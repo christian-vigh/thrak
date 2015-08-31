@@ -1,0 +1,238 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        CircularBuffer.phpclass
+
+    DESCRIPTION
+        Implements a circular buffer of fixed size that can be indexed as an array.
+
+    AUTHOR
+        Christian Vigh, 02/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/02/23]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Types ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use  	Thrak\System\Object ;
+
+
+/*==============================================================================================================
+
+    CircularBuffer -
+        Implements a circular buffer of fixed size that can be indexed as an array.
+
+  ==============================================================================================================*/
+class  CircularBuffer		extends		Object
+				implements	\ArrayAccess, \Countable, \Iterator
+   {
+	protected	$NextPosition		=  0 ;		// Position of next element
+	protected	$Data ;					// Circular buffer contents
+	protected	$DataSize ;
+	private		$EnumeratorIndex	=  0 ;		// Index of current element when using an enumerator to loop through the circular buffer
+	
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        Constructor - Builds a circular buffer.
+	
+	    PROTOTYPE
+	        $cb	=  new  CircularBuffer ( $size ) ;
+		$cb	=  new  CircularBuffer ( $array ) ;
+		$cb	=  new  CircularBuffer ( $array, $size ) ;
+	
+	    DESCRIPTION
+	        The first form of the constructor builds a circular buffer which can contain $size elements.
+	 	The second form builds a circular buffer using the supplied $array. The size of the circular buffer will
+	 	be the size of the array.
+	 	The third form builds a circular buffer using the supplied array, giving it $size elements ($size can be
+	 	different from the size of the specified array ; if smaller, only $size elements of $array will be used
+	 	to initialize the circular buffer).
+	
+	    PARAMETERS
+	        $size (integer) -
+	                Number of items in the circular buffer.
+	  
+	 	$array (array) -
+	 		Array used to initialize the circular buffer.
+	
+	  ==============================================================================================================*/
+	public function  __construct  ( )
+	   {
+		$argv	=  func_get_args ( ) ;
+		$argc	=  count ( $argv ) ;
+		
+		switch ( $argc )
+		   {
+			// One argument : either an array or an initial size
+			case	1 :
+				// Array given : the circular buffer size will be array size
+				if  ( is_array ( $argv [0] ) )
+				   {
+					$this -> Data		=  $argv [0] ;
+					$this -> DataSize	=  count ( $argv [0] ) ;
+				    }
+				// Numeric value : this gives the circular buffer size
+				else if  ( is_numeric ( $argv [0] ) )
+				   {
+					$count			=  ( integer ) $argv [0] ;
+					$this -> Data		=  array_fill ( 0, $count, null ) ;
+					$this -> DataSize	=  $count ;
+				    }
+				else
+					error ( new \Thrak\System\InvalidArgumentException ( "CircularBuffer constructor accepts either an array " .
+						"or a numeric size" ) ) ;
+				
+				break ;
+				
+			// 2 arguments : must be an array and a size
+			case	2 :
+				if  ( is_array ( $argv [0] )  &&  is_numeric ( $argv [1] ) )
+				   {
+					$count			=  count ( $argv [0] ) ;
+					$size			=  ( integer ) $argv [1] ;
+					
+					if  ( $count  ==  $size )
+					   {
+						$this -> Data		=  $argv [0] ;
+						$this -> DataSize	=  $count ;
+					    }
+					else if  ( $count  >  $size )
+					   {
+						$this -> Data		=  array_slice ( $argv [0], 0, $size ) ;
+						$this -> DataSize	=  $size ;
+					    }
+					else	// $count  <  $size
+					   {
+						$this -> Data		=  array_merge ( $argv [0], array_fill ( 0, $size - $count, null ) ) ;
+						$this -> DataSize	=  $size ;
+						$this -> NextPosition	=  $count ;
+					    }
+				    }
+				else
+					error ( new \Thrak\System\InvalidArgumentException ( "CircularBuffer constructor accepts either an array " .
+							"or a numeric size, or both" ) ) ;
+				    
+				break ;
+				    
+			// Any other number of arguments is forbidden
+			default :
+				error ( new \Thrak\System\InvalidArgumentException ( "CircularBuffer constructor accepts either an array " .
+					"or a numeric size, or both" ) ) ;
+		    }
+	    }
+
+	
+	/*==============================================================================================================
+	
+	    Reset -
+	        Resets the circular buffer.
+	
+	  ==============================================================================================================*/
+	public function  Reset ( )
+	   {
+		$this -> Data			=  array_fill ( 0, $this -> DataSize, null ) ;
+		$this -> EnumeratorIndex	=  0 ;
+		$this -> NextPosition		=  0 ;
+	    }
+	    
+	    
+	/**************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 ******                                   INTERFACES IMPLEMENTATIONS                                     ******
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************/
+
+	
+	/*==============================================================================================================
+	
+	        Countable interface.
+	
+	  ==============================================================================================================*/
+	public function  Count ( )
+	   { return ( $this -> DataSize ) ; }
+	
+	
+	/*==============================================================================================================
+	
+	        ArrayAccess interface.
+	
+	  ==============================================================================================================*/
+	protected function  offsetOff ( $offset )
+	   { return ( ( $this -> NextPosition + $offset ) % $this -> DataSize ) ; }
+
+	
+	public function  offsetExists ( $offset )
+	   { return ( $offset  >=  0  &&  $offset  <  $this -> DataSize ) ; }
+	
+	
+	public function  offsetGet ( $offset )
+	   {
+		if  ( $this -> offsetExists ( $offset ) )
+			return ( $this -> Data [ $this -> offsetOff ( $offset ) ] ) ;
+		else
+			error ( new \Thrak\System\OutOfBoundsException ( "Invalid offset $offset." ) ) ;
+	    }
+	
+	
+	public function  offsetUnset ( $offset )
+	   {
+		if  ( $this -> offsetExists ( $offset ) )
+			$this -> Data [ $this -> offsetOff ( $offset ) ]	=  null ;
+		else
+			error ( new \Thrak\System\OutOfBoundsException ( "Invalid offset $offset." ) ) ;
+	    }
+	
+	
+	public function  offsetSet ( $offset, $value )
+	   {
+		if  ( $offset  ===  null )
+		   {
+			$this -> Data [ $this -> NextPosition ]			=  $value ;
+			$this -> NextPosition					=  ( $this -> NextPosition + 1 ) % $this -> DataSize ;
+			
+		    }
+		else if  ( $this -> offsetExists ( $offset ) )
+			$this -> Data [ $this -> offsetOff ( $offset ) ]	=  $value ;
+		else
+			error ( new \Thrak\System\OutOfBoundsException ( "Invalid offset $offset." ) ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	        Iterator interface.
+	
+	  ==============================================================================================================*/
+	public function  rewind ( )
+	   { $this -> EnumeratorIndex	=  0 ; }
+	
+	
+	public function  valid  ( )
+	   { return ( $this -> EnumeratorIndex  >=  0  &&  $this -> EnumeratorIndex  <  $this -> DataSize ) ; }
+	
+	
+	public function  next ( )
+	   { $this -> EnumeratorIndex ++ ; }
+	
+	
+	public function  key ( )
+	   { return ( $this -> EnumeratorIndex ) ; }
+	
+	
+	public function  current ( )
+	   { return ( $this -> Data [ $this -> offsetOff ( $this -> EnumeratorIndex ) ] ) ; }
+		
+    }

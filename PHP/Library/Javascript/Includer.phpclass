@@ -1,0 +1,536 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        Includer.php
+
+    DESCRIPTION
+        Includer classes for Javascript & CSS files.
+
+    AUTHOR
+        Christian Vigh, 10/2013.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2013/10/14]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Javascript ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces & objects
+use 		Thrak\System\Object 		as  Object ;
+use		Thrak\IO\Path			as  Path ;
+
+
+/*==============================================================================================================
+
+    ClientIncluder -
+        Base abstract class for client-side file inclusion (CSS, Javascript, etc.).
+
+  ==============================================================================================================*/
+abstract class  ClientSideIncluder  extends Object
+   {
+	// Include paths, provided to the class constructor.
+	// When a file is included using the methods of this class, the following happens :
+	// - If the file name starts with '#', the path will be evaluated relatively to $THRAK_ROOT. No include path
+	//   list will be searched.
+	// - If a file starts with '/', it will be evaluated relatively to $SITE_ROOT. No include path list will be
+	//   used.
+	// - If a file is relative, then it will be first searched in te current directory, then into each of the 
+	//   directories specified in the include path list.
+	// - Of course, URLs are supported
+	// Note that directories in the include path list can also contain absolute ('#', '/') and relative paths.
+	protected	$IncludePaths		=  array ( ) ;
+	
+	// Real include paths, after expanding input paths to their absolute filesystem notation.
+	protected	$RealIncludePaths	=  array ( ) ;
+	
+	// Files included so far.
+	protected	$IncludedFiles		=  array ( ) ;
+	
+	
+	/*==============================================================================================================
+
+	    CONSTRUCTOR
+		Initializes the IncludePaths array and expands these path references to absolute filesystem file paths.
+
+	    PROTOTYPE
+		public function  __construct ( array  $include_paths  =  array ( ) ) ;
+
+	    DESCRIPTION
+		Instanciates a ClientSideIncluder object.
+
+	    PARAMETERS
+		$include_paths (array) -
+			List of directories to add to the include path.
+
+	  ==============================================================================================================*/
+	public function  __construct ( array  $include_paths = array ( ) )
+	   {
+		parent::__construct ( ) ;
+		
+		foreach  ( $include_paths  as  $include_path )
+			$this -> AddIncludePath ( $include_path ) ;
+	    }
+
+	    
+	/*==============================================================================================================
+	
+	    __get_server_side_path -
+	        Returns the absolute server-side path for a specified file.
+	
+	  ==============================================================================================================*/
+	private function  __get_server_side_path ( $file )
+	   {
+		global		$THRAK_ROOT, $SITE_ROOT ;
+		
+
+		// If the path is an URL, return it as is
+		if  ( strpos ( $file, "://" )  !==  false  ||  substr ( $file, 0, 2 )  ==  '//' )
+			return ( $file ) ;
+
+		// If file exists, nothing to do...
+		if  ( file_exists ( $file ) )
+			return ( $file ) ;
+			
+		// Try to locate the file locally
+		$absfile	=  Path::RealPath ( $file ) ;
+
+		if  ( file_exists ( $absfile ) ) 
+			return ( $absfile ) ;
+		
+		// Other cases : we need to go through the include path list
+		foreach  ( $this -> RealIncludePaths  as  $directory )
+		   {
+			$test_file	=  $directory . "/" . $file  ;
+			
+			if  ( file_exists ( $test_file ) )
+			   {
+				$test_file	=  Path::ToUnix ( substr ( $test_file, strlen ( $_SERVER [ 'DOCUMENT_ROOT' ] ) ) ) ;
+				return ( $test_file ) ;
+			    }
+		    }
+		    
+		// File not found...
+		return ( false ) ;
+	    }
+	    
+	    
+	/*==============================================================================================================
+	
+	    __do_preinclude -
+	        Tries to locate an include file. Fails if the file could not be located or has already been included.
+		Returns the real path, relative to $_SERVER [ 'DOCUMENT_ROOT' ].
+	
+	  ==============================================================================================================*/
+	private function  __do_preinclude ( $file, $error, $once )
+	   {
+		$errfunc	=  ( $error ) ?  'error' : 'warning' ;
+		$test_file	=  $this -> __get_server_side_path ( $file ) ;
+
+		if  ( $test_file  ===  false )
+		   {
+			$errfunc ( "Unable to locate include file \"$file\"." ) ;
+			return ( false ) ;		// If $error is false, a warning will be issued, so we need to return an error condition
+		    }
+		    
+		if  ( in_array ( $test_file, $this -> IncludedFiles ) )
+		   {
+			if  ( $once )
+				return ( $test_file ) ;
+				
+			$errfunc ( "File \"$file\" has already been included." ) ;
+			return ( false ) ;
+		    }
+		    
+		return ( $test_file ) ;
+	    }
+	    
+	    
+	/*==============================================================================================================
+	
+	    NAME
+	        AddIncludePath - Adds a directory to the include path list.
+	
+	    PROTOTYPE
+	        $cs -> AddIncludePath ( string  $directory ) ;
+	
+	    DESCRIPTION
+	        Adds the specified directory to the include path list. 
+		No warning or error will be issued if the directory does not exist.
+		Note that if the directory is already present in the list, it will not be added a second time.
+	
+	    PARAMETERS
+	        $directory (string) -
+	                Directory to be added to the include path.
+			
+	    RETURNS
+		True if the directory has been added, false otherwise.
+	
+	  ==============================================================================================================*/
+	public function  AddIncludePath  ( $directory )
+	   {
+		if  ( in_array ( $directory, $this -> IncludePaths ) )
+			return ( false ) ;
+		
+		$real_directory			=  Path::RealPath ( $directory ) ;
+		$this -> IncludePaths []	=  $directory ;
+		$this -> RealIncludePaths []	=  $real_directory ;
+	    }
+	    
+	    
+	/*==============================================================================================================
+	
+	    NAME
+	        GetIncludePath, SetIncludePath - Mimics the behavior of get_include_path/set_include_path.
+	
+	    PROTOTYPE
+	        $str	=  $object -> GetIncludePath ( ) ;
+		$object -> SetIncludePath ( $str ) ;
+	
+	    DESCRIPTION
+	        GetIncludePath() returns the include path as a string separated by the PATH_SEPARATOR character.
+		SetIncludePath() takes an include path list separated by the PATH_SEPARATOR character and overrides any
+		existings entries if the path list by the provided one.
+	
+	    PARAMETERS
+	        $str (string) -
+	                Include path, ie a string consisting of a list of directories separated by the PATH_SEPARATOR
+			character.
+	
+	    RETURN VALUE
+	        GetIncludePath() returns the include path.
+		
+	  ==============================================================================================================*/
+	public function  GetIncludePath ( )
+	   {
+		$list		=  implode ( PATH_SEPARATOR, $this -> IncludePaths ) ;
+		
+		return ( $list ) ;
+	    }
+	    
+	    
+	public function  SetIncludePath ( string  $path )
+	   {
+		$list				=  explode ( PATH_SEPARATOR, $path ) ;
+		$this -> IncludePaths		=  array ( ) ;
+		$this -> RealIncludePaths	=  array ( ) ;
+		
+		foreach  ( $list  as  $item )
+			$this -> AddIncludePath ( $item ) ;
+	    }
+	    
+	    
+	/*==============================================================================================================
+	
+	    NAME
+	        IncludeFile, IncludeFileOnce, RequireFile, RequireFileOnce -
+			Equivalents of the PHP functions that have (approximately) the same name.
+	
+	    PROTOTYPE
+	        $object -> IncludeFile		( string  $file ) ;
+		$object -> IncludeFileOnce	( string  $file ) ;
+		$object -> RequireFile		( string  $file ) ;
+		$object -> RequireFileOnce	( string  $file ) ;
+	
+	    DESCRIPTION
+	        Implement the equivalent functions.
+		- IncludeFile will include the file and display a warning if it has already been included or if it does
+		  not exist.
+		- IncludeFileOnce will include the file if it has not already been included. It will display a warning
+		  if the file does not exist.
+		- RequireFile and RequireFileOnce behave the same way, except that they generate an error instead of a
+		  warning.
+	
+	    PARAMETERS
+	        $file (string) -
+	                File to be included.
+
+	    NOTES
+		All these functions finally call the abstract DoInclude function, which must be implemented by descendent
+		classes.
+		
+	  ==============================================================================================================*/
+	protected abstract function	DoInclude ( $file, $return = false ) ;
+	
+	
+	private function  __do_include ( $file, $error, $once, $return )
+	   {
+		$include	=  $this -> __do_preinclude ( $file, $error, $once ) ;
+		
+		if  ( $include  ===  false )
+		   {
+			$error	=  "<!-- FAILED TO INCLUDE FILE : $file -->\n" ;
+			
+			if  ( $return ) 
+				return ( $error ) ;
+			else
+			   {
+				output ( $error ) ;
+				return ;
+			    }
+		    }
+
+		if  ( $return )
+			return ( $this -> DoInclude ( $include, true ) ) ;
+		else
+			$this -> DoInclude ( $include, false ) ;
+	    }
+	    
+	    
+	public function  IncludeFile ( $file, $return = false ) 
+	   { $this -> __do_include ( $file, false, false, $return ) ; }
+	    
+	public function  IncludeFileOnce ( $file, $return = false ) 
+	   {$this -> __do_include ( $file, false, true, $return ) ; }
+	    
+	public function  RequireFile ( $file, $return = false ) 
+	   { $this -> __do_include ( $file, true, false, $return ) ; }
+	    
+	public function  RequireFileOnce ( $file, $return = false ) 
+	   { $this -> __do_include ( $file, true, true, $return ) ; }
+	   
+	   
+	
+    }    
+    
+    
+/*==============================================================================================================
+
+    CSS class includer -
+        File includer for CSS files.
+
+  ==============================================================================================================*/
+class  CSSIncluder	extends ClientSideIncluder
+   {
+	/*==============================================================================================================
+	
+		Calls constructor. Initializes the instance using the 'Environment/css-include-path' as the list of 
+		include directories.
+		
+	  ==============================================================================================================*/
+	public function  __construct ( )
+	   {
+		global		$Configuration ;
+		
+		parent::__construct ( $Configuration -> Get ( 'Environment/css-include-path' ) ) ;
+	    }
+	    
+
+	/*==============================================================================================================
+	
+		DoInclude -
+			Implementation of the abstract DoInclude function. Outputs the HTML code to really include the
+			file.
+			
+	  ==============================================================================================================*/
+	protected function  DoInclude ( $file, $return = false ) 
+	   {
+		$result		=  "<link rel='stylesheet' type='text/css' href='$file'>\n" ;
+
+		if  ( $return )
+			return ( $result ) ;
+		else
+			echo ( $result ) ;
+	    }
+
+	    
+	/*==============================================================================================================
+	
+	    NAME
+	        IncludeJQueryUITheme - Includes a JQuery UI theme.
+	
+	    PROTOTYPE
+	        $CSSIncluder -> IncludeJQueryUITheme ( $theme, $min = true, $custom = true ) ;
+	
+	    DESCRIPTION
+	        Includes the specified JQuery UI theme.
+	
+	    PARAMETERS
+	        $theme (string) -
+	                Theme name.
+			
+		$min (boolean) -
+			When true, the minified version will be included.
+			
+		$custom (boolean) -
+			When true, the custom version will be used.
+	
+	    NOTES
+	        . JQuery themes are stored in directory thrak://Javascript/contribs/jquery/css/themes.
+		. A customized and minified version will have a name of the form :
+		
+			thrak://Javascript/contribs/jquery/css/themes/{theme}/jquery-ui-{version}.custom.min.css
+			
+		  while the standard, non-minified file will have a name of the form :
+	
+			thrak://Javascript/contribs/jquery/css/themes/{theme}/jquery-ui-{version}.css
+			
+		  where {theme} is the theme name, and {version} its version, taken from the Thrak or Site configuration
+		  file.
+		. If the file does not exist on the server, no HTML instruction will be added in the output.
+			
+	  ==============================================================================================================*/
+	private function  __get_css_path ( $theme, $key, $min = true, $custom = true )
+	   {
+		global	$Configuration ;
+
+		$minified	=  $Configuration -> Get ( "Javascript/$key/minified", $min ) ;
+		$custom		=  $Configuration -> Get ( "Javascript/$key/custom", $custom ) ;
+		$location	=  $Configuration -> Get ( "Javascript/$key/location" ) ;
+		$version	=  $Configuration -> Get ( "Javascript/$key/version" ) ;
+		
+		$location	=  str_replace ( "%v", $version, $location ) ;
+		$location	=  str_replace ( "%t", $theme, $location ) ;
+		
+		if  ( $minified )
+			$location	=  str_replace ( "%m", "min", $location ) ;
+		else
+			$location	=  str_replace ( ".%m", "", $location ) ;
+			
+		if  ( $custom )
+			$location	=  str_replace ( "%c", "custom", $location ) ;
+		else
+			$location	=  str_replace ( ".%c", "", $location ) ;
+
+		return ( $location ) ;
+	    }
+	    
+	    
+	public function  IncludeJQueryUITheme ( $theme, $min = true, $custom = true, $return = false ) 
+	   {
+		$location	=  $this -> __get_css_path ( $theme, 'jquery-ui-themes', $min, $custom ) ;
+		
+		if  ( $location )
+			$this -> IncludeFileOnce ( $location, $return ) ;
+	    }
+    }
+    
+    
+/*==============================================================================================================
+
+    JS class includer -
+        File includer for CSS files.
+
+  ==============================================================================================================*/
+class  JSIncluder	extends ClientSideIncluder
+   {
+	/*==============================================================================================================
+	
+		Calls constructor. Initializes the instance using the 'Environment/js-include-path' as the list of 
+		include directories.
+		
+	  ==============================================================================================================*/
+	public function  __construct ( )
+	   {
+		global		$Configuration ;
+		
+		parent::__construct ( $Configuration -> Get ( 'Environment/js-include-path' ) ) ;
+	    }
+	    
+	    
+	/*==============================================================================================================
+	
+		DoInclude -
+			Implementation of the abstract DoInclude function. Outputs the HTML code to really include the
+			file.
+			
+	  ==============================================================================================================*/
+	protected function  DoInclude ( $file, $return = false ) 
+	   {
+		$result		=  "<script language='javascript' src='$file'></script>\n" ;
+		
+		if  ( $return )
+			return ( $result ) ;
+		else
+			echo ( $result ) ;
+	    }
+	    
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        IncludeJQuery, IncludeJQuery - Includes a JQuery or JQuery UI javascript file.
+	
+	    PROTOTYPE
+	        $JSIncluder -> IncludeJQuery ( $min = true ) ;
+	
+	    DESCRIPTION
+	        Includes the specified JQuery javascript source.
+	
+	    PARAMETERS
+		$min (boolean) -
+			When true, the minified version will be included.
+	
+	    NOTES
+		. A minified version will have a name of the form :
+		
+			thrak://Javascript/contribs/jquery/jquery-{version}.min.js
+			
+		  while the standard, non-minified file will have a name of the form :
+	
+			thrak://Javascript/contribs/jquery/jquery-{version}.js
+			
+		  where {version} is the JQuery or JQuery UI version, taken from the Thrak or Site configuration file.
+		. If the file does not exist on the server, no HTML instruction will be added in the output.
+			
+	  ==============================================================================================================*/
+	private function  __get_javascript_path ( $key, $min = true )
+	   {
+		global	$Configuration ;
+
+		$location	=  $Configuration -> Get ( "Javascript/$key/location" ) ;
+		$version	=  $Configuration -> Get ( "Javascript/$key/version" ) ;
+		$minified	=  $Configuration -> Get ( "Javascript/$key/minified", $min ) ;
+		
+		$location	=  str_replace ( "%v", $version, $location ) ;
+		
+		if  ( $minified )
+			$location	=  str_replace ( "%m", "min", $location ) ;
+		else
+			$location	=  str_replace ( ".%m", "", $location ) ;
+			
+		return ( $location ) ;
+	    }
+	    
+	    
+	public function  IncludeJQuery ( $min = true, $return = false ) 
+	   {
+		$location	=  $this -> __get_javascript_path ( 'jquery', $min ) ;
+		
+		if  ( $location )
+			$this -> IncludeFileOnce ( $location, $return ) ;
+	    }
+
+	    
+	public function  IncludeJQueryUI ( $min = true, $return = false ) 
+	   {
+		$location	=  $this -> __get_javascript_path ( 'jquery-ui', $min ) ;
+		
+		if  ( $location )
+			$this -> IncludeFileOnce ( $location, $return ) ;
+	    }
+	    
+	    
+	public function  UseJQuery ( $theme, $min = true, $custom = true, $return = false )
+	   {
+		global		$CSSIncluder ;
+		
+		if  ( $return )
+		   {
+			$result		=  $this -> IncludeJQuery ( $min, true ) . 
+					   $this -> IncludeJQueryUI ( $min, true ) . 
+					   $CSSIncluder -> IncludeJQueryUITheme ( $theme, $min, $custom, true ) ;
+			
+			return ( $result ) ;
+		    }
+		else
+		   {
+			$this -> IncludeJQuery ( $min ) ;
+			$this -> IncludeJQueryUI ( $min ) ;
+			$CSSIncluder -> IncludeJQueryUITheme ( $theme, $min, $custom ) ;
+		    }
+	    }
+    }    

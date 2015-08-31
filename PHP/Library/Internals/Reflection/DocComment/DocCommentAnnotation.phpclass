@@ -1,0 +1,59 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        DocCommentAnnotation.phpclass
+
+    DESCRIPTION
+        Definition of an Annotation located in a bloc comment. Processes annotations in the format described
+	in PhpDocumentor, plus the following special form :
+  
+ 	@annotation(param=value, ...)
+  
+    AUTHOR
+        Christian Vigh, 11/2014.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2014/11/09]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Reflection ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use  	Thrak\System\Object ;
+use	Thrak\Reflection\DocCommentElement ;
+
+
+/*==============================================================================================================
+
+    DocCommentAnnotation -
+        Implements an Annotation.
+
+  ==============================================================================================================*/
+class	DocCommentAnnotation		extends  DocCommentElement
+   {
+	/*==============================================================================================================
+	
+	    Constructor -
+	        Does not do nothing much...
+	
+	  ==============================================================================================================*/
+	public function  __construct  ( $name, $params_array )
+	   {
+		parent::__construct ( $name, $params_array ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    __tostring -
+	        Returns a generic string representation of the annotation.
+	
+	  ==============================================================================================================*/
+	public function  __tostring ( )
+	   {
+		return ( '@' . $this -> Name . ' ' . implode ( ' ', $this -> Parameters -> ToArray ( ) ) ) ;
+	    }
+    }

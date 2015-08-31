@@ -1,0 +1,441 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        SshConnection.php
+
+    DESCRIPTION
+        Implements an SSH2 connection. The SshConnection class is automatically created by calling the
+	SshSession::Connect() method, which returns an SshSession object.
+
+    AUTHOR
+        Christian Vigh, 05/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/05/17]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace	Thrak\Network\Ssh ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces & objects
+use	Thrak\System\Object ;
+
+
+/*==============================================================================================================
+
+    ISshConnection interface -
+        Interface for implementing connection callback functions.
+
+  ==============================================================================================================*/
+interface	ISshConnection
+   {
+	// MessageIgnore -
+	//	Called when an SSH2_MSG_IGNORE packet is received.
+	public function	 MessageCallbackIgnore ( $message ) ;
+	
+	
+	// MessageDebug -
+	//	Called when an SSH2_MSG_DEBUG is received.
+	public function  MessageCallbackDebug ( $message, $language, $always_display ) ;
+	
+	
+	// MessageError -
+	//	Called when a packet is received but the identification function has failed.
+	//	If the callback returns true, the error will be ignored. Otherwise, connection will be closed.
+	public function	 MessageCallbackError ( $packet ) ;
+
+	
+	// MessageDisconnect -
+	//	Called when an SSH2_MSG_DISCONNECT is received.
+	public function	 MessageCallbackDisconnect ( $reason, $message, $language ) ;
+    }
+
+
+/*==============================================================================================================
+
+    SshConnection -
+        Implements an SSH connection towards a server.
+
+  ==============================================================================================================*/
+class  SshConnection		extends		Object
+				implements	ISshConnection
+   {
+	// When set to true, default callbacks will print the received messages
+	public static	$Debug			=  true ;
+	
+	// Parent session object
+	public		$Session		=  null ;
+	// True when a connection has been established ; does not indicate that authentication succeeded
+	private		$Connected		=  false ;
+	// Authentication object
+	private		$Authentication		=  null ;
+	// Resource returned by ssh2_connect()
+	private		$ConnectionResource	=  null ;
+	// Host name
+	private		$Host			=  null ;
+	// Port number
+	private		$Port			=  22 ;
+	// Methods supported by the client ; see ssh2_connect()
+	private		$Methods		=  null ;
+	// Callbacks ; Default callbacks are implemented by this class
+	private		$Callbacks		=  null ;
+	
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        Constructor - Builds a Connection object.
+	
+	    PROTOTYPE
+	        $connection	=   new  SshConnection ( $host_or_resource = null, $port = 22, $methods = null, 
+								$callbacks = null ) ;
+	
+	    DESCRIPTION
+	        Builds an SshConnection object. You must call the Connect() method on the created object in order to 
+		perform a real connection.
+	
+	    PARAMETERS
+	        $host_or_resource (string, resource or SshConnection object) -
+	                Host to connect to. It can have one of the following types :
+	 		- string :
+	 			Host name that will be supplied to the ssh2_connect() function.
+	 		- resource :
+	 			An already existing ssh connection. Note that in this case, the Host, Port, Methods
+	 			and Callbacks properties of the $this -> Connection SshConnection object will be
+	 			undefined.
+	 		- SshConnection object :
+	 			Duplicates the parameters of an existing SshConnection object.
+	  
+	 	$port (integer) -
+	 		Ssh port to be used for the connection. Default is 22.
+	  
+	 	$methods (array) -
+	 		Associative array. See the ssh2_connect() function help for for a description of its entries.
+	  
+	 	$callbacks (array) -
+	 		An associative array providing the names of callback functions (see the ssh2_connect()
+	 		function).
+	 		Note that all the callbacks are implemented in the SshConnection class . This parameter can 
+	 		be used to override existing callbacks in derived classes.
+	
+	    RETURN VALUE
+	        description
+	
+	    NOTES
+	        description
+	
+	  ==============================================================================================================*/
+	public function  __construct ( $host_or_resource = null, $port = null, $methods = null, $callbacks = null )
+	   {
+		$this -> __set_connection_data ( $host_or_resource, $port, $methods, $callbacks ) ;
+	    }
+
+	
+	/*==============================================================================================================
+	
+	        Private methods.
+	
+	  ==============================================================================================================*/
+
+	// __set_connection_data -
+	//	Assigns the supplied arguments to connection data.
+	private function  __set_connection_data ( $host_or_resource = null, $port = null, $methods = null, $callbacks = null )
+	   {
+		$default_callbacks	=
+		   [
+			'ignore'	=>  ( isset ( $callbacks [ 'ignore'    ] ) ) ?  
+							$callbacks [ 'ignore'     ] : [ $this, 'MessageCallbackIgnore'		],
+			'debug'		=>  ( isset ( $callbacks [ 'debug'     ] ) ) ?  
+							$callbacks [ 'debug'      ] : [ $this, 'MessageCallbackDebug'		],
+			'macerror'	=>  ( isset ( $callbacks [ 'macerror'  ] ) ) ?  
+							$callbacks [ 'macerror'   ] : [ $this, 'MessageCallbackError'		],
+			'disconnect'	=>  ( isset ( $callbacks [ 'disconnect'] ) ) ?  
+							$callbacks [ 'disconnect' ] : [ $this, 'MessageCallbackDisconnect'	]
+		    ] ;
+			
+		// First argument can be either a string (a host name), a resource (an existing ssh connection) or an
+		// existing SshConnection object, whose properties will be copied into this one
+		if  ( $host_or_resource )
+		   {
+			if  ( is_resource ( $host_or_resource ) )
+			   {
+				$this -> ConnectionResource	=  $host_or_resource ;
+				$this -> Connected		=  true ;
+				$this -> Host			=  null ;
+				$this -> Port			=  null ;
+				$this -> Methods		=  null ;
+				$this -> Callbacks		=  null ;
+			    }
+			else if  ( is_a ( $host_or_resource, '\Thrak\Network\Ssh\SshConnection' ) )
+			   {
+				$this -> ConnectionResource	=  $host_or_resource -> ConnectionResource ;
+				$this -> Connected		=  false ;
+				$this -> Host			=  $host_or_resource -> Host ;
+				$this -> Port			=  $host_or_resource -> Port ;
+				$this -> Methods		=  $host_or_resource -> Methods ;
+				$this -> Callbacks		=  $host_or_resource -> Resources ;
+			    }
+			else
+			   {
+				$this -> ConnectionResource	=  null ;
+				$this -> Connected		=  false ;
+				$this -> Host			=  $host_or_resource ;
+				$this -> Port			=  ( $port ) ?  $port : 22 ;
+				$this -> Methods		=  $methods ;
+				$this -> Callbacks		=  $default_callbacks ;
+			    }
+		    }
+	    }
+
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        Authenticate - Performs session authentication.
+	
+	    PROTOTYPE
+	        $connection -> Authenticate ( ) ;
+	
+	    DESCRIPTION
+	        Authenticates on an already connected session using the specified SshAuthentication class-derived 
+		object.
+	 	The SetAuthentication() method must be called first, to assign an SshAuthentication object.
+	
+	    PARAMETERS
+	        $auth_object (Ssh) -
+	                SshAuthentication object.
+	
+	  ==============================================================================================================*/
+	public function  Authenticate ( )
+	   {
+		if  ( $this -> Authentication )
+			$this -> Authentication -> Authenticate ( ) ;
+		else
+			error ( new \Thrak\Network\Ssh\SshConnectionException ( "Cannot authenticate ; no authentication data available." ) ) ;
+	    }
+	
+		
+	/*==============================================================================================================
+	
+	    NAME
+	        Connect - Establishes an ssh connection.
+	
+	    PROTOTYPE
+	        $connection -> Connect ( $host_or_resource = null, $port = 22, $methods = null, 
+						$callbacks = null ) ;
+	
+	    DESCRIPTION
+	        Establishes an ssh connection. Reuse existing connection parameters if none specified.
+	
+	    PARAMETERS
+	        $host_or_resource (string, resource or SshConnection object) -
+	                Host to connect to. It can have one of the following types :
+	 		- string :
+	 			Host name that will be supplied to the ssh2_connect() function.
+	 		- resource :
+	 			An already existing ssh connection. Note that in this case, the Host, Port, Methods
+	 			and Callbacks properties of the $this -> Connection SshConnection object will be
+	 			undefined.
+	 		- SshConnection object :
+	 			Duplicates the parameters of an existing SshConnection object.
+	  
+	 	$port (integer) -
+	 		Ssh port to be used for the connection. Default is 22.
+	  
+	 	$methods (array) -
+	 		Associative array. See the ssh2_connect() function help for for a description of its entries.
+	  
+	 	$callbacks (array) -
+	 		An associative array providing the names of callback functions (see the ssh2_connect()
+	 		function).
+	 		Note that all the callbacks are implemented in the SshConnection class . This parameter can 
+	 		be used to override existing callbacks in derived classes.
+	
+	    RETURN VALUE
+	        description
+	
+	    NOTES
+	        description
+	
+	  ==============================================================================================================*/	
+	public function  Connect ( $host_or_resource = null, $port = null, $methods = null, $callbacks = null )
+	   {
+		if  ( $host_or_resource )
+			$this -> __set_connection_data ( $host_or_resource, $port, $methods, $callbacks ) ;
+
+		if  ( ! $this -> Host ) 
+			error ( new SshConnectionException ( "An SshConnection object, a connection resource returned by the ssh2_connect() function " .
+						"or a hostname/ip address is required." ) ) ;
+		
+		if  ( ! $this-> ConnectionResource )
+		   {
+			$resource		=  @ssh2_connect ( $this -> Host, $this -> Port, $this -> Methods, $this -> Callbacks ) ;
+				
+			if  ( $resource  ===  false )
+				error ( new SshConnectionException ( "SSH2 connection failed to host {$this -> Host} port {$this -> Port}" ) ) ;
+			
+			$this -> ConnectionResource	=  $resource ;
+			$this -> Connected		=  true ;
+		    }
+	    }
+	
+
+	/*==============================================================================================================
+	
+	    NAME
+	        Disconnect - Closes an ssh connection.
+	
+	    PROTOTYPE
+	        $connection -> Disconnect ( ) ;
+	
+	    DESCRIPTION
+	        Closes an existing ssh connection.
+	
+	    RETURN VALUE
+	        True if a connection was already opened, false otherwise.
+	
+	  ==============================================================================================================*/
+	public function  Disconnect ( )
+	   {
+		if  ( $this -> ConnectionResource )
+		   {
+			unset ( $this -> ConnectionResource ) ;
+			$this -> ConnectionResource	=  null ;
+			$this -> Connected		=  false ;
+			
+			return ( true ) ;
+		    }
+		else
+			return ( false ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        GetFingerprint - Returns a host fingerprint.
+	
+	    PROTOTYPE
+	        $fingerprint	=  $connection -> GetFingerprint ( $flags = SSH2_FINGERPRINT_MD5 | SSH2_FINGERPRINT_HEX ) ;
+	
+	    DESCRIPTION
+	        Returns a host fingerprint ; the connection must be established prior to a call to this method, or an
+		error will be issued.
+	
+	    PARAMETERS
+	        $flags (integer) -
+	                SSH2_FINGERPRINT_MD5 or SSH2_FINGERPRINT_SHA1, associated with one of these flags : 
+			SSH2_FINGERPRINT_HEX or SSH2_FINGERPRINT_RAW. 
+	
+	    RETURN VALUE
+	        The host fingerprint.
+	
+	  ==============================================================================================================*/
+	public function  GetFingerprint ( $flags = SSH2_FINGERPRINT_MD5 | SSH2_FINGERPRINT_HEX )
+	   {
+		if  ( $this -> ConnectionResource )
+			return ( ssh2_fingerprint ( $this -> ConnectionResource, $flags ) ) ;
+		else
+			error ( new SshConnectionException ( "Cannot get a host fingerprint on a closed session." ) ) ;
+	    }
+
+	
+	/*==============================================================================================================
+	
+	    GetNegociatedMethods -
+	        Returns information about negociated methods.
+	
+	  ==============================================================================================================*/
+	public function  GetNegociatedMethods ( )
+	   {
+		$result		=  ssh2_methods_negotiated ( $this -> ConnectionResource ) ;
+		
+		return ( $result ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	        Some property access functions.
+	
+	  ==============================================================================================================*/
+	public function  GetCallbacks ( )
+	   { return ( $this -> Callbacks ) ; }
+
+		
+	public function  GetHost ( )
+	   { return ( $this -> Host ) ; }
+
+		
+	public function  GetMethods ( )
+	   { return ( $this -> Methods ) ; }
+
+		
+	public function  GetPort ( )
+	   { return ( $this -> Port ) ; }
+
+		
+	public function  GetResource ( )
+	   { return ( $this -> ConnectionResource ) ; }
+		
+	
+	public function  GetAuthentication ( )
+	   { return ( $this -> Authentication ) ; }
+	
+	
+	public function  IsAuthenticated ( )
+	   { return ( $this -> Authentication  !==  null  &&  $this -> Authentication -> Authenticated ) ; }
+	
+	public function  IsConnected ( )
+	   { return ( $this -> Connected ) ; }
+
+	
+	public function  SetAuthentication ( $auth_object )
+	   { $this -> Authentication	=  $auth_object ; }
+	
+	
+	/*==============================================================================================================
+	
+	        Callback methods for ssh2_connect().
+	
+	  ==============================================================================================================*/
+	protected function  DebugMessage ( $message )
+	   {
+		warning ( "[Ssh2 debug] $message" ) ;
+	    }
+	
+	
+	public function  MessageCallbackIgnore ( $message )
+	   {
+		if  ( self::$Debug )
+			$this -> DebugMessage ( "SSH2_MSG_IGNORE: $message" ) ;
+	    }
+	
+	
+	public function  MessageCallbackDebug ( $message, $language, $always_display ) 
+	   {
+		if  ( $always_display  ||  self::$Debug )
+			$this -> DebugMessage ( "[$language] SSH2_MSG_DISPLAY: $message" ) ;
+	    }
+	
+	
+	public function  MessageCallbackError ( $packet )
+	   {
+		if  ( self::$Debug )
+			$this -> DebugMessage ( "Identification failed. TODO : see packet contents" ) ;
+		
+		return ( true ) ;
+	    }
+	
+	
+	public function  MessageCallbackDisconnect ( $reason, $message, $language )
+	   {
+		if  ( self::$Debug )
+			$this -> DebugMessage ( "Disconnect, reason = $reason: $message" ) ;
+	    }
+    }
+	

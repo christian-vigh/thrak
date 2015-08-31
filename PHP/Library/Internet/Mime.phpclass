@@ -1,0 +1,405 @@
+<?php
+/***************************************************************************************************
+
+    NAME
+	Mime.phpclass
+
+    DESCRIPTION
+	Manages the list of MIME types.
+
+    AUTHOR
+     	Christian Vigh, 10/2011.
+
+    HISTORY
+    [Version : 1.0]	[Date : 2011/10/07]	[Author : CV]
+     	Initial version.
+
+   [Version : 2.0]	[Date : 2012/10/06]		[Author : CV]
+	Migrated to the Thrak library version 2.
+
+ ***************************************************************************************************/
+namespace  	Thrak\Internet ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+
+// Used namespaces and classes
+use     Thrak\System\Object 		as  Object ;
+use 	Thrak\System\Exception 		as  Exception ;
+use 	Thrak\Internet\Xml\SimpleXML	as  SimpleXML ;
+use     Thrak\Types\String 		as  String ;
+use     Thrak\IO\Path 			as  Path ;
+
+
+/*==================================================================================================
+
+     MimeType class -
+	Holds information about a particular MIME type.
+
+   ==================================================================================================*/
+class  MimeType  extends  Object
+   {
+	// Mime type extension
+	public 		$Extension ;
+	// Associated application
+	public		$Application ;
+	// Application name
+	public		$ApplicationName ;
+	// ... and module name
+	public		$ApplicationModule ;
+	// Option description
+	public		$Description ;
+
+	// Constructor
+	public function  __construct ( $extension, $application, $description )
+	   {
+	   	// Add a leading dot to the extension if none specified
+	   	if  ( $extension [0]  !=  '.' )
+	   		$extension = '.' . $name ;
+
+
+	   	// Save the values
+	   	$this -> Extension		=  $extension ;
+	   	$this -> Application 		=  $application ;
+	   	$this -> Description		=  trim ( $description ) ;
+
+	   	$list 				=  explode ( '/', $application ) ;
+	   	$this -> ApplicationName	=  $list [0] ;
+	   	$this -> ApplicationModule	=  $list [1] ;
+	    }
+    }
+
+
+ /*==================================================================================================
+
+     MimeTypes class -
+	Handles a list of available MIME types, defined in the Data/MimeTypes.txt file.
+
+   ==================================================================================================*/
+// Search options
+define ( 'MIME_TYPE_SEARCH_BY_EXTENSION'		, 0x01 ) ;		// Search by file extension
+define ( 'MIME_TYPE_SEARCH_BY_APPLICATION'		, 0x02 ) ;		// Search by application/module name
+define ( 'MIME_TYPE_SEARCH_BY_APPLICATION_NAME'		, 0x04 ) ;		// Search by application name
+define ( 'MIME_TYPE_SEARCH_BY_APPLICATION_MODULE'	, 0x08 ) ;		// Search by application module
+
+
+class  MimeTypes  extends  Object
+			    implements  \ArrayAccess, \Countable, \Iterator
+   {
+   	public		$MimeTypes ;
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Class constructor.
+
+	 --------------------------------------------------------------------------------------------*/
+   	public function  __construct  ( $file = "thrak://Data/MimeTypes.xml" )
+   	   {
+   	   	$file 	=  Path::RealPath ( $file ) ;
+
+		if  ( ! file_exists ( $file ) )
+			throw new Exception ( "MimeTypes : MIME types definition file '$file' does not exist." ) ;
+
+		$contents 	=  file_get_contents ( $file ) ;
+		$xml 		=  SimpleXML::LoadFromString ( $contents ) ;
+		$xml_array 	=  $xml -> AsArray ( ) ;
+
+		$this -> __process_xml_array ( $xml_array, $file ) ;
+   	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Processes XML data converted to an array.
+
+	 --------------------------------------------------------------------------------------------*/
+	private function  __process_xml_array ( $data, $file )
+	   {
+	   	// Check that the root tag is '<schemes>' and that no attribute has been specified.
+	   	$root 		=  $data [ 'tag' ] ;
+	   	$children       =  $data [ 'children' ] ;
+
+		if  ( strcasecmp ( $root, 'mime-types' ) )
+			throw new Exception ( "MimeTypes class : The root tag defined in the Mime type definition file '$file' must be '<mime-types>'. '<$root>' was found instead." ) ;
+
+		if  ( count ( $data [ 'attributes' ] ) )
+			throw new Exception ( "MimeTypes class : The root tag defined in the Mime type definitions file '$file' cannot have attributes." ) ;
+
+		if  ( ! count ( $children ) )
+			throw new Exception ( "MimeTypes class : The root tag in the Mime type definitions file '$file' has no entries." ) ;
+
+
+		// Process children
+		$mime_index = 0 ;
+
+		foreach  ( $children  as  $child )
+		   {
+		   	$mime_index ++ ;
+
+		   	// Only '<scheme>' tags are allowed inside the root tag.
+		   	$tag 		=  $child [ 'tag' ] ;
+
+		   	if  ( strcasecmp ( $tag, "mime-type" ) )
+				throw new Exception ( "MimeTypes class : The <mime-types> tag defined in the MIME type definitions file '$file' can only contain <mime-type> tags." ) ;
+
+			// Attributes and other information
+			$extension	=  null ;
+			$application 	=  null ;
+			$description	=  trim ( $child [ 'contents' ] ) ;
+
+			// Get attribute definitions
+			foreach  ( $child [ 'attributes' ]  as  $attribute )
+			   {
+				$attr_name 	=  strtolower ( $attribute [ 'name' ] ) ;
+				$attr_value 	=  trim ( $attribute [ 'value' ] ) ;
+
+				switch  ( $attr_name )
+				   {
+				   	// Extension
+				   	case	'extension' :
+				   	case	'ext' :
+				   		$extension  	=  strtolower ( $attr_value ) ;
+				   		break ;
+
+			   		// Application
+			   		case	'application' :
+			   		case	'app' :
+			   			$application 	=  strtolower ( $attr_value ) ;
+			   			break ;
+
+					// Other attributes are banished
+					default :
+						throw new Exception ( "MimeTypes class : Invalid attribute '$attr_name' in the <mime-type> tag defined in the MIME type definitions file '$file'." ) ;
+				    }
+			    }
+
+			// Check that the required attributes have been supplied
+			if  ( ! $extension )
+				throw new Exception ( "MimeTypes class : The 'extension' attribute for the <mime-type> entry #$mime_index of the '$file' MIME type definitions file is mandatory." ) ;
+
+			if  ( ! $application )
+				throw new Exception ( "MimeTypes class : The 'application' attribute for the <mime-type> entry #$mime_index of the '$file' MIME type definitions file is mandatory." ) ;
+
+			// Create the new MIME type object
+			$mime = new MimeType ( $extension, $application, $description ) ;
+			$this -> MimeTypes []	=  $mime ;
+		    }
+	    }
+
+
+
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/******                                                                               ******/
+	/******               MIME-TYPE RETRIEVAL FUNCTIONS IMPLEMENTATION                    ******/
+	/******                                                                               ******/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+
+	/*-------------------------------------------------------------------------------------------
+
+	   	__search -
+	   		Searches for the specified member value. $search can be a wildcard expression.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __search  ( $member, $expression, $loose_match )
+	   {
+		$result 	=  array ( ) ;
+		$length 	=  strlen ( $expression ) ;
+
+		foreach  ( $this -> MimeTypes  as  $mime_type )
+		   {
+		   	$value 	=  $mime_type -> $member ;
+
+			if  ( $loose_match  &&  ! strncasecmp ( $value, $expression, $length ) )
+				$result [] = $mime_type ;
+			else if  ( Path::Matches ( $mime_type -> $member, $expression ) )
+				$result [] = $mime_type ;
+		    }
+
+    		return ( $result ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		GetBy -
+			Searches MIME type definitions by their extension.
+			A leading dot is implied.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  GetBy  ( $value, $loose_match = false, $search_type )
+	   {
+		switch ( $search_type )
+		   {
+			case  MIME_TYPE_SEARCH_BY_EXTENSION :
+				return ( $this -> GetByExtension ( $value, $loose_match ) ) ;
+
+			case  MIME_TYPE_SEARCH_BY_APPLICATION :
+				return ( $this -> GetByApplication ( $value, $loose_match ) ) ;
+
+			case  MIME_TYPE_SEARCH_BY_APPLICATION_NAME :
+				return ( $this -> GetByApplicationName ( $value, $loose_match ) ) ;
+
+			case  MIME_TYPE_SEARCH_BY_APPLICATION_MODULE :
+				return ( $this -> GetByApplicationModule ( $value, $loose_match ) ) ;
+		    }
+
+		return ( false ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		GetByExtension -
+			Searches MIME type definitions by their extension.
+			A leading dot is implied.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  GetByExtension  ( $extension, $loose_match = false )
+	   {
+	   	if  ( $extension [0]  !=  '.' )
+	   		$extension = '.' . $extension ;
+
+		$result = $this -> __search ( 'Extension', $extension, $loose_match ) ;
+
+		return ( $result ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		GetByApplication -
+			Searches MIME type definitions by their application/module name.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  GetByApplication  ( $application, $loose_match = false  )
+	   {
+		$result = $this -> __search ( 'Application', $application, $loose_match ) ;
+
+		return ( $result ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		GetByApplicationName -
+			Searches MIME type definitions by their application name.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  GetByApplicationName  ( $application_name, $loose_match = false  )
+	   {
+		$result = $this -> __search ( 'ApplicationName', $application_name, $loose_match ) ;
+
+		return ( $result ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		GetByApplicationModule -
+			Searches MIME type definitions by their module name.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  GetByApplicationModule  ( $application_module, $loose_match = false  )
+	   {
+		$result = $this -> __search ( 'ApplicationModule', $application_module, $loose_match ) ;
+
+		return ( $result ) ;
+	    }
+
+
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/******                                                                               ******/
+	/******                         INTERFACES IMPLEMENTATION                             ******/
+	/******                                                                               ******/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+
+	/*-------------------------------------------------------------------------------------------
+
+		ArrayAccess interface implementation.
+			Used for accessing MIME type entries.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  offsetSet ( $offset, $value )
+	   {
+		throw new Exception ( "MIME type entries are read-only and cannot be set." ) ;
+	    }
+
+    	public function  offsetExists ( $offset )
+    	   {
+	   	return ( isset ( $this -> MimeTypes [ $offset ] ) ) ;
+	    }
+
+    	public function offsetUnset ( $offset )
+	   {
+		throw new Exception ( "MIME type entries are read-only and cannot be unset." ) ;
+	    }
+
+        public function offsetGet ( $offset )
+           {
+	   	return ( $this -> MimeTypes [ $offset ] ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Countable interface implementation.
+			Counts the number of MIME type definitions.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  count ( )
+	   { return ( count ( $this -> MimeTypes ) ) ; }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Iterator interface implementation.
+			Allows for looping through each MIME type entry using a foreach() construct.
+
+	 --------------------------------------------------------------------------------------------*/
+	private  	$MimeIndex		=  0 ;
+
+	function  current ( )
+	   {
+		return ( $this -> MimeTypes [ $this -> MimeInde ] ) ;
+	    }
+
+	function  key ( )
+	   {
+		return ( $this -> MimeIndex ) ;
+	    }
+
+	function  next ( )
+	   {
+		$this -> MimeIndex ++ ;
+
+		return ( $this -> MimeTypes [ $MimeIndex ] ) ;
+	    }
+
+	function  rewind ( )
+	   {
+	   	$this -> MimeIndex = 0 ;
+	    }
+
+	function  valid ( )
+	   {
+	   	return ( $this -> MimeIndex  <  count ( $this -> MimeTypes ) ) ;
+	    }
+
+	function  length ( )
+	   { return ( count ( $this -> MimeTypes ) ) ; }
+
+	function  getIterator ( )
+	   { return ( $this ) ; }
+    }
+
+ 

@@ -1,0 +1,351 @@
+<?php
+/***************************************************************************************************
+
+    NAME
+	mysqli.phpclass
+
+    DESCRIPTION
+	MySQL database access using the mysqli functions.
+
+    AUTHOR
+	Christian Vigh, 04/2010.
+
+    HISTORY
+    [Version : 1.0]		[Date : 2010/04/01]		[Author : CV]
+	Initial release.
+
+   [Version : 2.0]	[Date : 2012/10/13]		[Author : CV]
+	Migrated to the Thrak library version 2.
+
+   [Version : 2.0.1]	[Date : 2015/06/08]		[Author : CV]
+	. Renamed the db_quote_value() method to db_escape_value().
+
+ ***************************************************************************************************/
+namespace  	Thrak\Database\Drivers ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces and classes
+use 	Thrak\System\Object ;
+use 	Thrak\System\Exception ;
+use     Thrak\Database\Database ;
+use     Thrak\Database\DatabaseDriver ;
+use     Thrak\Types\String ;
+
+
+/*===========================================================================================
+
+	mysqli class -
+		MySQL-specific database access using the mysqli functions.
+		The main advantage of using these functions instead of the mysql ones is for
+		calling stored procedures. Stored procedures always return a last result set
+		giving execution information. Since the mysql function cannot handle multiple
+		result sets from a query, this ends up with the "Command out of sync"
+		message.
+		The mysqli functions correctly handle such multiple results.
+
+  ===========================================================================================*/
+class	mysqli  extends  DatabaseDriver
+   {
+	/********************************************************************************************
+	 ********************************************************************************************
+	 ********************************************************************************************
+	 ******                                                                                ******
+	 ******                                MAGIC FUNCTIONS                                 ******
+	 ******                                                                                ******
+	 ********************************************************************************************
+	 ********************************************************************************************
+	 ********************************************************************************************/
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	  	Class constructor - Initializes the database driver.
+
+	    PROTOTYPE
+		$Database = new mysqli ( $parent ) ;
+
+	    DESCRIPTION
+		Initializes a database driver.
+
+	    PARAMETERS
+	    	$parent (Database object) -
+	    		Parent database object.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __construct ( $parent )
+	   {
+		parent::__construct ( $parent ) ;
+	   	$this -> Parent 	=  $parent ;
+	    }
+
+
+	/********************************************************************************************
+	 ********************************************************************************************
+	 ********************************************************************************************
+	 ******                                                                                ******
+	 ******                           INTERFACE IMPLEMENTATION                             ******
+	 ******                                                                                ******
+	 ********************************************************************************************
+	 ********************************************************************************************
+	 ********************************************************************************************/
+
+	// Shortcut to assign the error fields in the parent class
+	public function  db_set_error ( )
+	   {
+		$this -> Parent -> LastErrorNumber 	=  mysqli_errno ( $this -> Parent -> Connection ) ;
+		$this -> Parent -> LastErrorMessage	=  mysqli_error ( $this -> Parent -> Connection ) ;
+	    }
+
+
+	    // Checks if the database driver is installed
+	public function  db_is_driver_installed ( )
+	   {
+		if  ( function_exists ( "mysqli_connect" ) )
+			return ( true ) ;
+		else
+			return ( false ) ;
+	    }
+
+	// Connects to the database
+	public function  db_connect ( $user, $password, $hostname, $port )
+	   {
+		$status = @mysqli_connect ( $hostname, $user, $password, null, $port ) ;
+
+		$this -> Parent -> LastErrorNumber 	=  mysqli_connect_errno ( $status ) ;
+		$this -> Parent -> LastErrorMessage	=  mysqli_connect_error ( $status ) ;
+
+		return ( $status ) ;
+	    }
+
+
+	// Disconnects from the database
+	public function  db_disconnect ( $resource )
+	   {
+		$status = mysqli_close ( $resource ) ;
+		$this -> db_set_error ( ) ;
+
+		return ( $status ) ;
+	    }
+
+
+	// Selects the specified database
+	public function  db_select_database ( $resource, $name )
+	   {
+		$status = mysqli_select_db ( $resource, $name ) ;
+		$this -> db_set_error ( ) ;
+
+		if  ( $status ) 
+			$this -> CurrentDatabase	=  $name ;
+
+		return ( $status ) ;
+	    }
+
+
+	// Used for adding the LIMIT (or equivalent) clause to a SQL statement
+	public function  db_preprocess_statement ( $resource, $statement )
+	   {
+		if  ( $this -> Parent -> QueryLimit  >  0 )
+		   {
+			if  ( $this -> Parent -> QueryOffset  >  0 )
+				$extra = " LIMIT {$this -> Parent -> QueryOffset}, {$this -> Parent -> QueryLimit}" ;
+			else
+				$extra = " LIMIT {$this -> Parent -> QueryLimit}" ;
+		    }
+		else
+			$extra = "" ;
+
+		return ( $statement . $extra ) ;
+	    }
+
+ 	// Runs an SQL query and returns the 1st result set
+	public function  db_run_query ( $resource, $statement )
+	   {
+		// Run the query
+		$result = mysqli_multi_query ( $resource, $statement ) ;
+		$this -> db_set_error ( ) ;
+
+		// If no error, get the first result set returned
+		if  ( ! $this -> Parent -> LastErrorNumber )
+		   {
+			$result = mysqli_store_result ( $resource ) ;
+			$this -> db_set_error ( ) ;
+		    }
+
+		return ( $result ) ;
+	    }
+
+	// Free a result returned by an SQL query
+	// If there are multiple result sets, all of them will be freed.
+	public function  db_free_query ( $resource, $recordset )
+	   {
+		// We check error conditions at each stages.
+		$result = mysqli_free_result ( $recordset ) ;
+		$this -> db_set_error ( ) ;
+
+		/// If no error, free the next result sets
+		if  ( ! $this -> Parent -> LastErrorNumber )
+		   {
+			// While result sets are available...
+			while  ( mysqli_more_results ( $resource ) )
+			   {
+				// Prepare the next one
+				$result = mysqli_next_result ( $resource ) ;
+				$this -> db_set_error ( ) ;
+
+				if  ( ! $result  ||  $this -> LastErrorNumber )
+					break ;
+
+				// Acquire the data
+				$result = mysqli_store_result ( $resource ) ;
+				$this -> db_set_error ( ) ;
+
+				if  ( $result  ===  false  ||  $this -> LastErrorNumber )
+					break ;
+
+				// And free the result
+				$result = mysqli_free_result ( $result ) ;
+				$this -> db_set_error ( ) ;
+
+				if  ( $this -> Parent -> LastErrorNumber )
+					break ;
+			    }
+		    }
+
+		if  ( $this -> Parent -> LastErrorNumber )
+			return ( false ) ;
+		else
+			return ( true ) ;
+	    }
+
+
+	// Fetches the next result from a recordset
+	public function  db_fetch_next ( $resource, $recordset )
+	   {
+		$row = mysqli_fetch_assoc ( $recordset ) ;
+		$this -> db_set_error ( ) ;
+
+		return ( $row ) ;
+	    }
+
+	// Get rows affected by last update
+	public function  db_get_affected_rows  ( $resource )
+	   {
+		$result = mysqli_affected_rows ( $resource ) ;
+		$this -> db_set_error ( ) ;
+
+		if  ( $result  ==  -1 )
+			return ( false ) ;
+		else
+			return ( $result ) ;
+	    }
+
+	// Get number of rows returned by the last query
+	public function  db_get_num_rows ( $resource )
+	   {
+		$result = mysqli_num_rows ( $resource ) ;
+		$this -> db_set_error ( ) ;
+
+		if  ( $result  ==  -1 )
+			return ( false ) ;
+		else
+			return ( $result ) ;
+	    }
+
+
+	// Returns the ID of an auto-increment field from the last insert
+	public function  db_get_last_insert_id ( $resource )
+	   {
+		$result = mysqli_insert_id ( $resource ) ;
+		$this -> db_set_error ( ) ;
+
+		return ( $result ) ;
+	    }
+
+
+	// Get version
+	public function  db_get_version ( $resource )
+	   {
+		return ( mysqli_get_server_info ( $resource ) ) ;
+	    }
+
+	// Returns an escaped string
+	public function  db_escape_value ( $resource, $value )
+	    {
+	    	return ( mysqli_real_escape_string ( $resource, $value ) ) ;
+	     }
+
+
+	// Get database list
+	public function  db_get_databases ( $resource, $wildcard = null )
+	   {
+		$rs	=  $this -> db_run_query ( $resource, "SHOW DATABASES" ) ;
+		$result =  [] ;
+
+		while  ( $row = $this -> db_fetch_next ( $resource, $rs ) )
+		   {
+			$dbname		=  $row [ 'Database' ] ;
+
+			if  ( $wildcard )
+			   {
+				if  ( String::MatchesEx ( $dbname, $wildcard ) )
+					$result []	=  $dbname ;
+			    }
+			else
+				$result []	=  $dbname ;
+		    }
+
+		$this -> db_free_query ( $resource, $rs ) ;
+
+		return ( $result ) ;
+	    }
+
+
+	// Get table list
+	public function  db_get_tables ( $resource, $database, $wildcard  =  null )
+	   {
+		$rs	=  $this -> db_run_query ( $resource, "SHOW TABLE STATUS FROM $database" ) ;
+		$result =  [] ;
+
+		while  ( $row = $this -> db_fetch_next ( $resource, $rs ) )
+		   {
+			$name		=  $row [ 'Name' ] ;
+			$selected	=  false ;
+
+			if  ( $wildcard )
+			   {
+				if  ( String::MatchesEx ( $name, $wildcard ) )
+					$selected	=  true ;
+			    }
+			else
+				$selected	=  true ;
+
+			if  ( $selected )
+			   {
+				$result []	=
+				   [
+					'name'			=>  $row [ 'Name' ],
+					'engine'		=>  $row [ 'Engine' ],
+					'fixed-rows'		=>  ! strcasecmp ( $row [ 'Row_format' ], 'fixed' ),
+					'rows'			=>  ( integer ) $row [ 'Rows' ],
+					'average-row-length'	=>  ( integer ) $row [ 'Avg_row_length' ],
+					'data-size'		=>  ( integer ) $row [ 'Data_length' ],
+					'index-size'		=>  ( integer ) $row [ 'Index_length' ],
+					'free-space'		=>  ( integer ) $row [ 'Data_free' ],
+					'comment'		=>  $row [ 'Comment' ],
+					'creation-time'		=>  strtotime ( $row [ 'Create_time' ] ),
+					'update-time'		=>  strtotime ( $row [ 'Update_time' ] ),
+					'collation'		=>  $row [ 'Collation' ],
+					'fragmentation'		=>  ( double ) ( $row [ 'Data_free' ] * 100 ) / ( double ) $row [ 'Data_length' ]
+				    ] ;
+			    }
+		    }
+
+		$this -> db_free_query ( $resource, $rs ) ;
+
+		return ( $result ) ;
+	    }
+    }
+
+ 

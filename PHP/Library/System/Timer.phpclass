@@ -1,0 +1,668 @@
+<?php
+/***************************************************************************************************
+
+    NAME
+	Timer.phpclass
+
+    DESCRIPTION
+	Time-counting object.
+	The basic usage consists in instanciating the Timer object, then marking some optional steps
+	to measure portions of code. The following example will instanciate a Timer object, start it,
+	marks two loops for measurement, iterate 10000 times the 'myfunction' function, and display 
+	the results using the Report() method :
+	
+	$timer	=  new Timer ( ) ;
+	$timer -> Start ( ) ;
+	... some code to measure ...
+	$timer -> Step ( 'Loop 1' ) ;
+	... some loop to measure ...
+	$timer -> Step ( 'Loop 2' ) ;
+	... a second loop to measure ...
+	$timer -> Iterate ( "Run 10000 iterations", 'myfunction', 10000 ) ;
+	$timer -> Stop ( ) ;
+	echo $timer -> Report ( ) ;
+	
+	The Report() method will return the following :
+	+-----------+------------------+-----------+--------+------------+------+------+-----+
+	| Type      | Step name        | Elapsed   | % load | Iterations | Min  | Max  | Avg |
+	+-----------+------------------+-----------+--------+------------+------+------+-----+
+	| step      | Start            |         - |      - |          1 |      |      |     |
+	| step      | Sleep 1          |    1s 3ms |  4.60% |          1 |    - |    - |   - |
+	| step      | Loop 1           |     122ms |  0.56% |          1 |    - |    - |   - |
+	| step      | Loop 2           |     380ms |  1.74% |          1 |    - |    - |   - |
+	| iteration | 10000 iterations | 20s 290ms | 93.09% |      10000 | <1ms | 22ms | 2ms |
+	| step      | Stop             |      <1ms |  0.00% |          1 |    - |    - |   - |
+	+-----------+------------------+-----------+--------+------------+------+------+-----+
+	6 samples listed.	
+	
+	Note that the Start() and Stop() method have a step name of 'Start' and 'Stop', respectively,
+	but you can provide your own one when calling them.
+	
+    AUTHOR
+	Christian Vigh, 01/2010.
+
+    HISTORY
+    [Version : 1.0]		[Date : 2010/01/26]		[Author : CV]
+	Initial release.
+
+    [Version : 2.0]		[Date : 2012/10/05]		[Author : CV]
+    	Adapted to the Thrak library version 2.
+
+    [Version : 3.0]		[Date : 2013/12/12]		[Author : CV]
+    	Completely rewritten.
+
+    [Version : 3.0.1]		[Date : 2014/01/07]		[Author : CV]
+    	. Iteration columns are only shown if some iterations took place.
+	. Added the possibility to add user-defined columns.
+
+    [Version : 3.0.2]		[Date : 2014/09/20]		[Author : CV]
+	. Added the StopTime member which is set when the Stop() method is called. This ensures that
+	  the Elapsed() method will still continue to return correct results even if the timer is 
+	  stopped.
+
+    [Version : 3.0.3]		[Date : 2014/11/11]		[Author : CV]
+	. Adapted to use the HRTime extension. But does not seem that accurate... Major drawback :
+	  retrieving the current timer value needs the stop() function to be called before.
+
+    [Version : 3.0.4]		[Date : 2014/11/11]		[Author : CV]
+	. Removed the use of the HRTime extension.
+ 
+ ***************************************************************************************************/
+namespace 	Thrak\System ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces & objects
+use 		Thrak\System\Object ;
+use		Thrak\Types\String ;
+use		Thrak\Types\String\Convert ;
+use		Thrak\IO\AsciiReport ;
+
+
+/*===========================================================================================
+
+    Timer class -
+	Timing, benchmarking & profiling support class.
+
+  ===========================================================================================*/
+class  Timer  extends  Object
+   {
+	// Official start time of the timer
+	protected	$StartTime			=  0 ;
+	// Remember time when the timer was stopped in case the Elapsed() method is called
+	protected	$StopTime			=  0 ;
+	// A flag that indicates whether the timer is running or not
+	protected	$Running			=  false ;
+	// A set of of sequence step markers that may optionnally be set by the caller.
+	// Note that this array will always contain a 'Start' and 'Stop' marker.
+	protected	$Steps				=  array ( ) ;
+	// When the Mark() method is called without a title, the official title become "Step #x", where "x" is the 
+	// current sequence step number.
+	private		$StepNumber			=  0 ;
+	// Result precision
+	private		$UpperPrecision			=  TTS_UNIT_HOURS ;
+	private		$LowerPrecision			=  TTS_UNIT_MILLISECONDS ;
+	// True if iteration columns are to be displayed
+	private		$HasIterations			=  false ;
+	// Custom column definitions
+	private		$CustomColumnDefinitions	=  array ( ) ;
+	
+	
+
+	/*==============================================================================================================
+
+	    NAME
+		Constructor - Instanciates a timer object.
+
+	    PROTOTYPE
+		$timer = new Timer ( $start = false, $stepname = 'Start', $upper_precision = null, $lower_precision = null ) ;
+
+	    DESCRIPTION
+		Builds a timer object. If the $start parameter is set to true, then the timer will be
+		immediately started.
+
+	    PARAMETERS
+		$start (boolean) -
+			Indicates whether the timer should be started immediately or not.
+			
+		$stepname (string) -
+			Name of the step. The default is 'Start'.
+			
+		$upper_precision (integer) -
+			Upper precision for time values. Must be a TTS_UNIT_xxx constant.
+			
+		$lower_precision (integer) -
+			Lower precision. Every result lower than this precision (for example, TTS_UNIT_MILLISECONDS),
+			will be represented as "<1ms".
+			
+	  ==============================================================================================================*/
+	public function  __construct ( $start = false, $stepname = 'Start', $upper_precision = null, $lower_precision = null )
+	   {
+		parent::__construct ( ) ;
+		
+		$this -> SetPrecision ( $upper_precision, $lower_precision ) ;
+		$this -> Reset ( ) ;
+		
+		if  ( $start )
+			$this -> Start ( $stepname ) ;
+	    }
+
+	    
+	/*==============================================================================================================
+	
+	        Private functions.
+	
+	  ==============================================================================================================*/
+	
+	// __compute_percentages -
+	//	Computes the percentages consumed by each step.
+	private function  __compute_percentages ( )
+	   {
+		$last		=  count ( $this -> Steps ) - 1 ;
+		$high		=  $this -> Steps [ $last ] [ 'time' ] ;
+		$low		=  $this -> Steps [0] [ 'time' ] ;
+		$elapsed	=  ( $high - $low ) * 1000000 ;
+		
+		$this -> Steps [0] [ 'percentage' ]		=  '-' ;
+		$this -> Steps [0] [ 'delta-string' ]		=  '-' ;
+		$this -> Steps [0] [ 'iteration-count' ]	=  '1' ;
+		$this -> Steps [0] [ 'iteration-min' ]		=  '-' ;
+		$this -> Steps [0] [ 'iteration-max' ]		=  '-' ;
+		$this -> Steps [0] [ 'iteration-avg' ]		=  '-' ;
+		
+		for  ( $i = 1 ; $i  <  count ( $this -> Steps ) ; $i ++ )
+		   {
+			$delta	=  $this -> Steps [$i] [ 'delta' ] ;
+			$pc	=  ( $elapsed ) ?  ( 100 / $elapsed ) * ( $delta * 1000000 ) : 0 ;
+			
+			$this -> Steps [$i] [ 'percentage' ]		=  sprintf ( "%.2f", $pc ) . '%' ;
+			$this -> Steps [$i] [ 'delta-string' ]		=  Convert::ToTimeString ( $delta, true, $this -> UpperPrecision, $this -> LowerPrecision ) ;
+			
+			switch ( $this -> Steps [$i] [ 'type' ] )
+			   {
+				case	'step' :
+					$this -> Steps [$i] [ 'iteration-count' ]		=  '1' ;
+					$this -> Steps [$i] [ 'iteration-min' ]			=  '-' ;
+					$this -> Steps [$i] [ 'iteration-max' ]			=  '-' ;
+					$this -> Steps [$i] [ 'iteration-avg' ]			=  '-' ;
+					$this -> Steps [$i] [ 'iteration-min-string' ]		=  '-' ;
+					$this -> Steps [$i] [ 'iteration-max-string' ]		=  '-' ;
+					$this -> Steps [$i] [ 'iteration-avg-string' ]		=  '-' ;
+					break ;
+				
+				case	'iteration' :
+					$this -> Steps [$i] [ 'iteration-min-string' ]		=  Convert::ToTimeString ( $this -> Steps [$i] [ 'iteration-min' ], 
+														true, $this -> UpperPrecision, $this -> LowerPrecision ) ;
+					$this -> Steps [$i] [ 'iteration-max-string' ]		=  Convert::ToTimeString ( $this -> Steps [$i] [ 'iteration-max' ], 
+														true, $this -> UpperPrecision, $this -> LowerPrecision ) ;
+					$this -> Steps [$i] [ 'iteration-avg-string' ]		=  Convert::ToTimeString ( $this -> Steps [$i] [ 'iteration-avg' ], 
+														true, $this -> UpperPrecision, $this -> LowerPrecision ) ;
+					break ;
+			    }
+		    }
+	    }
+	    
+
+	// __get_delta -
+	//	Returns the delta between the supplied time value and the last one.
+	private function  __get_delta ( $current )
+	   {
+		$last		=  count ( $this -> Steps ) - 1 ;
+		
+		if  ( $last  <  0 )
+			$previous	=  $this -> StartTime ;
+		else
+			$previous	=  $this -> Steps [ $last ] [ 'time' ] ;
+		
+		return ( $current - $previous ) ;
+	    }
+	
+	    
+	/*==============================================================================================================
+	
+	    NAME
+	        AddCustomColumn - Adds a custom column for the final report.
+	
+	    PROTOTYPE
+	        $timer -> AddCustomColumn ( $def ) ;
+	
+	    DESCRIPTION
+	        Adds a custom column definition to the final report.
+	
+	    PARAMETERS
+	        $def (array) -
+	                A column definition array in a format accepted by the AsciiReport object.
+	
+	    NOTES
+	        The Start, Restart, Iterate and Step functions accept now an additional parameter, which is an associative
+		array whose keys are the column names (as defined by the 'member' member of the $def array) and whose
+		values are the ones to display in the column.
+		If no array is specified, an empty string is displayed in the column.
+	
+	  ==============================================================================================================*/
+	public function  AddCustomColumn ( $def )
+	   {
+		$this -> CustomColumnDefinitions []	=  $def ;
+	    }
+	    
+	    
+	  
+	/*==============================================================================================================
+	
+	    NAME
+	        Elapsed - Returns elapsed time since the timer was started.
+	
+	    PROTOTYPE
+	        $elapsed = $timer -> Elapsed ( $as_string = false ) ;
+	
+	    DESCRIPTION
+	        Returns the timer elapsed time since it was started.
+	
+	    PARAMETERS
+		$as_string (boolean) -
+			Indicates whether the elapsed time should be returned as a double value or a string. The default
+			is double.
+			
+	    RETURN VALUE
+	        The current elapsed time.
+	
+	  ==============================================================================================================*/
+	public function  Elapsed  ( $as_string  =  false )
+	   {
+		$now		=  $this -> GetMicrotime ( ) ;
+		
+		if  ( $this -> Running )
+			$elapsed	=  $now - $this -> StartTime ;
+		else
+			$elapsed	=  $this -> StopTime - $this -> StartTime ;
+			
+		if  ( $as_string ) 
+			return ( Convert::ToTimeString ( $elapsed, true, $this -> UpperPrecision, $this -> LowerPrecision ) ) ;
+		else
+			return ( $elapsed ) ;
+	    }
+	    
+
+	/*==============================================================================================================
+	
+	    NAME
+	        GetMicrotime - Returns time at the current finest resolution.
+	
+	    PROTOTYPE
+	        $double = Timer::GetMicrotime ( ) ;
+	
+	    DESCRIPTION
+	        Returns current elapsed time at the current finest resolution.
+	
+	    RETURN VALUE
+	        A double indicating current time at the microsecond level.
+	
+	  ==============================================================================================================*/
+	public function  GetMicrotime ( )
+	   {
+		$result		=  microtime ( true ) ;
+
+		return ( $result ) ;
+	    }
+
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        IsRunning - Indicates if the timer is running.
+	
+	    PROTOTYPE
+	        $status = $timer -> IsRunning ( ) ;
+	
+	    DESCRIPTION
+	        Indicates whether the timer is running or not.
+	
+	    RETURN VALUE
+	        true if the timer is running, false otherwise.
+	
+	  ==============================================================================================================*/
+	public function  IsRunning ( )
+	   {
+		return  ( $this -> Running ) ;
+	    }
+	
+	   
+	/*==============================================================================================================
+	
+	    NAME
+	        Iterate - Times successive calls to the same function.
+	
+	    PROTOTYPE
+	        $timer -> Iterate ( $step, $callback, $count, $custom_values ) ;
+	
+	    DESCRIPTION
+	        Times the specified callback by calling it $count times.
+	
+	    PARAMETERS
+	        $callback (type) -
+	                A callable function.
+	
+		$count (integer) -
+			Number of times to call the function. If this parameter is less than 1, nothing happens.
+			
+		$custom_values (array) -
+			Array of custom column values. See the AddCustomColumn() function for more details on custom
+			columns.
+	
+	  ==============================================================================================================*/
+	function  Iterate  ( $step, $callback, $count, $custom_values )
+	   {
+		if  ( $count  <  1 )
+			return ;
+			
+		$last				=  count ( $this -> Steps ) - 1 ;
+		$previous_time			=  $this -> Steps [ $last ] [ 'time' ] ;
+		$min				=  PHP_INT_MAX ;
+		$max				=  -1 ;
+		$sum				=  0 ;
+		
+		for  ( $i = 0 ; $i  <  $count ; $i ++ )
+		   {
+			call_user_func ( $callback ) ;
+			$time	=  $this -> GetMicrotime ( ) ;
+			$delta	=  $time - $previous_time ;
+			
+			if  ( $delta  <  $min )
+				$min	=  $delta ;
+				
+			if  ( $delta  >  $max )
+				$max	=  $delta ;
+				
+			$sum		+=  $delta ;
+			$previous_time	 =  $time ;
+		    }
+
+		$this -> __Step ( $step, 'iteration', $custom_values ) ;
+		$step	=  &$this -> Steps [ count ( $this -> Steps ) - 1 ] ;
+		
+		$step [ 'iteration-count' ]	=  $count ;
+		$step [ 'iteration-min' ]	=  $min ;
+		$step [ 'iteration-max' ]	=  $max ;
+		$step [ 'iteration-avg' ]	=  $sum / $count ;
+		
+		$this -> __compute_percentages ( ) ;
+		$this -> HasIterations		=  true ;
+	    }
+	
+	  
+	/*==============================================================================================================
+	
+	    NAME
+	        Report - Generate a report of the timed instructions.
+	
+	    PROTOTYPE
+	        echo $timer -> Report ( ) ;
+	
+	    DESCRIPTION
+	        Generates an ascii report showing the collected 
+	
+	    RETURN VALUE
+	        The text that contains the report.
+	
+	  ==============================================================================================================*/
+	public function  Report ( )
+	   {
+		$columns	=  array
+		   (
+			array ( 'member' => 'type'			, 'title' => 'Type'					),
+			array ( 'member' => 'title'			, 'title' => 'Step name'				),
+			array ( 'member' => 'delta-string'		, 'title' => 'Elapsed'		, 'align' => 'right'	),
+			array ( 'member' => 'percentage'		, 'title' => '% load'		, 'align' => 'right'	)
+		    ) ;
+
+		// Add iteration-specific columns if iterations were run
+		if  ( $this -> HasIterations )
+		   {
+			$columns	=  array_merge 
+			   ( 
+				$columns, 
+				array
+				   (
+					array ( 'member' => 'iteration-count'		, 'title' => 'Iterations'	, 'align' => 'right'	),
+					array ( 'member' => 'iteration-min-string'	, 'title' => 'Min'		, 'align' => 'right'	),
+					array ( 'member' => 'iteration-max-string'	, 'title' => 'Max'		, 'align' => 'right'	),
+					array ( 'member' => 'iteration-avg-string'	, 'title' => 'Avg'		, 'align' => 'right'	)
+				    )
+			    ) ;
+		    }
+		    
+		// Add custom column values, if some were specified
+		if  ( count ( $this -> CustomColumnDefinitions ) )
+			$columns	=  array_merge ( $columns, $this -> CustomColumnDefinitions ) ;
+		
+		// Create report
+		$report		=  new  AsciiReport ( $columns ) ;
+
+		return ( $report -> Generate ( $this -> Steps ) . $report -> Summary ( 'sample' ) ) ;
+	    }
+	
+	    
+	/*==============================================================================================================
+	
+	    NAME
+	        Reset - Resets the timer.
+	
+	    PROTOTYPE
+	        $timer -> Reset ( ) ;
+	
+	    DESCRIPTION
+	        Resets the timer and all the information collected so far.
+	
+	  ==============================================================================================================*/
+	public function  Reset ( )
+	   {
+		$this -> StartTime		=  0 ;
+		$this -> Steps			=  array ( ) ;
+		$this -> StepNumber		=  0 ;
+		$this -> Running		=  false ;
+	    }
+	    
+		    
+	/*==============================================================================================================
+
+	    NAME
+		Restart - Restarts the timer.
+		
+	    PROTOTYPE
+		$timer -> Restart ( $stepname = 'Restart', $custom_values = array ( ) ) ;
+		
+	    DESCRIPTION
+		Restarts the timer.
+		
+	    PARAMETERS
+		$stepname (string) -
+			Name of the step to be recorded.
+
+		$custom_values (array) -
+			Array of custom column values. See the AddCustomColumn() function for more details on custom
+			columns.
+	
+	  ==============================================================================================================*/
+	public function  Restart ( $stepname = 'Restart', $custom_values = array ( ) ) 
+	   {
+		$this -> StopTime	=  0 ;
+		$this -> StartTime	=  $this -> GetMicrotime ( ) ;
+		$this -> Running	=  true ;
+		$this -> Step ( $stepname, $custom_values ) ;
+	    }
+	    
+	    
+	/*==============================================================================================================
+	
+	    NAME
+	        SetPrecision, SetLowerPrecision, SetUpperPrecision - Sets the precision display.
+	
+	    PROTOTYPE
+	        $timer -> SetPrecision      ( $upper_precision, $lower_precision ) ;
+	        $timer -> SetUpperPrecision ( $upper_precision ) ;
+	        $timer -> SetLowerPrecision ( $lower_precision ) ;
+	
+	    DESCRIPTION
+	        Sets the timer output precision.
+	
+	    PARAMETERS
+	        $upper_precision, $lowr_precision (integer) -
+	                One of the TTS_UNIT_xxx constants used by the Convert::ToTimeString() function
+		
+	  ==============================================================================================================*/
+	public function  SetPrecision ( $upper_precision = null, $lower_precision = null )
+	   {
+		if  ( $upper_precision  !==  null )
+			$this -> UpperPrecision		=  $upper_precision ;
+
+		if  ( $lower_precision  !==  null )
+			$this -> LowerPrecision		=  $lower_precision ;
+	    }
+	    
+	    
+	public function  SetUpperPrecision ( $upper_precision )
+	   {
+		$this -> SetPrecision ( $upper_precision ) ;
+	    }
+
+	    
+	public function  SetLowerPrecision ( $lower_precision )
+	   {
+		$this -> SetPrecision ( null, $lower_precision ) ;
+	    }
+	  
+	  
+	/*==============================================================================================================
+
+	    NAME
+		Start - Starts the timer.
+		
+	    PROTOTYPE
+		$timer -> Start ( $stepname = 'Start', $custom_values = array ( ) ) ;
+		
+	    DESCRIPTION
+		Starts the timer.
+		
+	    PARAMETERS
+		$stepname (string) -
+			Name of the step to be recorded.
+
+		$custom_values (array) -
+			Array of custom column values. See the AddCustomColumn() function for more details on custom
+			columns.
+	
+	  ==============================================================================================================*/
+	public function  Start ( $stepname = 'Start', $custom_values = array ( ) ) 
+	   {
+		$this -> Reset ( ) ;
+
+		$this -> StartTime	=  $this -> GetMicrotime ( ) ;
+		$this -> Running	=  true ;
+		$this -> StopTime	=  0 ;
+		
+		$this -> Step ( $stepname, $custom_values ) ;
+	    }
+	    
+	    
+	/*==============================================================================================================
+	
+	    NAME
+	        Step - Marks a timing sequence step.
+	
+	    PROTOTYPE
+	        $elapsed = $timer -> Step ( $title = null ) ;
+	
+	    DESCRIPTION
+	        Marks a new timing sequence step. All the marked steps will be included in the GetResults() method 
+		output.
+	
+	    PARAMETERS
+	        $title (string) -
+	                Step name. The default value is "Step #x", where "x" is a value incremented each time the Mark()
+			method is called, and starting from 1.
+			
+		$custom_values (array) -
+			Array of custom column values. See the AddCustomColumn() function for more details on custom
+			columns.
+	
+	    RETURN VALUE
+	        The current elapsed time, as a double value.
+		
+	  ==============================================================================================================*/
+	public function  Step ( $title  =  null, $custom_values = array ( ) )
+	   {
+		$this ->  __Step ( $title, 'step', $custom_values ) ;
+	    }
+	    
+	    
+	public function  __Step ( $title, $type, $custom_values = array ( ) )
+	   {
+		// Build a default title if none specified
+		$this -> StepNumber ++ ;
+		
+		if  ( ! $title ) 
+		   {
+			$title	=  "Step #{$this -> StepNumber}" ;
+		    }
+		    
+		// Add a step to the current list
+		$now			=  $this -> GetMicrotime ( ) ;
+		$delta			=  $this -> __get_delta ( $now ) ;
+		
+		$sample			=  array
+		   (
+			'type'			=>  $type,
+			'title'			=>  $title,
+			'time'			=>  $now,
+			'delta'			=>  $delta,
+			'percentage'		=>  0,
+			'iteration-min'		=>  0,
+			'iteration-max'		=>  0,
+			'iteration-avg'		=>  0
+		    ) ;
+
+		// Add to this new sample the custom column values if they were specified.
+		foreach  ( $this -> CustomColumnDefinitions  as  $definition )
+		   {
+			if  ( array_key_exists ( $definition [ 'member' ], $custom_values ) )
+				$value		=  $custom_values [ $definition [ 'member' ] ] ;
+			else
+				$value		=  "" ;
+				
+			$sample [ $definition [ 'member' ] ]	=  $value ;
+		    }
+		    
+		$this -> Steps []		=   $sample ;
+		    
+		// Recompute each step's elapsed time and percentage
+		$this -> __compute_percentages ( ) ;
+	    }
+
+	    
+	/*==============================================================================================================
+
+	    NAME
+		Stop - Stops the timer.
+		
+	    PROTOTYPE
+		$timer -> Stop ( $stepname = 'Stop', $custom_values ) ;
+		
+	    DESCRIPTION
+		Stops the timer.
+		
+	    PARAMETERS
+		$stepname (string) -
+			Name of the step to be recorded.
+
+		$custom_values (array) -
+			Array of custom column values. See the AddCustomColumn() function for more details on custom
+			columns.
+	
+	  ==============================================================================================================*/
+	public function  Stop ( $stepname = 'Stop', $custom_values = array ( ) ) 
+	   {
+		$this -> Step ( $stepname, $custom_values ) ;
+		$this -> Running	=  false ;
+		$this -> StopTime	=  $this -> GetMicrotime ( ) ;
+	    }
+    }

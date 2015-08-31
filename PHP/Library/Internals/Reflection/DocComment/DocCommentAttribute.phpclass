@@ -1,0 +1,70 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        DocCommentAttribute.phpclass
+
+    DESCRIPTION
+        Definition of an attribute located in a bloc comment.
+  
+ 	An attribute description has the following syntax :
+  
+ 		[attribute_name	 param1="value1" ... paramn="valuen"]
+ 
+    AUTHOR
+        Christian Vigh, 11/2014.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2014/11/09]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Reflection ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use  	Thrak\System\Object ;
+use	Thrak\Reflection\DocCommentElement ;
+
+
+/*==============================================================================================================
+
+    DocCommentAttribute -
+        Implements an attribute.
+
+  ==============================================================================================================*/
+class	DocCommentAttribute		extends  DocCommentElement
+   {
+	/*==============================================================================================================
+	
+	    Constructor -
+	        Does not do nothing much...
+	
+	  ==============================================================================================================*/
+	public function  __construct  ( $name, $params_array )
+	   {
+		parent::__construct ( $name, $params_array ) ;
+	    }
+	
+	
+ 	/*==============================================================================================================
+	
+	    __tostring -
+	        Returns a generic string representation of the attribute.
+	
+	  ==============================================================================================================*/
+	public function  __tostring ( )
+	   {
+		$result		=  "[{$this -> Name}" ;
+		
+		foreach  ( $this -> Parameters  as  $pname => $pvalue )
+		   {
+			$pvalue		 =  str_replace ( '"', "\\\"", $pvalue ) ;
+			$result		.=  " $pname=\"$pvalue\"" ;
+		    }
+		
+		$result		.=  "]" ;
+		
+		return ( $result ) ;
+	    }
+   }

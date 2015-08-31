@@ -1,0 +1,94 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        LogFile.phpclass
+
+    DESCRIPTION
+        A class to read log file contents. This class is intended to provide really fast access to logfile lines,
+	particularly when new updates are to be extracted.
+
+    AUTHOR
+        Christian Vigh, 06/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/06/30]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\IO ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces & objects
+use 	Thrak\System\Object ;
+use     Thrak\Types\TextStringAsArray ;
+
+
+/*==============================================================================================================
+
+    LogFileContents class -
+        A class to read logfile contents.
+
+  ==============================================================================================================*/
+class  LogFileContents			extends  TextStringAsArray 
+   {
+	// Logfile timestamp location (start column and length)
+	public		$TimestampStartColumn ;
+	public		$TimestampLength ;
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+
+	    Constructor -
+		Builds a logfile object, specifying the location of the timestamp part.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( $contents, $timestamp_start, $timestamp_length, $delimiter = "\n" )
+	   {
+		parent::__construct ( $contents, true, $delimiter ) ;
+		$this -> TimestampStartColumn	=  $timestamp_start ;
+		$this -> TimestampLength	=  $timestamp_length ;
+	    }
+
+	
+	/*--------------------------------------------------------------------------------------------------------------
+
+	    Compare -
+		Performs a comparison on the timestamp part of logfile lines.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  Compare ( $value1, $value2 )
+	   {
+		$date_1		=  strtotime ( substr ( $value1, $this -> TimestampStartColumn, $this -> TimestampLength ) ) ;
+		$date_2		=  strtotime ( $value2 ) ;
+
+		return ( $date_1 - $date_2 ) ;
+	    }
+    }
+
+
+/*==============================================================================================================
+
+    LogFile class -
+        A class to read logfile contents.
+
+  ==============================================================================================================*/
+class  LogFile				extends  LogFileContents
+   {
+	/*--------------------------------------------------------------------------------------------------------------
+
+	    Constructor -
+		Builds a logfile object, specifying the location of the timestamp part.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( $file, $timestamp_start, $timestamp_length, $delimiter = "\n" )
+	   {
+		if  ( ! file_exists ( $file ) )
+			error ( new \Thrak\System\FileNotFoundException ( "File \"$file\" not found" ) ) ;
+
+		$contents			=  file_get_contents ( $file ) ;
+
+		parent::__construct ( $contents, $timestamp_start, $timestamp_length, $delimiter ) ;
+	    }
+    }

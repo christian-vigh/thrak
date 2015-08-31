@@ -1,0 +1,14 @@
+<?php
+
+/**
+ * JsTreeNode short summary.
+ *
+ * JsTreeNode description.
+ *
+ * @version 1.0
+ * @author KIKI
+ */
+class JsTreeNode
+{
+    
+}

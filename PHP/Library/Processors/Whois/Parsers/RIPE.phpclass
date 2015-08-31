@@ -1,0 +1,938 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        WhoisRIPEInformation.phpclass
+
+    DESCRIPTION
+        A parser for whois data coming from RIPE servers.
+
+    AUTHOR
+        Christian Vigh, 08/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/08/03]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace  Thrak\Processors\Whois ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces and classes
+use  	Thrak\System\Object ;
+use	Thrak\IO\Path ;
+use	Thrak\Types\String ;
+use	Thrak\Processors\Whois\WhoisProviderInformation ;
+
+
+/*==============================================================================================================
+
+    WhoisRIPEInformation -
+        A class for handling whois data coming from ARIN servers.
+	Example input :
+
+		% This is the RIPE Database query service.
+		% The objects are in RPSL format.
+		%
+		% The RIPE Database is subject to Terms and Conditions.
+		% See http://www.ripe.net/db/support/db-terms-conditions.pdf
+
+		% Note: this output has been filtered.
+		%       To receive output for a database update, use the "-B" flag.
+
+		% Information related to '109.247.54.0 - 109.247.54.127'
+
+		% Abuse contact for '109.247.54.0 - 109.247.54.127' is 'abuse@altibox.no'
+
+		inetnum:        109.247.54.0 - 109.247.54.127
+		netname:        NO-LYSE-CUSTOMER-RESIDENTIAL-LINKNETS
+		descr:          Altibox Residential Customer Linknets
+		remarks:        INFRA-AW
+		country:        NO
+		admin-c:        LYSE1-RIPE
+		tech-c:         LYSE1-RIPE
+		status:         ASSIGNED PA
+		mnt-by:         LYSE-MNT
+		created:        2010-12-02T14:29:26Z
+		last-modified:  2010-12-02T14:29:26Z
+		source:         RIPE # Filtered
+
+		role:           Altibox role Object
+		address:        Altibox AS
+		address:        Postboks 8124
+		address:        NO-4069 Stavanger
+		address:        Norway
+		phone:          +47 5190 8000
+		fax-no:         +47 5190 8001
+		admin-c:        RA1765-RIPE
+		tech-c:         DAK29-RIPE
+		tech-c:         RA1765-RIPE
+		tech-c:         MBH17-RIPE
+		tech-c:         ES8317-RIPE
+		nic-hdl:        LYSE1-RIPE
+		mnt-by:         LYSE-MNT
+		abuse-mailbox:  abuse@altibox.no
+		created:        2002-11-01T11:09:39Z
+		last-modified:  2014-12-12T11:04:48Z
+		source:         RIPE # Filtered
+
+		% Information related to '109.247.0.0/16AS29695'
+
+		route:          109.247.0.0/16
+		descr:          Altibox
+		origin:         AS29695
+		mnt-lower:      LYSE-MNT
+		mnt-routes:     LYSE-MNT
+		mnt-by:         LYSE-MNT
+		created:        2010-06-17T08:55:53Z
+		last-modified:  2015-05-20T14:47:15Z
+		source:         RIPE # Filtered
+
+		% This query was served by the RIPE Database Query Service version 1.80.1 (DB-3)
+
+
+
+  ==============================================================================================================*/
+class  WhoisRIPEInformation		extends  WhoisProviderInformation
+   {
+	protected static		$Definitions		=
+	   [
+		'range-definition'		=>
+		   [
+			'start'		=>  '^\s*inetnum:'
+		    ],
+		'comments'			=>  [ '\#', '%' ],
+		'keyword-match'			=>  '/^(?P<keyword> [^\s:]+) \s* : \s* (?P<value> .*) \s*$/imsx',
+		'line-breaks'			=>  true,
+		'ignore'			=>  
+		   [
+			'ResourceLink:',
+			'ReferralServer:',
+			'connect: Connection timed out',
+			'connect: Connection refused',
+			'fgets: Connection reset by peer'
+		    ],
+		'data-blocks'			=>
+		   [
+			self::BLOCK_PROVIDER  =>
+			   [
+				'start-keywords'		=>  [ 'inetnum' ],
+				'required'			=>  true,
+				'multiple'			=>  false,
+				'keywords'			=>
+				   [
+					self::TYPE_PROVIDER_NETRANGE		=>
+					[ 
+						'name'			=>  [ 'inetnum' ],
+						'type'			=>  self::TYPE_PROVIDER_NETRANGE,
+						'value-type'		=>  self::VALUE_TYPE_NETRANGE,
+						'required'		=>  true,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_PROVIDER_NETNAME		=>
+					[ 
+						'name'			=>  [ 'netname', 'aut-num' ],
+						'type'			=>  self::TYPE_PROVIDER_NETNAME,
+						'value-type'		=>  self::VALUE_TYPE_STRING
+					 ],
+					self::TYPE_PROVIDER_PARENT		=>
+					[ 
+						'name'			=>  [ 'parent', 'inetnum-up', ],
+						'type'			=>  self::TYPE_PROVIDER_PARENT,
+						'value-type'		=>  self::VALUE_TYPE_NETRANGE,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_PROVIDER_COMMENT		=>
+					[ 
+						'name'			=>  [ 'remarks' ],
+						'type'			=>  self::TYPE_PROVIDER_COMMENT,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_PROVIDER_DESCRIPTION		=>
+					[ 
+						'name'			=>  [ 'descr' ],
+						'type'			=>  self::TYPE_PROVIDER_DESCRIPTION,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_PROVIDER_ID			=>
+					[
+						'name'			=>  [ 'ownerid' ],
+						'type'			=>  self::TYPE_PROVIDER_ID,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+					 ],
+					self::TYPE_PROVIDER_COUNTRY		=>
+					[
+						'name'			=>  [ 'country' ],
+						'type'			=>  self::TYPE_PROVIDER_COUNTRY,
+						'value-type'		=>  self::VALUE_TYPE_COUNTRY,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_PROVIDER_ORGANIZATION	=>
+					[
+						'name'			=>  [ 'org', 'owner' ],
+						'type'			=>  self::TYPE_PROVIDER_ORGANIZATION,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_PROVIDER_RESPONSIBLE		=>
+					[
+						'name'			=>  [ 'responsible' ],
+						'type'			=>  self::TYPE_PROVIDER_RESPONSIBLE,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+					 ],
+					self::TYPE_PROVIDER_SPONSORING_ORGANIZATION	=>
+					[
+						'name'			=>  [ 'sponsoring-org' ],
+						'type'			=>  self::TYPE_PROVIDER_SPONSORING_ORGANIZATION,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+					 ],
+					self::TYPE_PROVIDER_ADMINISTRATIVE_CONTACT	=>
+					[
+						'name'			=>  [ 'admin-c' ],
+						'type'			=>  self::TYPE_PROVIDER_ADMINISTRATIVE_CONTACT,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_PROVIDER_TECHNICAL_CONTACT	=>
+					[
+						'name'			=>  [ 'tech-c' ],
+						'type'			=>  self::TYPE_PROVIDER_TECHNICAL_CONTACT,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_PROVIDER_CONTACT		=>
+					[
+						'name'			=>  [ 'owner-c', 'notify' ],
+						'type'			=>  self::TYPE_PROVIDER_CONTACT,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_PROVIDER_ADDRESS		=>
+					[ 
+						'name'			=>  [ 'address' ],
+						'type'			=>  self::TYPE_PROVIDER_ADDRESS,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_PROVIDER_PHONE		=>
+					[ 
+						'name'			=>  [ 'phone' ],
+						'type'			=>  self::TYPE_PROVIDER_PHONE,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_PROVIDER_FAX		=>
+					[ 
+						'name'			=>  [ 'fax' ],
+						'type'			=>  self::TYPE_PROVIDER_FAX,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_PROVIDER_NETTYPE		=>
+					[ 
+						'name'			=>  [ 'status' ],
+						'type'			=>  self::TYPE_PROVIDER_NETTYPE,
+						'value-type'		=>  self::VALUE_TYPE_INTEGER,
+						'matches'		=>  
+						   [
+							self::NETTYPE_ALLOCATED_PA		=>
+							   [
+								'ALLOCATED PA',
+								'allocated'
+							    ],
+							self::NETTYPE_ALLOCATED_PI		=>
+							   [
+								'ALLOCATED PI'
+							    ],
+							self::NETTYPE_ALLOCATED_UNSPECIFIED	=> 
+							   [
+								'ALLOCATED UNSPECIFIED' 
+							    ],
+							self::NETTYPE_SUBALLOCATED_PA	=> 
+							   [
+								'SUB-ALLOCATED PA' 
+							    ],
+							self::NETTYPE_LIR_PARTITIONED_PA	=> 
+							   [
+								'LIR-PARTITIONED PA' 
+							    ],
+							self::NETTYPE_LIR_PARTITIONED_PI	=> 
+							   [
+								'LIR-PARTITIONED PA' 
+							    ],
+							self::NETTYPE_NOT_SET			=> 
+							   [
+								'NOT-SET' 
+							    ],
+							self::NETTYPE_ASSIGNED_PA		=> 
+							   [
+								'ASSIGNED PA',
+								'ASSIGNED  PA',
+								'assigned'
+							    ],
+							self::NETTYPE_ASSIGNED_PORTABLE		=> 
+							   [
+								'ASSIGNED PORTABLE' 
+							    ],
+							self::NETTYPE_REASSIGNED		=> 
+							   [
+								'REASSIGNED' 
+							    ],
+							self::NETTYPE_ASSIGNED_PI		=> 
+							   [
+								'ASSIGNED PI' 
+							    ],
+							self::NETTYPE_ASSIGNED_NON_PORTABLE	=> 
+							   [
+								'ASSIGNED NON-PORTABLE' 
+							    ],
+							self::NETTYPE_ALLOCATED_PORTABLE	=> 
+							   [
+								'ALLOCATED PORTABLE' 
+							    ],
+							self::NETTYPE_ALLOCATED_NON_PORTABLE	=> 
+							   [
+								'ALLOCATED NON-PORTABLE',
+								'ALLOCATED  NON-PORTABLE' 
+							    ],
+							self::NETTYPE_LEGACY			=> 
+							   [
+								'LEGACY' 
+							    ],
+							self::NETTYPE_REALLOCATED		=> 
+							   [
+								'REALLOCATED' 
+							    ],
+							self::NETTYPE_ASSIGNED_ANYCAST		=> 
+							   [
+								'ASSIGNED ANYCAST' 
+							    ]
+						    ]
+					 ],
+					self::TYPE_PROVIDER_MAINTAINED_BY	=>
+					[
+						'name'			=>  [ 'mnt-by' ],
+						'type'			=>  self::TYPE_PROVIDER_MAINTAINED_BY,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_PROVIDER_REGISTRATION_DATE	=>
+					[ 
+						'name'			=>  [ 'created' ],
+						'type'			=>  self::TYPE_PROVIDER_REGISTRATION_DATE,
+						'value-type'		=>  self::VALUE_TYPE_DATE
+					 ],
+					self::TYPE_PROVIDER_UPDATE_DATE		=>
+					[ 
+						'name'			=>  [ 'last-modified' ],
+						'type'			=>  self::TYPE_PROVIDER_UPDATE_DATE,
+						'value-type'		=>  self::VALUE_TYPE_DATE
+					 ],
+					self::TYPE_PROVIDER_ABUSE_CONTACT	=>
+					[ 
+						'name'			=>  [ 'abuse-c' ],
+						'type'			=>  self::TYPE_PROVIDER_ABUSE_CONTACT,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_PROVIDER_LOWER_MAINTAINER	=>
+					[ 
+						'name'			=>  [ 'mnt-lower' ],
+						'type'			=>  self::TYPE_PROVIDER_LOWER_MAINTAINER,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_PROVIDER_ROUTES_MAINTAINER	=>
+					[ 
+						'name'			=>  [ 'mnt-routes' ],
+						'type'			=>  self::TYPE_PROVIDER_ROUTES_MAINTAINER,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_PROVIDER_DOMAINS_MAINTAINER	=>
+					[ 
+						'name'			=>  [ 'mnt-domains' ],
+						'type'			=>  self::TYPE_PROVIDER_DOMAINS_MAINTAINER,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_PROVIDER_MAINTAINER_IRT		=>
+					[ 
+						'name'			=>  [ 'mnt-irt' ],
+						'type'			=>  self::TYPE_PROVIDER_MAINTAINER_IRT,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_PROVIDER_NET_REVISION		=>
+					[ 
+						'name'			=>  [ 'inetrev' ],
+						'type'			=>  self::TYPE_PROVIDER_NET_REVISION,
+						'value-type'		=>  self::VALUE_TYPE_STRING
+					 ],
+					self::TYPE_PROVIDER_NAME_SERVER			=>
+					[ 
+						'name'			=>  [ 'nserver' ],
+						'type'			=>  self::TYPE_PROVIDER_NAME_SERVER,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_PROVIDER_NAME_SERVER_STAT		=>
+					[ 
+						'name'			=>  [ 'nsstat' ],
+						'type'			=>  self::TYPE_PROVIDER_NAME_SERVER_STAT,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_PROVIDER_NAME_SERVER_LAST_AA		=>
+					[ 
+						'name'			=>  [ 'nslastaa' ],
+						'type'			=>  self::TYPE_PROVIDER_NAME_SERVER_LAST_AA,
+						'value-type'		=>  self::VALUE_TYPE_DATE,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_PROVIDER_LANGUAGE		=>
+					[
+						'name'			=>  [ 'language' ],
+						'type'			=>  self::TYPE_PROVIDER_LANGUAGE,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_PROVIDER_GEOLOCATION		=>
+					[
+						'name'			=>  [ 'geoloc' ],
+						'type'			=>  self::TYPE_PROVIDER_GEOLOCATION,
+						'value-type'		=>  self::VALUE_TYPE_STRING
+					 ],
+					self::TYPE_PROVIDER_SOURCE	=>
+					[
+						'name'			=>  [ 'source' ],
+						'type'			=>  self::TYPE_PROVIDER_SOURCE,
+						'value-type'		=>  self::VALUE_TYPE_STRING
+					 ],
+					self::TYPE_PROVIDER_DS_NETRANGE		=>
+					[ 
+						'name'			=>  [ 'dsinetrev' ],
+						'type'			=>  self::TYPE_PROVIDER_DS_NETRANGE,
+						'value-type'		=>  self::VALUE_TYPE_NETRANGE
+					 ],
+					self::TYPE_PROVIDER_DS_RECORD	=>
+					[
+						'name'			=>  [ 'dsrecord' ],
+						'type'			=>  self::TYPE_PROVIDER_DS_RECORD,
+						'value-type'		=>  self::VALUE_TYPE_STRING
+					 ],
+					self::TYPE_PROVIDER_DS_STATUS	=>
+					[
+						'name'			=>  [ 'dsstatus' ],
+						'type'			=>  self::TYPE_PROVIDER_DS_STATUS,
+						'value-type'		=>  self::VALUE_TYPE_STRING
+					 ],
+					self::TYPE_PROVIDER_DS_LAST_OK	=>
+					[
+						'name'			=>  [ 'dslastok' ],
+						'type'			=>  self::TYPE_PROVIDER_DS_LAST_OK,
+						'value-type'		=>  self::VALUE_TYPE_DATE
+					 ],
+				    ]
+			    ],
+			self::BLOCK_ORGANIZATION  =>
+			   [
+				'start-keywords'		=>  [ 'role', 'organisation', 'irt' ],
+				'multiple'			=>  true,
+				'keywords'			=>
+				    [
+					self::TYPE_ORGANIZATION_NAME		=>
+					[ 
+						'name'			=>  [ 'role', 'org-name', 'irt' ],
+						'type'			=>  self::TYPE_ORGANIZATION_NAME,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'required'		=>  true
+					 ],
+					self::TYPE_ORGANIZATION_ID		=>
+					[ 
+						'name'			=>  [ 'nic-hdl', 'organisation', 'org' ],
+						'type'			=>  self::TYPE_ORGANIZATION_ID,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_ORGANIZATION_TYPE		=>
+					[ 
+						'name'			=>  [ 'org-type' ],
+						'type'			=>  self::TYPE_ORGANIZATION_TYPE,
+						'value-type'		=>  self::VALUE_TYPE_STRING
+					 ],
+					self::TYPE_ORGANIZATION_ADDRESS		=>
+					[ 
+						'name'			=>  [ 'address' ],
+						'type'			=>  self::TYPE_ORGANIZATION_ADDRESS,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'required'		=>  false,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_ORGANIZATION_REGISTRATION_DATE =>
+					[ 
+						'name'			=>  [ 'created' ],
+						'type'			=>  self::TYPE_ORGANIZATION_REGISTRATION_DATE,
+						'value-type'		=>  self::VALUE_TYPE_DATE
+					 ],
+					self::TYPE_ORGANIZATION_UPDATE_DATE	=>
+					[ 
+						'name'			=>  [ 'last-modified' ],
+						'type'			=>  self::TYPE_ORGANIZATION_UPDATE_DATE,
+						'value-type'		=>  self::VALUE_TYPE_DATE
+					 ],
+					self::TYPE_ORGANIZATION_PHONE		=>
+					[ 
+						'name'			=>  [ 'phone' ],
+						'type'			=>  self::TYPE_ORGANIZATION_PHONE,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_ORGANIZATION_FAX		=>
+					[ 
+						'name'			=>  [ 'fax-no' ],
+						'type'			=>  self::TYPE_ORGANIZATION_FAX,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_ORGANIZATION_AUTH	=>
+					[ 
+						'name'			=>  [ 'auth' ],
+						'type'			=>  self::TYPE_ORGANIZATION_AUTH,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_ORGANIZATION_CONTACT	=>
+					[ 
+						'name'			=>  [ 'e-mail', 'notify', 'irt-nfy' ],
+						'type'			=>  self::TYPE_ORGANIZATION_CONTACT,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_ORGANIZATION_ADMINISTRATIVE_CONTACT	=>
+					[ 
+						'name'			=>  [ 'admin-c' ],
+						'type'			=>  self::TYPE_ORGANIZATION_ADMINISTRATIVE_CONTACT,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_ORGANIZATION_TECHNICAL_CONTACT	=>
+					[ 
+						'name'			=>  [ 'tech-c' ],
+						'type'			=>  self::TYPE_ORGANIZATION_TECHNICAL_CONTACT,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_ORGANIZATION_COUNTRY		=>
+					[
+						'name'			=>  [ 'country' ],
+						'type'			=>  self::TYPE_ORGANIZATION_COUNTRY,
+						'value-type'		=>  self::VALUE_TYPE_COUNTRY,
+					 ],
+					self::TYPE_ORGANIZATION_MAINTAINED_BY	=>
+					[ 
+						'name'			=>  [ 'mnt-by' ],
+						'type'			=>  self::TYPE_ORGANIZATION_MAINTAINED_BY,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_ORGANIZATION_GEOLOCATION	=>
+					[ 
+						'name'			=>  [ 'geoloc' ],
+						'type'			=>  self::TYPE_ORGANIZATION_GEOLOCATION,
+						'value-type'		=>  self::VALUE_TYPE_STRING
+					 ],
+					self::TYPE_ORGANIZATION_MAINTAINER_REFERENCE	=>
+					[ 
+						'name'			=>  [ 'mnt-ref' ],
+						'type'			=>  self::TYPE_ORGANIZATION_MAINTAINER_REFERENCE,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_ORGANIZATION_ABUSE_CONTACT	=>
+					[ 
+						'name'			=>  [ 'abuse-mailbox', 'abuse-c' ],
+						'type'			=>  self::TYPE_ORGANIZATION_ABUSE_CONTACT,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_ORGANIZATION_UPDATED_BY_AND_DATE	=>
+					[ 
+						'name'			=>  [ 'changed' ],
+						'type'			=>  self::TYPE_ORGANIZATION_UPDATED_BY_AND_DATE,
+						'value-type'		=>  self::VALUE_TYPE_ID_AND_DATE,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_ORGANIZATION_COMMENT			=>
+					[ 
+						'name'			=>  [ 'remarks' ],
+						'type'			=>  self::TYPE_ORGANIZATION_COMMENT,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_ORGANIZATION_DESCRIPTION		=>
+					[ 
+						'name'			=>  [ 'descr' ],
+						'type'			=>  self::TYPE_ORGANIZATION_DESCRIPTION,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_ORGANIZATION_SOURCE	=>
+					[ 
+						'name'			=>  [ 'source' ],
+						'type'			=>  self::TYPE_ORGANIZATION_SOURCE,
+						'value-type'		=>  self::VALUE_TYPE_STRING
+					 ]
+				     ]
+			    ],
+			self::BLOCK_ROUTE  =>
+			   [
+				'start-keywords'		=>  [ 'route' ],
+				'multiple'			=>  true,
+				'keywords'			=>
+				    [
+					self::TYPE_ROUTE_MASK		=>
+					[ 
+						'name'			=>  [ 'route' ],
+						'type'			=>  self::TYPE_ROUTE_MASK,
+						'value-type'		=>  self::VALUE_TYPE_NETMASK,
+						'required'		=>  true
+					 ],
+					self::TYPE_ROUTE_HOLES		=>
+					[ 
+						'name'			=>  [ 'holes' ],
+						'type'			=>  self::TYPE_ROUTE_HOLES,
+						'value-type'		=>  self::VALUE_TYPE_NETMASK,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_ROUTE_DESCRIPTION		=>
+					[ 
+						'name'			=>  [ 'descr' ],
+						'type'			=>  self::TYPE_ROUTE_DESCRIPTION,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_ROUTE_COMMENT		=>
+					[ 
+						'name'			=>  [ 'remarks' ],
+						'type'			=>  self::TYPE_ROUTE_COMMENT,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_ROUTE_MEMBER_OF		=>
+					[ 
+						'name'			=>  [ 'member-of' ],
+						'type'			=>  self::TYPE_ROUTE_MEMBER_OF,
+						'value-type'		=>  self::VALUE_TYPE_STRING
+					 ],
+					self::TYPE_ROUTE_ORIGIN	=>
+					[ 
+						'name'			=>  [ 'origin' ],
+						'type'			=>  self::TYPE_ROUTE_ORIGIN,
+						'value-type'		=>  self::VALUE_TYPE_STRING
+					 ],
+					self::TYPE_ROUTE_ORGANIZATION	=>
+					[ 
+						'name'			=>  [ 'org' ],
+						'type'			=>  self::TYPE_ROUTE_ORGANIZATION,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_ROUTE_COUNTRY		=>
+					[
+						'name'			=>  [ 'country' ],
+						'type'			=>  self::TYPE_ROUTE_COUNTRY,
+						'value-type'		=>  self::VALUE_TYPE_COUNTRY,
+					 ],
+					self::TYPE_ROUTE_LOWER_MAINTAINER	=>
+					[ 
+						'name'			=>  [ 'mnt-lower' ],
+						'type'			=>  self::TYPE_ROUTE_LOWER_MAINTAINER,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_ROUTE_ROUTES_MAINTAINER	=>
+					[ 
+						'name'			=>  [ 'mnt-routes' ],
+						'type'			=>  self::TYPE_ROUTE_ROUTES_MAINTAINER,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_ROUTE_MAINTAINED_BY	=>
+					[ 
+						'name'			=>  [ 'mnt-by' ],
+						'type'			=>  self::TYPE_ROUTE_MAINTAINED_BY,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_ROUTE_REGISTRATION_DATE =>
+					[ 
+						'name'			=>  [ 'created' ],
+						'type'			=>  self::TYPE_ROUTE_REGISTRATION_DATE,
+						'value-type'		=>  self::VALUE_TYPE_DATE
+					 ],
+					self::TYPE_ROUTE_CONTACT	=>
+					[ 
+						'name'			=>  [ 'notify' ],
+						'type'			=>  self::TYPE_ROUTE_CONTACT,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_ROUTE_PINGABLE	=>
+					[ 
+						'name'			=>  [ 'pingable' ],
+						'type'			=>  self::TYPE_ROUTE_PINGABLE,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_ROUTE_PING_HDL	=>
+					[ 
+						'name'			=>  [ 'ping-hdl' ],
+						'type'			=>  self::TYPE_ROUTE_PING_HDL,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_ROUTE_INJECT		=>
+					[ 
+						'name'			=>  [ 'inject' ],
+						'type'			=>  self::TYPE_ROUTE_INJECT,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_ROUTE_AGGREGATE_MTD		=>
+					[ 
+						'name'			=>  [ 'aggr-mtd' ],
+						'type'			=>  self::TYPE_ROUTE_AGGREGATE_MTD,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_ROUTE_UPDATE_DATE	=>
+					[ 
+						'name'			=>  [ 'last-modified' ],
+						'type'			=>  self::TYPE_ROUTE_UPDATE_DATE,
+						'value-type'		=>  self::VALUE_TYPE_DATE
+					 ],
+					self::TYPE_ROUTE_UPDATED_BY_AND_DATE =>
+					[ 
+						'name'			=>  [ 'changed' ],
+						'type'			=>  self::TYPE_ROUTE_UPDATED_BY_AND_DATE,
+						'value-type'		=>  self::VALUE_TYPE_ID_AND_DATE,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_ROUTE_SOURCE		=>
+					[ 
+						'name'			=>  [ 'source' ],
+						'type'			=>  self::TYPE_ROUTE_SOURCE,
+						'value-type'		=>  self::VALUE_TYPE_STRING
+					 ]				    
+				    ]
+			    ],
+			self::BLOCK_PERSON  =>
+			   [
+				'start-keywords'		=>  [ 'person', 'nic-hdl', 'nic-hdl-br' ],
+				'multiple'			=>  true,
+				'keywords'			=>
+				    [
+					self::TYPE_PERSON_NAME		=>
+					[ 
+						'name'			=>  [ 'person' ],
+						'type'			=>  self::TYPE_PERSON_NAME,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'required'		=>  true
+					 ],
+					self::TYPE_PERSON_ID		=>
+					[ 
+						'name'			=>  [ 'nic-hdl', 'nic-hdl-br' ],
+						'type'			=>  self::TYPE_PERSON_ID,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'required'		=>  true
+					 ],
+					self::TYPE_PERSON_ADDRESS		=>
+					[ 
+						'name'			=>  [ 'address' ],
+						'type'			=>  self::TYPE_PERSON_ADDRESS,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_PERSON_UPDATED_BY_AND_DATE =>
+					[ 
+						'name'			=>  [ 'changed' ],
+						'type'			=>  self::TYPE_PERSON_UPDATED_BY_AND_DATE,
+						'value-type'		=>  self::VALUE_TYPE_ID_AND_DATE,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_PERSON_REGISTRATION_DATE =>
+					[ 
+						'name'			=>  [ 'created' ],
+						'type'			=>  self::TYPE_PERSON_REGISTRATION_DATE,
+						'value-type'		=>  self::VALUE_TYPE_DATE
+					 ],
+					self::TYPE_PERSON_UPDATED_DATE	=>
+					[ 
+						'name'			=>  [ 'last-modified' ],
+						'type'			=>  self::TYPE_PERSON_UPDATED_DATE,
+						'value-type'		=>  self::VALUE_TYPE_DATE
+					 ],
+					self::TYPE_PERSON_PHONE		=>
+					[ 
+						'name'			=>  [ 'phone' ],
+						'type'			=>  self::TYPE_PERSON_PHONE,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_PERSON_FAX		=>
+					[ 
+						'name'			=>  [ 'fax-no' ],
+						'type'			=>  self::TYPE_PERSON_FAX,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_PERSON_MAINTAINED_BY	=>
+					[ 
+						'name'			=>  [ 'mnt-by' ],
+						'type'			=>  self::TYPE_PERSON_MAINTAINED_BY,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_PERSON_EMAIL	=>
+					[ 
+						'name'			=>  [ 'e-mail', 'notify' ],
+						'type'			=>  self::TYPE_PERSON_EMAIL,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_PERSON_COUNTRY		=>
+					[
+						'name'			=>  [ 'country' ],
+						'type'			=>  self::TYPE_PERSON_COUNTRY,
+						'value-type'		=>  self::VALUE_TYPE_COUNTRY
+					 ],
+					self::TYPE_PERSON_ORGANIZATION		=>
+					[
+						'name'			=>  [ 'org' ],
+						'type'			=>  self::TYPE_PERSON_ORGANIZATION,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_PERSON_PROVIDER		=>
+					[
+						'name'			=>  [ 'provider' ],
+						'type'			=>  self::TYPE_PERSON_PROVIDER,
+						'value-type'		=>  self::VALUE_TYPE_STRING
+					 ],
+					self::TYPE_PERSON_ABUSE_CONTACT	=>
+					[ 
+						'name'			=>  [ 'abuse-mailbox' ],
+						'type'			=>  self::TYPE_PERSON_ABUSE_CONTACT,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_PERSON_COMMENT	=>
+					[ 
+						'name'			=>  [ 'comment', 'remarks' ],
+						'type'			=>  self::TYPE_PERSON_COMMENT,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_PERSON_SOURCE	=>
+					[ 
+						'name'			=>  [ 'source' ],
+						'type'			=>  self::TYPE_PERSON_SOURCE,
+						'value-type'		=>  self::VALUE_TYPE_STRING
+					 ]
+				    ]
+			    ]
+		    ]
+	    ] ;
+
+
+	public function  __construct ( $queried_ip, $contents )
+	   {
+		parent::__construct ( $queried_ip, $contents ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    Parse -
+		Handles some exceptions in whois output.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  Parse ( $contents )
+	   {
+		// List of replacement strings for whois output
+		static		$replacements  =
+		   [
+			// Handles replacements for multiline remarks ; substitute every newline character with a newline +
+			// "remarks:" string
+			[
+				'regex'		=> 
+					'/
+						(?P<multiline_rem> remarks: \s+ these \s+ address?es \s+ are \s+ allocated .*?)
+						\n
+						[\w_\-]+ :
+					 /imsx',
+				'from'		=>  "\n",
+				'to'		=>  "\nremarks: "
+			 ],
+			[
+				'regex'		=> 
+					'/
+						(?P<multiline_rem> remarks: \s+ the \s+ activity \s+ you \s+ have \s+ detected \s+ originates .*?)
+						\n
+						[\w_\-]+ :
+					 /imsx',
+				'from'		=>  "\n",
+				'to'		=>  "\nremarks: "
+			 ],
+			[
+				'regex'		=> 
+					'/
+						(?P<multiline_rem> remarks: \s+ X-RMS .*)
+						\n
+						[\w_\-]+ :
+					 /imsx',
+				'from'		=>  "\n",
+				'to'		=>  "\nremarks: "
+			 ],
+			[
+				'regex'		=> 
+					'/
+						(?P<multiline_rem> member-of: .*)
+						\n
+						[\w_\-]+ :
+					 /imsx',
+				'from'		=>  "\n",
+				'to'		=>  "\nremarks: "
+			 ],
+			[
+				'regex'		=> 
+					'/
+						(?P<multiline_rem> remarks: \s+ For \s+ fastest \s+ response, \s+ please \s+ submit \s+ abuse \s+ reports .*?)
+						\n
+						point \s+ in \s+ time \.
+					 /imsx',
+				'from'		=>  "\n",
+				'to'		=>  "\nremarks: "
+			 ]
+		    ] ;
+
+		// Loop through replacement strings
+		foreach  ( $replacements  as  $replacement )
+		   {
+			if  ( preg_match ( $replacement [ 'regex' ], $contents, $matches ) )
+			   {
+				$original	=  $matches [ 'multiline_rem' ] ;
+				$new		=  str_replace ( $replacement [ 'from' ], $replacement [ 'to' ], $original ) ;
+				$contents	=  str_replace ( $original, $new, $contents ) ;
+			    }
+		    }
+
+		//output ( $contents ) ; exit ;
+		Parent::Parse ( $contents ) ;
+	    }
+    }

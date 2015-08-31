@@ -1,0 +1,362 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        Chainer.phpclass
+
+    DESCRIPTION
+        Chainer is a simple class that allows to chain multiple function calls starting from one input value.
+	
+ 	A basic usage could be :
+  
+ 		$out = Chainer::On ( "This is a simple string" ) -> str_replace ( 'string', 'STRING', me ) 
+ 				   -> substr ( me, 8 )  -> prepend ( '[' ) -> append ( ']' ) -> me ;	
+
+ 	which outputs :
+ 		
+ 		[a simple STRING]
+  
+ 	Note a few things about the preceding example :
+ 	- There is an On() function which simply calls the Chainer::On() method. Even shorter...
+ 	- 'me' as a member represents the current value in the chain
+ 	- 'me' as a constant represents the current value in the parameter list and has to be used when 
+ 	  specified as a function parameter.
+ 	- Built-in methods such as prepend() and append() are used to implement the string concatenation 
+ 	  operator ".".
+ 	- Other "method" calls like str_replace(), substr(), etc. are handled by the magic function __call(),
+ 	  which does the work of calling the real PHP function, after substitution of the 'me' constant by
+ 	  the current value in the chain.
+ 
+ 	But what about functions like array_xxx, such as array_shift(), array_pop() etc., which do not return
+ 	their input array value ? well, there is a push() method which saves the current value in the chain,
+ 	and a pop() method which restores the last pushed one.
+  
+ 	Consider the following example :
+  
+ 		$values = array ( 'value 1', 'value 2', 'value 3' ) ;
+		print_r ( On ( $values ) -> push ( 2 ) 
+					 -> array_shift ( me ) 
+ 					 -> set ( $popped_item ) 
+ 					 -> pop ( ) 
+ 					 -> array_push ( me, 'value 4' ) 
+ 					 -> pop ( ) -> me ) ;
+	
+ 	The output will be :
+ 		[ 'value2', 'value3', value4' ]
+  
+ 	In this example :
+ 	- The current value ( [ 'value1', 'value2', value3' ] ) is pushed two times on the stack
+ 	- Array shift is called on 'me'. Current value becomes 'value1', and the pushed values, which
+ 	  are simply a reference to the original value, become [ 'value2', 'value3' ].
+ 	- The example introduces the set() method, which allows for assigning the current value to the 
+ 	  specified variable
+ 	- The pop() function is called. Current value is now [ 'value2', 'value3' ].
+ 	- array_push() is called. Value on the stack is now [ 'value2', 'value3', 'value4' ], and current value
+ 	  3, the number of items in the array, as returned by the array_push() function.
+ 	- Let's replace it with the array value using pop().
+ 		
+    AUTHOR
+        Christian Vigh, 10/2014.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2014/10/15]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Internals ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use 	Thrak\System\Object ;
+
+define ( 'me', '$this' ) ;
+
+ 
+/*===========================================================================================================
+
+    Class Chainer -
+	Allows for chaining function calls on the same input value.
+	
+ *===========================================================================================================*/ 
+class  Chainer		extends  Object 
+   {
+	// Holds the current value in a chain
+	public 		$me ;
+	// A stack to push to/pop from values
+	private 	$stack 	=  array ( ) ;
+	
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        Constructor.
+	
+	    DESCRIPTION
+	        Builds a Chainer object with the specified value.
+	
+	  ==============================================================================================================*/
+	public function  __construct ( $value )
+	   {
+		// You're not allowed to put a Chainer object in the call chain...
+		if (  $this -> __is_me ( $value ) )
+			error ( new \Thrak\System\LogicException ( "Cannot create a chain within a chain." ) ) ;
+			
+		$this -> me 	=  $value ;
+	    }
+
+	// On -
+	//	A static function to create a Chainer object.
+	public static function  On ( $value )
+	   {
+		$chain 	=  new Chainer ( $value ) ;
+		
+		return ( $chain ) ;
+	    }
+	
+
+	// __tostring -
+	//	Returns a string representation of the current value.
+	public function  __tostring ( )
+	   {
+		return ( ( string ) $this -> me ) ;
+	    }
+
+	
+	// __is_me -
+	//	A function to check a function parameter against the "me" value.
+	private function  __is_me ( $value )
+	   {
+		return (  $value  ==  me ) ;
+	    }
+	
+	
+	// __substitute_me -
+	//	Substitutes a reference to the "me" constant with the current object value.
+	private function  __substitute_me  ( $arg ) 
+	   {
+		if  ( is_string ( $arg ) )
+		   {
+			$index		=  strpos ( $arg, me ) ;
+				
+			if  ( $index  !==  false )
+				$arg		=  substr ( $arg, 0, $index ) .
+						   $this -> me .
+						   substr ( $arg, $index + strlen ( me ) ) ;
+		    }
+		
+		return ( $arg ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        __call - Calls a PHP function.
+	
+	    PROTOTYPE
+	        $chain -> phpfunction ( arguments... ) ;
+	
+	    DESCRIPTION
+	        Executes the specified PHP function and sets the current value to the return value of this function.
+	
+	    PARAMETERS
+	        arguments (any) -
+	                PHP function arguments. The "me" constant may be one or more of them.
+	
+	    RETURN VALUE
+	        The Chainer object, to allow for chaining.
+	
+	  ==============================================================================================================*/
+	public function  __call ( $function, $args )
+	   {
+		// Complain if function is undefined
+		if  ( ! function_exists ( $function ) )
+			error ( new \Thrak\System\RuntimeException ( "Call to undefined function $function." ) ) ;
+			
+		// This trick allows us to use the call_user_func_array() function, regardless of the number of arguments
+		if  ( ! $args )
+			$args 	= array ( ) ;
+		
+		// We will loop through arguments before calling the PHP function
+		for  ( $i = 0 ; $i  <  count ( $args ) ; $i ++ )
+		   {
+			$arg	=  $args [$i] ;
+			
+			// First, if the current argument is the "me" constant, then replace it with a REFERENCE to the current value
+			// Note that using : foreach ( $args  as  &$arg ) does not produce the expected result (the reference to the
+			// current value is lost).
+			if  ( $this -> __is_me ( $arg ) )
+				$args [$i] =  &$this -> me ;
+			// Otherwise, in case of a string argument, check if the "me" constant is not present.
+			// If this is the case, replace it with the current value contents.
+			else 
+				$args [$i] =  $this -> __substitute_me ( $arg ) ;
+		    }
+		    
+		// Call the function
+		$result 	=  call_user_func_array ( $function, $args ) ;
+		
+		// Unset the current value. This is important because if pushed values point to it, they will be modified as well
+		// Unsetting the current value only decrease the reference counter by one.
+		unset ( $this -> me ) ;	
+		
+		// Now, we can create a new value and assign the PHP function return value to it. Existing pushed references
+		// still point to the previous value.
+		$this -> me 	=  $result ;
+		
+		return ( $this ) ;
+	    }
+	    
+
+	/*==============================================================================================================
+	
+	    NAME
+	        prepend, append - Replacement methods for the string concatenation operator ".".
+	
+	    PROTOTYPE
+	        prepend ( $str ) ;
+		append  ( $str ) ;
+	
+	    DESCRIPTION
+	        Prepends / appends the specified string to the current chain value.
+	
+	    PARAMETERS
+	        $str (string) -
+	                String to be prepended/appended.
+	
+	    RETURN VALUE
+	        The Chainer object, to allow for chaining.
+	
+	  ==============================================================================================================*/
+	public function  prepend ( $str )
+	   {
+		$this -> me 	=  $str . $this -> me ;
+		
+		return ( $this  ) ;
+	    }
+	
+	public function  append ( $str )
+	   {
+		$this -> me 	.=  $str  ;
+		
+		return ( $this ) ;
+	    }
+
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        push, pop, swap - Value stack manipulation functions.
+	
+	    PROTOTYPE
+	        push ( $count = 1 ) ;
+		pop  ( $count = 1 ) ;
+		swap ( ) ;
+		dup  ( ) ;
+	
+	    DESCRIPTION
+	        push() pushes $count times the current value onto the stack. Note that a reference to the current value
+		is pushed, not the value itself.
+		pop ( ) pops $count values from the stack. The last popped value becomes the current value.
+		swap ( ) swaps the two values on top of the stack.
+		dup ( ) duplicates the value on top of the stack.
+		
+	    PARAMETERS
+	        $count (integer) -
+	                Number of times to push the current value or number of values to pop from the stack.
+	
+	    RETURN VALUE
+	        The Chainer object, to allow for chaining.
+	
+	  ==============================================================================================================*/
+	public function  push  ( $count = 1 )
+	   {
+		for  ( $i = 0 ; $i < $count ; $i ++ )
+			$this -> stack []	=  &$this -> me ;
+		
+		return ( $this ) ;
+	    }
+	    
+	public function  pop ( $count = 1 ) 
+	   {
+		$stacksize 	=  count ( $this -> stack ) ;
+		
+		if  ( $count  >  $stacksize )
+			error ( new \Thrak\System\RuntimeException ( "Stack empty." ) ) ;
+			
+		for  ( $i = 0 ; $i  <  $count - 1 ; $i ++ )
+			array_pop ( $this -> stack ) ;
+		
+		// Last popped stack value will become the current value. Note that a reference is needed here.
+		$this -> me 	=  &$this -> stack [ count ( $this -> stack ) - 1 ] ;
+		array_pop ( $this -> stack ) ;
+		
+		return ( $this ) ;
+	    }
+
+	
+	public function  swap ( )
+	   {
+		$stacksize 	=  count ( $this -> stack ) ;
+
+		if  ( $stacksize  <  2 )
+			error ( new \Thrak\System\RuntimeException ( "The stack should contain at least two items for a swap operation." ) ) ;
+		
+		$index1		=  $stacksize - 1 ;
+		$index2		=  $stacksize - 2 ;
+		
+		$temp				=  $this -> stack [ $index1 ] ;
+		$this -> stack [ $index1 ]	=  $this -> stack [ $index2 ] ;
+		$this -> stack [ $index2 ]	=  $temp ;
+	    }
+	    
+	
+	public function  dup ( )
+	   {
+		$stacksize 	=  count ( $this -> stack ) ;
+
+		if  ( ! $stacksize )
+			error ( new \Thrak\System\RuntimeException ( "Stack empty." ) ) ;
+
+		$value			=  $this -> stack [ $stacksize - 1 ] ;
+		$this -> stack []	=  $value ;
+	    }
+	    
+
+	/*==============================================================================================================
+	
+	    NAME
+	        set - Assigns the current value to a variable.
+	
+	    PROTOTYPE
+	        set ( &$var, $value = null ) ;
+	
+	    DESCRIPTION
+	        set() assigns the current value to the specified variable.
+	
+	    PARAMETERS
+	        $var (any) -
+	                Variable to be set.
+	  
+	 	$value (any) -
+	 		Value to assign to the variable. This can be any value, including a string referencing the "me"
+	 		constant, or simply a null value to assign the variable a reference to the current value.
+	 		If you want a reference to be assigned, and not the current value, simply call :
+	  
+	 			set ( $var ) ;
+	
+	    RETURN VALUE
+	        The Chainer object, to allow for chaining.
+	
+	  ==============================================================================================================*/
+	public function  set ( &$var, $value = null )
+	   {
+		if  ( $value  ==  null )
+			$var	=  &$this -> me ;
+		else
+			$var	=  $this -> __substitute_me ( $value ) ;
+		
+		return ( $this ) ;
+	    }
+    }
+ 

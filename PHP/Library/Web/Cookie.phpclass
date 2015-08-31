@@ -1,0 +1,32 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        Cookie.phpclass
+
+    DESCRIPTION
+        Encapsulates the $_COOKIE array.
+
+    AUTHOR
+        Christian Vigh, 06/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/06/06]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Web ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces & objects
+use	Thrak\System\Object ;
+use	Thrak\Types\AssociativeArray ;
+use	Thrak\IO\Path ;
+
+
+class  Cookies		extends		Object 
+			implements	\ArrayAccess, \Countable, \IteratorAggregate
+   {
+	public		$Cookies	=  [] ;
+    }

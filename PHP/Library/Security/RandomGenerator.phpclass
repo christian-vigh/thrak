@@ -1,0 +1,72 @@
+<?php
+/**************************************************************************************************************
+   
+       NAME
+           Random.phpclass
+   
+       DESCRIPTION
+           A class for returning random numbers taken from rndom provider.
+	   This class is not meant to return huge series of random values, but to obtain a "true" (when possible)
+	   random number when its needed, for example for security-related functions.
+   
+       AUTHOR
+           Christian Vigh, 10/2014.
+   
+       HISTORY
+       [Version : 1.0]    [Date : 2014/10/19]     [Author : CV]
+           Initial version.
+   
+    **************************************************************************************************************/
+namespace 	Thrak\Security\Random ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use  	Thrak\System\Object ;
+use	Thrak\IO\Path ;
+
+
+/*==============================================================================================================
+
+    IRandomProvider interface -
+        Parent interface to the ITrueRandomProvider and IPseudoRandomProvider interfaces.
+	A random provider class must implement one of them (true or pseudo-random).
+
+  ==============================================================================================================*/
+
+// IRandomProvider -
+//	Base interface for a random value provider.
+interface  IRandomProvider 
+   {
+	// Returns then next integer value available
+	public function  Next ( ) ;
+	
+	// Returns a series of integer values, as an array
+	public function  NextSeries ( $series_size ) ;
+
+	// 
+    }
+
+
+// ITrueRandomProvider -
+//	Interface that a true random number provider must implement.
+interface  ITrueRandomProvider  extends  IRandomProvider
+   {
+    }
+
+
+// IPseudoRandomProvider -
+//	Interface for pseudo-random providers.
+interface  IPseudoRandomProvider  extends  IRandomProvider 
+   {
+    }
+
+
+/*==============================================================================================================
+
+    RandomGenerator -
+        A random generator using multiple random providers as fallbacks.
+
+  ==============================================================================================================*/
+class  RandomGenerator
+   {
+    }

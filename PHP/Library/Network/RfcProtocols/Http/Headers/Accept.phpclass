@@ -1,0 +1,111 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        Accept.phpclass
+
+    DESCRIPTION
+        Http ACCEPT header.
+
+    AUTHOR
+        Christian Vigh, 05/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/05/27]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace  	Thrak\Network\RfcProtocols\Http ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces and classes
+use     Thrak\System\Object ;
+use	Thrak\Network\RfcProtocols\Http\HttpStandardHeader ;
+
+
+/*==============================================================================================================
+
+    HttpAcceptHeader class -
+        Http ACCEPT header implementation (http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.1).
+
+ 	Examples :
+ 		Accept: audio/*; q=0.2, audio/basic
+		Accept: text/plain; q=0.5, text/html, text/x-dvi; q=0.8, text/x-c
+		Accept: text/*, text/html, text/html;level=1, * /*
+
+  ==============================================================================================================*/
+class	HttpAcceptHeader		extends  HttpStandardHeader
+   {
+	public function  __construct ( $header )
+	   {
+		parent::__construct ( 'Accept', $header, self::HTTP_HEADER_LIST | self::HTTP_HEADER_PARAMETERS ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    CompareHeaderValues -
+	        Compare two media strings. Returns 1 if $a is more specific than $b, -1 if $b is more specific than $a,
+		and 0 if they are equal.
+	
+	  ==============================================================================================================*/
+	
+	// __compare_parts -
+	//	A comparison function that takes two items of a media specification and changes the order when at least one
+	//	of them is a wildcard ("*")
+	private function  __compare_parts ( $a, $b )
+	   {
+		// If first string is a wildcard...
+		if  ( $a  ==  '*' )
+		   {
+			// If second string is a wildcard, they are considered equal
+			if  ( $b  ==  '*' )
+				return ( 0 ) ;
+			// otherwise, string $b is considered greater than $a
+			else 
+				return ( 1 ) ;
+		    }
+		// String $a is not a wildcard
+		else
+		   {
+			// If $b is a wildcard, it will always be less than $a
+			if  ( $b  ==  '*' )
+				return ( -1 ) ;
+			// Both $a and $b are not wildcards : performs a natural string comparison
+			else
+				return ( strcasecmp ( $a, $b ) ) ;
+		    }
+	    }
+	
+	
+	protected function  CompareHeaderValues ( $a, $b )
+	   {
+		// If strings are equal, then there is not much to do
+		$status		=  strcasecmp ( $a, $b ) ;
+		
+		if  ( ! $status )
+			return ( 0 ) ;
+		
+		// Split parts of both strings around the slash
+		$a_parts	=  explode ( '/', $a ) ;
+		$b_parts	=  explode ( '/', $b ) ;
+		
+		// Don't try to make miracles if input strings are not of the form "text1/text2"
+		if  ( count ( $a_parts )  !=  2  ||  count ( $b_parts )  !=  2 )
+			return ( $status ) ;
+		
+		// Compare first parts of the media specification
+		$a_status	=  $this -> __compare_parts ( $a_parts [0], $b_parts [0] ) ;
+		
+		// If different, we're done
+		if  ( $a_status )
+			return ( $a_status ) ;
+		
+		// Otherwise, compare the second parts
+		$b_status	=  $this -> __compare_parts ( $a_parts [1], $b_parts [1] ) ;
+		
+		return ( $b_status ) ;
+	    }
+    }

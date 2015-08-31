@@ -1,0 +1,66 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        NetworkHelpers.phpclass
+
+    DESCRIPTION
+        description.
+
+    AUTHOR
+        Christian Vigh, 07/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/07/30]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace	Thrak\Network ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces & objects
+use		Thrak\System\Object			as  Object ;
+
+
+/*==============================================================================================================
+
+    NetworkHelpers -
+        A class of static methods to provide additional network functions.
+
+  ==============================================================================================================*/
+class  NetworkHelpers		extends  Object
+   {
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        GetHostByName - Returns the ip address of a given host.
+	 
+	    PROTOTYPE
+	        $ip		=  NetworkHelpers::GetHostByName ( $host ) ;
+	 
+	    DESCRIPTION
+	        Overcomes a small inconsistency in the gethostbyname() function, where the supplied hostname is returned
+		as is if not mapped to any ip address.
+	 
+	    PARAMETERS
+	        $host (string) -
+	                Name of the host whose ip address is to be retrieved.
+	 
+	    RETURN VALUE
+	        The ip address mapped to the specified host, or false if no ip address exists for it.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public static function  GetHostByName ( $host )
+	   {
+		$ip	=  gethostbyname ( $host ) ;
+
+		if  ( $ip  ==  $host )
+			return ( false ) ;
+		else
+			return ( $ip ) ;
+	    }
+
+
+    }

@@ -1,0 +1,71 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        DocCommentUsesAnnotation.phpclass
+
+    DESCRIPTION
+        Implements an @Uses annotation.
+
+    AUTHOR
+        Christian Vigh, 11/2014.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2014/11/09]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Reflection\Annotations ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use  	Thrak\System\Object ;
+use	Thrak\Reflection\DocCommentAnnotation ;
+
+
+/*==============================================================================================================
+
+    DocCommentUsesAnnotation -
+        Implements an @Uses annotation.
+ 
+	Available members :
+ 	- fqsen :
+ 		Fully qualified name of the component, for example : Core\System\Kernel::Init().
+  
+ 	- reference :
+ 		When an FQSEN is specified, contains the class reference part (eg, "Kernel::Init").
+  
+ 	- components :
+ 		Components of the FQSEN, as an array (eg, [ 'Core', 'System' ]).
+  
+ 	- description :
+ 		Optional description.
+
+  ==============================================================================================================*/
+class	DocCommentUsesAnnotation		extends  DocCommentAnnotation
+   {
+	public function  __construct ( $name, $params_array )
+	   {
+		parent::__construct ( $name, $params_array ) ;
+	    }
+
+
+	/*==============================================================================================================
+	
+	    __tostring -
+	        Provides a formatted @Uses annotation.
+	
+	  ==============================================================================================================*/
+	public function  __tostring ( )
+	   {
+		$result		=  "@" . $this -> Name ;
+
+		if  ( $this -> Parameters -> fqsen  !==  "" )
+			$result		.=  " " . $this -> Parameters -> fqsen ;
+		
+		if  ( $this -> Parameters -> description  !==  "" )
+			$result		.=  " " . $this -> Parameters -> description ;
+		
+		return ( $result ) ;
+	    }
+    }

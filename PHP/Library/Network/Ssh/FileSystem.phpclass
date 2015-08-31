@@ -1,0 +1,604 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        FileSystem.php
+
+    DESCRIPTION
+        Implements an SSH2 SFTP session.
+
+    AUTHOR
+        Christian Vigh, 05/2015.
+
+    HISTORY
+    [Version : 1.0]	[Date : 2015/05/25]     [Author : CV]
+        Initial version.
+
+    [Version : 1.0.1]	[Date : 2015/06/11]     [Author : CV]
+	. Added the fread(), gzopen(), gzread() and gzclose() methods.
+
+    [Version : 1.0.2]	[Date : 2015/08/16]     [Author : CV]
+	. Changed the fopen() method to handle the case where $contents is null.
+ 
+ **************************************************************************************************************/
+namespace	Thrak\Network\Ssh ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces & objects
+use	Thrak\System\Object ;
+use     Thrak\IO\Path ;
+use	Thrak\Types\String ;
+
+
+/*==============================================================================================================
+
+    SshFileSystem -
+        Implements access to a remote host filesystem using SFTP.
+
+  ==============================================================================================================*/
+class  SshFileSystem		extends  Object
+   {
+	// Current SSH session
+	public		$Session ;
+	// Sftp connection
+	public		$SftpSession ;
+	// Current working directory
+	public		$Cwd ;
+	
+	
+	/*==============================================================================================================
+	
+	    Constructor -
+	        Builds an SSH filesystem object. Complains if no connection has been established yet.
+	
+	  ==============================================================================================================*/
+	public function  __construct  ( $session )
+	   {
+		if  ( ! $session -> IsConnected ( ) )
+			error ( new \Thrak\Network\Ssh\SshSession ( "Sftp session requested, but no connection has been established." ) ) ;
+		
+		$this -> SftpSession	=  ssh2_sftp ( $session -> Connection -> GetResource ( ) ) ;
+		
+		if  ( ! $this -> SftpSession )
+			error ( new \Thrak\Network\Ssh\SshSession ( "An error occurred during the creation of an sftp session" ) ) ;
+		
+		$this -> Session	=  $session ;
+		$this -> Cwd		=  $this -> realpath ( '.' ) ;
+	    }
+	
+	
+	/**************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 ******                                       PRIVATE METHODS                                            ******
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************/
+
+	// __check_error -
+	//	Called when an operation using a remote filename with the ssh2.sftp:// handler is involved.
+	private function  __check_error ( $status, $path = null )
+	   {
+		if  ( $status  ===  false )
+		   {
+			$error		=  get_last_ignored_error ( ) ;
+			$message	=  preg_replace ( '-ssh2.sftp://Resource id #\d+/-', '/', $error [ 'error' ] ) ;
+
+			if  ( $path )
+				$message	.=  "\nPath : $path" ;
+			
+			error ( new SftpException ( $message ) ) ;
+		    }
+	    }
+	
+	
+	// __get_path -
+	//	Interprets a path using the current working directory, which is determined during object construction.
+	private function  __get_path ( $path )
+	   {
+		if  ( $path [0]  ==  '/' )
+			return ( $path ) ;
+		else
+			return ( $this -> Cwd . $path ) ;
+	    }
+	
+	
+	/**************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 ******                                     GENERAL UTILITY FUNCTIONS                                    ******
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************/
+
+	/*==============================================================================================================
+	
+	    SshPath -
+	        Builds an SSH path (using the ssh2.sftp:// handler).
+	
+	  ==============================================================================================================*/
+	public function  SshPath ( $path ) 
+	   {
+		if  ( $path  ==  '/' )
+			$path	=  '/.' ;
+		else if  ( $path [0]  ==  '/' )
+			$path	=  $this -> __get_path ( $path ) ;
+		else
+			$path	=  "/$path" ;
+		
+		$path	=  "ssh2.sftp://{$this -> SftpSession}$path" ;
+		
+		return ( $path ) ;
+	    }
+	
+	
+	/**************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 ******                                 FILESYSTEM CALLS HANDLERS                                        ******
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************/
+
+	// chdir - 
+	//	Changes current working directory (note that the notion of current working directory is emulated).
+	public function  chdir ( $path ) 
+	   {
+		$result		=  @ssh2_sftp_realpath (  $this -> SftpSession, $path ) ;
+		
+		if  ( ! $result )
+			error ( new SftpException ( "Cannot chdir() to \"$path\" : path does not exist" ) ) ;
+		
+		$old_cwd	=  String::SetEOS ( $this -> Cwd, '/' ) ;
+		$this -> Cwd	=  $this -> realpath ( $result ) ;
+		
+		return ( $old_cwd ) ;
+	    }
+
+	
+	// chmod -
+	//	Changes access mode for a remote file.
+	public function  chmod ( $remote_file, $mode )
+	   {
+		$status		=  @ssh2_sftp_chmod ( $this -> SftpSession, $this -> __get_path ( $remote_file ), $mode ) ;
+		
+		$this -> __check_error ( $status, $remote_file ) ;
+		
+		return ( $status ) ;
+	    }
+	
+	
+	// closedir -
+	//	Closes a directory that has been remotely opened.
+	public function  closedir ( $resource )
+	   {
+		closedir ( $resource ) ;
+	    }
+	
+	
+	// fclose -
+	//	Closes a file opened on the remote host.
+	public function  fclose ( $fp ) 
+	   {
+		$status		=  @fclose ( $fp ) ;
+		
+		$this -> __check_error ( $status ) ;
+		
+		return ( $status ) ;
+	    }
+	
+	
+	// fgets -
+	//	fgets() function, on a remote file.
+	public function  fgets ( $fp, $data, $length = null )
+	   {
+		return ( $this -> fread ( $fp, $length ) ) ;
+	    }
+
+	
+	// file -
+	//	Gets remote file contents, as an array of lines.
+	public function  file ( $filename, $flags = 0, $context = null )
+	   {
+		$data	=  file ( $this -> SshPath ( $filename ), $flags, $context ) ;
+		
+		$this -> __check_error ( $data, $filename ) ;
+		
+		return ( $data ) ;
+	    }
+	
+	
+	// file_exists -
+	//	Checks if the specified file exists on the remote host.
+	public function  file_exists ( $remote_file )
+	   {
+		$status		=  file_exists ( $this -> SshPath ( $remote_file ) ) ;
+		
+		return ( $status ) ;
+	    }
+	
+	
+	// file_get_contents -
+	//	Retrieves the contents of a remote file, using the ssh2.sftp wrapper.
+	//	Note that the $maxlen parameter is not used, since it gives empty results.
+	public function  file_get_contents ( $filename, $use_include_path = false, $context = null, $offset = -1 )
+	   {
+		$data		=  @file_get_contents ( $this -> SshPath ( $filename ), $use_include_path, $context, $offset ) ;
+		
+		$this -> __check_error ( $data, $filename ) ;
+		
+		return ( $data ) ;
+	    }
+	
+	
+	// file_put_contents -
+	//	Replaces the contents of a remote file, using the ssh2.sftp wrapper.
+	public function  file_put_contents ( $filename, $data, $flags = 0, $context = null )
+	   {
+		$data		=  @file_put_contents ( $this -> SshPath ( $filename ), $data, $flags, $context ) ;
+		
+		$this -> __check_error ( $data, $filename ) ;
+		
+		return ( $data ) ;
+	    }
+	
+	
+	// fopen -
+	//	Opens a file on the remote host.
+	public function  fopen ( $remote_file, $mode, $use_include_path = false, $context = false )
+	   {
+		if  ( $context ) 
+			$fp		=  @fopen ( $this -> SshPath ( $remote_file ), $mode, $use_include_path, $context ) ;
+		else 
+			$fp		=  @fopen ( $this -> SshPath ( $remote_file ), $mode, $use_include_path ) ;
+		
+		$this -> __check_error ( $fp ) ;
+		
+		return ( $fp ) ;
+	    }
+	
+	
+	// fpassthru -
+	//	Reads an already opened file until the end and returns its data.
+	public function  fpassthru ( $fp )
+	   {
+		$data		=  @fpassthru ( $fp ) ;
+		
+		$this -> __check_error ( $data ) ;
+		
+		return ( $data ) ;
+	    }
+	
+	
+	// fprintf -
+	//	fprintf() function, on a remote file.
+	public function  fprintf ( $fp, $format )
+	   {
+		$args	=  func_get_args ( ) ;
+		$status		=  call_user_func_array ( $args ) ;
+		
+		$this -> __check_error ( $status ) ;
+		
+		return ( $status ) ;
+	    }
+	
+	
+	// fputs -
+	//	fputs() function, on a remote file.
+	public function  fputs ( $fp, $data, $length = null )
+	   {
+		return ( $this -> fwrite ( $fp, $data, $length ) ) ;
+	    }
+	
+	
+	// fread -
+	//	fread() function, on a remote file.
+	public function  fread ( $fp, $length = null )
+	   {
+		$contents	=  @fwrite ( $fp, $length ) ;
+		
+		$this -> __check_error ( $contents ) ;
+		
+		return ( $contents ) ;
+	    }
+	
+	
+	// fseek -
+	//	Seeks on a remote file.
+	public function  fseek ( $fp, $offset, $whence = SEEK_SET )
+	   {
+		$status		=  @fseek ( $fp, $offset, $whence ) ;
+		
+		$this -> __check_error ( $status ) ;
+		
+		return ( $status ) ;
+	    }
+	
+	
+	// ftell -
+	//	Returns the current offset of  remote file.
+	public function  ftell ( $fp )
+	   {
+		$status		=  @ftell ( $fp ) ;
+		
+		$this -> __check_error ( $status ) ;
+		
+		return ( $status ) ;
+	    }
+	
+	
+	// fwrite -
+	//	fwrite() function, on a remote file.
+	public function  fwrite ( $fp, $data, $length = null )
+	   {
+		$status		=  @fwrite ( $fp, $data, $length ) ;
+		
+		$this -> __check_error ( $status ) ;
+		
+		return ( $status ) ;
+	    }
+	
+	
+	// getcwd -
+	//	Returns the current working directory, which is evaluated through the realpath() method upon connection.
+	public function  getcwd ( )
+	   {
+		return ( $this -> Cwd ) ;
+	    }
+	
+	
+	// gzclose -
+	//	Closes an opened gzipped file.
+	public function  gzclose ( $fp )
+	   {
+		$status		=  @gzclose ( $fp ) ;
+		
+		$this -> __check_error ( $status ) ;
+		
+		return ( $status ) ;
+	    }
+	
+	
+	// gzopen -
+	//	Opens a gzipped file.
+	public function  gzopen ( $remote_file, $mode, $use_include_path = false )
+	   {
+		// The gzopen() function is unable to cope with remote filenames ; so first use file_get_contents()
+		// to retrieve file contents and put it in the "volatile://" location
+		$contents	=  $this -> file_get_contents ( $remote_file, $use_include_path ) ;
+		$this -> __check_error ( $contents, $remote_file ) ;
+		
+		$filename	=  'volatile://' . basename ( $remote_file ) ;
+		$fp		=  fopen ( $filename, 'w' ) ;
+		fwrite ( $fp, $contents ) ;
+		fclose ( $fp ) ;
+		
+		// Then open the newly created file with gzopen() ; note that fopen() cannot be used here, since the gz
+		// functions expect handles created by gzopen()
+		$fp		=  gzopen ( $filename, $mode, $use_include_path ) ;
+		
+		return ( $fp ) ;
+	    }
+	
+	
+	// gzread -
+	//	gzread() function, on a remote file.
+	public function  gzread ( $fp, $length = null )
+	   {
+		if  ( $length  !==  null )
+			$contents	=  gzread ( $fp, $length ) ;
+		else
+		   {
+			$contents	=  '' ;
+			
+			while  ( $data = gzread ( $fp, 16384 ) )
+			   {
+				$this -> __check_error ( $data ) ;
+				$contents	.=  $data ;
+			    }
+		    }			
+
+		return ( $contents ) ;
+	    }
+		
+	
+	// is_dir -
+	//	Checks if the specified file exists on the remote host and is a directory.
+	public function  is_dir ( $remote_file )
+	   {
+		$status		=  is_dir ( $this -> SshPath ( $remote_file ) ) ;
+		
+		return ( $status ) ;
+	    }
+	
+	
+	// is_file -
+	//	Checks if the specified file exists on the remote host and is a plain file.
+	public function  is_file ( $remote_file )
+	   {
+		$status		=  is_file ( $this -> SshPath ( $remote_file ) ) ;
+		
+		return ( $status ) ;
+	    }
+	
+	
+	// lstat -
+	//	Stats a remote symbolic link target.
+	public function  lstat ( $remote_file )
+	   {
+		$result		=  @ssh2_sftp_lstat ( $this -> SftpSession, $this -> __get_path ( $remote_file ) ) ;
+		
+		$this -> __check_error ( $result, $remote_file ) ;
+		
+		return ( $result ) ;
+	    }
+	
+	
+	// mkdir -
+	//	Creates a directory on the remote host.
+	public function  mkdir ( $remote_directory, $mode = 0755, $recursive = false ) 
+	   {
+		$result		=  @ssh2_sftp_mkdir ( $this -> SftpSession, $this -> __get_path ( $remote_directory ), $mode, $recursive ) ;
+		
+		$this -> __check_error ( $result, $remote_directory ) ;
+		
+		return ( $result ) ;
+	    }
+	
+	
+	// opendir -
+	//	Opens a remote directory.
+	public function  opendir ( $path )
+	   {
+		$status		=  @opendir ( $this -> SshPath ( $path ) ) ;
+		
+		$this -> __check_error ( $status, $path ) ;
+		
+		return ( $status ) ;
+	    }
+	
+	
+	// readdir -
+	//	Reads the next directory entry.
+	public function  readdir ( $resource )
+	   {
+		$result		=  readdir ( $resource ) ;
+		
+		return ( $result ) ;
+	    }
+	
+	
+	// readlink -
+	//	Returns the target path of a symbolic link on the remote host.
+	public function  readlink ( $remote_file )
+	   {
+		$result		=  @ssh2_sftp_readlink ( $this -> SftpSession, $this -> __get_path ( $remote_file ) ) ;
+		
+		$this -> __check_error ( $result, $remote_file ) ;
+		
+		return ( $result ) ;
+	    }
+	
+	
+	// realpath -
+	//	Returns the real path of a file on the remote host.
+	public function  realpath ( $remote_file )
+	   {
+		$result		=  @ssh2_sftp_realpath ( $this -> SftpSession, $this -> __get_path ( $remote_file ) ) ;
+		
+		$this -> __check_error ( $result, $remote_file ) ;
+		
+		return ( $result ) ;
+	    }
+	
+	
+	// receive -
+	//	Receives a file from the remote server.
+	public function  receive ( $remote_file, $local_file )
+	   {
+		$status		=  @ssh2_scp_recv ( $this -> Session -> Connection -> GetResource ( ), $this -> __get_path ( $remote_file ), $local_file ) ;
+		
+		$this -> __check_error ( $status, $remote_file ) ;
+		
+		return ( $status ) ;
+	    }
+	
+	
+	// rename -
+	//	Renames a file on the remote host.
+	public function  rename ( $old_name, $new_name )
+	   {
+		$result		=  @ssh2_sftp_rename ( $this -> SftpSession, $this -> __get_path ( $old_name ), $this -> __get_path ( $new_name ) ) ;
+		
+		$this -> __check_error ( $result, $old_name ) ;
+		
+		return ( $result ) ;
+	    }
+
+	
+	// rewind -
+	//	Rewinds an already opened file on the remote server.
+	public function  rewind ( $fp )
+	   {
+		$status		=  @rewind ( $fp ) ;
+		
+		$this -> __check_error ( $status ) ;
+		
+		return ( $status ) ;
+	    }
+	
+	
+	// rmdir -
+	//	Removes a directory from the remote host.
+	public function  rmdir ( $remote_directory )
+	   {
+		$result		=  @ssh2_sftp_rmdir ( $this -> SftpSession, $this -> __get_path ( $remote_directory ) ) ;
+		
+		$this -> __check_error ( $result, $remote_directory ) ;
+		
+		return ( $result ) ;
+	    }
+	
+	
+	// send -
+	//	Sends a file to the remote server.
+	public function  send ( $local_file, $remote_file, $mode = 0644 )
+	   {
+		$status		=  @ssh2_scp_send ( $this -> Session -> Connection -> GetResource ( ), $local_file, 
+							$this -> __get_path ( $remote_file ), $mode ) ;
+		
+		$this -> __check_error ( $status, $local_file ) ;
+		
+		return ( $status ) ;
+	    }
+	
+	
+	// stat -
+	//	Stats a remote file.
+	public function  stat ( $remote_file )
+	   {
+		$result		=  @ssh2_sftp_stat ( $this -> SftpSession, $this -> __get_path ( $remote_file ) ) ;
+		
+		$this -> __check_error ( $result, $remote_file ) ;
+		
+		return ( $result ) ;
+	    }
+	
+	
+	// symlink -
+	//	Creates a symbolic link.
+	public function  symlink ( $file, $target )
+	   {
+		$result		=  ssh2_sftp_symlink ( $this -> SftpSession, $this -> __get_path ( $file ), $this -> __get_path ( $target ) ) ;
+		
+		$this -> __check_error ( $result, $file ) ;
+		
+		return ( $result ) ;
+	    }
+
+	
+	// unlink -
+	//	Deletes a file from the remote host.
+	public function  unlink ( $remote_file )
+	   {
+		$result		=  @ssh2_sftp_unlink ( $this -> SftpSession, $this -> __get_path ( $remote_file ) ) ;
+		
+		$this -> __check_error ( $result, $remote_file ) ;
+		
+		return ( $result ) ;
+	    }
+    }

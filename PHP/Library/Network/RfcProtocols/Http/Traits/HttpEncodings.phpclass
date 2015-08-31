@@ -1,0 +1,42 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        HttpEncodings.phpclass
+
+    DESCRIPTION
+        Provides a trait with a list of known http encoding methods.
+
+    AUTHOR
+        Christian Vigh, 05/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/05/30]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace  	Thrak\Network\RfcProtocols\Http\Traits ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+trait  HttpEncodings
+   {
+	// Official compression (encoding) methods - comment excerpts from Wikipedia
+	public static	$OfficialEncodings	=  
+	   [
+		'compress',		// UNIX "compress" program method (historic; deprecated in most applications and replaced by gzip or deflate)
+		'deflate',		// Compression based on the deflate algorithm (described in RFC 1951), wrapped inside the zlib data format (RFC 1950)
+		'exi',			// W3C Efficient XML Interchange
+		'gzip',			// GNU zip format (described in RFC 1952). 
+		'identity',		// No transformation is used. This is the default value for content coding.
+		'pack200-gzip',		// Network Transfer Format for Java Archives
+		'bzip2',		// Compression based on the free bzip2 format, supported by lighttpd
+		'lzma',			// Compression based on (raw) LZMA is available in Opera 20, and in elinks via a compile-time option
+		'peerdist',		// Microsoft Peer Content Caching and Retrieval
+		'sdch',			// Google Shared Dictionary Compression for HTTP, based on VCDIFF (RFC 3284); 
+					// supported natively in recent versions of Google Chrome, Chromium and Android, as well as on Google websites.
+		'xz'			// LZMA2-based content compression, supported by a non-official Firefox patch and fully implemented in mget
+	   
+	    ] ;
+    }

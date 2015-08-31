@@ -1,0 +1,22 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        JsTree.phpclass
+
+    DESCRIPTION
+        Base class for JsTree helper classes.
+
+    AUTHOR
+        Christian Vigh, 10/2014.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2014/10/26]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Javascript\JsTree ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use	Thrak\System\Object ;

@@ -1,0 +1,704 @@
+<?php
+/***************************************************************************************************
+
+    NAME
+	Debug.phpclass
+
+    DESCRIPTION
+	Debug helpers.
+
+    AUTHOR
+	Christian Vigh, 10/2012.
+
+    HISTORY
+    [Version : 1.0]		[Date : 2012/10/04]		[Author : CV]
+	Initial release.
+
+    [Version : 1.0.1]		[Date : 2014/07/28]		[Author : CV]
+	. In the __DumpThis() method, replaced an incorrect instanciation of ReflectionClass by
+	  ReflectionObject (dynamic properties were not shown by the dump() method).
+
+    [Version : 1.0.2]		[Date : 2014/10/13]		[Author : CV]
+	. Changed the __DumpThis() method not to dump contents of a class inheriting from a COM
+	  object, since it causes a Windows exception.
+ 
+    [Version : 1.0.3]		[Date : 2014/11/17]		[Author : CV]
+ 	. Changed the __DumpThis() method to display the resource id.
+ 
+    [Version : 1.0.4]		[Date : 2015/02/11]		[Author : CV]
+	. Added the lost-in-space Evaluate method, which came from Thrak 1.0 Runtime class.
+ 
+    [Version : 1.0.5]		[Date : 2015/03/19]		[Author : CV]
+	. Changed the __DumpThis() method to convert strings to code page 437 if running on Windows
+	  as a command-line script.
+ 
+    [Version : 1.0.6]		[Date : 2015/03/23]		[Author : CV]
+	. After revising Exception::__Error_Handler() to display errors only if the error_reporting()
+	  level is zero, checked the return value of iconv() if the input string is not really a
+	  string but a stream of bytes.
+ 
+    [Version : 1.0.7]		[Date : 2015/05/09]		[Author : CV]
+ 	. Changed the __DumpThis() method to handle classes that implement the __dump_debuginfo()
+ 	  method. This method, implemented by derived classes, must return an array which can contain
+ 	  the following items :
+ 	  'hidden' -
+ 		An array of property names that should not be displayed by Dump().
+ 	  'selected' -
+ 		An array which lists the only properties to display.
+ 	  'renamed' :
+ 		An associative array whose keys are property name and whose values are the real names
+ 		to be displayed.
+ 
+    [Version : 1.0.8]		[Date : 2015/05/28]		[Author : CV]
+ 	. Changed the __DumpAsHtml() method so that output is formatted, using a fixed-width font
+ 
+    [Version : 1.0.9]		[Date : 2015/06/17]		[Author : CV]
+	. Calling the dump() function from within an eval()'ed string caused warnings to be issued
+	  because no source file was available to scan the arguments passed to the dump() function.
+	  Corrected the Dump() method to provide standard parameter names of the form "arg#x".
+ 
+ ***************************************************************************************************/
+namespace 	Thrak\System ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces & objects
+use 		Thrak\System\Object 		as  Object ;
+use 		Thrak\System\DynamicObject 	as  DynamicObject ;
+use 		Thrak\Types\String		as  String ;
+use		Thrak\IO\Path			as  Path ;
+
+
+/*==================================================================================================
+
+    Debug class -
+	Debug helper utilities.
+
+  ==================================================================================================*/
+class  Debug		extends  Object
+   {
+	/*-------------------------------------------------------------------------------------------
+
+	    Dump -
+	    	Dumps a variable contents.
+
+	 --------------------------------------------------------------------------------------------*/
+   	public static function  Dump ( )
+   	   {
+   	   	// First of all, locate the file where the Dump() function was called
+   	   	$trace 		=  debug_backtrace ( 0 ) ;
+		$argv		=  func_get_args ( ) ;
+		$argc		=  count ( $argv ) ;
+
+   	   	if  ( count ( $trace )  >=  3  &&  $trace [2] [ 'function']  ==  'dump' )
+   	   		$index 	=  2 ;		// Called by dump() in functions.php
+   	   	else
+   	   		$index  =  1 ;		// Called by Debug::Dump()
+
+   	   	// We have the stack trace index of the caller ; locate the source line where the call was performed
+   	   	$source_line 	=  $trace [ $index ] [ 'line' ] - 1 ;
+   	   	$source_file   	=  $trace [ $index ] [ 'file' ] ;
+
+		if  ( strpos ( $source_file, "eval()'d code" )  ===  false )
+		   {
+   	   		$lines 		=  file ( $source_file ) ;
+   	   		$line 		=  $lines [ $source_line ] ;
+
+   	   		// Get from the caller source file the parameters that were specified
+   	   		$objects 	=  Debug::__DumpGetCallerParameters ( $line ) ;
+		    }
+		// When called from the eval() function, we cannot analyze source code, so build an artificial list of arg names
+		else
+		   {
+			$objects	=  [] ;
+
+			for  ( $i = 0 ; $i  <  $argc ; $i ++ )
+				$objects []	=  'arg#' . $i ;
+		    }
+
+   	   	// Loop through the variables to be dumped
+   	   	for  ( $i = 0 ; $i < $argc ; $i ++ )
+   	   	   {
+   	   	   	$title 		=  $objects [$i] ;
+   	   	   	$var 		=  $argv [$i] ;
+
+   	   	   	// The $output array will be filled with individual arrays containing the data to be displayed.
+   	   	   	// It can be seen as a guide for the DumpAsText and DumpAsHtml functions to properly display the
+   	   	   	// dumped data.
+   	   	   	// Each entry is an array than can have the following values :
+   	   	   	// - array ( "header-start" ) :
+   	   	   	//	Starts a header text (the variable name, as originally specified by the caller)
+   	   	   	// - array ( "header-end" ) :
+   	   	   	//	End of the header.
+   	   	   	// - array ( "type-start" ) :
+   	   	   	//	Starts the definition of an item type (for example : "(object)" or "(string[12])").
+   	   	   	// - array ( "type-end" ) :
+   	   	   	//	Ends a type definition.
+   	   	   	// - array ( "value-start", typename ) :
+   	   	   	//	Starts a value definition. "typename" provides information about the value's basic type.
+   	   	   	// - array ( "value-end" ) :
+   	   	   	//	Ends a value definition.
+   	   	   	// - array ( "nl" ) :
+   	   	   	//	Line break.
+   	   	   	// - array ( "string", value ) :
+   	   	   	//	Item value.
+   	   	   	// - array ( "indent", level ) :
+   	   	   	//	Specifies a new indentation level.
+   	   	   	//
+   	   	   	// The xxx-start and xxx-end entries are mainly used for html output ; they will not be used in
+   	   	   	// the text version (__DumpAsText).
+	   	   	$output 	=  array ( ) ;
+
+	   	   	$output []	=  array ( "header-start" ) ;
+	   	   	$output []	=  array ( "string", $title ) ;
+	   	   	$output []	=  array ( "header-end" ) ;
+	   	   	$output []	=  array ( "string", " = " ) ;
+
+	   	   	// Recursive dump of the specified object
+	   	   	Debug::__DumpThis ( $output, $var, array ( ), 0 ) ;
+
+	   	   	// Display the resulting data from the $output array
+	   	   	if  ( IS_STANDALONE )
+	   	   		Debug::__DumpAsText ( $output ) ;
+	   	   	else
+	   	   		Debug::__DumpAsHtml ( $output ) ;
+   	   	   }
+   	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    __DumpThis -
+	    	Recursively dumps a variable contents.
+
+	 --------------------------------------------------------------------------------------------*/
+	private static function  __DumpThis ( &$output, $var, $references, $indent_level )
+   	   {
+   	   	// Search and replacements strings used to properly display text strings.
+		static 	$string_searches	=  array ( "\\"  , "\""  , "\n" , "\r" , "\t"  ) ;
+		static  $string_replacements 	=  array ( "\\\\", "\\\"", "\\n", "\\r", "\\t" ) ;
+
+
+		// Boolean value
+   		if  ( is_bool ( $var ) )
+   		   {
+   			$output [] = array ( "type-start" ) ;
+   			$output [] = array ( "string", "(bool) " ) ;
+   			$output [] = array ( "type-end" ) ;
+   			$output [] = array ( "value-start",  "bool" ) ;
+   			$output [] = array ( "string", ( $var ) ? "true" : "false" ) ;
+   			$output [] = array ( "value-end" ) ;
+   		    }
+   		// Integer value
+   		else if  ( is_integer ( $var ) )
+   		   {
+   			$output [] = array ( "type-start" ) ;
+   			$output [] = array ( "string", "(int) " ) ;
+   			$output [] = array ( "type-end" ) ;
+   			$output [] = array ( "value-start",  "int" ) ;
+   			$output [] = array ( "string", $var ) ;
+   			$output [] = array ( "value-end" ) ;
+   		    }
+   		// Float value
+   		else if  ( is_float ( $var ) )
+   		   {
+   			$output [] = array ( "type-start" ) ;
+   			$output [] = array ( "string", "(float) " ) ;
+   			$output [] = array ( "type-end" ) ;
+   			$output [] = array ( "value-start",  "float" ) ;
+   			$output [] = array ( "string", $var ) ;
+   			$output [] = array ( "value-end" ) ;
+   		    }
+   		// String value
+   		// (replace control characters with their escaped equivalent)
+   		else if  ( is_string ( $var ) )
+   		   {
+			if  ( IS_WINDOWS  &&  IS_CLI )
+			   {
+				$str = @iconv ( 'ISO-8859-1', 'CP437', $var ) ;
+				
+				if  ( $str  !==  false )
+					$var	=  $str ;
+			    }
+			
+   		   	$var = str_replace ( $string_searches, $string_replacements, $var ) ;
+			$length = strlen ( $var ) ;
+
+   			$output [] = array ( "type-start" ) ;
+   			$output [] = array ( "string", "(string[$length]) " ) ;
+   			$output [] = array ( "type-end" ) ;
+   			$output [] = array ( "value-start",  "string" ) ;
+   			$output [] = array ( "string", '"' . $var . '"' ) ;
+   			$output [] = array ( "value-end" ) ;
+   		    }
+   		// Resource value
+   		else if  ( is_resource ( $var ) )
+   		   {
+   			$output [] = array ( "type-start" ) ;
+   			$output [] = array ( "string", "(resource) " ) ;
+   			$output [] = array ( "type-end" ) ;
+   			$output [] = array ( "value-start",  "string" ) ;
+   			$output [] = array ( "string", get_resource_type ( $var ) . " id #" . intval ( $var ) ) ;
+   			$output [] = array ( "value-end" ) ;
+   		   }
+   		// Null value : cannot determine any type
+		else if  ( is_null ( $var ) )
+   		   {
+   			$output [] = array ( "value-start",  "null" ) ;
+   			$output [] = array ( "string", "null" ) ;
+   			$output [] = array ( "value-end" ) ;
+   		    }
+   		// Function closure
+   		else if ( is_object ( $var )  &&  get_class ( $var )  ==  'Closure' )
+   		   {
+   			$output [] = array ( "type-start" ) ;
+   			$output [] = array ( "string", "(closure/function)" ) ;
+   			$output [] = array ( "type-end" ) ;
+   		    }
+   		// Array value : recursively dump array contents
+   		else if ( is_array ( $var ) )
+   		   {
+   		   	$count = count ( $var ) ;
+
+   		   	// Will display "array [x] {"
+   			$output [] = array ( "value-start",  "null" ) ;
+   			$output [] = array ( "string", "array[$count]" ) ;
+   			$output [] = array ( "value-end" ) ;
+   			$output [] = array ( "nl" ) ;
+   			$output [] = array ( "string", "   {" ) ;
+   			$output [] = array ( "nl" ) ;
+
+   			// One more indentation level
+   			$indent_level ++ ;
+   			$output [] = array ( "indent", $indent_level ) ;
+
+   			// Loop through each array item to recursively display its contents
+   			foreach  ( $var  as  $key => $value )
+   			   {
+				if  ( is_numeric ( $key ) )
+					$output [] = array ( "string", "[$key] => " ) ;
+				else
+					$output [] = array ( "string", "[\"$key\"] => " ) ;
+
+				Debug::__DumpThis ( $output, $value, $references, $indent_level ) ;
+   			    }
+
+   			// One indentation level less
+   			$indent_level -- ;
+   			$output [] = array ( "indent", $indent_level ) ;
+
+   			// Will display the closing brace for array contents
+   			$output [] = array ( "string", "    }" ) ;
+   		    }
+   		// Object value : need a little bit more processing...
+   		else if  ( is_object ( $var ) )
+   		   {
+   		   	// Get object class name
+   		   	$class 		=  get_class ( $var ) ;
+
+   		   	// Search if this object has already been processed
+   		   	foreach  ( $references   as  $reference )
+   		   	   {
+   		   	   	// Yes, this means that trying to display this particular item's contents would mean to
+   		   	   	// infinite recursion, so ensure a summary will be displayed then exit
+   		   		if  ( $reference  ===  $var )
+   		   		   {
+   		   		   	$output []	=  array ( "type-start" ) ;
+   		   		   	$output []	=  array ( "string", "(object) " ) ;
+   		   		   	$output []	=  array ( "type-end" ) ;
+   		   		   	$output []	=  array ( "value-start", "object" ) ;
+   		   		   	$output []	=  array ( "string", "$class  *** recursion ***" ) ;
+   		   		   	$output []	=  array ( "value-end" ) ;
+   		   		   	$output []	=  array ( "nl" ) ;
+
+   		   		   	return ;
+   		   		    }
+   		   	    }
+
+   		   	// Start object declaration
+      		   	$output []	=  array ( "type-start" ) ;
+      		   	$output []	=  array ( "string", "(object) " ) ;
+      		   	$output []	=  array ( "type-end" ) ;
+      		   	$output []	=  array ( "value-start", "object" ) ;
+      		   	$output []	=  array ( "string", "$class" ) ;
+      		   	$output []	=  array ( "value-end" ) ;
+      		   	$output []	=  array ( "nl" ) ;
+      		   	$output []	=  array ( "string", "   {" ) ;
+      		   	$output []	=  array ( "nl" ) ;
+
+			// NEVER try to dump a COM object ! segmentation fault guaranteed
+			if  ( $var  instanceof  \COM )
+			   {
+	   			$output []	=  array ( "indent", $indent_level + 1 ) ;
+				$output []	=  array ( "string", "*** COM object ***" ) ;
+	   			$output []	=  array ( "indent", $indent_level ) ;
+	      		   	$output []	=  array ( "nl" ) ;
+   				$output []	=  array ( "string", "    }" ) ;
+	      		   	$output []	=  array ( "nl" ) ;
+				   
+				return ;
+			    }
+
+			// Constants and properties are at the next indentation level
+   			$indent_level ++ ;
+   			$output [] = array ( "indent", $indent_level ) ;
+
+   			// Get a reflection object that points to this class
+   			$references [] 	=  $var ;
+   		   	$reflection 	=  new  \ReflectionObject ( $var ) ;
+   		   	$need_nl 	=  false ;
+
+			// Check if we have a Dynamic object
+			$dynamic_object	=  $var instanceof DynamicObject ;
+			
+   		   	// Display constants, but only for non-dynamic objects
+			if  ( ! $dynamic_object ) 
+			   {
+   		   		$constants 	=  $reflection -> getConstants ( ) ;
+			      
+   		   		foreach  ( $constants  as  $name => $value )
+   		   		   {
+   		   	   		if  ( is_string ( $value ) )
+   		   	   			$value = '"' . str_replace ( $string_searches, $string_replacements, $value ) . '"' ;
+
+   		   	   		$name 		=  sprintf ( "%-32s", $name ) ;
+   		   			$output [] 	=  array ( "string", "const  $name  =  $value ;" ) ;
+   		   			$output []	=  array ( "nl" ) ;
+   		   			$need_nl 	=  true ;
+   		   		    }
+			    }
+
+   		   	// Get all object properties
+   		   	$properties 	=  $reflection -> getProperties ( ) ;
+
+   		   	// Cosmetics : arrange for an empty line between object constants and properties
+   		   	if  ( $need_nl  &&  count ( $properties ) )
+   		   	   {
+				$output [] 	=  array ( "nl" ) ;
+				$need_nl 	=  false ;
+   		   	    }
+
+			// Get customized properties display options
+			$hidden_properties	=  [] ;
+			$renamed_properties	=  [] ;
+			$selected_properties	=  [] ;
+			$class			=  get_class ( $var ) ;
+			
+			do
+			   {
+				if  ( method_exists ( $class, '__dump_debuginfo' ) )
+				   {
+					$parent_debuginfo	=  $class::__dump_debuginfo ( ) ;
+					
+					if  ( ! $parent_debuginfo )
+						$parent_debuginfo	=  [] ;
+					
+					if  ( isset ( $parent_debuginfo [ 'hidden' ] ) )
+					   {
+						foreach  ( $parent_debuginfo [ 'hidden' ]  as  $hidden )
+						   {
+							if  ( ! in_array ( $hidden, $hidden_properties ) )
+								$hidden_properties []	=  $hidden ;
+						    }
+					    }
+					
+					if  ( isset ( $parent_debuginfo [ 'selected' ] ) )
+					   {
+						foreach  ( $parent_debuginfo [ 'selected' ]  as  $selected )
+						   {
+							if  ( ! in_array ( $selected, $selected_properties ) )
+								$selected_properties []	=  $selected ;
+						    }
+					    }
+					
+					if  ( isset ( $parent_debuginfo [ 'renamed' ] ) )
+					   {
+						foreach  ( $parent_debuginfo [ 'renamed' ]  as  $old_name => $new_name )
+							$renamed_properties [ $old_name ]	=  $new_name ;
+					    }
+				    }
+
+				$old_class		=  $class ;
+				$class			=  get_parent_class ( $class ) ;
+				
+			    }  while  ( $class  &&  $old_class  !=  $class ) ;
+			
+   		   	// Display properties ; hide non-public properties for DynamicObjects
+   		   	foreach  ( $properties  as  $property )
+   		   	   {
+				$property_name	=  $property -> getName ( ) ;
+				
+				// Ignore hidden properties
+				if  ( in_array ( $property_name, $hidden_properties ) )
+					continue ;
+				
+				// Keep only selected properties, if present
+				if  ( count ( $selected_properties )  &&  ! in_array ( $property_name, $selected_properties ) )
+					continue ;
+				
+				// Check if property needs to be renamed before displaying
+				if  ( isset ( $renamed_properties [ $property_name ] ) )
+					$property_name	=  $renamed_properties [ $property_name ] ;
+				else 
+					$property_name  =  '$'. $property_name ;
+				
+				// Keep only public nonstatic properties for dynamic objects
+				if  ( $dynamic_object  &&  ( ! $property -> isPublic ( )  ||  $property -> isStatic ( ) ) )
+					continue ;
+					
+				$modifiers 	=  array ( ) ;
+				$need_nl 	=  true ;
+
+				if  ( $property -> isStatic ( ) )
+					$modifiers [] 	=  "static" ;
+
+				if  ( $property -> isPublic ( ) )
+					$modifiers [] 	=  "public" ;
+
+				if  ( $property -> isProtected ( ) )
+					$modifiers [] 	=  "protected" ;
+
+				if  ( $property -> isPrivate ( ) )
+					$modifiers []	=  "private" ;
+
+				$modifier_string 	=  sprintf ( "%-20s", implode ( ' ', $modifiers ) ) ;
+				$pname 			=  sprintf ( "%-32s", $property_name ) ;
+				$output []		=  array ( "string", "$modifier_string $pname = " ) ;
+
+				// Get the property value. Since we want to display the protected and private properties,
+				// we have to make them accessible
+				$property -> setAccessible ( true ) ;
+				$value 			=  $property -> getValue ( $var ) ;
+
+				// Recursively dump the property value
+				Debug::__DumpThis ( $output, $value, $references, $indent_level ) ;
+   		   	    }
+
+   		   	// Previous indent level
+   			$indent_level -- ;
+   			$output [] = array ( "indent", $indent_level ) ;
+
+   			// Close the object definition
+   			$output [] = array ( "string", "    }" ) ;
+   		   }
+   		// Unknown object type
+   		else
+   		   {
+   			$output [] = array ( "type-start" ) ;
+   			$output [] = array ( "string", "*** unknown ***" ) ;
+   			$output [] = array ( "type-end" ) ;
+   		    }
+
+		// End the last line with a newline
+   		$output [] = array ( "nl" ) ;
+   	   }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    __DumpAsText -
+	    	Displays dumped data using the array entries filled by the __DumpThis function in the
+	    	$output array.
+	    	Output is pure text.
+
+	 --------------------------------------------------------------------------------------------*/
+   	   private static function  __DumpAsText ( $output )
+   	   {
+   	   	static $indent 		=  "" ;
+   	   	static $nl		=  false ;
+
+   	   	// Loop through display items
+   		foreach  ( $output  as  $item )
+   		   {
+   		   	// Only process the string, nl and indent entries
+   			switch ( $item [0] )
+   			   {
+   			   	case 	'string' :
+   			   		// A small trick just not to display the $indent string after the very last line of output
+   			   		if  ( $nl )
+   			   		   {
+   			   			$nl = false ;
+   			   			echo $indent ;
+   			   		    }
+
+   			   		echo $item [1] ;
+   			   		break ;
+
+   			   	case 	'nl' :
+   			   		echo "\n" ;
+   			   		$nl = true ;
+   			   		break ;
+
+   			   	case 	'indent' :
+   			   		$indent = str_repeat ( " ", $item [1]  * 8 ) ;
+   			   		break ;
+   			    }
+   		    }
+   	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    __DumpAsHtml -
+	    	Displays dumped data using the array entries filled by the __DumpThis function in the
+	    	$output array.
+	    	Output is Html code.
+
+	 --------------------------------------------------------------------------------------------*/
+   	    private static function  __DumpAsHtml ( $output )
+   	   {
+  	   	static $indent 		=  "" ;
+   	   	static $nl		=  false ;
+
+		echo "<pre><code>" ;
+
+		// Loop through display items
+   	   	foreach  ( $output  as  $item )
+   		   {
+   			switch ( $item [0] )
+   			   {
+   			   	case 	'string' :
+   			   		// A small trick just not to display the $indent string after the very last line of output
+   			   		if  ( $nl )
+   			   		   {
+   			   			$nl = false ;
+   			   			echo $indent ;
+   			   		    }
+
+   			   		echo $item [1] ;
+   			   		break ;
+
+   			   	case 	'nl' :
+   			   		echo "<br/>" ;
+   			   		$nl = true ;
+   			   		break ;
+
+   			   	case 	'indent' :
+   			   		$indent = str_repeat ( "&nbsp;", $item [1]  * 8 ) ;
+   			   		break ;
+
+   			    }
+   		    }
+
+		echo "</code></pre>" ;
+   	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    __DumpGetCallerParameters -
+	    	Retrieves the caller parameters, as they were specified in the source file that called
+	    	the dump() or Debug::Dump() function.
+
+	 --------------------------------------------------------------------------------------------*/
+   	private static function  __DumpGetCallerParameters ( $sourceline )
+   	   {
+   		$tokens 	=  token_get_all ( "<?php $sourceline ?>" ) ;		// Parsed source line
+   		$token_count 	=  count ( $tokens ) ;
+   		$result 	=  array ( ) ;						// Will hold the caller parameters
+		$start_index	=  0 ;
+		$end_index 	=  0 ;
+		$collected 	=  "" ;
+		$nesting 	=  0 ;
+
+
+		// To simplify parsing of such an expression :
+		//
+		//	dump ( $Configuration, $bool, $int, $str, "coucou", 'c', 2 * 18, array ( 1, 2, 3 ), $int * 7 ) ;
+		//
+		// we will first locate the opening parenthesis (before the "$Configuration" variable in the above example)
+		// then the very last closing parenthesis (before the semicolon).
+		// This will result in a sequence of tokens containing the following sub-expression :
+		//
+		//	" $Configuration, $bool, $int, $str, "coucou", 'c', 2 * 18, array ( 1, 2, 3 ), $int * 7 )"
+		//
+		// To simplify the parsing process, we will put an end marker (',') instead of the very last closing
+		// parenthesis. That way, for the whole sub-expression, we can safely consider that a parameter has been
+		// parsed once a comma has been encountered, and we are sure that all parameters are followed by a comma.
+		for  ( $i = 0 ; $i  <  $token_count ; $i ++ )
+		   {
+			if  ( ! is_array ( $tokens [$i] )  &&  $tokens [$i]  ==  '(' )
+			   {
+				$start_index 	=  $i + 1 ;
+				break ;
+			    }
+		    }
+
+		for  ( $i = $token_count - 1 ; $i >= 0 ; $i -- )
+		   {
+			if  ( ! is_array ( $tokens [$i] )  &&  $tokens [$i]  ==  ')' )
+			   {
+				$tokens [$i] 	=  ',' ;	// End marker
+				$end_index 	=  $i ;
+				break ;
+			    }
+		    }
+
+		// Loop through the expression inside the dump() function call
+		for  ( $i  =  $start_index ; $i  <=  $end_index ; $i ++ )
+		   {
+		   	// Every token that is an array can safely be collected to form the original expression
+			if  ( is_array ( $tokens [$i] ) )
+				$collected 	.=  $tokens [$i] [1] ;
+			// When not an array (in the case of parentheses or commas, for example) we need to consider
+			// special cases
+			else
+			   {
+			   	// Opening or closing parentheses : this may be the start or end of an array or
+			   	// grouped expression. Commas inside those delimiters are to be collected, not treated
+			   	// as a parameter separator
+			   	if  ( $tokens [$i]  ==  '(' )
+			   	   {
+			   		$nesting ++ ;
+			   		$collected .= '(' ;
+			   	    }
+			   	else if  ( $tokens [$i]  ==  ')' )
+			   	   {
+			   		$nesting -- ;
+			   		$collected .= ')' ;
+			   	    }
+			   	// Comma outside parentheses : add the tokens collected so far to the result array
+				else if  ( ! $nesting  &&  $tokens [$i]  ==  ',' )
+				   {
+					$result [] 	=  trim ( $collected ) ;
+					$collected 	=  "" ;
+				    }
+				// Other cases of non-array tokens : simply add them to the collected token
+				else
+					$collected .= $tokens [$i] ;
+			    }
+		    }
+
+		// All done, return
+   		return ( $result ) ;
+   	    }
+	   
+	   
+	/*-------------------------------------------------------------------------------------------
+
+	    Evaluate -
+	    	Tries to evaluate a PHP expression and returns its value.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  Evaluate ( $expr )
+	   {
+		$new_exp	=  "global \$value ; \$value = $expr ;" ;
+		ob_start ( ) ;
+		$result		=  @eval ( $new_exp ) ;
+		
+		if  ( $result  ===  false )
+			error ( new \Thrak\System\RuntimeException ( "EValuate: bad expression \"$expr\"." ) ) ;
+		
+		$errors		=  ob_get_clean ( ) ;
+		
+		if  ( $errors )
+			$errors		=  explode ( "\n", str_replace ( "\r", '', $errors ) ) ;
+		else
+			$errors		=  [] ;
+		
+		$result		=   [ 'errors' => $errors, 'value' => $value ] ;
+		
+		unset ( $value ) ;
+		return ( $result ) ;
+	    }
+    }

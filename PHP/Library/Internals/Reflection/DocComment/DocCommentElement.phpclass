@@ -1,0 +1,193 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        DocCommentElement.phpclass
+
+    DESCRIPTION
+        An abstract class to implement annotations and attributes in docComments.
+
+    AUTHOR
+        Christian Vigh, 11/2014.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2014/11/09]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Reflection ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use  	Thrak\System\Object ;
+use	Thrak\Types\AssociativeArray ;
+use	Thrak\Types\String ;
+use	Thrak\Types\String\Convert ;
+
+
+/*==============================================================================================================
+
+    DocCommentElement -
+        Implements an abstract document element.
+
+  ==============================================================================================================*/
+abstract class	DocCommentElement	extends		Object 
+					implements	\ArrayAccess, \Countable, \IteratorAggregate
+   {
+	// Element name
+	protected	$Name ;
+	// Element parameters 
+	protected	$Parameters ;
+	
+	
+	/*==============================================================================================================
+	
+	    Constructor -
+	        Builds a DocCommentElement object.
+	
+	  ==============================================================================================================*/
+	public function  __construct ( $name, $params_array )
+	   {
+		parent::__construct ( ) ;
+		
+		$this -> Name		=  $name ;
+		$this -> Parameters	=  new  AssociativeArray ( ) ;
+		
+		foreach  ( $params_array  as  $pname => $pvalue )
+		   {
+			$pname	=  Convert::ToPHPName ( $pname ) ;
+			$valid	=  $this -> IsValid ( $pname, $pvalue ) ;
+			
+			if  ( $valid  ===  true )
+				$this -> Parameters [ $pname ]	=  $pvalue ;
+			else if  ( $valid  ===  false )
+				error ( new \Thrak\System\InvalidArgumentException ( "Invalid value \"$pvalue\" for parameter $pname." ) ) ;
+			else
+				error ( new \Thrak\System\InvalidArgumentException ( $valid ) ) ;
+		    }
+	    }
+	
+
+	/*==============================================================================================================
+	
+	    __get, __set -
+	        Give access to parameter array elements as if it were properties.
+	
+	  ==============================================================================================================*/
+	public function  __get ( $member ) 
+	   {
+		if  ( isset ( $this -> Parameters [ $member ] ) )
+			return ( $this -> Parameters [ $member ] ) ;
+		else
+			error ( new \Thrak\System\BadMethodCallException ( "Undefined property " . get_called_class ( ) . "::$member." ) ) ;
+	    }
+	
+	
+	public function  __set ( $member, $value )
+	   {
+		if  ( isset ( $this -> Parameters [ $member ] ) )
+			$this -> Parameters [ $member ]		=  $value ;
+		else
+			error ( new \Thrak\System\BadMethodCallException ( "Undefined property " . get_called_class ( ) . "::$member." ) ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    __call -
+	        In conjunction with the IsValid() method, calls a potential "IsxxxValid" method implemented in a dreived
+		class.
+	
+	  ==============================================================================================================*/
+	private		$__called_from_isvalid		=  false ;
+	
+	public function  __call ( $member, $args )
+	   {
+		$class	=  get_called_class ( ) ;
+		
+		// Do the job only if called from the IsValid() method
+		if  ( $this -> __called_from_isvalid )
+		   {
+			// Check if the "IsxxxValid" method exists
+			if  ( method_exists ( $class, $member ) )
+			   {
+				if  ( ! $args ) 
+					$args	=  [] ;
+				
+				$elements	=  call_user_func_array ( [ $class, $member ], $args ) ;
+				
+				return ( $elements ) ;
+			    }
+			// If method is inexistent, then we our validation job is over : say it's ok
+			else
+				return ( true ) ;
+		    }
+		else
+			error ( new \Thrak\System\BadMethodCallException ( "Undefined method $class::$member()" ) ) ;
+	    }
+	
+
+	/*==============================================================================================================
+	
+	    GetName -
+	        Returns the name of this docComment element.
+	
+	  ==============================================================================================================*/
+	public function  GetName ( )
+	   { return ( $this -> Name ) ; }
+	
+	
+	/*==============================================================================================================
+	
+	    IsValid -
+	        Checks if a parameter is valid. If the derived class has a 'IsxxxValid' method, this one will be called.
+	
+	  ==============================================================================================================*/
+	protected function  IsValid ( $pname, $pvalue ) 
+	   {
+		$pname				=  ucfirst ( $pname ) ;
+		$validator			=  "Is{$pname}Valid" ;
+		
+		$this -> __called_from_isvalid	=  true ;
+		$result				=  $this -> $validator ( $pname, $pvalue ) ;
+		$this -> __called_from_isvalid	=  false ;
+		
+		return ( $result ) ;
+	    }
+
+
+	/*==============================================================================================================
+	
+	    __tostring -
+	        Returns the string representation of the element (its name).
+	
+	  ==============================================================================================================*/
+	public function  __tostring ( )
+	   {
+		return  ( $this -> Name ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+		ArrayAccess, Countable & IteratorAggregate interfaces implementation.
+	
+	  ==============================================================================================================*/
+	public function  Count ( )
+	   { return ( count ( $this -> Parameters ) ) ; }
+	
+	public function  getIterator ( )
+	   { return ( $this -> Parameters -> getIterator ( ) ) ; }
+	
+	public function  offsetExists ( $offset )
+	   { return ( $this -> Parameters -> offsetExists ( $offset ) ) ; }
+	
+	public function  offsetGet ( $offset )
+	   { return ( $this -> Parameters -> offsetGet ( $offset ) ) ; }
+	
+	public function  offsetSet ( $offset, $value )
+	   { $this -> Parameters -> offsetSet ( $offset, $value ) ; }
+	
+	public function  offsetUnset ( $offset )
+	   { $this -> Parameters -> offsetUnset ( $offset ) ; }
+    }

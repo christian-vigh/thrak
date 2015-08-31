@@ -1,0 +1,1707 @@
+<?php
+/***************************************************************************************************
+
+    NAME
+	Lexer.phpclass
+
+    DESCRIPTION
+	Lexical analyzer generator class.
+
+    AUTHOR
+	Christian Vigh, 10/2012.
+
+    HISTORY
+    [Version : 1.0]		[Date : 2012/10/10]		[Author : CV]
+	Initial release.
+
+ ***************************************************************************************************/
+namespace 	Thrak\Processors\Lexer ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces & objects
+use 		Thrak\System\Object 			as  Object ;
+use 		Thrak\System\Exception 			as  Exception ;
+use 		Thrak\Types\String			as  String ;
+use		Thrak\IO\Path				as  Path ;
+use 		Thrak\Internet\Xml\Utilities		as  XmlUtilities ;
+use 		Thrak\Processors\PPP			as  PPP ;
+
+
+// Internally used for token replacement
+define ( 'LEX_REPLACE_ASIS'		, 0 ) ;		// Replaces the token as is
+define ( 'LEX_REPLACE_COMMENT'		, 1 ) ;		// Replaces a "/* xxx */" construct
+define ( 'LEX_REPLACE_AND_EAT'		, 2 ) ;		// Same, but eats the symbol after the comment
+							// This trick is used to have a syntactically correct lexer template
+
+
+/*==================================================================================================
+
+    Lexer class -
+	A lexical analyzer generator class.
+	The Lexer class takes a lexical definitions file and uses a template (given by the
+	LEXER_TEMPLATE constant) to produce a lexical analyzer based on the lexical definitions file.
+	The Lexer has to be created with the new() operator ; it generates a parser class than can
+	be instanciated with the CreateClass function. This class will provide methods to parse
+	files that contain lexical elements defined by the lexical definitions file.
+
+	Lexical definitions file
+	------------------------
+	A lexical definitions file is a file containing a set of Lexer directives that may be
+	interspersed with PHP code. During the Lexer object construction, those directives and PHP
+	code fragments are inserted into the LEXER_TEMPLATE file to generate the final code that
+	will be used to instanciate the lexical analyzer class.
+
+	Lexical definitions
+	-------------------
+	Lexical definitions are keywords that start with the percent sign ("%") and that can have a
+	list of xml-like attributes (name="value" pairs) followed by an optional body enclosed in curly
+	braces. Not all lexical definitions can have a body. Note that some definitions are simply
+	notational shortcuts that avoid writing more or less complex regular expressions.
+
+	The following definitions are currently handled :
+
+	- %options attributes (or %option) :
+		Provides a way of setting general parameters that condition the behavior of the
+		generated lexical analyzer along with some of its parameters. The following is a
+		list of authorized attributes :
+
+		- case-sensitive="boolean" :
+			When case-sensitive="true", all regular expressions specified in the
+			lexical definitions file will be appended the preg_match() option that
+			consider the string matching to be case insensitive.
+
+		- classname="name" (or class="name") :
+			Class name of the generated lexical analyzer.
+			An error will be generated if the class name is not a valid PHP name or
+			already exists.
+			The default name is : "LexicalAnalyzer".
+
+		- comment="string" :
+			Optional comment to be put in the generated PHP code to describe the lexical
+			analyzer class.
+
+		- identifier="regex" :
+			Gives a regular expression that allows to isolate identifiers in the input
+			stream. Although identifier regexes can be specified in the %rules section,
+			it becomes mandatory to specify a generic regex to recognize identifiers
+			when you have a %keywords section in your lexical definitions file.
+			When an identifier has been matched in the input stream, the lexical
+			analyzer returns STD_TOKEN_IDENTIFIER.
+
+		- want-spaces="boolean" :
+			When false, the lexical analyzer will never return the STD_TOKEN_SPACE token :
+			Spaces will be ignored.
+			When true (the default), every space (including newlines and other special
+			characters) is returned as a STD_TOKEN_SPACE token.
+
+		- want-comments="boolean" :
+			When false, the lexical analyzer will never return the STD_TOKEN_COMMENT token :
+			Comments will be ignored.
+			When true (the default), every comment is returned as a STD_TOKEN_COMMENT token.
+
+		- want-unknown-tokens="boolean" :
+			When false, unrecognized tokens are returned as a STD_TOKEN_UNKNOWN token.
+			When true (the default), unrecognized tokens generate an exception.
+
+		- want-line-directives="boolean" :
+			When false (the default), #line directives are processed but never returned.
+			When true, #line directives are processed and a token of type
+			STD_TOKEN_LINE_DIRECTIVE is returned.
+
+		- namespace="name" :
+			You can specify an optional namespace to contain your lexical analyzer class.
+
+		- token-prefix="string" (or prefix="string") :
+			Default string to be prepended to token names. If not specified, tokens will
+			not have a prefix string.
+
+	- %comment multiline="boolean" start="string" stop=string"
+		Allows to specify the format of comments within the input stream, without having to
+		specify complex regular expressions.
+		The following attributes are recognized :
+
+		- multiline="boolean" :
+			When true, the comment is a multiline comment. In this case, the "start" and
+			"stop" attributes are mandatory.
+			A typical %comment directive for a C-style multiline comment would be :
+
+				%comment multiline="true" start="/ *" stop="* /
+
+			When false, the comment is a single-line comment, as for a C++ comment in the
+			example below :
+
+				%comment multiline="false" start="//"
+
+			Note that the "stop" attribute is forbidden in this case.
+
+		- start="string" :
+			String used to start a comment. Regular expressions are not handled here.
+
+		- stop="string" :
+			String used to end a comment. This parameter must not be specified if the
+			comment is a single-line comment.
+
+	- %string delimiter="string" escape="char" token-identifier="name" :
+		Allows to specify the format of string values, without having to specify complex
+		regular expressions.
+		The following attributes are recognized :
+
+		- delimiter="string" :
+			Character or sequence of characters used to delimit a string in the input
+			stream.
+
+		- escape="char" :
+			Escape character or sequence of characters to specify when the string
+			delimiter mut be used within a string.
+
+		- token-identifier="name" :
+			Optional token identifier to be returned. If not specified, the token will
+			have the value STD_TOKEN_STRING.
+
+		Example for a C-style string :
+
+			%string delimiter='"' escape="\"
+
+	- %block name="string" start="string" stop="string" allow-nesting="boolean" :
+		Specifies a compound block whose contents are to be uninterpreted.
+		The following attributes are recognized :
+
+		- name="string" (or token="string") :
+			Indicates the value of the token to be returned for that type of block.
+			If not specified, the default value of STD_TOKEN_BLOCK will be used.
+
+		- start="string" :
+			Indicates the string that starts a block.
+
+		- stop="string" :
+			String that ends a block.
+
+		- allow-nesting="boolean" (or nesting="boolean") :
+			When true, nested contents can contain the strings specified for the 'start'
+			and 'stop' attributes.
+			Blocks of PHP code could for example be declared as :
+
+				%block start="{" stop="}" allow-nesting="true"
+
+			whereas a PHP source file could be declared as :
+
+				%block start="<?php" stop="?>" allow-nesting="false"
+
+			Note that within a compound block, standard PHP comments are interpreted only
+			if the allow-nesting attribute is set to true (this behavior is meant to correctly
+			track the nesting level of start and stop strings).
+
+	- %keywords { } (or "%keyword") :
+		A compound statement that allows for easily defining keywords without specifying
+		additional definitions in the %rules section. Each keyword must be declared as is
+		within the curly braces, without any separator character, such as in the following
+		example, which defines the "CREATE", "INSERT" and "DELETE" keywords :
+
+		 	%keywords
+		 	   {
+		 	   	CREATE INSERT DELETE
+		 	    }
+
+		The following constants will be generated in the lexical analyzer class (assuming
+		this is the first %keywords or %tokens definition in your file) :
+
+		const  CREATE 		=  0 ;
+		const  INSERT		=  1 ;
+		const  DELETE		=  2 ;
+
+		You can also specify the following attributes for the %keywords directive :
+
+		- token-prefix="string" (or prefix="string") :
+			String to be prepended to the generated token names. For example :
+
+		 	%keywords token-prefix="TOKEN_KEYWORD_"
+		 	   {
+		 	   	CREATE INSERT DELETE
+		 	    }
+
+			will generate the following constants :
+
+			const  TOKEN_KEYWORD_CREATE 		=  0 ;
+			const  TOKEN_KEYWORD_INSERT		=  1 ;
+			const  TOKEN_KEYWORD_DELETE		=  2 ;
+
+		Multiple %keywords definitions can be specified within the same file.
+
+	- %tokens { } (or "%token") :
+		This directive is very similar to the %keywords directive and accepts the same
+		attributes. The only difference is that it allows you to specify a regular expression
+		to be associated with each token. The above %keywords example could be rewritten
+		into :
+
+		 	%tokens token-prefix="TOKEN_KEYWORD_"
+		 	   {
+		 	   	CREATE		=  "/CREATE/"
+		 	   	INSERT 		=  "/INSERT/"
+		 	   	DELETE		=  "/DELETE/"
+		 	    }
+
+		As for all places in a definitions file where a regular expression can be specified,
+		it is not necessary to put the starting and closing delimiters ("/", in the example).
+
+		Multiple %token definitions can be specified within the same file.
+
+	- %code { } :
+		The PHP code within the curly braces will automatically be added in the lexical
+		analyzer class.
+
+		Multiple %code definitions can be specified within the same file.
+		Note that :
+		- All PHP code before the very first %code construct in the definitions file will be
+		  put in the LEXER_TEMPLATE file at the location identified by the __PRECODE__
+		  keyword.
+		- All PHP code after the first code construct will replace the __POSTCODE__ keyword
+		in the LEXER_TEMPLATE file.
+
+	- %rules { } :
+		//TODO: Lexer: Implement the %rules directive
+
+	A note about token names
+	------------------------
+	The Lexer class automatically generates token names, defined as constants in the lexical
+	analyzer class. Tokens are generated either through the %keywords or %tokens directives, and
+	their values are attributed sequentially starting from zero.
+	The following predefined tokens are always defined :
+
+	- STD_TOKEN_COMMENT (-1) :
+		Comment token (either multiline or single-line).
+	- STD_TOKEN_STRING (-2) :
+		String token.
+	- STD_TOKEN_SPACE (-3) :
+		Any combination of space characters.
+	- STD_TOKEN_IDENTIFIER (-4) :
+		Identifier token ; this token value is returned when the characters in the input stream
+		match the regular expression specified for the "identifier" attribute of the %options
+		definition.
+	- STD_TOKEN_LINE_DIRECTIVE (-5) :
+		A #line directive.
+	- STD_TOKEN_BLOCK_DIRECTIVE (-6) :
+		A block directive.
+	- STD_TOKEN_UNKNOWN (-32768) :
+		An unknown token has been encountered in the input stream.
+
+	A note on regular expressions
+	-----------------------------
+	All regular expressions specified within the lexical definitions file must be accpted by the
+	PCRE functions. Note however that leading and terminating separators (such as slash) are
+	optional. Thus, the regular expression "/DELETE/" is similar to : "DELETE".
+	When the lexer is specified to be case-insensitive through the "case-sensitive" attribute of
+	the %options definition, the "/i" modifier is appended to the regular expression (if not
+	already present).
+
+	Lexer template file keywords
+	----------------------------
+	The file specified by the LEXER_TEMPLATE file contains a certain number of keywords that
+	will be replaced during the generation of the lexical analyzer class ; the keywords and their
+	replacements are explained below :
+
+	__NAMESPACE__ :
+		Optional namespace to be used with this class ("namespace" attribute of the
+		%options directive, or "$namespace" parameter of the Lexer class constructor).
+		The default value is no namespace at all.
+
+	__PRECODE__ :
+		Replaced by all code found between two directives before the very first %code
+		directive.
+
+	__CLASSNAME__ :
+		Name of the generated lexical analyzer class ("classname" attribute of the
+		%options directive, or "$classname" parameter of the Lexer class constructor).
+		The default value is : "LexicalAnalyzer".
+
+	__CLASSCOMMENT__ :
+		Lexical analyzer class description that will be inserted as a comment.
+
+	__STANDARD_TOKENS__ :
+		STD_TOKEN_xxx standard token values.
+
+	__USER_DEFINED_TOKENS__ :
+		List of constants representing the tokens defined through the %keywords and %tokens
+		directives.
+
+	__CASE_SENSITIVE__ :
+		Value of the "case-sensitive" attribute specified through the %options directive.
+
+	__WANT_COMMENTS__ :
+		Value of the "want-comments" attribute specified through the %option directive.
+
+	__WANT_SPACES__ :
+		Value of the "want-spaces" attribute specified through the %option directive.
+
+	__WANT_UNKNOWN_TOKENS__ :
+		Value of the "want-unknown-tokens" attribute specified through the %option
+		directive.
+
+	__WANT_LINE_DIRECTIVES :
+		Value of the "want-line-directives" attribute specified through the %option
+		directive.
+
+	__IDENTIFIER_REGEX__ :
+		Value of the "identifier" attribute specified through the %option directive.
+
+	__COMMENT_DEFINITIONS__ :
+		Array of comment definitions specified through the %comment directive.
+
+	__STRING_DEFINITIONS__ :
+		Array of string definitions specified through the %string directive.
+
+	__TOKENS__ :
+		Array of token definitions.
+
+	__CLASSCODE__ :
+		All code found in %code directives.
+
+	__POSTCODE__ :
+		All PHP code found between two directives, after the very first %code directive.
+
+  ==================================================================================================*/
+class  Lexer	extends  Object
+   {
+   	// Template file
+   	const 		LEXER_TEMPLATE		=  "thrak://PHP/Library/Processors/Lexer/Lexer.template.phpclass" ;
+
+	// Standard tokens
+   	const 	STD_TOKEN_COMMENT		=  -1 ;				// Single or multiline comment
+   	const 	STD_TOKEN_STRING		=  -2 ;				// String token
+   	const 	STD_TOKEN_SPACE			=  -3 ;				// Space or series of spaces
+   	const   STD_TOKEN_IDENTIFIER		=  -4 ;				// A language identifier
+   	const   STD_TOKEN_LINE_DIRECTIVE	=  -5 ;				// #line directive
+   	const   STD_TOKEN_BLOCK_DIRECTIVE	=  -6 ;				// A block directive with no name
+   	const   STD_TOKEN_UNKNOWN		=  -32768 ;			// Unknown token
+
+   	// When false, token recognition is not case sensitive
+	public 	$CaseSensitive 		=  true ;
+	// Tells whether the lexical analyzer should return space tokens
+	public  $WantSpaces		=  true ;
+	// Tells whether the lexical analyzer should return comments
+	public  $WantComments		=  true ;
+	// Return unknown tokens ?
+	public  $WantUnknownTokens	=  false ;
+	// Return #line directives ?
+	public  $WantLineDirectives	=  false ;
+	// Class comment string
+	public  $ClassComment		=  null ;
+	// String definitions
+	public  $Strings 		=  array ( ) ;
+	// Single and multiline comments
+	public  $Comments		=  array ( ) ;
+	// Syntactical blocks
+	public  $Blocks 		=  array ( ) ;
+	// Lexical analyzer namespace
+	public  $Namespace 		=  null ;
+	// Lexical analyzer class name
+	public  $ClassName		=  "LexicalAnalyzer" ;
+	// Identifier regex
+	public  $IdentifierRegex	=  null ;
+	// Default token prefix
+	public  $TokenPrefix 		=  null ;
+	// Standard tokens
+	public $StandardTokens		=  array
+	   (
+		'std_token_comment'		=> array ( 'name' => 'STD_TOKEN_COMMENT'	, 'value' => -1		, 'comment' => "Single or multiline comment" ),
+		'std_token_string'		=> array ( 'name' => 'STD_TOKEN_STRING'		, 'value' => -2		, 'comment' => "String token" ),
+		'std_token_space'		=> array ( 'name' => 'STD_TOKEN_SPACE'		, 'value' => -3		, 'comment' => "Space or series of space" ),
+		'std_token_identifer'		=> array ( 'name' => 'STD_TOKEN_IDENTIFIER'	, 'value' => -4		, 'comment' => 'A language identifier' ),
+		'std_token_line_directive'	=> array ( 'name' => 'STD_TOKEN_LINE_DIRECTIVE'	, 'value' => -5		, 'comment' => '#line directive' ),
+		'std_token_block_directive'	=> array ( 'name' => 'STD_TOKEN_BLOCK_DIRECTIVE', 'value' => -6		, 'comment' => 'A block directive with no name' ),
+		'std_token_unknown'		=> array ( 'name' => 'STD_TOKEN_UNKNOWN'	, 'value' => -32768	, 'comment' => 'Unknown token' )
+	    ) ;
+	// Tokens & keywords
+	public  $Tokens 		=  array ( ) ;
+	// Produyction rules
+	public  $Rules 			=  array ( ) ;
+	// Lexer file name
+	public  $Filename ;
+	// Lexical analyzer source code
+	public  $PreCode 		=  "" ;
+	public  $ClassCode 		=  "" ;
+	public  $PostCode 		=  "" ;
+	// Complete lexical analyzer
+	public  $Text 			=  "" ;
+	// Next token ID and tokens defined so far
+	private $NextTokenId		=  1 ;
+	private $DefinedTokens		=  array ( ) ;
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Creates a Lexer object.
+
+	    PROTOTYPE
+		$lexer = new Lexer ( $filename, $classname = null, $namespace = null,
+					$disable_preprocessing = false ) ;
+
+	    DESCRIPTION
+		Creates a Lexer object that can later be used to perform the lexical analysis of a
+		file.
+
+	    PARAMETERS
+		$filename (string) -
+			Name of the lexer definition file, which is used to generate the lexical
+			analyzer class.
+
+		$classname (string) -
+			Name of the lexer class. If this parameter is not specified, it will be taken
+			from the lexer definition file, through the "%option classname=" directive.
+			If no class name has been specified, either by calling the class constructor
+			or through the lexer definition file, an error message will be issued.
+
+		$namespace (string) -
+			If necessary, you can specify a namespace to be used to isolate the lexer
+			class. This option can be overridden by the "%option namespace=" directive
+			from the lexer definition file.
+			Namespace is not mandatory.
+
+		$disable_preprocessing (boolean) -
+			When true, # directives (such as #include) are not preprocessed.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __construct ( $filename, $classname = null, $namespace = null, $disable_preprocessing = false )
+	   {
+	   	// The template file must exist
+	   	if  ( ! file_exists ( self::LEXER_TEMPLATE ) )
+	   		error ( new \Thrak\System\FileNotFoundException ( "Lexer template file \"" . self::LEXER_TEMPLATE . "\" not found." ) ) ;
+
+	   	// The definitions file does not exist
+		if  ( ! file_exists ( $filename ) )
+			error ( new \Thrak\System\FileNotFoundException ( "Lexer : Input definitions file \"$filename\" does not exist." ) ) ;
+
+		// Save supplied parameters
+		$this -> Filename 		=  $filename ;
+		$this -> Namespace 		=  $namespace ;
+
+		if  ( $classname )
+			$this -> ClassName 		=  $classname ;
+
+		// Initialize the defined tokens with the pre-defined standard tokens
+		foreach  ( $this -> StandardTokens  as  $token )
+			$this -> DefinedTokens [ strtolower ( $token [ 'name' ] ) ]  =  array ( 'name' => $token [ 'name' ], 'value' => $token [ 'value' ] ) ;
+
+		// Create the Lexer object.
+		$this -> __CreateLexer ( $disable_preprocessing ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	    	__tostring - Returns the text contents of the lexer class code.
+
+	    PROTOTYPE
+		$code = ( string ) $lexer ;
+
+	    DESCRIPTION
+		Returns the text contents of the lexer class code, which is the lexer template
+		defined by the LEXER_TEMPLATE constant, where all the definitions of the lexer
+		definitions file specified by the caller have been put.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __tostring ( )
+	   {
+		return ( $this -> Text ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Create - Creates a lexical analyzer instance.
+
+	    PROTOTYPE
+		static function  Create ( $filename, $classname = null, $namespace = null,
+						$disable_preprocessing = false ) ;
+
+	    DESCRIPTION
+	    	Once a Lexer object has been instanciated for a particular .lex file, you still need
+	    	to generate the class definition that will be able to parse any input file conformant
+	    	to the specified .lex file. This is what the Create() methods does.
+
+	    PARAMETERS
+		$filename (string) -
+			Name of the lexer definition file, which is used to generate the lexical
+			analyzer class.
+
+		$classname (string) -
+			Name of the lexer class. If this parameter is not specified, it will be taken
+			from the lexer definition file, through the "%option classname=" directive.
+			If no class name has been specified, either by calling the class constructor
+			or through the lexer definition file, an error message will be issued.
+
+		$namespace (string) -
+			If necessary, you can specify a namespace to be used to isolate the lexer
+			class. This option can be overridden by the "%option namespace=" directive
+			from the lexer definition file.
+			Namespace is not mandatory.
+
+		$disable_preprocessing (boolean) -
+			When true, # directives are not preprocessed.
+
+	    RETURNS
+	    	An object of the generated lexer class, whose name is either "LexicalAnalyzer" or the
+	    	name specified as the "option classname=" option of the supplied .lex file.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  Create	 ( $filename, $lexerfile, $classname = null, $namespace = null,
+		 				$disable_preprocessing = false )
+	   {
+	   	// Create the lexer object that is used to generate the lexical analyzer class
+	   	$lexer 	=  new Lexer( $lexerfile, $classname, $namespace, $disable_preprocessing ) ;
+
+	   	// Do as if the generated lexical analyzer class was included
+	   	if  ( ! class_exists ( $lexer -> ClassName ) )
+	   		eval ( $lexer -> Text ) ;
+
+	   	// Create an instance of this class
+	   	$class  =  $lexer -> ClassName ;
+
+		if  ( $lexer -> Namespace )
+			$class	=  $lexer -> Namespace . "\\" . $class ;
+
+	   	$object =  new $class ( $filename ) ;
+
+	   	// All done, return
+	   	return ( $object ) ;
+	   }
+
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		__CreateLexer - Creates the lexical analyzer definitions.
+
+	    DESCRIPTION
+		Creates the lexical analyzer definitions for a class that will be able to parse any
+		input file using the lex file supplied to the constructor.
+
+	 --------------------------------------------------------------------------------------------*/
+	private function  __CreateLexer ( $disable_preprocessing = false )
+	   {
+	   	// Check that the specified classname is a valid PHP name
+		if  ( $this -> ClassName  &&  ! String::IsPhpName ( $this -> ClassName ) )
+			error ( "File \"{$this -> Filename}\" : the class name specified through the Lexer file constructor (\"{$this -> ClassName}\") is not " .
+				"a valid PHP name." ) ;
+
+		// ... and that the class does not already exists !
+		if  ( class_exists ( $this -> ClassName ) )
+			error ( "File \"{$this -> Filename}\" : the class name specified through the Lexer file constructor (\"{$this -> ClassName}\") already exists." ) ;
+
+		// Initializations
+		if  ( $disable_preprocessing )
+			$contents 	=  file_get_contents ( $this -> Filename ) ;
+		else
+		   {
+			$ppp		=  new PPP ( $this -> Filename ) ;
+			$contents 	=  $ppp -> Text ;
+		    }
+
+		$contents 		=  str_replace ( "\r", "", $contents ) ;				// Get input lexer file contents without carriage returns
+		$contents_length	=  strlen ( $contents ) ;
+		$lastchar		=  "\n" ;								// Last character encountered so far
+		$index 			=  0 ;									// Current character index in input
+		$current_line 		=  0 ;									// Current line
+
+		// Loop through lex definition file contents, one character at a time
+		while  ( $index   <  $contents_length )
+		   {
+		   	// If we already have the code for the generated lexical analyzer class, then all additional PHP code found in the input file
+		   	// will be placed after the class definition
+		   	if  ( $this -> ClassCode )
+		   		$text 	=  &$this -> PostCode ;
+		   	// Otherwise it will be put before
+		   	else
+		   		$text 	=  &$this -> PreCode ;
+
+			$ch 		=  $contents [ $index ] ;
+
+			// Try to get a faster handling for input file comments
+			if  ( $ch  ==  '/' )
+			   {
+			   	// Check if this is not the last character of the file
+				if  ( $index + 1  <  $contents_length )
+				   {
+					$ch2 	=  $contents [ $index + 1 ] ;
+
+					// Multiline comment: search the position of the closing delimiter ("*/")
+					if  ( $ch2  ==  '*' )
+					   {
+						$endpos 	=  strpos ( $contents, "*/", $index + 2 ) ;
+
+						// Not found : consider all the input have been read (the multiline comment includes the rest of the file)
+						if  ( $endpos  ===  false )
+						   {
+							$substr		 =  substr ( $contents, $index ) ;
+							$index  	 =  $contents_length ;
+						    }
+						// Closing delimiter found : position just after it
+						else
+						   {
+							$substr		 =  substr ( $contents, $index, $endpos - $index + 2 ) ;
+							$index  	 =  $endpos + 1 ;
+							$lastchar 	 =  "/" ;
+						    }
+					    }
+					// Single line comment : search the end of line
+					else if  ( $ch2  ==  '/' )
+					   {
+						$endpos 	=  strpos ( $contents, "\n", $index + 2 ) ;
+
+						// End of line not found : this comment was the very last line of the file
+						if  ( $endpos  ===  false )
+						   {
+							$substr		 =  substr ( $contents, $index ) ;
+							$index  	 =  $contents_length ;
+						    }
+						// Found : position just after the newline
+						else
+						   {
+							$substr		 =  substr ( $contents, $index, $endpos - $index + 2 ) ;
+							$index  	 =  $endpos ;
+							$lastchar 	 =  "\n" ;
+						    }
+					    }
+					// A character other than '*' or '/' have been found after the first '/' : the '/' character will be treated as is
+					else
+						$substr 	=  $ch ;
+
+					// Update the number of newlines encountered in this input
+					$current_line += substr_count ( $substr, "\n" ) ;
+
+					// Collect data
+					$text .= $substr ;
+				    }
+			   }
+			// '#' character : another style of comment...
+			else if  ( $ch  ==  '#' )
+			   {
+				$endpos 	=  strpos ( $contents, "\n", $index + 1 ) ;
+
+				if  ( $endpos  ===  false )
+				   {
+					$text  		.=  substr ( $contents, $index ) ;
+					$index  	 =  $contents_length ;
+				    }
+				else
+				   {
+					$text  		.=  substr ( $contents, $index, $endpos - $index + 2 ) ;
+					$index  	 =  $endpos ;
+					$lastchar 	 =  "\n" ;
+					$current_line ++ ;
+				    }
+			    }
+			// '%' character : start of a lexer directive
+			else if  ( $ch  ==  '%' )
+			   {
+				$endpos 	=  strpos ( $contents, "\n", $index + 2 ) ;
+
+				// Parse the directive
+				$directive 	=  self::__ParseDirective ( $this, $current_line, substr ( $contents, $index, $endpos - $index ) ) ;
+
+				// Special case where the directive is the very last line of the input file : there is no newline at the end...
+				if  ( $endpos  ===  false )
+				   {
+					$index  	 =  $contents_length ;
+				    }
+				else
+				   {
+					$index  	 =  $endpos ;
+					$lastchar 	 =  "\n" ;
+					$current_line ++ ;
+				    }
+
+				// Process the directive
+				$this -> __ProcessDirective ( $this, $current_line, $directive, $contents, $index, $contents_length ) ;
+			   }
+			// Other character : put it as is
+			else
+			   {
+				$text  	.=  $ch ;
+
+				if  ( $ch  ==  "\n" )
+					$current_line ++ ;
+			    }
+
+			// Go to next character
+			$index ++ ;
+		    }
+
+		// Ensure that if token directives have been found, there is also a "%option identifier=" option in the lexer file
+		$count  	=  0 ;
+
+		foreach  ( $this -> Tokens  as  $token )
+		   {
+			if  ( $token [ 'reserved' ] )
+				$count ++ ;
+		    }
+
+		if  ( $count   &&  ! $this -> IdentifierRegex )
+			error ( new \Thrak\System\RuntimeException ( "File \"{$this -> Filename}\" : When you use the \"%keywords\" statement, you must also declare a \"%option identifier=regex\" directive." ) ) ;
+
+		// Build a default class comment if none specified.
+		if  ( ! $this -> ClassComment )
+			$this -> ClassComment = $this -> ClassName . " lexer class." ;
+
+		if  ( substr ( $this -> ClassComment, -1, 1 )  !=  '.' )
+			$this -> ClassComment .= '.' ;
+
+		// Create the class definition text (this text can be directly put into a text file then later included from a PHP file)
+		$this -> Text 	=  $this -> __CreateClassContents ( ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	    	__CreateClassContents
+
+	    DESCRIPTION
+	    	Creates the class contents text, based on the definitions encountered in the lexer
+	    	file.
+
+	 --------------------------------------------------------------------------------------------*/
+	private function  __CreateClassContents ( )
+	   {
+		$output_tokens		=  array ( ) ;
+
+
+	   	// Get template lexer class contents
+		$contents 	=  file_get_contents ( self::LEXER_TEMPLATE ) ;
+
+		// Strings to search and replace in the template file
+		// Since the template file is a syntactically correct PHP file, adding constructs such as __CLASSNAME__
+		// obliged to put a dummy symbol after the "/* __CLASSNAME__ */ construct.
+		// The first element of each array item in $replacements is an integer indicating whether the next symbol
+		// after the "/* ... */" should be removed.
+		$replacements [ '__NAMESPACE__' 		]  =  array ( LEX_REPLACE_COMMENT , ( $this -> Namespace ) ? "namespace\t\t{$this -> Namespace} ;" : "" ) ;
+		$replacements [ '__PRECODE__'			]  =  array ( LEX_REPLACE_COMMENT , $this -> PreCode ) ;
+		$replacements [ '__POSTCODE__'			]  =  array ( LEX_REPLACE_COMMENT , $this -> PostCode ) ;
+		$replacements [ '__CLASSCODE__'			]  =  array ( LEX_REPLACE_COMMENT , $this -> ClassCode ) ;
+		$replacements [ '__CLASSNAME__'			]  =  array ( LEX_REPLACE_AND_EAT , $this -> ClassName ) ;
+		$replacements [ '__CLASSCOMMENTNAME__'		]  =  array ( LEX_REPLACE_ASIS    , $this -> ClassName ) ;
+		$replacements [ '__CLASSCOMMENT__'		]  =  array ( LEX_REPLACE_ASIS    , $this -> ClassComment ) ;
+		$replacements [ '__CASE_SENSITIVE__' 		]  =  array ( LEX_REPLACE_AND_EAT , ( $this -> CaseSensitive      ) ? "true" : "false" ) ;
+		$replacements [ '__WANT_COMMENTS__'		]  =  array ( LEX_REPLACE_AND_EAT , ( $this -> WantComments       ) ? "true" : "false" ) ;
+		$replacements [ '__WANT_SPACES__' 		]  =  array ( LEX_REPLACE_AND_EAT , ( $this -> WantSpaces         ) ? "true" : "false" ) ;
+		$replacements [ '__WANT_UNKNOWN_TOKENS__'	]  =  array ( LEX_REPLACE_AND_EAT , ( $this -> WantUnknownTokens  ) ? "true" : "false" ) ;
+		$replacements [ '__WANT_LINE_DIRECTIVES__' 	]  =  array ( LEX_REPLACE_AND_EAT , ( $this -> WantLineDirectives ) ? "true" : "false" ) ;
+		$replacements [ '__IDENTIFIER_REGEX__'		]  =  array ( LEX_REPLACE_COMMENT , self::__ToRegex ( $this, "/" . $this -> IdentifierRegex . "/" ) ) ;
+
+
+		// Process standard tokens
+		$collected_tokens	=  "" ;
+
+		foreach  ( $this -> StandardTokens  as  $token )
+		   {
+			if  ( ! in_array ( $token [ 'name' ], $output_tokens ) )
+			   {
+				$collected_tokens	.=  "\tconst\t" . sprintf ( "%-32s", $token [ 'name' ] ) . " = " .
+	   								  sprintf ( "%6d", $token [ 'value' ] ) .
+									  " ;\t\t// " . $token [ 'comment' ] . "\n" ;
+				$output_tokens []	=  $token [ 'name' ] ;
+			    }
+		    }
+
+		$replacements [ '__STANDARD_TOKENS__'	]  =  array ( LEX_REPLACE_COMMENT, $collected_tokens ) ;
+
+		// Dynamically build the token constants
+		$collected_tokens 	=  "" ;
+
+		foreach  ( $this -> Tokens  as  $token )
+		   {
+			if  ( ! in_array ( $token [ 'name' ], $output_tokens ) )
+			   {
+	   			$collected_tokens 	.=  "\tconst\t"  . sprintf ( "%-32s", $token [ 'name' ] ) . " = " .
+	   								   sprintf ( "%6d", $token [ 'value' ] ) . " ;\n" ;
+				$output_tokens []	=  $token [ 'name' ] ;
+			    }
+		    }
+
+		// We may have to add constants for special strings
+		foreach  ( $this -> Strings  as  $string )
+		   {
+			if  ( $string [ 'name' ]  &&  ! in_array ( $string [ 'name' ], $output_tokens ) )
+			   {
+	   			$collected_tokens 	.=  "\tconst\t"  . sprintf ( "%-32s", $string [ 'name' ] ) . " = " .
+	   								   sprintf ( "%6d", $string [ 'value' ] ) . " ;\n" ;
+				$output_tokens []	=  $string [ 'name' ] ;
+			    }
+		    }
+
+		// Same for blocks
+		if  ( $this -> Blocks )
+		   {
+			foreach  ( $this -> Blocks  as  &$the_block )
+			   {
+				if  ( $the_block [ 'name' ]  &&  ! in_array ( $the_block [ 'name' ], $output_tokens ) )
+				   {
+					$collected_tokens .= "\tconst\t" . sprintf ( "%-32s", $the_block [ 'name' ] ) . " = " .
+							 		   sprintf ( "%6d"  , $the_block [ 'value' ] ) . " ;\n" ;
+					$output_tokens []	=  $the_block [ 'name' ] ;
+				    }
+				else
+				   {
+					$the_block [ 'name' ]	=  'STD_TOKEN_BLOCK' ;
+					$the_block [ 'value' ]	=  'self::STD_TOKEN_BLOCK' ;
+				    }
+			    }
+		    }
+
+		if (  $collected_tokens )
+			$collected_tokens 	=  "\t// Reserved keywords and tokens\n" . $collected_tokens ;
+
+		$replacements [ '__USER_DEFINED_TOKENS__'	]  =  array ( LEX_REPLACE_COMMENT, $collected_tokens ) ;
+
+		// Then the string definitions (ie, the definitions structures corresponding to input tokens)
+		$definitions 	=  array ( ) ;
+
+		if  ( count ( $this -> Strings ) )
+		   {
+			foreach  ( $this -> Strings  as  $strdef )
+			   {
+			   	$delimiter 	=  str_replace ( array ( "\\", "\"" ), array ( "\\\\", "\\\"" ), $strdef [ 'delimiter' ] ) ;
+			   	$escape 	=  str_replace ( array ( "\\", "\"" ), array ( "\\\\\\", "\\\"" ), $strdef [ 'escape' ] ) ;
+				$name		=  $strdef [ 'name' ] ;
+				$value		=  $strdef [ 'value' ] ;
+				$definitions [] =  "\t\tarray ( 'delimiter' =>  \"$delimiter\", 'escape' =>  \"$escape\", 'name' => \"$name\", 'value' => $value )" ;
+			    }
+		    }
+
+		$value 	=  implode ( ",\n", $definitions ) ;
+		$replacements [ '__STRING_DEFINITIONS__'	]  =  array ( LEX_REPLACE_COMMENT, $value ) ;
+
+		// Dynamically build the comment definitions table
+		$definitions 	=  array ( ) ;
+
+		if  ( count ( $this -> Comments ) )
+		   {
+			foreach  ( $this -> Comments  as  $cmtdef )
+			   {
+			   	$start 	= sprintf ( "%7s", "\"" . $cmtdef [ 'start' ] . "\"" ) ;
+			   	$stop  	= sprintf ( "%7s", "\"" . $cmtdef [ 'stop'  ] . "\"" ) ;
+
+			   	$definitions [] =  "\t\tarray ( 'multiline' =>  " . ( ( $cmtdef [ 'multiline' ] ) ? " true" : "false" ) . ", " .
+						               "'start' => $start, 'stop' => $stop )" ;
+			    }
+		    }
+
+		$value 	=  implode ( ",\n", $definitions ) ;
+		$replacements [ '__COMMENT_DEFINITIONS__'	]  =  array ( LEX_REPLACE_COMMENT, $value ) ;
+
+		// Build the token definition structures
+		$definitions 	=  array ( ) ;
+
+		foreach  ( $this -> Tokens  as  $token )
+		   {
+		   	$key_name 	=  sprintf ( "%-20s", "'" . strtolower ( $token [ 'text' ] ) . "'" ) ;
+		   	$name	 	=  sprintf ( "%-32s", "'" . $token [ 'name' ] . "'" ) ;
+		   	$value 		=  sprintf ( "%6d", $token [ 'value' ] ) ;
+		   	$text 		=  sprintf ( "%-20s", "'" . $token [ 'text' ] . "'" ) ;
+		   	$regex 		=  sprintf ( "%-20s", "'" . $token [ 'regex' ] . "'" ) ;
+		   	$reserved 	=  ( $token [ 'reserved' ] ) ?  "true " : "false" ;
+
+		   	$definitions [] = "\t\t$key_name =>  array ( 'name' => $name, 'value' => $value, 'text' => $text, 'regex' => $regex, 'reserved' => $reserved )" ;
+		    }
+
+		$value 	=  implode ( ",\n", $definitions ) ;
+		$replacements [ '__TOKENS__'		]  =  array ( LEX_REPLACE_COMMENT, $value ) ;
+
+		// Build the block structures
+		$definitions 	=  array ( ) ;
+
+		foreach  ( $this -> Blocks  as  $block )
+		   {
+		   	$name  		=  $block [ 'name' ] ;
+		   	$value 		=  $block [ 'value' ] ;
+			$start 		=  $block [ 'start' ] ;
+			$stop   	=  $block [ 'stop' ] ;
+			$allow_nesting 	=  ( $block [ 'allow-nesting' ] ) ? "true" : "false" ;
+
+			$definitions [] =  "\t\tarray ( 'name' => '$name', 'value' => $value, 'start' => '$start', 'stop' => '$stop', 'allow-nesting' => $allow_nesting )" ;
+		    }
+		$value 	=  implode ( ",\n", $definitions ) ;
+		$replacements [ '__BLOCKS__'		]  =  array ( LEX_REPLACE_COMMENT, $value ) ;
+
+
+		// Perform the replacement and save the contents
+		$searches	=  array ( ) ;
+		$replaces 	=  array ( ) ;
+
+		foreach  ( $replacements  as  $key => $value )
+		   {
+		   	$replaces []	=  $value [1] ;
+
+		   	switch ( $value [0] )
+		   	   {
+		   	   	case 	LEX_REPLACE_ASIS :
+		   	   		$re 	=  $key ;
+		   	   		break ;
+
+		   	   	case	LEX_REPLACE_COMMENT :
+		   	   		$re 	=  '[\/] [*] \s* ' . $key . '\s* [*] [\/]' ;
+		   	   		break ;
+
+		   	   	case 	LEX_REPLACE_AND_EAT :
+		   	   		$re 	=  '[\/] [*] \s* ' . $key . '\s* [*] [\/] \s* [^ \n\r\t]*' ;
+		   	   		break ;
+		   	    }
+
+			$searches [] 	=  "/$re/imsx" ;
+		   }
+
+		$contents 	=  preg_replace ( $searches, $replaces, $contents ) ;
+
+		if (  ! strncmp ( $contents, "<?php", 5 ) )
+			$contents = substr ( $contents, 5 ) ;
+
+		$this -> Text 	=  $contents ;
+
+		// All done, return
+		return ( $contents ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		__Error - Display an error message and exit.
+
+	 --------------------------------------------------------------------------------------------*/
+	private static function  __Error ( $lexer, $current_line, $message )
+	   {
+		error ( new \Thrak\System\ParseException ( "File \"{$lexer -> Filename}\", line #$current_line : $message" ) ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		__ParseDirective
+
+	    DESCRIPTION
+	    	Parses a directive of the form '%directive name=value name=value' and returns an
+	    	associative array containing the parsed items.
+
+	 --------------------------------------------------------------------------------------------*/
+	private static function  __ParseDirective ( $lexer, $current_line, $text )
+	   {
+		$regex 		=  "/[%] \s* (?P<name> [a-z_\-.] [a-z0-9_\-.]* ) \s* (?P<options> .*)/imsx" ;
+
+		if  ( preg_match ( $regex, $text, $matches )  ===  false )
+			self::__Error ( $lexer, $current_line, "Invalid Lexer directive : \"$text\"." ) ;
+
+		$result 	=  array
+		   (
+		   	'name' 		=>  $matches [ 'name' ],
+		   	'attributes'	=>  XmlUtilities::ParseAttributeValuePairs ( $matches [ 'options' ] )
+		    ) ;
+
+		return ( $result ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		__ProcessDirective
+
+	    DESCRIPTION
+	    	Parses a directive and performs the corresponding action. This function handles both
+	    	single-line and group directives (ie, directives followed by "{ }").
+
+	 --------------------------------------------------------------------------------------------*/
+	private function  __ProcessDirective ( $lexer, &$current_line, $directive, $contents, &$index, $contents_length )
+	   {
+	   	// The big switch
+		switch ( strtolower ( $directive [ 'name' ] ) )
+		   {
+		   	// 'option' or 'options' directive :
+		   	//	Specifies one or more lexer options.
+		   	case 	'option' :
+		   	case 	'options' :
+		   		// Cycle through the attributes specified with this directive
+		   		foreach  ( $directive [ 'attributes' ]  as  $attr_name => $attr_value )
+		   		   {
+		   			switch ( strtolower ( $attr_name ) )
+		   			   {
+		   			   	// 'case-sensitive' :
+		   			   	//	A boolean value indicating whether pattern matching should be case-sensitive or not.
+		   			   	case 	"case-sensitive" :
+		   			   		if  ( String::IsBoolean ( $attr_value ) )
+		   			   			$lexer -> CaseSensitive 	=  ( bool ) String::BooleanValue ( $attr_value ) ;
+		   			   		else
+		   			   			self::__Error ( $lexer, $current_line, "Invalid boolean value \"$attr_value\" specified for the " .
+		   			   					"\"$attr_name\"  attribute of the \"%option\" directive." ) ;
+		   			   		break ;
+
+		   			   	// 'want-spaces' :
+		   			   	//	A boolean value indicating whether the generated lexical analyzer will return token values
+		   			   	//	when it encounters spaces or not.
+		   			   	case 	"want-spaces" :
+		   			   		if  ( String::IsBoolean ( $attr_value ) )
+		   			   			$lexer -> WantSpaces	 	=  ( bool ) String::BooleanValue ( $attr_value ) ;
+		   			   		else
+		   			   			self::__Error ( $lexer, $current_line, "Invalid boolean value \"$attr_value\" specified for the " .
+		   			   					"\"$attr_name\"  attribute of the \"%option\" directive." ) ;
+		   			   		break ;
+
+		   			   	// 'want-comments' :
+		   			   	//	A boolean value indicating whether the generated lexical analyzer will return token values
+		   			   	//	when it encounters comments (both multiline and single-line) or not.
+		   			   		case 	"want-comments" :
+		   			   		if  ( String::IsBoolean ( $attr_value ) )
+		   			   			$lexer -> WantComments 	=  ( bool ) String::BooleanValue ( $attr_value ) ;
+		   			   		else
+		   			   			self::__Error ( $lexer, $current_line, "Invalid boolean value \"$attr_value\" specified for the " .
+		   			   					"\"$attr_name\"  attribute of the \"%option\" directive." ) ;
+		   			   		break ;
+
+		   			   	// 'want-unknown-tokens' :
+		   			   	//	A boolean value indicating whether the generated lexical analyzer will return unknown token values
+		   			   	//	or generate an exception.
+		   			   		case 	"want-unknown-tokens" :
+		   			   		if  ( String::IsBoolean ( $attr_value ) )
+		   			   			$lexer -> WantUnknownTokens 	=  ( bool ) String::BooleanValue ( $attr_value ) ;
+		   			   		else
+		   			   			self::__Error ( $lexer, $current_line, "Invalid boolean value \"$attr_value\" specified for the " .
+		   			   					"\"$attr_name\"  attribute of the \"%option\" directive." ) ;
+		   			   		break ;
+
+		   			   	// 'want-line-directives' :
+		   			   	//	A boolean value indicating whether the generated lexical analyzer will return token values
+		   			   	//	when it encounters comments (both multiline and single-line) or not.
+		   			   		case 	"want-line-directives" :
+		   			   		if  ( String::IsBoolean ( $attr_value ) )
+		   			   			$lexer -> WantLineDirectives 	=  ( bool ) String::BooleanValue ( $attr_value ) ;
+		   			   		else
+		   			   			self::__Error ( $lexer, $current_line, "Invalid boolean value \"$attr_value\" specified for the " .
+		   			   					"\"$attr_name\"  attribute of the \"%option\" directive." ) ;
+		   			   		break ;
+
+
+		   			   	// 'namespace' :
+		   			   	//	Allows to specify a namespace for the generated lexical analyzer class.
+		   			   	case 	"namespace" :
+		   			   		$lexer -> Namespace 	=  $attr_value ;
+		   			   		break ;
+
+		   			   	// 'classname' or 'class' :
+		   			   	//	Specifies a class name other than the default one, "LexicalAnalyzer".
+		   			   	case	"classname" :
+		   			   	case    "class" :
+		   			   		if  ( ! $attr_value )
+		   			   			self::__Error ( $lexer, $current_line, "No class name specified for the " .
+		   			   					"\"$attr_name\"  attribute of the \"%option\" directive." ) ;
+
+		   			   		if  ( ! String::IsPhpName ( $attr_value ) )
+		   			   			self::__Error ( $lexer, $current_line, "The class name specified for the " .
+		   			   					"\"$attr_name\"  attribute of the \"%option\" directive (\"$attr_value\") is not " .
+		   			   					"a valid PHP name." ) ;
+
+		   			   		$lexer -> ClassName 	=  $attr_value ;
+		   			   		break ;
+
+		   			   	// 'prefix' or 'token-prefix' :
+		   			   	//	Indicates the prefix string to be prepended to the various token definitions found in the
+		   			   	//	input file.
+		   			   	case 	"prefix" :
+		   			   	case    "token-prefix" :
+		   			   		if  ( ! $attr_value )
+		   			   			self::__Error ( $lexer, $current_line, "No token prefix specified for the " .
+		   			   					"\"$attr_name\"  attribute of the \"%option\" directive." ) ;
+
+		   			   		if  ( ! String::IsPhpName ( $attr_value ) )
+		   			   			self::__Error ( $lexer, $current_line, "The prefix specified for the " .
+		   			   					"\"$attr_name\"  attribute of the \"%option\" directive (\"$attr_value\") is not " .
+		   			   					"a valid PHP name." ) ;
+
+		   			   		$lexer -> TokenPrefix 	=  $attr_value ;
+		   			   		break ;
+
+		   			   	// 'identifier' :
+		   			   	//	This attribute is mandatory when keywords are defined in the input file. It specifies the
+		   			   	//	regular expression that matches a keyword. This is a shortcut to the %token directive, where
+		   			   	//	you need to specify a regular expression for each token definition.
+		   			   	case    "identifier" :
+		   			   		if  ( ! $attr_value )
+		   			   			self::__Error ( $lexer, $current_line, "No class name specified for the " .
+		   			   					"\"$attr_name\"  attribute of the \"%option\" directive." ) ;
+
+		   			   		$lexer -> IdentifierRegex 	= $attr_value ;
+		   			   		break ;
+
+		   			   	// 'comment' :
+		   			   	//	Optional string that specifies the comment that will describe the class in the generated source code.
+		   			   	case    "comment" :
+		   			   		$lexer -> ClassComment = $attr_value ;
+		   			   		break ;
+
+		   			   	// Default : say "aaarggh"
+		   			   	default :
+		   			   		self::__Error ( $lexer, $current_line, "Invalid attribute \"$attr_name\" for the \"%option\" directive." ) ;
+		   			    }
+		   		    }
+
+		   		break ;
+
+		   	// %comment directive :
+		   	//	Allows to specify single or multiline comments.
+		   	case 	'comment' :
+		   		$multiline	=  false ;
+		   		$start 		=  null ;
+		   		$end 		=  null ;
+
+		   		// Loop through directive attributes
+		   		foreach  ( $directive [ 'attributes' ]  as  $attr_name => $attr_value )
+		   		   {
+		   			switch ( strtolower ( $attr_name ) )
+		   			   {
+		   			   	// 'multiline' attribute :
+		   			   	//	A boolean value indicating whether the comment is a multiline comment or not.
+		   			   	//	If false, only the 'start' (or 'begin') attribute can be specified.
+		   			   	//	If true, both the 'start' (or 'begin') and 'stop' (or 'end') attributes must be specified.
+		   			   	case 	'multiline' :
+		   			   		if  ( String::IsBoolean ( $attr_value ) )
+		   			   			$multiline 	=  ( bool ) String::BooleanValue ( $attr_value ) ;
+		   			   		else
+		   			   			self::__Error ( $lexer, $current_line, "Invalid boolean value \"$attr_value\" specified for the " .
+		   			   					"\"$attr_name\"  attribute of the \"%option\" directive." ) ;
+		   			   		break ;
+
+		   			   	// 'start' (or 'begin') attribute :
+		   			   	//	Specifies the string that starts the comment.
+		   			   	case 	'start' :
+		   			   	case    'begin' :
+		   			   		$start 		=  $attr_value ;
+		   			   		break ;
+
+		   			   	// 'stop' (or 'end') attribute :
+		   			   	//	Specifies the string that ends a comment (multiline comments only).
+		   			   	case 	'end' :
+		   			   	case    'stop' :
+		   			   		$end 		=  $attr_value ;
+		   			   		break ;
+
+		   			   	// Default : complain
+		   			   	default :
+		   			   		self::__Error ( $lexer, $current_line, "Invalid attribute \"$attr_name\" for the \"%option\" directive." ) ;
+		   			    }
+		   		    }
+
+		   		// Multiline comments : check that both the 'start' and 'stop' attributes have been specified.
+		   		if  ( $multiline )
+		   		   {
+		   			if  ( ! $start )
+		   				self::__Error ( $lexer, $current_line, "The \"start\" attribute is mandatory for comments." ) ;
+
+		   			if  ( ! $end )
+		   				self::__Error ( $lexer, $current_line, "The \"end\" attribute is mandatory for comments." ) ;
+		   		   }
+		   		// Single-line comments : Check that only the 'start' attribute have been specified.
+		   		else
+		   		   {
+		   			if  ( ! $start )
+		   				self::__Error ( $lexer, $current_line, "The \"end\" attribute is mandatory for comments." ) ;
+
+		   			if  ( $end )
+		   				self::__Error ( $lexer, $current_line, "The \"end\" attribute can only be specified for multi-line comments." ) ;
+		   		    }
+
+		   		// Check that not comment definition starts with the same substring
+		   		$lstart 	=  strlen ( $start ) ;
+
+		   		foreach ( $lexer -> Comments  as  $def )
+		   		   {
+		   			$mlen 	=  min ( $lstart, strlen ( $def [ 'start' ] ) ) ;
+
+		   			if  ( ! strncasecmp ( $start, $def [ 'start'], $mlen ) )
+		   				self::__Error ( $lexer, $current_line,
+		   					"The following comment definitions start with the same substring :\n" .
+		   					"Comment #1 : multiline = " . ( ( string ) $def [ 'multiline' ] ) . ", start = " .
+		   						$def [ 'start' ] . ", stop = " . $def [ 'stop' ] . "\n" .
+		   					"Comment #2 : multiline = " . ( ( string ) $multiline ) . ", start = $start, end = $end" ) ;
+		   		    }
+
+		   		// Add this comment to the list of allowed comments
+		   		$lexer -> Comments []  =  array ( 'multiline' => $multiline, 'start' => $start, 'stop' => $end ) ;
+		   		break ;
+
+		   	// 'string' directive :
+		   	//   	Adds a definition which specifies how strings are enclosed.
+		   	case 	'string' :
+		   		$delimiter	=  null ;
+		   		$escape 	=  null ;
+				$token		=  'STD_TOKEN_STRING' ;
+				$token_id	=  self::STD_TOKEN_STRING ;
+
+		   		// Loop through attributes
+		   		foreach  ( $directive [ 'attributes' ]  as  $attr_name => $attr_value )
+		   		   {
+		   			switch ( strtolower ( $attr_name ) )
+		   			   {
+		   			   	// 'delimiter' attribute :
+		   			   	//	Specifies the character that delimits a string.
+		   			   	case 	'delimiter' :
+		   			   		$delimiter 	=  $attr_value ;
+		   			   		break ;
+
+		   			   	// 'escape' :
+		   			   	//	Specifies the escape character to use before when a delimiter character is found in the string.
+		   			   	case    'escape' :
+		   			   		$escape 	=  $attr_value ;
+		   			   		break ;
+
+						// 'name' or 'token' :
+						//	Specifies a token identifier other than STD_TOKEN_STRING
+						case	'name' :
+						case	'token' :
+							list ( $token, $token_id )	=  $this -> __GetToken ( $attr_value ) ;
+							break ;
+
+		   			   	// Default : complain for bad attribute name
+		   			   	default :
+		   			   		self::__Error ( $lexer, $current_line, "Invalid attribute \"$attr_name\" for the \"%string\" directive." ) ;
+		   			    }
+		   		    }
+
+		   		// Check that the 'delimiter' attribute has been specified (the 'escape' attribute is optional : when not specified, the
+		   		// string cannot contain the delimiter)
+		   		if  ( ! $delimiter )
+		   			self::__Error ( $lexer, $current_line, "The \"delimiter\" attribute of the \"%string\" directive is mandatory." ) ;
+
+				// Strip slashes - the php_get_tokens() function used by PPP returns an incorrect set of tokens when it encounters
+				// a form like : "\"
+				$delimiter	=  stripslashes ( $delimiter ) ;
+				$escape		=  stripslashes ( $escape ) ;
+
+		   		// Check that delimiter and escape strings are 1 char long
+		   		if  ( strlen ( $delimiter )  >  1 )
+		   			self::__Error ( $lexer, $current_line, "The \"delimiter\" attribute of the \"%string\" directive must be exactly one character long." ) ;
+
+		   		if  ( strlen ( $escape )  >  1 )
+		   			self::__Error ( $lexer, $current_line, "The \"escape\" attribute of the \"%string\" directive must be exactly one character long." ) ;
+
+		   		// Add the string delimiter definition to the existing list
+		   		$lexer -> Strings []	=  array ( 'delimiter' => $delimiter, 'escape' => $escape, 'name' => $token, 'value' => $token_id ) ;
+		   		break ;
+
+
+		   	// 'block' directive :
+		   	// 	Allow to declare a compound block with unstructured contents.
+		   	case  	'block' :
+		   		$block 		=  array
+		   		   (
+		   		   	'name'		=>  'STD_TOKEN_BLOCK',
+					'value'		=>  self::STD_TOKEN_BLOCK_DIRECTIVE,
+		   		   	'start'		=>  null,
+		   		   	'stop'		=>  null,
+		   		   	'allow-nesting'	=>  false
+		   		    ) ;
+
+		   		foreach  ( $directive [ 'attributes' ]  as  $attr_name  =>  $attr_value )
+		   		   {
+		   			switch  ( strtolower ( $attr_name ) )
+		   			   {
+		   			   	// 'name' or 'token' attribute :
+		   			   	//	Specifies a token value other than STD_TOKEN_BLOCK
+		   			   	case 	'name' :
+		   			   	case 	'token' :
+							list ( $block [ 'name' ], $block [ 'value' ] )	=  $this -> __GetToken ( $attr_value ) ;
+		   			   		break ;
+
+		   			   	// 'start' :
+		   			   	//	String that starts the compound block.
+		   			   	case 	'start' :
+		   			   	case    'begin' :
+		   			   		$block [ 'start' ]	=  $attr_value ;
+		   			   		break ;
+
+		   			   	// 'stop' :
+		   			   	//	String that stops the compound block.
+		   			   	case  	'stop' :
+		   			   	case    'end' :
+		   			   		$block [ 'stop' ]	=  $attr_value ;
+		   			   		break ;
+
+		   			   	// 'allow-nesting' or 'nesting' :
+		   			   	// 	Indicates if blocks can be nested within blocks.
+		   			   	case 	'nesting' :
+		   			   	case 	'allow-nesting' :
+		   			   		if  ( String::IsBoolean ( $attr_value ) )
+		   			   			$block [ 'allow-nesting' ] 	=  ( bool ) String::BooleanValue ( $attr_value ) ;
+		   			   		else
+		   			   			self::__Error ( $lexer, $current_line, "Invalid boolean value \"$attr_value\" specified for the " .
+		   			   					"\"$attr_name\"  attribute of the \"%block\" directive." ) ;
+		   			   		break ;
+
+		   			   	// Default : complain for unknown attribute
+		   			   	default :
+		   			   		self::__Error ( $lexer, $current_line, "Invalid attribute \"$attr_name\" for the \"%block\" directive." ) ;
+		   			    }
+		   		   }
+
+	   			// Check that the start and stop attributes have been specified
+	   			if  ( ! $block [ 'start' ] )
+   			   		self::__Error ( $lexer, $current_line, "The 'start' attribute is required for the \"%block\" directive." ) ;
+
+   			   	if  ( ! $block [ 'stop' ] )
+   			   		self::__Error ( $lexer, $current_line, "The 'stop' attribute is required for the \"%block\" directive." ) ;
+
+   			   	$this -> Blocks []	=  $block ;
+   			   	break ;
+
+
+		   	// 'keyword' or 'keywords' directive :
+		   	//	Define keywords for the input language.
+		   	case 	'keywords' :
+		   	case	'keyword' :
+		   		$prefix 	=  $this -> TokenPrefix ;
+
+		   		// Loop through attributes
+		   		foreach  ( $directive [ 'attributes' ]  as  $attr_name => $attr_value )
+		   		   {
+		   			switch ( strtolower ( $attr_name ) )
+		   			   {
+		   			   	// 'prefix' or 'token-prefix' attribute :
+		   			   	//	Override the default token prefix specified in the %options directive.
+		   			   	case  	'prefix' :
+		   			   	case    'token-prefix' :
+		   			   		$prefix 	=  $attr_value ;
+		   			   		break ;
+
+		   			   	// Default : complain for unknown attribute
+		   			   	default :
+		   			   		self::__Error ( $lexer, $current_line, "Invalid attribute \"$attr_name\" for the \"%keywords\" directive." ) ;
+		   			    }
+		   		    }
+
+		   		// Get the definition contents placed between the curly braces ( "{ }")
+		   		// Definitions consist only in token names
+		   		$oldline 	=  $current_line ;
+		   		$text 		=  self::__GetCompoundContents ( $lexer, $current_line, $contents, $index, $contents_length, true ) ;
+				$list		=  explode ( ' ', $text ) ;
+
+				// Loop through the list of definitions (
+		   		foreach  ( $list  as  $item )
+		   		   {
+		   			$token_name 	=  $prefix . $item ;
+		   			$lower_token	=  strtolower ( $token_name ) ;
+
+		   			// Check that names are valid PHP names (this is a restriction)
+		   			if  ( ! String::IsPhpName ( $token_name ) )
+		   				self::__Error ( $lexer, $current_line, "The generated token value \"$token_name\" is not a valid PHP identifier." ) ;
+
+		   			// Check that the current token was not already defined
+		   			if  ( array_key_exists ( $lower_token, $lexer -> DefinedTokens ) )
+		   				self::__Error ( $lexer, $current_line, "The \"$token_name\" token has already been defined." ) ;
+
+		   			// Build a token definition for this keyword
+					list ( $name, $value )	=  $this -> __GetToken ( $token_name ) ;
+		   			$text 		=  $item ;
+		   			$reserved	=  'true' ;
+		   			$regex 		=  self::__ToRegex ( $lexer, $item ) ;
+
+		   			// Add the definition to the list of existing ones
+		   			$lexer -> Tokens [ $lower_token ]  	=  array
+		   			   (
+		   			   	'name' => $name, 'value' => $value, 'text' => $text, 'regex' => $regex, 'reserved' => $reserved
+		   			    ) ;
+		   		    }
+
+		   		break ;
+
+		   	// 'tokens' or 'token' directive :
+		   	//	Defines a list of tokens that could not be expressed in a %keywords directive (because of special characters for example).
+		   	case 	'tokens' :
+		   	case	'token' :
+		   		$prefix 	=  $this -> TokenPrefix ;
+
+		   		// Loop through directive attributes
+		   		foreach  ( $directive [ 'attributes' ]  as  $attr_name => $attr_value )
+		   		   {
+		   			switch ( strtolower ( $attr_name ) )
+		   			   {
+		   			   	// 'prefix' or 'token-prefix' attribute :
+		   			   	//	Override the default token prefix specified in the %options directive.
+		   			   	case  	'prefix' :
+		   			   	case    'token-prefix' :
+		   			   		$prefix 	=  $attr_value ;
+		   			   		break ;
+
+		   			   	// Default : complain for invalid attribute
+		   			   	default :
+		   			   		self::__Error ( $lexer, $current_line, "Invalid attribute \"$attr_name\" for the \"%tokens\" directive." ) ;
+		   			    }
+		   		    }
+
+		   		// Get the definition contents placed between the curly braces ( "{ }")
+		   		// Definitions consist of "name = value" pairs, where "value" is a quoted string containing either a string or a regex.
+		   		$oldline 	=  $current_line ;
+		   		$text 		=  self::__GetCompoundContents ( $lexer, $current_line, $contents, $index, $contents_length, true ) ;
+		   		$regex 		=  "/^ (?P<match> \s* (?P<name> [a-z_][a-z0-9_]*) \s* = \s* \" (?P<value> ( (\\\") | ([^\"]) )*? ) \" \s* ) /imsx" ;
+
+		   		// Loop through the compound contents
+		   		while  ( $text )
+		   		   {
+		   		   	// Get next match for the "name = value" pair
+		   			preg_match ( $regex, $text, $matches ) ;
+
+		   			// If match found...
+		   			if  ( count ( $matches ) )
+		   			   {
+			   			$token_name 	=  $prefix . $matches [ 'name' ] ;
+			   			$lower_token	=  strtolower ( $token_name ) ;
+
+			   			// Check that the token name is a valid PHP name
+			   			if  ( ! String::IsPhpName ( $token_name ) )
+			   				self::__Error ( $lexer, $current_line, "The generated token value \"$token_name\" is not a valid PHP identifier." ) ;
+
+			   			// Check that the token does not already exists
+			   			if  ( array_key_exists ( $lower_token, $lexer -> DefinedTokens ) )
+			   				self::__Error ( $lexer, $current_line, "The \"$token_name\" token has already been defined." ) ;
+
+			   			// Build the token definition
+						list ( $name, $value )	=  $this -> __GetToken ( $token_name ) ;
+			   			$value_text 	=  $matches [ 'value' ] ;
+			   			$value_regex 	=  self::__ToRegex ( $lexer, $matches [ 'value' ] ) ;
+
+			   			// Add it to the list of existing token definitions
+			   			$lexer -> Tokens [ $lower_token ]  	=  array
+			   			   (
+			   			   	'name' => $name, 'value' => $value, 'text' => $value_text, 'regex' => $value_regex, 'reserved' => false
+			   			    ) ;
+
+			   			// Remove the matched string from the input text
+      		   				$text = substr ( $text, strlen ( $matches [0] ) ) ;
+		   			   }
+		   			// No match : there is an error somewhere.
+		   			else
+		   			   {
+		   			   	$substr 	=  trim ( substr ( $text, $index, 80 ) ) ;
+
+		   			   	if  ( $substr )
+		   					self::__Error ( $lexer, $current_line, "Syntax error near :\n\t" . substr ( $text, $text_index, 80 ) ) ;
+		   				else
+		   					break ;
+		   			    }
+
+		   		    }
+
+		   		break ;
+
+		   	// 'code' directive :
+		   	//	Allows to add code within the generated class definition.
+		   	case 	'code' :
+		   		$text 			 =  $this -> __GetCompoundContents ( $lexer, $current_line, $contents, $index, $contents_length, false ) ;
+				$lexer -> ClassCode 	.=  $text ;
+				break ;
+
+			// Default : complain for bad directive.
+		   	default :
+		   		self::__Error ( $lexer, $current_line,  "Invalid lexer directive encountered : \"{$directive [ 'name' ]}\"." ) ;
+		    }
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		__GetCompoundContents
+
+	    DESCRIPTION
+		Gets the contents of any text specified between curly braces ("{}").
+
+	 --------------------------------------------------------------------------------------------*/
+	private function  __GetCompoundContents ( $lexer, &$current_line, $contents, &$index, $contents_length, $strip_comments )
+	   {
+		$result 		=  "" ;
+		$found_lbrace		=  0 ;
+
+		// Loop through each input character
+		while  ( $index  <  $contents_length )
+		   {
+			$ch 	=  $contents [ $index ] ;
+
+			// Comment processing, the same as in the __CreateLexer function
+			if  ( $ch  ==  '/' )
+			   {
+				if  ( $index + 1  <  $contents_length )
+				   {
+					$ch2 	=  $contents [ $index + 1 ] ;
+
+					if  ( $ch2  ==  '*' )
+					   {
+						$endpos 	=  strpos ( $contents, "*/", $index + 2 ) ;
+
+						if  ( $endpos  ===  false )
+						   {
+							$substr		 =  substr ( $contents, $index ) ;
+							$index  	 =  $contents_length ;
+						    }
+						else
+						   {
+							$substr		 =  substr ( $contents, $index, $endpos - $index + 2 ) ;
+							$index  	 =  $endpos + 1 ;
+							$lastchar 	 =  "/" ;
+						    }
+					    }
+					else if  ( $ch2  ==  '/' )
+					   {
+						$endpos 	=  strpos ( $contents, "\n", $index + 2 ) ;
+
+						if  ( $endpos  ===  false )
+						   {
+							$substr		 =  substr ( $contents, $index ) ;
+							$index  	 =  $contents_length ;
+						    }
+						else
+						   {
+							$substr		 =  substr ( $contents, $index, $endpos - $index + 2 ) ;
+							$index  	 =  $endpos ;
+							$lastchar 	 =  "\n" ;
+						    }
+					    }
+					else
+					   {
+						$result 	.=  $ch ;
+						$lastchar  	 =  "/" ;
+						$index ++ ;
+						continue ;
+					    }
+
+					$current_line += substr_count ( $substr, "\n" ) ;
+
+					if  ( ! $strip_comments  &&  $found_lbrace )
+						$result .= $substr ;
+				    }
+			   }
+			else if  ( $ch  ==  '#' )
+			   {
+				$endpos 	=  strpos ( $contents, "\n", $index + 1 ) ;
+
+				if  ( $endpos  ===  false )
+				   {
+					$substr		 =  substr ( $contents, $index ) ;
+					$index  	 =  $contents_length ;
+				    }
+				else
+				   {
+					$substr		 =  substr ( $contents, $index, $endpos - $index + 2 ) ;
+					$index  	 =  $endpos ;
+					$lastchar 	 =  "\n" ;
+					$current_line ++ ;
+				    }
+
+				if  ( ! $strip_comments  &&  $found_lbrace )
+					$result  .=  $substr ;
+			    }
+			else
+			   {
+			   	// Opening curly brace : count one more nesting level
+			   	if  ( $ch  ==  '{' )
+			   	   {
+			   	   	if  ( $found_lbrace )
+						$result  	.=  $ch ;
+
+			   	   	$found_lbrace ++ ;
+			   	    }
+			   	// Closing curly brace : count one nesting level less
+			   	else if  ( $ch  ==  '}' )
+			   	   {
+			   	   	$found_lbrace -- ;
+
+			   	   	if  ( $found_lbrace  >  0 )
+						$result  	.=  $ch ;
+			   	   	// If we reach zero, this means that we have collected all the text between the curly braces
+			   		else if  ( $found_lbrace  <  1 )
+			   			break ;
+			   	    }
+			   	// Other character : process it as is
+			   	else
+			   	   {
+					$result  	.=  $ch ;
+
+					if  ( $ch  ==  "\n" )
+						$current_line ++ ;
+			   	    }
+			    }
+
+			$index ++ ;
+		    }
+
+		// Strip spaces if necessary
+		if  ( $strip_comments )
+			$result = trim ( preg_replace ( '/\s+/', ' ', $result ) ) ;
+
+		// All done, return
+		return ( $result ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		__ToRegex
+
+	    DESCRIPTION
+		Converts a string to a PHP regex specification.
+		The supplied string can already be a regex string ; in this case, the case-insensitive
+		flag ("/i") will be added if not already present.
+
+	 --------------------------------------------------------------------------------------------*/
+	private static function  __ToRegex ( $lexer, $text )
+	   {
+		if  ( String::IsRegex ( $text ) )
+		   {
+		   	if  ( ! $lexer -> CaseSensitive )
+		   	   {
+				$pos 	=  strrpos ( $text, "/" ) ;
+
+				if  ( $pos  !==  false )
+				   {
+					if  ( strpos ( $text, 'i', $pos )  ===  false )
+						$text .= 'i' ;
+				    }
+		   	    }
+		    }
+		else
+		   {
+			$text = "/" . String::SafeRegex ( $text ) . "/" ;
+
+			if (  ! $lexer -> CaseSensitive )
+				$text .= 'i' ;
+		    }
+
+		return ( $text ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		__GetToken
+
+	    DESCRIPTION
+		Retrieves an existing token name and id, or create a new one.
+
+	 --------------------------------------------------------------------------------------------*/
+	private function  __GetToken ( $name )
+	   {
+		$lowname	=  strtolower ( $name ) ;
+
+		if  ( array_key_exists ( $lowname, $this -> DefinedTokens ) )
+			return ( array ( $this -> DefinedTokens [ $lowname ] [ 'name' ], $this -> DefinedTokens [ $lowname ] [ 'value' ] ) ) ;
+		else
+		   {
+			$this -> DefinedTokens [ $lowname ] [ 'name' ]		=  $name ;
+			$this -> DefinedTokens [ $lowname ] [ 'value' ]	=  $this -> NextTokenId ++ ;
+
+			return ( array ( $this -> DefinedTokens [ $lowname ] [ 'name' ], $this -> DefinedTokens [ $lowname ] [ 'value' ] ) ) ;
+		    }
+	    }
+    }

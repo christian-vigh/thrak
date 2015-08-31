@@ -1,0 +1,1193 @@
+<?php
+/***************************************************************************************************
+
+    NAME
+	File.phpclass
+
+    DESCRIPTION
+	File-related parameters.
+
+    AUTHOR
+     	Christian Vigh, 07/2011.
+
+    HISTORY
+    [Version : 1.0]	[Date : 2011/07/03]	[Author : CV]
+     	Initial version.
+
+   [Version : 2.0]	[Date : 2012/10/06]		[Author : CV]
+	Migrated to the Thrak library version 2.
+ 
+   [Version : 2.0.1]	[Date : 2014/11/22]		[Author : CV]
+	. Changed the FileOrDirectoryParameter::ProcessValue() method so that filename globbing is
+	  transparent on Windows platforms.
+ 	. Added the "glob" boolean attribute to FileOrDirectoryParameter so that globbing on Windows
+ 	  platforms can be turned off (on by default).
+ 
+   [Version : 2.0.2]	[Date : 2015/02/09]		[Author : CV]
+	. Added the <drive> parameter type.
+
+   [Version : 2.0.3]	[Date : 2015/04/11]		[Author : CV]
+	. Replaced each exception throwing with "error ( new CLException (...) )".
+
+ ***************************************************************************************************/
+namespace  	Thrak\Processors\CL ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces and classes
+use     Thrak\Processors\CL\CLException as  CLException ;
+use   	Thrak\Types\String 		as  String ;
+use 	Thrak\IO\Path 			as  Path ;
+use     Thrak\Types\String\Convert	as  Convert ;
+
+
+/*==================================================================================================
+
+    CLFileSystemObjectParameter class -
+	Abstract class for file and directory objects.
+
+  ==================================================================================================*/
+abstract class  CLFileSystemObjectParameter  extends  \Thrak\Processors\CL\CLAbstractParameter
+   {
+	// File disposition constants
+	const DISPOSITION_ANY  		=  0 ; 		// No particular checking is performed on the specified file
+	const DISPOSITION_NEW	      	=  1 ;    	// The specified file must not exist and will be created
+	const DISPOSITION_EXISTING      =  2 ;		// The specified file must exist
+	const DISPOSITION_RECREATE	=  3 ;		// The specified file will be created if it does not exist, or reset if it already exists
+	const DISPOSITION_HERE		=  4 ;		// The specified file will be created only if it does not exist
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Class constructor.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __construct ( $parent, $tags, $valuetext = "file-system-object", $definitions )
+	   {
+		parent::__construct ( $parent, $tags, $valuetext, $definitions ) ;
+		$this -> ReturnValueType	=  self::RETURN_VALUE_MULTIPLE ;
+	    }
+
+    }
+
+
+/*==================================================================================================
+
+	CLFileOrDirectoryObjectParameter class -
+		Implements a file or directory object.
+
+  ==================================================================================================*/
+ abstract class  CLFileOrDirectoryParameter  extends  CLFileSystemObjectParameter
+    {
+	// File disposition constants
+	const DISPOSITION_ANY  		=  0 ; 		// No particular checking is performed on the specified file
+	const DISPOSITION_NEW	      	=  1 ;    	// The specified file must not exist and will be created
+	const DISPOSITION_EXISTING      =  2 ;		// The specified file must exist
+	const DISPOSITION_RECREATE	=  3 ;		// The specified file will be created if it does not exist, or reset if it already exists
+	const DISPOSITION_HERE		=  4 ;		// The specified file will be created only if it does not exist
+
+	// Creation mode. When unspecified, the host's default creation mode is used
+	public $CreationMode		=  null ;
+	// File disposition
+	public $Disposition 		=  self::DISPOSITION_ANY ;
+	// Default globbing value
+	public $Glob			=  true ;
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Class constructor.
+			The 'disposition' xml attribute must be defined by derived classes.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __construct ( $parent, $tags, $valuetext = "file-or-directory", $definitions )
+	   {
+	   	$definitions = array_merge ( $definitions,
+	   		array
+			   (
+			   	array
+			   	   (
+			   		'names'		=>  'creation-mode',
+			   		'member'	=>  'CreationMode',
+			   		'type'		=>  self::ATTRIBUTE_TYPE_ANY,
+			   		'preprocessor'	=>  'CreationModeValidator',
+			   		'help'		=>  'Creation mode, as an integer value (can be octal or hex).'
+		   		    ),
+			   	array
+			   	   (
+			   		'names'		=>  'glob',
+			   		'member'	=>  'Glob',
+			   		'type'		=>  self::ATTRIBUTE_TYPE_BOOLEAN,
+			   		'help'		=>  'On Windows platforms, allows to turn filename globbing on or off (default is on). ' .
+							    'This attribute is ignored on Unix platforms.'
+		   		    )
+	   		    ) ) ;
+
+		parent::__construct ( $parent, $tags, $valuetext, $definitions ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Creation mode validator.
+
+	 --------------------------------------------------------------------------------------------*/
+	protected function  CreationModeValidator ( $object, $attribute_definition, $tag, $name, $attribute_value )
+	   {
+   	   	if  ( String::IsInteger ( $attribute_value ) )
+   			$mode  = Convert::ToInteger ( $attribute_value ) ;
+		else
+			error ( new CLException ( "Invalid creation mode specification '$attribute_value' for the <$tag> tag." ) ) ;
+
+		return ( $mode ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Processes the command-line value.
+
+	 --------------------------------------------------------------------------------------------*/
+	protected function  ProcessValue ( $pname, $real_value )
+	   {
+		// On Windows platform, we need to do file substitution by ourself
+		if  ( IS_WINDOWS  &&  $this -> Glob )
+		   {
+			$real_values	=  glob ( $real_value ) ;
+			
+			if  ( ! $real_values )
+				$real_values	=  [ $real_value ] ;
+		    }
+		else
+		   {
+			$real_values	=  [ $real_value ] ;
+		    }
+
+		// Loop through the expanded values (there will be only one on Unix platforms)
+		$values		=  [] ;
+		
+		foreach  ( $real_values  as  $real_value )
+		   {
+			// Try not to get the full path of a filename that contain wildcards on Windows platforms
+			if  ( IS_WINDOWS  &&  ! $this -> Glob  &&  strcspn ( $real_value, "[]*?" )  <  strlen ( $real_value ) )
+				$value	=  $real_value ;
+			else
+	   			$value 	=  Path::RealPath ( $real_value, true ) ;
+			
+	   		$type 	=  $this -> ValueLabel ;
+
+	   		if  ( ! $this -> IsValidFilename ( $value ) )
+	   			error ( new CLException ( "The $type '$value' specified for the '$pname' parameter is invalid." ) ) ;
+
+			// Check file/directory existence according to its disposition
+			switch ( $this -> Disposition )
+			   {
+		   		// disposition="any" -
+		   		//	All we need to do is checking that the given path is correct, which has already been done.
+		   		case	self::DISPOSITION_ANY :
+		   			break ;
+
+				// disposition="new" or "create" -
+				//	The path must not exist and will automatically be created.
+				case	self::DISPOSITION_NEW :
+					if  ( $this -> Exists ( $value ) )
+						error ( new CLException ( "The specified $type ($real_value) already exists." ) ) ;
+
+					if  ( ! $this -> Create ( $value ) )
+						error ( new CLException ( "Cannot create the specified $type '$real_value'." ) ) ;
+
+					$value = realpath ( $value ) ;  // works only for existing files
+					break ;
+
+				// disposition="existing" or "exists" -
+				//	The path must already exist.
+				case	self::DISPOSITION_EXISTING :
+					if  ( ! $this -> Exists ( $value ) )
+						error ( new CLException ( "No $type named \"$real_value\" exists." ) ) ;
+					break ;
+
+				// disposition="reset" or "recreate" -
+				//	Recreates the path, whether it already exists or not.
+				case	self::DISPOSITION_RECREATE :
+					if  ( $this -> Exists ( $value ) )
+						@unlink ( $value ) ;
+
+					if  ( ! $this -> Create ( $value ) )
+						error ( new CLException ( "Cannot create the specified $type '$real_value'." ) ) ;
+
+					$value = realpath ( $value ) ;  // works only for existing files
+					break ;
+
+				// disposition="here" -
+				//	The path will be created if it does not exists, and remain untouched if it already exists.
+				case	self::DISPOSITION_HERE :
+					if  ( ! $this -> Exists ( $value ) )
+					   {
+						if  ( ! $this -> Create ( $value ) )
+							error ( new CLException ( "Cannot create the specified $type '$real_value'." ) ) ;
+					    }
+
+					$value = realpath ( $value ) ;  // works only for existing files
+					break ;
+			    }
+			
+			// Add this value to the list of returned ones
+			$values []	=  $value ;
+		    }
+		
+		if  ( count ( $values )  ==  1 )
+			return ( $values [0] ) ;
+		else
+			return ( $values ) ;
+	    }
+     }
+
+
+/*==================================================================================================
+
+    CLFileParameter class -
+	Implements a file parameter.
+
+  ==================================================================================================*/
+ class  CLFileParameter  extends  CLFileOrDirectoryParameter
+    {
+	/*-------------------------------------------------------------------------------------------
+
+		Class constructor.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __construct ( $parent, $tags )
+	   {
+	   	$definitions  =  array
+		   (
+		   	array
+		   	   (
+		   		'names'		=>  'disposition',
+		   		'type'		=>  self::ATTRIBUTE_TYPE_KEYWORD,
+		   		'member' 	=>  'Disposition',
+		   		'help'		=>  array
+		   		   (
+		   		   	"Disposition for the specified filename ; can be any one of the following :\n\n",
+		   		   	"existing or exists -\n",
+		   		   	"\tThe file must already exists. An error will occur if the file does not exists.\n",
+		   		   	"create or new -\n",
+		   		   	"\tThe file will be created if it does not already exist. An error will occurr if it already exists.\n",
+		   		   	"any -\n",
+		   		   	"\tFile existence is not checked.\n",
+		   		   	"reset or recreate -\n",
+		   		   	"\tThe file will be systematically recreated.\n",
+		   		   	"here -\n",
+		   		   	"\tThe file will be created if it does not exists ; otherwise, it will remain untouched."
+	   		   	    ),
+		   	    	'keywords' 	=>  array
+		   	    	   (
+		   	    	   	'existing'		=>  self::DISPOSITION_EXISTING,
+		   	    	   	'exists'		=>  self::DISPOSITION_EXISTING,
+		   	    	   	'create'		=>  self::DISPOSITION_NEW,
+		   	    	   	'new'			=>  self::DISPOSITION_NEW,
+		   	    	   	'any'			=>  self::DISPOSITION_ANY,
+		   	    	   	'here'			=>  self::DISPOSITION_HERE,
+		   	    	   	'reset'			=>  self::DISPOSITION_RECREATE,
+		   	    	   	'recreate'		=>  self::DISPOSITION_RECREATE
+				    )
+		    	    )
+   		    ) ;
+
+		$this -> Help 			=  "Defines a file name parameter." ;
+		$this -> ReturnValueHelp	=  "Returns the absolute path of the specified filename." ;
+
+		parent::__construct ( $parent, $tags, 'filename', $definitions ) ;
+	    }
+
+
+	/*******************************************************************************************/
+     	/*******************************************************************************************/
+     	/*******************************************************************************************/
+     	/******                                                                               ******/
+     	/******                SUPPORT FUNCTIONS FOR THE BASE ABSTRACT CLASS                  ******/
+     	/******                                                                               ******/
+     	/*******************************************************************************************/
+     	/*******************************************************************************************/
+     	/*******************************************************************************************/
+
+	//    IsValidFilename -
+	//    	Checks that the supplied filename is valid.
+	protected function  IsValidFilename  ( $filename )
+	   {
+		return ( Path::IsValidFilename ( $filename, false ) ) ;
+	    }
+
+	//    Exists -
+	//    	Checks that the supplied filename exists.
+ 	protected function  Exists ( $filename )
+ 	   {
+ 	   	return ( is_file ( $filename ) ) ;
+ 	    }
+
+
+ 	// Create -
+ 	//	Creates the specified file.
+  	protected function  Create ( $object )
+  	   {
+  	   	if  ( $this -> CreationMode  !==  null )
+  	   	   {
+			$status = touch ( $object ) ;
+
+			if  ( $status  &&  $this -> CreationMode )
+				chmod ( $object, $this -> CreationMode ) ;
+ 		    }
+ 		else
+ 			$status = touch ( $object ) ;
+
+		return ( $status ) ;
+  	    }
+     }
+
+
+/*==================================================================================================
+
+    CLDirectoryParameter class -
+	Implements a directory parameter.
+
+  ==================================================================================================*/
+ class  CLDirectoryParameter  extends  CLFileOrDirectoryParameter
+    {
+	/*-------------------------------------------------------------------------------------------
+
+		Class constructor.
+		The difference with the <file> parameter is that the 'recreate' disposition is not
+		defined for directories (too dangerous).
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __construct ( $parent, $tags )
+	   {
+	   	$definitions  =  array
+		   (
+		   	array
+		   	   (
+		   		'names'		=>  'disposition',
+		   		'type'		=>  self::ATTRIBUTE_TYPE_KEYWORD,
+		   		'member' 	=>  'Disposition',
+		   		'help'		=>  array
+		   		   (
+		   		   	"Disposition for the specified directory ; can be any one of the following :\n\n",
+		   		   	"existing or exists -\n",
+		   		   	"\tThe directory must already exists. An error will occur if it does not exists.\n",
+		   		   	"create or new -\n",
+		   		   	"\tThe directory will be created if it does not already exist. An error will occurr if it already exists.\n",
+		   		   	"any -\n",
+		   		   	"\tDirectory existence is not checked.\n",
+		   		   	"here -\n",
+		   		   	"\tThe directory will be created if it does not exists ; otherwise, it will remain untouched."
+	   		   	    ),
+		   	    	'keywords' 	=>  array
+		   	    	   (
+		   	    	   	'existing'		=>  self::DISPOSITION_EXISTING,
+		   	    	   	'exists'		=>  self::DISPOSITION_EXISTING,
+		   	    	   	'create'		=>  self::DISPOSITION_NEW,
+		   	    	   	'new'			=>  self::DISPOSITION_NEW,
+		   	    	   	'any'			=>  self::DISPOSITION_ANY,
+		   	    	   	'here'			=>  self::DISPOSITION_HERE
+				    )
+		    	    )
+   		    ) ;
+
+		$this -> Help 			=  "Defines a directory name parameter." ;
+		$this -> ReturnValueHelp	=  "Returns the absolute path of the specified directory." ;
+
+		parent::__construct ( $parent, $tags, 'directory', $definitions ) ;
+	    }
+
+
+	/*******************************************************************************************/
+     	/*******************************************************************************************/
+     	/*******************************************************************************************/
+     	/******                                                                               ******/
+     	/******                SUPPORT FUNCTIONS FOR THE BASE ABSTRACT CLASS                  ******/
+     	/******                                                                               ******/
+     	/*******************************************************************************************/
+     	/*******************************************************************************************/
+     	/*******************************************************************************************/
+
+	//    IsValidFilename -
+	//    	Checks that the supplied filename is valid.
+	protected function  IsValidFilename  ( $filename )
+	   {
+		return ( Path::IsValidFilename ( $filename, true ) ) ;
+	    }
+
+	//    Exists -
+	//    	Checks that the supplied filename exists.
+ 	protected function  Exists ( $filename )
+ 	   {
+ 	   	return ( is_dir ( $filename ) ) ;
+ 	    }
+
+
+ 	// Create -
+ 	//	Creates the specified file.
+  	protected function  Create ( $object )
+  	   {
+  	   	if  ( $this -> CreationMode  !==  null )
+  	   		$status = mkdir ( $object, $this -> CreationMode ) ;
+ 		else
+ 			$status = mkdir ( $object ) ;
+
+		return ( $status ) ;
+  	    }
+     }
+
+
+/*==================================================================================================
+
+    CLFileContentsParameter class -
+	Implements a file contents parameter.
+
+  ==================================================================================================*/
+ class  CLFileContentsParameter  extends  \Thrak\Processors\CL\CLAbstractParameter
+    {
+    	// EOL disposition options
+    	const   FILE_EOL_BINARY		=  0 ;	// No special processing is performed on file contents
+    	const	FILE_EOL_UNIX		=  1 ;	// "\n" for EOL
+	const	FILE_EOL_WINDOWS	=  2 ;	// "\r\n" for EOL
+	const   FILE_EOL_SPLIT		=  3 ;	// Lines are splitted and returned as an array.
+
+	// For the FILE_EOL_SPLIT disposition, trimming options
+	const	FILE_SPLIT_TRIM_NONE	=  0 ;
+	const   FILE_SPLIT_TRIM_LEFT	=  1 ;
+	const 	FILE_SPLIT_TRIM_RIGHT	=  2 ;
+	const	FILE_SPLIT_TRIM_BOTH	=  3 ;
+
+	// Disposition for empty lines removal
+	const	FILE_EMPTY_LINES_REMOVE	=  0 ;
+	const	FILE_EMPTY_LINES_KEEP	=  1 ;
+	const	FILE_EMPTY_LINES_UNIQUE	=  2 ;
+
+	// EOL disposition
+	public	$EOLDisposition		=  self::FILE_EOL_UNIX ;
+	// Trimming option, when the FILE_EOL_SPLIT disposition is chosen
+	public	$TrimmingOption		=  self::FILE_SPLIT_TRIM_NONE ;
+	// Remove empty lines, when the FILE_EOL_SPLIT disposition is chosen
+	public	$RemoveEmptyLines	=  self::FILE_EMPTY_LINES_KEEP ;
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Class constructor.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __construct ( $parent, $tags )
+	   {
+	   	$definitions  =  array
+		   (
+		   	array
+		   	   (
+		   		'names'		=>  array ( 'eol', 'eol-disposition' ),
+		   		'type'		=>  self::ATTRIBUTE_TYPE_KEYWORD,
+		   		'member' 	=>  'EOLDisposition',
+		   		'help'		=>  array
+				    (
+				    	"EOL Disposition for the specified filename contents ; can be any one of the following :\n",
+				    	"unix -\n",
+				    	"\tEnd of lines will be terminated by the Unix EOL character, '\\n'.\n",
+				    	"windows or msdos -\n",
+				    	"\tEnd of lines will be terminated by the MSDOS cr/lf combination ('\\r\\n').\n",
+				    	"binary -\n",
+				    	"\tNo special handling will occur for end of lines. The file is considered as pure binary data.\n",
+				    	"split -\n",
+				    	"\tFile contents are returned as an array of individual lines, without the trailing EOL sequence.\n"
+			    	     ),
+		   	    	'keywords' 	=>  array
+		   	    	   (
+		   	    	   	'unix'			=>  self::FILE_EOL_UNIX,
+		   	    	   	'windows'		=>  self::FILE_EOL_WINDOWS,
+		   	    	   	'msdos'			=>  self::FILE_EOL_WINDOWS,
+		   	    	   	'binary'		=>  self::FILE_EOL_BINARY,
+		   	    	   	'split'			=>  self::FILE_EOL_SPLIT
+				    )
+		    	    ),
+		   	array
+		   	   (
+		   		'names'		=>  'trim',
+		   		'type'		=>  self::ATTRIBUTE_TYPE_KEYWORD,
+		   		'member' 	=>  'TrimmingOption',
+		   		'help'		=>  array
+				    (
+				    	"Trimming option, when the eol-disposition parameter is set to 'split' :\n",
+				    	"left -\n",
+				    	"\tLines are trimmed left.\n",
+				    	"right -\n",
+				    	"\tLines are trimmed right.\n",
+				    	"both -\n",
+				    	"\tLines are trimmed both left and right.\n",
+				    	"none -\n",
+				    	"No trimming occurs."
+			    	     ),
+		   	    	'keywords' 	=>  array
+		   	    	   (
+		   	    	   	'left'			=>  self::FILE_SPLIT_TRIM_LEFT,
+		   	    	   	'right'			=>  self::FILE_SPLIT_TRIM_RIGHT,
+		   	    	   	'both'			=>  self::FILE_SPLIT_TRIM_BOTH,
+		   	    	   	'none'			=>  self::FILE_SPLIT_TRIM_NONE
+				    )
+		    	    ),
+  	    		array
+  	    		   (
+  	    		   	'names'		=>  'empty-lines',
+  	    		   	'type'		=>  self::ATTRIBUTE_TYPE_KEYWORD,
+  	    		   	'member'	=>  'RemoveEmptyLines',
+  	    		   	'help'		=>  array
+				    (
+				    	"Specifies what to do when the eol-disposition parameter is set to 'split' and empty lines are encountered :\n",
+				    	"keep -\n",
+				    	"\tEmpty lines are kept.\n",
+				    	"remove or discard -\n",
+				    	"\tEmpty lines are removed.\n",
+				    	"unique -\n",
+				    	"\tWhen at least one empty line is encountered, only one empty line will be kept."
+			    	     ),
+  	    		   	'keywords'	=>  array
+  	    		   	   (
+  	    		   	   	'keep'			=>  self::FILE_EMPTY_LINES_KEEP,
+					'remove'		=>  self::FILE_EMPTY_LINES_REMOVE,
+					'discard'		=>  self::FILE_EMPTY_LINES_REMOVE,
+					'unique'		=>  self::FILE_EMPTY_LINES_UNIQUE
+				    )
+			    )
+   	    	    ) ;
+
+		$this -> Help 			=  "Defines a file parameter whose contents are to be read." ;
+		$this -> ReturnValueHelp	=<<<END
+Returns an associative array containing the following entries :
+
+'file' -
+	Absolute path of the supplied file name.
+
+'contents' -
+	File contents, as a single string, or as an array of string if the eol-disposition attribute is set to 'split'.
+END;
+
+
+		parent::__construct ( $parent, $tags, 'file-contents', $definitions ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Process the value.
+		The returned value is an associative array containing the following :
+
+		'file' -
+			Filename, as specified on the command line.
+
+		'realfile' -
+			Absolute filename.
+
+		'contents' -
+			File contents.
+
+	 --------------------------------------------------------------------------------------------*/
+	protected function  ProcessValue ( $name, $value )
+	   {
+	   	// Get an absolute path
+	   	$real_value 	=  Path::RealPath ( $value ) ;
+
+	   	if  ( ! file_exists ( $real_value ) )
+	   		error ( new CLException ( "The '$value' file specified for the '$name' parameter does not exist." ) ) ;
+
+   		// Handle EOL disposition
+   		switch  ( $this -> EOLDisposition )
+   		   {
+   		   	// Binary file :
+   		   	//	Do nothin else than reading file contents.
+			case	self::FILE_EOL_BINARY :
+				$contents = file_get_contents ( $real_value ) ;
+				break ;
+
+			// Splitted file :
+			//	Process the trimming options and empty line removals.
+			case	self::FILE_EOL_SPLIT :
+				$contents = file ( $real_value ) ;
+
+				foreach  ( $contents  as  &$line )
+					$line = str_replace ( array ( "\r", "\n" ), "", $line ) ;
+
+				// Process trimming options
+				switch  ( $this -> TrimmingOption )
+				   {
+					case	self::FILE_SPLIT_TRIM_NONE :
+						break ;
+
+					case	self::FILE_SPLIT_TRIM_LEFT :
+						foreach  ( $contents  as  &$line )
+							$line = ltrim ( $line ) ;
+						break ;
+
+					case	self::FILE_SPLIT_TRIM_RIGHT :
+						foreach ( $contents  as  &$line )
+							$line = rtrim ( $line ) ;
+						break ;
+
+					case	self::FILE_SPLIT_TRIM_BOTH :
+						foreach  ( $contents  as  &$line )
+							$line = trim ( $line ) ;
+				    }
+
+				// If empty lines are to be removed, remove them
+				switch  ( $this -> RemoveEmptyLines )
+				   {
+					case	self::FILE_EMPTY_LINES_KEEP :
+						break ;
+
+					case	self::FILE_EMPTY_LINES_REMOVE :
+						$old_contents 	=  $contents ;
+						$contents 	=  array ( ) ;
+
+						foreach  ( $old_contents  as  $old_line )
+						   {
+							if  ( trim ( $old_line )  !=  "" )
+								$contents []  =  $old_line ;
+						    }
+						break ;
+
+					case	self::FILE_EMPTY_LINES_UNIQUE :
+						$previous_line 	=  null ;
+						$old_contents  	=  $contents ;
+						$contents 	=  array ( ) ;
+
+						foreach  ( $old_contents  as  $old_line )
+						   {
+							if  ( $previous_line  ===  null  ||  $previous_line  !=  "" )
+								$contents []  	=  $old_line ;
+							else if  ( $previous_line  ==  "" )
+							   {
+								if  ( $old_line  !=  "" )
+									$contents [] = $old_line ;
+							    }
+
+							$previous_line = $old_line ;
+						    }
+						break ;
+				    }
+
+		    		break ;
+
+			// Unix EOL disposition :
+			//	Make sure all EOLs end with "\n"
+			case	self::FILE_EOL_UNIX :
+				$contents = file_get_contents ( $real_value ) ;
+				$contents = str_replace ( "\r", "", $contents ) ;
+				break ;
+
+			// Windows EOL disposition :
+			//	Make sure all EOLs end with "\r\n"
+			case	self::FILE_EOL_WINDOWS :
+				$contents = file_get_contents ( $real_value ) ;
+				$contents = str_replace ( "\r", "", $contents ) ;
+				$contents = str_replace ( "\n", "\r\n", $contents ) ;
+				break ;
+
+			default :
+   		    }
+
+    		// All done, return
+    		$result = array ( 'file' => $real_value, 'contents' => $contents ) ;
+
+    		return ( $result ) ;
+	    }
+     }
+
+
+/*==================================================================================================
+
+    CLFileMaskParameter class -
+	Implements a file mask parameter.
+
+  ==================================================================================================*/
+ class  CLFileMaskParameter  extends  \Thrak\Processors\CL\CLAbstractParameter
+    {
+	/*-------------------------------------------------------------------------------------------
+
+		Class constructor.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __construct ( $parent, $tags )
+	   {
+		$this -> Help 			=  "Defines a file mask parameter with wildcard characters." ;
+		$this -> ReturnValueHelp	=  "Returns the matching files as an array, or an empty array if no file matches the specified mask." ;
+
+		parent::__construct ( $parent, $tags, 'filemask' ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Process the value.
+
+	 --------------------------------------------------------------------------------------------*/
+	protected function  ProcessValue ( $name, $value )
+	   {
+	   	$values = glob ( $value, GLOB_BRACE ) ;
+
+	   	if  ( $values  ===  false )
+	   		$values = array ( ) ;
+
+   		return ( $values ) ;
+	    }
+     }
+
+
+
+/*==================================================================================================
+
+    CLFileSystemTreeParameter class -
+	Implements a file system tree parameter.
+
+  ==================================================================================================*/
+ class  CLFileSystemTreeParameter  extends  \Thrak\Processors\CL\CLAbstractParameter
+    {
+    	// File system object types handled by this class
+    	const	TYPE_FILE		=  0x01 ;
+    	const	TYPE_DIRECTORY		=  0x02 ;
+    	const	TYPE_ALL		=  0x03 ;
+
+    	// Inclusion and exclusion masks. null means no filter
+	public		$IncludeFileMask		=  null ;
+	public 		$ExcludeFileMask		=  null ;
+	public 		$ExcludeDirectoryMask		=  null ;
+	// Case-sensitive flag for processing inclusions/exclusions ; depends on OS type
+	protected	$CaseSensitive ;
+	// Max tree nesting level during traversal. null means no limit.
+	public		$MaxDepth		=  null ;
+	// Max results. When null, all the tree is traversed. If a max number of results is specified,
+	// the user will be prompted for continuation
+	public		$MaxResults		=  null ;
+	// Indicates if the file system object absolute path is to b e returned instead of relative path
+	public		$ReturnAbsolutePath	=  false ;
+	// File system object types to be retrieved
+	public		$ObjectTypes		=  self::TYPE_ALL ;
+	// Sort option
+	public		$SortResults		=  false ;
+	// Flatten option
+	public		$FlattenResults		=  false ;
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Class constructor.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __construct ( $parent, $tags )
+	   {
+	   	global		$Runtime ;
+
+
+		$this -> Help 			=  "Defines a file system tree parameter. The supplied value must be a valid directory." ;
+		$this -> ReturnValueHelp	=<<<END
+When the "flatten" attribute is set to "false", the return value is a recursive associative array containing the following entries :
+
+'files' -
+	List of files found in the current directory.
+
+'directories' -
+	Associative array whose keys contain the found directory names and whose entries are themselves
+	'directory' and 'files' subkeys.
+END;
+
+		$definitions  =  array
+		   (
+		   	array
+		   	   (
+		   	   	'names'		=>  array ( 'include-files' ),
+				'type'		=>  self::ATTRIBUTE_TYPE_LIST,
+				'member'	=>  'IncludeFileMask',
+				'help'		=>  'Specifies a mask which will be applied to the files to be retained.'
+		 	    ),
+		   	array
+		   	   (
+		   	   	'names'		=>  array ( 'exclude-files' ),
+				'type'		=>  self::ATTRIBUTE_TYPE_LIST,
+				'member'	=>  'ExcludeFileMask',
+				'help'		=>  'Specifies a mask which will be applied to the files not to be rejected.'
+		 	    ),
+		   	array
+		   	   (
+		   	   	'names'		=>  array ( 'exclude-directories', 'exclude-dirs' ),
+				'type'		=>  self::ATTRIBUTE_TYPE_LIST,
+				'member'	=>  'ExcludeDirectoryMask',
+				'help'		=>  'Specifies the sub-directories to be excluded from the search.'
+		 	    ),
+    			array
+    			   (
+    			   	'names'		=>  array ( 'absolute-path', 'absolute', 'abs-path', 'abspath' ),
+    			   	'type'		=>  self::ATTRIBUTE_TYPE_BOOLEAN,
+    			   	'member' 	=>  'ReturnAbsolutePath',
+				'default'	=>  'false',
+    			   	'help'		=>  'Returns all names as absolute paths.'
+			    ),
+    			array
+    			   (
+    			   	'names'		=>  array ( 'depth', 'max-depth', 'maxdepth' ),
+    			   	'type'		=>  self::ATTRIBUTE_TYPE_UNSIGNED_INTEGER,
+    			   	'member'	=>  'MaxDepth',
+				'help'		=>  'Indicates a nesting-level limit.'
+       			    ),
+    			array
+    			   (
+    			   	'names'		=>  array ( 'limit', 'max-results', 'maxresults' ),
+    			   	'type'		=>  self::ATTRIBUTE_TYPE_UNSIGNED_INTEGER,
+    			   	'member'	=>  'MaxResults',
+				'help'		=>  'Indicates a limit on the number of file system objects to be returned.'
+       			    ),
+    			array
+    			   (
+    			   	'names'		=>  array ( 'flat', 'flatten' ),
+    			   	'type'		=>  self::ATTRIBUTE_TYPE_BOOLEAN,
+    			   	'member' 	=>  'FlattenResults',
+				'default'	=>  'true',
+    			   	'help'		=>  'Specifies whether the results are to be returned as a flat array, or as a recursive associative array.'
+			    ),
+  			array
+  			   (
+  			   	'names'		=>  'sort',
+  			   	'type'		=>  self::ATTRIBUTE_TYPE_BOOLEAN,
+  			   	'member'	=>  'SortResults',
+				'default'	=>  'false',
+  			   	'help'		=>  'Indicates whether the results are to be sorted or left as is.'
+			    ),
+		   	array
+		   	   (
+		   		'names'		=>  array ( 'type' ),
+		   		'type'		=>  self::ATTRIBUTE_TYPE_KEYWORD,
+		   		'member' 	=>  'ObjectTypes',
+		   		'help'		=>  array
+				    (
+				    	"Type of file system objects to be returned ; can be any one of the following :\n\n",
+				    	"file or f -\n",
+				    	"\tOnly file names will be returned.\n",
+				    	"directory or dir or d -\n",
+				    	"\tOnly directory names will be returned. Note that the '.' and '..' entries will never be returned.\n",
+				    	"all or a or * -\n",
+				    	"\tBoth file and directory names will be returned.\n",
+				    	"\nNote : The 'flatten' attribute is forced to true if the 'file' or 'directory' restriction is specified.",
+
+			    	     ),
+				'default'	=>  'all',
+		   	    	'keywords' 	=>  array
+		   	    	   (
+		   	    	   	'file'		=>  self::TYPE_FILE,
+		   	    	   	'f'		=>  self::TYPE_FILE,
+		   	    	   	'directory'	=>  self::TYPE_DIRECTORY,
+		   	    	   	'dir'		=>  self::TYPE_DIRECTORY,
+		   	    	   	'd'		=>  self::TYPE_DIRECTORY,
+		   	    	   	'all'		=>  self::TYPE_ALL,
+		   	    	   	'a'		=>  self::TYPE_ALL,
+		   	    	   	'*'		=>  self::TYPE_ALL
+				    )
+			    )
+		    ) ;
+
+		parent::__construct ( $parent, $tags, 'filetree', $definitions ) ;
+
+		// Force the flatten option if a restriction is applied on object types
+		if  ( $this -> ObjectTypes  !=  self::TYPE_ALL )
+			$this -> FlattenResults = true ;
+
+		// When running on Windows, exclusions/inclusions are case-insensitive
+		if  ( IS_WINDOWS )
+			$this -> CaseSensitive = false ;
+		else
+			$this -> CaseSensitive = true ;
+
+		// Always handle Unix-style paths
+		if  ( $this -> ExcludeDirectoryMask  !==  null )
+		   {
+			foreach  ( $this -> ExcludeDirectoryMask  as  &$mask )
+				$mask = str_replace ( "\\", "/", $mask ) ;
+		    }
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		IsFiltered -
+			Can be implemented by derived classes to provide for additional filtering on
+			the results.
+			Return boolean false to keep the specified file.
+
+	 --------------------------------------------------------------------------------------------*/
+ 	protected function  IsFiltered ( $file, $isdir )
+ 	   {
+		return ( false ) ;
+ 	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		IsExcluded -
+			Process optional file and directory exclusions.
+
+	 --------------------------------------------------------------------------------------------*/
+ 	protected function  IsExcluded ( $path, $isdir )
+ 	   {
+ 	   	// Basic fast precheck : do nothing if no inclusion/exclusion has been specified
+		if  ( $this -> ExcludeFileMask  ===  null  &&  $this -> ExcludeDirectoryMask  ===  null  &&
+	 	      $this -> IncludeFileMask  ===  null )
+			return ( false ) ;
+
+		// Split path
+		$dirname	=  dirname  ( $path ) ;
+		$direlements 	=  explode ( '/', $dirname ) ;
+		$filename	=  basename ( $path ) ;
+		$case		=  $this -> CaseSensitive ;
+
+		// File exclusions
+		if  ( $isdir )
+		   {
+			if  ( $this -> ExcludeDirectoryMask )
+			   {
+				foreach  ( $this -> ExcludeDirectoryMask  as  $mask )
+				   {
+					if  ( String::Matches ( $dirname, $mask, $case ) )
+						return ( true ) ;
+				    }
+			    }
+		    }
+		else
+		   {
+			if  ( $this -> ExcludeFileMask  !==  null )
+			   {
+				foreach  ( $this -> ExcludeFileMask  as  $mask )
+				   {
+					if  ( String::Matches ( $filename, $mask, $case ) )
+						return ( true ) ;
+				    }
+			    }
+
+			// File inclusions
+			if  ( $this -> IncludeFileMask  !==  null )
+			   {
+				foreach  ( $this -> IncludeFileMask  as  $mask )
+				   {
+					if  ( Path::Matches ( $filename, $mask, $case ) )
+						return ( false ) ;
+				    }
+			    }
+		    }
+
+		// No exclusion or inclusion applies : exclude the file
+		if  ( $isdir )
+			return ( false ) ;	// Subdirectories must still be processed
+		else
+		   {
+			// If file inclusion/exclusion has been specified, then we must not retain this file
+			if  ( $this -> ExcludeFileMask  !==  null  ||  $this -> IncludeFileMask  !==  null )
+				return ( true ) ;
+			else
+				return ( false ) ;
+		    }
+ 	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Retrieve file system objects tree.
+
+	 --------------------------------------------------------------------------------------------*/
+ 	private 	$ObjectCount	=  0 ;
+
+	private function  WalkTree ( $level, $path, &$results )
+	   {
+	   	// Check if a limit is imposed on the number of results
+	   	if  ( $this -> MaxResults  &&  $this -> ObjectCount  >  $this -> MaxResults )
+	   		return ;
+
+	   	// Open the specified directory
+		$fp  =  opendir ( $path ) ;
+
+		// If open failed, this means that we don't have the necessary rights ; silently ignore it
+		if  ( $fp  ===  false )
+			return ;
+
+		// Create a new sub-entry into our array
+		if  ( ! $this -> FlattenResults )
+		   {
+		   	if  ( $this -> ObjectTypes  &  self::TYPE_DIRECTORY )
+				$results [ 'directories' ] = array ( ) ;
+
+			if  ( $this -> ObjectTypes  &  self::TYPE_FILE )
+				$results [ 'files' ] = array ( ) ;
+		    }
+
+		// Remove trailing slash from path, if present
+		$path = str_replace ( "\\", "/", $path ) ;
+		$path = trim ( $path, "/" ) ;
+
+		// Loop through directory contents
+		while  ( ( $file = readdir ( $fp ) )  !==  false )
+		   {
+		   	// Exclude the reserved '.' and '..' entries
+			if  ( $file  ==  '.'  ||  $file  == '..' )
+				continue ;
+
+			$file = $path . '/' . $file ;
+
+			// Keep the object type
+			$isdir  	=  is_dir ( $file ) ;
+
+			// Check if we need to retain files
+			if  ( ! ( $this -> ObjectTypes  &  self::TYPE_FILE )  &&  ! $isdir )
+				continue ;
+
+			// Check if we have to apply some exclusions
+			$keep = true ;
+
+			if  ( $this -> IsExcluded ( $file, $isdir ) )
+				$keep = false ;
+
+			// Check if the file matches the filtering settings defined by derived classes
+			if  ( $this -> IsFiltered ( $file, $isdir ) )
+				$keep = false ;
+
+		   	// Check if a limit is imposed on the number of results
+		   	if  ( $keep )
+		   	   {
+			   	if  ( $this -> MaxResults  &&  $this -> ObjectCount  >  $this -> MaxResults )
+			   		return ;
+
+				$this -> ObjectCount ++ ;
+
+				// All checkings performed, add the current object to the array
+				if  ( $this -> FlattenResults )
+				   {
+					if  ( ( $this -> ObjectTypes  &  self::TYPE_DIRECTORY )  &&  $isdir )
+						$results [] = $file ;
+					else if  ( $this -> ObjectTypes  &  self::TYPE_FILE  &&  ! $isdir )
+						$results [] = $file ;
+				    }
+				else
+				   {
+					if  ( $isdir )
+						$results [ 'directories' ] [ $file ] = array ( ) ;
+					else
+						$results [ 'files' ] [] = $file ;
+				    }
+			    }
+
+			// If a directory has been found, recursively process it
+			if  ( $isdir )
+			   {
+			   	// Check if we reached a maximum nesting level
+				if  ( ! $this -> MaxDepth  ||  $level + 1  <=  $this -> MaxDepth )
+				   {
+				   	$level ++ ;
+
+				   	if  ( $this -> FlattenResults )
+				   		$this -> WalkTree ( $level, $file, $results ) ;
+					else
+					   {
+					   	$keys =  array_keys ( $results [ 'directories' ] ) ;
+					   	$last =  count ( $keys ) - 1 ;
+						$this -> WalkTree ( $level, $file, $results [ 'directories' ] [ $keys [ $last ] ] ) ;
+					    }
+				    }
+			    }
+		    }
+
+		closedir ( $fp ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Sorts the results, when they are presented as a recursive array.
+
+	 --------------------------------------------------------------------------------------------*/
+	private function  SortResults ( &$results )
+	   {
+	   	if  ( isset ( $results [ 'directories' ] )  && count ( $results [ 'directories' ] ) )
+	   		ksort ( $results [ 'directories' ] ) ;
+
+		if  ( isset ( $results [ 'files' ] )  &&  count ( $results [ 'files' ] ) )
+	   		sort ( $results [ 'files' ] ) ;
+
+	   	foreach  ( $results [ 'directories' ]  as  &$directory )
+			$this -> SortResults ( $directory ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Process the value.
+
+	 --------------------------------------------------------------------------------------------*/
+	protected function  ProcessValue ( $name, $value )
+	   {
+	   	// Check that the specified path exists and it is a directory
+  		if  ( ! file_exists ( $value ) )
+  			error ( new CLException ( "The '$value' path specified for the '$name' parameter does not exist." ) ) ;
+
+		if  ( ! is_dir ( $value ) )
+			error ( new CLException ( "The '$value' path specified for the '$name' parameter should be a directory." ) ) ;
+
+		// If absolute paths are requested, do it
+		if  ( $this -> ReturnAbsolutePath )
+			$value = Path::RealPath ( $value ) ;
+
+		// Build the result array
+		$results 	=   array ( ) ;
+
+		$this -> WalkTree ( 1, $value, $results ) ;
+
+		// Check if we need to perform some sorting
+		if  ( $this -> SortResults )
+		   {
+			if  ( $this -> FlattenResults )
+				sort ( $results ) ;
+			else
+				$this -> SortResults ( $results ) ;
+		    }
+
+		// All done, return
+		return ( $results ) ;
+	    }
+     }
+
+
+ 
+/*==================================================================================================
+
+    CLDriveParameter -
+    	Implements a drive letter parameter. Input value can be a letter followed by an optional
+	semicolon
+
+  ==================================================================================================*/
+class  CLDriveParameter  extends  \Thrak\Processors\CL\CLAbstractParameter
+   {
+	/*-------------------------------------------------------------------------------------------
+
+		Class constructor.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __construct ( $parent, $tags, $valuetext = "boolean" )
+	   {
+	   	$this -> Help 			=  "Defines a drive letter parameter, which can be any letter followed by an optional semicolon." ;
+	   	$this -> ReturnValueHelp	=  "Returns the supplied uppercased drive letter, followed by a semicolon." ;
+
+		parent::__construct ( $parent, $tags, $valuetext, null, null, null ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Preprocess value.
+
+	 --------------------------------------------------------------------------------------------*/
+  	protected function  ProcessValue ( $name, $value )
+  	   {
+		  if  ( preg_match ( '/^[a-z]:?$/i', $value ) )
+			  return ( strtoupper ( $value [0] ) . ":" ) ;
+		  
+		  error ( new CLException ( "Invalid drive specification '$value' for parameter '$name'." ) ) ;
+	    }
+    }

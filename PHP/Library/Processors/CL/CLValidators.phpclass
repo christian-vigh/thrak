@@ -1,0 +1,141 @@
+<?php
+/***************************************************************************************************
+
+    NAME
+	CLValidators.phpclass
+
+    DESCRIPTION
+	Standard command-line attribute value validator objects.
+
+    AUTHOR
+     	Christian Vigh, 09/2011.
+
+    HISTORY
+    [Version : 1.0]	[Date : 2011/09/28]	[Author : CV]
+     	Initial version.
+
+   [Version : 2.0]	[Date : 2012/10/06]		[Author : CV]
+	Migrated to the Thrak library version 2.
+
+   [Version : 2.0.1]	[Date : 2015/04/11]		[Author : CV]
+	. Replaced each exception throwing with "error ( new CLException (...) )".
+
+ ***************************************************************************************************/
+namespace 	Thrak\Processors\CL ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces & objects
+use 		Thrak\System\Object 		as  Object ;
+use 		Thrak\System\Exception		as  Exception ;
+use 		Thrak\Type\String\Convert	as  Convert ;
+use  		Thrak\Types\String 		as  String ;
+
+
+/*==================================================================================================
+
+    CLAbstractValidator class -
+	Abstract class for parameter attribute value validation classes.
+
+  ==================================================================================================*/
+abstract class  CLAbstractValidator  extends  Object
+   {
+   	// Command-line parameter value preprocessor
+   	public function		Preprocess ( $object, $definition, $tag, $name, $value )
+   	   { return ( $value ) ; }
+
+
+	// Command-line parameter value postprocessor
+	public function		Postprocess ( $object, $definition, $tag, $name, $value )
+	   { return ( $value ) ; }
+    }
+
+
+
+
+/*==================================================================================================
+
+    CLRegexValidator class -
+	Class to allow parameter validation using a regular expression.
+
+  ==================================================================================================*/
+class  CLRegexValidator  extends  CLAbstractValidator
+   {
+   	// Preprocessor
+	public function  Preprocess ( $object, $definition, $tag, $name, $value )
+	   {
+	   	return ( $this -> __validate ( $value ) ) ;
+	    }
+
+
+   	// Postprocessor
+	public function  Postprocess ( $object, $definition, $tag, $name, $value )
+	   {
+	   	return ( $this -> __validate ( $value ) ) ;
+	    }
+
+  	// Internal validation
+  	private function  __validate ( $value )
+  	   {
+  	   	if  ( is_array ( $value ) )
+  	   	   {
+			$result 	=  array ( ) ;
+
+			foreach  ( $value  as  $item )
+				$result [] =  String::NormalizeRegex ( $value, true ) ;
+
+			return ( $result ) ;
+  	   	    }
+   		else
+			return ( String::NormalizeRegex ( $value, true ) ) ;
+  	    }
+    }
+
+
+/*==================================================================================================
+
+    CLCharacterValidator class -
+	Class to allow parameter validation for single characters.
+
+  ==================================================================================================*/
+class  CLCharacterValidator  extends  CLAbstractValidator
+   {
+   	// Preprocessor
+	public function  Preprocess ( $object, $definition, $tag, $name, $value )
+	   {
+	   	$value 		=  Convert::ToInteger ( $value ) ;
+
+	   	if  ( $value  ===  false )
+	   		$value = ord ( $value ) ;
+
+   		return ( chr ( $value ) ) ;
+	    }
+     }
+
+
+/*==================================================================================================
+
+	CLCharacterClassValidator class -
+		Class to allow character class parameter validation for single characters.
+
+  ==================================================================================================*/
+class  CLCharacterClassValidator  extends  CLAbstractValidator
+   {
+   	// Preprocessor
+	public function  Preprocess ( $object, $definition, $tag, $name, $value )
+	   {
+		if  ( ! $value )
+			return ;
+
+		$value 		=  trim ( $value ) ;
+
+		if  ( $value [0]  !=  '[' )
+			$value = '[' . $value . ']' ;
+
+		if  ( ! preg_match ( '/^\[ [^\]]* \]$/x', $value ) )
+			error ( new CLException ( "Invalid character class '$value' for the '$name' parameter." ) ) ;
+
+		$this -> CharacterClass 	=  $value ;
+	    }
+     }

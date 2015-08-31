@@ -1,0 +1,1550 @@
+<?php
+/***************************************************************************************************
+
+    NAME
+	Colors.phpclass
+
+    DESCRIPTION
+	Color manipulation class.
+
+    AUTHOR
+     	Christian Vigh, 09/2011.
+
+    HISTORY
+    [Version : 1.0]	[Date : 2011/09/21]	[Author : CV]
+     	Initial version.
+
+   [Version : 2.0]	[Date : 2012/10/06]		[Author : CV]
+	Migrated to the Thrak library version 2.
+
+ ***************************************************************************************************/
+namespace 	Thrak\Graphics ;
+
+// Used namespaces and objects
+use 	Thrak\System\Object 		as  Object ;
+use     Thrak\Types\Vector		as  Vector ;
+use 	Thrak\Types\String  		as  String ;
+
+
+/*==================================================================================================
+
+	Color schemes.
+
+  ==================================================================================================*/
+define ( 'COLOR_SCHEME_RGB'		, 0 ) ;
+define ( 'COLOR_SCHEME_HSL'		, 1 ) ;
+define ( 'COLOR_SCHEME_HSB'		, 2 ) ;
+define ( 'COLOR_SCHEME_WEBSAFE'		, 3 ) ;
+define ( 'COLOR_SCHEME_CMY'		, 4 ) ;
+define ( 'COLOR_SCHEME_CMYK'		, 5 ) ;
+define ( 'COLOR_SCHEME_GRAYSCALE'	, 6 ) ;
+
+define ( 'COLOR_SCHEME_MIN'		, 0 ) ;
+define ( 'COLOR_SCHEME_MAX'		, 6 ) ;
+
+
+/*==================================================================================================
+
+	Colors enumeration method.
+
+  ==================================================================================================*/
+define ( 'COLOR_ENUM_ON_VALUES'		, 0 ) ;
+define ( 'COLOR_ENUM_ON_NAMES'		, 1 ) ;
+
+
+/*==================================================================================================
+
+    NamedColors class -
+	Named colors manipulation class.
+
+  ==================================================================================================*/
+class  NamedColors  extends     Object
+		      implements  \ArrayAccess, \Countable, \Iterator
+   {
+   	// Color names, classed by their values
+   	private 		$NamedColorsByValues		=  null ;
+   	// Color names, classed by names
+	private 		$NamedColorsByNames		=  null ;
+	// Colors names, classed by their sequential index
+	private 		$NamedColorIndexesByValues	=  null ;
+	private			$NamedColorIndexesByNames	=  null ;
+	// Color count
+	private 		$ColorCount ;
+	// Enumeration method
+	public           	$EnumerationMethod		=  COLOR_ENUM_ON_NAMES ;
+
+
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/******                                                                               ******/
+	/******                             MAGIC FUNCTIONS                                   ******/
+	/******                                                                               ******/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+
+	/*-------------------------------------------------------------------------------------------
+
+		Class constructor.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __construct ( $file = "thrak://Data/ColorNames.txt" )
+	   {
+		parent::__construct ( ) ;
+		
+	   	// Check that the file exists and load it
+		if  ( ! file_exists ( $file ) )
+			throw new Exception ( "Color naming file '$color_naming_file' does not exist." ) ;
+
+		$lines = file ( $file ) ;
+
+		// Loop through each line
+		foreach  ( $lines  as  $line )
+		   {
+		   	// Get rid of empty lines
+		   	$line = trim ( $line ) ;
+
+			if  ( $line  ==  "" )
+				continue ;
+
+			// Each line has the format : 'code:color name' ; convert code to syntactically-correct RGB value
+			list ( $code, $name ) 	=  explode ( ':', $line ) ;
+			$code 			=  '#' . strtoupper ( $code ) ;
+			$color_name		=  $this -> __simplified_color_name ( $name ) ;
+
+			// Add it to the color arrays
+			$this -> NamedColorsByValues [ ( string ) $code ] = $color_name ;
+			$this -> NamedColorsByNames [ strtolower ( $color_name ) ] = array ( 'rgb' => $code, 'name' => $name ) ;
+		    }
+
+		// Sort the two tables
+		uksort ( $this -> NamedColorsByValues, 'strcmp' ) ;
+		ksort ( $this -> NamedColorsByNames ) ;
+		$this -> NamedColorIndexesByNames	=  array_keys ( $this -> NamedColorsByNames ) ;
+		$this -> NamedColorIndexesByValues	=  array_keys ( $this -> NamedColorsByValues ) ;
+
+		$this -> ColorCount 	=  count ( $this -> NamedColorsByValues ) ;
+	    }
+
+
+
+
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/******                                                                               ******/
+	/******                            PRIVATE FUNCTIONS                                  ******/
+	/******                                                                               ******/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+
+	/*-------------------------------------------------------------------------------------------
+
+		__simplified_color_name -
+			Simplifies a color name by removing spaces and converting it to lowercase.
+
+	 --------------------------------------------------------------------------------------------*/
+	private function  __simplified_color_name ( $name )
+	   {
+		$name = strtolower ( String::StripSpaces ( $name ) ) ;
+
+		return ( $name ) ;
+	    }
+
+
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/******                                                                               ******/
+	/******                         INTERFACE IMPLEMENTATION                              ******/
+	/******                                                                               ******/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+
+	/*-------------------------------------------------------------------------------------------
+
+		ArrayAccess interface implementation.
+			Used for accessing individual color names/values.
+			Uses the EnumerationMethod to determine if colors are to be enumerated upon
+			their RGB value or upon their name.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  offsetSet ( $offset, $value )
+	   {
+		throw new Exception ( "ColorNames entries are read-only and cannot be set." ) ;
+	    }
+
+
+    	public function offsetUnset ( $offset )
+	   {
+	   	throw new CLException ( "ColorNames entries are read-only and cannot be unset." ) ;
+	    }
+
+
+    	public function  offsetExists ( $offset )
+    	   {
+		if  ( $this -> __real_value ( $offset )  !==  null )
+			return ( true ) ;
+		else
+			return ( false ) ;
+	    }
+
+
+        public function offsetGet ( $offset )
+           {
+		return  ( $this -> __real_value ( $offset ) ) ;
+	    }
+
+
+	// __real_value -
+	//	Gets a real value of a color designated by $offset.
+	//	$offset can either be :
+	//	- A numeric index into the named colors array
+	//	- An rgb value in the form '#rrggbb'
+	//	- A color name, such as 'black' or 'dark blue'. The search is case-insensitive,
+	//	  and spaces in the color name are not significant.
+	public function  __real_value ( $offset )
+	   {
+	   	$result = null ;
+
+		if  ( is_numeric ( $offset ) )
+		   {
+			if  ( $offset  >=  0  &&  $offset  <  $this -> ColorCount )
+			   {
+			   	if  ( $this -> EnumerationMethod  ==  COLOR_ENUM_ON_NAMES )
+			   	   {
+					$key 	=  $this -> NamedColorIndexesByNames [ $offset ] ;
+					$result =  $this -> NamedColorsByNames [ $key ] ;
+				    }
+				else
+			   	   {
+					$key 	=  $this -> NamedColorIndexesByValues [ $offset ] ;
+					$key    =  strtolower ( $this -> NamedColorsByValues [ $key ] ) ;
+					$result =  $this -> NamedColorsByNames [ $key ] ;
+				    }
+			    }
+		    }
+	    	else if  ( $offset [0]   ==  '#' )
+	    	   {
+	    	   	$offset = Color::NormalizedRGBValue ( $offset ) ;
+
+	    	   	if  ( array_key_exists ( $offset, $this -> NamedColorsByValues ) )
+	    	   	   {
+	 	   		$offset =  $this -> __simplified_color_name ( $this -> NamedColorsByValues [ $offset ] ) ;
+	 	   	        $result =  $this -> NamedColorsByNames [ $offset ] ;
+			    }
+		    }
+	    	else
+	    	   {
+	    	   	$offset 	=  $this -> __simplified_color_name ( $offset ) ;
+
+			if  ( array_key_exists ( $offset, $this -> NamedColorsByNames ) )
+				$result = $this -> NamedColorsByNames [ $offset ] ;
+	    	    }
+
+		return ( $result ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Countable interface implementation.
+			Counts the number of colors.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  count ( )
+	   { return ( count ( $this -> ColorCount ) ) ; }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Iterator interface implementation.
+			Allows for looping through each color.
+
+	 --------------------------------------------------------------------------------------------*/
+	private 	$ColorIndex 	=  0 ;
+
+	function  current ( )
+	   {
+		return ( $this -> __real_value ( $this -> ColorIndex ) ) ;
+	    }
+
+	function  key ( )
+	   {
+		return ( $this -> ColorIndex ) ;
+	    }
+
+	function  next ( )
+	   {
+		$key		=  $this -> key ( ) ;
+		$this -> ColorIndex ++ ;
+
+		return ( $this -> __real_value ( $key ) ) ;
+	    }
+
+	function  rewind ( )
+	   {
+	   	$this -> ColorIndex = 0 ;
+	    }
+
+	function  valid ( )
+	   {
+	   	return ( $this -> ColorIndex  <  $this -> ColorCount ) ;
+	    }
+
+	function  length ( )
+	   { return ( count ( $this -> ColorCount ) ) ; }
+
+	function  getIterator ( )
+	   { return ( $this ) ; }
+
+    }
+
+
+/*==================================================================================================
+
+    Color class -
+	Color manipulation and conversion class.
+
+  ==================================================================================================*/
+class  Color  extends  Object
+   {
+   	// Color names object
+   	public static 	$ColorNames		=  null ;
+
+	// Associations between a color scheme constant and its corresponding member
+	private static  $SchemesToMembers	=  array
+	   (
+	   	COLOR_SCHEME_RGB	=>  'RGB',
+	   	COLOR_SCHEME_HSL	=>  'HSL',
+	   	COLOR_SCHEME_HSB	=>  'HSB',
+	   	COLOR_SCHEME_WEBSAFE	=>  'WebSafe',
+	   	COLOR_SCHEME_CMY	=>  'CMY',
+	   	COLOR_SCHEME_CMYK	=>  'CMYK',
+	   	COLOR_SCHEME_GRAYSCALE 	=>  'GrayScale'
+	    ) ;
+
+	// Conversion array ; entry #0 is the original color format, entry #1 is the destination color format,
+	// and entry #2 is the conversion function
+	private static  $Conversions		=  array
+	   (
+	   	// RGB to other colorimetric models
+	   	array ( 'from' => COLOR_SCHEME_RGB	, 'to' => COLOR_SCHEME_HSL	, 'member' => 'HSL'		, 'function' => '__convert_rgb_to_hsl' 		),
+	   	array ( 'from' => COLOR_SCHEME_RGB	, 'to' => COLOR_SCHEME_HSB 	, 'member' => 'HSB'		, 'function' => '__convert_rgb_to_hsb' 		),
+	   	array ( 'from' => COLOR_SCHEME_RGB	, 'to' => COLOR_SCHEME_WEBSAFE 	, 'member' => 'WebSafe'		, 'function' => '__convert_rgb_to_websafe' 	),
+	   	array ( 'from' => COLOR_SCHEME_RGB	, 'to' => COLOR_SCHEME_CMY	, 'member' => 'CMY'		, 'function' => '__convert_rgb_to_cmy' 		),
+	   	array ( 'from' => COLOR_SCHEME_RGB	, 'to' => COLOR_SCHEME_CMYK	, 'member' => 'CMYK'		, 'function' => '__convert_rgb_to_cmyk'		),
+
+		// HSL to other colorimetric models
+	   	array ( 'from' => COLOR_SCHEME_HSL	, 'to' => COLOR_SCHEME_RGB	, 'member' => 'RGB'		, 'function' => '__convert_hsl_to_rgb'		),
+	   	array ( 'from' => COLOR_SCHEME_HSL	, 'to' => COLOR_SCHEME_HSB	, 'member' => 'HSB'		, 'function' => '__convert_hsl_to_hsb'		),
+	   	array ( 'from' => COLOR_SCHEME_HSL	, 'to' => COLOR_SCHEME_WEBSAFE 	, 'member' => 'WebSafe'		, 'function' => '__convert_hsl_to_websafe'	),
+	   	array ( 'from' => COLOR_SCHEME_HSL	, 'to' => COLOR_SCHEME_CMY	, 'member' => 'CMY'		, 'function' => '__convert_hsl_to_cmy'		),
+	   	array ( 'from' => COLOR_SCHEME_HSL	, 'to' => COLOR_SCHEME_CMYK 	, 'member' => 'CMYK'		, 'function' => '__convert_hsl_to_cmyk' 	),
+
+	   	// HSB to other colorimetric models
+	   	array ( 'from' => COLOR_SCHEME_HSB	, 'to' => COLOR_SCHEME_RGB	, 'member' => 'RGB'		, 'function' => '__convert_hsb_to_rgb'		),
+	   	array ( 'from' => COLOR_SCHEME_HSB	, 'to' => COLOR_SCHEME_HSB	, 'member' => 'HSL'		, 'function' => '__convert_hsb_to_hsl'		),
+	   	array ( 'from' => COLOR_SCHEME_HSB	, 'to' => COLOR_SCHEME_WEBSAFE 	, 'member' => 'WebSafe'		, 'function' => '__convert_hsb_to_websafe'	),
+	   	array ( 'from' => COLOR_SCHEME_HSB	, 'to' => COLOR_SCHEME_CMY	, 'member' => 'CMY'		, 'function' => '__convert_hsb_to_cmy'		),
+	   	array ( 'from' => COLOR_SCHEME_HSB	, 'to' => COLOR_SCHEME_CMYK 	, 'member' => 'CMYK'		, 'function' => '__convert_hsb_to_cmyk' 	),
+
+	   	// Websafe to other colorimetric models
+	   	array ( 'from' => COLOR_SCHEME_WEBSAFE 	, 'to' => COLOR_SCHEME_RGB	, 'member' => 'RGB'		, 'function' => '__convert_websafe_to_rgb'	),
+	   	array ( 'from' => COLOR_SCHEME_WEBSAFE	, 'to' => COLOR_SCHEME_HSL	, 'member' => 'HSL'		, 'function' => '__convert_websafe_to_hsl'	),
+	   	array ( 'from' => COLOR_SCHEME_WEBSAFE	, 'to' => COLOR_SCHEME_HSB 	, 'member' => 'HSB'		, 'function' => '__convert_websafe_to_hsb'	),
+	   	array ( 'from' => COLOR_SCHEME_WEBSAFE	, 'to' => COLOR_SCHEME_CMY	, 'member' => 'CMY'		, 'function' => '__convert_websafe_to_cmy'	),
+	   	array ( 'from' => COLOR_SCHEME_WEBSAFE	, 'to' => COLOR_SCHEME_CMYK	, 'member' => 'CMYK'		, 'function' => '__convert_websafe_to_cmyk'	),
+
+	   	// CMY to other colorimetric models
+		array ( 'from' => COLOR_SCHEME_CMY	, 'to' => COLOR_SCHEME_RGB	, 'member' => 'RGB'		, 'function' => '__convert_cmy_to_rgb'		),
+		array ( 'from' => COLOR_SCHEME_CMY	, 'to' => COLOR_SCHEME_HSL	, 'member' => 'HSL'		, 'function' => '__convert_cmy_to_hsl'		),
+		array ( 'from' => COLOR_SCHEME_CMY	, 'to' => COLOR_SCHEME_HSB	, 'member' => 'HSB'		, 'function' => '__convert_cmy_to_hsb'		),
+		array ( 'from' => COLOR_SCHEME_CMY	, 'to' => COLOR_SCHEME_WEBSAFE	, 'member' => 'WebSafe'		, 'function' => '__convert_cmy_to_websafe'	),
+		array ( 'from' => COLOR_SCHEME_CMY	, 'to' => COLOR_SCHEME_CMYK	, 'member' => 'CMYK'		, 'function' => '__convert_cmy_to_cmyk'		),
+
+	   	// CMYK to other colorimetric models
+		array ( 'from' => COLOR_SCHEME_CMYK	, 'to' => COLOR_SCHEME_RGB	, 'member' => 'RGB'	, 'function' => '__convert_cmyk_to_rgb'		),
+		array ( 'from' => COLOR_SCHEME_CMYK	, 'to' => COLOR_SCHEME_HSL	, 'member' => 'HSL'	, 'function' => '__convert_cmyk_to_hsl'		),
+		array ( 'from' => COLOR_SCHEME_CMYK	, 'to' => COLOR_SCHEME_HSB	, 'member' => 'HSB'	, 'function' => '__convert_cmyk_to_hsb'		),
+		array ( 'from' => COLOR_SCHEME_CMYK	, 'to' => COLOR_SCHEME_WEBSAFE	, 'member' => 'WebSafe'	, 'function' => '__convert_cmyk_to_websafe'	),
+		array ( 'from' => COLOR_SCHEME_CMYK	, 'to' => COLOR_SCHEME_CMY	, 'member' => 'CMY'	, 'function' => '__convert_cmyk_to_cmy'		)
+	    ) ;
+
+   	// Normalized RGB color value
+   	public		$RGBString ;
+   	// Color name if any, or normalized RGB value if no color name is associated to this particular value
+   	public 		$ColorName ;
+   	// Color value in different colorimetric models
+   	public		$RGB ;
+   	public 		$HSL ;
+   	public 		$HSB ;
+   	public 		$CMY ;
+   	public 		$CMYK ;
+   	public 		$WebSafe ;
+   	public 		$GrayScale ;
+
+
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/******                                                                               ******/
+	/******                                 MAGIC METHODS                                 ******/
+	/******                                                                               ******/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Constructor.
+
+	    PROTOTYPE
+		$color = new Color ( $value, $model = null ) ;
+
+	    DESCRIPTION
+		Builds a Color object based on the supplied color specification given by the
+		$value parameter.
+
+	    PARAMETERS
+		$value (string or integer) -
+			Color value specification. It can have the following forms :
+			. Color name -
+				Specifies a color name.
+			. Hex value of the form #digits -
+				See the NormalizedRGBValue function help for a description on the
+				various ways of supplying RGB values.
+			. RGB(r,g,b) (or RVB) -
+				Specifies an RGB value. r, g and b can be decimal integers.
+			. HSL(h,s,l) (or TSL) -
+				Specifies a color value using the HSL colorimetric model.
+			. HSB(h,s,b) (or HSV or TSV) -
+				Specifies a color value using the HSB colorimetric model.
+			. WebSafe(r,g,b) (or WSafe or WSRGB or WRGB) -
+				Specifies a WebSafe RGB value.
+			. CMY(c,m,j) (or CMJ) -
+				Specifies a Cyan/Magenta/Yellow color value.
+			. CMJK(c,m,j,k) (or CMJN) -
+				Specifies a Cyan/Magenta/Yellow/blacK color value.
+			. GRAYSCALE(v) or GSCALE(v) or GS(v) -
+				Grayscale value.
+
+			Keywords are not case-sensitive.
+			All values are optional and default to zero ; thus, RGB() is equivalent to
+			RGB(0,0,0).
+			Individual values can be specified as a decimal integer, or in hex format
+			using the '0x' or '#' prefix.
+
+		$model (integer) -
+			If $value is a string or an array, and a color model has been specified
+			(MODEL_xxx constants), then $value is considered to be a color elements
+			specification using the specified model.
+
+	    RETURN VALUE
+		A Object with the initial color converted to other various colorimetric models.
+
+	    NOTES
+		An exception is thrown if the input value is incorrect.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function 	__construct ( $value, $model = null )
+	   {
+		// Instanciate a NamedColors object if needed
+		if  ( Color::$ColorNames  ==  null )
+			Color::$ColorNames = new NamedColors ( ) ;
+
+		// Set the color
+		$this -> SetColor ( $value, $model ) ;
+	    }
+
+
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/******                                                                               ******/
+	/******                              PRIVATE FUNCTIONS                                ******/
+	/******                                                                               ******/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+
+	// __build_color_regex -
+	//	Builds a regex for analyzing a color specification of the form : name(values)
+	//	Arguments are the various accepted keywords.
+	private function  __build_color_regex ( )
+	   {
+		$keywords		=  func_get_args ( ) ;
+		$regex 			=  '/^ (' . implode ( ' | ', $keywords ) . ') \s* \( (?P<list> [^)]* ) \)$/imsx' ;
+
+		return ( $regex ) ;
+	    }
+
+
+	// __extract_list_values -
+	//	Extracts list of integer values separated by a comma.
+	private function  __extract_list_values ( $value, $max_values, $list )
+	   {
+		$result 	=  String::ExplodeAndTrim ( ',', $list ) ;
+
+		// Get each color item
+		foreach  ( $result  as  &$item )
+		   {
+			if  ( ! strlen ( $item ) )
+				$item = 0 ;
+			else if  ( $item [0]  ==  '#' )
+				$item = '0x' . substr ( $item, 1 ) ;
+
+			if  ( $item  <  0  ||  $item  >  255  ||  round ( $item, 0 )  !=  $item )
+			   	throw new Exception ( "Color class constructor : the supplied color '$value' contains an incorrect value '($item)', which should be an integer value in the range 0..255.." ) ;
+		    }
+
+		// Check that no extra color item has been specified
+		$result_count 	=  count ( $result ) ;
+
+		if  ( $result_count  >  $max_values )
+		   	throw new Exception ( "Color class constructor : the supplied color '$value' contains more color values than the expected number ($max_values)." ) ;
+
+		// If less than $max_values have been specified, then left-fill with zero values
+		if  ( $result_count  <  $max_values )
+		   {
+			$filler = array_fill ( 0, $max_values - $result_count, 0 ) ;
+			$result = array_merge ( $filler, $result ) ;
+		    }
+
+		// All done, return
+		return ( $result ) ;
+	    }
+
+
+	// __extract_rgb_values -
+	//	Given a normalized RGB value of the form '#digits', returns an array of 3 decimal integer values for
+	//	the R, G and B components.
+	private function  __extract_rgb_values ( $value )
+	   {
+		$result 		=  array ( ) ;
+		$result [0]		=  '0x' . substr ( $value, 1, 2 ) ;
+		$result [1]		=  '0x' . substr ( $value, 3, 2 ) ;
+		$result [2]		=  '0x' . substr ( $value, 5, 2 ) ;
+
+		return ( $result ) ;
+	    }
+
+
+	// __get_websafe_value -
+	//	Returns a websafe color component value, given the supplied value.
+	private static 		$__websafe_values 	=  null ;
+
+	private function  __get_websafe_value ( $value )
+	   {
+	   	// Initialize the conversion array upon instanciation of the first Color object
+		if  ( Color::$__websafe_values  ==  null )
+		   {
+		   	$array 	=  new Vector ( ) ;
+		   	$array -> FillEx
+		    	   (
+				array ( 0x00, 0x08, 0x00 ),
+				array ( 0x09, 0x19, 0x11 ),
+				array ( 0x1A, 0x29, 0x22 ),
+				array ( 0x2A, 0x3B, 0x33 ),
+				array ( 0x3C, 0x4C, 0x44 ),
+				array ( 0x4D, 0x5D, 0x55 ),
+				array ( 0x5E, 0x6E, 0x66 ),
+				array ( 0x6F, 0x7F, 0x77 ),
+				array ( 0x80, 0x90, 0x88 ),
+				array ( 0x91, 0xA1, 0x99 ),
+				array ( 0xA2, 0xB2, 0xAA ),
+				array ( 0xB3, 0xC3, 0xBB ),
+				array ( 0xC4, 0xD4, 0xCC ),
+				array ( 0xD5, 0xE5, 0xDD ),
+				array ( 0xE6, 0xF6, 0xEE ),
+				array ( 0xF7, 0xFF, 0xFF )
+			    ) ;
+
+    			Color::$__websafe_values =  $array ;
+		    }
+
+		// Find the appropriate value
+		return ( Color::$__websafe_values [ $value ] ) ;
+	    }
+
+
+	// __perform_conversions -
+	//	Given the supplied color value, converts it to all other color schemes
+	private function  __perform_conversions ( $color_scheme, $color_values )
+	   {
+		// If grayscale input is provided, consider it as RGB
+		if  ( $color_scheme  ==  COLOR_SCHEME_GRAYSCALE )
+		   {
+			$this -> GrayScale 	=  $color_values ;
+			$this -> RGB 		=  $color_values ;
+			$color_scheme 		=  COLOR_SCHEME_RGB ;
+		    }
+   		// For RGB, save RGB data such as ColorString and ColorName
+		else if  ( $color_scheme  ==  COLOR_SCHEME_RGB )
+		   {
+			$this -> RGB 		=  $color_values ;
+		    }
+		else
+		   {
+			$member 		=  Color::$SchemesToMembers [ $color_scheme ] ;
+			$this -> $member 	=  $color_values ;
+		    }
+
+		// Perform conversions to other colorimetric models
+		foreach  ( Color::$Conversions  as  $entry )
+		   {
+			if  ( $entry [ 'from' ]  ==  $color_scheme )
+			   {
+				$member 		=  $entry [ 'member' ] ;
+				$function 		=  $entry [ 'function' ] ;
+				$result 		=  $this -> $function ( $color_values ) ;
+
+				foreach ( $result  as  &$item )
+					$item = ( integer ) $item ;
+
+				$this -> $member        =  $result ;
+			    }
+		    }
+
+    		$this -> GrayScale 	=  $this -> __convert_rgb_to_grayscale ( $this -> RGB ) ;
+		$this -> __save_rgb_data ( $color_values ) ;
+	    }
+
+
+	// __save_rgb_data -
+	//	Saves the specified value as an RGB string, together with its potential color name
+	private function  __save_rgb_data ( $color_values )
+	   {
+		$rgb 		=  '#' . sprintf ( "%02X", $color_values [0] ) .
+					 sprintf ( "%02X", $color_values [1] ) .
+					 sprintf ( "%02X", $color_values [2] ) ;
+
+		$this -> RGBString  	=  $rgb ;
+
+		if  ( isset ( Color::$ColorNames [ $rgb ] ) )
+			$this -> ColorName = Color::$ColorNames [ $rgb ] [ 'name' ] ;
+	    }
+
+
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/******                                                                               ******/
+	/******                           CONVERSION FUNCTIONS                                ******/
+	/******                                                                               ******/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	private static 		$__grayscale_multipliers 	=  array ( 0.2125, 0.7154, 0.0721 ) ;
+
+
+	// __convert_cmy_to_rgb -
+	//	Converts a CMY value to RGB.
+	private function  __convert_cmy_to_rgb ( $cmy )
+	   {
+	   	$C 	=  $cmy [0] ;
+	   	$M 	=  $cmy [1] ;
+		$Y 	=  $cmy [2] ;
+
+		if  ( $C  >  1  ||  $M  >  1  ||  $Y  >  1 )
+		   {
+			$C /= 100.0 ;
+			$M /= 100.0 ;
+			$Y /= 100.0 ;
+		    }
+
+		$R = ( 1 - $C ) * 255 ;
+		$G = ( 1 - $M ) * 255 ;
+		$B = ( 1 - $Y ) * 255 ;
+
+		$result  =  array ( round( $R ), round ( $G ), round ( $R ) ) ;
+
+		return ( $result ) ;
+	    }
+
+
+	// __convert_cmy_to_hsl -
+	//	Converts a CMY value to HSL.
+	private function  __convert_cmy_to_hsl ( $cmy )
+	   {
+		return ( $this -> __convert_rgb_to_hsl ( $this -> RGB ) ) ;
+	    }
+
+
+	// __convert_cmy_to_hsb -
+	//	Converts a CMY value to HSB.
+	private function  __convert_cmy_to_hsb ( $cmy )
+	   {
+		return ( $this -> __convert_rgb_to_hsb ( $this -> RGB ) ) ;
+	    }
+
+
+	// __convert_cmy_to_websafe -
+	//	Converts a CMY value to WebSafe.
+	private function  __convert_cmy_to_websafe ( $cmy )
+	   {
+		return ( $this -> __convert_rgb_to_websafe ( $this -> RGB ) ) ;
+	    }
+
+
+	// __convert_cmy_to_cmyk -
+	//	Converts a CMY value to RGB.
+	private function  __convert_cmy_to_cmyk ( $cmy )
+	   {
+	   	$K 	=  1 ;
+	   	$C 	=  $cmy [0] ;
+	   	$M 	=  $cmy [1] ;
+	   	$Y 	=  $cmy [2] ;
+
+	   	if  ( $C  <  $K )
+	   		$K = $C ;
+
+   		if  ( $M  <  $K )
+   			$K = $M ;
+
+		if  ( $Y  <  $K )
+			$K = $Y ;
+
+		if  ( $K  ==  1 )
+			$D = $K ;
+		else
+			$D = 1 - $K ;
+
+		$C 	=  ( $C - $K ) / $D ;
+		$M 	=  ( $M - $K ) / $D ;
+		$Y 	=  ( $Y - $K ) / $D ;
+
+		$result =  array ( round ( $C ), round ( $M ), round ( $Y ), round ( $K ) ) ;
+
+		return ( $result ) ;
+	    }
+
+
+	// __convert_cmyk_to_rgb -
+	//	Converts a CMYK value to RGB.
+	private function  __convert_cmyk_to_rgb ( $cmyk )
+	   {
+		$C 	=  $cmyk [0] ;
+		$M 	=  $cmyk [1] ;
+		$Y 	=  $cmyk [2] ;
+		$K 	=  $cmyk [3] ;
+
+		if  ( $C  >  1  ||  $M  >  1  ||  $Y  >  1  ||  $K  >  1 )
+		   {
+			$C /= 100.0 ;
+			$M /= 100.0 ;
+			$Y /= 100.0 ;
+			$K /= 100.0 ;
+		    }
+
+   		$R 	=  ( 1 - $C * ( 1 - $K ) - $K ) * 256 ;
+   		$G 	=  ( 1 - $M * ( 1 - $K ) - $K ) * 256 ;
+   		$B 	=  ( 1 - $Y * ( 1 - $K ) - $K ) * 256 ;
+
+		$result =  array ( round ( $R ), round ( $G ), round ( $B ) ) ;
+
+		return ( $result ) ;
+  	    }
+
+
+	// __convert_cmyk_to_hsl -
+	//	Converts a CMYK value to HSL.
+	private function  __convert_cmyk_to_hsl ( $cmyk )
+	   {
+		return ( $this -> __convert_rgb_to_hsl ( $this -> RGB ) ) ;
+	    }
+
+
+	// __convert_cmyk_to_hsb -
+	//	Converts a CMYK value to HSB.
+	private function  __convert_cmyk_to_hsb ( $cmyk )
+	   {
+		return ( $this -> __convert_rgb_to_hsb ( $this -> RGB ) ) ;
+	    }
+
+
+	// __convert_cmyk_to_websafe -
+	//	Converts a CMYK value to WebSafe.
+	private function  __convert_cmyk_to_websafe ( $cmyk )
+	   {
+		return ( $this -> __convert_rgb_to_websafe ( $this -> RGB ) ) ;
+	    }
+
+
+	// __convert_cmyk_to_cmy -
+	//	Converts a CMYK value to CMY.
+	private function  __convert_cmyk_to_cmy ( $cmyk )
+	   {
+	   	$C	=  $cmyk [0] / 100.0 ;
+	   	$M 	=  $cmyk [1] / 100.0 ;
+	   	$Y 	=  $cmyk [2] / 100.0 ;
+	   	$K 	=  $cmyk [3] / 100.0 ;
+
+	   	$C 	=  ( ( $C * ( 1 - $K ) ) + $K ) ;
+	   	$M 	=  ( ( $M * ( 1 - $K ) ) + $K ) ;
+	   	$Y 	=  ( ( $Y * ( 1 - $K ) ) + $K ) ;
+
+	   	$result =  array ( round ( $C * 100 ), round ( $M * 100 ), round ( $Y * 100 ) ) ;
+	   	return ( $result ) ;
+	    }
+
+
+	// __convert_hsb_to_rgb -
+	//	Converts an HSB value to RGB.
+	private function  __convert_hsb_to_rgb ( $hsb )
+	   {
+		$H 	=  $hsb [0] ;
+		$S 	=  $hsb [1] / 100.0 ;
+		$V 	=  $hsb [2] / 100.0 ;
+
+		if  ( $S  ==  0 )
+		   {
+			$R =  $V * 255 ;
+			$G =  $V * 255 ;
+			$B =  $V * 255 ;
+		    }
+		else
+		   {
+			$var_H 	=  $H * 6 ;
+
+			if  ( $var_H  ==  6 )
+				$var_H = 0 ;
+
+			if  ( $var_H  <  ( integer )  $var_H )
+				$var_i = ( integer ) $var_H - 1 ;
+			else
+				$var_i = $var_H ;
+
+			$var_1 	=  $V * ( 1 - $S ) ;
+			$var_2  =  $V * ( 1 - $S * ( $var_H - $var_i ) ) ;
+			$var_3  =  $V * ( 1 - $S * ( 1 - ( $var_H - $var_i ) ) ) ;
+
+			if  ( $var_i  ==  0 )
+			   {
+			   	$var_R 	=  $V ;
+			   	$var_G  =  $var_3 ;
+				$var_B 	=  $var_1 ;
+			    }
+			else if  ( $var_i  ==  1 )
+			   {
+				$var_R 	=  $var_2 ;
+				$var_G 	=  $V ;
+				$var_B 	=  $var_1 ;
+			    }
+			else if  ( $var_i  ==  2 )
+			   {
+				$var_R 	=  $var_1 ;
+				$var_G 	=  $V ;
+				$var_B 	=  $var_3 ;
+			    }
+			else if  ( $var_i  ==  3 )
+			   {
+				$var_R 	=  $var_1 ;
+				$var_G 	=  $var_2 ;
+				$var_B	=  $V ;
+			   }
+			else if  ( $var_i  ==  4 )
+			   {
+				$var_R 	=  $var_3 ;
+				$var_G 	=  $var_1 ;
+				$var_B 	=  $V ;
+			    }
+			else
+			   {
+				$var_R	=  $V ;
+				$var_G 	=  $var_1 ;
+				$var_B 	=  $var_2 ;
+			    }
+		    }
+
+		$R  	=  $var_R * 255 ;
+		$G 	=  $var_G * 255 ;
+		$B 	=  $var_B * 255 ;
+
+		$result =  array ( round ( $R ), round ( $G ), round ( $B ) ) ;
+
+		return ( $result ) ;
+	    }
+
+
+	// __convert_hsb_to_hsl -
+	//	Converts an HSB value to HSL.
+	private function  __convert_hsb_to_hsl ( $hsb )
+	   {
+		return ( $this -> __convert_rgb_to_hsl ( $this -> RGB ) ) ;
+	    }
+
+
+	// __convert_hsb_to_websafe -
+	//	Converts an HSB value to WebSafe.
+	private function  __convert_hsb_to_websafe ( $hsb )
+	   {
+		return ( $this -> __convert_rgb_to_websafe ( $this -> RGB ) ) ;
+	    }
+
+
+	// __convert_hsb_to_cmy -
+	//	Converts an HSB value to CMY.
+	private function  __convert_hsb_to_cmy ( $hsb )
+	   {
+		return ( $this -> __convert_rgb_to_cmy ( $this -> RGB ) ) ;
+	    }
+
+
+	// __convert_hsb_to_cmyk -
+	//	Converts an HSB value to cmyk.
+	private function  __convert_hsb_to_cmyk ( $hsb )
+	   {
+		return ( $this -> __convert_rgb_to_cmyk ( $this -> RGB ) ) ;
+	    }
+
+
+	// __convert_hsl_to_rgb -
+	//	Converts an HSL value to RGB.
+	private function  __convert_hsl_to_rgb ( $hsl )
+	   {
+		$H 	=  $hsl [0] ;
+		$S 	=  $hsl [1] / 100.0 ;
+		$L 	=  $hsl [2] / 100.0 ;
+
+		if ( $S  ==  0 )
+		   {
+			$R 	=  $L * 255 ;
+			$G 	=  $R * 255 ;
+			$B 	=  $R * 255 ;
+		    }
+		else
+		   {
+		   	if  ( $L  <  0.5 )
+		   		$v2 = $L * ( 1 + $S ) ;
+			else
+				$v2 = ( $L + $S ) - ( $S * $L ) ;
+		    }
+
+		$v1 = 2 * $L - $v2 ;
+
+		$R 	=  255 * $this -> __hue_to_rgb ( $v1, $v2, $H + ( 1 / 3.0 ) ) ;
+		$G  	=  255 * $this -> __hue_to_rgb ( $v1, $v2, $H ) ;
+		$B 	=  255 * $this -> __hue_to_rgb ( $v1, $v2, $H - ( 1 / 3.0 ) ) ;
+
+		$result =  array ( round ( $R ), round ( $G ), round ( $B ) ) ;
+
+		return ( $result ) ;
+	    }
+
+
+	// __convert_hsl_to_hsb -
+	//	Converts an HSL value to HSB.
+	private function  __convert_hsl_to_hsb ( $hsl )
+	   {
+		return ( $this -> __convert_rgb_to_hsb ( $this -> RGB ) ) ;
+	    }
+
+
+	// __convert_hsl_to_websafe -
+	//	Converts an HSL value to WebSafe.
+	private function  __convert_hsl_to_websafe ( $hsl )
+	   {
+		return ( $this -> __convert_rgb_to_websafe ( $this -> RGB ) ) ;
+	    }
+
+
+	// __convert_hsl_to_cmy -
+	//	Converts an HSL value to CMY.
+	private function  __convert_hsl_to_cmy ( $hsl )
+	   {
+		return ( $this -> __convert_rgb_to_cmy ( $this -> RGB ) ) ;
+	    }
+
+
+	// __convert_hsl_to_cmyk -
+	//	Converts an HSL value to cmyk.
+	private function  __convert_hsl_to_cmyk ( $hsl )
+	   {
+		return ( $this -> __convert_rgb_to_cmyk ( $this -> RGB ) ) ;
+	    }
+
+
+	// __convert_rgb_to_grayscale -
+	//	Converts an RGB value to grayscale.
+	private function  __convert_rgb_to_grayscale ( $rgb )
+	   {
+		$r 	=  $rgb [0] * Color::$__grayscale_multipliers [0] ;
+		$g 	=  $rgb [1] * Color::$__grayscale_multipliers [1] ;
+		$b 	=  $rgb [2] * Color::$__grayscale_multipliers [2] ;
+
+		$total  =  ( integer ) round ( $r + $g + $b ) ;
+
+		$result =  array ( $total, $total, $total ) ;
+
+	    	return ( $result ) ;
+	    }
+
+
+	// __convert_rgb_to_hsl -
+	//	Converts an rgb array to a hsl array.
+	private function  __convert_rgb_to_hsl ( $rgb )
+	   {
+	   	$R 	=  $rgb [0] / 255.0 ;
+	   	$G 	=  $rgb [1] / 255.0 ;
+	   	$B 	=  $rgb [2] / 255.0 ;
+
+		$vMin 	=  min ( $R, $G, $B ) ;
+		$vMax 	=  max ( $R, $G, $B ) ;
+		$dMax   =  $vMax - $vMin ;
+
+		$L 	=  ( $vMax + $vMin ) / 2.0 ;
+
+		if  ( $dMax  ==  0 )
+		   {
+			$H = 0 ;
+			$S = 0 ;
+		    }
+		else
+		   {
+			if  ( $L  <  0.5 )
+				$S = $dMax / ( float ) ( $vMax + $vMin ) ;
+			else
+				$S = $dMax / ( float ) ( 2 - $vMax - $vMin ) ;
+
+			$dR = ( ( ( $vMax - $R ) / 6.0 ) + ( $dMax / 2.0 ) ) / ( float ) $dMax ;
+			$dG = ( ( ( $vMax - $G ) / 6.0 ) + ( $dMax / 2.0 ) ) / ( float ) $dMax ;
+			$dB = ( ( ( $vMax - $B ) / 6.0 ) + ( $dMax / 2.0 ) ) / ( float ) $dMax ;
+
+			if  ( $R  ==  $vMax )
+				$H = $dB - $dG ;
+			else if  ( $G  ==  $vMax )
+				$H = ( 1 / 3.0 ) + $dR - $dB ;
+			else if  ( $B  ==  $vMax )
+				$H = ( 2 / 3.0 ) + $dG - $dR ;
+
+			if  ( $H  <  0 )
+				$H = $H + 1 ;
+			if  ( $H  >  1 )
+				$H = $H - 1 ;
+		    }
+
+		$result = array
+		   (
+		   	round ( 360 * $H ),
+			round ( $S * 100 ),
+			round ( $L * 100 )
+		    ) ;
+
+		return ( $result ) ;
+	    }
+
+	// __convert_rgb_to_hsb -
+	//	Converts an rgb array to a hsb array.
+	private function  __convert_rgb_to_hsb ( $rgb )
+	   {
+	   	$R 		=  $rgb [0] ;
+	   	$G 		=  $rgb [1] ;
+	   	$B 		=  $rgb [2] ;
+
+	   	$var_R 		=  ( $R / 255.0 ) ;
+	   	$var_G  	=  ( $G / 255.0 ) ;
+	   	$var_B  	=  ( $B / 255.0 ) ;
+
+		$var_Min        =  min ( $var_R, $var_G, $var_B ) ;
+		$var_Max 	=  max ( $var_R, $var_G, $var_B ) ;
+		$del_Max 	=  $var_Max - $var_Min ;
+
+		$V 		=  $var_Max ;
+
+		if  ( ! $del_Max )
+		   {
+			$H = 0 ;
+			$S = 0 ;
+		    }
+		else
+		   {
+			$S = $del_Max / $var_Max ;
+
+			$del_R = ( ( ( $var_Max - $var_R ) / 6.0 ) + ( $del_Max / 2.0 ) / $del_Max ) ;
+			$del_G = ( ( ( $var_Max - $var_G ) / 6.0 ) + ( $del_Max / 2.0 ) / $del_Max ) ;
+			$del_B = ( ( ( $var_Max - $var_B ) / 6.0 ) + ( $del_Max / 2.0 ) / $del_Max ) ;
+
+			if  ( $var_R  ==  $var_Max )
+				$H = $del_B - $del_G ;
+			else if  ( $var_G  ==  $var_Max )
+				$H = ( 1 / 3.0 ) + $del_R - $del_B ;
+			else if  ( $var_B  ==  $var_Max )
+				$H = ( 2 / 3.0 ) + $del_G - $del_R ;
+		    }
+
+		if  ( $H  <  0 )
+			$H = $H + 1 ;
+		if  ( $H  >  1 )
+			$H = $H - 1 ;
+
+		$result = array
+		   (
+		   	round ( 360 * $H ),
+			round ( 100 * $S ),
+			round ( 100 * $V )
+		    ) ;
+
+   		return ( $result ) ;
+ 	    }
+
+
+	// __convert_rgb_to_websafe -
+	//	Converts an rgb array to a websafe array.
+	private function  __convert_rgb_to_websafe ( $rgb )
+	   {
+	   	$r 	=  $this -> __get_websafe_value ( $rgb [0] ) ;
+	   	$g 	=  $this -> __get_websafe_value ( $rgb [1] ) ;
+	   	$b 	=  $this -> __get_websafe_value ( $rgb [2] ) ;
+
+	   	return ( array ( $r, $g, $b ) ) ;
+	    }
+
+
+	// __convert_rgb_to_cmy -
+	//	Converts an rgb array to a cmy array.
+	private function  __convert_rgb_to_cmy ( $rgb )
+	   {
+   		$C 	=  1 - ( $rgb [0] / 255.0 ) ;
+   		$M 	=  1 - ( $rgb [1] / 255.0 ) ;
+   		$Y 	=  1 - ( $rgb [2] / 255.0 ) ;
+
+   		$result =  array
+   		   (
+   		   	round ( $C * 100, 0 ),
+   		   	round ( $M * 100, 0 ),
+   		   	round ( $Y * 100, 0 )
+		    ) ;
+
+	    	return ( $result ) ;
+	    }
+
+
+	// __convert_rgb_to_cmyk -
+	//	Converts an rgb array to a cmyk array.
+	private function  __convert_rgb_to_cmyk ( $rgb )
+	   {
+	   	$C 	=  1 - ( $rgb [0] / 255.0 ) ;
+	   	$M	=  1 - ( $rgb [1] / 255.0 ) ;
+		$Y 	=  1 - ( $rgb [2] / 255.0 ) ;
+
+		if  ( min ( $C, $M, $Y )  ==  1 )
+		   {
+			$C 	=  0 ;
+			$M 	=  0 ;
+			$Y 	=  0 ;
+			$K 	=  1 ;
+		    }
+		else
+		   {
+		   	$K 	=  min ( $C, $M, $Y ) ;
+			$C 	=  ( $C - $K ) / ( 1 - $K ) ;
+			$M 	=  ( $M - $K ) / ( 1 - $K ) ;
+			$Y 	=  ( $Y - $K ) / ( 1 - $K ) ;
+		    }
+
+		$result = array
+		   (
+		   	round ( $C * 100, 0 ),
+		   	round ( $M * 100, 0 ),
+		   	round ( $Y * 100, 0 ),
+		   	round ( $K * 100, 0 )
+		    ) ;
+
+		return ( $result ) ;
+	    }
+
+
+	// __convert_websafe_to_rgb -
+	//	Converts a websafe value to RGB.
+	private function  __convert_websafe_to_rgb ( $websafe )
+	   {
+		$this -> WebSafe 	=  $this ->__convert_rgb_to_websafe ( $websafe ) ;
+		return ( $this -> WebSafe ) ;
+	    }
+
+
+	// __convert_websafe_to_hsl -
+	//	Converts a WebSafe value to HSL.
+	private function  __convert_websafe_to_hsl ( $websafe )
+	   {
+		return ( $this -> __convert_rgb_to_hsl ( $this -> WebSafe ) ) ;
+	    }
+
+
+	// __convert_websafe_to_hsb -
+	//	Converts a WebSafe value to HSB.
+	private function  __convert_websafe_to_hsb ( $websafe )
+	   {
+		return ( $this -> __convert_rgb_to_hsb ( $this -> WebSafe ) ) ;
+	    }
+
+
+	// __convert_websafe_to_cmy -
+	//	Converts a WebSafe value to CMY.
+	private function  __convert_websafe_to_cmy ( $websafe )
+	   {
+		return ( $this -> __convert_rgb_to_cmy ( $this -> WebSafe ) ) ;
+	    }
+
+
+	// __convert_websafe_to_cmyk -
+	//	Converts a WebSafe value to CMYK.
+	private function  __convert_websafe_to_cmyk ( $websafe )
+	   {
+		return ( $this -> __convert_rgb_to_cmyk ( $this -> WebSafe ) ) ;
+	    }
+
+
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/******                                                                               ******/
+	/******                       CONVERSION SUPPORT FUNCTIONS                            ******/
+	/******                                                                               ******/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	// __hue_to_rgb -
+	//	Converts a hue to an RGB value.
+	private function  __hue_to_rgb ( $v1, $v2, $vh )
+	   {
+	   	if  ( $vh  <  0 )
+	   		$vh = $vh + 1 ;
+
+   		if  ( $vh  >  1 )
+   			$vh = $vh - 1 ;
+
+		if  ( $vh * 6  <  1 )
+			return ( $v1 + ( $v2 - $v1 ) * 6 * $vh ) ;
+
+		if  ( $vh * 2  <  1 )
+			return ( $v2 ) ;
+
+		if  ( $vh * 3  <  2 )
+			return ( $v1 + ( $v2 - $v1 ) * ( ( 2.0 / 3.0 ) - $vh ) * 6 ) ;
+
+		return ( $v1 ) ;
+	    }
+
+
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/******                                                                               ******/
+	/******                               UTILITY FUNCTIONS                               ******/
+	/******                                                                               ******/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		NormalizedRGBValue - Normalizes an RGB value.
+
+	    PROTOTYPE
+		$result = Color::NormalizedRGBValue ( $value ) ;
+
+	    DESCRIPTION
+		Normalizes an RGB value by applying the following process :
+		- Adds a leading '#' if none present
+		- If exactly 3 characters are specified, the digits are doubled. For example, "#123"
+		  will yield to "#112233".
+		- If less than 6 characters are specified, leading zeros are added.
+		- Hex digits are converted to uppercase.
+
+	    PARAMETERS
+		$value (string) -
+			RGB value.
+
+	    RETURN VALUE
+		The normalized RGB value, or false if the supplied value is incorrect.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  NormalizedRGBValue ( $value )
+	   {
+	   	static 		$digits 	=  "0123456789ABCDEF" ;
+
+
+		$length 	=  strlen ( $value ) ;
+
+	   	if  ( ! $length )
+		   	return ( false ) ;
+
+		if  ( $value [0]  ==  '#' )
+		   {
+			$value = substr ( $value, 1 ) ;
+			$length -- ;
+		    }
+
+		if  ( $length  >  6 )
+			return ( false ) ;
+
+		$value = strtoupper ( $value ) ;
+
+		for  ( $i = 0 ; $i < $length ; $i ++ )
+		   {
+		   	$c  	=  $value [$i] ;
+
+		   	if  ( strpos ( $digits, $c )  ===  false )
+			   	return ( false ) ;
+		    }
+
+		switch ( $length )
+		   {
+			case 	3 :
+				$value = $value [0] . $value [0] . $value [1] . $value [1] . $value [2] . $value [2] ;
+				break ;
+
+			case 	6 :
+				break ;
+
+			default :
+				$value = str_repeat ( '0', 6 - $length ) . $value ;
+		    }
+
+		$value = '#' . $value ;
+
+		return ( $value ) ;
+	    }
+
+
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/******                                                                               ******/
+	/******                            PUBLIC FUNCTIONS                                   ******/
+	/******                                                                               ******/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		SetColor - Sets a color for this object.
+
+	    PROTOTYPE
+		$object -> SetColor ( $value, $model = null ) ;
+
+	    DESCRIPTION
+		Sets the color of a Color object.
+
+	    PARAMETERS
+		$value (string or integer) -
+			Color value specification. It can have the following forms :
+			. Color name -
+				Specifies a color name.
+			. Hex value of the form #digits -
+				See the NormalizedRGBValue function help for a description on the
+				various ways of supplying RGB values.
+			. RGB(r,g,b) (or RVB) -
+				Specifies an RGB value. r, g and b can be decimal integers.
+			. HSL(h,s,l) (or TSL) -
+				Specifies a color value using the HSL colorimetric model.
+			. HSB(h,s,b) (or HSV or TSV) -
+				Specifies a color value using the HSB colorimetric model.
+			. WebSafe(r,g,b) (or WSafe or WSRGB or WRGB) -
+				Specifies a WebSafe RGB value.
+			. CMY(c,m,j) (or CMJ) -
+				Specifies a Cyan/Magenta/Yellow color value.
+			. CMJK(c,m,j,k) (or CMJN) -
+				Specifies a Cyan/Magenta/Yellow/blacK color value.
+			. GRAYSCALE(v) or GSCALE(v) or GS(v) -
+				Grayscale value.
+
+			Keywords are not case-sensitive.
+			All values are optional and default to zero ; thus, RGB() is equivalent to
+			RGB(0,0,0).
+			Individual values can be specified as a decimal integer, or in hex format
+			using the '0x' or '#' prefix.
+
+		$model (integer) -
+			If $value is a string or an array, and a color model has been specified
+			(MODEL_xxx constants), then $value is considered to be a color elements
+			specification using the specified model.
+
+	    NOTES
+		An exception is thrown if the input value is incorrect.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  SetColor ( $value, $model = null )
+	   {
+		$value 		=  String::StripSpaces ( $value ) ;
+
+		// Check the supplied value
+		$colorimetric_model 	=  null ;
+		$colorimetric_values	=  null ;
+
+    		// A colorimetric model has been specified, and the supplied value is either a comma-separated list of integers
+    		// or an array of integer values
+    		if  ( $model  !==  null  &&  ( is_string ( $value )  ||  is_array ( $value ) ) )
+    		   {
+    		   	if  ( $model  <  COLOR_SCHEME_MIN  ||  $model  >  COLOR_SCHEME_MAX )
+    		   		throw new  Exception ( "Color class constructor : the supplied color scheme model '$value' is out of range." ) ;
+
+			if  ( is_array ( $value ) )
+				$value 	=  implode ( ',', $value ) ;
+
+			$colorimetric_model 		=  $model ;
+			$colorimetric_values	 	=  $this -> __extract_list_values ( $value, Color::$ColorModelArguments, $value ) ;
+    		    }
+		// rgb(r,g,b) notation
+		else if  ( preg_match ( $this -> __build_color_regex ( 'rgb', 'rvb' ), $value, $matches ) )
+		   {
+		   	$colorimetric_model	=  COLOR_SCHEME_RGB ;
+			$colorimetric_values	=  $this -> __extract_list_values ( $value, 3, $matches [ 'list' ] ) ;
+		    }
+   		// hsl(h,s,l) notation
+  		else if  ( preg_match ( $this -> __build_color_regex ( 'hsl', 'tsl' ), $value, $matches  ) )
+  		   {
+		   	$colorimetric_model	=  COLOR_SCHEME_HSL ;
+			$colorimetric_values	=  $this -> __extract_list_values ( $value, 3, $matches [ 'list' ] ) ;
+  		    }
+   		// hsb(h,s,b) notation
+  		else if  ( preg_match ( $this -> __build_color_regex ( 'hsb', 'hsv', 'tsv' ), $value, $matches  ) )
+  		   {
+		   	$colorimetric_model	=  COLOR_SCHEME_HSB ;
+			$colorimetric_values	=  $this -> __extract_list_values ( $value, 3, $matches [ 'list' ] ) ;
+  		    }
+   		// cmy(c,m,y) notation
+  		else if  ( preg_match ( $this -> __build_color_regex ( 'cmy', 'cmj' ), $value, $matches  ) )
+  		   {
+		   	$colorimetric_model	=  COLOR_SCHEME_CMY ;
+			$colorimetric_values	=  $this -> __extract_list_values ( $value, 3, $matches [ 'list' ] ) ;
+  		    }
+   		// cmyk(c,m,y,k) notations
+  		else if  ( preg_match ( $this -> __build_color_regex ( 'cmyk', 'cmjn' ), $value, $matches  ) )
+  		   {
+		   	$colorimetric_model	=  COLOR_SCHEME_CMYK ;
+			$colorimetric_values	=  $this -> __extract_list_values ( $value, 4, $matches [ 'list' ] ) ;
+  		    }
+   		// websafe(r,g,b) notation
+  		else if  ( preg_match ( $this -> __build_color_regex ( 'websafe', 'wsafe', 'wsrgb', 'wrgb', 'wsrvb', 'wrvb', 'ws' ), $value, $matches  ) )
+  		   {
+		   	$colorimetric_model	=  COLOR_SCHEME_WEBSAFE ;
+			$colorimetric_values	=  $this -> __extract_list_values ( $value, 3, $matches [ 'list' ] ) ;
+  		    }
+  		else if  ( preg_match ( $this -> __build_color_regex ( 'grayscale', 'gray', 'gscale', 'gs' ), $value, $matches  ) )
+  		   {
+		   	$colorimetric_model	=  COLOR_SCHEME_GRAYSCALE ;
+			$colorimetric_values	=  $this -> __extract_list_values ( $value, 1, $matches [ 'list' ] ) ;
+
+			for  ( $i = 1 ; $i < 3 ; $i ++ )
+				$colorimetric_values [$i] = $colorimetric_values [0] ;
+  		    }
+   		// #rgb value notation
+		else if  ( $value [0]  ==  '#' )
+		   {
+			$new_value 		=  Color::NormalizedRGBValue ( $value ) ;
+
+			if  ( $new_value  !=  null )
+			   {
+				$colorimetric_model 	=  COLOR_SCHEME_RGB ;
+				$colorimetric_values	=  $this -> __extract_rgb_values ( $new_value ) ;
+			    }
+		    }
+    		// Integer value : consider it as an rgb value
+		else if  ( is_numeric ( $value ) )
+		   {
+			$new_value 			=  Color::NormalizedRGBValue ( sprintf ( "%X", round ( $value, 0 ) ) ) ;
+
+			if  ( $new_value  !=  null )
+			   {
+				$colorimetric_model 	=  COLOR_SCHEME_RGB ;
+				$colorimetric_values	=  $this -> __extract_rgb_values ( $new_value ) ;
+			    }
+		    }
+		// Otherwise this may be a valid color name
+		else if  ( is_string ( $value ) )
+		   {
+			$new_value 		=  Color::$ColorNames [ $value ] ;
+
+			if  ( $new_value  !=  null )
+			   {
+				$colorimetric_model 	=  COLOR_SCHEME_RGB ;
+				$colorimetric_values	=  $this -> __extract_rgb_values ( $new_value [ 'rgb' ] ) ;
+			    }
+		    }
+
+		// Check that the supplied value is correct
+		if  ( ! $colorimetric_values )
+		   	throw new Exception ( "Color class constructor : the supplied color value '$value' is incorrect." ) ;
+
+		// Convert color values to decimal
+		foreach  ( $colorimetric_values  as  &$colorimetric_value )
+		   {
+		   	if  ( $colorimetric_value [0]  ==  '#' )
+				$colorimetric_value = '0x' . substr ( $colorimetric_value, 1 ) ;
+
+			if  ( ! strncasecmp ( $colorimetric_value, '0x', 2 ) )
+				$colorimetric_value = hexdec ( substr ( $colorimetric_value, 2 ) ) ;
+		    }
+
+		// Save supplied input color in the appropriate scheme
+		$this -> __perform_conversions ( $colorimetric_model, $colorimetric_values ) ;
+
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		ToArray - Returns an array of the same color in different color models.
+
+	    PROTOTYPE
+		$array = $color -> ToArray ( ) ;
+
+	    DESCRIPTION
+		Returns an associative array with the following entries, expressing the input color
+		in different colorimetric models.
+
+	    RETURN VALUE
+		An associative array containing the following entries :
+
+		'RGBString' -
+			The HTML string corresponding to the color's RGB value.
+
+		'ColorName' -
+			Color name, if a match has been found.
+
+		'RGB' -
+			An array of three values, corresponding to the RGB colorimetric model.
+
+		'HSL' -
+			Same, for the HSL colorimetric model.
+
+		'HSB' -
+			Same, for the HSB colorimetric model.
+
+		'CMY' -
+			Same, for the CMY colorimetric model.
+
+		'CMYK' -
+			An array of four values, corresponding to the CMYK colorimetric model.
+
+		'WebSafe' -
+			An array of three RGB values, considered to be web-safe (ie, correctly rendered
+			by most navigators).
+
+		'GrayScale' -
+			An array of three RGB values, corresponding to the associated color in the
+			gray colorimetric model.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  ToArray ( )
+	   {
+        	$members =  array ( 'RGBString', 'ColorName', 'RGB', 'HSL', 'HSB', 'WebSafe', 'CMY', 'CMYK', 'GrayScale' ) ;
+		$result  =  array ( ) ;
+
+		foreach  ( $members  as  $member )
+			$result [ $member ] = $this -> $member ;
+
+		return ( $result ) ;
+	    }
+    }

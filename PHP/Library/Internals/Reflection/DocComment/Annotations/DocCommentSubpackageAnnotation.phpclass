@@ -1,0 +1,64 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        DocCommentSubpackageAnnotation.phpclass
+
+    DESCRIPTION
+        Implements an @Subpackage annotation.
+
+    Subpackage
+        Christian Vigh, 11/2014.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2014/11/09]     [Subpackage : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Reflection\Annotations ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use  	Thrak\System\Object ;
+use	Thrak\Reflection\DocCommentAnnotation ;
+
+
+/*==============================================================================================================
+
+    DocCommentSubpackageAnnotation -
+        Implements an @Subpackage annotation.
+ 
+	Available members :
+ 	- name :
+ 		Subpackage name.
+	- description :
+		Subpackage description.
+
+  ==============================================================================================================*/
+class	DocCommentSubpackageAnnotation		extends  DocCommentAnnotation
+   {
+	public function  __construct ( $name, $params_array )
+	   {
+		parent::__construct ( $name, $params_array ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    __tostring -
+	        Customized presentation of an @Source annotation.
+	
+	  ==============================================================================================================*/
+	public function  __tostring ( )
+	   {
+		$values		=  $this -> Parameters ;
+		$result		=  "@" . $this -> Name . " " ;
+		
+		if  ( $values -> name  !==  "" )
+			$result		.=  $values -> name . " " ;
+		
+		$result		.=  $values -> description ;
+		
+		return ( rtrim ( $result ) ) ;
+	    }
+    }

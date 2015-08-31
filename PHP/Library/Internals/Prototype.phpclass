@@ -1,0 +1,151 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        Prototype.phpclass
+
+    DESCRIPTION
+        Implements a Javascript-style prototype object.
+
+    AUTHOR
+        Christian Vigh, 10/2014.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2014/10/16]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Internals ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use 	Thrak\System\Object ;
+use     Thrak\System\IsNonObject ;
+
+ 
+/*===========================================================================================================
+
+    Class Prototype -
+	Implements a prototype in the Javascript way.
+
+ *===========================================================================================================*/ 
+class Prototype
+   {
+	use		IsNonObject ;
+	
+	// List of instances having this prototype
+	private static  $__prototyped_instances		=  array ( ) ;
+	// List of protyped classes 
+	private static  $__prototypes			=  array ( ) ;
+	// Class name of the prototyped object
+	private		$__prototyped_object_class ;
+
+
+	/*==============================================================================================================
+	
+	    NAME
+	        constructor - Stores the prototyped object class name.
+	
+	    DESCRIPTION
+	        This constructor is private and can only be called by the Prototype() static method.
+	
+	  ==============================================================================================================*/
+	private function  __construct ( $object )
+	   {
+		$this -> __prototyped_object_class	=  get_class ( $object ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        Prototype - Prototypizes an object.
+	
+	    PROTOTYPE
+	        Prototype::Prototype ( $object ) ;
+	
+	    DESCRIPTION
+	        Add a $prototype member to the specified object.
+	
+	    PARAMETERS
+	        $object (object) -
+	                Object to hack.
+	
+	  ==============================================================================================================*/
+	public static function  Prototype ( $object )
+	   {
+		$class		=  get_class  ( $object ) ;
+		
+		// If this object class has no prototypized object yet...
+		if  ( ! isset  ( self::$__prototyped_instances [ $class ] ) )
+		   {
+			// Create a new instance list for this class
+			self::$__prototyped_instances [ $class ]	=  array ( ) ;
+			
+			// Create the prototype
+			$prototype					=  new  Prototype ( $object ) ;
+			
+			// Get object variables ; they will be used to initialize the new prototype object
+			$vars						=  get_object_vars ( $object ) ;
+			
+			// If object has public properties, use them as the prototype properties
+			if  ( count ( $vars ) )
+			   {
+				foreach  ( $vars  as  $name => $value )
+					$prototype -> $name	=  $value ;
+			    }
+		
+			// Then add the prototype to the list of instanciated prototypes
+			self::$__prototypes [ $class ]			=  $prototype ;
+		    }
+		// Prototype exists for this class
+		else
+		   {
+			// Get it, along with its public properties
+			$prototype					=  self::$__prototypes [ $class ] ;
+			$vars						=  get_object_vars ( $prototype ) ;
+			
+			// When there are public properties...
+			if  ( count ( $vars ) )
+			   {
+				// Assign them to the object instance if they do not exist yet
+				foreach  ( $vars  as  $name => $value )
+				   {
+					if  ( ! isset ( $object -> name ) ) 
+						$object -> $name	=  $value ;
+				    }
+			    }
+		    }
+		
+		// Remember this instance for this class
+		self::$__prototyped_instances [ $class ] []	=  $object ;
+		
+		// Assign the prototype to the object
+		$object -> prototype				=  $prototype ;
+	    }
+	
+
+	/*==============================================================================================================
+	
+	    NAME
+	        __set - Change a property in a prototype.
+	
+	    PROTOTYPE
+	        $object -> prototype -> some_property	=  some_value ;
+	
+	    DESCRIPTION
+	        Change the value of a property for this prototype and propagates the change to all object instances
+		having this prototype but not this property yet defined.
+	
+	  ==============================================================================================================*/
+	public function  __set ( $name, $value )
+	   {
+		$this -> $name	=  $value ;
+		
+		foreach  ( self::$__prototyped_instances [ $this -> __prototyped_object_class ]  as  $object )
+		   {
+			if  ( ! isset ( $object -> $name ) )
+				$object -> $name	=  $value ;
+		    }
+	    }
+    }

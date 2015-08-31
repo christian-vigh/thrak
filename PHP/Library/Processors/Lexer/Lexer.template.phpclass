@@ -1,0 +1,619 @@
+<?php
+/* __NAMESPACE__ */
+
+// Used namespaces and classes
+use	Thrak\System\Object ;
+use     Thrak\system\Exception ;
+use     Thrak\Types\String ;
+use	Thrak\Processors\PPP ;
+
+
+/* __PRECODE__ */
+
+
+/*===========================================================================================
+
+    __CLASSCOMMENTNAME__ class -
+    	__CLASSCOMMENT__
+
+  ===========================================================================================*/
+class  /* __CLASSNAME__ */ __CLASSNAME__	extends  Object
+   {
+	
+/* __STANDARD_TOKENS__ */
+
+/* __USER_DEFINED_TOKENS__ */
+
+   	// Indicates whether this lexer is case-sensitive or not
+   	public 		$CaseSensitive 		=  /* __CASE_SENSITIVE__ */ false ;
+   	// Indicates whether comment tokens should be returned by the lexer
+   	public 		$WantComments		=  /* __WANT_COMMENTS__ */ false ;
+   	// Indicates whether spaces should be returned as tokens by the lexer or simply ignored
+   	public 		$WantSpaces 		=  /* __WANT_SPACES__ */ false ;
+   	// Specifies whether we should abort when encountering an unrecognized token or not
+   	public  	$WantUnknownTokens	=  /* __WANT_UNKNOWN_TOKENS__ */ false ;
+   	// Indicates if #line directives should also be returned
+   	public  	$WantLineDirectives	=  /* __WANT_LINE_DIRECTIVES__ */ false ;
+   	// Identifier regex
+   	public  	$IdentifierRegex	=  "/* __IDENTIFIER_REGEX__ */" ;
+   	// Comment definitions
+   	public 		$Comments		=  array
+   	   (
+/* __COMMENT_DEFINITIONS__ */
+   	    ) ;
+   	// String definitions
+   	public 		$Strings 		=  array
+   	   (
+/* __STRING_DEFINITIONS__ */
+   	    ) ;
+	// Tokens
+	public 		$Tokens 		=  array
+	   (
+/* __TOKENS__ */
+	    ) ;
+	// Blocks
+	public 		$Blocks 		=  array
+	   (
+/* __BLOCKS__ */
+	    ) ;
+	// Input filename
+	public 		$Filename ;
+	// Input file contents (all carriage returns are stripped)
+	public	 	$Contents ;
+	// Current character index in the input contents, and contents length
+	private 	$ContentIndex 		=  0 ;
+	private 	$ContentLength ;
+	// Last character seen so far
+	private  	$LastChar		=  "\n" ;
+	// Current line & character in line
+	public  	$CurrentLine 		=  1 ;
+	public 		$CurrentFile ;
+	// For "peeking" tokens
+	private		$PokedTokens		=  array ( ) ;
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Class constructor.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __construct ( $filename, $preprocess = true )
+	   {
+		if  ( ! file_exists ( $filename ) )
+			throw_error ( __CLASS__ . " : File \"$filename\" does not exist." ) ;
+
+		if  ( $preprocess )
+		   {
+		   	$ppp		=  new PPP ( $filename, PPP::OPT_LINE, true ) ;
+		   	$contents	=  $ppp -> Text ;
+		    }
+		else
+			$contents 	=  file_get_contents ( $filename ) ;
+
+		$this -> Filename 		=  $filename ;
+		$this -> CurrentFile		=  $filename ;
+		$this -> Contents 		=  str_replace ( "\r", "", $contents ) ;
+		$this -> ContentLength 		=  strlen ( $this -> Contents ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    IsReserved -
+		Checks if a keyword is reserved.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  IsReserved ( $token )
+	   {
+	   	if  ( array_key_exists ( strtolower ( $token ), $this -> Tokens ) )
+	   		return ( true ) ;
+	   	else
+	   		return ( false ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NextToken -
+		Returns the next token from the input file.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  NextToken ( )
+	   {
+		// Check if tokens were poked
+		if  ( count ( $this -> PokedTokens ) )
+			$token	=  array_pop ( $this -> PokedTokens ) ;
+		else 
+			$token  =  $this -> __NextToken ( ) ;
+
+		return ( $token ) ;
+	   }
+
+
+	private function  __NextToken ( )
+	   {	
+		// The big token retrieval loop...
+	   	while ( $this -> ContentIndex  <  $this -> ContentLength )
+	   	   {
+	   	   	$ch 		=  $this -> Contents [ $this -> ContentIndex ] ;
+	   	   	$current_index 	=  $this -> ContentIndex ;
+
+
+	   	   	// A special processing for '#line' directives that give the current line number and current file
+	   	   	if  ( $this -> LastChar  ==  "\n"  &&  $ch  ==  '#' )
+	   	   	   {
+				$eol 	=  strpos ( $this -> Contents, "\n", $this -> ContentIndex ) ;
+
+				if  ( preg_match ( '/\#\s*line \s+ (?P<number> \d+) \s+ " (?P<file> [^"]+) "/imsx',
+							$this -> Contents, $matches, 0, $this -> ContentIndex ) )
+				   {
+					if  ( $eol  ===  false )
+					   {
+						$value 	=  substr ( $this -> Contents, $this -> ContentIndex ) ;
+						$eol	=  $this -> ContentLength ;
+					    }
+					else
+						$value 	=  substr ( $this -> Contents, $this -> ContentIndex, $eol - $this -> ContentIndex ) ;
+
+					$this -> CurrentFile 		=  $matches [ 'file' ] ;
+					$this -> CurrentLine 		=  ( integer ) $matches [ 'number' ] ;
+
+					$this -> LastChar  		=  "\n" ;
+					$this -> ContentIndex 		=  $eol + 1 ;		// Eat the whole '#line', including the trailing newline
+
+					if  ( $this -> WantLineDirectives )
+					   {
+			   			$result =  array
+			   			      (
+								'token'		=>  self::STD_TOKEN_LINE_DIRECTIVE,
+			   			      		'name'		=>  'STD_TOKEN_LINE_DIRECTIVE',
+			   			      		'value'		=>  $value,
+			   			      		'file'		=>  $this -> CurrentFile,
+			   			      		'line'		=>  $this -> CurrentLine,
+			   			      		'matches'	=>  array ( array ( $value, $current_index ) )
+			   			       ) ;
+
+					   	$this -> ContentIndex -- ;	// Well, if caller wants line directives, then don't it up the newline after the directive
+					   	$this -> CurrentLine -- ;
+					   	return ( $result ) ;
+					    }
+
+					continue ;
+				    }
+		   	    }
+
+		   	// Process spaces
+		   	if  ( String::IsSpace ( $ch ) )
+		   	   {
+		   	   	$this -> ContentIndex ++ ;
+				$this -> LastChar 	=  $ch ;
+
+				// Build the resulting token
+				$result =  array
+					      (
+						   	'token' 	=>  self::STD_TOKEN_SPACE,
+						   	'name' 		=>  'STD_TOKEN_SPACE',
+						   	'value' 	=>  $ch,
+						   	'file' 		=>  $this -> CurrentFile,
+						   	'line'		=>  $this -> CurrentLine,
+						   	'matches'	=>  array ( array ( $ch, $current_index ) )
+					       ) ;
+
+				// Count one more line for a newline character
+				if  ( $ch  ==  "\n" )
+					$this -> CurrentLine ++ ;
+
+				// If spaces are ignored, process next characters
+				if  ( ! $this -> WantSpaces )
+					continue ;
+
+					// Return the resulting token
+				return ( $result ) ;
+		   	   }
+
+		   	// Check if next item is a comment by looping through each comment definition
+		   	foreach  ( $this -> Comments  as  $comment )
+		   	   {
+		   		$lcomment	=  strlen ( $comment [ 'start' ] ) ;	// Length of comment start string
+
+		   		// If current input does not start this comment type, check next comment definition
+		   		if  ( substr ( $this -> Contents, $this -> ContentIndex, $lcomment )  !=  $comment [ 'start' ] )
+		   			continue ;
+
+		   		// For multiline comment, we will have to catch the comment terminator string
+		   		if  ( $comment [ 'multiline' ] )
+		   		   {
+		   			$search 	=  $comment [ 'stop' ] ;
+		   		   	$lcomment	=  strlen ( $search ) ;
+		   		    }
+		   		// Otherwise (single-line comments), simply search for the end of line
+		   		else
+		   		   {
+		   			$search  	=  "\n" ;
+		   			$lcomment 	=  0 ;
+		   		    }
+
+		   		$end 	=  strpos ( $this -> Contents, $search, $this -> ContentIndex ) ;
+
+		   		// Comment terminator string (or end of line) no found : the comment terminates with the end of file
+		   		if  ( $end  ===  false )
+		   		   {
+		   		   	if  ( $comment [ 'multiline' ] )
+		   		   		throw_error ( "File \"{$this -> CurrentFile}\", line {$this -> CurrentLine} : EOF found before end of comment." ) ;
+
+		   			$value 	=  substr ( $this -> Contents, $this -> ContentIndex ) ;
+		   			$end  	=  $this -> ContentLength ;
+		   		    }
+		   		// Otherwise, simply extract the comment string
+		   		else
+		   		   {
+		   			$value	=  substr ( $this -> Contents, $this -> ContentIndex, $end + $lcomment - $this -> ContentIndex ) ;
+		   		    }
+
+		   		// Update input character pointer
+		   		$this -> ContentIndex	=  $end + $lcomment ;
+
+		   		// Count number of newlines in the comment and update current line number accordingly
+		   		$this -> CurrentLine  	+=  substr_count ( $value, "\n" ) ;
+
+		   		// Discard if we are to ignore comments
+		   		if  ( ! $this -> WantComments )
+		   			continue 2 ;
+
+		   		// Build the resulting token
+		   		$result =  array
+		   			      (
+							'token'		=>  self::STD_TOKEN_COMMENT,
+		   			      		'name'		=>  'STD_TOKEN_COMMENT',
+		   			      		'value'		=>  $value,
+		   			      		'file'		=>  $this -> CurrentFile,
+		   			      		'line'		=>  $this -> CurrentLine,
+		   			      		'matches'	=>  array ( array ( $value, $current_index ) ),
+		   			      		'multiline'	=>  $comment [ 'multiline' ]
+		   			       ) ;
+
+		   		// Return result
+		   		return ( $result ) ;
+		   	   }
+
+			// Check if next item is a compound block whose contents must remain uninterpreted
+			foreach  ( $this -> Blocks  as  $block )
+			   {
+			   	$lblockstart 	=  strlen ( $block [ 'start' ] ) ;
+			   	$lblockend	=  strlen ( $block [ 'stop' ] ) ;
+
+		   		// If current input does not start this block type, check next block definition
+		   		if  ( substr ( $this -> Contents, $this -> ContentIndex, $lblockstart )  !=  $block [ 'start' ] )
+		   			continue ;
+
+		   		$search =  $block [ 'stop' ] ;
+
+		   		if  ( $block [  'allow-nesting' ] )
+		   		   {
+		   		   	$end 		=  $this -> ContentIndex + $lblockstart ;
+		   		   	$nesting_level 	=  1 ;			// = 1 because we already found the opening block string
+
+		   		   	// Loop through block contents
+		   		   	while  ( $end  <  $this -> ContentLength )
+		   		   	   {
+		   		   	   	// Skip multiline comments
+		   		   	   	if  ( substr ( $this -> Contents, $end, 2 )  ==  "/*" )
+		   		   	   	   {
+		   		   	   	   	$cend 	=  strpos ( $this -> Contents, "*/", $end ) ;
+
+		   		   	   	   	if  ( $cend  ===  false )
+		   		   	   	   		throw_error ( "File \"{$this -> CurrentFile}\", line {$this -> CurrentLine} : " .
+		   		   	   	   				"EOF found inside a multiline comment of a nested block." ) ;
+
+		   		   	   	   	$end = $cend + 2 ;
+		   		   	   	    }
+		   		   	   	// And single-line comments
+		   		   	   	else if ( substr ( $this -> Contents, $end, 2 )  ==  "//"  ||  $this -> Contents [  $end ]  ==  '#' )
+		   		   	   	   {
+		   		   	   	   	$cend 	=  strpos ( $this -> Contents, "\n", $end ) ;
+
+		   		   	   	   	if  ( $cend  ===  false )
+		   		   	   	   		throw_error ( "File \"{$this -> CurrentFile}\", line {$this -> CurrentLine} : " .
+		   		   	   	   				"EOF found inside a single-line comment of a nested block." ) ;
+
+		   		   	   	   	$end  =  $cend ;
+		   		   	   	    }
+		   		   	   	// Count one nesting level more if we find the block opening string
+		   		   	   	else if  ( substr ( $this -> Contents, $end, $lblockstart )  ==  $block [ 'start' ] )
+		   		   	   	   {
+		   		   	   	   	$nesting_level ++ ;
+		   		   	   	   	$end 	+=  $lblockstart ;
+		   		   	   	    }
+		   		   	   	// And one nesting level less if we find the block closing string
+		   		   	   	else if  ( substr ( $this -> Contents, $end, $lblockend )  ==  $block [ 'stop' ] )
+		   		   	   	   {
+		   		   	   	   	$nesting_level -- ;
+
+		   		   	   	   	if  ( $nesting_level  ==  0 )
+		   		   	   	   		break ;
+		   		   	   	   	else
+		   		   	   	   		$end    +=  $lblockend ;
+		   		   	   	    }
+		   		   	   	// Other cases : simply go through the current character
+		   		   	   	else
+		   		   	   		$end ++ ;
+		   		   	    }
+
+		   		   	if  ( $nesting_level )
+		   		   		throw_error ( "File \"{$this -> CurrentFile}\", line {$this -> CurrentLine} : EOF found inside a nested block." ) ;
+		   		    }
+		   		else
+		   			$end 	=  strpos ( $this -> Contents, $search, $this -> ContentIndex + 1 ) ;	// +1 in case start and stop strings are the same
+
+		   		// No ending delimiter : eof has been found
+		   		if  ( $end  ===  false )
+	   		   		throw_error ( "File \"{$this -> CurrentFile}\", line {$this -> CurrentLine} : EOF found inside a block." ) ;
+
+	   		   	// Extract the block contents within delimiters
+	   		   	$value 	=  substr ( $this -> Contents, $this -> ContentIndex + $lblockstart, $end - $lblockstart - $this -> ContentIndex ) ;
+
+		   		// Update input character pointer
+		   		$this -> ContentIndex   = $end + $lblockend ;
+
+		   		// Count number of newlines in the comment and update current line number accordingly
+		   		$this -> CurrentLine   += substr_count ( $value, "\n" ) ;
+
+		   		// Build the resulting token
+		   		$result =  array
+		   			      (
+							'token'		=>  $block [ 'value' ],
+		   			      		'name'		=>  $block [ 'name' ],
+		   			      		'value'		=>  $value,
+		   			      		'file'		=>  $this -> CurrentFile,
+		   			      		'line'		=>  $this -> CurrentLine,
+		   			      		'matches'	=>  array ( array ( $value, $current_index ) )
+		   			       ) ;
+
+		   		// Return result
+		   		return ( $result ) ;
+			    }
+
+		   	// Another special processing for strings
+		   	foreach  ( $this -> Strings  as  $string )
+		   	   {
+		   	   	$delimiter 	=  $string [ 'delimiter' ] ;
+		   	   	$escape		=  $string [ 'escape' ] ;
+
+		   	   	// Start of a string
+				if  ( $ch  ==  $string [ 'delimiter' ] )
+				   {
+					$value 		=  "" ;
+					$is_terminated	=  false ;
+
+					$this -> ContentIndex ++ ;
+
+					// Loop until we find the ending delimiter
+					while  ( $this -> ContentIndex  <  $this -> ContentLength )
+					   {
+						$ch  	=  $this -> Contents [ $this -> ContentIndex ] ;
+
+						// If current char is the escape character...
+						if  ( $ch  ==  $escape )
+						   {
+						   	// No more character after : EOF met
+							if  ( $this -> ContentIndex  >=  $this -> ContentLength )
+						    			throw_error ( "File \"{$this -> CurrentFile}\", line {$this -> CurrentLine} : EOF found inside a string." ) ;
+
+						    	$this -> ContentIndex ++ ;
+						    	$ch  	=  $this -> Contents [ $this -> ContentIndex ] ;
+
+						    	// If the escape character is the same than the string delimiter then we will have...
+						    	if  ( $escape  ==  $delimiter )
+						    	   {
+						    	   	// ... to add the next character to the token value or
+						    		if  ( $ch  ==  $delimiter )
+						    			$value .= $ch ;
+						    		// ... to consider that this is the real end of the string. The character after will be processed on
+						    		// the next while() cycle
+						    		else
+						    		   {
+						    			$value .= $escape ;
+						    			$is_terminated = true ;
+						    			break ;
+						    		    }
+						    	    }
+						    	// escape character != string delimiter
+						    	else
+						    	   {
+						    	   	// If next character is the string delimiter, then only retain the string delimiter
+						    		if  ( $ch  ==  $delimiter )
+						    			$value .= $ch ;
+						    		// Otherwise, retain both the escape character and the string delimiter
+						    		else
+						    			$value .= $escape . $ch ;
+						    	    }
+						   }
+						// Ending delimiter found (not preceded by an escape character)
+						else if  ( $ch  ==  $delimiter )
+						   {
+							$is_terminated	=  true ;
+							$this -> ContentIndex ++ ;
+							break ;
+						    }
+						// Other cases : simply collect the current character
+						else
+							$value 	.=  $ch ;
+
+						$this -> ContentIndex ++ ;
+					    }
+
+					// Complain if we reached EOF before the end of string
+					if  ( ! $is_terminated )
+				    		throw_error ( "File \"{$this -> CurrentFile}\", line {$this -> CurrentLine} : EOF found inside a string." ) ;
+
+				    	// Build the result
+		   			$result =  array
+		   			      (
+							'token'		=>  $string [ 'value' ],
+		   			      		'name'		=>  $string [ 'name' ],
+		   			      		'value'		=>  $value,
+		   			      		'file'		=>  $this -> CurrentFile,
+		   			      		'line'		=>  $this -> CurrentLine,
+		   			      		'matches'	=>  array ( array ( $value, $current_index ) ),
+		   			      		'delimiter'	=>  $delimiter,
+		   			      		'escape'	=>  $escape
+		   			       ) ;
+
+		   			// All done, return
+					return ( $result ) ;
+				    }
+		   	    }
+
+			// Process keywords
+			if  ( $this -> IdentifierRegex  &&
+				preg_match ( $this -> IdentifierRegex, $this -> Contents, $matches, PREG_OFFSET_CAPTURE, $this -> ContentIndex ) )
+			   {
+			   	if  ( $matches [0] [1]  ==  $this -> ContentIndex )
+			   	   {
+				   	$keyword 	=  $matches [0] [0] ;
+				   	$cmpfunc 	=  ( $this -> CaseSensitive )  ?  "strcmp" : "strcasecmp" ;
+
+				   	// Loop through defined tokens
+				   	foreach  ( $this -> Tokens  as  $tokendef )
+				   	   {
+				   	   	// If current token is a reserved keyword and equals the matched text ($keyword), then we're done
+				   		if  ( $tokendef [ 'reserved']  &&  ! $cmpfunc ( $tokendef [ 'text' ], $keyword ) )
+				   		   {
+				   			$result =  array
+				   			      (
+									'token'		=>  $tokendef [ 'value' ],
+				   			      		'name'		=>  $tokendef [ 'name' ],
+				   			      		'value'		=>  $keyword,
+				   			      		'file'		=>  $this -> CurrentFile,
+				   			      		'line'		=>  $this -> CurrentLine,
+				   			      		'matches'	=>  $matches
+				   			       ) ;
+
+				   			$this -> ContentIndex	+=  strlen ( $keyword ) ;
+
+				   			return ( $result ) ;
+	      			   		    }
+				   	    }
+
+				   	// If no keyword found, say that this is a standard identifier
+		   			$result =  array
+		   			      (
+							'token'		=>  self::STD_TOKEN_IDENTIFIER,
+		   			      		'name'		=>  'STD_TOKEN_IDENTIFIER',
+		   			      		'value'		=>  $keyword,
+		   			      		'file'		=>  $this -> CurrentFile,
+		   			      		'line'		=>  $this -> CurrentLine,
+		   			      		'matches' 	=>  $matches
+		   			       ) ;
+
+		   			$this -> ContentIndex 	+=  strlen ( $keyword ) ;
+
+		   			return ( $result ) ;
+			   	   }
+			   }
+
+
+			// Process other (non-keyword) tokens
+			foreach  ( $this -> Tokens  as  $tokendef )
+			   {
+				if  ( $tokendef [ 'reserved' ] )
+					continue ;
+
+				if  ( preg_match ( $tokendef [ 'regex' ], $this -> Contents, $matches, PREG_OFFSET_CAPTURE, $this -> ContentIndex ) )
+				   {
+				   	if  ( $matches [0] [1]  ==  $this -> ContentIndex )
+				   	    {
+						$keyword	=  $matches [0] [0] ;
+
+			   			$result =  array
+			   			      (
+								'token'		=>  $tokendef [ 'value' ],
+			   			      		'name'		=>  $tokendef [ 'name' ],
+			   			      		'value'		=>  $keyword,
+			   			      		'file'		=>  $this -> CurrentFile,
+			   			      		'line'		=>  $this -> CurrentLine,
+			   			      		'matches'	=>  $matches
+			   			       ) ;
+
+			   			$this -> ContentIndex	+=  strlen ( $keyword ) ;
+			   			$this -> CurrentLine	+=  substr_count ( $keyword, "\n" ) ;
+
+			   			return ( $result ) ;
+				   	     }
+				   }
+			    }
+
+			// Unrecognized tokens
+			if  ( ! $this -> WantUnknownTokens )
+			   {
+	   			$result =  array
+	   			      (
+						'token'		=>  self::STD_TOKEN_UNKNOWN,
+	   			      		'name'		=>  'STD_TOKEN_UNKNOWN',
+	   			      		'value'		=>  $ch,
+	   			      		'file'		=>  $this -> CurrentFile,
+	   			      		'line'		=>  $this -> CurrentLine,
+	   			      		'matches'	=>  array ( array ( $ch, $current_index ) )
+	   			       ) ;
+
+	   			$this -> ContentIndex ++ ;
+
+	   			return ( $result ) ;
+			    }
+
+			throw_error ( "File \"{$this -> CurrentFile}\", line {$this -> CurrentLine} : Unrecognized token \"$ch\" encountered." ) ;
+	   	    }
+
+	   	// End of file
+		return ( false ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    PeekToken -
+		Peeks a token from the input file.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  PeekToken ( )
+	   {
+		$token	=  $this -> __NextToken ( ) ;	// Use the non-buffered version
+
+		if  ( $token  ===  false )
+			return ( $false ) ;
+
+		$this -> PokedTokens []	=  $token ;
+
+		return ( $token ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    ToEol -
+		Returns all the text until the next end of line.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  ToEol ( )
+	   {
+	   	$eol	=  strpos ( $this -> Contents, "\n", $this -> ContentIndex ) ;
+
+	   	if  ( $eol  ===  false )
+	   	   {
+	   	   	$result 		=  substr ( $this -> Contents, $this -> ContentIndex ) ;
+	   	   	$this -> ContentIndex	=  $this -> ContentLength ;
+	   	    }
+	   	else
+	   	   {
+	   	   	$result 		=  substr ( $this -> Contents, $this -> ContentIndex, $eol - $this -> ContentIndex ) ;
+	   	   	$this -> ContentIndex	=  $eol ;
+	   	    }
+
+	   	return ( $result ) ;
+   	    }
+
+
+/* __CLASSCODE__ */
+    }
+
+/* __POSTCODE__ */

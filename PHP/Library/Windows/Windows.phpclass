@@ -1,0 +1,145 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        Windows.phpclass
+
+    DESCRIPTION
+        General functions related to the Windows platform.
+
+    AUTHOR
+        Christian Vigh, 10/2014.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2014/10/30]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Windows ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use  	Thrak\System\Object ;
+use	Thrak\Windows\AbstractWindowsBase ;
+
+
+/*==============================================================================================================
+
+    Windows class -
+        A set of Windows-related information functions.
+
+  ==============================================================================================================*/
+class  Windows	extends  AbstractWindowsBase
+   {
+	// Keep an instance of WMI
+	private static		$WmiInstance	=  null ;
+	
+	
+	//  __get_wmi -
+	//	Ensures that a WMI instance is loaded.
+	private static  function  __get_wmi ( )
+	   {
+		if  ( self::$WmiInstance  ===  null )
+		   {
+			self::$WmiInstance	=  new  \COM ( 'winmgmts:{impersonationLevel=impersonate}//./root/cimv2' ) ;
+			
+			if  ( self::$WmiInstance  ===  null )
+				error ( new WindowsException ( "Failed to instanciate a WMI object." ) ) ;
+		    }
+	    }
+	
+
+	/*==============================================================================================================
+	
+	    GetLogicalDriveLetters -
+	        Returns the list of assigned logical drive letters.
+	
+	  ==============================================================================================================*/
+	public static function  GetLogicalDriveLetters ( )
+	   {
+		self::__get_wmi ( ) ;
+		$result_set		=  self::$WmiInstance -> ExecQuery ( 'SELECT DeviceID FROM Win32_LogicalDisk' ) ;
+		$result			=  [] ;
+		
+		foreach  ( $result_set  as  $drive )
+			$result	[]	=  strtoupper ( $drive -> DeviceID [0] ) ;
+		
+		return ( $result ) ;
+	    }
+	
+
+	/*==============================================================================================================
+	
+	    GetNextAvailableDriveLetter -
+	        Returns the next available drive letters, or false if all the driver letters are in use.
+	
+	  ==============================================================================================================*/
+	public static function  GetNextAvailableDriveLetter ( )
+	   {
+		$logical_drives		=  self::GetLogicalDriveLetters ( ) ;
+		$last_letter		=  ord ( 'A' ) ;
+		
+		foreach  ( $logical_drives  as  $logical_drive )
+		   {
+			$ord	=  ord ( $logical_drive [0] ) ;
+			
+			if  ( $last_letter + 1  <  $ord )
+				return ( chr ( $last_letter + 1 ) ) ;
+			
+			$last_letter	=  $ord ;
+		    }
+		
+		return  ( false ) ;
+	    }
+	
+
+	/*==============================================================================================================
+	
+	    GetOsArchitecture -
+	        Returns the OS architecture, either 32 (for 32 bits) or 64 (for 64 bits), as an integer. 
+		May still work if we go one day to 128 bits...
+	
+	  ==============================================================================================================*/
+	public static function  GetOsArchitecture ( )
+	   {
+		self::__get_wmi ( ) ;
+		$result_set		=  self::$WmiInstance -> ExecQuery ( 'SELECT OSArchitecture FROM Win32_OperatingSystem' ) ;
+		
+		if  ( ! $result_set -> Count ( ) )
+			return ( false ) ;
+		
+		$result		=  $result_set -> ItemIndex ( 0 ) ;
+		$size		=  preg_replace ( '/[^\d]+/', '', $result -> OSArchitecture ) ;
+		
+		return (  ( integer ) $size ) ;
+	    }
+	
+
+	/*==============================================================================================================
+	
+	    GetProcessorArchitecture -
+	        Returns the processor architecture as a string.
+	
+	  ==============================================================================================================*/
+	public static function  GetProcessorArchitecture ( )
+	   {
+		self::__get_wmi ( ) ;
+		$result_set		=  self::$WmiInstance -> ExecQuery ( 'SELECT Architecture FROM Win32_Processor' ) ;
+		
+		if  ( ! $result_set -> Count ( ) )
+			return ( false ) ;
+		
+		$architecture	=  $result_set -> ItemIndex ( 0 ) -> Architecture ;
+
+		switch ( $architecture )
+		   {
+			case  0 :  return ( "x86" ) ;
+			case  1 :  return ( "MIPS" ) ;
+			case  2 :  return ( "Alpha" ) ;
+			case  3 :  return ( "PowerPC" ) ;
+			case  6 :  return ( "Itanium" ) ;
+			case  9 :  return ( "x64" ) ;
+			default :  return ( "Unknown (type $architecture)" ) ;
+		     }
+	    }
+    }

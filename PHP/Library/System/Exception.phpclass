@@ -1,0 +1,762 @@
+<?php
+/***************************************************************************************************
+
+    NAME
+	Exception.phpclass
+
+    DESCRIPTION
+	Exception-related classes.
+
+    AUTHOR
+     	Christian Vigh, 05/2011.
+
+    HISTORY
+    [Version : 1.0]	[Date : 2011/05/21]	[Author : CV]
+     	Initial version.
+
+    [Version : 1.0.1]	[Date : 2011/10/07]	[Author : CV]
+    	Modified the CrimsonException::__tostring() method so that the exception message will be
+    	correctly aligned if it spans several lines.
+    	Uses the 'DisplayWidth' attribute of the $Configuration object.
+
+    [Version : 2.0]	[Date : 2012/10/03]	[Author : CV]
+    	Migration to the Thrak library version 2.
+    	All errors and messages are now handled by this class, when the Install() method is called.
+
+    [Version : 2.0.1] 	[Date : 2013/04/25]	[Author : CV]
+    	Fixed a bug : the Thrak\System\Exception constructor did not call its parent constructor.
+    	The displayed exception message was empty.
+
+    [Version : 2.0.2] 	[Date : 2014/11/16]	[Author : CV]
+	. Changed the __DisplayTextMessage() and __DisplayHtmlMessage() functions to display the
+	  exception name in the message header.
+	. Added "standard" exception classes.
+
+    [Version : 2.0.3] 	[Date : 2015/02/05]	[Author : CV]
+	. Changed the __DisplayTextMessage() and __DisplayHtmlMessage() functions to use STDERR 
+ 	  instead of simply invoking echo().
+
+    [Version : 2.0.4] 	[Date : 2015/03/07]	[Author : CV]
+ 	. Changed the __DisplayTextMessage() to add a trailing dot only if the message does not end
+ 	  with a dot or a newline and contains only one line.
+
+    [Version : 2.0.5] 	[Date : 2015/03/23]	[Author : CV]
+	. Changed the __Error_Handler() method for the error_reporting() level. If zero, no message
+	  will be displayed.
+
+    [Version : 2.0.6] 	[Date : 2015/04/02]	[Author : CV]
+ 	. Added the $LastError member set to the calling error when error_reporting() is zero. This
+ 	  ensures that warnings or errors disabled by the "@" sign will still be accessible, such as
+ 	  for preg_* functions.
+
+    [Version : 2.0.7] 	[Date : 2015/05/24]	[Author : CV]
+	. Errors of type E_USER_WARNING will not generate a stack backtrace, even if the 
+	  'Runtime/error-mode' configuration is set to 'stacktrace'.
+
+    [Version : 2.0.8] 	[Date : 2015/05/26]	[Author : CV]
+	. Finally styled the output of the __DisplayHtmlMessage() method.
+
+    [Version : 2.0.9] 	[Date : 2015/06/09]	[Author : CV]
+	. Added the __format_trace_message() method, for cli stack trace display. 
+	. Added the called class method/function to the cli stack trace display.
+
+    [Version : 2.0.10] 	[Date : 2015/06/26]	[Author : CV]
+	. Changed the __DisplayHtmlMessage() and DisplayTextMessage() in order not to display an
+	  ending dot if the last character is one of the following : '.', '';', ':', "\n".
+ 
+ ***************************************************************************************************/
+namespace	Thrak\System ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces & objects
+use		Thrak\System\Object			as  Object ;
+use		Thrak\System\IsNonObject ;
+use 		Thrak\Types\String			as  String ;
+use 		Thrak\Types\String\Formatting 		as  Formatting ;
+
+// Error modes
+define ( 'ERROR_MODE_UNDEFINED'		, -1 ) ;
+define ( 'ERROR_MODE_NORMAL'		, 0 ) ;			// Errors are displayed without extra information
+define ( 'ERROR_MODE_VERBOSE'		, 1 ) ;			// Errors are displayed with information about the caller
+define ( 'ERROR_MODE_STACKTRACE'	, 2 ) ;			// Errors are displayed with a full stacktrace
+
+
+/*==================================================================================================
+
+    Exception class -
+	Standard exception class for the Thrak library. This is the central point for catching any
+	exception thrown or triggered error.
+
+  ==================================================================================================*/
+class  Exception 	extends  \Exception
+   {
+	use		IsNonObject ;
+	
+   	public static 	$ErrorMode 		=  ERROR_MODE_UNDEFINED ;
+   	public static 	$LineWidth 		=  80 ;
+	public static	$LastError		=  false ;
+
+
+	// Mapping for E_xxx constants. Each entry has the following subitems :
+	// - 'text' :
+	//	Text to be displayed before the error message itself.
+	// - 'error' :
+	//	When true, indicates that the associated entry is an error, and stops program execution.
+	// The special index '0' is for exceptions, and '-1' is for messages having an error code not in the table.
+	static private 	$Errors				=  array
+	   (
+	   	E_COMPILE_ERROR		=>  array ( 'text' => "Compile error"		, 'error' => true  ),
+	   	E_COMPILE_WARNING	=>  array ( 'text' => "Compile warning"		, 'error' => false ),
+	   	E_CORE_ERROR		=>  array ( 'text' => "Core error"		, 'error' => true  ),
+	   	E_CORE_WARNING		=>  array ( 'text' => "Core warning"		, 'error' => false ),
+	   	E_DEPRECATED		=>  array ( 'text' => "Deprecated"		, 'error' => false ),
+	   	E_ERROR			=>  array ( 'text' => "Error"			, 'error' => true  ),
+	   	E_NOTICE		=>  array ( 'text' => "Notice"			, 'error' => false ),
+	   	E_PARSE			=>  array ( 'text' => "Parse error"		, 'error' => true  ),
+	   	E_RECOVERABLE_ERROR	=>  array ( 'text' => "Recoverable error"	, 'error' => false ),
+	   	E_STRICT		=>  array ( 'text' => "Strict standards"	, 'error' => true  ),
+	   	E_USER_DEPRECATED	=>  array ( 'text' => "Deprecated"		, 'error' => false ),
+	   	E_USER_NOTICE		=>  array ( 'text' => "Notice"			, 'error' => false ),
+	   	E_USER_WARNING		=>  array ( 'text' => "Warning"			, 'error' => false ),
+	   	E_USER_ERROR 		=>  array ( 'text' => "Error"			, 'error' => true  ),
+	   	E_WARNING		=>  array ( 'text' => "Warning"			, 'error' => false ),
+	   	0			=>  array ( 'text' => "Error"			, 'error' => true  ),
+	   	-1			=>  array ( 'text' => "Unknown error"		, 'error' => true  )
+	    ) ;
+
+
+	/*==================================================================================================
+
+		Class constructor.
+
+	  ==================================================================================================*/
+    	public function  __construct ( $message, $code = 0, $previous = null )
+	   {
+		self::__GetExceptionParameters ( ) ;
+		parent::__construct ( $message, $code, $previous ) ;
+		$this -> CoreInit ( ) ;
+	    }
+
+
+	/*==================================================================================================
+
+	    Install -
+	    	Installs the default exception and error handlers.
+
+	  ==================================================================================================*/
+	static public function  Install ( )
+	   {
+		set_exception_handler ( array ( __NAMESPACE__ . '\Exception', '__Exception_Handler' ) ) ;
+		set_error_handler     ( array ( __NAMESPACE__ . '\Exception', '__Error_Handler'     ), 0xFFFFFFFF ) ;
+		self::__GetExceptionParameters ( ) ;
+	    }
+
+
+	/*==================================================================================================
+
+	    Uninstall -
+	    	Uninstalls the default exception and error handlers.
+
+	  ==================================================================================================*/
+	static public function  Uninstall ( )
+	   {
+		restore_exception_handler ( ) ;
+		restore_error_handler ( ) ;
+	    }
+
+
+	/*==================================================================================================
+
+		Gets configuration parameters related to exceptions.
+
+	  ==================================================================================================*/
+	private static function  __GetExceptionParameters ( )
+	   {
+	   	global  	$Configuration ;
+
+
+	   	// Error reporting mode
+		if  ( self::$ErrorMode  ==  ERROR_MODE_UNDEFINED )
+		   {
+			$mode	=  strtolower ( $Configuration -> Get ( "Runtime/error-mode" ) ) ;
+
+			switch ( $mode )
+			   {
+			   	case  	'verbose' :
+			   		self::$ErrorMode	=  ERROR_MODE_VERBOSE ;
+			   		break ;
+
+			   	case 	'stacktrace' :
+			   		self::$ErrorMode	=  ERROR_MODE_STACKTRACE ;
+			   		break ;
+
+			   	case 	'normal' :
+			   	default :
+			   		self::$ErrorMode 	=  ERROR_MODE_NORMAL ;
+			   		break ;
+			    }
+		    }
+
+		// Console line width
+		self::$LineWidth	=  $Configuration -> Get ( 'console/line-width' ) ;
+
+		if   ( self::$LineWidth  <  40 )		// Arbitrary decision
+			self::$LineWidth = 80 ;
+	    }
+
+
+	/*==================================================================================================
+
+		Default exception handler.
+
+	  ==================================================================================================*/
+	static public function  __Exception_Handler ( $exception )
+	   {
+	   	if (  IS_STANDALONE )	// Display as text on the console
+	   		Exception::__DisplayTextMessage ( 0, $exception -> getCode ( ), $exception -> getMessage ( ),
+	   							$exception -> getFile ( ), $exception -> getLine ( ),
+	   							$exception -> getTrace ( ),
+								$exception ) ;
+	   	else			// Display as HTML
+		   {
+	   		Exception::__DisplayHtmlMessage ( 0, $exception -> getCode ( ), $exception -> getMessage ( ),
+	   							$exception -> getFile ( ), $exception -> getLine ( ),
+	   							$exception -> getTrace ( ),
+								$exception ) ;
+		   }
+	    }
+
+
+	/*==================================================================================================
+
+		Default error handler.
+
+	  ==================================================================================================*/
+	static public function  __Error_Handler ( $errno, $errstr, $errfile = null, $errline = null, $errcontext = null )
+	   {
+		// Remember last error, in case of we did not irremediably crash...
+		self::$LastError	=
+		   [
+			'errno'		=>  $errno,
+			'error'		=>  $errstr,
+			'file'		=>  $errfile,
+			'line'		=>  $errline,
+			'context'	=>  $errcontext
+		    ] ;
+		
+		// Check error reporting ; it might be set to zero by a php.ini directive, or simply by prefixing an expression with "@"
+		$reporting	=   error_reporting ( ) ;
+		
+		if  ( ! $reporting )
+			return ;
+		
+	   	// In case $errno is not a valid E_xxx constant, set $errtype to -1 ("Unknown error").
+	   	// Otherwise, set $errtype to the specified E_xxx constant, and $errno to 0 so that no error code will be displayed.
+	   	$found 		=  false ;
+
+	   	foreach  ( Exception::$Errors  as  $id => $data )
+	   	   {
+	   		if  ( ( $errno & $id )  ==  $errno )
+	   		   {
+				$found 	  =  true ;
+				$errtype  =  $id ;
+
+				if  ( $errno  ==  $id )
+					$errno = 0 ;
+
+				break ;
+	   		    }
+	   	    }
+
+	   	if  ( ! $found )
+	   	   	$errtype  	=  -1 ;
+
+	   	// Get the backtrace, except for the current function
+	   	$trace 	=  debug_backtrace ( ) ;
+
+	   	if  ( ! array_key_exists ( 'file', $trace [0] ) )
+	   		array_shift ( $trace ) ;
+
+	   	if  ( $trace [0] [ 'function' ]  ==  'trigger_error' )
+	   		array_shift ( $trace ) ;
+
+	   	// Display as either text or html, depending on the current execution environment
+	   	if (  IS_STANDALONE )
+	   		Exception::__DisplayTextMessage ( $errtype, $errno, $errstr, $errfile, $errline, $trace ) ;
+	   	else
+	   		Exception::__DisplayHtmlMessage ( $errtype, $errno, $errstr, $errfile, $errline, $trace ) ;
+
+		// If specified error is an error (not a warning or notice) then terminate the program/
+		if  ( Exception::$Errors [ $errtype ] [ 'error' ] )
+			die ( ) ;	// aaaarggghhhhh....
+	    }
+
+
+
+	 /*==================================================================================================
+
+		Locate the potential caller from a stack trace. Don't retain functions that contain the word
+		'error'.
+
+	  ==================================================================================================*/
+	static private function  __LocateCaller ( $stacktrace )
+	   {
+	   	static  $ErrorStrings 		=  array ( 'error', 'exception' ) ;
+
+	   	$level 		=  0 ;
+
+		foreach  ( $stacktrace  as  $entry )
+		   {
+		   	$found 	=  false ;
+
+		   	foreach  ( $ErrorStrings  as  $string )
+		   	   {
+		   		if  ( stripos ( $entry [ 'function' ], $string )  !==  false )
+		   			$found 	=  true ;
+		   	    }
+
+		   	if  ( ! $found )
+		   	   {
+		   	   	if  ( $level )
+		   	   		$result 		=  $stacktrace [ $level - 1 ] ;
+		   	   	else
+		   	   		$result 		=  $stacktrace [0] ;
+
+		   	   	$result [ 'level' ]	=  $level ;
+		   	   	$result [ 'caller' ]    =  $entry [ 'function' ] ;
+				return ( $result ) ;
+		   	    }
+
+		   	$level ++ ;
+		    }
+
+		$entry 			=  $stacktrace [0] ;
+		$entry [ 'level' ]	=  0 ;
+		$entry [  'caller' ]	=  $entry [ 'function' ] ;
+		return ( $entry ) ;
+	    }
+
+
+	 /*==================================================================================================
+
+		Formats a trace message.
+
+	  ==================================================================================================*/
+	static private function  __format_trace_message ( $trace )
+	   {
+		if  ( isset  ( $trace [ 'file' ] )  &&  isset ( $trace [ 'line' ] ) )
+		    {
+			$message	=  '--> ' . $trace [ 'file' ] . " [line " . $trace [ 'line' ] . ']' ;
+				
+			if  ( isset ( $trace [ 'class' ] ) )
+				$message	.=  ' ' . $trace [ 'class' ] . '::' ;
+
+			if  ( isset ( $trace [ 'function' ] ) )
+			   {
+				if  ( ! isset ( $trace [ 'class' ] ) ) 
+					$message	.=  ' ' ;
+				
+				$message	.=  $trace [ 'function' ] . '()' ;
+			    }
+		     }
+		else if  ( isset ( $trace [ 'object' ] ) )
+			$message	=   '--> ' . get_class ( $trace [ 'object' ] ) . "\n" ;
+		else  
+			$message	=  '' ;
+		
+		return ( $message ) ;
+	    }
+	
+	
+	 /*==================================================================================================
+
+		Displays the error message as text.
+
+	  ==================================================================================================*/
+	static private function  __DisplayTextMessage ( $errtype, $errno, $errstr, $errfile, $errline, $stacktrace = null, $exception = null )
+	   {
+	   	$header 	=  Exception::$Errors [ $errtype ] [ 'text' ] ;
+		$trailer	=  "" ;
+	   	$error 		=  Exception::$Errors [ $errtype ] [ 'error' ] ;
+
+		if  ( $exception )
+		   {
+			$exception_path		=  get_class ( $exception ) ;
+			$parts			=  explode ( "\\", $exception_path ) ;
+			$exception_name		=  $parts [ count ( $parts ) - 1 ] ;
+			$trailer	        =  "(source exception : $exception_path)" ;
+		    }
+		
+		$header		=  "*** $header ***" ;
+		
+	   	if  ( $errno )
+	   		$errstr = "[code = " . $errno . "] " . $errstr ;
+
+		$last	=  substr ( $errstr, -1, 1 ) ; 
+		$count	=  substr_count ( $errstr, "\n" ) ;
+		
+	   	if  ( $count  ==  0  &&  ! in_array ( $last, [ '.', ':', ';', "\n" ] ) )
+	   		$errstr .= "." ;
+
+	   	if  ( self::$ErrorMode  ==  ERROR_MODE_VERBOSE  &&  $stacktrace  !=  null )
+	   	   {
+	   	   	$caller  =  Exception::__LocateCaller ( $stacktrace ) ;
+
+	   	   	$errstr .= "\n=> " ;
+
+	   		$errstr .= "See function \"{$caller [ 'caller' ]}()\" in \"{$caller [ 'file' ]}\"#{$caller [ 'line' ]}" ;
+
+	   		if  ( $caller [ 'level' ] )
+	   	   		$errstr .= " {" . $caller [ 'level' ] . "}" ;
+
+	   	   	$errstr  .=  "." ;
+	   	   }
+
+		$lmargin	=  strlen ( $header ) + 1 ;
+		$width 		=  self::$LineWidth ;
+		$errstr		=  String::SetEOS ( $errstr, "\n" ) ;
+		$errstr	       .=  $trailer ;
+
+		$message 	=  $header . " " .
+				   trim ( Formatting::FormatParagraph ( $errstr,
+				   		TEXT_ALIGN_LEFT,
+				   		$width - $lmargin, $lmargin ) ) ;
+
+		fputs ( STDERR,  $message ) ;
+
+		if  ( substr ( $message, 1, -1 )  !=  "\n" )
+			fputs ( STDERR,  "\n" ) ;
+
+		$display_stacktrace	=  ( $errtype  !=  E_USER_WARNING ) ;
+		
+		if  ( $display_stacktrace  &&  self::$ErrorMode  ==  ERROR_MODE_STACKTRACE  &&  $stacktrace  !=  NULL )
+		   {
+			fputs ( STDERR,  "\nStack trace :\n" ) ;
+			
+			foreach  ( $stacktrace  as  $trace )
+			    {
+				$message	=  self::__format_trace_message ( $trace ) ;
+				fputs ( STDERR, "$message\n" ) ;
+			     }
+		    }
+	   }
+
+
+	/*==================================================================================================
+
+		Displays the error message as HTML.
+
+	  ==================================================================================================*/
+	static private function  __DisplayHtmlMessage ( $errtype, $errno, $errstr, $errfile, $errline, $stacktrace = null, $exception = null )
+	   {
+		if (  $exception )
+		   {
+			$exception_class	=  get_class ( $exception ) ;
+			$parts			=  explode ( '\\', $exception_class ) ;
+			$error_name		=  $parts [ count ( $parts ) - 1 ] . ' error' ;
+			$additional_css_class	=  'exception' ;
+		    }
+		else
+		   {
+			$error_name		=  self::$Errors [ $errtype ] [ 'text' ] ;
+			$additional_css_class	=  'error' ;
+		    }
+		
+		if  ( $errno )
+			$errstr		=  "[errno=$errno] $errstr" ;
+		
+	   	if  ( ! in_array ( $last, [ '.', ':', ';', "\n" ] ) )
+	   		$errstr .= "." ;
+
+		if  ( self::$ErrorMode  ==  ERROR_MODE_VERBOSE )
+		   {
+	   	   	$caller  =  Exception::__LocateCaller ( $stacktrace ) ;
+						
+			$caller_link	=  "<br/>See function {$caller [ 'caller' ]}() in {$caller [ 'file' ]}#{$caller [ 'line' ]}" ;
+		    }
+		else
+			$caller_link	=  '' ;
+		
+		echo <<<END
+			<style>
+				.internal-error-frame
+				   {
+					width			:  100% ;
+					text-align		:  left ;
+				    }
+				    
+				.internal-error-message
+				   {
+					font-family		:  'Palatino Linotype', Arial ;
+					font-size		:  14px ;
+					color			:  #FF0000 ;
+					font-weight		:  bold ;
+				    }
+				    
+				.internal-error-message div
+				   {
+					display			:  inline-block ;
+				    }
+				    
+				.internal-error-message-type
+				   {
+					padding-right		:  16px ;
+					vertical-align		:  top ;
+				    }
+				    
+				.internal-error-message-type:after
+				   {
+					content			:  " : " ;
+				    }
+				    
+				table.internal-error-stacktrace
+				   {
+					color			:  #FFFFFF ;
+					border			:  1px solid #000000 ;
+					border-collapse		:  collapse ;
+				    }
+				    
+				table.internal-error-stacktrace th, table.internal-error-stacktrace td
+				   {
+					border			:  1px solid #000000 ;
+				    }
+				    
+				table.internal-error-stacktrace th.internal-error-stacktrace-header
+				   {
+					color			:  #000000 ;
+					padding			:  2px 8px 2px 8px ;
+					text-align		:  left ;
+				    }
+				    
+				table.internal-error-stacktrace th.internal-error-stacktrace-header1
+				   {
+					background-color	:  #FF7F2A ;
+					text-align		:  center ;
+				    }
+				    
+				table.internal-error-stacktrace th.internal-error-stacktrace-header2
+				   {
+					background-color	:  #FFFF55 ;
+				    }
+				    
+				table.internal-error-stacktrace td.internal-error-stacktrace-cell
+				   {
+					background-color	:  #FFFFFF ;
+					color			:  #000000 ;
+					padding			:  2px 8px 2px 8px ;
+					font-family		:  'Courier New'
+				    }
+				    
+				table.internal-error-stacktrace td.internal-error-stacktrace-cell-line
+				   {
+					text-align		:  right ;
+				    }
+				    
+			</style>
+			
+			<div class='internal-error-frame error-frame'>
+				<div class='internal-error-message $additional_css_class'>
+					<div class='internal-error-message-type error-message-type'>
+						$error_name
+					</div>
+					<div class='internal-error-message-text error-message-text' $additional_css_class'>
+						$errstr $caller_link
+					</div>
+				</div>
+			</div>
+END;
+		
+		$display_stacktrace	=  ( $errtype  !=  E_USER_WARNING ) ;
+				
+		if  ( self::$ErrorMode  ==  ERROR_MODE_STACKTRACE  &&  $stacktrace  !=  NULL  &&  $display_stacktrace )
+		   {
+			echo  <<<END
+				<br/>
+				<table cellpadding='0' cellspacing='0' border='0' class='internal-error-stacktrace error-stacktrace'>
+					<tr>
+						<th colspan='3' class='internal-error-stacktrace-header internal-error-stacktrace-header1 error-stacktrace-header error-stacktrace-header1'>
+							Stacktrace
+						</th>
+					</tr>
+					<tr>
+						<th class='internal-error-stacktrace-header internal-error-stacktrace-header2 error-stacktrace-header error-stacktrace-header2'>
+							Function
+						</th>
+						<th class='internal-error-stacktrace-header internal-error-stacktrace-header2 error-stacktrace-header error-stacktrace-header2'>
+							Line
+						</th>
+						<th class='internal-error-stacktrace-header internal-error-stacktrace-header2 error-stacktrace-header error-stacktrace-header2'>
+							File
+						</th>
+					</tr>
+					
+END;
+			
+			foreach  ( $stacktrace  as  $trace )
+			    {
+				echo <<<END
+					<tr>
+						<td class='internal-error-stacktrace-cell internal-error-stacktrace-cell-function error-stacktrace-cell error-stacktrace-cell-function'>
+							{$trace [ 'function' ]}
+						</td>
+						<td class='internal-error-stacktrace-cell internal-error-stacktrace-cell-line error-stacktrace-cell error-stacktrace-cell-line'>
+							{$trace [ 'line' ]}
+						</td>
+						<td class='internal-error-stacktrace-cell internal-error-stacktrace-cell-file error-stacktrace-cell error-stacktrace-cell-file'>
+							{$trace [ 'file' ]}
+						</td>
+					</tr>
+END;
+			     }
+			
+			echo '</table>' ;
+		    }
+	   }
+   }
+
+
+/*==============================================================================================================
+
+	Reproduction of standard exception classes.
+ 
+  ==============================================================================================================*/
+
+class  LogicException				extends  Exception		{ }
+class  RuntimeException				extends  Exception		{ }
+
+class  BadDerivedClassInitializationException	extends  LogicException		{ }
+class  BadFunctionCallException			extends  LogicException		{ }
+class  BadMethodCallException			extends  LogicException		{ }
+class  BadPropertyException			extends  LogicException		{ }
+class  ConfigurationFileException		extends  RuntimeException	{ }
+class  DataStructureException			extends  RuntimeException	{ } 
+class  DatabaseException			extends  LogicException		{ }
+class  DatabaseConnectionException		extends  LogicException		{ }
+class  DirectoryNotFoundException		extends  RuntimeException	{ }
+class  DomainException				extends  LogicException		{ }
+class  ExecutionException			extends  RuntimeException	{ }
+class  FileNotDirectoryException		extends  RuntimeException	{ }
+class  FileNotFoundException			extends  RuntimeException	{ }
+class  FileReadException			extends  RuntimeException	{ }
+class  FileWriteException			extends  RuntimeException	{ }
+class  HttpException				extends  RuntimeException	{ }
+class  InvalidArgumentException			extends  LogicException		{ }
+class  LengthException				extends  LogicException		{ }
+class  NetworkException				extends  RuntimeException	{ }
+class  OutOfBoundsException			extends  RuntimeException	{ }
+class  OutOfRangeException			extends  RuntimeException	{ }
+class  OverflowException			extends  RuntimeException	{ }
+class  ParseException				extends  RuntimeException	{ }
+class  RangeException				extends  RuntimeException	{ }
+class  RegexException				extends  RuntimeException	{ }
+class  UnauthorizedOperationException		extends  RuntimeException	{ }
+class  UnderflowException			extends  RuntimeException	{ }
+class  UnexpectedValueException			extends  RuntimeException	{ }
+class  XmlErrorException			extends  RuntimeException	{ }
+
+
+class  ErrorException				extends  Exception
+   {
+	private		$severity	=  0 ;
+	
+	
+	public function  __construct ( $message = "", $code = 0, $severity = 1, Exception  $previous = null )
+	   {
+		parent::__construct ( $message, $code, $previous ) ;
+		$this -> severity	=  $severity ;
+	    }
+	
+	public function  getSeverity ( )
+	{ return ( $this -> severity ) ; }
+    }
+
+
+class  ParanoidException			extends  RuntimeException
+   {
+	public function  __construct ( $message = "This exception should never happen.", $code = 0, Exception  $previous = null )
+	   {
+		parent::__construct ( $message, $code, $previous ) ;
+	    }
+    }
+
+
+class  NotYetImplementedException		extends  RuntimeException
+   {
+	public function  __construct ( $message = "This function is not yet implemented.", $code = 0, Exception  $previous = null )
+	   {
+		parent::__construct ( $message, $code, $previous ) ;
+	    }
+    }
+
+
+class  UnsupportedOperationException		extends  RuntimeException
+   {
+	public function  __construct ( $message = "Unsupported operation.", $code = 0, Exception  $previous = null )
+	   {
+		parent::__construct ( $message, $code, $previous ) ;
+	    }
+    }
+
+
+class  UndefinedPropertyException		extends  RuntimeException
+   {
+	public function  __construct ( $property_name = false, $code = 0, Exception  $previous = null )
+	   {
+		$debug	=  debug_backtrace ( 0 ) ;
+		$debug	=  $debug [1] ;	
+	
+		if  ( ! isset ( $debug [ 'file' ] )  ||  ! $debug [ 'file' ] )
+			$file	=  'command line code' ;
+		else
+			$file	=  $debug [ 'file' ] ;
+		
+		if  ( ! $property_name )
+			$property_name	=  $debug [ 'args' ] [0] ;
+		
+		$message	=  "Undefined property: {$debug [ 'class' ]}::\$$property_name in $file on line {$debug [ 'line' ]}" ;
+		parent::__construct ( $message, $code, $previous ) ;
+	    }
+    }
+
+
+class  ReadOnlyPropertyException		extends  RuntimeException
+   {
+	public function  __construct ( $property_name = false, $code = 0, Exception  $previous = null )
+	   {
+		$debug	=  debug_backtrace ( 0 ) ;
+		$debug	=  $debug [1] ;	
+	
+		if  ( ! isset ( $debug [ 'file' ] )  ||  ! $debug [ 'file' ] )
+			$file	=  'command line code' ;
+		else
+			$file	=  $debug [ 'file' ] ;
+		
+		if  ( ! $property_name )
+			$property_name	=  $debug [ 'args' ] [0] ;
+		
+		$message	=  "Property {$debug [ 'class' ]}::\$$property_name is read-only and cannot be assigned in $file on line {$debug [ 'line' ]}" ;
+		parent::__construct ( $message, $code, $previous ) ;
+	    }
+    }
+
+
+class  IndexOutOfRangeException		extends  RuntimeException
+   {
+	public function  __construct ( $index, $code = 0, Exception  $previous = null )
+	   {
+		$debug	=  debug_backtrace ( 0 ) ;
+		$debug	=  $debug [1] ;	
+	
+		if  ( ! isset ( $debug [ 'file' ] )  ||  ! $debug [ 'file' ] )
+			$file	=  'command line code' ;
+		else
+			$file	=  $debug [ 'file' ] ;
+		
+		$message	=  "Undefined offset: $index in $file on line {$debug [ 'line' ]}" ;
+		parent::__construct ( $message, $code, $previous ) ;
+	    }
+    }
+
+

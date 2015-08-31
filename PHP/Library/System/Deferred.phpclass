@@ -1,0 +1,199 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        Deferred.phpclass
+
+    DESCRIPTION
+        A class for deferring execution of functions.
+	The idea is to execute tasks when an instance of the Deferred class goes out of scope and its destructor
+ *	function is called, for example at the end of a function execution.
+ *	The class can also be used 
+ * 
+    AUTHOR
+        Christian Vigh, 10/2014.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2014/10/11]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\System ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces & objects
+use 		Thrak\System\Object 			as  Object ;
+
+
+/*==============================================================================================================
+
+    Deferred class -
+        A class for deferring function execution.
+
+  ==============================================================================================================*/
+class  Deferred
+   {
+	// Callbacks to be executed upon object destruction
+	protected 	$Callbacks 	=  array ( ) ;
+	// Variables to be set to a certain value
+	protected 	$Variables 	=  array ( ) ;
+	
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        Destructor
+	
+	    DESCRIPTION
+	        The destructor is executed when the Deferred object instance is destroyed, for example at function exit.
+		If the object reference count is non null, then the destructor will only be called at script termination,
+		after all the shutdown handlers. This is why provisions have been made to avoid unnecessary object
+		references (see the explanation in the documentation of the bind() private method and in the comments of
+		the run() public method).
+	
+	  ==============================================================================================================*/
+	public function  __destruct ( )
+	   {
+		// Run variable assignments
+		foreach  ( $this -> Variables  as  $entry )
+			$entry [ 'reference' ]	=  $entry [ 'value' ] ;
+			
+		// Run callbacks
+		foreach  ( $this -> Callbacks  as  $callback )
+		   {
+			if  ( is_callable ( $callback [ 'callback' ] ) )
+			   {
+				if ( $callback [ 'arguments' ] ) 
+					call_user_func_array ( $callback [ 'callback' ], $callback [ 'arguments' ] ) ;
+				else
+					call_user_func ( $callback [ 'callback' ] ) ;
+			    }
+		    }
+	    }
+
+
+	/*==============================================================================================================
+	
+	    NAME
+	        bind - Binds a callback to a closure.
+	
+	    PROTOTYPE
+	        $closure = $deferred -> bind ( $closure_or_callable, $args ) ;
+	
+	    DESCRIPTION
+	        Returns a closure without arguments that calls the specified callback with the specified arguments.
+		This construct allows for adding deferred functions to the Deferred object without incrementing its
+		reference count.
+	
+	    PARAMETERS
+	        $closure_or_callable (callback) -
+	                A reference to a function, class method or closure.
+	 
+		$args (array) -
+			Arguments to be passed to the callback function.
+	
+	    RETURN VALUE
+	        A closure that can be used to call the specified function with its specified arguments.
+	
+	  ==============================================================================================================*/
+	static protected function  bind ( $closure_or_callable, $args )
+	   {
+		$call 	=  function ( ) use ( $closure_or_callable, $args )
+		   {
+			if (  $args )
+				call_user_func_array ( $closure_or_callable, $args ) ;
+			else
+				call_user_func ( $closure_or_callable ) ;
+		    } ;
+
+		return ( $call ) ;
+	    }
+	    
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        run - Sets a function to be run when the Deferred object instance is destroyed.
+	
+	    PROTOTYPE
+	        $deferred -> run ( $closure_or_callable, $args = null, $local_scope = true ) ;
+	
+	    DESCRIPTION
+	        Sets a function to be executed at object or script termination.
+	
+	    PARAMETERS
+	        $closure_or_callable (callback) -
+	                Callback function.
+	  
+	 	$args (array) -
+	 		Arguments to be passed to the function.
+	  
+	 	$local_scope (boolean) -
+	 		True if the function is to be executed when the object is destroyed.
+	 		When false, the function will be called upon script termination.
+	 
+	  ==============================================================================================================*/
+	public function  run ( $closure_or_callable, $args = null, $local_scope = true )
+	   {
+		if  ( $local_scope )
+			$this -> Callbacks [] 	=  array ( 'callback' => $closure_or_callable, 'arguments' => $args ) ;
+		else
+		   {
+			// We need a static method like bind() to build a closure with the specified callback and callback arguments.
+			// We cannot do it directly in this function like in the following example :
+			// 
+			// $call 	=  function ( ) use ( $closure_or_callable, $args )
+			//    {
+			// 	if (  $args )
+			// 		call_user_func_array ( $closure_or_callable, $args ) ;
+			// 	else
+			// 		call_user_func ( $closure_or_callable ) ;
+			//     } ;
+			//
+			//  register_shutdown_function ( $call ) ;
+			//
+			//  Why ? the reason is that in this sequence of code, the register_shutdown_function call
+			//  uses the local variable $call, which increments the reference counter of the Deferred object.
+			//  If this object is instantiated in a function, it will never be destroyed upon function exit.
+			//  Rather, its destructor will be called at the very end of the script, after all the other 
+			//  registered shutdown functions have been called.
+			//  Using the return value of a function (self::bind) avoids to increment the Deferred object
+			//  reference count.
+			register_shutdown_function ( self::bind ( $closure_or_callable, $args ) ) ;
+		    }
+	    }
+
+
+	/*==============================================================================================================
+	
+	    NAME
+	        set - Defers the setting of a variable value.
+	
+	    PROTOTYPE
+	        $deferred -> set ( &$variable, $value = null ) ;
+	
+	    DESCRIPTION
+	        A shortcut to assign a specific value to a variable upon object termination.
+		The following construct :
+			
+	 		$deferred -> set ( $global_boolean, false ) ;
+	  
+	 	is equivalent to :
+	  
+	 		$deferred -> run ( function ( ) use ( $global_variable ) { $global_variable = false ; } ) ;
+	
+	    PARAMETERS
+	        &$variable (any) -
+	                A reference to a variable.
+	  
+	 	$value (any) -
+	 		The value to be set upon object's destruction.
+	
+	  ==============================================================================================================*/
+	public function  set  ( &$variable, $value = null )
+	   {
+		$this -> Variables [] 	=  array ( 'reference' => &$variable, 'value' => $value ) ;
+	    }
+    }
+    

@@ -1,0 +1,79 @@
+<?php
+/**************************************************************************************************************
+   
+       NAME
+           StandardRandomProvider.phpclass
+   
+       DESCRIPTION
+		   
+       AUTHOR
+           Christian Vigh, 10/2014.
+   
+       HISTORY
+       [Version : 1.0]    [Date : 2015/03/22]     [Author : CV]
+           Initial version.
+   
+    **************************************************************************************************************/
+namespace 	Thrak\Security\Random ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use  	Thrak\System\Object ;
+use     Thrak\Security\Random\RandomProvider ;
+use     Thrak\Security\Random\IPseudoRandomProvider ;
+
+
+/*==============================================================================================================
+
+    StandardRandomProvider -
+        A random number provider that uses the rand()/srand() functions.
+
+  ==============================================================================================================*/
+class	StandardRandomProvider		extends		RandomProvider
+					implements	IPseudoRandomProvider
+   {
+	public function  __construct ( )
+	   {
+		$this -> MinValue	=  - PHP_INT_MAX - 1 ;
+		$this -> MaxValue	=  PHP_INT_MAX ;
+		parent::__construct ( ) ;
+	    }
+	
+	
+	public function  Randomize ( $seed = null )
+	   {
+		if  ( $seed  !=  null )
+			srand ( $seed ) ;
+		else
+			srand ( ) ;
+	    }
+	
+	
+	public function  Next ( $count = 1, $low = null, $high = null )
+	   {
+		$result		=  [] ;
+		
+		
+		if  ( $low  ===  null  &&  $high  ===  null )
+		   {
+			for  ( $i = 0 ; $i  <  $count ; $i ++ )
+			   {
+				$value		=  rand ( ) ;
+				$result	[]	=  $value ;
+			    }
+		    }
+		else
+		   {
+			for  ( $i = 0 ; $i  <  $count ; $i ++ )
+			   {
+				$value		=  rand ( $low, $high ) ;
+				$result	[]	=  $value ;
+			    }
+		    }
+		
+		if  ( count ( $result )  ==  1 )
+			return ( $result [0] ) ;
+		else
+			return ( $result ) ;
+	    }
+    }

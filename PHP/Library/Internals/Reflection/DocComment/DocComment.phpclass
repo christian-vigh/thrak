@@ -1,0 +1,190 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        DocComment.phpclass
+
+    DESCRIPTION
+        A class that encapsulates a docComment part and all its annotations and attributes.
+
+    AUTHOR
+        Christian Vigh, 11/2014.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2014/11/09]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Reflection ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use	Thrak\System\Object ;
+use	Thrak\Reflection\DocCommentAttributes ;
+//use	Thrak\Reflection\DocCommentAnnotations ;
+
+
+
+/*==============================================================================================================
+
+    DocCommentExtender -
+        This trait has to be included by all the Reflection objects that have a docComment.
+	It defines a protected $docComment property object and a magic getter to instanciate it upon first
+	reference.
+	Of course, this getter will have to be manually redefined and called if the including class has itself
+	a magic getter.
+
+  ==============================================================================================================*/
+trait  DocCommentExtender
+   {
+	protected	$__docComment	=  null ;
+	
+	
+	/**************************************************************************************************************
+
+	    formatDocComment -
+		Tries to reshape a doc comment to its original appearance.
+	
+	 **************************************************************************************************************/
+	public function  formatDocComment ( $comment, $indentation = "" )
+	   {
+		$comment	=  trim ( $comment ) ;
+		
+		if  ( ! $comment )
+			return ( "" ) ;
+		
+		$comment	=  preg_replace ( '/\n\s+/', "\n", $comment ) ;
+		$comment	=  str_replace ( "\n*", "\n *", $comment ) ;
+		$comment	=  $indentation . str_replace ( "\n", "\n$indentation", $comment ) ;
+		
+		return ( $comment ) ;
+	    }
+	
+	
+	/**************************************************************************************************************
+
+	    getDocCommentObject -
+		Instanciate a ReflectionDocComment object upon first invocation.
+	
+	 **************************************************************************************************************/
+	protected function  getDocCommentObject ( )
+	   {
+		if  ( $this -> __docComment  ==  null )
+			$this -> __docComment	=  new  ReflectionDocComment ( $this ) ;
+		
+		return ( $this -> __docComment ) ;
+	    }
+	
+	
+	/**************************************************************************************************************
+
+	    getDocComment -
+		Returns a formatted docComment string for this Reflection object instance.
+	
+	 **************************************************************************************************************/
+	protected function  getDocComment ( )
+	   {
+		$text		=  trim ( parent::getDocComment ( ) ) ;
+		$text		=  preg_replace
+		   (
+			[ '#^\s+/\*#', '#\n\s*\*#' ],
+			[ '/*'	     , ' *'	   ],
+			$text 
+		    ) ;
+		
+		return ( $text ) ;
+	    }
+	
+	
+	/**************************************************************************************************************
+
+	    __get -
+		Magic function to intercept access to the docComment property and instanciate a ReflectionDocComment
+		object if necessary.
+	
+	 **************************************************************************************************************/
+	public function  __get  ( $member )
+	   {
+		if  ( $member  ==  'docComment' )
+			return ( $this -> getDocCommentObject ( ) ) ;
+		else if  ( ! strcasecmp ( $member, 'attributes' ) )
+			return ( $this -> getDocCommentObject ( ) -> Attributes ) ;
+		else if  ( ! strcasecmp ( $member, 'annotations' ) )
+			return ( $this -> getDocCommentObject ( ) -> Annotations ) ;
+		else
+			error ( new \Thrak\System\BadMethodCallException ( "Undefined property " . get_called_class ( ) . "::$member" ) ) ;
+	    }
+    }
+
+
+/*==============================================================================================================
+
+    ReflectionDocComment -
+        A class that encapsulates the docComment block and parses annotations and attributes.
+
+  ==============================================================================================================*/
+class  ReflectionDocComment		extends  Object 
+   {
+	protected	$Reflector ;
+	protected	$DocCommentText ;
+	protected	$SanitizedDocCommentText ;
+	protected	$UninterpretedDocCommentText ;
+	public		$Annotations ;
+	public		$Attributes ;
+	
+	
+	/*==============================================================================================================
+	
+	    Constructor -
+	        Builds a ReflectionDocComment object and initializes all annotations and attributes.
+	
+	  ==============================================================================================================*/
+	public function  __construct ( $reflector )
+	   {
+		parent::__construct ( ) ;
+		
+		$this -> Reflector			=  $reflector ;
+		$this -> DocCommentText			=  $reflector -> getDocComment ( ) ;
+		$this -> SanitizedDocCommentText	=  $this ->  __sanitize ( $this -> DocCommentText ) ;
+		
+		$uninterpreted_text			=  $this -> SanitizedDocCommentText ;
+		$this -> Attributes			=  new DocCommentAttributes ( $uninterpreted_text ) ;
+		$this -> Annotations			=  new DocCommentAnnotations ( $uninterpreted_text ) ;
+		
+		$this -> UninterpretedDocCommentText	=  $uninterpreted_text ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    __sanitize -
+	        Removes unnecessary surrounding comments from the docComment block.
+	
+	  ==============================================================================================================*/
+	private function  __sanitize ( $text )
+	   {
+		// Strip carriage returns
+		$text		=  str_replace ( "\r", "", $text ) ;
+		
+		// Remove intermediate line comments
+		$text		=  preg_replace ( '# \n \s* \* [ \t]* #imsx', "\n", $text ) ;
+		
+		// Remove starting comment
+		$text		=  preg_replace ( '#^ \s* / \* [^\n]* \n#imsx', '', $text ) ;
+		
+		// Remove comment terminator - the first '*' has been eaten by the previous replacement
+		$text		=  preg_replace ( '# [\s*]* / $#imsx', '', $text ) ;
+		
+		return  ( $text ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    __tostring -
+	        Returns the formatted docComment text.
+	
+	  ==============================================================================================================*/
+	public function  __tostring ( )
+	   { return (  $this -> DocCommentText ) ; }
+    }

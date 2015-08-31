@@ -1,0 +1,76 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        ReflectionParameter.phpclass
+
+    DESCRIPTION
+        An enhanced ReflectionParameter class.
+
+    AUTHOR
+        Christian Vigh, 11/2014.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2014/11/08]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+ namespace 	Thrak\Reflection ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use  	Thrak\System\Object ;
+use     Thrak\System\IsNonObject ;
+use	Thrak\Reflection\Sourcers\ReflectionSourcerInterface ;
+use	Thrak\Reflection\Sourcers\ReflectionParameterSourcer ;
+
+
+/*==============================================================================================================
+
+    ReflectionParameter class -
+        An enhanced ReflectionParameter class.
+
+  ==============================================================================================================*/
+class  ReflectionParameter	extends 	\ReflectionParameter
+				implements 	\Reflector, ReflectionSourcerInterface
+   {
+	use IsNonObject ;
+	
+	
+	/*==============================================================================================================
+	
+	    Constructor -
+	        Initializes the instance.
+	
+	  ==============================================================================================================*/
+	public function  __construct ( $function, $name )
+	   {
+		parent::__construct ( $function, $name ) ;
+	    }
+
+
+	/*==============================================================================================================
+	
+	    getDocComment -
+	        Retrieves the doc comment contents.
+	
+	  ==============================================================================================================*/
+	public function  getDocComment ( )
+	   {
+		return ( "" ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	        Implementation of the RefelectionSourcerInterface interface.
+	
+	  ==============================================================================================================*/
+	public function  getText ( $include_source = false )
+	   {
+		$sourcer 	=  new  ReflectionParameterSourcer ( $this ) ;
+		
+		return  ( $sourcer -> getText ( $include_source ) ) ;
+	    }
+    }
+

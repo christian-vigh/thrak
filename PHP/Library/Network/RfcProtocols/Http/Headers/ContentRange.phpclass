@@ -1,0 +1,203 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        ContentRange.phpclass
+
+    DESCRIPTION
+        Http Content-Range header.
+
+    AUTHOR
+        Christian Vigh, 05/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/05/27]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace  	Thrak\Network\RfcProtocols\Http ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces and classes
+use     Thrak\System\Object ;
+use	Thrak\Network\RfcProtocols\Http\HttpStandardHeader ;
+
+
+/*==============================================================================================================
+
+    HttpContentRangeHeader class -
+        Http ContentRange header implementation (http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.16).
+
+ 	Examples :
+ 		Content-Range: bytes 0-499/1234
+		Content-Range: bytes * /*
+
+  ==============================================================================================================*/
+class	HttpContentRangeHeader		extends  HttpStandardHeader
+   {
+	private		$Unit		=  null ;
+	private		$RangeLow	=  null,
+			$RangeHigh	=  null ;
+	private		$ContentLength	=  null ;
+	
+	
+	public function  __construct ( $header )
+	   {
+		parent::__construct ( 'Content-Range', $header ) ;
+	    }
+	
+	
+	// __get :
+	//	Gives access to the following properties :
+	//	'unit' -
+	//		Range unit.
+	//	'low' -
+	//		Low range value.
+	//	'high' -
+	//		High range value.
+	//	'range' -
+	//		Low/high range values, returned as an array.
+	//		May also return '*'.
+	//	'length' -
+	//		Length value.
+	public function  __get ( $member )
+	   {
+		switch ( strtolower ( $member ) )
+		   {
+			case	'unit'		:  return ( $this -> Unit ) ;
+			case	'low'		:  return ( $this -> RangeLow ) ;
+			case	'high'		:  return ( $this -> RangeHigh ) ;
+			case	'range'		:  return ( ( $this -> RangeLow  ===  null ) ) ?  '*' : [ $this -> RangeLow, $this -> RangeHigh ] ;
+			case	'length'	:  return ( $this -> Length ) ;
+			default			:  
+				error  ( new \Thrak\System\UndefinedPropertyException ( $member ) ) ;
+		    }
+	    }
+	    
+	    
+	// __set :
+	//	Sets one of the pseudo-properties.
+	public function  __set ( $member, $value )
+	   {
+		switch ( strtolower ( $member ) )
+		   {
+			// unit :
+			//	Range unit.
+			case	'unit' :
+				$this -> Unit	=  $value ;
+				break ;
+				
+			// low :
+			//	Sets the low range value. If null or false or '*', both low and high range values
+			//	will be set to null.
+			case	'low' :
+				if  ( $value  ==  '*'  ||  $value  ===  null  ||  $value  ===  false )
+					$this -> RangeHigh = $this -> RangeLow = null ;
+				else
+					$this -> RangeLow	=  $value ;
+				
+				break ;
+				
+			// high :
+			//	Sets the high range value. Same principle as for 'low'.
+			case	'high' :
+				if  ( $value  ==  '*'  ||  $value  ===  null  ||  $value  ===  false )
+					$this -> RangeHigh = $this -> RangeLow = null ;
+				else
+					$this -> RangeHigh	=  $value ;
+				
+				break ;
+				
+			// length :
+			//	Sets the content length. Can be null, false or '*'.
+			case	'length' :
+				if  ( $value  ==  '*'  ||  $value  ===  null  ||  $value  ===  false  )
+					$this -> ContentLength	=  null ;
+				else
+					$this -> ContentLength	=  $value ;
+				
+				break ;
+				
+			// range :
+			//	Allows to define a range by using an array of two values.
+			//	As for the other properties, '*', null or false can be specified.
+			case	'range' :
+				if  ( $value  ==  '*'  ||  $value  ===  null  ||  $value  ===  false  )
+					$this -> RangeHigh = $this -> RangeLow = null ;
+				else if  ( is_array ( $value ) )
+				   {
+					$this -> RangeLow	=  $value [0] ;
+					$this -> RangeHigh	=  $value [1] ;
+				    }
+				else 
+					$this -> RangeHigh = $this -> RangeLow = $value ;
+			
+				break ;
+				
+			default :
+				error  ( new \Thrak\System\UndefinedPropertyException ( $member ) ) ;
+		    }
+		
+		$this -> Value	=  ( string ) $this ;
+	    }
+	
+	    
+	public function  __tostring ( )
+	   {
+		$value	=  $this -> Unit . ' ' ;
+		
+		if  ( $this -> RangeLow  ===  null )
+			$value	.=  '*' ;
+		else
+			$value	 =  $this -> RangeLow . '-' . $this -> RangeHigh ;
+		
+		$value	.= '/' ;
+		
+		if  ( $this -> ContentLength  ===  null )
+			$value	.=  '*' ;
+		else
+			$value  .=  $this -> ContentLength ;
+		
+		return ( $value ) ;
+	    }
+	
+	
+	protected function  CheckContent ( )
+	   {
+		static		$re	=  '#
+						(?P<unit> [^\t ]+)
+						\s+
+						(
+							(?P<range>
+								(?P<range_low> \d+)
+								\s* - \s*
+								(?P<range_high> \d+)
+							 )
+							|
+							(?P<empty_range> \*)
+						)
+						\s* / \s*
+						(
+							(?P<size> \d+)
+							|
+							(?P<empty_size> \*)
+						 )
+					    #imsx' ;
+						 
+		if  ( preg_match ( $re, $this -> Text, $match ) )
+		   {
+			$this -> Unit		=  $match [ 'unit' ] ;
+			
+			if  ( isset ( $match [ 'range' ] ) )
+			   {
+				$this -> RangeLow	=  $match [ 'range_low' ] ;
+				$this -> RangeHigh	=  $match [ 'range_high' ] ;
+			    }
+			
+			if  ( isset ( $match [ 'size' ] ) )
+				$this -> ContentLength	=  $match [ 'size' ] ;
+		    }
+	    }
+    }

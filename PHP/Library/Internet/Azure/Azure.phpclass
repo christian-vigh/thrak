@@ -1,0 +1,357 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        Azure.phpclass
+
+    DESCRIPTION
+        Base class for Azure services classes. Provides basic services such as access token retrieval and
+	account information.
+
+    AUTHOR
+        Christian Vigh, 03/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/03/15]     [Author : CV]
+        . Initial version ; base class for Microsoft Azure services, such as Bing translator.
+ 	. Extracted the GetAccessToken() method from the BingTranslator class.
+	. Added the following methods :
+		- GetAccountInformation()
+		- GetServiceStatusString()
+ 		- ReportServiceData()
+
+ **************************************************************************************************************/
+
+namespace	Thrak\Internet\Azure ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces & objects
+use		Thrak\System\Object ;
+use		Thrak\System\Exception ;
+use		Thrak\IO\AsciiReport ;
+
+// An exception only for us...
+class  AzureException		extends  \Thrak\System\RuntimeException { } ;
+
+
+/*==============================================================================================================
+
+    Interface IAzureService -
+        Describes methods that a Microsoft Azure service must implement.
+
+  ==============================================================================================================*/
+interface  IAzureService
+   {
+	// Returns the official Azure service name
+	public function  GetServiceName ( ) ;
+    }
+
+
+/*==============================================================================================================
+
+    AbstractAzureBase -
+        Base class for Azure services classes.
+
+  ==============================================================================================================*/
+class  AbstractAzureBase	extends		Object
+   {
+	// Azure service statuses
+	const	SERVICE_STATUS_ACTIVE		=  2 ;
+	const   SERVICE_STATUS_SUSPENDED	=  3 ;
+	const	SERVICE_STATUS_CANCELLED	=  4 ;
+	const   SERVICE_STATUS_SUPPLYING	=  5 ;
+	const   SERVICE_STATUS_PURCHASE_ERROR	=  7 ;
+
+	// Authentication token retrieval url			
+	public			$AuthenticationUrl		=  'https://datamarket.accesscontrol.windows.net/v2/OAuth2-13' ;
+	// Account information url
+	public			$AccountInformationUrl		=  'https://api.datamarket.azure.com/Services/My/Datasets' ;
+	// Account ID
+	public			$AccountId ;
+	// Client application ID
+	public			$ClientApplicationId ;
+	// Secret key
+	public			$SecretKey ;
+	// Access token and its expiration time
+	public			$AccessToken			=  false ;
+	public			$AccessTokenExpirationTime	=  false ;
+	public			$AccessTokenRenewed		=  false ;	// True if last call to the Translate() method implied renewing the access token
+
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        Constructor
+	
+	    PROTOTYPE
+	        $translator	=  new Translator ( $account_id, $client_application_id, $secret_key ) ;
+	
+	    DESCRIPTION
+	        Instanciates a Translator object. No query is performed to the Bing API at that stage.
+	
+	    PARAMETERS
+	 	$account_id (string) -
+	 		Your Microsoft Azure account id.
+	  
+	 	$client_application_id (string) -
+	 		Your Bing client application id.
+	  
+	 	$secret_key (string) -
+	 		Your secret key.
+	
+	  ==============================================================================================================*/
+	public function  __construct ( $account_id, $client_application_id, $secret_key )
+	   {
+		parent::__construct ( ) ;
+		
+		$this -> AccountId		=  $account_id ;
+		$this -> ClientApplicationId	=  $client_application_id ;
+		$this -> SecretKey		=  $secret_key ;
+	    }
+
+	
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        GetAccessToken - Retrieves an access token.
+	
+	    PROTOTYPE
+	        $token	=  GetAccessToken ( $force_retrieval = false ) ;
+	
+	    DESCRIPTION
+	        Retrieves an access token to be used as an authentication token for accessing the Bing Translator
+		services.
+	 	To minimize token attribution, the class handles token expiration time, unless the $force_retrieval
+	 	parameter is set to true.
+	
+	    PARAMETERS
+	        $force_retrieval (boolean) -
+	                When set to false (the default), a token will be retrieved only if one of the following conditions
+	 		is true :
+	 		- No token has been requested so far
+	 		- Acces token has expired
+	
+	    RETURN VALUE
+	        Returns the access token, which is also available in the AccessToken public property.
+	
+	  ==============================================================================================================*/
+	public function  GetAccessToken ( $force_retrieval = false )
+	   {
+		if  ( $this -> AccessTokenExpirationTime  &&  $this -> AccessTokenExpirationTime  >  time ( ) )
+		   {
+			$this -> AccessTokenRenewed	=  false ;
+			return ;
+		    }
+		
+		$post_params	= 'grant_type=client_credentials&client_id=' . 
+					urlencode ( $this -> ClientApplicationId ) .
+					'&client_secret=' . 
+					urlencode ( $this -> SecretKey ) .
+					'&scope=http://api.microsofttranslator.com' ;
+		
+		$request	=  curl_init ( ) ;
+		
+		curl_setopt ( $request, CURLOPT_URL		, $this -> AuthenticationUrl ) ;
+		curl_setopt ( $request, CURLOPT_POSTFIELDS	, $post_params ) ;
+		curl_setopt ( $request, CURLOPT_RETURNTRANSFER	, true ) ;
+		
+		// Do not check ssl certificates for now ; this can expose to a man-in-the-middle attack 
+		curl_setopt ( $request, CURLOPT_SSL_VERIFYPEER	, false ) ;
+		
+		$response	=  curl_exec ( $request ) ;
+		
+		if  ( curl_errno ( $request ) )
+			error ( new \Thrak\System\HttpErrorException ( "Error executing Http request : \n" . curl_error ( $request ) ) ) ;
+		
+		$data		=  json_decode ( $response ) ;
+		
+		if  ( isset ( $data -> error ) )
+			error ( new BingTranslatorException ( "Bing authentication error :\n" . $data -> error_description ) ) ;
+		
+		$this -> AccessToken			=  $data -> access_token ;
+		$this -> AccessTokenExpirationTime	=  time ( ) + $data -> expires_in - /* Safeguard */ 60 ;
+		$this -> AccessTokenRenewed		=  true ;
+		
+		curl_close ( $request ) ;
+	    }
+	
+
+	/*==============================================================================================================
+	
+	    NAME
+	        GetAccountInformation - Retrieves Azure account information.
+	
+	    PROTOTYPE
+	        $result		=  $translator -> GetAccountInformation ( ) ;
+	
+	    DESCRIPTION
+	        Retrieves global services information for a given account.
+	
+	    RETURN VALUE
+	        A Json-decoded object that contains the information returned by the Microsoft Azure API.
+	 	The returned value is an array where each item corresponds to a service.
+		
+	  ==============================================================================================================*/
+	public function  GetAccountInformation ( )
+	   {
+		// Get access token 
+		$this -> GetAccessToken ( ) ;
+
+		$request	=  curl_init ( ) ;
+		
+		curl_setopt ( $request, CURLOPT_URL		, $this -> AccountInformationUrl . '?$format=json' ) ;
+		curl_setopt ( $request, CURLOPT_HTTPHEADER	, 
+				[ 
+					'Authorization: Basic ' . base64_encode ( 'ozpPnl8Y9NY2Xd2n0se3DyOuLLGS6NECjGPf3SvBSkw:ozpPnl8Y9NY2Xd2n0se3DyOuLLGS6NECjGPf3SvBSkw' )
+				 ] ) ;
+		curl_setopt ( $request, CURLOPT_RETURNTRANSFER	, true ) ;
+		
+		// Do not check ssl certificates for now ; this can expose to a man-in-the-middle attack 
+		curl_setopt ( $request, CURLOPT_SSL_VERIFYPEER	, false ) ;
+		
+		$response	=  curl_exec ( $request ) ;
+		
+		if  ( curl_errno ( $request ) )
+			error ( new \Thrak\System\HttpErrorException ( "Error executing Http request : \n" . curl_error ( $request ) ) ) ;
+		
+		$data		=  json_decode ( $response ) ;
+		curl_close ( $request ) ;
+		
+		return ( $data -> d -> results ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        GetServiceInformation - Returns service information for the current instance.
+	
+	    PROTOTYPE
+	        $result		=  $azure_service -> GetServiceInformation ( ) ;
+	
+	    DESCRIPTION
+	        Returns service information for the service that a derived class implements.
+	
+	    RETURN VALUE
+	        An object providing the service data.
+	
+	  ==============================================================================================================*/
+	public function  GetServiceInformation ( )
+	   {
+		$name		=  $this -> GetServiceName ( ) ;
+		$services	=  $this -> GetAccountInformation ( ) ;
+		
+		foreach  ( $services  as  $service )
+		   {
+			if  ( ! strcasecmp ( $service -> Title, $name ) )
+				return ( $service ) ;
+		    }
+		
+		error ( new AzureException ( "Service \"$name\" not found in account information." ) ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        GetServiceStatusString - Returns a service status as a human-readable string.
+	
+	    PROTOTYPE
+	        $str = $azure_service -> GetServiceStatusString ( $status ) ;
+	
+	    DESCRIPTION
+	        Returns a service status as a human-readable string.
+	
+	    PARAMETERS
+	        $status (integer) -
+	                Status to be converted to a string.
+	
+	    RETURN VALUE
+	        The string description of the specified status, or the status value itself if undocumented.
+	
+	  ==============================================================================================================*/
+	public function  GetServiceStatusString ( $status )
+	   {
+		switch ( $status )
+		   {
+			case	self::SERVICE_STATUS_ACTIVE		:  return ( 'Active' ) ;
+			case	self::SERVICE_STATUS_SUSPENDED		:  return ( 'Suspended' ) ;
+			case	self::SERVICE_STATUS_CANCELLED		:  return ( 'Cancelled' ) ;
+			case	self::SERVICE_STATUS_SUPPLYING		:  return ( 'Supplying' ) ;
+			case	self::SERVICE_STATUS_PURCHASE_ERROR	:  return ( 'Purchase error' ) ;
+			
+			default :
+				return ( $status ) ;
+		    }
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        ReportServiceData - Generates report(s) for each of the specified services.
+	
+	    PROTOTYPE
+	        echo $azure_service -> ReportServiceData ( $services ) ;
+	
+	    DESCRIPTION
+	        Takes service data, as returned by the GetAccountInformation method, and generates an ascii report for
+		each of the services specified.
+	
+	    PARAMETERS
+	        $services (array of service stdclass objects) -
+	                Services information.
+	
+	    RETURN VALUE
+	        An ascii report to be echoed on standard output.
+	
+	  ==============================================================================================================*/
+	public function  ReportServiceData ( $services )
+	   {
+		global		$Configuration ;
+		
+		
+		$width		=  $Configuration -> Get ( 'Console/line-width' ) ;
+		$property_width =  22 ;
+		$value_width	=  $width - $property_width - 10 ;
+		$result		=  [] ;
+
+		foreach  ( $services  as  $service )
+		   {
+			$report		=  new  Asciireport 
+			   (
+				[ 'member' => 'p', 'title' => 'Property', 'width' => $property_width						],
+				[ 'member' => 'v', 'title' => 'Value'	, 'width' => $value_width   , 'overflow' => 'wrap', 'align' => 'left'	] 
+			    ) ;
+			
+			$data		=  
+			   [
+				[ 'p' => 'Category'		, 'v' => $service -> Category ],
+				[ 'p' => 'Description'		, 'v' => $service -> Description ],
+				[ 'p' => 'Market place url'	, 'v' => $service -> MarketplaceDetailUrl ],
+				[ 'p' => 'Metadata uri'		, 'v' => $service -> __metadata -> uri ],
+				[ 'p' => 'Metadata type'	, 'v' => $service -> __metadata -> type ],
+				[ 'p' => 'Offer id'		, 'v' => $service -> OfferId ],
+				[ 'p' => 'Preview url'		, 'v' => $service -> PreviewUrl ],
+				[ 'p' => 'Provider description'	, 'v' => $service -> ProviderDescription ],
+				[ 'p' => 'Provider id'		, 'v' => $service -> ProviderId ],
+				[ 'p' => 'Provider name'	, 'v' => $service -> ProviderName ],
+				[ 'p' => 'Resource balance'	, 'v' => number_format ( $service -> ResourceBalance, 0, '.', ' ' ) ],
+				[ 'p' => 'Resource type'	, 'v' => $service -> ResourceType ],
+				[ 'p' => 'Service entry point'	, 'v' => $service -> ServiceEntryPointUrl ],
+				[ 'p' => 'Short description'	, 'v' => $service -> ShortDescription ],
+				[ 'p' => 'Status'		, 'v' => $this -> GetServiceStatusString ( $service -> Status ) ],
+				[ 'p' => 'Subscription id'	, 'v' => $service -> SubscriptionId ],
+				[ 'p' => 'Title'		, 'v' => $service -> Title ],
+				[ 'p' => 'Type'			, 'v' => $service -> Type ]
+			    ] ;
+		
+			$result []	=  $service -> Title . ":\n" . $report -> Generate ( $data ) ;
+		    }		
+		
+		return ( implode ( "\n", $result ) ) ;
+	    }
+    }

@@ -1,0 +1,593 @@
+<?php
+
+/***************************************************************************************************
+
+    NAME
+	Math.phpclass
+
+    DESCRIPTION
+	Math functions.
+
+    AUTHOR
+	Christian Vigh, 01/2009.
+
+    HISTORY
+    [Version : 1.0]		[Date : 2009/01/05]		[Author : CV]
+	Initial release.
+
+    [Version : 1.1]		[Date : 2010/08/19]		[Author : CV]
+	. Migration from the Thrak to the Crimson library.
+
+   [Version : 2.0]	[Date : 2012/10/06]		[Author : CV]
+	. Migrated to the Thrak library version 2.
+ 
+   [Version : 2.0.1]	[Date : 2014/11/23]		[Author : CV]
+	. Added the crc16 function.
+ 
+   [Version : 2.0.2]	[Date : 2015/03/23]		[Author : CV]
+	. Added the Average() and Variance() methods
+
+ ***************************************************************************************************/
+namespace 	Thrak ;
+
+// Used namespaces and objects
+use 	Thrak\System\Object 		as  Object ;
+
+
+/*==================================================================================================
+
+    Math class -
+	Implements extented math functions.
+
+  ==================================================================================================*/
+class  Math  extends  Object
+   {
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		ArithmeticSuite - Computes the result of an arithmetic suite.
+
+	    PROTOTYPE
+		$result = Math::ArithmeticSuite ( $start, $stop, $step = 1 ) ;
+
+	    DESCRIPTION
+		Compute the arithmetic suite from $start to $stop using the specified step.
+
+	    PARAMETERS
+		$start (numeric) -
+			Start value.
+
+		$end (numeric) -
+			End value.
+
+		$step (numeric) -
+			Value to be used for incrementing each loop step.
+
+	    RETURN VALUE
+		Returns the value of the arithmetic suite, or false if the arguments are incoherent.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  ArithmeticSuite ( $start, $end, $step = 1 )
+	   {
+		$status 	=  Math::__validate_suite_arguments ( $start, $end, $step ) ;
+
+		if  ( ! $status )
+			return ( false ) ;
+
+		$result 	=  0 ;
+
+		for  ( $i = $start ; $i  <= $end ; $i += $step )
+			$result += $i ;
+
+		return ( $result ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Average - Computes the average from an array of values.
+
+	    PROTOTYPE
+		$result = Math::Average ( $array ) ;
+
+	    DESCRIPTION
+		Computes the average from an array of values.
+
+	    PARAMETERS
+		$array (array of integers) -
+			Set of values whose average is to be computed.
+	  
+	    RETURN VALUE
+		Returns the average of the input values.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  Average ( $values )
+	   {
+		$count		=  count ( $values ) ;
+		
+		if (  ! $count )
+			return ( 0 ) ;
+		
+		$result		=  array_sum ( $values ) / $count ;
+		
+		return ( $result ) ;
+	    }
+	
+	
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Combinations - Computes the combination count.
+
+	    PROTOTYPE
+		$result = Math::Combinations ( $n, $p ) ;
+
+	    DESCRIPTION
+		Computes A(n,p), the number of combinations of $p elements within a set of $n elements.
+
+	    PARAMETERS
+		$n (integer) -
+			Cardinality of the set of elements.
+
+		$p (integer) -
+			Size of the combinations to be computed.
+
+	    RETURN VALUE
+		The number of combinations of $p elements within $n.
+
+	    NOTES
+		Float values are rounded. Negative values are converted to positive.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  Combinations ( $n, $p )
+	    {
+	    	$result 	=  1 ;
+		$n 		=  abs ( round ( $n, 0 ) ) ;
+		$p 		=  abs ( round ( $p, 0 ) ) ;
+
+		if  ( $p  >  $n )
+			return ( 0 ) ;
+
+		$i = $n - $p + 1 ;
+
+		while  ( $i  <  $n + 1 )
+			$result *= $i ++ ;
+
+		$result /=  Math::Factorial ( $p ) ;
+		return ( $result ) ;
+	     }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Factorial - Computes a factorial.
+
+	    PROTOTYPE
+		$result = Math::Factorial ( $x ) ;
+
+	    DESCRIPTION
+	    	Computes the factorial of the given number.
+
+	    PARAMETER
+	    	$x (number) -
+			Number whose factorial is to be computed.
+
+	    RETURN VALUE
+	    	false if the number is $x is negative or $x's factorial.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  Factorial ( $x )
+	   {
+	   	if  ( $x  <  0 )
+	   		return ( false ) ;
+
+		$x		=  ( float ) ceil ( ( float ) $x ) ;
+		$result 	=  1 ;
+
+		if  ( $x   ==  0 )
+			return ( ( float ) 1 ) ;
+
+		while  ( $x  >  1 )
+		   {
+			$result *= $x ;
+			$x -- ;
+		    }
+
+		return ( $result ) ;
+	    }
+
+
+	/*==============================================================================================================
+	
+	    NAME
+	        crc16 - CCITT version of the CRC16 algorithm.
+	
+	    PROTOTYPE
+	        $crc	=  Math::crc16 ( $data ) ;
+	
+	    DESCRIPTION
+	        Compute the 16-bit crc of arbitrary data.
+	
+	    PARAMETERS
+	        $data (string) -
+	                Input data.
+	
+	    RETURN VALUE
+	        The CRC16 value of the supplied data.
+	
+	  ==============================================================================================================*/
+	public static function  crc16 ( $data )
+	   {
+		$crc	=  0xFFFF ;
+		
+		for  ( $i = 0 ; $i < strlen ( $data ) ; $i ++ )
+		   {
+			$x	 =  ( ( $crc >> 8 ) ^ ord ( $data[$i] ) ) & 0xFF ;
+			$x	^=  $x >> 4 ;
+			$crc	 =  ( ( $crc << 8 ) ^ ( $x << 12 ) ^ ( $x << 5 ) ^ $x ) & 0xFFFF ;
+		    }
+		
+		return ( $crc ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		GCD - Computes the greatest common divisor between two numbers.
+
+	    PROTOTYPE
+		$result = Math::GCD ( $x, $y ) ;
+
+	    DESCRIPTION
+		Computes the greatest common divisor between two numbers.
+
+	    PARAMETERS
+		$x, $y (numeric) -
+			Values whose greatest common divisor is to be computed.
+
+	    RETURN VALUE
+		The greatest common divisor of $x and $y.
+
+	    NOTES
+		Negative values are converted to positive integers.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  GCD ( $x, $y )
+	   {
+	   	$x	=  abs ( round ( $x, 0 ) ) ;
+	   	$y 	=  abs ( round ( $y, 0 ) ) ;
+
+		while  ( $x  >  1 )
+		   {
+			$rem	=  $x % $y ;
+
+			if  ( ! $rem )
+				break ;
+
+			$x 	=  $y ;
+			$y 	=  $rem ;
+		    }
+
+		return ( $y ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		GeometricSuite - Computes the result of a geometric suite.
+
+	    PROTOTYPE
+		$result = Math::GeometricSuite ( $start, $stop, $step ) ;
+
+	    DESCRIPTION
+		Compute the geometric suite from $start to $stop using the specified step.
+
+	    PARAMETERS
+		$start (numeric) -
+			Start value.
+
+		$end (numeric) -
+			End value.
+
+		$step (numeric) -
+			Value to be used for incrementing each loop step.
+
+	    RETURN VALUE
+		Returns the value of the geometric suite, or false if the arguments are incoherent.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  GeometricSuite ( $start, $end, $step = 1 )
+	   {
+		$status 	=  Math::__validate_suite_arguments ( $start, $end, $step ) ;
+
+		if  ( ! $status  ||  ! $step )
+			return ( false ) ;
+
+		$result 	=  1 ;
+
+		for  ( $i = $start ; $i  <= $end ; $i += $step )
+			$result *= $i ;
+
+		return ( $result ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Log2 - Computes the logarithm in base 2 of a given number.
+
+	    PROTOTYPE
+		$value = Math::Log2 ( $value ) ;
+
+	    DESCRIPTION
+	    	Computes the logarithm in base 2 of a given number.
+
+    	    PARAMETERS
+		$value (numeric) -
+			Value whose base-2 logarithm is to be computed.
+
+	    RETURNS
+	    	The base-2 logarithm of the supplied input value.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  Log2 ( $value )
+	   {
+		return  ( log ( $value, 2 ) ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Min, Max - Computes the min or max of a set of values.
+		MinMax   - Computes the min and max of a set of values.
+
+	    PROTOTYPE
+		$result = Math::Min ( $args... ) ;
+		$result = Math::Max ( $args... ) ;
+		$result = Math::MinMax ( $args... ) ;
+
+	    DESCRIPTION
+		Computes the min or max value of a set of values.
+
+	    PARAMETERS
+		$args (variadic list of values and/or arrays) -
+			List of values whose min/max is to be computed.
+
+	    RETURN VALUE
+		The Min() function returns the min value in the given set of arguments.
+		The Max() function returns the max value in the given set of arguments.
+		The MinMax() function returns the min and max values as an array.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  Min ( )
+	   {
+	   	$result 	=  Math::__MinMax ( func_get_args ( ) ) ;
+	   	return ( $result [0] ) ;
+   	    }
+
+
+ 	public static function  Max ( )
+ 	   {
+		$result 	=  Math::__MinMax ( func_get_args ( ) ) ;
+		return ( $result [1] ) ;
+ 	    }
+
+
+	public static function  MinMax ( )
+	   {
+		$result 	=  Math::__MinMax ( func_get_args ( ) ) ;
+		return ( $result ) ;
+	    }
+
+
+  	private static function  __MinMax ( $array )
+  	   {
+		$result =  array ( PHP_INT_MAX, -PHP_INT_MAX - 1 ) ;
+
+		foreach ( $array  as  $value )
+		   {
+			if  ( is_a ( $value, 'Array' ) )
+				$pair = Math::__MinMax ( $value -> ToArray ( ) ) ;
+			else if  ( is_array ( $value ) )
+				$pair = Math::__MinMax ( $value ) ;
+			else
+				$pair = array ( $value, $value ) ;
+
+			if  ( $pair [0]  <  $result [0] )
+				$result [0] = $pair [0] ;
+
+			if  ( $pair [1]  >  $result [1] )
+				$result [1] = $pair [1] ;
+		    }
+
+		return ( $result ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Permutations - Computes the permutation count.
+
+	    PROTOTYPE
+		$result = Math::Permutations ( $n, $p ) ;
+
+	    DESCRIPTION
+		Computes A(n,p), the number of permutations of $p elements within a set of $n elements.
+
+	    PARAMETERS
+		$n (integer) -
+			Cardinality of the set of elements.
+
+		$p (integer) -
+			Size of the permutations to be computed.
+
+	    RETURN VALUE
+		The number of permutations of $p elements within $n.
+
+	    NOTES
+		Float values are rounded. Negative values are converted to positive.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  Permutations ( $n, $p )
+	    {
+	    	$result 	=  1 ;
+		$n 		=  abs ( round ( $n, 0 ) ) ;
+		$p 		=  abs ( round ( $p, 0 ) ) ;
+
+		if  ( $p  >  $n )
+			return ( 0 ) ;
+
+		$i = $n - $p + 1 ;
+
+		while  ( $i  <  $n + 1 )
+			$result *= $i ++ ;
+
+		return ( $result ) ;
+	     }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Random - Generates a random number.
+
+	    PROTOTYPE
+		$value = Math::Random ( $min = false, $max = false ) ;
+
+	    DESCRIPTION
+		Generates a random number between the specified min and max value.
+		If $min is not specified, it will to 0. If $max is not specified, it will default to
+		RAND_MAX.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  Random ( $min = false, $max = false )
+	   {
+		if  ( $min  ===  false )
+		        $min = 0 ;
+		if  ( $max  ===  false )
+		        $max = RAND_MAX ;
+
+		return ( mt_rand ( $min, $max ) ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		SCM - Computes the smallest common multiple between two numbers.
+
+	    PROTOTYPE
+		$result = Math::SCM ( $x, $y ) ;
+
+	    DESCRIPTION
+		Computes the smallest common multiple between two numbers.
+
+	    PARAMETERS
+		$x, $y (numeric) -
+			Values whose smallest common multiple is to be computed.
+
+	    RETURN VALUE
+		The smallest common multiple of $x and $y.
+
+	    NOTES
+		Negative values are converted to positive integers.
+
+	 --------------------------------------------------------------------------------------------*/
+	 public static function  SCM ( $x, $y )
+	    {
+		$x	=  abs ( round ( $x, 0 ) ) ;
+		$y 	=  abs ( round ( $y, 0 ) ) ;
+		$z 	=  $x * $y ;
+
+		while  ( $x  >  1 )
+		   {
+			$rem 	= $x % $y ;
+
+			if  ( ! $rem )
+			   {
+				$result 	= round ( $z / $y, 0 ) ;
+				break ;
+			    }
+
+			$x 	=  $y ;
+			$y 	=  $rem ;
+		    }
+
+		return ( $result ) ;
+	     }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Variance - Computes the variance from an array of values.
+
+	    PROTOTYPE
+		$result = Math::Average ( $array ) ;
+
+	    DESCRIPTION
+		Computes the variance from an array of values.
+
+	    PARAMETERS
+		$array (array of integers) -
+			Set of values whose variance is to be computed.
+	  
+	    RETURN VALUE
+		Returns the variance of the input values.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  Variance ( $values )
+	   {
+		$count		=  count ( $values ) ;
+		
+		if  ( ! $count )
+			return ( 0 ) ;
+		
+		$average	=  self::Average ( $values ) ;
+		$variance	=  0 ;
+
+		foreach  ( $values  as  $i => $value )
+		   {
+			$x		 =  $value - $average ;
+			$variance	+=  $x ** 2 ;
+		    }	
+
+		return ( $variance / ( $count - 1 ) ) ;
+	    }
+	
+	
+
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/******                                                                               ******/
+	/******                           PRIVATE FUNCTIONS                                   ******/
+	/******                                                                               ******/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+
+	// Validates an arithmetic or geometric suite arguments
+	private static function  __validate_suite_arguments ( $start, $end, $step )
+	   {
+		if  ( $start  <  0  &&  $end  <  0 )
+		   {
+		   	if  ( $start  >  $end )
+		   		return ( false ) ;
+
+			if  ( $step  >  0 )
+				return ( false ) ;
+		    }
+		else if  ( $start  >  $end )
+			return ( false ) ;
+
+		return ( true ) ;
+	    }
+     }

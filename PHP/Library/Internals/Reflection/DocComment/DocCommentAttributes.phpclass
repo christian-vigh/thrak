@@ -1,0 +1,121 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        DocCommentAttributes.phpclass
+
+    DESCRIPTION
+        Implements a list of docComment attributes.
+
+    AUTHOR
+        Christian Vigh, 11/2014.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2014/11/09]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Reflection ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use	Thrak\System\Object ;
+use	Thrak\Reflection\DocCommentElements ;
+use	Thrak\Types\AssociativeArray ;
+
+
+/*==============================================================================================================
+
+    DocCommentAttributes class -
+        Implements a list of docComment attributes.
+
+  ==============================================================================================================*/
+class  DocCommentAttributes		extends		DocCommentElements
+   {
+	/*==============================================================================================================
+	
+	    Constructor -
+	        Initialize the object, providing the parent with the suffix needed for custom attribute classes.
+	
+	  ==============================================================================================================*/
+	public function  __construct ( &$doc_comment )
+	   {
+		parent::__construct ( 'Attribute', $doc_comment ) ;
+	    }
+	
+
+	/*==============================================================================================================
+	
+	    GetElements -
+	        To be implemeted by derived class. Called by the DocCommentElements base class to retrieve attribute
+		specifications from the docComment block.
+		Processed attribute lines must be removed from the supplied docComment string.
+	
+	  ==============================================================================================================*/
+	protected function  GetElements ( &$docstr )
+	   {
+		// Matches an attribute of the form "[attr ...]" 
+		static		$attribute_re	=  '#^
+							[^\[]*
+							(?P<attr>
+								\[
+									(?P<name> [\w\-]+)
+									\s*
+									(?P<params> [^\]]+)?
+								\]
+							 )
+						   $#imsx' ;
+		
+		// Matches a list of name/quoted value pairs (to be used with preg_match_all)
+		static		$params_re	=  '#
+							\s*
+							(?P<name> [\w\-]+)
+							(
+								\s* = \s*
+								(?P<quote> ["\'])
+								(?P<value> ( [^\\\\]  | ( \\\\ . ) )*? )
+								(?P=quote)
+							 )?
+							\s*
+						    #ix' ;
+		
+		// Get the supplied docComment line
+		$lines			=  explode ( "\n", $docstr ) ;
+		
+		// Keep unprocessed lines into this array
+		$untouched_lines	=  [] ;
+		
+		// Loop through docComment lines
+		foreach  ( $lines  as  $line )
+		   {
+			// If attribute match...
+			if  ( preg_match ( $attribute_re, $line, $match ) )
+			   {
+				// Get attribute name and parameters string
+				$name		=  $match [ 'name' ] ;
+				$param_string	=  ( isset ( $match [ 'params' ] ) ) ?  $match [ 'params' ] : "" ;
+				$param_array	=  [] ;
+				
+				// Try to see if there are any attribute parameters here...
+				if  ( preg_match_all ( $params_re, $param_string, $matches ) )
+				   {
+					// Loop through matched parameter name/value pairs
+					for  ( $i = 0 ; $i  <  count ( $matches [ 'name' ] ) ; $i ++ )
+						$param_array [ $matches [ 'name' ] [ $i ] ]	=  $matches [ 'value' ] [$i] ;
+					
+					// Add this pair to the DocCommentElements array
+					$this -> Add ( $name, $param_array ) ;
+				    }
+				// preg_match returned false (bad re) or 0 (no match) : something is wrong, ignore this line
+				else
+					$untouched_lines []	=  $line ;
+			    }
+			// No match : ignore this line
+			else
+				$untouched_lines []	=  $line ;
+		    }
+		
+		// Return unprocessed lines
+		$docstr		=  implode ( "\n", $untouched_lines ) ;
+	    }
+    }

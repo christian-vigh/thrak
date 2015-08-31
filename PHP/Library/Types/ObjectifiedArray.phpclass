@@ -1,0 +1,438 @@
+<?php
+/***************************************************************************************************
+
+	NAME
+		ObjectifiedArray.phpclass
+
+	DESCRIPTION
+		Creates dynamic objects based on arrays.
+
+	AUTHOR
+		Christian Vigh, 01/2014.
+
+	HISTORY
+	[Version : 1.0]		[Date : 2014/07/28]		[Author : CV]
+		Initial release.
+		   
+ ***************************************************************************************************/
+namespace  	Thrak\Types ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces & objects
+use 		Thrak\System\DynamicObject 		as  DynamicObject ;
+
+
+/*===========================================================================================
+
+	ObjectifiedArray class -
+		Creates an object based on array.
+		During the conversion, the following rules apply :
+		- Integer indexes can be accessed individually by prepending the index with
+		  an underline such as :
+		  
+			$obj -> _0
+			
+		- Characters not allowed in PHP identifiers are replaced with an underline.
+		  Multiple underlines will be replaced with a single one. For example :
+		  
+			'a--very--long_key!with special characters'
+			
+		  will become :
+		  
+			a_very_long_key_with_special_characters
+			
+		Note that the class implements the Countable, ArrayAccess and Iterator
+		interfaces, which allows the object to continue to be used as an array.
+		
+		The class constructor (along the extend() method) accepts a variable number of 
+		array arguments.
+		
+		The process is recursive : sub-arrays are also objectified...
+
+  ===========================================================================================*/
+class ObjectifiedArray extends	DynamicObject
+		  implements	\Countable, \ArrayAccess, \Iterator
+   {
+	/*==============================================================================================================
+	
+	    NAME
+	        Constructor
+	
+	    PROTOTYPE
+	        $object		=  new ObjectifiedArray ( $array(s)... ) ;
+		$object		=  o ( $array ) ;
+	
+	    DESCRIPTION
+	        Creates an object from an array.
+	
+	    PARAMETERS
+	        $array (list of arrays) -
+	                A list of arrays to be used for building an object whose members will be the arrays's keys.
+	
+	  ==============================================================================================================*/
+	public function  __construct ( )
+	   {
+		parent::__construct ( ) ;
+		
+		$args	=  func_get_args ( ) ;
+		
+		foreach ( $args  as  $arg )
+			$this -> extend ( $arg ) ;
+	    }
+	   
+
+	/*==============================================================================================================
+	
+	    NAME
+	        __get - Magic method for retrieving objectified array members.
+	
+	    PROTOTYPE
+	        $value	=  $object -> my_member ;
+	
+	    DESCRIPTION
+	        This magic method retrieves an objectified array member. It ensures to always return a value even if the
+		array item does not exists.
+	
+	    RETURN VALUE
+	        Returns the value of the specified objectified array member, or null if it does not exist.
+		
+	    NOTES
+		Their is no way to distinguish an inexisting member from a member which has the value null. Use the 
+		isset() function instead to test for existence.
+	
+	  ==============================================================================================================*/
+	public function  __get  ( $member )
+	   {
+		$member		=  $this -> __normalize_name ( $member ) ;
+		
+		if  ( isset ( $this -> $member ) )
+			return ( $this -> $member ) ;
+		else
+			return ( null ) ;
+	    }
+	    
+
+	/*==============================================================================================================
+	
+	    NAME
+	        __set - A magic method to set or define a member of an objectified array.
+	
+	    PROTOTYPE
+	        $object -> my_member = $value ;
+	
+	    DESCRIPTION
+	        This magic method sets an existing objectified array member or defines a new one.
+	
+	  ==============================================================================================================*/
+	public function  __set  ( $member, $value ) 
+	   {
+		$normalized_member	=  $this -> __normalize_name ( $member ) ;
+		
+		// When called by the __internal_set() method, the new member has already been created so
+		// don't take it into account once more 
+		if  ( ! $this -> __called_by_internal_set__ )
+		   {
+			// In case this is a new member, count one more
+			if  ( ! isset ( $this -> $normalized_member ) )
+			   {
+				// ... and add it to the list of defined array keys
+				$this -> __array_keys__ [ $normalized_member ]	=  $this -> __actual_member_count__ ;
+			
+				// Count one more member
+				$this -> __actual_member_count__ ++ ;
+			    }
+		    }
+		    
+		$this -> $normalized_member	=  $value ;
+	    }
+
+	    
+	/*==============================================================================================================
+	
+	    NAME
+	        __isset - Checks if a member is set
+	
+	    PROTOTYPE
+	        $result		=  isset ( $object -> my_member ) ;
+	
+	    DESCRIPTION
+	        Checks if an objectified array member is set.
+	
+	  ==============================================================================================================*/
+	public function  __isset ( $member )
+	   {
+		$member		=  $this -> __normalize_name ( $member ) ;
+		
+		return ( isset ( $this -> $member ) ) ;
+	    }
+	    
+
+	/*==============================================================================================================
+	
+	    NAME
+	        __unset - Unsets the specified member.
+	
+	    PROTOTYPE
+	        unset ( $object -> my_member ) ;
+	
+	    DESCRIPTION
+	        Unsets the specified member and updates the internal count of objectified members.
+	
+	  ==============================================================================================================*/
+	public function  __unset  ( $member )
+	   {
+		if  ( isset ( $this -> $member ) )
+		   {
+			// Wipe this member from the list of existing array keys
+			if  ( isset ( $this -> __array_keys__ [ $member ] ) )
+				unset ( $this -> __array_keys__ [ $member ] ) ;
+				
+			// Count one member less
+			$this -> __actual_member_count__ -- ;
+		    }
+	    }
+
+	    
+	/*==============================================================================================================
+	
+	    __normalize_name -
+	        Normalizes a name (ie, an array key) so that it becomes a valid PHP identifier :
+		- Integer indexes are prefixed with an underline
+		- Invalid PHP identifier characters are replaced with an underline
+		- Consecutive underlines are replaced with a single one
+	
+	  ==============================================================================================================*/
+	protected function  __normalize_name ( $name )
+	   {
+		// Integer indexes need to be converted to string, otherwise $name [0] will return an empty string...
+		$name	=  ( string ) $name ;
+
+		if  ( ctype_digit ( $name [0] ) )
+			$name = "_$name" ;
+			
+		$name	=  preg_replace ( '/[^a-z0-9_]+/imsx', '_', $name ) ;
+		
+		return ( $name ) ;
+	    }
+
+	    
+	/*==============================================================================================================
+	
+	    __internal_set -
+	        Internally called by other methods such as expand() and offsetSet() to define a new member, keeping its
+		original name into the __array_keys__ array.
+	
+	  ==============================================================================================================*/
+	protected function  __internal_set ( $member, $value )
+	   {
+		$normalized_member	=  $this -> __normalize_name ( $member ) ;
+
+
+		// In case this is a new member, count one more
+		if  ( ! isset ( $this -> $normalized_member ) )
+		   {
+			// ... and add it to the list of defined array keys
+			$this -> __array_keys__ [ $normalized_member ]	=  $this -> __actual_member_count__ ;
+			$this -> __normalized_array_keys__ []		=  $normalized_member ;
+			
+			if  ( $normalized_member  !=  $member )
+				$this -> __array_keys__ [ $member ]	=  $this -> __actual_member_count__ ;
+			
+			// Count one more member
+			$this -> __actual_member_count__ ++ ;
+		    }
+		
+		$this -> __called_by_internal_set__	=  true ;
+		$this -> __set ( $member, $value ) ;
+		$this -> __called_by_internal_set__	=  false ;
+	    }
+
+	    
+	/*==============================================================================================================
+	
+	    NAME
+	        extends - Adds array(s) keys to existing list of object members.
+	
+	    PROTOTYPE
+	        $object -> extend ( $array(s)... ) ;
+	
+	    DESCRIPTION
+	        Adds the keys of the specified array(s) as new members for this object.
+	
+	    PARAMETERS
+	        $array(s)... (list of arrays) -
+	                Arrays to be objectified in this ObjectifiedArray.
+	
+	    NOTES
+	        The process of objectifying arrays is recursive.
+	
+	  ==============================================================================================================*/
+	public function  extend ( )
+	   {
+		if  ( func_num_args ( )  ==  0 )
+			return ;
+			
+		$arrays		=  func_get_args ( ) ;
+		
+		// Loop through the caller arguments
+		foreach  ( $arrays  as  $array )
+		   {
+			// Only arrays are allowed here...
+			if  ( ! is_array ( $array ) )
+				error ( new \Thrak\System\InvalidArgumentException ( "Only array parameters are allowed for the ObjectifiedArray class." ) ) ;
+			
+			// Loop through array keys
+			foreach  ( $array  as  $key =>  $value )
+			   {
+				// Recursively perform sub-arrays and objectify them
+				if  ( is_array ( $value ) )
+					$this -> __internal_set ( $key, new  ObjectifiedArray ( $value ) ) ;
+				// Other type of values will be treated as simple members
+				else
+					$this -> __internal_set ( $key,  $value ) ;
+			    }
+		     }
+		     
+		// Rewind the iterator
+		$this -> rewind ( ) ;
+	    }
+
+	    
+	/*==============================================================================================================
+
+		Variables related to interface implementations.
+		
+	  ==============================================================================================================*/
+	private  $__actual_member_count__	=  0 ;			// Actual number of members
+	private  $__array_keys__		=  array ( ) ;		// List of original and normalized array keys
+	private  $__normalized_array_keys__	=  array ( ) ;		// List of normalized array keys only
+	private  $__called_by_internal_set__	=  false ;		// True if __set() if called by the __internal_set() method
+	private  $__current_iterator_index__	=  0 ;			// Current iterator index
+
+	    
+	/*==============================================================================================================
+	
+		Countable interface implementation.
+	
+	  ==============================================================================================================*/
+	public function  count ( )
+	   {
+		return ( $this -> __actual_member_count__ ) ;
+	    }
+	    
+	    
+	/*==============================================================================================================
+
+		ArrayAccess interface implementation.
+	
+	  ==============================================================================================================*/
+	
+	// offsetExists -
+	//	Checks that an array offset exists.
+	public function  offsetExists ( $offset )
+	   {
+		$offset		=  $this-> __normalize_name ( $offset ) ;
+		
+		if  ( isset ( $this -> __array_keys__ [ $offset ] ) )
+			return ( true ) ;
+
+		return ( false ) ;
+	    }
+	    
+	    
+	// offsetGet -
+	//	Returns the specified array item, or null if the specified offset does not exist.
+	public function  offsetGet ( $offset ) 
+	   {
+		if  ( isset ( $this -> __array_keys__ [ $offset ] ) )
+			return ( $this -> $offset ) ;
+
+		if  ( ! preg_match ( '/\w+/i', $offset ) )			
+			$normalized_offset	=  $this-> __normalize_name ( $offset ) ;
+		else
+			$normalized_offset	=  $offset ;
+		
+		if  ( isset ( $this -> __array_keys__ [ $normalized_offset ] ) )
+			return ( $this -> $normalized_offset ) ;
+
+		return ( null ) ;
+	    }
+	
+	    
+	// offsetSet -
+	//	Sets an existing member or defined a new one.
+	public function  offsetSet ( $offset, $value ) 
+	   {
+		$this -> __internal_set ( $offset, $value ) ;
+	    }
+	    
+	
+	// offsetUnset -
+	//	Unsets an existing member.
+	public function  offsetUnset ( $offset ) 
+	   {
+		$normalized_offset	=  $this -> __normalize_name ( $offset ) ;
+		
+		if  ( isset ( $this -> __array_keys__ [ $normalized_offset ] ) )
+		   {
+			unset ( $this -> $normalized_offset ) ;
+			unset ( $this -> __array_keys__ [ $normalized_offset ] ) ;	
+			
+			if  ( $normalized_offset  !=  $offset  &&  isset ( $this -> __array_keys__ [ $offset ] ) ) 
+				unset (  $this -> __array_keys__ [ $offset ] ) ;
+				
+			$this -> __actual_member_count__ -- ;
+		    }
+	    }
+
+	    
+	/*==============================================================================================================
+
+		Iterator interface implementation.
+	
+	  ==============================================================================================================*/
+
+	// rewind -
+	//	Rewinds the current iterator index.
+	public function  rewind ( )
+	   {
+		$this -> __current_iterator_index__	=  0 ;
+	    }
+	    
+	// current -
+	//	Returns the current item.
+	public function  current ( )
+	   {
+		if  ( $this -> __current_iterator_index__  >=  0  &&  
+			$this -> __current_iterator_index__  <  $this -> __normalized_array_keys__ )
+			$member		=  $this -> __normalized_array_keys__ [ $this -> __current_iterator_index__ ] ;
+		else
+			$member		=  null ;
+			
+		return ( $member ) ; 
+	    }
+	    
+	// key -
+	//	Returns current item key
+	public function  key ( )
+	   {
+		return ( $this -> __current_iterator_index__ ) ;
+	    }
+	    
+	    
+	// valid -
+	//	Checks whether the current position is valid.
+	public function  valid ( )
+	   {
+		return  ( $this -> __current_iterator_index__  <  count ( $this -> __normalized_array_keys__ ) ) ;
+	    }
+	   
+	    
+	// next -
+	//	Positions to the next element.
+	public function  next ( )
+	   {
+		$this -> __current_iterator_index__ ++ ;
+	    }
+    }

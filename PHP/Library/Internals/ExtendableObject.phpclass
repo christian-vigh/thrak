@@ -1,0 +1,171 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        ExtendableObject.phpclass
+
+    DESCRIPTION
+        Implements an empty class where methods can be dynamically added. Adding a method consists into 
+	assigning a value to a property, value which can either be a closure or a string representing the name
+	of a PHP function :
+ 
+	$ext = new ObjectExtender ( ) ;
+ 	$ext -> strtolower	=  function ( $str ) { return ( strtolower ( $str ) ) ; }
+ 	$ext -> strtoupper	=  'strtoupper' ;
+ 	
+
+    AUTHOR
+        Christian Vigh, 10/2014.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2014/10/16]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Internals ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use 	Thrak\System\Object ;
+
+
+/*==============================================================================================================
+
+    ExtendableObject class -
+        Implements a class where methods can be dynamically added.
+
+  ==============================================================================================================*/
+class   ExtendableObject 	extends  Object 
+  {
+	// Dynamic methods store
+	private 	$Methods 	=  [] ;
+	
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        Constructor - builds the object.
+	
+	  ==============================================================================================================*/
+	public function  __construct ( )
+	   {
+		parent::__construct ( ) ;
+	    }
+	
+
+	/*==============================================================================================================
+	
+	    NAME
+	        __bind - Binds a closure to a scope.
+	
+	    PROTOTYPE
+	        $result = $this -> __bind ( $closure, $scope ) ;
+	
+	    DESCRIPTION
+	        Binds a closure to the specified scope.
+	
+	    PARAMETERS
+	        $closure (callable) -
+	                Closure to be bound.
+	 
+		$scope (object or string) -
+			Either an object or the string 'static'.
+	
+	    RETURN VALUE
+	        The bound closure.
+	
+	  ==============================================================================================================*/
+	private function  __bind ( $closure, $scope )
+	   {
+		if  ( $scope  ==  null )
+			$scope 	=  $this ;
+			
+		return ( $closure -> bindTo ( $this, $scope ) ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        __get - Retrieves a dynamic method by its name.
+	
+	    PROTOTYPE
+		$extobject -> method_name	=  $closure ;
+	        $closure	=  $extobject -> method_name ;
+	
+	    DESCRIPTION
+	        Retrieves a dynamic method by its name ; this method must have been added before by using an
+		assignment.
+	
+	    PARAMETERS
+	        method_name -
+	                Method name, used as a property.
+	
+	    RETURN VALUE
+	        Either the closure that was assigned previously, or null if undefined.
+	
+	  ==============================================================================================================*/
+	public function  __get ( $member )
+	   {
+		if  ( isset ( $this -> Methods [ $member ] ) )
+			return ( $this -> Methods [ $member ] ) ;
+		else
+			return ( null ) ;
+	    }
+	
+
+	/*==============================================================================================================
+	
+	    NAME
+	        __set - Dynamically assigns a method to the ObjectExtender instance.
+	
+	    PROTOTYPE
+	        $extobject -> some_method	=  $closure_or_string ;
+	
+	    DESCRIPTION
+	        Dynamically assigns or create a method called 'some_method' with the value of a closure.
+	
+	    PARAMETERS
+	        $closure_or_string (closure or string) -
+	                Either a closure or a string representing the name of a PHP function.
+	
+	  ==============================================================================================================*/
+	public function  __set ( $member, $closure )
+	   {
+		if  ( $closure  instanceof  \Closure )
+			$this -> Methods [ $member ] 	=  $this -> __bind ( $closure, $this -> Context ) ;
+		else if  ( is_string ( $closure ) )
+		   {
+			if (  function_exists ( $closure ) )
+				$this -> Methods [ $member ] 	=  function ( ) use ( $closure ) 
+				   { 
+					return ( call_user_func_array ( $closure, func_get_args ( ) ) ) ; 
+				    } ;
+			else
+				$this -> $member	=  $closure ;
+		    }
+		else
+			$this -> $member	=  $closure ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        __call - Calls a dynamic method.
+	
+	  ==============================================================================================================*/
+	public function  __call ( $method, $args )
+	   {
+		if  ( isset ( $this -> Methods [ $method ] ) )
+		   {
+			$result 	=  call_user_func_array ( $this -> Methods [ $method ], $args ) ;
+			return ( $result ) ;
+		    }
+		else
+		   {
+			$class 	=  get_class ( ) ;
+			error ( new \Thrak\System\RuntimeException ( "Method $class::$method does not exist." ) ) ;
+		    }
+	    }
+    }   

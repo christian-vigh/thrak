@@ -1,0 +1,107 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        ReflectionPropertySourcer.phpclass
+
+    DESCRIPTION
+        A sourcer for the ReflectionProperty class.
+
+    AUTHOR
+        Christian Vigh, 10/2014.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2014/10/23]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Reflection\Sourcers ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use  	Thrak\System\Object ;
+
+
+/*==============================================================================================================
+
+    ReflectionPropertySourcer -
+        A sourcer for the ReflectionProperty class.
+
+  ==============================================================================================================*/
+class  ReflectionPropertySourcer 	extends  ReflectionSourcer 
+   {
+	use	ReflectionHelpers ;
+	
+	
+	/*==============================================================================================================
+	
+	    Constructor -
+	        Creates an instance of a ReflectionPropertySourcer class using the specified property reflection object.
+	
+	  ==============================================================================================================*/
+	public function  __construct  ( $reflector )
+	   {
+		parent::__construct ( $reflector, false ) ;
+	    }
+	    
+	
+	/*==============================================================================================================
+	
+	    __get_contents -
+	        Gets the textual definition of the property.
+		The $include_source parameter is ignored.
+	
+	  ==============================================================================================================*/
+	private function  __get_contents ( $include_source = true )
+	   {
+		$result 	=  "" ;
+		
+		// Get the doc comment for this property
+		$docComment	=  $this -> reflector -> getDocComment ( $this -> Reflector -> getDocComment ( ) ) ;
+		
+		if  ( $docComment )
+			$docComment 	.=  PHP_EOL ;
+		
+		// Get property modifiers
+		$modifiers 	=  array ( ) ;
+
+		if  ( $this -> Reflector -> isPrivate ( ) )
+			$modifiers []	=  "private" ;
+		else if  ( $this -> Reflector -> isProtected ( ) )
+			$modifiers []	=  "protected" ;
+		else if  ( $this -> Reflector -> isPublic ( ) )
+			$modifiers []	=  "public" ;
+			
+		if  ( $this -> Reflector -> isStatic ( ) )
+			$modifiers []	=  "static" ;
+		
+		// Merge all this stuff
+		$result 	=  $docComment . implode ( " ", $modifiers ) . ' $' . $this -> Reflector -> getName ( ) ;
+		
+		// Get the property value, if any
+		$value 		=  $this -> Reflector -> getValue ( ) ;
+		
+		if  ( is_string ( $value ) )		// Handle string values that may contain characters to be escaped
+			$value 	=  '"' . str_replace ( '"', "\\\"", $value ) . '"' ;
+		
+		// Consider that "null" value are uninitialized (and thus default to... null)
+		if  ( $value  !==  null )
+			$result .= " = $value" ;
+		
+		// Don't forget the trailing semicolon separator
+		$result 	.= " ;" ;
+		
+		// All done, return
+		return ( $result ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	        Implementation of the RefelectionSourcerInterface interface.
+	
+	  ==============================================================================================================*/
+	public function  getText ( $include_source = false )
+	   { return ( $this -> __get_contents ( $include_source ) ) ; }
+    }
+

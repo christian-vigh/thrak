@@ -1,0 +1,636 @@
+<?php
+/***************************************************************************************************
+
+    NAME
+	Set.phpclass
+
+    DESCRIPTION
+     	Implements a bitset/set/typed set parameter.
+
+    AUTHOR
+     	Christian Vigh, 10/2011.
+
+    HISTORY
+    [Version : 1.0]	[Date : 2011/10/17]	[Author : CV]
+     	Initial version.
+
+   [Version : 2.0]	[Date : 2012/10/06]		[Author : CV]
+	Migrated to the Thrak library version 2.
+
+   [Version : 2.0]	[Date : 2014/11/10]		[Author : CV]
+	. Changed the <set> parameter :
+ 		. Added the define-constants boolean flag, to define set constants as PHP constants
+ 		. <constant> subtag : added the "constant" and "value" attributes
+		. Added the possibility to have <constant> aliases
+
+   [Version : 2.0.1]	[Date : 2015/02/05]		[Author : CV]
+ 	. Corrected minor imperfections when displaying help for a <set> parameters :
+ 		. The "Available set values :" line was truncated from the left
+ 		. The constant value is now displayed in hexadecimal
+ 	. Automatically set to "specified" numeric constants that are a subset of the one specified
+ 	  on the command line. This allows for defining constant flags such as "all" :
+  
+ 	  Consider the following example :
+		<set name="display_options, display_option, do" default="all">
+			<constant name="all, a" constant="DO_ALL" value="0xFFFFFFFF"/>
+			<constant name="path, p" constant="DO_PATH" value="1"/>
+			<constant name="isdir, i" constant="DO_ISDIR" value="2"/>
+		</set>
+  
+ 	If the constant "all" is specified on the command line, then the "isdir" and "path" constants
+ 	will automatically be set to true in the returned array, because they are both a subset of
+ 	the "all" constant.
+
+   [Version : 2.0.2]	[Date : 2015/04/11]		[Author : CV]
+	. Replaced each exception throwing with "error ( new CLException (...) )".
+
+ ***************************************************************************************************/
+namespace  	Thrak\Processors\CL ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces and classes
+use 	Thrak\Types\String  		as  String ;
+use     Thrak\Types\String\Convert 	as  Convert ;
+
+
+/*==================================================================================================
+
+    CLBitsetParameter class -
+	Implements a bitset parameter.
+
+	The attributes for a <bitset> tag are the following :
+	- 'strict' (boolean) :
+		Indicates if the bitmasks defined in the <constant> tags are the only ones
+		allowed (true) or not (false).
+
+	The <bitset> tag can contain optional <constant> child tags that have the following
+	attributes :
+	'names' (string) :
+		Constant name(s), which will be defined using the PHP define() function.
+	'value' (integer) :
+		Integer value for this constant.
+	'help' (string) :
+		Help for this bitmask.
+
+	The syntax for specifying a bitset on the command-line is either :
+	- An integer value
+	- A combination of constant names (defined in <constant> child tags) separated by a
+	  comma or a vertical bar. Numeric values are also allowed.
+
+	The return value is an associative array containing the following entries :
+	- 'value' :
+		The supplied initial value, as an hexadecimal integer.
+	- 'flags' :
+		Associative array whose keys are the constant names defined in the <constant>
+		child tags, and whose values are a boolean value indicating if the bit was set
+		or not.
+	- 'leftover' :
+	  	Integer value containing the specified input bits not covered by the ones
+	  	defined through the <constant> tags.
+
+  ==================================================================================================*/
+
+class  CLBitsetParameter  extends  \Thrak\Processors\CL\CLAbstractParameter
+   {
+	// Specific attributes
+   	private		$BitsetDefinitions = array
+   	   (
+	    	array
+	    	   (
+	    	   	'names'		=>  array ( 'strict' ),
+	    	   	'type'		=>  self::ATTRIBUTE_TYPE_BOOLEAN,
+	    	   	'member'	=>  'Strict',
+	    	   	'default'	=>  "false",
+	    	   	'help'		=>  'Indicates if the bitmasks defined in the <constant> tags are the only ones allowed (true) or not (false).'
+      		    )
+    	    ) ;
+
+ 	// Strict checking ?
+ 	public		$Strict ;
+ 	// Constant definitions
+ 	public 		$ConstantDefinitions	=  array ( ) ;
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Class constructor.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __construct ( $parent, $tags, $valuetext = "bitset" )
+	   {
+   		$this -> Help 			=  "Defines a bitset parameter.\nIt can contain any number of <constant> child tags that must have the following attributes :\n\n" .
+  		 				   "name -\n" .
+		   				   "	Constant name.\n\n" .
+	   				    	   "value -\n" .
+		   				   "	Corresponding integer value. Since PHP does not support unsigned integers, the maximum number of bits allowed is 31.\n\n" .
+		   				   "help -\n" .
+		   				   "	Help text for this constant.\n\n" .
+   						   "The syntax for specifying a bitset on the command-line is either :\n" .
+						   "- An integer value\n" .
+						   "- A combination of constant names (defined in <constant> child tags) separated by a " .
+						   "comma or a vertical bar.\n  Numeric values are also allowed." ;
+;
+
+		$this -> ReturnValueHelp 	=<<<END
+The return value is an associative array containing the following entries :
+
+- 'value' :
+	The supplied initial value, as an hexadecimal integer.
+- 'flags' :
+	Associative array whose keys are the constant names defined in the <constant>
+	child tags, and whose values are a boolean value indicating if the bit was set
+	or not.
+- 'leftover' :
+  	Integer value containing the specified input bits not covered by the ones
+  	defined through the <constant> tags.
+END;
+
+		parent::__construct ( $parent, $tags, $valuetext, $this -> BitsetDefinitions ) ;
+	    }
+
+
+ 	/*-------------------------------------------------------------------------------------------
+
+	    GetHelp -
+	    	Returns the help text for this bitset.
+
+ 	 --------------------------------------------------------------------------------------------*/
+	public function  GetHelp ( )
+	   {
+		$help 	=  parent::GetHelp ( ) . "Available bitmasks : \n\n" ;
+
+		foreach  ( $this -> ConstantDefinitions  as  $definition )
+		   {
+		   	$value 	=  $definition [ 'value' ] ;
+			$width  =  8 ;
+
+			if  ( $value  <  256 )
+				$width = 2 ;
+			else if  ( $value  <  65536 )
+				$width = 4 ;
+
+		   	$help  .=  implode ( ', ', $definition [ 'names' ] ) . '  (0x' . sprintf ( "%0{$width}X", $value ) . ') :' . "\n" ;
+			$help  .=  "\t" . trim ( $definition [ 'help' ] ) . "\n\n" ;
+		    }
+
+		return ( trim ( $help ) ) ;
+	    }
+
+
+ 	/*-------------------------------------------------------------------------------------------
+
+	    ProcessChildTag -
+	    	Processes <constant> tags.
+
+ 	 --------------------------------------------------------------------------------------------*/
+	protected function  ProcessChildTag ( $child )
+	   {
+	   	// Get child and parent tagname
+	   	$tag 	=  $child [ 'tag' ] ;
+	   	$name 	=  $this -> GetUsageParameterName ( ) ;
+
+		// Check if they are allowed
+		if  ( strcasecmp ( $tag, 'constant' )  &&  strcasecmp ( $tag, 'const' ) )
+		   {
+			parent::ProcessChildTag ( $child ) ;
+			exit ( ) ;
+   		    }
+
+		// Loop through attributes to get names and value
+		$constant_names		=  null ;
+		$constant_value 	=  null ;
+		$constant_help		=  null ;
+
+		foreach  ( $child [ 'attributes' ]  as  $attribute )
+		   {
+			switch ( strtolower ( $attribute [ 'name' ] ) )
+			   {
+				case	'name' :
+					$constant_names	=  $attribute [ 'value' ] ;
+					break ;
+
+				case	'value' :
+					$constant_value =  $attribute [ 'value' ] ;
+
+					if  ( String::IsInteger ( $constant_value, false ) )
+						$constant_value = Convert::ToInteger ( $constant_value ) ;
+					else
+						error ( new CLException ( "Invalid constant value '$constant_value' for the <$tag> subtag of the '$name' parameter." ) ) ;
+					break ;
+
+				case 	'help' :
+					$constant_help 	=  $attribute [ 'value' ] ;
+					break ;
+
+				default :
+					error ( new CLException ( "Invalid attribute '{$attribute [ 'name' ]} for the <$tag> subtag of the '$name' parameter." ) ) ;
+			    }
+		    }
+
+		// If no help provided through the 'help' attribute, check if contents are provided
+		if  ( $constant_help  ==  null )
+		   {
+		   	if  ( trim ( $child [ 'contents' ] )  ==  "" )
+		   		$constant_help = "(no help defined)" ;
+	   		else
+				$constant_help = $child [ 'contents' ] ;
+		    }
+
+		// Check that the 'name' and 'value' attributes have been specified
+		if  (  $constant_names  ===  null  ||  $constant_value  ===  null )
+			error ( new CLException ( "The <constant> child tags for the '$name' parameter must define both the 'name' and 'value' attributes." ) ) ;
+
+		// Check that the constant value is numeric
+		if  ( ! String::IsInteger( $constant_value, false )  ||  $constant_value  !=  round ( $constant_value, 0 ) )
+			error ( new CLException ( "The value '{$attribute [ 'value' ]}' defined for the constant '{$list [0]}' of the '$name' parameter must be an integer value." ) ) ;
+
+		// Loop through existing constant names to check for duplicates
+		$list 		=  String::ExplodeAndTrim ( ',', $constant_names ) ;
+
+		foreach  ( $list  as  $item )
+		   {
+			if  ( array_key_exists ( $item, $this -> ConstantDefinitions ) )
+				error ( new CLException ( "The constant '$item' has been defined more than once for parameter '$name'." ) ) ;
+		    }
+		
+		$this -> ConstantDefinitions [] = array ( 'names' => $list, 'value' => $constant_value, 'help' => $constant_help ) ;
+	    }
+
+
+ 	/*-------------------------------------------------------------------------------------------
+
+	    ProcessValue -
+	    	Processes a keyword value.
+
+ 	 --------------------------------------------------------------------------------------------*/
+	protected function  ProcessValue ( $pname, $pvalue )
+	   {
+	   	$result 	=  array ( ) ;
+
+	   	// For numeric results, simply get the value
+   		if  ( String::IsInteger ( $pvalue, false ) )
+   			$value 	=  Convert::ToInteger ( $pvalue ) ;
+		// Otherwise, build the value from the supplied parameter
+		else
+		   {
+			$pvalue2 	=  str_replace ( '|', ',', $pvalue ) ;
+			$list 		=  String::ExplodeAndTrim ( ',', $pvalue2 ) ;
+			$value 		=  0 ;
+
+			// Loop through potential list items
+			foreach  ( $list  as  $item )
+			   {
+			   	// If current list item is numeric, simply OR its bits with the current value
+				if  ( String::IsInteger ( $item, false ) )
+					$value |= Convert::ToInteger ( $item ) ;
+				// Otherwise, search for bitmask using the specified flags
+				else
+				   {
+				   	$found 	=  false ;
+
+					foreach  ( $this -> ConstantDefinitions  as  $definition )
+					   {
+					   	foreach  ( $definition [ 'names' ]  as  $defname )
+					   	   {
+							if  ( ! strcasecmp ( $item, $defname ) )
+							   {
+							   	$found   =  true ;
+								$value  |=  ( integer ) $definition [ 'value' ] ;
+								break 2 ;
+							    }
+				    		    }
+					    }
+
+		    			if  ( ! $found )
+		    				error ( new CLException ( "Undefined '$item' flag for the '$pname' parameter." ) ) ;
+				    }
+			    }
+		    }
+
+	    	// Create the 'flags' array
+	    	$result [ 'flags' ] 	=  array ( ) ;
+	    	$cumulator		=  0 ;
+	    	$value 			=  ( integer ) $value ;
+
+	    	// Save the supplied input value
+	    	$result [ 'value' ] 	=  $value ;
+
+
+	    	foreach  ( $this -> ConstantDefinitions  as  $definition )
+	    	   {
+	    	   	$a 	=  ( integer ) $definition [ 'value' ] ;
+
+			if  ( ( $a & $value )  ==  $a )
+			   {
+				$result [ 'flags' ] [ $definition [ 'names' ] [0] ] = true ;
+				$cumulator  |=  $a ;
+			    }
+			else
+				$result [ 'flags' ] [ $definition [ 'names' ] [0] ] = false ;
+	    	    }
+
+    		// Compute the leftover
+    		$cumulator 	=  ~$cumulator ;
+    		$leftover 	=  $value & $cumulator ;
+
+		if  ( $this -> Strict  &&  $leftover )
+			error ( new CLException ( "The value '$pvalue' specified for the '$pname' parameter contains undefined bits (" . sprintf ( "0x%08X", $leftover ) . ")." ) ) ;
+
+    		$result [ 'leftover' ] 	=  $leftover ;
+
+    		// All done, return
+    		return ( $result ) ;
+    	    }
+    }
+
+
+/*==================================================================================================
+
+    CLSetParameter class -
+	Implements a set of values from a given list.
+
+  ==================================================================================================*/
+class  CLSetParameter  extends  \Thrak\Processors\CL\CLAbstractSimpleCompoundParameter
+   {
+	// Specific attributes
+   	private		$SetDefinitions = array
+   	   (
+	    	array
+	    	   (
+	    	   	'names'		=>  array ( 'define-constants' ),
+	    	   	'type'		=>  self::ATTRIBUTE_TYPE_BOOLEAN,
+	    	   	'member'	=>  'DefineConstants',
+	    	   	'default'	=>  "false",
+	    	   	'help'		=>  'Indicates if the constants specified for this parameter should be defined as real PHP constants.'
+      		    ),
+	    	array
+	    	   (
+	    	   	'names'		=>  array ( 'check-constants' ),
+	    	   	'type'		=>  self::ATTRIBUTE_TYPE_BOOLEAN,
+	    	   	'member'	=>  'CheckConstants',
+	    	   	'default'	=>  "false",
+	    	   	'help'		=>  'When both \"define-constants\" and \"check-constants\" are true, an error will be generated ' .
+					    'if the constant already exists in the PHP namespace.'
+      		    )
+    	    ) ;
+
+	// "define-constants" flag
+	public		$DefineConstants	=  false ;
+	// "check-constants" flag
+	public		$CheckConstants		=  false ;
+	
+ 	// Constant definitions
+ 	public 		$ConstantDefinitions	=  array ( ) ;
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Class constructor.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __construct ( $parent, $tags, $valuetext = "bitset" )
+	   {
+   		$this -> Help 			=  "Defines a set parameter. It can contain any number of <constant> child tags that must have the following attributes :\n\n" .
+  		 				   "name -\n" .
+		   				   "	Constant name. This must be a valid PHP constant name that will be defined using the define() function.\n\n" .
+						   "define-constants -\n" .
+						   "	When true, <set> constants are also defined as PHP constants.\n" .
+						   "check-constants -\n" .
+						   "	When true, an error is generated if the constant already exists. Default is false.\n" .
+		   				   "help -\n" .
+		   				   "	Help text for this constant.\n\n" .
+   						   "The syntax for specifying a set on the command-line is a combination of constant names separated by a comma or a vertical bar.\n\n" .
+						   "The list of authorized constants is given through the <constant> tag (or <const> or <keyword>) and can have the " .
+						   "following attributes :\n\n" .
+						   "name -\n" .
+						   "	Name (and aliases) of the constant.\n" .
+						   "constant -\n" .
+						   "	Name of the PHP constant to be defined (if the \"define-constants\" attribute is set to true).\n" .
+						   "value -\n" .
+						   "	Constant value (used only if the constant attribute if specified.\n\n" ;
+
+		$this -> ReturnValueHelp 	=<<<END
+The return value is an associative array whose key is the constant name, and whose value is either true (the constant has been specified) or false.
+It also includes an item whose key is '*', which is an array containing the flags specified on the command line.
+
+END;
+
+		parent::__construct ( $parent, $tags, $valuetext, $this -> SetDefinitions ) ;
+	    }
+
+
+ 	/*-------------------------------------------------------------------------------------------
+
+	    GetHelp -
+	    	Returns the help text for this bitset.
+
+ 	 --------------------------------------------------------------------------------------------*/
+	public function  GetHelp ( )
+	   {
+		$help 	=  parent::GetHelp ( ) ;
+
+		if  ( $help )
+			$help .=  " " ;
+		else
+			$help  =  "" ;
+
+		$help .= "\t\tAvailable set values : \n\n" ;
+
+		foreach  ( $this -> ConstantDefinitions  as  $definition )
+		   {
+		   	$help .=  "\t\t" . implode ( ', ', $definition [ 'names' ] ) ;
+				   
+			if  ( $definition [ 'value' ] )
+			   {
+				if  ( is_numeric ( $definition [ 'value' ] ) )
+					$constant_value	=  sprintf ( "0x%08X", $definition [ 'value' ] ) ;
+				else 
+					$constant_value	=  $definition [ 'value' ] ;
+				
+				$help	.=  " ($constant_value)" ;
+			    }
+			
+			$help .=  " :\n" ;
+			$help .=  "\t\t\t" . trim ( $definition [ 'help' ] ) . "\n\n" ;
+		    }
+
+		return ( rtrim ( $help ) ) ;
+	    }
+
+
+ 	/*-------------------------------------------------------------------------------------------
+
+	    ProcessChildTag -
+	    	Processes <constant> tags.
+
+ 	 --------------------------------------------------------------------------------------------*/
+	protected function  ProcessChildTag ( $child )
+	   {
+	   	// Get child and parent tagname
+	   	$tag 	=  $child [ 'tag' ] ;
+	   	$name 	=  $this -> GetUsageParameterName ( ) ;
+
+		// Check if they are allowed
+		if  ( strcasecmp ( $tag, 'constant' )  &&  strcasecmp ( $tag, 'const' )  &&  strcasecmp ( $tag, "keyword" ) )
+		   {
+			parent::ProcessChildTag ( $child ) ;
+			exit ( ) ;
+   		    }
+
+		// Loop through attributes to get names and value
+		$constant_name		=  null ;
+		$constant_help	 	=  null ;
+		$php_constant_name	=  null ;
+		$constant_value		=  null ;
+
+		foreach  ( $child [ 'attributes' ]  as  $attribute )
+		   {
+			switch ( strtolower ( $attribute [ 'name' ] ) )
+			   {
+				// Constant name
+				case	'name' :
+					$constant_names 	=  String::ExplodeAndTrim ( ',', $attribute [ 'value' ] ) ;
+					break ;
+
+				// PHP constant name
+				case	'constant' :
+					$php_constant_name	=  $attribute [ 'value' ] ;
+					break ;
+					
+				// Constant value
+				case	'value' :
+					if  ( String::IsInteger ( $attribute [ 'value' ] ) )
+						$constant_value		=  Convert::ToInteger ( $attribute [ 'value' ] ) ;
+					else 
+						$constant_value		=  $attribute [ 'value' ] ;
+					break ;
+					
+				// Help text
+				case	'help' :
+					$constant_help =  $attribute [ 'help' ] ;
+					break ;
+
+				default :
+					error ( new CLException ( "Invalid attribute '{$attribute [ 'name' ]}' for the <$tag> subtag of the '$name' parameter." ) ) ;
+			    }
+		    }
+
+		// Use child contents as help, if no help text defined
+		if  ( ! $constant_help )
+			$constant_help	=  $child [ 'contents' ] ;
+		
+		// Check that the 'name' and 'value' attributes have been specified
+		if  (  ! $constant_names )
+			error ( new CLException ( "The <constant> child tags for the '$name' parameter must define the 'name' attribute." ) ) ;
+		
+		// Check that the constant is not yet defined - use the value of the "constant" attribute for that
+		if  ( $this -> DefineConstants )
+		   {
+			if  ( $php_constant_name  &&  $this -> CheckConstants )
+			   {
+	   			$constant_list 		=  array_keys ( get_defined_constants ( ) ) ;
+
+				if  ( in_array ( $php_constant_name, $constant_list ) )
+					error ( new CLException ( "The '$php_constant_name' constant defined for parameter '$name' already exists in the PHP namespace." ) ) ;
+			    }
+			
+			// Define the constant if it did not exist
+			define ( $php_constant_name, $constant_value ) ;
+		    }
+		
+		// Add the constant to this object's constants list
+		$key 	=  strtolower ( $constant_names [0] ) ;
+
+		if  ( $constant_help  ===  null )
+			$constant_help =  "(no help defined)" ;
+
+		if  ( array_key_exists ( $key, $this -> ConstantDefinitions ) )
+			error ( new CLException ( "The constant '$constant_name' has been defined more than once for parameter '$name'." ) ) ;
+		else
+			$this -> ConstantDefinitions [ $key ] = 
+			  [ 
+				'names'		=>  $constant_names, 
+				'constant'	=>  $php_constant_name,
+				'value'		=>  $constant_value,
+				'help'		=>  $constant_help 
+			   ] ;
+	    }
+
+
+ 	/*-------------------------------------------------------------------------------------------
+
+	    ProcessValue -
+	    	Processes a keyword value.
+
+ 	 --------------------------------------------------------------------------------------------*/
+	protected function  ProcessValue ( $pname, $pvalue )
+	   {
+		// Check that set constants have been defined
+		if  ( ! count ( $this -> ConstantDefinitions ) )
+			error ( new CLException ( "The '$pname' set parameter has no defined constants." ) ) ;
+
+	   	$result 	=  array ( ) ;
+		$specified 	=  array ( ) ;
+		$pvalue 	=  str_replace ( '|', ',', $pvalue ) ;
+		$list 		=  String::ExplodeAndTrim ( ',', $pvalue ) ;
+		$mask		=  0 ;
+
+		// Build default values for each flag
+		foreach  ( $this -> ConstantDefinitions  as  $definition )
+			$result [ $definition [ 'names' ] [0] ] = false ;
+
+		// Loop through potential list items
+		foreach  ( $list  as  $item )
+		   {
+		   	$found 		=  false ;
+			$count		=  count ( $this -> ConstantDefinitions ) ;
+			$defkeys 	=  array_keys ( $this -> ConstantDefinitions ) ;
+			
+			// Loop through each constant definition
+			for ( $i = 0 ; $i  <  $count ; $i ++ )
+			   {
+				$definition	=  $this -> ConstantDefinitions [ $defkeys [$i] ] ;
+			   	$defnames	=  $definition [ 'names' ] ;
+
+				   // Find the definition whose aliases matches the one specified
+				foreach  ( $defnames  as  $defname )
+				   {
+					// Alias found : this is our definition
+					if  ( ! strcasecmp ( $item, $defname ) )
+					   {
+					   	$found   			=  true ;
+						$result [ $defnames [0] ] 	=  true ;
+						$specified []			=  $defnames [0] ;
+						
+						// Handle a mask if the value is numeric
+						if  ( is_integer ( $definition [ 'value' ] ) )
+						   {
+							$mask	|=  $definition [ 'value' ] ;
+							
+							// Set to true other definitions who might be a subset of this one
+							for  ( $j = 0 ; $j  <  $count ; $j ++ )
+							   {
+								$definition2	=  $this -> ConstantDefinitions [ $defkeys [$j] ] ;
+								
+								if  ( $i  !=  $j  &&
+									( $definition [ 'value' ] & $definition2 [ 'value' ] )  ==  $definition2 [ 'value' ] )
+									$result [ $definition2 [ 'names' ] [0] ]	=  true ;
+							    }	
+						    }
+						break ;
+					    }
+				    }
+			    }
+
+    			if  ( ! $found )
+    				error ( new CLException ( "Undefined constant '$item' for the '$pname' parameter." ) ) ;
+		    }
+
+    		// All done, return
+    		$result ['*'] 		=  $specified ;		// List of specified constants
+		$result ['~']		=  $mask ;		// Specified constant mask - will not work if some constants are not integers
+    		ksort ( $result ) ;
+    		return ( $result ) ;
+    	    }
+    }

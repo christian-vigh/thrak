@@ -1,0 +1,494 @@
+<?php
+/***************************************************************************************************
+
+    NAME
+	Thrak.phpinclude
+
+    DESCRIPTION
+     	Main include file for applications using Thrak.
+
+    AUTHOR
+     	Christian Vigh, 10/2012.
+
+    HISTORY
+    [Version : 1.0]	[Date : 2012/10/01]	[Author : CV]
+     	Initial version.
+
+ ***************************************************************************************************/
+! defined ( '__THRAK_SETUP__' ) or die ( "Stopped." ) ;
+
+use	Thrak\System\Object ;
+
+// We have almost run the setup...
+define ( '__THRAK_SETUP__', 1 ) ;
+
+// The time we began
+define  ( 'THRAK_TIMESTARTED', microtime ( true ) ) ;
+
+// Check if we are run from a web server or from the command line
+if  ( php_sapi_name ( )  ==  'cli' )
+   {
+ 	define ( 'THRAK_STANDALONE'	, 1 ) ;
+ 	define ( 'IS_STANDALONE'	, 1 ) ;
+	define ( 'IS_CLI'		, 1 ) ;
+    }
+else
+   {
+ 	define ( 'THRAK_STANDALONE'	, 0 ) ;
+ 	define ( 'IS_STANDALONE'	, 0 ) ;
+	define ( 'IS_CLI'		, 0 ) ;
+    }
+
+// Determine if we run under Windows or Unix
+if  ( ! strncasecmp ( php_uname ( 's' ), 'windows', 7 ) )
+    {
+ 	define ( 'IS_WINDOWS'		,  1 ) ;
+ 	define ( 'IS_UNIX'		,  0 ) ;
+     }
+ else
+    {
+ 	define ( 'IS_WINDOWS'		,  0 ) ;
+ 	define ( 'IS_UNIX'		,  1 ) ;
+     }
+
+// Determine if we run locally (ie, on a standalone PC, not a server)
+if  ( ! isset ( $_SERVER [ 'SERVER_ADDR' ] )  ||  ( $_SERVER [ 'SERVER_ADDR' ]  ==  '127.0.0.1'  &&  $_SERVER [ 'REMOTE_ADDR' ]  ==  '127.0.0.1' ) )
+	define ( 'IS_LOCAL'		,  1 ) ;
+else
+	define ( 'IS_LOCAL'		,  0 ) ;
+
+// Some OS specific settings
+if  ( IS_WINDOWS )
+	define ( 'PATH_ENV_SEPARATOR'	,  ';' ) ;
+else
+	define ( 'PATH_ENV_SEPARATOR'	,  ':' ) ;
+	
+// 64- or 32-bits platform ?
+if  ( PHP_INT_SIZE  ==  4  &&  ! IS_WINDOWS )
+   {
+	define ( 'PHP_X86'		,  true ) ;
+	define ( 'PHP_X64'		,  false ) ;
+	define ( 'WORD_SIZE'		,  4 ) ;
+    }
+else
+   {
+	define ( 'PHP_X86'		,  false ) ;
+	define ( 'PHP_X64'		,  true ) ;
+	define ( 'WORD_SIZE'		,  8 ) ;
+    }
+
+define ( 'DW_SIZE'	, 2 ) ;
+define ( 'DD_SIZE'	, 4 ) ;
+define ( 'DQ_SIZE'	, 8 ) ;
+
+// Other constants
+define ( 'PHP_INT_MIN'			, - PHP_INT_MAX - 1 ) ;
+
+// A small kludge for the CLParser object, so that the --classes, --stdclasses, etc. special
+// parameters won't show the classes, functions, interfaces and so on defined in the CL package.
+if  ( IS_STANDALONE )
+   {
+	$__THRAK_STDCLASSES__		=  get_declared_classes ( ) ;
+	$__THRAK_STDINTERFACES__	=  get_declared_interfaces ( ) ;
+	$__THRAK_STDTRAITS__		=  get_declared_traits ( ) ;
+	$__THRAK_STDFUNCTIONS__ 	=  get_defined_functions ( ) ;
+	$__THRAK_STDVARIABLES__ 	=  get_defined_vars ( ) ;
+	$__THRAK_STDCONSTANTS__ 	=  get_defined_constants ( ) ;
+    }
+
+
+// Enable this until all classes that do not inherit from the Object class or do not call its constructor have been corrected
+$GLOBALS [ 'OBJECT_GARDENKEEPER' ]	=  true ;
+
+// Global variables
+$Configuration  		=  null ;
+
+
+/*==================================================================================================
+
+	BootSetup function.
+
+	This function performs the following steps :
+
+	- Establish the basic configuration variables that are needed by the Thrak library. These
+	  variables are the following :
+
+	  - THRAK_ROOT :
+	  	This variable must be defined in order for the Thrak library to be able to locate
+	  	its components. Its value is first searched in the $GLOBALS array, then the
+	  	environment. If not found, it is assumed to be the directory holding this file.
+
+  	  - THRAK_CONFIGURATION :
+  	  	Path of the Thrak configuration file. Its value is first searched in the $GLOBALS
+  	  	array, then in the environment. If not found, it is assumed to be a file named
+  	  	'Thrak.Configuration' in the same directory than Thrak.phpinclude.
+
+  	  - SITE_ROOT :
+  	  	Website root. Its value is first searched in the $GLOBALS array, then in the
+ 		environment. If not found, it is assumed to be the parent directory of the path
+ 		specified by the THRAK_ROOT variable.
+
+	  - SITE_CONFIGURATION :
+	  	Site configuration file. Its value is first searched in the $GLOBALS array, then in
+	  	the environment. If not found, it is assumed to be the parent directory of the path
+	  	specified by the THRAK_ROOT_VARIABLE.
+
+	- Set the include path to point to Thrak PHP include files.
+
+  ==================================================================================================*/
+$BootSetup 		=  function  ( $debug )
+   {
+   	// getcgfvar -
+   	//	Gets the value of a Thrak configuration variable (from GLOBALS, environment or specified default value).
+   	//	Complains if the path is incorrect.
+   	$getcfgvar 		=  function ( $varname, $default  =  "", $dir )
+   	   {
+ 		$result 	=  "" ;
+ 		$item_type	=  ( $dir )  ?  "directory" : "file" ;
+
+
+ 		// Try from $GLOBALS...
+	   	if  ( isset ( $GLOBALS [ $varname ] )  &&  ! empty ( $GLOBALS [ $varname ] ) )
+		   	$result =  $GLOBALS [ $varname ] ;
+		// ... then from environment...
+		else
+		   {
+		   	// Web-based Thrak does not use environment variables
+		   	$value 	=  ( IS_STANDALONE ) ? getenv ( $varname ) : '' ;
+
+			if ( empty ( $value ) )
+				$result  =  $default ;
+			else	// otherwise, use default value
+				$result  =  $value ;
+		    }
+
+    		// Get the real path, if the file ordirectory exists
+		$realpath	=  realpath ( $result ) ;
+
+		if  ( ! empty ( $realpath ) )
+    			$result  =  $realpath ;
+
+		// Always convert to Unix path
+    		$result  	=  str_replace ( "\\", "/", $result ) ;
+
+    		// For directories, make sure it ends with a trailing slash
+		if  ( $dir  &&  substr ( $result, -1, 1 )  !=  '/' )
+			$result  .=  '/' ;
+
+		// Complain if not path at all
+		if  ( empty ( $result ) )
+		   {
+			echo "***  Error  *** Unable to determine the location of the $varname $item_type.\n" ;
+			exit ( ) ;
+		    }
+
+		// Complain if the file or directory does not exist
+		$exists 	=  file_exists ( $result ) ;
+
+		if  ( $dir  &&  ! $exists )
+		   {
+			echo "***  Error  *** The path specified by the $varname variable ($result) does not exist.\n" ;
+			exit ( ) ;
+		    }
+
+		// Complain if the path has an incorrect file type
+		if  ( ( $dir  &&  ! is_dir ( $result ) )  ||  ( ! $dir  &&  $exists  &&  ! is_file ( $result ) ) )
+		   {
+			echo "***  Error  *** The path specified by the $varname variable ($result) is not a $item_type.\n" ;
+			exit ( ) ;
+		    }
+
+		// All done, return
+		return ( $result ) ;
+   	    } ;
+
+	/*==========================================================================================
+
+		Thrak environment variables.
+
+	  ==========================================================================================*/
+	$GLOBALS [ 'THRAK_ROOT' ]		=  $getcfgvar ( 'THRAK_ROOT', dirname ( __FILE__ ), true ) ;
+	$GLOBALS [ 'THRAK_CONFIGURATION' ]	=  $getcfgvar ( 'THRAK_CONFIGURATION', $GLOBALS [ 'THRAK_ROOT' ] . '/Configuration/Thrak.Configuration.php', false ) ;
+	$GLOBALS [ 'SITE_ROOT' ]		=  $getcfgvar ( 'SITE_ROOT', dirname ( __FILE__ ) . '/..', true ) ;
+	$GLOBALS [ 'SITE_CONFIGURATION' ]	=  $getcfgvar ( 'SITE_CONFIGURATION', $GLOBALS [ 'SITE_ROOT' ] . 'Site.Configuration.php', false ) ;
+	$GLOBALS [ 'THRAK_VERSION' ]		=  "2.0" ;
+
+	// A little exception for URLs, which must refer to the root of the site, not to the root of the filesystem...
+	if  ( IS_STANDALONE )
+	   {
+		$GLOBALS [ 'THRAK_URL_ROOT' ]	=  $GLOBALS [ 'THRAK_ROOT' ] ;
+		$GLOBALS [ 'THRAK_JS_ROOT'  ]	=  $GLOBALS [ 'THRAK_ROOT' ] . "Javascript" ;
+		$GLOBALS [ 'THRAK_CSS_ROOT' ]	=  $GLOBALS [ 'THRAK_ROOT' ] . "css" ;
+	    }
+	else
+	   {
+		$length 				=  strlen ( $_SERVER [ 'DOCUMENT_ROOT' ] ) ;
+		$url_root				= $getcfgvar ( 'THRAK_URL_ROOT', $GLOBALS [ 'SITE_ROOT' ], true ) ;
+		$url_root 				=  substr ( $url_root, $length ) ;
+
+		if  ( $url_root [0]  !=  '/' )
+			$url_root [0] = '/' . $$url_root ;
+
+		$GLOBALS [ 'THRAK_URL_ROOT' ]	=  $url_root ;
+		$GLOBALS [ 'THRAK_JS_ROOT'  ]	=  $url_root . "Javascript" ;
+		$GLOBALS [ 'THRAK_CSS_ROOT' ]	=  $url_root . "css" ;
+	    }
+
+	// Debug information
+	if (  $debug )
+	   {
+		echo ( "THRAK_ROOT		=  {$GLOBALS [ 'THRAK_ROOT' ]}\n" ) ;
+		echo ( "THRAK_CONFIGURATION	=  {$GLOBALS [ 'THRAK_CONFIGURATION' ]}\n" ) ;
+		echo ( "SITE_ROOT		=  {$GLOBALS [ 'SITE_ROOT' ]}\n" ) ;
+		echo ( "SITE_CONFIGURATION	=  {$GLOBALS [ 'SITE_CONFIGURATION' ]}\n" ) ;
+		echo ( "IS_STANDALONE 		=  " . IS_STANDALONE 	. "\n" ) ;
+		echo ( "IS_LOCAL 		=  " . IS_LOCAL 	. "\n" ) ;
+		echo ( "IS_WINDOWS 		=  " . IS_WINDOWS 	. "\n" ) ;
+		echo ( "IS_UNIX 		=  " . IS_UNIX 		. "\n" ) ;
+	   }
+
+
+   	/*==========================================================================================
+
+		Other pre-initializations.
+
+	  ==========================================================================================*/
+
+	// Include path
+	set_include_path ( get_include_path ( ) . PATH_SEPARATOR .
+				$GLOBALS [ 'THRAK_ROOT' ] . "PHP/Library" . PATH_SEPARATOR .
+				$GLOBALS [ 'THRAK_ROOT' ] . "PHP/Scripts" ) ;
+   } ;
+
+
+/*==================================================================================================
+
+	BootFinalize function.
+
+	This function performs the following steps :
+
+	- Performs some initializations for the CL Parser in standalone mode.
+	- Set the error reporting level.
+
+  ==================================================================================================*/
+$BootFinalize		=  function ( $debug )
+   {
+	/*==========================================================================================
+
+		Miscellaneous global initializations.
+
+	  ==========================================================================================*/
+	$this_dir	=  dirname ( __FILE__ ) ;
+	
+	// Create the configuration object - this is one of the two classes, with Autoloader, that need to
+	// be instanciated without any Thrak library support.
+	global 		$Configuration ;
+
+	require_once ( $this_dir . '/PHP/Library/Runtime/Configuration.phpclass' ) ;
+	$Configuration	=  new  \Thrak\Runtime\Configuration ( ) ;
+
+	// Load Thrak and site configuration files
+	if  ( file_exists ( $GLOBALS [ 'THRAK_CONFIGURATION' ] ) )
+		$Configuration -> Load ( $GLOBALS [ 'THRAK_CONFIGURATION' ] ) ;
+
+	if  ( file_exists ( $GLOBALS [ 'SITE_CONFIGURATION' ] ) )
+		$Configuration -> Load ( $GLOBALS [ 'SITE_CONFIGURATION' ] ) ;
+
+	// Install the class autoloader. This is at a very early stage, where we won't benefit from the Thrak classes.
+	require_once ( $this_dir . '/PHP/Library/Runtime/Autoloader.phpclass' ) ;
+
+	$Autoloader	=  new Thrak\System\Autoloader ( $Configuration ) ;
+	
+	// Get the autoloadable classes defined in Configuration/autoload.php, for both Thrak and site roots
+	$autoloads	=  [ "{$GLOBALS [ 'THRAK_ROOT' ]}/Configuration/autoload.ini", 
+			     "{$GLOBALS [ 'SITE_ROOT'  ]}/Configuration/autoload.ini" ] ;
+	
+	foreach  ( $autoloads  as  $autofile )
+	   {
+		if  ( file_exists ( $autofile ) )
+		   {
+			$status		=  $Autoloader -> Load ( $autofile ) ;
+		
+			if  ( ! $status )
+			   {
+				echo ( "***  error  *** Unable to load autoloder definitions from file $autofile.\n" ) ;
+				exit ;
+			    }
+		     }
+	    }
+
+	// Error reporting
+	$level			=  $Configuration -> Get ( 'Runtime/error-reporting' ) ;
+	
+	switch  ( strtolower ( $level ) )
+	   {
+		case	'debug' :
+			ini_set ( 'display_startup_errors', 1 ) ;
+			ini_set ( 'display_errors', "stderr" ) ;
+			error_reporting ( -1 ) ;
+			break ;
+			
+		case	'production' :
+			error_reporting ( 0 ) ;
+			ini_set ( 'display_startup_errors', 0 ) ;
+			ini_set ( 'display_errors', "" ) ;
+			break ;
+		
+		case	'default' :
+		default :
+			break ;
+	    }
+	    
+	// Exception and error handlers
+	\Thrak\System\Exception::Install ( ) ;
+
+	// Create shortcut file wrappers
+	\Thrak\IO\Wrappers\FileWrapper::Register ( "thrak"    	, array ( 'root' => $GLOBALS [ 'THRAK_ROOT' ] ) ) ;
+	\Thrak\IO\Wrappers\FileWrapper::Register ( "site"     	, array ( 'root' => $GLOBALS [ 'SITE_ROOT'  ] ) ) ;
+	\Thrak\IO\Wrappers\FileWrapper::Register ( "private"   	, array ( 'root' => $GLOBALS [ 'SITE_ROOT'  ] . "private" ) ) ;
+	\Thrak\IO\Wrappers\FileWrapper::Register ( "public"    	, array ( 'root' => $GLOBALS [ 'SITE_ROOT'  ] . "public"  ) ) ;
+
+	// Get ramdisks 
+	$RamDisks	=  $Configuration -> Get ( "Environment/RamDisks" ) ;
+	$ramdisk0	=  false ;
+	
+	if  ( $RamDisks )
+	   {
+		$index	=  0 ;
+		
+		foreach  ( $RamDisks  as  $ramdisk )
+		   {
+			if  ( is_dir ( $ramdisk ) )
+			   {
+				$ramdisk	=  \Thrak\IO\Path::ToUnix ( $ramdisk ) ;
+				$ramdisk	=  \Thrak\Types\String::SetEOS ( $ramdisk, '/' ) ;
+				
+				\Thrak\IO\Wrappers\FileWrapper::Register ( "ramdisk$index", array ( 'root' => $ramdisk ) ) ;
+				 
+				 if  ( ! $index ) 
+				    {
+					\Thrak\IO\Wrappers\FileWrapper::Register ( "ramdisk", array ( 'root' => $ramdisk ) ) ;
+					 $ramdisk0	=  $ramdisk ;
+				     }
+				 
+				$index ++ ;
+			    }
+		    }
+	    }
+	
+	// Volatile file wrapper - use first ramdisk entry if available
+	if  (  $ramdisk0  ===  false ) 
+		\Thrak\IO\Wrappers\VolatileFileWrapper::Register ( "volatile" ) ;
+	else
+		\Thrak\IO\Wrappers\VolatileFileWrapper::Register ( "volatile", array ( 'root' => $ramdisk0 . "volatile" ) ) ;
+	
+	// System temp directory file wrapper
+	$temp 		=  \Thrak\IO\Path::GetTempDirectory ( ) ;
+	$temp_dir 	=  \Thrak\IO\Path::ToUnix ( $Configuration -> GetExistingDirectory ( true, 0700, "Environment/thrak-temp", $temp ) ) ;
+	\Thrak\IO\Wrappers\FileWrapper::Register ( "systmp"   	, array ( 'root' => $temp		      ) ) ;
+
+	if  ( $temp_dir  ==  null )
+		error ( "Unable to locate the Thrak temp directory." ) ;
+
+	$GLOBALS [ 'THRAK_TEMP' ] 	=  $temp_dir ;
+	\Thrak\IO\Wrappers\FileWrapper::Register ( "tmp"      	, array ( 'root' => $GLOBALS [ 'THRAK_TEMP' ] ) ) ;
+
+	// Site temp directory
+	$temp_dir 	=  \Thrak\IO\Path::ToUnix ( $Configuration -> GetExistingDirectory ( true, 0700, "Environment/site-temp", 'public://tmp' ) ) ;
+
+	if  ( $temp_dir  ==  null )
+		error ( "Unable to locate the site temp directory." ) ;
+
+	$GLOBALS [ 'SITE_TEMP' ] 	=  $temp_dir ;
+	\Thrak\IO\Wrappers\FileWrapper::Register ( "usrtmp"   	, array ( 'root' => $GLOBALS [ 'SITE_TEMP'  ] ) ) ;
+
+	// Get log directory
+	$log_dir 	=  \Thrak\IO\Path::ToUnix ( $Configuration -> GetExistingDirectory ( true, 0700, "Environment/log-dir", $GLOBALS [ 'SITE_TEMP' ] . "logs" ) ) ;
+
+	if  ( $log_dir  ==  null )
+		error ( "Unable to locate the logs directory." ) ;
+
+	$GLOBALS [ 'THRAK_LOGDIR' ] 	=  $log_dir ;
+	\Thrak\IO\Wrappers\FileWrapper::Register ( "log"      	, array ( 'root' => $log_dir		      ) ) ;
+
+	// Default log file
+	if  ( isset ( $GLOBALS [ 'THRAK_LOGFILE' ] ) )
+		$log_file 	=  $GLOBALS [ 'THRAK_LOGFILE' ] ;
+	else
+		$log_file	=  \Thrak\IO\Path::RealPath ( $Configuration -> Get ( "Runtime/log-file" ) ) ;
+
+	if  ( ! $log_file )
+		$log_file 	=  $log_dir . "Thrak.log" ;
+
+	$GLOBALS [ 'THRAK_LOG' ]	=  $log_file ;
+	$GLOBALS [ 'Log' ]		=  new \Thrak\IO\Log ( $log_file ) ;
+	
+	// Set again the include path, taking into account the configuration files that just have been loaded
+	$includes		=  $Configuration -> Get ( "Environment/include-path" ) ;
+
+	if  ( count ( $includes ) )
+	   {
+		$real_includes	=  array ( ) ;
+		
+		foreach  ( $includes  as  $include )
+		   {
+			$realpath	=  \Thrak\IO\Path::RealPath ( $include ) ;
+			$realpath	=  \Thrak\IO\Path::ToUnix ( $realpath ) ;
+			$realpath	=  \Thrak\Types\String::SetEOS ( $realpath, '/' ) ;
+			
+			$real_includes []	=  $realpath ;
+		    }
+		    
+		set_include_path ( get_include_path ( ) . PATH_SEPARATOR . implode ( PATH_SEPARATOR, $real_includes ) ) ;
+	    }
+
+	// Instanciate a database object with the default database
+	$key				=  $Configuration -> Get ( 'Database/default' ) ;
+	$GLOBALS [ 'Database' ]		=  new \Thrak\Database\Database ( $key ) ;
+	
+	// Get our host ip address
+	$GLOBALS [ 'SYSTEM_IP' ]		=  gethostbyname ( php_uname ( 'n' ) ) ;
+	
+	// URL root, from a client-side point of view (in case the site is hosted into an existing domain subdirectory)
+	$url_root	=  $Configuration -> Get ( 'Environment/url-root' ) ;
+	
+	$GLOBALS [ 'THRAK_CLIENT_URL_ROOT' ]	=  ( $url_root ) ?  $url_root : "/" ;
+   } ;
+
+
+
+/*==================================================================================================
+
+	The real initialization stuff.
+
+  ==================================================================================================*/
+
+// Debug mode
+if  ( ! isset ( $THRAK_DEBUG ) )
+	$GLOBALS [ 'THRAK_DEBUG' ] 	=  false ;
+
+// Boot process startup
+$BootSetup ( false ) ;
+
+// Required include files
+require_once ( 'functions.php' ) ;
+
+// Boot process finalization
+$BootFinalize ( false ) ;
+
+// Unset variables defined so far
+unset ( $BootSetup ) ;
+unset ( $Boot ) ;
+
+if  ( ! IS_STANDALONE )
+   {
+	// Define includer and browser globals
+	$GLOBALS [ 'CSSIncluder' ]	=  new  \Thrak\Javascript\CSSIncluder ( ) ;
+	$GLOBALS [ 'JSIncluder'  ]	=  new  \Thrak\Javascript\JSIncluder ( ) ;
+	$GLOBALS [ 'Browser'	 ]	=  new  \Thrak\Internet\Browser ( ) ;
+	
+	// Create a website instance
+	require_once ( 'Web/WebSite.phpclass' ) ;
+	$WebSite	=  new  \Thrak\Web\WebSite ( ) ;
+    }
+

@@ -1,0 +1,76 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        HttpInteger.phpclass
+
+    DESCRIPTION
+        A trait to be used by http headers that require an integer value.
+
+    AUTHOR
+        Christian Vigh, 05/2015.
+
+    HISTORY
+    [Version : 1.0]    [Integer : 2015/05/27]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace  	Thrak\Network\RfcProtocols\Http\Traits ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used classes
+use	Thrak\Types\String ;
+
+
+/*==============================================================================================================
+
+    HttInteger class -
+        A trait to be used by http headers that require an integer value.
+
+  ==============================================================================================================*/
+trait  HttpInteger
+   {
+	private		$Value ;
+	
+	
+	public function  __get ( $member )
+	   {
+		switch ( strtolower ( $member ) )
+		   {
+			case	'value' :
+				return ( $this -> Value ) ;
+				
+			default :
+				return ( parent::__get  ( $member ) ) ;
+		    }
+	    }
+	
+	
+	public function  __set ( $member, $value )
+	   {
+		switch ( strtolower ( $member ) )
+		   {
+			case	'value' :
+				if  ( ! is_numeric ( $value ) )
+					self::ReportError ( "Integer \"{$this -> Field -> Value}\" is not a valid Integer/time expression." ) ;
+
+				$this -> Value		=  ( integer ) $value ;
+				$this -> Field -> Value	=  ( integer ) $value ;
+				break ;
+				
+			default :
+				parent::__set ( $member, $value ) ;
+		    }
+	    }
+		
+	
+	protected function  CheckContent ( )
+	   {
+		if  ( ! is_numeric ( $this -> Field -> Value ) )
+			self::ReportError ( "Integer \"{$this -> Field -> Value}\" is not a valid Integer/time expression." ) ;
+		
+		$this -> Value	=  $this -> Field -> Value	=  ( integer ) $this -> Field -> Value ;
+	    }
+    }

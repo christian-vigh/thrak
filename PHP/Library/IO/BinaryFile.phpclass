@@ -1,0 +1,649 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        BinaryFile.php
+
+    DESCRIPTION
+        Implements a binary file, with raw-level access.
+
+    AUTHOR
+        Christian Vigh, 10/2014.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2014/10/17]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\IO ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use 	Thrak\System\Object ;
+use	Thrak\IO\Stat ;
+use	Thrak\Types\Packer ;
+
+
+// From now, the fcntl() function is not supported on Windows. We will use flock() instead
+if  ( ! defined ( 'F_WRLCK' ) )		
+   {
+	define ( 'F_WRLCK'		, 0 ) ;
+	define ( 'F_RDLCK'		, 1 ) ;
+	define ( 'F_UNLCK'		, 2 ) ;
+	
+	define ( 'WINDOWS_DIO_FUCKING_IMPLEMENTATION'	, true ) ;
+    }
+else 
+	define ( 'WINDOWS_DIO_FUCKING_IMPLEMENTATION'	, false ) ;
+
+
+/*==============================================================================================================
+
+    BinaryFileLock class -
+        Raw-level binary file access.
+
+  ==============================================================================================================*/
+class  BinaryFileLock		extends  Object
+   {
+	public		$Start ;		// Lock start
+	public		$Length ;		// Lock length
+	public		$Whence ;		// Where to put this lock from
+	public		$Type ;			// Requested operation (locking for read/write, unlocking)
+	
+	
+	/*==============================================================================================================
+	
+	    Constructor -
+	        Builds a BinaryFileLock object.
+	
+	  ==============================================================================================================*/
+	public function  __construct ( $type, $start = 0, $length = -1, $whence = SEEK_SET )
+	   {
+		$this -> Start		=  $start ;
+		$this -> Length		=  $length ;
+		$this -> Whence		=  $whence ;
+		$this -> Type		=  $type ;
+	    }
+	
+
+	/*==============================================================================================================
+	
+	    FromArray -
+	        Creates a BinaryFileLock object from an array, possibly returned by dio_fcntl.
+	
+	  ==============================================================================================================*/
+	public static function  FromArray ( $array )
+	   {
+		$area		=  new BinaryFileLock ( ) ;
+		
+		$area -> Start	=  $array [ 'start' ] ;
+		$area -> Length	=  $array [ 'length' ] ;
+		$area -> Whence =  $array [ 'whence' ] ;
+		$area -> Type	=  $array [ 'type' ] ;
+		
+		return ( $area ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    WriteLock -
+	        Creates a BinaryFileLock object for a write lock.
+	
+	  ==============================================================================================================*/
+	public static function WriteLock ( $start = 0, $length = -1, $whence = SEEK_SET )
+	   {
+		return  ( new BinaryFileLock ( F_WRLCK, $start, $length, $whence ) ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    ReadLock -
+	        Creates a BinaryFileLock object for a read lock.
+	
+	  ==============================================================================================================*/
+	public static function ReadLock ( $start = 0, $length = -1, $whence = SEEK_SET )
+	   {
+		return  ( new BinaryFileLock ( F_RDLCK, $start, $length, $whence ) ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    UnlockLock -
+	        Creates a BinaryFileLock object for unlocking a lock.
+	
+	  ==============================================================================================================*/
+	public static function UnlockLock ( $binary_file, $start = 0, $length = -1, $whence = SEEK_SET )
+	   {
+		return  ( new BinaryFileLock ( F_UNLCK, $start, $length, $whence ) ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    Release -
+	        Makes this lock an unlock request.
+	
+	  ==============================================================================================================*/
+	public function  Release ( )
+	   {
+		$this -> Type	=  F_UNLCK ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    ToArray -
+	        Returns lock information as an array suitable for the dio_fcntl() function.
+	
+	  ==============================================================================================================*/
+	public function  ToArray ( )
+	   {
+		return 
+		   (
+			array 
+			   (
+				'start'		=>  $this -> Start,
+				'length'	=>  $this -> Length,
+				'whence'	=>  $this -> Whence,
+				'type'		=>  $this -> Type
+			    ) 
+		    ) ;
+	    }
+    }
+
+
+/*==============================================================================================================
+
+    BinaryFile class -
+        Raw-level binary file access.
+
+  ==============================================================================================================*/
+class  BinaryFile	extends	 Object 
+   {
+	// Properties
+	protected	$Filename ;		// Underlying filename
+	protected	$Fd ;			// File descriptor
+	protected	$Opened ;		// True if the file is opened
+	protected	$OpenFlags ;		// Flags specified upon opening
+	protected	$CreationMode ;		// Creation mode specified upon opening
+	private		$BytesRead ;		// Number of bytes read so far
+	private		$BytesWritten ;		// Number of bytes written
+	
+	
+	/*==============================================================================================================
+	
+	    Constructor -
+	        Builds a BinaryFile object.
+	
+	  ==============================================================================================================*/
+	public function  __construct ( $filename )
+	   {
+		$this -> Filename	=  $filename ;
+		$this -> __reset ( ) ;
+	    }
+	
+	
+	// __reset -
+	//	Re-initializes all the private properties.
+	private function  __reset  ( )
+	   {
+		$this -> Fd		=  false ;
+		$this -> Opened		=  false ;
+		$this -> OpenFlags	=  false ;
+		$this -> CreationMode	=  false ;
+		$this -> Offset		=  false ;
+		$this -> BytesRead	=  0 ;
+		$this -> BytesWritten	=  0 ;
+	    }
+	
+
+	/*==============================================================================================================
+	
+	    Getxxx -
+	        Get property values.
+	
+	  ==============================================================================================================*/
+	
+	// GetBytesRead -
+	//	Returns the number of bytes read so far.
+	public function  GetBytesRead ( )
+		{ return ( $this -> BytesRead ) ; }
+	
+	// GetBytesWritten -
+	//	Returns the number of bytes written so far.
+	public function  GetBytesWritten ( )
+		{ return ( $this -> BytesWritten ) ; }
+	
+	// GetCreationMode -
+	//	Returns the creation mode specified during opening.
+	public function  GetCreationMode ( )
+		{ return ( $this -> CreationMode ) ; }
+	
+	// GetFileDescriptor -
+	//	Returns the file descriptor.
+	public function  GetFileDescriptor ( )
+		{ return ( $this -> Fd ) ; }
+	
+	// GetFilename -
+	//	Returns the underlying filename.
+	public function  GetFilename ( )
+	   { return ( $this -> __tostring ( ) ) ; }
+	
+	// GetFileSize -
+	//	Returns the file size.
+	public function  GetFileSize ( )
+	   {
+		if  ( $this -> Opened )
+		   {
+			$stat	=  dio_stat ( $this -> Fd ) ;
+			$size	=  $stat [ 'size' ] ;
+		    }
+		else
+			$size	=  filesize ( $this -> Filename ) ;
+		
+		return ( $size ) ;
+	    }
+
+	// GetOpenFlags -
+	//	Returns the flags specified during opening.
+	public function  GetOpenFlags ( )
+		{ return ( $this -> OpenFlags ) ; }
+	
+	// GetPosition -
+	//	Returns the current file position.
+	public function  GetPosition ( )
+		{ return ( $this -> Tell ( ) ) ; }
+	
+	// GetStat -
+	//	Returns stat information for this file.
+	public function  GetStat ( )
+	   { 
+		if  ( $this -> Opened ) 
+			return ( Stat::Stat ( $this -> Fd, true ) ) ; 
+		else
+			return ( false ) ;
+	    }
+	
+	// IsOpened -
+	//	Returns a boolean indicating whether the file is opened or not.
+	public function  IsOpened ( )
+		{ return ( $this -> Opened ) ; } 
+	
+	
+	/*==============================================================================================================
+	
+	    Close -
+	        Closes the file.
+	
+	  ==============================================================================================================*/
+	public function  Close ( )
+	   {
+		if  ( $this -> Opened )
+		   {
+			dio_close ( $this -> Fd ) ;
+			$this -> __reset ( ) ;
+		    }
+		else
+			error ( new \Thrak\System\RuntimeException ( "Tried to close an already closed file, {$this -> Filename}." ) ) ;
+	    }
+
+	
+	/*==============================================================================================================
+	
+	    Duplicate -
+	        Creates a new instance of this BinaryFile with a new file descriptor.
+	
+	  ==============================================================================================================*/
+	public function  Duplicate ( )
+	   {
+		if  ( $this -> Opened )
+		   {
+			$fd	=  dio_fcntl ( $this -> Fd, F_DUPFD ) ;
+			
+			if  ( $fd  >  0 )
+			   {
+				$result		=  clone ( $this ) ;
+				$this -> Fd	=  $fd ;
+			    }
+			else 
+				$result		=  false ;
+			
+			return ( $result ) ;
+		    }
+		else
+			error ( new \Thrak\System\RuntimeException ( "Try to duplicate a file descriptor for already closed file {$this -> Filename}." ) ) ;
+	    }
+	
+
+	/*==============================================================================================================
+	
+	    Fcntl -
+	        Generic access to file control options.
+	
+	  ==============================================================================================================*/
+	public function  Fcntl ( $cmd, $args = null )
+	   {
+		if  ( ! $this -> Opened )
+			error ( new \Thrak\System\RuntimeException ( "Tried to fnctl() {$this -> Filename} but file is not opened." ) ) ;
+		else
+		   {
+			$result		=  dio_fcntl ( $this -> Fd, $cmd, $args ) ;
+			
+			return ( $result ) ;
+		    }
+	    }
+
+
+	/*==============================================================================================================
+	
+	    GetLock -
+	        When the Lock() method fails because the lock has been acquired by another process, this method can be
+		called to retrieve information about the lock in question.
+	
+	  ==============================================================================================================*/
+	public function  GetLock ( $area )
+	   {
+		if ( $this-> Opened )
+		   {
+			if  ( WINDOWS_DIO_FUCKING_IMPLEMENTATION )
+				return ( false ) ;
+			
+			$area	=  dio_fcntl ( $this -> Fd, F_GETLK ) ;
+			
+			if  ( is_array ( $area ) )
+				return  ( BinaryFileLock::FromArray ( $area ) ) ;
+			else 
+				return ( false ) ;
+		    }
+		else
+			error ( new \Thrak\System\RuntimeException ( "Tried to get lock information on a closed file, {$this -> Filename}." ) ) ;
+	    }
+	
+
+	/*==============================================================================================================
+	
+	    Lock -
+	        Puts a lock on the file.
+		If the Length property is -1, then the entire file will be locked.
+	
+	  ==============================================================================================================*/
+	public function  Lock ( $area, $wait = true )
+	   {
+		if  ( $this -> Opened )
+		   {
+			if  ( ! WINDOWS_DIO_FUCKING_IMPLEMENTATION )
+			   {
+				if  ( $area -> Length  ==  -1 )
+					$area -> Length		=  $this -> GetFileSize ( ) ;
+			
+				$result			=  dio_fcntl ( $this -> Fd, ( $wait ) ?  F_SETLKW : F_SETLK, $area -> ToArray ( ) ) ;
+			     }
+			else
+				$result			=  false ;
+			
+			return ( $result ) ;
+		    }
+		else
+			error ( new \Thrak\System\RuntimeException ( "Tried to lock a closed file, {$this -> Filename}." ) ) ;
+	    }
+	
+	    
+	/*==============================================================================================================
+	
+	    Open -
+	        Opens the file.
+	
+	  ==============================================================================================================*/
+	public function  Open  ( $flags, $mode = 0660 )
+	   {
+		if  ( $this -> Opened )
+			error ( new \Thrak\System\RuntimeException ( "Tried to open file {$this -> Filename} twice." ) ) ;
+		else
+		   {
+			$this -> Fd		=  dio_open ( $this -> Filename, $flags, $mode ) ;
+			
+			if  ( $this -> Fd  ===  false )
+				error ( new \Thrak\System\RuntimeException ( "Can't open file {$this -> Filename}." ) ) ;
+			
+			$this -> Opened		=  true ;
+			$this -> OpenFlags	=  $flags ;
+			$this -> CreationMode	=  $mode ;
+		    }
+	    }
+	
+
+	/*==============================================================================================================
+	
+	    Read -
+	        Reads $length bytes from the file.
+	
+	  ==============================================================================================================*/
+	public function  Read  ( $length = 4096 ) 
+	   {
+		if  ( $this -> Opened )
+		   {
+			if  ( $length  <=  0 )
+				return ( "" ) ;
+		
+			$result		=  dio_read ( $this -> Fd, $length ) ;
+			$this -> Offset =  $this -> Tell ( ) ;
+		
+			if  ( $result  >=  0 )
+				$this -> BytesRead	+=  $result ;
+			
+			return  ( $result ) ;
+		    }
+		else
+			error ( new \Thrak\System\RuntimeException ( "Tried to read $length bytes from a closed file." ) ) ;
+	    }
+
+	
+	/*==============================================================================================================
+	
+	    ReadDW, ReadDD, ReadDQ -
+	        Reads $count words/dwords/qwords from the file, tacking into account their endianness.
+	
+	  ==============================================================================================================*/
+	public function  ReadDW ( $count, $endianness = Packer::LITTLE_ENDIAN )
+	   {
+		$buffer		=  $this -> Read ( $count * DW_SIZE ) ;
+		$words		=  array ( ) ;
+		$index		=  0 ;
+		
+		for   ( $i = 0 ; $i  <  $count ; $i ++ )
+		   {
+			$bytes		=  substr ( $buffer, $i * DW_SIZE, DW_SIZE ) ;
+			$word		=  Packer::DWUnpack ( $bytes, $endianness ) ;
+			$words []	=  $word ;
+		    }
+		
+		return ( $words ) ;
+	    }
+
+	
+	public function  ReadDD ( $count, $endianness = Packer::LITTLE_ENDIAN )
+	   {
+		$buffer		=  $this -> Read ( $count * DD_SIZE ) ;
+		$words		=  array ( ) ;
+		$index		=  0 ;
+
+		for   ( $i = 0 ; $i  <  $count ; $i ++ )
+		   {
+			$bytes		=  substr ( $buffer, $i * DD_SIZE, DD_SIZE ) ;
+			$word 		=  Packer::DDUnpack ( $bytes, $endianness ) ;
+			$words []	=  $word ;
+		    }
+		
+		return ( $words ) ;
+	    }
+	
+	
+	public function  ReadDQ ( $count, $endianness = Packer::LITTLE_ENDIAN )
+	   {
+		$buffer		=  $this -> Read ( $count * DQ_SIZE ) ;
+		$words		=  array ( ) ;
+		$index		=  0 ;
+		
+		for   ( $i = 0 ; $i  <  $count ; $i ++ )
+		   {
+			$bytes		=  substr ( $buffer, $i * DQ_SIZE, DQ_SIZE ) ;
+			$word		=  Packer::DQUnpack ( $bytes, $endianness ) ;
+			$words []	=  $word ;
+		    }
+		
+		return ( $words ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    Seek -
+	        Positions the file pointer to the specified offset.
+	
+	  ==============================================================================================================*/
+	public function  Seek ( $offset, $whence =  SEEK_SET )
+	   {
+		if  ( ! $this -> Opened )
+			error ( new \Thrak\System\RuntimeException ( "Seek() called on closed file {$this -> Filename}." ) ) ;
+		
+		dio_seek ( $this -> Fd, $offset, $whence ) ;
+		$this -> Tell ( ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    Tell -
+	        Returns the current file position.
+	
+	  ==============================================================================================================*/
+	public function  Tell ( )
+	   {
+		if  ( $this -> Opened )
+		   {
+			$this -> Offset	=  dio_seek ( $this -> Fd, 0, SEEK_CUR ) ;
+		
+			return  ( $this -> Offset ) ;
+		    }
+		else
+			error ( new \Thrak\System\RuntimeException ( "Tried to search current seek offset on a closed file {$this -> Filename}." ) ) ;
+	    }
+
+	
+	/*==============================================================================================================
+	
+	    Truncate -
+	        Truncates the file up to the specified offset.
+	
+	  ==============================================================================================================*/
+	public function  Truncate ( $offset )
+	   {
+		if  ( $this -> Opened )
+		   {
+			if  ( WINDOWS_DIO_FUCKING_IMPLEMENTATION )
+				warning ( "dio_truncate() is not available on the Windows platform. File will not be truncated to $offset bytes." ) ;
+			else
+				dio_truncate ( $this -> Fd, $offset ) ;
+		    }
+		else
+			error ( new \Thrak\System\RuntimeException ( "Tried to search current seek offset on a close file {$this -> Filename}." ) ) ;
+	    }
+
+	
+	/*==============================================================================================================
+	
+	    Unlock -
+	        Removes the specified lock.
+	
+	  ==============================================================================================================*/
+	public function  Unlock ( $area )
+	   {
+		if  ( $this -> Opened )
+		   {
+			if  ( ! WINDOWS_DIO_FUCKING_IMPLEMENTATION )
+			   {
+				if  ( $area )
+					$areas	=  array ( $area ) ;
+				else
+					$areas	=  $this -> Locks ;
+			
+				foreach  ( $areas  as  $area )
+				   {
+					$area -> Release ( ) ;
+					dio_fcntl ( $this -> Fd, F_SETLK, $area -> ToArray ( ) ) ;
+				    }
+			    }
+		    }
+		else
+			error ( new \Thrak\System\RuntimeException ( "Tried to unlock a close file, {$this -> Filename}." ) ) ;
+	    }
+	
+
+	/*==============================================================================================================
+	
+	    Write -
+	        Writes $length bytes to the file.
+		Warning : as of PHP 5.6RC1, the $length parameter cannot be zero, otherwise nothing is written.
+	
+	  ==============================================================================================================*/
+	public function  Write  ( $data, $length = 0 ) 
+	   {
+		if  ( $this -> Opened )
+		   {
+			if  ( $length  <=  0 )
+				return ( 0 ) ;
+		
+			$result		=  dio_write ( $this -> Fd, $data, $length ) ;
+			$this -> Offset =  $this -> Tell ( ) ;
+		
+			if  ( $result  >  0 )
+				$this -> BytesWritten	+=  $result ;
+			
+			return  ( $result ) ;
+		    }
+		else
+			error ( new \Thrak\System\RuntimeException ( "Tried to write $length bytes from a closed file." ) ) ;
+	    }	
+
+	
+	/*==============================================================================================================
+	
+	    WriteDW, WriteDD, WriteDQ -
+	        Writes the words/dwords/qwords from the specified array, taking into account their endianness.
+	
+	  ==============================================================================================================*/
+	public function  WriteDW ( array  $words, $endianness = Packer::LITTLE_ENDIAN )
+	   {
+		$buffer	=  "" ;
+		
+		foreach  ( $words  as  $word )
+			$buffer	.=  Packer::DWPack ( $word, $endianness ) ;
+		
+		$this -> Write ( $buffer, count ( $words ) * DW_SIZE ) ;
+	    }
+
+	
+	public function  WriteDD ( array  $dwords, $endianness = Packer::LITTLE_ENDIAN )
+	   {
+		$buffer	=  "" ;
+		
+		foreach  ( $dwords  as  $dword )
+			$buffer	.=  Packer::DDPack ( $dword, $endianness ) ;
+		
+		$this -> Write ( $buffer, count ( $dwords ) * DD_SIZE ) ;
+	    }
+
+	
+	public function  WriteDQ ( array  $qwords, $endianness = Packer::LITTLE_ENDIAN )
+	   {
+		$buffer	=  "" ;
+		
+		foreach  ( $qwords  as  $qword )
+			$buffer	.=  Packer::DQPack ( $qword, $endianness ) ;
+		
+		$this -> Write ( $buffer, count ( $qwords ) * DQ_SIZE ) ;
+	    }
+    }

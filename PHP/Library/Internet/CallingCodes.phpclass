@@ -1,0 +1,596 @@
+<?php
+/***************************************************************************************************
+
+    NAME
+	CallingCodes.phpclass
+
+    DESCRIPTION
+	Manages the list of international calling codes.
+
+    AUTHOR
+     	Christian Vigh, 10/2011.
+
+    HISTORY
+    [Version : 1.0]	[Date : 2011/10/10]	[Author : CV]
+     	Initial version.
+
+   [Version : 2.0]	[Date : 2012/10/06]		[Author : CV]
+	Migrated to the Thrak library version 2.
+
+ ***************************************************************************************************/
+namespace  	Thrak\Internet ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces and classes
+use     Thrak\System\Object 		as  Object ;
+use 	Thrak\System\Exception 		as  Exception ;
+use 	Thrak\Internet\Xml\SimpleXML	as  SimpleXML ;
+use     Thrak\IO\Path 			as  Path ;
+use     Thrak\Types\String 		as  String ;
+
+
+/*==================================================================================================
+
+     CallingCode class -
+	Holds information about a particular country calling code.
+
+   ==================================================================================================*/
+class  CallingCode  extends  Object
+   {
+	// Country code (2 characters)
+	public		$CountryCode ;
+	// Country name
+	public		$CountryName ;
+	// Calling code(s)
+	public		$CallingCodes ;
+	// Local number length
+	public		$MinLength ;
+	public 		$MaxLength ;
+	// Phone number format
+	public		$LocalNumberFormat 		=  "%[0-]" ;
+	public		$InternationalNumberFormat 	=  "%c (%[0])%[1-]" ;
+	// Tells if this is the default country calling code
+	public 		$Default ;
+
+
+	// Constructor
+	public function  __construct ( $countryname, $countrycode, $callingcodes, $minlength, $maxlength, $local_number_format, $international_number_format, $default )
+	   {
+		// If minlength is specified, then maxlength must be specified, and vice-versa
+		if  ( ( $minlength  !==  null  &&  $maxlength  ===  null ) )
+  			throw new Exception ( "CallingCode class : if the \"min-length\" attribute is specified, then the \"max-length\" attribute is mandatory for country '$countryname'." ) ;
+
+		if  ( ( $minlength  ===  null  &&  $maxlength  !==  null ) )
+  			throw new Exception ( "CallingCode class : if the \"max-length\" attribute is specified, then the \"min-length\" attribute is mandatory for country '$countryname'." ) ;
+
+		// Min length must be less or equal than max length
+		if  ( $minlength  >  $maxlength )
+  			throw new Exception ( "CallingCode class : the \"min-length\" attribute must be less or equal to the \"max-length\" attribute for country '$countryname'." ) ;
+
+	   	// Save the values
+  		$this -> CountryCode 			=  $countrycode ;
+  		$this -> CountryName			=  $countryname ;
+  		$this -> CallingCodes			=  $callingcodes ;
+  		$this -> MinLength			=  $minlength ;
+  		$this -> MaxLength			=  $maxlength ;
+		$this -> Default 			=  $default ;
+
+  		if  ( $local_number_format )
+  			$this -> LocalNumberFormat		=  $local_number_format ;
+
+		if  ( $international_number_format )
+  			$this -> InternationalNumberFormat	=  $international_number_format ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Returns the formatted phone number.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  GetPhoneNumber  ( $number, $international = false )
+	   {
+		// Regular expressions to analyze "[x-y]" constructs
+		static $res		=  array
+		   (
+		   	'\[\s*\]',
+		   	'\[\s* (?P<minmax> \d+) \s* \]',
+		   	'\[ \s* (?P<min> \d+) \s* \- \s* (?P<max> \d+)? \s* \]',
+		   	'\[ \s* (?P<min> \d+)? \s* \- \s* (?P<max> \d+) \s* \]'
+		    ) ;
+
+	   	// Get number length and verify that it has the correct length
+	   	$number 	=  ( string ) $number ;
+	   	$number_length 	=  strlen ( $number ) ;
+
+		if  ( $this -> MinLength  !==  null  &&  $this -> MaxLength  !==  null )
+		   {
+		   	if  ( $number_length  <  $this -> MinLength  ||  $number_length  >  $this -> MaxLength )
+		   	   {
+	  	   		if  ( $this -> MinLength  ==  $this -> MaxLength )
+	  	   			$msg 	=  $this -> MinLength ;
+	  			else
+	  				$msg 	=  "from " . $this -> MinLength . " to " . $this -> MaxLength ;
+
+		   		throw new Exception ( "The phone number '$number' must have $msg digits." ) ;
+			    }
+		    }
+
+		// Get formatting string
+		$format 	=  ( $international ) ?  $this -> InternationalNumberFormat : $this -> LocalNumberFormat ;
+		$format_length 	=  strlen ( $format ) ;
+		$result 	=  "" ;
+
+		// Analyze formatting string
+		for  ( $i = 0 ; $i < $format_length ; $i ++ )
+		   {
+		   	// Get current format character and analyze it
+			$ch 	=  $format [$i] ;
+
+			switch  ( $ch )
+			   {
+			   	// %[x-y] construction
+				case	'%' :
+					// If the '%' character is not the last one...
+					if  ( $i + 1  <  $format_length )
+					   {
+					   	// Get the character after the percent sign
+					   	$i ++ ;
+					   	$ch2 	=  $format [$i] ;
+
+						// Then handle it
+						switch  ( $ch2 )
+						   {
+						   	// %c construction -
+						   	//	Substitute with the default country code (the 1st one)
+							case	'c' :
+							case	'C' :
+								$result .= $this -> CallingCodes [0] ;
+								break ;
+
+							// %[min-max] construction -
+							//	Output string will contain the input digits from 'min' to 'max'.
+							//	Both min and max are optional.
+							case	'[' :
+								$j = strpos ( $format, ']', $i + 1 ) ;
+
+								// If no closing bracket, simply add the opening bracket to the resulting string
+								if  ( $j  ===  false )
+									$result .= '[' ;
+								// Otherwise, extract the min and max digits
+								else
+								   {
+								   	// Get the "[x-y]" string
+									$brackets 	=  substr ( $format, $i, $j - $i + 1 ) ;
+									$i	 	=  $j ;
+									$found 		=  false ;
+
+									// Check for a possible match within the possible "[x-y]" constructs
+								    	foreach ( $res as  $re )
+								    	   {
+								    	   	// If a match has been found...
+										if  ( preg_match ( "/^$re\$/imsx", $brackets, $matches ) )
+										   {
+										   	// Set first the min and max values to th default ones
+											$min	=  $this -> MinLength ;
+											$max 	=  $this -> MaxLength ;
+
+											if  ( $min  ===  null )
+												$min = 0 ;
+
+											if  ( $max  ===  null )
+												$max = $number_length - 1 ;
+
+											// Then search for 'min' and 'max' entries in the preg results
+											if  ( array_key_exists ( 'min', $matches ) )
+												$min 	=  $matches [ 'min' ] ;
+
+											if  ( array_key_exists ( 'max', $matches ) )
+												$max 	=  $matches [ 'max' ] ;
+
+											// Special case for the "[x]" construct : min = max
+											if  ( array_key_exists ( 'minmax', $matches ) )
+											   {
+											   	$min 	=  $matches [ 'minmax' ] ;
+												$max 	=  $matches [ 'minmax' ] ;
+											    }
+
+											// Check that min is less or equal to max and that both min and max are below
+											// the supplied number length
+											if  ( $min  >  $max  ||  $max  >=  $number_length )
+												throw new Exception ( "Invalid phone number format '$format'." ) ;
+
+											// All done, add the supplied input number digits to the result string
+											$result .=  substr ( $number, $min, $max - $min + 1 ) ;
+											$found 	 =  true ;
+											break ;
+										    }
+								    	    }
+
+									// If the input "[x-y]" construct has no match, simply add the format substring to
+									// the output result
+					    	    			if  ( ! $found )
+					    	    				$result .= $brackets ;
+								    }
+								break ;
+
+							// The '%' character is followed by an uninterpreted character : simply add them to the output result
+							default :
+								$result .= '%' . $ch2 ;
+						    }
+					    }
+				    	// ... otherwise simply add it to the output formatted string
+	    				else
+	    					$result .= '%' ;
+					break ;
+
+				// Backslash character :
+				//	Add the following character to the output result (no interpretation on special escape sequences).
+				//	If the backslash is the last character of the input format, no interpretation takes place.
+				case 	"\\" :
+					if  ( $i + 1  <  $format_length )
+					   {
+						$i ++ ;
+						$result .= $format [$i] ;
+					    }
+					else
+						$result .= "\\" ;
+					break ;
+
+				// Other cases :
+				//	Simply add the input character to the output result.
+				default :
+					$result .= $ch ;
+			    }
+		    }
+
+		// All done, return
+	    	return ( $result ) ;
+	    }
+    }
+
+
+ /*==================================================================================================
+
+     CallingCodes class -
+	Handles a list of available country callingcodes.
+
+   ==================================================================================================*/
+class  CallingCodes  extends  Object
+			    implements  \ArrayAccess, \Countable, \Iterator
+   {
+   	// List of calling codes
+   	public		$CallingCodes ;
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Class constructor.
+
+	 --------------------------------------------------------------------------------------------*/
+   	public function  __construct  ( $file = "thrak://Data/CallingCodes.xml" )
+   	   {
+   	   	$file 	=  Path::RealPath ( $file ) ;
+
+		if  ( ! file_exists ( $file ) )
+			throw new Exception ( "CallingCodes : Country codes definition file '$file' does not exist." ) ;
+
+		$contents 	=  file_get_contents ( $file ) ;
+		$xml 		=  SimpleXML::LoadFromString ( $contents ) ;
+		$xml_array 	=  $xml -> AsArray ( ) ;
+
+		$this -> __process_xml_array ( $xml_array, $file ) ;
+   	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Processes XML data converted to an array.
+
+	 --------------------------------------------------------------------------------------------*/
+	private function  __process_xml_array ( $data, $file )
+	   {
+	   	// Check that the root tag is '<schemes>' and that no attribute has been specified.
+	   	$root 		=  $data [ 'tag' ] ;
+	   	$children       =  $data [ 'children' ] ;
+
+		if  ( strcasecmp ( $root, 'calling-codes' ) )
+			throw new Exception ( "CallingCodes class : The root tag defined in the country code definitions file '$file' must be '<calling-codes>'. '<$root>' was found instead." ) ;
+
+		if  ( count ( $data [ 'attributes' ] ) )
+			throw new Exception ( "CallingCodes class : The root tag defined in the calling code definitions file '$file' cannot have attributes." ) ;
+
+		if  ( ! count ( $children ) )
+			throw new Exception ( "CallingCodes class : The root tag in the country code definitions file '$file' has no entries." ) ;
+
+
+		// Process children
+		$cc_index = 0 ;
+
+		foreach  ( $children  as  $child )
+		   {
+		   	$cc_index ++ ;
+
+		   	// Only '<scheme>' tags are allowed inside the root tag.
+		   	$tag 		=  $child [ 'tag' ] ;
+
+		   	if  ( strcasecmp ( $tag, "calling-code" ) )
+				throw new Exception ( "CallingCodes class : The <calling-codes> tag defined in the calling code definitions file '$file' can only contain <calling-code> tags." ) ;
+
+			// Attributes and other information
+			$country			=  null ;
+			$country_code 			=  "" ;
+			$codes 				=  null ;
+			$minlength 			=  null ;
+			$maxlength 			=  null ;
+			$local_number_format 		=  null ;
+			$international_number_format 	=  null ;
+			$is_default 			=  false ;
+
+			// Get attribute definitions
+			foreach  ( $child [ 'attributes' ]  as  $attribute )
+			   {
+				$attr_name 	=  strtolower ( $attribute [ 'name' ] ) ;
+				$attr_value 	=  trim ( $attribute [ 'value' ] ) ;
+
+				switch  ( $attr_name )
+				   {
+					// Country name
+					case	'country' :
+						$country 	=  $attr_value ;
+						break ;
+
+					// Country code
+					case	'country-code' :
+						$country_code 	=  strtolower ( $attr_value ) ;
+						break ;
+
+					// Calling codes
+					case  	'code' :
+					case	'codes' :
+						$codes 	=  String::ExplodeAndTrim ( ',', $attr_value ) ;
+
+						foreach  ( $codes  as  &$code )
+						   {
+							if  ( $code [0]  !=  '+' )
+								$code = '+' . $code ;
+
+							if  ( ! preg_match ( '/^\+\d+$/', $code ) )
+								throw new Exception ( "CallingCode class : invalid calling code '$code'." ) ;
+						    }
+				    		break ;
+
+					// For the case where the same prefix serves a country and several other dependencies, the "default" attribute
+					// tells which one is to use by default when only a calling code is specified
+					case	'default' :
+						if  ( String::IsTrue ( $attr_value ) )
+							$is_default = true ;
+						else if  ( String::IsFalse ( $attr_value ) )
+							$is_default = false ;
+						else
+							throw new Exception ( "CallingCode class : invalid boolean value '$attr_value' for the '$attr_name' attribute." ) ;
+						break ;
+
+					// Number length
+					case	'length' :
+					case	'len' :
+						if  ( ! is_numeric ( $attr_value )  ||  $attr_value  <  0 )
+							throw new Exception ( "CallingCode class : invalid phone number length '$attr_value'." ) ;
+						$minlength = $attr_value ;
+						$maxlength = $attr_value ;
+						break ;
+
+					case	'min-length' :
+					case	'min-len' :
+					case	'minlength' :
+					case 	'minlen' :
+						if  ( ! is_numeric ( $attr_value )  ||  $attr_value  <  0 )
+							throw new Exception ( "CallingCode class : invalid minimum phone number length '$attr_value'." ) ;
+						$minlength = $attr_value ;
+						break ;
+
+					case	'max-length' :
+					case	'max-len' :
+					case	'maxlength' :
+					case 	'maxlen' :
+						if  ( ! is_numeric ( $attr_value )  ||  $attr_value  <  0 )
+							throw new Exception ( "CallingCode class : invalid maximum phone number length '$attr_value'." ) ;
+						$maxlength = $attr_value ;
+						break ;
+
+					// Local number format
+					case	'local-number-format' :
+					case	'number-format' :
+					case	'format' :
+						$local_number_format 	=  $attr_value ;
+						break ;
+
+					// International number format
+					case	'international-number-format' :
+					case	'intl-number-format' :
+					case	'international-format' :
+					case	'intl-format' :
+						$international_number_format	=  $attr_value ;
+						break ;
+
+					// Other attributes are banished
+					default :
+						throw new Exception ( "CallingCodes class : Invalid attribute '$attr_name' in the <country-code> tag defined in the country code definitions file '$file'." ) ;
+				    }
+			    }
+
+			// Create the new country code entry object
+			$cc = new CallingCode ( $country, $country_code, $codes, $minlength, $maxlength, $local_number_format, $international_number_format, $is_default ) ;
+			$this -> CallingCodes []	=  $cc ;
+		    }
+
+		// Sort entries by country code and country name
+		$sort_function 	=  function  ( $a, $b )
+		   {
+			$status 	=  strcmp ( $a -> CountryCode, $b -> CountryCode ) ;
+
+			if  ( ! $status )
+				$status = strcmp ( $a -> CountryName, $b -> CountryName ) ;
+
+			return ( $status ) ;
+		    } ;
+
+    		usort ( $this -> CallingCodes, $sort_function ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Finds a calling code entry.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  Find ( $calling_code )
+	   {
+	   	$result1 	=  null ;
+	   	$result2 	=  null ;
+
+	   	if  ( preg_match ( '/^\w+$/', $calling_code ) )
+		   {
+			foreach  ( $this -> CallingCodes  as  $item )
+			   {
+				if  ( ! strcasecmp ( $item -> CountryCode, $calling_code ) )
+				   {
+					$result1 	=  $item ;
+					$result2 	=  $item -> CallingCodes [0] ;
+					break ;
+				    }
+			    }
+		    }
+		else if  ( preg_match ( '/[+]?\d+/', $calling_code ) )
+		   {
+			if  ( $calling_code [0]  !=  '+' )
+				$calling_code = '+' . $calling_code ;
+
+			foreach  ( $this -> CallingCodes  as  $item )
+			   {
+				foreach  ( $item -> CallingCodes  as  $code )
+				   {
+					if  ( ! strcasecmp ( $code, $calling_code ) )
+					   {
+						$result1 	=  $item ;
+						$result2 	=  $calling_code ;
+
+						if  ( $item -> Default )
+							break 2 ;
+					    }
+				    }
+			    }
+		    }
+
+		if  ( $result1  ===  null  &&  $result2  ===  null )
+			return ( false ) ;
+		else
+			return ( array ( $result1, $result2 ) ) ;
+	    }
+
+
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/******                                                                               ******/
+	/******                         INTERFACES IMPLEMENTATION                             ******/
+	/******                                                                               ******/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+
+	/*-------------------------------------------------------------------------------------------
+
+		ArrayAccess interface implementation.
+			Used for accessing calling code entries.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  offsetSet ( $offset, $value )
+	   {
+		throw new Exception ( "Calling code entries are read-only and cannot be set." ) ;
+	    }
+
+    	public function  offsetExists ( $offset )
+    	   {
+    	   	$result 	=  $this -> Find ( $offset ) ;
+
+    	   	if  ( $result  ===  false )
+    	   		return ( false ) ;
+   		else
+   			return ( true ) ;
+	    }
+
+    	public function offsetUnset ( $offset )
+	   {
+		throw new Exception ( "Calling code entries are read-only and cannot be unset." ) ;
+	    }
+
+        public function offsetGet ( $offset )
+           {
+           	$result 	=  $this -> Find ( $offset ) ;
+
+		if  ( $result  ===  false )
+			throw new Exception ( "Invalid calling code offset '$offset'." ) ;
+
+           	return ( $result ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Countable interface implementation.
+			Counts the number of calling code definitions.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  count ( )
+	   { return ( count ( $this -> CallingCodes ) ) ; }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Iterator interface implementation.
+			Allows for looping through each calling code entry using a foreach() construct.
+
+	 --------------------------------------------------------------------------------------------*/
+	private  	$CallingCodeIndex		=  0 ;
+
+	function  current ( )
+	   {
+	   	return ( $this -> CallingCodes [ $this -> CallingCodeIndex ] ) ;
+	    }
+
+
+	function  next ( )
+	   {
+	   	$result 	=  $this -> CallingCodes [ $this -> CallingCodeIndex ] ;
+		$this -> CallingCodeIndex ++ ;
+
+		return ( $result ) ;
+	    }
+
+	function  key ( )
+	   {
+		return  ( $this -> CallingCodeIndex ) ;
+	    }
+
+
+	function  rewind ( )
+	   {
+	   	$this -> CallingCodeIndex = 0 ;
+	    }
+
+	function  valid ( )
+	   {
+	   	return ( $this -> CallingCodeIndex  <  count ( $this -> CallingCodes ) ) ;
+	    }
+
+	function  length ( )
+	   { return ( count ( $this -> CallingCodes ) ) ; }
+
+	function  getIterator ( )
+	   { return ( $this ) ; }
+    }
+
+ 

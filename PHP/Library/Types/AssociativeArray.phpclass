@@ -1,0 +1,438 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        AssociativeArray.phpclass
+
+    DESCRIPTION
+        Implements a case_insensitive associative array.
+
+    AUTHOR
+        Christian Vigh, 11/2014.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2014/11/02]     [Author : CV]
+        Initial version.
+
+    [Version : 1.0.1]  [Date : 2014/11/09]     [Author : CV]
+	 . Added a default value of empty array to the class constructor.
+ 
+    [Version : 1.0.2]  [Date : 2014/12/04]     [Author : CV]
+	. Added the ksort() method.
+ 
+    [Version : 1.0.3]  [Date : 2015/04/08]     [Author : CV]
+ 	. Added the pop() method.
+ 
+    [Version : 1.0.3]  [Date : 2015/04/08]     [Author : CV]
+	. Added the in_array(), iin_array(), in_subarray() and iin_subarray() methods.
+ 
+    [Version : 1.0.4]  [Date : 2015/05/13]     [Author : CV]
+	. Added the keyname() method.
+ 
+    [Version : 1.0.5]  [Date : 2015/06/13]     [Author : CV]
+	. Added the ReadOnly boolean property, which prevents further values to be added once the array has
+	  been initialized.
+ 
+    [Version : 1.0.6]  [Date : 2015/07/20]     [Author : CV]
+	. Changed the offsetSet() method which uselessly called __rebuild_key_list() when an existing array
+	  item was assigned a value.
+  
+ **************************************************************************************************************/
+namespace 	Thrak\Types ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use  	Thrak\System\Object ;
+
+
+/*==============================================================================================================
+
+    AssociativeArray -
+        A class for handling associative arrays whose keys are case-insensitive.
+
+  ==============================================================================================================*/
+class  AssociativeArray		extends		Object
+				implements	\ArrayAccess, \Countable, \IteratorAggregate
+   {
+	// Associative array whose items are to be accessed in a case-insensitive way
+	protected	$associative_array ;
+	// Lowercase version of associative array keys. Values are the case-sensitive original key.
+	private		$array_keys_lc ;
+	// Interface implementations of the supplied input array
+	protected	$implements_array_access	=  true,
+			$implements_countable		=  true,
+			$implements_iterator		=  true ;
+	// Strict mode : once set, not more insertions are authorized
+	// This can be used to build associative arrays with restricted values ; while initializing the array, strict mode
+	// is false, which allows to insert any values needed ; then set ReadOnly to true to prevent the caller from
+	// inserting new values
+	public		$ReadOnly			=  false ;
+	
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        Constructor
+	
+	    PROTOTYPE
+	        $aarray		=  new  AssociativeArray ( $array = [] ) ;
+	
+	    DESCRIPTION
+	        Builds an AssociativeArray object based on the supplied array argument.
+	
+	    PARAMETERS
+	        $array (array or object) -
+	                Either an array or an object implementing at least the ArrayAccess interface.
+	
+	  ==============================================================================================================*/
+	public function  __construct ( $array = [] )
+	   {
+		if (  is_object ( $array ) )
+		   {
+			$this -> implements_array_access	=  class_implements ( $array, 'ArrayAccess' ) ;
+			$this -> implements_countable		=  class_implements ( $array, 'Countable' ) ;
+			$this -> implements_iterator		=  class_implements ( $array, 'Iterator' ) ;
+		    }
+		else if  ( ! is_array ( $array ) )
+		   {
+			$this -> implements_array_access	=  false ;
+			$this -> implements_countable		=  false ;
+			$this -> implements_iterator		=  false ;
+		    }
+		
+		if  ( ! $this -> implements_array_access )
+			error ( new \Thrak\System\InvalidArgumentException ( "The supplied argument must be either an array or an object implementing at least the ArrayAccess interface." ) ) ;
+		
+		$this -> associative_array	=  $array ;
+		$this -> __rebuild_key_list ( ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    __rebuild_key_list -
+	        Rebuilds the list of lowercase array keys after a modification has occurred.
+	
+	  ==============================================================================================================*/
+	private function  __rebuild_key_list ( )
+	   {
+		$keys		=  [] ;
+				
+		foreach  ( $this -> associative_array  as  $key => $value )
+			$keys [ strtolower ( $key ) ]	=  $key ;
+		
+		$this -> array_keys_lc	=  $keys ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    __get, __set -
+	        Allow access to array items as object properties.
+	
+	  ==============================================================================================================*/
+	public function  __get ( $member )
+	   {
+		$lcmember	=  strtolower ( $member ) ;
+		
+		if  ( isset ( $this -> array_keys_lc [ $lcmember ] ) )
+			return ( $this -> associative_array [ $this -> array_keys_lc [ $lcmember ] ] ) ;
+		else
+			error ( new \Thrak\System\BadPropertyException ( "Undefined property " . __CLASS__ . "::$member." ) ) ;
+	    }
+	
+	
+	public function  __set ( $member, $value )
+	   {
+		$lcmember	=  strtolower ( $member ) ;
+		
+		if  ( isset ( $this -> array_keys_lc [ $member ] ) )
+			$this -> associative_array [ $this -> array_keys_lc [ $lcmember ] ]	=  $value ;
+		else
+			error ( new \Thrak\System\BadPropertyException ( "Undefined property " . __CLASS__ . "::$member." ) ) ;
+	    }
+	
+
+	/*==============================================================================================================
+	
+	    ensure_exists -
+	        Ensures that, within this array, all the keys specified by the $required_keys array exist. If not, tries
+		to initialize them with one of the keys specified in the $default_keys array.
+		Returns the list of missing keys or an empty array.
+	
+	  ==============================================================================================================*/
+	public function  ensure_exists ( $required_keys, $default_keys )
+	   {
+		$missing_keys	=  [] ;
+		
+		foreach  ( $required_keys  as  $required_key )
+		   {
+			$required_lc_key	=  strtolower ( $required_key ) ;
+			
+			if  ( ! isset  ( $this -> array_keys_lc [ $required_lc_key ] ) )
+			   {
+				$found	=  false ;
+					
+				foreach  ( $default_keys  as  $default_key )
+				   {
+					$default_lc_key		=  strtolower ( $default_key ) ;
+					
+					if  ( isset ( $this -> array_keys_lc [ $default_lc_key ] ) )
+					   {
+						$this [ $required_key ]		=  $this [ $default_key ] ;
+						$found				=  true ;
+						break ;
+					    }
+				    }
+				
+				if  ( ! $found )
+					$missing_keys []	=  $required_key ;
+			    }
+		    }
+		
+		return ( $missing_keys ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    keyname -
+	        Returns the name of the key associated to the specified numeric index.
+	
+	  ==============================================================================================================*/
+	public function  keyname ( $index ) 
+	   {
+		if  ( is_numeric ( $index )  &&  $index  >=  0  &&  $index  <  count ( $this -> associative_array ) )
+		   {
+			$array	=  array_keys ( $this -> associative_array ) ;
+			
+			return  ( $array [ $index ] ) ;
+		    }
+		else
+			return ( false ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    in_array, iin_array, in_subarray, iin_subarray -
+	        Checks if the specified element is in this array. iin_array() is the case-insensitive version.
+		in_subarray() and iin_subarray() search subitems referenced by $subitem and return the array index of
+		the found subitem, or false.
+	
+	  ==============================================================================================================*/
+	public function  in_array ( $value )
+	   {
+		return  ( in_array ( $value, $this -> associative_array ) ) ;
+	    }
+	
+	
+	public function  iin_array ( $value )
+	   {
+		foreach  ( $this -> associative_array  as  $item )
+		   {
+			if  ( is_scalar ( $item )  &&  ! strcasecmp ( $item, $value ) )
+				return ( true ) ;
+		    }
+		
+		return ( false ) ;
+	    }
+	
+	
+	public function  in_subarray ( $key, $value )
+	   {
+		foreach  ( $this -> associative_array  as  $index => $item )
+		   {
+			if  ( isset  ( $item [ $key ] )  &&  is_array ( $item [ $key ] ) )
+			   {
+				if  ( in_array ( $value, $item [ $key ] ) )
+					return ( $index ) ;
+			    }
+		    }
+		    
+		return ( false ) ;
+	    }
+	
+	
+	public function  iin_subarray ( $key, $value )
+	   {
+		$index	=  0 ;
+		
+		foreach  ( $this -> associative_array  as  $index => $item )
+		   {
+			if  ( isset ( $item [ $key ] )  &&  is_array ( $item [ $key ] ) )
+			   {
+				foreach  ( $item [ $key ]  as  $subitem )
+				   {
+					if  ( is_scalar ( $subitem )  &&  ! strcasecmp ( $subitem, $value ) )
+						return ( $index ) ;
+				    }
+			    }
+			
+			$index ++ ;
+		    }
+		
+		return ( false ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    ksort -
+	        Sorts the array by its keys.
+	
+	  ==============================================================================================================*/
+	public function  ksort ( )
+	   {
+		ksort ( $this -> associative_array ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    pop -
+	        Pops the last element of the array.
+	
+	  ==============================================================================================================*/
+	public function  pop ( )
+	   {
+		array_pop ( $this -> array_keys_lc ) ;
+		array_pop ( $this -> associative_array ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    ToArray -
+	        Returns the real array representation of the class.
+	
+	  ==============================================================================================================*/
+	public function  &ToArray ( )
+	   { return $this -> associative_array ; }
+	
+	
+	/*==============================================================================================================
+	
+		Countable interface implementation.
+	
+	  ==============================================================================================================*/
+	public function  count ( )
+	   {
+		if  ( $this -> implements_countable )
+			return ( count ( $this -> associative_array ) ) ; 
+		else
+			error ( new \Thrak\System\RuntimeException ( "Unsupported operation." ) ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+		IteratorAggregate interface implementation.
+	
+	  ==============================================================================================================*/
+	public function  getIterator ( )
+	   {
+		if  ( $this -> implements_iterator )
+			return ( new \ArrayIterator ( $this -> associative_array ) ) ; 
+		else 
+			error ( new \Thrak\System\RuntimeException ( "Unsupported operation." ) ) ;
+	    }
+		
+	
+	/*==============================================================================================================
+	
+		ArrayAccess interface implementation.
+	
+	  ==============================================================================================================*/
+	
+	// offsetExists -
+	//	Checks if the specified offset exists.
+	public function  offsetExists ( $member )
+	   { return ( isset ( $this -> array_keys_lc [ strtolower ( $member ) ] ) ) ; }
+	
+	
+	// offsetGet -
+	//	Return the value at the specified offset or key.
+	public function  offsetGet ( $member )
+	   {
+		$lcmember	=  strtolower ( $member ) ;
+		
+		if  ( isset ( $this -> array_keys_lc [ $lcmember ] ) )
+		   {
+			$index		=  $this -> array_keys_lc [ $lcmember ] ;
+			
+			return ( $this -> associative_array [ $index ] ) ;
+		    }
+		else
+			error ( new \Thrak\System\OutOfRangeException ( "Undefined offset $member." ) ) ;
+	    }
+	
+	
+	// offsetSet -
+	//	Sets a value at the specified offset.
+	public function  offsetSet ( $member, $value )
+	   {
+		$lcmember	=  strtolower ( $member ) ;
+		
+		if  ( $this -> ReadOnly  &&  ! isset ( $this -> array_keys_lc [ $lcmember ] ) )
+			error ( new \Thrak\System\UnauthorizedOperationException ( 'Cannot add value : array is read-only.' ) ) ;
+		
+		// $array [] = value construct : append the specified value to the existing array.
+		if  ( $member  ===  null )
+		   {
+			$this -> associative_array []	=  $value ;
+			$this -> __rebuild_key_list ( ) ;
+		    }
+		// Assignment to an existing array key : preserve its original case
+		else if  ( isset ( $this -> array_keys_lc [ $lcmember ] ) )
+		   {
+			$index		=  $this -> array_keys_lc [ $lcmember ] ;
+			
+			$this -> associative_array [ $index ]	=  $value ;
+		    }
+		// Assignment to a new key
+		else 
+		   {
+			$this -> associative_array [ $member ]	=  $value ;
+			$this -> __rebuild_key_list ( ) ;
+		    }
+	    }
+	
+	
+	// offsetUnset -
+	//	Unsets the specified array key.
+	public function  offsetUnset ( $member )
+	   {
+		if  ( $this -> ReadOnly )
+			error ( new \Thrak\System\UnauthorizedOperationException ( 'Cannot unset value : array is read-only.' ) ) ;
+		
+		$lcmember	=  strtolower ( $member ) ;
+		
+		if  ( isset ( $this -> array_keys_lc [ $lcmember ] ) )
+		   {
+			$index		=  $this -> array_keys_lc [ $lcmember ] ;
+			
+			unset ( $this -> associative_array [ $index ] ) ;
+			$this -> __rebuild_key_list ( ) ;
+		    }
+	    }
+	
+	
+	/*==============================================================================================================
+	
+		Helper functions for Debug::Dump().
+	
+	  ==============================================================================================================*/
+	public static function  __dump_debuginfo ( )
+	   {
+		return 
+		   ( 
+			[
+				'hidden'	=>  [ 'array_keys_lc', 'implements_array_access', 'implements_countable', 'implements_iterator' ],
+				'renamed'	=>  [ 'associative_array' => '[]' ]
+			 ]
+		     ) ;
+
+	    }
+	
+    }

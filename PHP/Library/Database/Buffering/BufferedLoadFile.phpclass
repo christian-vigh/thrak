@@ -1,0 +1,147 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        BufferedLoadFile.phpclass
+
+    DESCRIPTION
+        A class for buffering LOAD DATA INFILE statements.
+
+    AUTHOR
+        Christian Vigh, 07/2015.
+
+    HISTORY
+    [Version : 1.0]	[Date : 2015/07/28]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace	Thrak\Database ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces & objects
+use	Thrak\System\Object ;
+use     Thrak\IO\Path ;
+use	Thrak\Types\String ;
+use     Thrak\Types\ArrayHelpers ;
+use	Thrak\Database\BufferedOperation ;
+
+
+/*==============================================================================================================
+
+    BufferedLoadFile class -
+        A class for buffering LOAD DATA INFILE statements.
+
+  ==============================================================================================================*/
+class  BufferedLoadFile		extends  BufferedOperation
+   {
+	// List of field names
+	public		$FieldNames ;
+	
+	
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        Constructor - Builds a BufferedLoadFile object
+	
+	    PROTOTYPE
+	        $inserter	=  new BufferedLoadFile ( $table_name, $field_names, $buffer_size = 4096, 
+								$database = null ) ;
+	
+	    DESCRIPTION
+	        Builds a BufferedLoadFile object.
+	
+	    PARAMETERS
+	        $table_name (string) -
+	                Name of the underlying table.
+	  
+	 	$field_names (array of strings) -
+	 		Field names.
+	  
+	 	$buffer_size (integer) -
+	 		Number of rows to be buffered before a LOAD DATA INFILE statement is issued.
+	  
+	 	$database (Database) -
+	 		Database object. If not specified, the global $Database object will be used.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( $table_name, $field_names, $buffer_size = 4096, $database = null )
+	   {
+		global		$Database ;
+		
+		
+		parent::__construct ( $table_name, $buffer_size, $database ) ;
+		
+		$this -> FieldNames	=  $field_names ;
+	    }
+	
+	
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        CanAddToQuery - Checks if a row can be added to a query.
+	
+	    PROTOTYPE
+	        $status =	$inserter -> CanAddToQuery ( $values ) ;
+	
+	    DESCRIPTION
+	       Checks if a row can be added to a query.
+	
+	    PARAMETERS
+	        $values (array) -
+	                Array of record values to be added to the buffer (key is field name, value is field value).
+
+	    RETURN VALUE 
+		Returns true if the row can be added to the query, false otherwise.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  CanAddToQuery ( &$values ) 
+	   {
+		$this -> ValidateFieldNames ( $this -> FieldNames, $values ) ;
+  		
+		return ( true ) ;
+	    }
+	
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        BuildQuery - Builds the final query.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  BuildQuery ( )
+	   {
+		$rows	=  [] ;
+			
+		// Collect rows and build csv file contents
+		foreach  ( $this -> Rows  as  $row )
+		   {
+			$values		=  [] ;
+				
+			foreach  ( $row  as  $field )
+				$values []	=   '"' . $this -> Database -> Escape ( $field ) . '"' ;
+				
+			$rows []	=  implode ( ';', $values ) ;
+		    }
+
+		$csvfile	=  "volatile://dbbuffer." . sprintf ( '%08X', rand ( 1, PHP_INT_MAX ) ) . ".csv" ;
+		$fp		=  fopen ( $csvfile, "w" ) ;
+
+		fwrite ( $fp, implode ( "\n", $rows ) ) ;
+		fclose ( $fp ) ;
+
+		$csvfile	=  Path::ToUnix ( Path::RealPath ( $csvfile ) ) ;
+
+		// Build the query
+		$query		=  "
+					LOAD DATA LOCAL INFILE '$csvfile'
+					INTO TABLE {$this -> TableName}
+					FIELDS TERMINATED BY ';' OPTIONALLY ENCLOSED BY '\"'
+					LINES  TERMINATED BY '\\n'
+				   " ;
+		$query	.= '(' . implode ( ',', $this -> FieldNames ) . ')' ;
+
+		return ( $query ) ;
+	    }
+    }

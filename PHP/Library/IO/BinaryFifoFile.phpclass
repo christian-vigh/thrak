@@ -1,0 +1,388 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        BinaryFifoFile.phpclass
+
+    DESCRIPTION
+        A transient Fifo stack class that is stored in a file.
+	The file has the following format :
+	- bytes 0..3   : Total number of items
+	- bytes 4..7   : Item size
+	- bytes 7..11  : Next item to be popped
+	- bytes 12..*  : Stored items. The first item (ie, the one whose index is specified by the first 8 bytes
+			 of the file) 
+
+    AUTHOR
+        Christian Vigh, 10/2014.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2014/10/17]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\IO ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use 	Thrak\System\Object ;
+use	Thrak\Types\Packer ;
+
+
+/*==============================================================================================================
+
+    BinaryFifoFile class -
+        Implements a Fifo stack in a file.
+	This can be useful for example where information is scarce and you have to collect it on a periodic 
+	basis ; and when each value must be used only once.
+ *	In such a situation, a background job could collect the values and put them in the file.
+ *	Then, each consumer could obtain a new value by calling the Next() method.
+ *	This scheme is used by the RandomOrg class for example to store in a FIFO file random values retrieved 
+ *	from www.random.org.
+ *	Each time a random value is needed, it is taken from that file then forgotten.
+ * 
+ *	A binary fifo file has the following format :
+	- bytes 0..3   : Total number of items
+	- bytes 4..7   : Item size
+	- bytes 7..11  : Next item to be popped
+	- bytes 12..*  : Stored items. The first item is specified by bytes 7..11 of the file.
+
+  ==============================================================================================================*/
+class  BinaryFifoFile	extends		BinaryFile
+			implements	\Countable
+   {
+	protected	$HeaderSize	=  12 ;		// Size of header, in bytes
+	protected	$ItemSize ;			// Item size
+	
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        Constructor - Builds a binary FIFO file.
+		
+	  ==============================================================================================================*/
+	public function  __construct ( $filename, $item_size )
+	   {
+		parent::__construct ( $filename ) ;
+		
+		$this -> ItemSize	=  $item_size ;
+		
+		if  ( ! file_exists ( $filename ) ) 
+			$this -> __reset ( ) ;
+	    }	
+
+	
+	// __reset -
+	//	Recreates the file.
+	private function  __reset ( $reinit = false )
+	   {
+		parent::Open ( O_RDWR | O_CREAT ) ;
+		
+		if  ( $reinit )
+			$this -> Truncate ( 0 ) ;
+		
+		$this -> __write_header ( 0, $this -> ItemSize, 0 ) ;
+		$this -> Close ( ) ;
+	    }
+	
+	
+	// __read_header -
+	//	Reads file header.
+	private function  __read_header ( )
+	   {
+		$lock	=  BinaryFileLock::ReadLock ( 0, $this -> HeaderSize ) ;
+		$this -> Lock ( $lock ) ;
+		$this -> Seek ( 0 ) ;
+		$dd	=  $this -> ReadDD ( 3 ) ;
+		$this -> Unlock ( $lock ) ;
+		
+		return ( $dd ) ;
+	    }
+	
+	
+	// __write_header -
+	//	Writes the file header.
+	public function  __write_header ( $count, $item_size, $next )
+	   {
+		$data	=  array ( $count, $item_size, $next ) ;
+		$lock	=  BinaryFileLock::WriteLock ( 0, $this -> HeaderSize ) ;
+		$this -> Lock ( $lock ) ;
+		$this -> Seek ( 0 ) ;
+		$this -> WriteDD ( $data ) ;
+		$this -> Unlock ( $lock ) ;
+	    }
+	
+
+	// __move_data -
+	//	Moves the available data at the beginning of the fifo file.
+	//	The "next" counter is reset to zero, to point to the first element of moved data.
+	//	If $update_count is true, the "count" entry is also updated.
+	public function  __move_data ( $count, $item_size, $next, $update_count = true )
+	   {
+		// Don't do anything if $next is zero
+		if  ( ! $next )
+			return ;
+		
+		// Compute origin and destination offsets for the move
+		$from_offset	=  $this -> HeaderSize + ( $next * $item_size ) ;
+		$to_offset	=  $this -> HeaderSize ;
+			
+		// Compute the new data size and element count
+		$new_count	=  ( $count - $next ) ;
+		$data_size	=  $new_count * $item_size ;
+			
+		// Move the data
+		$this -> Seek ( $from_offset ) ;
+		$moved_data	=  $this -> Read ( $data_size ) ;
+			
+		$this -> Seek ( $to_offset ) ;
+		$this -> Write ( $moved_data, strlen ( $moved_data ) ) ;
+			
+		// Truncate the file
+		$this -> Truncate ( $data_size + $this -> HeaderSize ) ;
+			
+		// Update the 'Next' pointer
+		$this -> Seek ( 8 ) ;
+		$this -> WriteDD ( array ( 0 ) ) ;
+		
+		// If needed, update item count
+		if  ( $update_count )
+		   {
+			$this -> Seek ( 0 ) ;
+			$this -> WriteDD ( array ( $new_count ) ) ;
+		    }
+		
+		// Truncate file to new size
+		$this -> Truncate ( $this -> HeaderSize + $data_size ) ;
+		
+		// All done, return new count
+		$count		=  $new_count ;			
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    GetHeader -
+	        Returns header information.
+	
+	  ==============================================================================================================*/
+	public function  GetHeader ( )
+	   {
+		$this -> Open ( O_RDONLY ) ;
+		$result = $this -> __read_header ( ) ;
+		$this -> Close ( ) ;
+		
+		return  ( $result ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    Open -
+	        Opens the file and checks header validity.
+	
+	  ==============================================================================================================*/
+	public function  Open ( $flags, $mode = 0660 )
+	   {
+		parent::Open ( $flags, $mode ) ;
+		
+		list ( $count, $item_size, $next )	=  $this -> __read_header ( ) ;
+		$filesize				=  $this -> GetFileSize ( ) ;
+		$expected_filesize			=  $this -> HeaderSize + ( $count * $item_size ) ;
+		
+		if  ( $expected_filesize  !=  $filesize )
+			error ( new \Thrak\System\RuntimeException ( "Expected file size ($expected_filesize) differs from actual file size ($filesize) for file {$this -> Filename}." ) ) ;
+		
+		if  ( $next  >  $count )
+			error ( new \Thrak\System\RuntimeException ( "Next item (#$next) exceeds the current number of items ($count) stored in file {$this -> Filename}." ) ) ;
+		
+		if  ( $item_size  !=  $this -> ItemSize )
+			error ( new \Thrak\System\RuntimeException ( "Specified item size ({$this -> ItemSize}) does not match file the item size $item_size stored in file " .
+					$this -> Filename . "." ) ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    BatchAppend -
+	        Append values to the file.
+	
+	  ==============================================================================================================*/
+	public function  BatchAppend ( $values, $max_unused_values = 1048576 )
+	   {
+		// Build a buffer containing the values
+		$buffer					=  implode ( "", $values ) ;
+		$length					=  strlen ( $buffer ) ;
+		$value_count				=  count ( $values ) ;
+		
+		// Open it and get header information
+		$this -> Open ( O_RDWR | O_CREAT ) ;
+		list ( $count, $item_size, $next )	=  $this -> __read_header ( ) ;
+
+		// Lock the entire file
+		$lock					=  BinaryFileLock::WriteLock ( 0 ) ;
+		$this -> Lock ( $lock ) ;
+		
+		// If unused values exceed the specified parameter, rebuild the file
+		if  ( $next  >  $max_unused_values )
+		   {
+			$count	=  $this -> __move_data ( $count, $item_size, $next, false ) ;
+		    }
+		
+		// Go pas the last stored element
+		$this -> Seek ( $this -> HeaderSize + ( $count * $item_size ) ) ;
+		$this -> Write ( $buffer, $length ) ;
+
+		// Update total value count
+		$count +=  $value_count ;
+		$this -> Seek ( 0 ) ;
+		$this -> WriteDD ( array ( $count ) ) ;
+		
+		// Unlock and close
+		$this -> Unlock ( $lock ) ;
+		$this -> Close ( ) ;
+	    }
+
+	
+	/*==============================================================================================================
+	
+	    BatchCompress -
+	        Removes unused values (well, already fetched values) from the fifo file by copying unused data over it,
+		and update the "next" pointer accordingly.
+		The item count field is also updated.
+	
+	  ==============================================================================================================*/
+	public function  BatchCompress ( )
+	   {
+		// Open it and get header information
+		$this -> Open ( O_RDWR | O_CREAT ) ;
+		list ( $count, $item_size, $next )	=  $this -> __read_header ( ) ;
+
+		// Lock the entire file
+		$lock					=  BinaryFileLock::WriteLock ( 0 ) ;
+		$this -> Lock ( $lock ) ;
+		
+		// Rebuild the file
+		$this -> __move_data ( $count, $item_size, $next, true ) ;
+		
+		// Unlock and close
+		$this -> Unlock ( $lock ) ;
+		$this -> Close ( ) ;
+	    }
+
+	
+	/*==============================================================================================================
+	
+	    Next -
+	        Retrieves next available value.
+		Returns false if no more value is available.
+	
+	  ==============================================================================================================*/
+	public function  Next  ( )
+	   {
+		// Open the fil and get the header
+		$this -> Open ( O_RDWR ) ;
+		list ( $count, $item_size, $next )	=  $this -> __read_header ( ) ;
+		
+		// Compute the offset of the next item
+		$offset					=  ( $next * $item_size ) + $this -> HeaderSize ;
+		
+		// Lock header portion
+		$lock					=  BinaryFileLock::WriteLock ( 0, $this -> HeaderSize ) ;
+		$this -> Lock ( $lock ) ;
+
+		// Get value
+		$this -> Seek ( $offset ) ;
+		$value	=  $this -> Read ( $item_size ) ;
+		
+		// Write the index of the next item to be retrieved
+		$this -> Seek ( 8 ) ;
+		$this -> WriteDD ( array ( $next + 1 ) ) ;
+		
+		// Close the file
+		$this -> Close ( ) ;
+
+		// All done, return
+		return ( $value ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    Reset -
+	        Resets file contents.
+	
+	  ==============================================================================================================*/
+	public function  Reset ( )
+	   { $this -> __reset ( ) ; }
+	
+	
+	/*==============================================================================================================
+	
+	    Getxxx -
+	        Get property values.
+	
+	  ==============================================================================================================*/
+	public function  GetHeaderSize ( )
+	   { return ( $this -> HeaderSize ) ; }
+	
+	public function  GetItemSize ( )
+	   { return ( $this -> ItemSize ) ; }
+	
+	
+	/*==============================================================================================================
+	
+		Countable interface.
+	
+	  ==============================================================================================================*/
+	public function  count ( )
+	   {
+		return ( $this -> __read_dd ( 0 ) ) ;
+	    }
+    }
+
+
+/*==============================================================================================================
+
+    DWordFifoFile -
+        Encapsulates a FIFO file that contains DWORDs.
+
+  ==============================================================================================================*/
+class  DWordFifoFile	extends  BinaryFifoFile 
+   {
+	// Constructor -
+	//	Builds the object, create the file if necessary
+	public function  __construct ( $filename )
+	   {
+		parent::__construct ( $filename, 4 ) ;
+	    }
+	
+	
+	// BatchAppend -
+	//	Appends new values to the file.
+	public function  BatchAppend ( $values, $max_unused_values = 1048576 )
+	   {
+		$array	=  array ( ) ;
+		
+		foreach  ( $values  as  $value )
+			$array []	=  Packer::DDPack ( $value ) ;
+		
+		parent::BatchAppend ( $array, $max_unused_values ) ;
+	    }
+	
+	
+	// Next -
+	//	Retrieves the next available value.
+	//	Returns false if no more value available.
+	public function  Next ( )
+	   {
+		$value		=  parent::Next ( ) ;
+		
+		if  ( $value  ===  false )
+			return ( false ) ;
+		
+		$result		=  Packer::DDUnpack ( $value ) ;
+		
+		return ( $result ) ;
+	    }
+    }

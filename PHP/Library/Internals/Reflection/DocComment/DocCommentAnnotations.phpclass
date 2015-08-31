@@ -1,0 +1,1120 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        DocCommentAnnotations.phpclass
+
+    DESCRIPTION
+        Implements a list of docComment annotations.
+
+    AUTHOR
+        Christian Vigh, 11/2014.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2014/11/09]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Reflection ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use	Thrak\System\Object ;
+use	Thrak\Reflection\DocCommentElements ;
+use	Thrak\Types\AssociativeArray ;
+
+
+/*==============================================================================================================
+
+    DocCommentAnnotations class -
+        Implements a list of docComment annotations.
+
+  ==============================================================================================================*/
+class  DocCommentAnnotations		extends		DocCommentElements
+   {
+	// Summary and description text
+	public		$Summary ;
+	public		$Description ;
+	
+	// Annotation parsers
+	private static	$Parsers	=  
+	   [
+		'*'			=>  '__generic_annotation_parser',
+		'api'			=>  '__api_annotation_parser',
+		'author'		=>  '__author_annotation_parser',
+		'category'		=>  '__category_annotation_parser',
+		'copyright'		=>  '__copyright_annotation_parser',
+		'deprecated'		=>  '__deprecated_annotation_parser',
+		'example'		=>  '__example_annotation_parser',
+		'global'		=>  '__global_annotation_parser',
+		'ignore'		=>  '__ignore_annotation_parser',
+		'internal'		=>  '__internal_annotation_parser',
+		'license'		=>  '__license_annotation_parser',
+		'link'			=>  '__link_annotation_parser',
+		'method'		=>  '__method_annotation_parser',
+		'package'		=>  '__package_annotation_parser',
+		'param'			=>  '__param_annotation_parser',
+		'property'		=>  '__property_annotation_parser',
+		'property-read'		=>  '__property_read_annotation_parser',
+		'property-write'	=>  '__property_write_annotation_parser',
+		'return'		=>  '__return_annotation_parser',
+		'see'			=>  '__see_annotation_parser',
+		'since'			=>  '__since_annotation_parser',
+		'source'		=>  '__source_annotation_parser',
+		'subpackage'		=>  '__subpackage_annotation_parser',
+		'throws'		=>  '__throws_annotation_parser',
+		'todo'			=>  '__todo_annotation_parser',
+		'uses'			=>  '__uses_annotation_parser',
+		'var'			=>  '__var_annotation_parser',
+		'version'		=>  '__version_annotation_parser',
+		'fix'			=>  '__fix_annotation_parser'
+	    ] ;
+
+	
+	/*==============================================================================================================
+	
+	    Constructor -
+	        Initialize the object, providing the parent with the suffix needed for custom Annotation classes.
+	
+	  ==============================================================================================================*/
+	public function  __construct ( &$doc_comment )
+	   {
+		$this -> AddNamespace ( '\Thrak\Reflection\Annotations' ) ;
+		parent::__construct ( 'Annotation', $doc_comment ) ;
+	    }
+	
+
+	/*==============================================================================================================
+	
+	    getSummary, getDescription -
+	        Returns the summary and description parts of a docComment.
+	  
+	 	As described in PhpDocumentor, a summary is a line or group of consecutive non-empty lines that are 
+	 	either ended with a dot or followed by a blank line.
+	
+	  ==============================================================================================================*/
+	public function  getSummary ( )
+	   { return ( $this -> Summary ) ; }
+	
+	public function  getDescription ( )
+	   { return ( $this -> Description ) ; }
+	
+	
+	/*==============================================================================================================
+	
+	    GetElements -
+	        To be implemeted by derived class. Called by the DocCommentElements base class to retrieve Annotation
+		specifications from the docComment block.
+		Processed Annotation lines must be removed from the supplied docComment string.
+	
+	  ==============================================================================================================*/
+	protected function  GetElements ( &$docstr )
+	   {
+		// Get the supplied docComment line
+		$lines			=  explode ( "\n", $docstr ) ;
+		
+		// Keep unprocessed lines into this array
+		$untouched_lines	=  [] ;
+		
+		// Look for a summary text : a group of consecutive lines either ended by ".", or followed
+		// by an empty line
+		$index			=  0 ;
+		$count			=  count ( $lines ) ;
+		
+		while  ( $index  <  $count  &&  trim ( $lines [ $index ] )  ==  "" )
+			$index ++ ;
+		
+		$summary_lines		=  [] ;
+		
+		while  ( $index  <  $count )
+		   {
+			$line	=  trim ( $lines [ $index ] ) ;
+			
+			if (  ! $line )
+				break ;
+			
+			$summary_lines []	=  $line ;
+			
+			if  ( $line [ strlen ( $line ) - 1 ]  ==  '.' )
+				break ;
+			
+			$index ++ ;
+		    }
+		
+		$index ++ ;
+		$this -> Summary	=  implode ( "\n", $summary_lines ) ;
+		
+		// Now, get the description text
+		$description_lines	=  [] ;
+		
+		while  ( $index  <  $count )
+		   {
+			$line	=  trim ( $lines [ $index ] ) ;
+			
+			if  ( preg_match ( '/\s*@\w+/imsx', $line ) )
+				break ;
+			
+			$description_lines []	=  $line ;
+			
+			$index ++ ;
+		    }
+		
+		$this -> Description	=  trim ( implode ( "\n", $description_lines ) ) ;
+
+		// Loop through docComment lines, trying to find @constructs
+		for ( $i = $index ; $i  <  $count ; $i ++ )
+		   {
+			$line	=  trim ( $lines [ $i ] ) ;
+
+			if  ( preg_match ( '# \s* @(?P<annotation> [\w\-]+) \s* (?P<remainder> .*)?#imsx', $line, $match ) )
+			   {
+				$annotation	=  $match [ 'annotation' ] ;
+				$annotation_lc	=  strtolower ( $annotation ) ;
+				$remainder	=  trim ( $match [ 'remainder' ] ) ;
+				
+				// A small kludge : use the standard DocCommentAnnotation class if no parser is defined for this
+				// attribute
+				if  ( isset ( self::$Parsers [ $annotation_lc ] ) )
+				   {
+					$parser		=  self::$Parsers [ $annotation_lc ] ;
+					$class		=  null ;
+				    }
+				else
+				   {
+					$parser		=  self::$Parsers [ '*' ] ;
+					$class		=  '\Thrak\Reflection\DocCommentAnnotation' ;
+				    }
+				
+				$params		=  call_user_func_array ( [ $this, $parser ], [ $annotation_lc, $remainder ] ) ;
+				
+				$this -> Add ( $annotation_lc, $params, $class ) ;
+			    }
+		    }
+
+		// Return unprocessed lines
+		$docstr		=  implode ( "\n", $untouched_lines ) ;
+	    }
+
+	
+	/*==============================================================================================================
+	
+	        Parsers.
+	
+	  ==============================================================================================================*/
+	private static	$VersionRegex	=  '
+						(?P<version>
+						   (
+							(?P<major> \d+) 
+							(
+								\.
+								(?P<minor> \d+ )
+								(
+									\.
+									(?P<release> \d+ )
+									(
+										\.
+										(?P<build> \d+)
+									 )?
+								 )?
+							 )?
+							(
+								-
+								(?P<metadata> [^\s]+)
+							 )?
+						     ) |
+						    (
+							(?P<vcs> [^\s:]+)
+							\s* : \s* \$
+							(?P<vector> [^$]*)
+							\$
+						     )
+						 )
+					   ' ;
+	
+	// Generic parser - Creates a 'comment' field with the remaining text
+	private function  __generic_annotation_parser ( $name, $remainder )
+	   { return ( [ 'comment' => $remainder ] ) ; }
+	
+	
+	// @api parser :
+	//	Declares that the docBlock is followed by a public Api.
+	//	Nothing is supposed to follow the @api annotation, but it will be stored in a 'comment' property.
+	private function  __api_annotation_parser ( $name, $remainder )
+	   { return ( [ 'comment' => $remainder ] ) ; }	
+	
+	// @author parser :
+	//	Specifies author and email address.
+	// Usage :
+	//	@author [name...] [<email>]
+	// Notes :
+	//	Both 'name' and 'email' are considered to be optional here.
+	//	Email address is not strictly validated.
+	private function  __author_annotation_parser ( $name, $remainder )
+	   {
+		static		$re	=  '#
+						(?P<name> [^\[<]*)?
+						(
+							(?P<email1> \[ .*? \]) |
+							(?P<email2> \< .*? \>)
+						 )?
+					    #imsx' ;
+						 
+		if  ( preg_match ( $re, $remainder, $match ) )
+		   {
+			$name	=  trim ( $match [ 'name' ] ) ;
+			$email	=  ( $match [ 'email1' ] ) ?  $match [ 'email1' ] : $match [ 'email2' ] ;
+		    }
+		else
+		   {
+			$name	=  $remainder ;
+			$email	=  '' ;
+		    }
+		
+		return ( [ 'name' => $name, 'email' => $email ] ) ;
+	    }
+	
+	
+	// @category parser :
+	//	(deprecated) Element category.
+	// Usage :
+	//	@category name
+	private function  __category_annotation_parser ( $name, $remainder )
+	   { return ( [ 'name' => $remainder ] ) ; }	
+
+	
+	// @copyright parser :
+	//	Copyright.
+	// Usage :
+	//	@copyright description
+	private function  __copyright_annotation_parser ( $name, $remainder )
+	   { return ( [ 'description' => $remainder ] ) ; }	
+
+	// @deprecated parser :
+	//	Describes element that will be deprecated in the specified version.
+	// Usage :
+	//	@deprecated [version] [description]
+	private function  __deprecated_annotation_parser ( $name, $remainder )
+	   {
+		$re	=  '#
+				(' . self::$VersionRegex . ')?
+				\s*
+				(?P<description> .*)?
+			    #imsx' ;
+						
+		if  ( preg_match ( $re, $remainder, $match ) )
+		   {
+			$params		=
+			   [
+				'major'			=>  $match [ 'major' ],
+				'minor'			=>  $match [ 'minor' ],
+				'release'		=>  $match [ 'release' ],
+				'build'			=>  $match [ 'build' ],
+				'buildMetadata'		=>  $match [ 'metadata' ],
+				'vcs'			=>  $match [ 'vcs' ],
+				'vcsVector'		=>  $match [ 'vector' ],
+				'description'		=>  $match [ 'description' ]
+			    ] ;
+		    }
+		else
+		   {
+			$params		=  
+			   [
+				'major'			=>  "",
+				'minor'			=>  "",
+				'release'		=>  "",
+				'build'			=>  "",
+				'buildMetadata'		=>  "",
+				'vcs'			=>  "",
+				'vcsVector'		=>  "",
+				'description'		=>  $remainder
+			    ] ;
+		    }
+		
+		return ( $params ) ;
+	    }
+
+	
+	// @example parser :
+	//	Describes a reference to an example source file.
+	// Usage :
+	//	@example [location] [ start-line [count] ] [description]
+	private function  __example_annotation_parser ( $name, $remainder )
+	   {
+		static		$re	=  '#
+						\s*
+						(?P<location>
+							[^\s]+
+						 )?
+						(
+							\s+
+							(?P<start> \d+)
+							\s+
+							(?P<count> \d+)?
+						 )?
+						\s*
+						(?P<description> .*)
+					    #imsx' ;
+						
+		if  ( preg_match ( $re, $remainder, $match ) )
+		   {
+			$params		=
+			   [
+				'location'	=>  $match [ 'location' ],
+				'startLine'	=>  ( $match [ 'start' ]  !==  "" ) ?  $match [ 'start' ] : false,
+				'lineCount'	=>  ( $match [ 'count' ]  !==  "" ) ?  $match [ 'count' ] : false,
+				'description'	=>  $match [ 'description' ] 
+			    ] ;
+		    }
+		else
+		   {
+			$params		=
+			   [
+				'location'	=>  "",
+				'startLine'	=>  false,
+				'lineCount'	=>  false,
+				'description'	=>  $remainder
+			    ] ;
+		    }
+		
+		return ( $params ) ;
+	    }
+
+	
+	// @global parser :
+	//	Declares a global variable.
+	// Usage :
+	//	@global name
+	//	@global description
+	private function  __global_annotation_parser ( $name, $remainder )
+	   {
+		if  ( preg_match ( '#(?P<name> \w+) | (?P<description> .*) #imsx', $remainder, $match ) )
+		   {
+			if  ( $match [ 'name' ] )
+				$params		=  [ 'name' => $match [ 'name' ], 'description' => '' ] ;
+			else 
+				$params		=  [ 'name' => '', 'description' => $match [ 'description' ] ] ;
+		    }
+		else 
+			$params		=  [ 'name' => '', 'description' => $remainder ] ;
+		
+		return ( $params ) ;
+	    }
+	
+	// @ignore parser :
+	//	Identifies code not to be processed.
+	// Usage :
+	//	@ignore description
+	private function  __ignore_annotation_parser ( $name, $remainder )
+	   { return ( [ 'description' => $remainder ] ) ; }	
+
+	
+	// @internal parser :
+	//	Identifies code to be internal to the application.
+	// Usage :
+	//	@internal [description]
+	private function  __internal_annotation_parser ( $name, $remainder )
+	   { return ( [ 'description' => $remainder ] ) ; }	
+
+	
+	// @license parser :
+	//	Specifies a link to the license or a license type.
+	// Usage :
+	//	@license [url] [name]
+	private function  __license_annotation_parser ( $name, $remainder )
+	   {
+		static	$re	=  '#
+					(?P<url> \w+://[^\s]+)?
+					\s*
+					(?P<name> .*)?
+				    #imsx' ;
+					
+		if  ( preg_match ( $re, $remainder, $match ) )
+			$params		=  [ 'name' => $match [ 'name' ], 'url' => $match [ 'url' ] ] ;
+		else 
+			$params		=  [ 'name' => $remainder, 'url' => "" ] ;
+		
+		return ( $params ) ;
+	    }
+
+	
+	// @link parser :
+	//	Specifies a custom link to an external website.
+	// Usage :
+	//	@link [url] [description]
+	private function  __link_annotation_parser ( $name, $remainder )
+	   {
+		static	$re	=  '#
+					(?P<url> \w+://[^\s]+)?
+					\s*
+					(?P<description> .*)?
+				    #imsx' ;
+					
+		if  ( preg_match ( $re, $remainder, $match ) )
+			$params		=  [ 'description' => $match [ 'description' ], 'url' => $match [ 'url' ] ] ;
+		else 
+			$params		=  [ 'description' => $remainder, 'url' => "" ] ;
+		
+		return ( $params ) ;
+	    }
+
+	
+	// @method parser :
+	//	Specifies the signature of a method.
+	// Usage :
+	//	@method [return type] [name]([[type] [parameter]<, ...>]) [<description>]
+	private function  __method_annotation_parser ( $name, $remainder )
+	   {
+		static	$re	=  '#
+					(?P<retval> \w+)?
+					\s*
+					(?P<name> \w+)
+					\s*
+					\(
+						(?P<parameters> [^\)]*)
+					\)
+					\s*
+					(?P<description> .*)
+				    #imsx' ;
+		static  $pre	=  '#^
+					(?P<ptype> \w+)?
+					\s*
+					(?P<pname>  [$\w]\w*)
+				    $#imsx' ;
+					
+		if  ( preg_match ( $re, $remainder, $match ) )
+		   {
+			$pdefs		=  explode ( ",", $match [ 'parameters' ] ) ;
+			$parameters	=  [] ;
+			
+			foreach  ( $pdefs  as  $pdef )
+			   {
+				$pdef	=  trim ( $pdef ) ;
+				preg_match ( $pre, $pdef, $pmatch ) ;
+				$parameters [ $pmatch [ 'pname' ] ]	=  $pmatch [ 'ptype' ] ;
+			    }
+			
+			$params		=  
+			   [
+				'returns'	=>  $match [ 'retval' ],
+				'name'		=>  $match [ 'name' ],
+				'parameters'	=>  $parameters,
+				'description'	=>  $match [ 'description' ]
+			    ] ;
+		    }
+		else
+			$params		=  
+			   [
+				'returns'	=>  "",
+				'name'		=>  "",
+				'parameters'	=>  [],
+				'description'	=>  ""
+			    ] ;
+		
+		return ( $params ) ;
+	    }
+
+	
+	// @package parser :
+	//	Specifies the package to which the block of code belongs.
+	// Usage :
+	//	@package [level 1]\[level 2]\[etc.]
+	private function  __package_annotation_parser ( $name, $remainder )
+	   {
+		static	$re	=  '#^
+					(?P<name> \w+ ( \\\\ \w+)* )
+					(
+						\s+
+						(?P<description> .*)
+					 )?
+				    $#imsx' ;
+		
+		if  ( $remainder [0]  ==  "\\" )
+			$remainder	=  substr ( $remainder, 1 ) ;
+		
+		$remainder	=  str_replace ( [ "\\\\", "/" ], "\\", $remainder ) ;
+		
+		if  ( preg_match ( $re, $remainder, $match ) )
+		   {
+			$packages	=  explode ( "\\", $match [ 'name' ] ) ;
+		
+			$params		=
+			   [
+				'package'	=>  $match [ 'name' ],
+				'components'	=>  $packages,
+				'description'	=>  $match [ 'description' ]
+			    ] ;
+		    }
+		else
+			$params		=  [ 'package' => "", 'components' => [], 'description' => $remainder ] ;
+		
+		return ( $params ) ;
+	    }
+
+	
+	// @param parser :
+	//	Gives information about a parameter.
+	// Usage :
+	//	@param [Type] [name] [<description>]
+	private function  __param_annotation_parser ( $name, $remainder )
+	   {
+		static	$re	=  '#^
+					(?P<word1> \$? \w+) 
+					(
+						\s+
+						(?P<word2> \$? \w+)
+					 )
+					(
+						\s+
+						(?P<description> .*)
+					 )?
+				    $#imsx' ;
+		
+		if  ( preg_match ( $re, $remainder, $match ) )
+		   {
+			if  ( $match [ 'word2' ]  ==  "" )
+			   {
+				$type	=  "" ;
+				$name	=  $match [ 'word1' ] ;
+			    }
+			else
+			   {
+				$type	=  $match [ 'word1' ] ;
+				$name	=  $match [ 'word2' ] ;
+			    }
+			
+			$params		=  [ 'type' => $type, 'name' => $name, 'description' => $match [ 'description' ] ] ;
+		    }
+		else 
+			$params		=  [ 'type' => "", 'name' => "", 'description' => $remainder ] ;
+		
+		return ( $params ) ;
+	    }
+
+	
+	// @property parser :
+	//	Gives information about a property.
+	// Usage :
+	//	@property [Type] [name] [<description>]
+	private function  __property_annotation_parser ( $name, $remainder )
+	   {
+		static	$re	=  '#^
+					(?P<word1> \$? \w+) 
+					(
+						\s+
+						(?P<word2> \$? \w+)
+					 )
+					(
+						\s+
+						(?P<description> .*)
+					 )?
+				    $#imsx' ;
+		
+		if  ( preg_match ( $re, $remainder, $match ) )
+		   {
+			if  ( $match [ 'word2' ]  ==  "" )
+			   {
+				$type	=  "" ;
+				$name	=  $match [ 'word1' ] ;
+			    }
+			else
+			   {
+				$type	=  $match [ 'word1' ] ;
+				$name	=  $match [ 'word2' ] ;
+			    }
+			
+			$params		=  [ 'type' => $type, 'name' => $name, 'description' => $match [ 'description' ] ] ;
+		    }
+		else 
+			$params		=  [ 'type' => "", 'name' => "", 'description' => $remainder ] ;
+		
+		return ( $params ) ;
+	    }
+
+	
+	// @property-read parser :
+	//	Gives information about a property (when implemented in magic __get function).
+	// Usage :
+	//	@property-read [Type] [name] [<description>]
+	private function  __property_read_annotation_parser ( $name, $remainder )
+	   {
+		static	$re	=  '#^
+					(?P<word1> \$? \w+) 
+					(
+						\s+
+						(?P<word2> \$? \w+)
+					 )
+					(
+						\s+
+						(?P<description> .*)
+					 )?
+				    $#imsx' ;
+		
+		if  ( preg_match ( $re, $remainder, $match ) )
+		   {
+			if  ( $match [ 'word2' ]  ==  "" )
+			   {
+				$type	=  "" ;
+				$name	=  $match [ 'word1' ] ;
+			    }
+			else
+			   {
+				$type	=  $match [ 'word1' ] ;
+				$name	=  $match [ 'word2' ] ;
+			    }
+			
+			$params		=  [ 'type' => $type, 'name' => $name, 'description' => $match [ 'description' ] ] ;
+		    }
+		else 
+			$params		=  [ 'type' => "", 'name' => "", 'description' => $remainder ] ;
+		
+		return ( $params ) ;
+	    }
+
+	
+
+	
+	// @property-write parser :
+	//	Gives information about a property (when implemented in magic __set function).
+	// Usage :
+	//	@property-write [Type] [name] [<description>]
+	private function  __property_write_annotation_parser ( $name, $remainder )
+	   {
+		static	$re	=  '#^
+					(?P<word1> \$? \w+) 
+					(
+						\s+
+						(?P<word2> \$? \w+)
+					 )
+					(
+						\s+
+						(?P<description> .*)
+					 )?
+				    $#imsx' ;
+		
+		if  ( preg_match ( $re, $remainder, $match ) )
+		   {
+			if  ( $match [ 'word2' ]  ==  "" )
+			   {
+				$type	=  "" ;
+				$name	=  $match [ 'word1' ] ;
+			    }
+			else
+			   {
+				$type	=  $match [ 'word1' ] ;
+				$name	=  $match [ 'word2' ] ;
+			    }
+			
+			$params		=  [ 'type' => $type, 'name' => $name, 'description' => $match [ 'description' ] ] ;
+		    }
+		else 
+			$params		=  [ 'type' => "", 'name' => "", 'description' => $remainder ] ;
+		
+		return ( $params ) ;
+	    }
+
+	
+	// @return parser :
+	//	Gives information about a function return value.
+	// Usage :
+	//	@return [Type] [<description>]
+	private function  __return_annotation_parser ( $name, $remainder )
+	   {
+		static	$re	=  '#^
+					(?P<type>  \w+) 
+					(
+						\s+
+						(?P<description> .*)
+					 )?
+				    $#imsx' ;
+		
+		if  ( preg_match ( $re, $remainder, $match ) )
+			$params		=  [ 'type' => $match [ 'type' ], 'description' => $match [ 'description' ] ] ;
+		else 
+			$params		=  [ 'type' => "", 'description' => $remainder ] ;
+		
+		return ( $params ) ;
+	    }
+
+	
+	// @see parser :
+	//	Specifies a link to an url or an FQSEN
+	// Usage :
+	//	@see [URI | FQSEN] [<description>]
+	private function  __see_annotation_parser ( $name, $remainder )
+	   {
+		static	$re	=  '#^
+					(
+						(?P<fqsen> 
+							( 
+								(\w+)? 
+								( \\\\ \w+)* 
+								( \w+ :: \w+ ) 
+								( \s* \( \s* \) )?
+							 ) 
+						 )
+						 |
+						(?P<url>
+							\w+://[^\s]+
+						 )
+					 )?
+					(
+						\s*
+						(?P<description> .*)
+					 )?
+				    $#imsx' ;
+		
+		if  ( $remainder [0]  ==  "\\" )
+			$remainder	=  substr ( $remainder, 1 ) ;
+		
+		$remainder	=  str_replace ( "\\\\", "\\", $remainder ) ;
+		
+		if  ( preg_match ( $re, $remainder, $match ) )
+		   {
+			if  ( $match [ 'fqsen' ]  !==  "" )
+			   {
+				$fqsen		=  $match [ 'fqsen' ] ;
+				$packages	=  explode ( "\\", $fqsen ) ;
+				$reference	=  array_pop ( $packages ) ;
+				$url		=  "" ;
+			    }
+			else
+			   {
+				$fqsen		=  "" ;
+				$packages	=  [] ;
+				$reference	=  "" ;
+				$url		=  $match [ 'url' ] ;
+			    }
+		
+			$params		=
+			   [
+				'fqsen'		=>  $fqsen,
+				'url'		=>  $url,
+				'reference'	=>  $reference,
+				'components'	=>  $packages,
+				'url'		=>  $url,
+				'description'	=>  $match [ 'description' ]
+			    ] ;
+		    }
+		else
+			$params		=  
+			   [ 
+				'fqsen'		=>  "",
+				'url'		=>  "",
+				'reference'	=>  "",
+				'components'	=>  [],
+				'url'		=>  "",
+				'description'	=>  $match [ 'description' ]
+			    ] ;
+		
+		return ( $params ) ;
+	    }
+
+	
+	// @since parser :
+	//	Indicates since which version a feature has become available.
+	// Usage :
+	//	@since [version] [<description>]
+	private function  __since_annotation_parser ( $name, $remainder )
+	   {
+		$re	=  '#
+				(' . self::$VersionRegex . ')?
+				\s*
+				(?P<description> .*)?
+			    #imsx' ;
+						
+		if  ( preg_match ( $re, $remainder, $match ) )
+		   {
+			$params		=
+			   [
+				'major'			=>  $match [ 'major' ],
+				'minor'			=>  $match [ 'minor' ],
+				'release'		=>  $match [ 'release' ],
+				'build'			=>  $match [ 'build' ],
+				'buildMetadata'		=>  $match [ 'metadata' ],
+				'vcs'			=>  $match [ 'vcs' ],
+				'vcsVector'		=>  $match [ 'vector' ],
+				'description'		=>  $match [ 'description' ]
+			    ] ;
+		    }
+		else
+		   {
+			$params		=  
+			   [
+				'major'			=>  "",
+				'minor'			=>  "",
+				'release'		=>  "",
+				'build'			=>  "",
+				'buildMetadata'		=>  "",
+				'vcs'			=>  "",
+				'vcsVector'		=>  "",
+				'description'		=>  $remainder
+			    ] ;
+		    }
+		
+		return ( $params ) ;
+	    }
+
+	
+	// @source parser :
+	//	Shows the source code of a structural element.
+	// Usage :
+	//	@source [ start-line [count] ] [description]
+	private function  __source_annotation_parser ( $name, $remainder )
+	   {
+		static		$re	=  '#
+						\s*
+						(
+							\s+
+							(?P<start> \d+)
+							\s+
+							(?P<count> \d+)?
+						 )?
+						\s*
+						(?P<description> .*)
+					    #imsx' ;
+						
+		if  ( preg_match ( $re, $remainder, $match ) )
+		   {
+			$params		=
+			   [
+				'startLine'	=>  ( $match [ 'start' ]  !==  "" ) ?  $match [ 'start' ] : false,
+				'lineCount'	=>  ( $match [ 'count' ]  !==  "" ) ?  $match [ 'count' ] : false,
+				'description'	=>  $match [ 'description' ] 
+			    ] ;
+		    }
+		else
+		   {
+			$params		=
+			   [
+				'startLine'	=>  false,
+				'lineCount'	=>  false,
+				'description'	=>  $remainder
+			    ] ;
+		    }
+		
+		return ( $params ) ;
+	    }
+	
+	
+	// @subpackage parser :
+	//	Specifies the subpackage related with the structural element.
+	// Usage :
+	//	@subpackage name [description]
+	private function  __subpackage_annotation_parser ( $name, $remainder )
+	   {
+		static	$re	=  '#^
+					(?P<name>  \w+) 
+					(
+						\s+
+						(?P<description> .*)
+					 )?
+				    $#imsx' ;
+		
+		if  ( preg_match ( $re, $remainder, $match ) )
+			$params		=  [ 'name' => $match [ 'name' ], 'description' => $match [ 'description' ] ] ;
+		else 
+			$params		=  [ 'name' => $remainder, 'description' => "" ] ;
+		
+		return ( $params ) ;
+	    }
+
+	
+	// @throws parser :
+	//	Gives information about the kind of exceptions thrown by the structural element.
+	// Usage :
+	//	@throws [Type] [<description>]
+	private function  __throws_annotation_parser ( $name, $remainder )
+	   {
+		static	$re	=  '#^
+					(?P<type>  \w+) 
+					(
+						\s+
+						(?P<description> .*)
+					 )?
+				    $#imsx' ;
+		
+		if  ( preg_match ( $re, $remainder, $match ) )
+			$params		=  [ 'type' => $match [ 'type' ], 'description' => $match [ 'description' ] ] ;
+		else 
+			$params		=  [ 'type' => "", 'description' => $remainder ] ;
+		
+		return ( $params ) ;
+	    }
+	
+	
+	// @todo parser - 
+	//	Todo note.
+	// Usage :
+	//	@todo description
+	private function  __todo_annotation_parser ( $name, $remainder )
+	   { return ( [ 'description' => $remainder ] ) ; }
+	
+	
+	// @Fix parser - 
+	//	Fix note.
+	// Usage :
+	//	@fix description
+	private function  __fix_annotation_parser ( $name, $remainder )
+	   { return ( [ 'description' => $remainder ] ) ; }
+	
+	
+	// @uses parser :
+	//	Creates a relation between this structural element and an external one.
+	// Usage :
+	//	@uses fqsen [<description>]
+	private function  __uses_annotation_parser ( $name, $remainder )
+	   {
+		static	$re	=  '#^
+					(?P<fqsen> 
+						(
+							(\w+)? 
+							( \\\\ \w+)* 
+							\\\\
+						)?
+						(?P<reference>
+							( (?P<class> \w+ ) :: (?P<item> \w+ ) ) 
+							( \s* \( \s* \) )?
+						)?
+					 )?
+					(
+						\s*
+						(?P<description> .*)
+					 )?
+				    $#imsx' ;
+		
+		if  ( $remainder [0]  ==  "\\" )
+			$remainder	=  substr ( $remainder, 1 ) ;
+		
+		$remainder	=  str_replace ( "\\\\", "\\", $remainder ) ;
+		
+		if  ( preg_match ( $re, $remainder, $match ) )
+		   {
+			if  ( $match [ 'fqsen' ]  !==  "" )
+			   {
+				$fqsen		=  $match [ 'fqsen' ] ;
+				$packages	=  explode ( "\\", $fqsen ) ;
+				
+				if  ( $match [ 'reference' ]  !==  "" )
+				   {
+					$reference	=  $match [ 'item' ] ;
+					array_pop ( $packages ) ;
+					$packages []	=  $match [ 'class' ] ;
+				    }
+				else
+					$reference	=  "" ;
+			    }
+			else
+			   {
+				$fqsen		=  "" ;
+				$packages	=  [] ;
+				$reference	=  "" ;
+			    }
+		
+			$params		=
+			   [
+				'fqsen'		=>  $fqsen,
+				'reference'	=>  $reference,
+				'components'	=>  $packages,
+				'description'	=>  $match [ 'description' ]
+			    ] ;
+		    }
+		else
+			$params		=  
+			   [ 
+				'fqsen'		=>  "",
+				'reference'	=>  "",
+				'components'	=>  [],
+				'description'	=>  $match [ 'description' ]
+			    ] ;
+		
+		return ( $params ) ;
+	    }
+
+	
+	// @var parser :
+	//	Gives information about a variable.
+	// Usage :
+	//	@var [Type] [name] [<description>]
+	private function  __var_annotation_parser ( $name, $remainder )
+	   {
+		static	$re	=  '#^
+					(?P<word1> \$? \w+) 
+					(
+						\s+
+						(?P<word2> \$? \w+)
+					 )
+					(
+						\s+
+						(?P<description> .*)
+					 )?
+				    $#imsx' ;
+		
+		if  ( preg_match ( $re, $remainder, $match ) )
+		   {
+			if  ( $match [ 'word2' ]  ==  "" )
+			   {
+				$type	=  "" ;
+				$name	=  $match [ 'word1' ] ;
+			    }
+			else
+			   {
+				$type	=  $match [ 'word1' ] ;
+				$name	=  $match [ 'word2' ] ;
+			    }
+			
+			$params		=  [ 'type' => $type, 'name' => $name, 'description' => $match [ 'description' ] ] ;
+		    }
+		else 
+			$params		=  [ 'type' => "", 'name' => "", 'description' => $remainder ] ;
+		
+		return ( $params ) ;
+	    }
+
+	
+	// @version parser :
+	//	Specifies a version and its contents.
+	// Usage :
+	//	@version [version] [<description>]
+	private function  __version_annotation_parser ( $name, $remainder )
+	   {
+		$re	=  '#
+				(' . self::$VersionRegex . ')?
+				\s*
+				(?P<description> .*)?
+			    #imsx' ;
+						
+		if  ( preg_match ( $re, $remainder, $match ) )
+		   {
+			$params		=
+			   [
+				'major'			=>  $match [ 'major' ],
+				'minor'			=>  $match [ 'minor' ],
+				'release'		=>  $match [ 'release' ],
+				'build'			=>  $match [ 'build' ],
+				'buildMetadata'		=>  $match [ 'metadata' ],
+				'vcs'			=>  $match [ 'vcs' ],
+				'vcsVector'		=>  $match [ 'vector' ],
+				'description'		=>  $match [ 'description' ]
+			    ] ;
+		    }
+		else
+		   {
+			$params		=  
+			   [
+				'major'			=>  "",
+				'minor'			=>  "",
+				'release'		=>  "",
+				'build'			=>  "",
+				'buildMetadata'		=>  "",
+				'vcs'			=>  "",
+				'vcsVector'		=>  "",
+				'description'		=>  $remainder
+			    ] ;
+		    }
+		
+		return ( $params ) ;
+	    }
+
+	
+	
+    }

@@ -1,0 +1,45 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        IfNoneMatch.phpclass
+
+    DESCRIPTION
+        Http If-None-Match: header.
+
+    AUTHOR
+        Christian Vigh, 05/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/05/27]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace  	Thrak\Network\RfcProtocols\Http ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces and classes
+use     Thrak\System\Object ;
+use	Thrak\Network\RfcProtocols\Http\HttpStandardHeader ;
+
+
+/*==============================================================================================================
+
+    HttpIfNoneMatchHeader class -
+        Http If-None-Match header implementation (http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.26).
+
+ 	Examples :
+		If-None-Match: "xyzzy"
+		If-None-Match: "xyzzy", "r2d2xxxx", "c3piozzzz"
+		If-None-Match: *
+
+  ==============================================================================================================*/
+class	HttpIfNoneMatchHeader		extends  HttpStandardHeader
+   {
+	public function  __construct ( $header )
+	   {
+		parent::__construct ( 'If-None-Match', $header, self::HTTP_HEADER_LIST ) ;
+	    }
+    }

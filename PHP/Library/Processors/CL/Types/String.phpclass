@@ -1,0 +1,730 @@
+<?php
+/***************************************************************************************************
+
+    NAME
+	String.phpclass
+
+    DESCRIPTION
+	String command-line parameter.
+
+    AUTHOR
+     	Christian Vigh, 06/2011.
+
+    HISTORY
+    [Version : 1.0]	[Date : 2011/06/09]	[Author : CV]
+     	Initial version.
+
+   [Version : 2.0]	[Date : 2012/10/06]		[Author : CV]
+	Migrated to the Thrak library version 2.
+
+   [Version : 2.0.1]	[Date : 2014/12/05]		[Author : CV]
+ 	. Added the "allow-factorization" and "factorization-limit" attributes to the <string> tag.
+
+   [Version : 2.0.2]	[Date : 2015/04/11]		[Author : CV]
+	. Replaced each exception throwing with "error ( new CLException (...) )".
+  
+ ***************************************************************************************************/
+namespace  	Thrak\Processors\CL ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces and classes
+use  	Thrak\Processors\CL\CLException ;
+use     Thrak\Types\String ;
+use     Thrak\Types\String\Convert ;
+use     Thrak\Types\String\Regex ;
+use     Thrak\Types\String\Formatting ;
+
+
+/*==================================================================================================
+
+    CLStringParameter class -
+	Implements a string command-line parameter.
+	The following attributes are implemented by this class, in addition to the standard
+	attributes defined in the CLAbstractParameter base class :
+
+	min-length (integer) -
+		Minimum length for the supplied argument string.
+		The special notation "*" means a minimum length of zero.
+
+	max-length (integer) -
+		Maximum length for the supplied argument string.
+		The special notation "*" means no maximum length.
+
+	length (range) -
+		A range of two values giving the minimum and maximum string length.
+
+	padding-to (string) -
+		Specifies string padding. It can be one of the following :
+		'min' -
+			If the "min-length" attribute has been specified, and the supplied
+			argument is shorter than this value, the argument will be padded to
+			reach this minimum string length.
+
+		'max' -
+			Same as 'min', but for the 'max-length' attribute.
+
+		'nopadding' or 'nopad' or 'none' -
+			No padding is applied.
+
+		integer value -
+			The supplied argument will be padded to the specified number of
+			characters.
+
+	padding-character or padding-char (string) -
+		Specifies the padding character to be used.
+
+	padding (string) -
+		Can contain one of the following keywords :
+		'left' -
+			Pad string to the left.
+
+		'right' -
+			Pad string to the right.
+
+		'both' or 'center' -
+			Pad string to left & right.
+
+	truncate (boolean) -
+		When true, the string will be truncated to the number of characters specified
+		in the 'max-value' attribute.
+
+	apply (string) -
+	        Applies the specified transformation to a string. The attribute value
+	        can be :
+
+	    	addslashes -
+		    	Adds slashes to escapable characters.
+	    	base64 / base64-encode -
+		    	Encodes the string to base64 encoding.
+	    	base64-decode -
+		    	Decodes the string from base64.
+	    	crc32 -
+		    	Computes the 32-bit CRC value of the supplied parameter.
+	    	crypt -
+		    	Encrypts the string.
+	    	forced-quote / abs-quote / absquote -
+		    	Unconditionnaly quotes the string.
+	    	html-chars-encode -
+		    	Encodes html special characters.
+	    	html-chars-decode -
+		    	Decodes html special characters.
+	    	html-entities-encode -
+		    	Encode html entities.
+	    	html-entities-decode -
+		    	Decode html entities.
+	    	lowercase / lower / lc -
+		    	Converts the parameter value to lowercase.
+	    	md5 -
+		    	Encodes the string to md5.
+	    	metaphone -
+		    	Computes the metaphone value of the supplied string.
+	    	quote -
+		    	Quotes the string with double quotes if it contains quotable characters such as spaces.
+	    	quotemeta -
+		    	Quotes meta-characters.
+	    	soundex -
+		    	Computes the soundex value of the supplied string.
+	    	spaces / spaces -
+		    	Removes duplicate spaces.
+	    	trim, ltrim, rtrim -
+		    	Trims the string both to left and right (trim), only left (ltrim) or only right (rtrim).
+	    	ucstring -
+		    	Converts the string to lowercase, with the first letter to uppercase.
+	    	ucwords / ucword -
+		    	Converts the string to lowercase, and the first letter of each word to uppercase.
+	    	uppercase / upper / uc -
+		    	Converts the parameter value to uppercase.
+	    	uuencode -
+		    	Performs uuencoding on the supplied value.
+	    	uudecode -
+	    		Performs uudecoding on the supplied value.
+	    	utf8 / utf8-encode -
+		    	Encodes the string into the UTF8 character set.
+	    	utf8-decode -
+		    	Decodes the string from the UTF8 to the current character set.
+  
+ 	allow-factorization (boolean) :
+ 		Allow factorization expressions to be specified (see Regex::DevelopExpression).
+  
+ 	factorization-limit (integer) :
+ 		Maximum number of expressions that can be generated through a factorized expression.
+
+  ==================================================================================================*/
+class  CLStringParameter  extends  \Thrak\Processors\CL\CLAbstractParameter
+   {
+
+
+	// Padding options
+	const	PAD_NO_PADDING		=   0 ;
+	const	PAD_TO_MINLENGTH	=  -1 ;
+	const	PAD_TO_MAXLENGTH	=  -2 ;
+
+	// Padding alignment option
+	const	PAD_ALIGN_LEFT		=  0 ;
+	const	PAD_ALIGN_RIGHT		=  1 ;
+	const	PAD_ALIGN_CENTER	=  2 ;
+
+	// Transformations to be applied
+	const	TRANSFORM_UPPERCASE			=   0 ;
+	const	TRANSFORM_LOWERCASE			=   1 ;
+	const	TRANSFORM_UCWORDS			=   2 ;
+	const	TRANSFORM_UCSTRING 			=   3 ;
+	const	TRANSFORM_TRIM				=   4 ;
+	const	TRANSFORM_RTRIM				=   5 ;
+	const	TRANSFORM_LTRIM				=   6 ;
+	const	TRANSFORM_SPACES			=   7 ;
+	const	TRANSFORM_QUOTE				=   8 ;
+	const	TRANSFORM_FORCED_QUOTE			=   9 ;
+	const	TRANSFORM_BASE64_ENCODE			=  10 ;
+	const 	TRANSFORM_BASE64_DECODE			=  11 ;
+	const	TRANSFORM_UUENCODE			=  13 ;
+	const	TRANSFORM_MD5				=  14 ;
+	const	TRANSFORM_ADDSLASHES			=  15 ;
+	const	TRANSFORM_CRC32				=  16 ;
+	const	TRANSFORM_CRYPT				=  17 ;
+	const	TRANSFORM_METAPHONE			=  18 ;
+	const	TRANSFORM_QUOTEMETA			=  19 ;
+	const	TRANSFORM_HTML_SPECIAL_CHARS_DECODE	=  20 ;
+	const	TRANSFORM_HTML_SPECIAL_CHARS_ENCODE	=  21 ;
+	const	TRANSFORM_HTML_ENTITIES_DECODE		=  22 ;
+	const	TRANSFORM_HTML_ENTITIES_ENCODE		=  23 ;
+	const	TRANSFORM_SOUNDEX			=  24 ;
+	const	TRANSFORM_UTF8_DECODE			=  25 ;
+	const	TRANSFORM_UTF8_ENCODE			=  26 ;
+	const	TRANSFORM_UUDECODE			=  27 ;
+
+	// String-specific definitions
+   	private		$StringDefinitions = array
+   	   (
+	    	array
+	    	   (
+	    	   	'names'		=>  array ( 'min-length', 'min-len', 'minlength', 'min-len' ),
+	    	   	'type'		=>  self::ATTRIBUTE_TYPE_UNSIGNED_INTEGER,
+	    	   	'member'	=>  'MinLength',
+	   		'substitutions'	=>  array ( '*' => 0 ),
+	    	   	'help'		=>  'Specifies if the string must have a minimum length'
+      		    ),
+	    	array
+	    	   (
+	    	   	'names'		=>  array ( 'max-length', 'max-len', 'maxlength', 'maxlen' ),
+	    	   	'type'		=>  self::ATTRIBUTE_TYPE_UNSIGNED_INTEGER,
+	    	   	'member'	=>  'MaxLength',
+	   		'substitutions'	=>  array ( '*' => PHP_INT_MAX ),
+	    	   	'help'		=>  'Specifies if the string must have a maximum length'
+      		    ),
+	    	array
+		   (
+	   		'names'		=>  array ( 'length', 'len' ),
+	   		'type'		=>  self::ATTRIBUTE_TYPE_RANGE,
+	   		'attributes'	=>  array ( 'min-length', 'max-length' ),
+	   		'help'		=>  'Defines the value of both the "min-length" and "max-length" attributes as a range'
+		    ),
+		array
+		   (
+		   	'names'		=>  array ( 'padding-character', 'pad-char' ),
+		   	'type'		=>  self::ATTRIBUTE_TYPE_CHARACTER,
+		   	'default'	=>  " ",
+		   	'member'	=>  'PaddingCharacter',
+		   	'help'		=>  'Padding character to be used if supplied string is shorter than maximum string length'
+		    ),
+		array
+		   (
+		   	'names'		=>  array ( 'padding', 'padding-alignment' ),
+			'type'		=>  self::ATTRIBUTE_TYPE_KEYWORD,
+			'default'	=>  self::PAD_ALIGN_LEFT,
+			'member'	=>  'PaddingAlignment',
+			'keywords'	=>  array
+			   (
+			   	'left'		=>  self::PAD_ALIGN_LEFT,
+			   	'right'		=>  self::PAD_ALIGN_RIGHT,
+			   	'both'		=>  self::PAD_ALIGN_CENTER,
+			   	'center'	=>  self::PAD_ALIGN_CENTER
+			    ),
+			'help'		=>  'Padding alignment : left, right or center (or both)'
+		    ),
+		array
+		   (
+		   	'names'		=>  array ( 'padding-to', 'pad-to' ),
+		   	'type'		=>  self::ATTRIBUTE_TYPE_INTEGER,
+		   	'member'	=>  'Padding',
+		   	'preprocessor'  =>  'PaddingOptionValidator',
+		   	'help'		=>  "Padding option : no padding ('nopadding' or 'nopad' or 'none'), pad to min string length ('min'), to max string length ('max'), or to the specified length."
+		    ),
+		array
+		   (
+		   	'names'		=>  'truncate',
+		   	'type'		=>  self::ATTRIBUTE_TYPE_BOOLEAN,
+		   	'member'	=>  'Truncate',
+		   	'help'		=>  'The string will be truncated if its length exceeds the specified max-length attribute.'
+		    ),
+	    	array
+	    	   (
+	    	   	'names'		=>  array ( 'allow-factorization', 'allow-fact', 'factorization', 'fact' ),
+	    	   	'type'		=>  self::ATTRIBUTE_TYPE_BOOLEAN,
+	    	   	'member'	=>  'AllowFactorization',
+	    	   	'help'		=>  'Expands factorized expressions'
+      		    ),
+	    	array
+	    	   (
+	    	   	'names'		=>  array ( 'factorization-limit', 'fact-limit' ),
+	    	   	'type'		=>  self::ATTRIBUTE_TYPE_UNSIGNED_INTEGER,
+	    	   	'member'	=>  'FactorizationLimit',
+	   		'substitutions'	=>  array ( '*' => 0 ),
+	    	   	'help'		=>  'Specifies the maximum number of elements generated by developing a factorized expression. "*" means "no limit".'
+      		    ),
+		array
+		   (
+		   	'names'		=>  'apply',
+		   	'type'		=>  self::ATTRIBUTE_TYPE_KEYWORD_LIST,
+		   	'member'	=>  'Apply',
+		   	'help'		=>  array
+			    (
+			    	"List of operations to be applied to the string :\n\n",
+			    	"addslashes -\n",
+				    	"\tAdds slashes to escapable characters.\n",
+			    	"base64 / base64-encode -\n",
+				    	"\tEncodes the string to base64 encoding.\n",
+			    	"base64-decode -\n",
+				    	"\tDecodes the string from base64.\n",
+			    	"crc32 -\n",
+				    	"\tComputes the 32-bit CRC value of the supplied parameter.\n",
+			    	"crypt -\n",
+				    	"\tEncrypts the string.\n",
+			    	"forced-quote / abs-quote / absquote -\n",
+				    	"\tUnconditionnaly quotes the string.\n",
+			    	"html-chars-encode -\n",
+				    	"\tEncodes html special characters.\n",
+			    	"html-chars-decode -\n",
+				    	"\tDecodes html special characters.\n",
+			    	"html-entities-encode -\n",
+				    	"\tEncode html entities.\n",
+			    	"html-entities-decode -\n",
+				    	"\tDecode html entities.\n",
+			    	"lowercase / lower / lc -\n",
+				    	"\tConverts the parameter value to lowercase.\n",
+			    	"md5 -\n",
+				    	"\tEncodes the string to md5.\n",
+			    	"metaphone -\n",
+				    	"\tComputes the metaphone value of the supplied string.\n",
+			    	"quote -\n",
+				    	"\tQuotes the string with double quotes if it contains quotable characters such as spaces.\n",
+			    	"quotemeta -\n",
+				    	"\tQuotes meta-characters.\n",
+			    	"soundex -\n",
+				    	"\tComputes the soundex value of the supplied string.\n",
+			    	"spaces / spaces -\n",
+				    	"\tRemoves duplicate spaces.\n",
+			    	"trim, ltrim, rtrim -\n",
+				    	"\tTrims the string both to left and right (trim), only left (ltrim) or only right (rtrim).\n",
+			    	"ucstring -\n",
+				    	"\tConverts the string to lowercase, with the first letter to uppercase.\n",
+			    	"ucwords / ucword -\n",
+				    	"\tConverts the string to lowercase, and the first letter of each word to uppercase.\n",
+			    	"uppercase / upper / uc -\n",
+				    	"\tConverts the parameter value to uppercase.\n",
+			    	"uuencode -\n",
+				    	"\tPerforms uuencoding on the supplied value.\n",
+			    	"uudecode -\n",
+			    		"\tPerforms uudecoding on the supplied value.\n",
+			    	"utf8 / utf8-encode -\n",
+				    	"\tEncodes the string into the UTF8 character set.\n",
+			    	"utf8-decode -\n",
+				    	"\tDecodes the string from the UTF8 to the current character set.\n"
+		    	     ),
+		    	'keywords'	=>  array
+		    	   (
+		    	   	'uppercase'		=>  self::TRANSFORM_UPPERCASE,
+		    	   	'uc'			=>  self::TRANSFORM_UPPERCASE,
+		    	   	'upper'			=>  self::TRANSFORM_UPPERCASE,
+		    	   	'lowercase'		=>  self::TRANSFORM_LOWERCASE,
+		    	   	'lc'			=>  self::TRANSFORM_LOWERCASE,
+		    	   	'lower'			=>  self::TRANSFORM_LOWERCASE,
+		    	   	'ucwords'		=>  self::TRANSFORM_UCWORDS,
+		    	   	'ucword'		=>  self::TRANSFORM_UCWORDS,
+		    	   	'ucstring'		=>  self::TRANSFORM_UCSTRING,
+		    	   	'trim'			=>  self::TRANSFORM_TRIM,
+		    	   	'rtrim'			=>  self::TRANSFORM_RTRIM,
+		    	   	'ltrim'			=>  self::TRANSFORM_LTRIM,
+		    	   	'spaces'		=>  self::TRANSFORM_SPACES,
+		    	   	'space'			=>  self::TRANSFORM_SPACES,
+		    	   	'quote'			=>  self::TRANSFORM_QUOTE,
+		    	   	'forced-quote'  	=>  self::TRANSFORM_FORCED_QUOTE,
+		    	   	'abs-quote'     	=>  self::TRANSFORM_FORCED_QUOTE,
+				'forcedquote'   	=>  self::TRANSFORM_FORCED_QUOTE,
+				'absquote'		=>  self::TRANSFORM_FORCED_QUOTE,
+				'base64'		=>  self::TRANSFORM_BASE64_ENCODE,
+				'base64-encode'		=>  self::TRANSFORM_BASE64_ENCODE,
+				'base64-decode' 	=>  self::TRANSFORM_BASE64_DECODE,
+				'uuencode'		=>  self::TRANSFORM_UUENCODE,
+				'uudecode'		=>  self::TRANSFORM_UUDECODE,
+				'md5'			=>  self::TRANSFORM_MD5,
+				'addslashes'		=>  self::TRANSFORM_ADDSLASHES,
+				'crc32'			=>  self::TRANSFORM_CRC32,
+				'crypt'			=>  self::TRANSFORM_CRYPT,
+				'metaphone'		=>  self::TRANSFORM_METAPHONE,
+				'quotemeta'		=>  self::TRANSFORM_QUOTEMETA,
+				'html-chars-encode'	=>  self::TRANSFORM_HTML_SPECIAL_CHARS_ENCODE,
+				'html-chars-decode'	=>  self::TRANSFORM_HTML_SPECIAL_CHARS_DECODE,
+				'html-entities-encode'	=>  self::TRANSFORM_HTML_ENTITIES_ENCODE,
+				'html-entities-decode'	=>  self::TRANSFORM_HTML_ENTITIES_DECODE,
+				'soundex'		=>  self::TRANSFORM_SOUNDEX,
+				'utf8'			=>  self::TRANSFORM_UTF8_ENCODE,
+				'utf8-encode'		=>  self::TRANSFORM_UTF8_ENCODE,
+				'utf8-decode'		=>  self::TRANSFORM_UTF8_DECODE
+       			    )
+		    )
+    	    ) ;
+
+	// Min and max string lengths
+	public 	$MinLength 		=  0 ;
+	public 	$MaxLength		=  PHP_INT_MAX ;
+
+	// Padding options
+	public	$Padding		=  self::PAD_NO_PADDING ;	// Padding option
+	public	$PaddingCharacter	=  " " ;			// Default padding character
+	public	$PaddingAlignment	=  self::PAD_ALIGN_LEFT ;       // Padding alignment option
+
+	// Truncate option ; when true and the string exceeds MaxLength, it will automatically be truncated
+	public	$Truncate		=  false ;
+
+	// Operations to apply on the string
+	public	$Apply			=  array ( ) ;
+	
+	// Factorization options
+	public	$AllowFactorization	=  false ;
+	public  $FactorizationLimit	=  null ;
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Class constructor.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __construct ( $parent, $tags, $valuetext = "string" )
+	   {
+	   	$this -> Help 			=  "Defines a string parameter. It is similar to a standard parameter (<parameter>, <option> or <switch> tags), except that more controls can be applied." ;
+	   	$this -> ReturnValueHelp	=  "Returns the specified string, after applying all the defined operations and checkings." ;
+		$this -> ReturnValueType	=  self::RETURN_VALUE_MULTIPLE ;
+
+		parent::__construct ( $parent, $tags, $valuetext, $this -> StringDefinitions ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Set the specifications.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  SetSpecifications ( $array, $named = true )
+	   {
+		parent::SetSpecifications ( $array, $named ) ;
+
+		$tag 		=  $array [ 'tag' ] ;
+		$name 		=  $this -> Names [0] ;
+
+		if  ( $this -> MinLength  >  $this -> MaxLength )
+		   	error ( new CLException ( "The 'min-length' attribute ({$this -> MinLength}) must not exceed the 'max-length' ({$this -> MaxLength}) attribute for the <$tag> parameter named '$name'." ) ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Preprocess value.
+
+	 --------------------------------------------------------------------------------------------*/
+  	protected function  ProcessValue ( $name, $value )
+  	   {
+  	   	// Process text transformations
+  	   	foreach  ( $this -> Apply  as  $operation )
+  	   	   {
+			switch ( $operation )
+			   {
+				case  self::TRANSFORM_UPPERCASE			:  $value = strtoupper ( $value ) 				; break ;
+				case  self::TRANSFORM_LOWERCASE 		:  $value = strtolower ( $value ) 				; break ;
+				case  self::TRANSFORM_UCWORDS   		:  $value = ucwords ( strtolower ( $value ) ) 			; break ;
+				case  self::TRANSFORM_UCSTRING  		:  $value = ucfirst ( strtolower ( $value ) ) 			; break ;
+				case  self::TRANSFORM_TRIM			:  $value = trim ( $value ) 					; break ;
+				case  self::TRANSFORM_LTRIM			:  $value = ltrim ( $value ) 					; break ;
+				case  self::TRANSFORM_RTRIM 			:  $value = rtrim ( $value ) 					; break ;
+				case  self::TRANSFORM_SPACES			:  $value = String::NoSpaces ( $value, false ) 			; break ;
+				case  self::TRANSFORM_QUOTE     		:  $value = String::QuotedString ( $value, '"', false ) 	; break ;
+				case  self::TRANSFORM_FORCED_QUOTE		:  $value = String::QuotedString ( $value, '"', true ) 		; break ;
+				case  self::TRANSFORM_BASE64_ENCODE		:  $value = base64_encode ( $value ) ;				; break ;
+				case  self::TRANSFORM_BASE64_DECODE		:  $value = base64_decode ( $value ) ;				; break ;
+				case  self::TRANSFORM_UUENCODE 			:  $value = convert_uuencode ( $value ) ;			; break ;
+				case  self::TRANSFORM_UUDECODE			:  $value = convert_uudecode ( $value ) ;			; break ;
+				case  self::TRANSFORM_MD5			:  $value = md5 ( $value ) ;					; break ;
+				case  self::TRANSFORM_ADDSLASHES		:  $value = addslashes ( $value ) ;				; break ;
+				case  self::TRANSFORM_CRC32			:  $value = crc32 ( $value ) ;					; break ;
+				case  self::TRANSFORM_CRYPT			:  $value = crypt ( $value ) ;					; break ;
+				case  self::TRANSFORM_METAPHONE			:  $value = metaphone ( $value ) ;				; break ;
+				case  self::TRANSFORM_QUOTEMETA 		:  $value = quotemeta ( $value ) ;				; break ;
+				case  self::TRANSFORM_HTML_SPECIAL_CHARS_DECODE	:  $value = htmlspecialchars_decode ( $value ) ;		; break ;
+				case  self::TRANSFORM_HTML_SPECIAL_CHARS_ENCODE :  $value = htmlspecialchars ( $value ) ;			; break ;
+				case  self::TRANSFORM_HTML_ENTITIES_DECODE	:  $value = html_entity_decode ( $value ) ;			; break ;
+				case  self::TRANSFORM_HTML_ENTITIES_ENCODE	:  $value = htmlentities ( $value ) ;				; break ;
+				case  self::TRANSFORM_SOUNDEX			:  $value = soundex ( $value ) ;				; break ;
+				case  self::TRANSFORM_UTF8_ENCODE		:  $value = utf8_encode ( $value ) ;				; break ;
+				case  self::TRANSFORM_UTF8_DECODE		:  $value = utf8_decode ( $value ) ;				; break ;
+			    }
+  	   	    }
+
+		// Process padding options
+		if  ( $this -> Padding  !=  self::PAD_NO_PADDING )
+		   {
+			$length 	=  strlen ( $value ) ;
+			$padcount       =  0 ;
+
+			// Check the padding limit
+			switch  ( $this -> Padding )
+			   {
+				case	self::PAD_TO_MINLENGTH :
+					if  ( $length  <  $this -> MinLength )
+						$padcount = $this -> MinLength - $length ;
+					break ;
+
+				case	self::PAD_TO_MAXLENGTH :
+					if  ( $length  <  $this -> MaxLength )
+						$padcount = $this -> MaxLength - $length ;
+					break ;
+
+				default :
+					if  ( $this -> Padding  <  0 )
+						error ( new CLException ( "Invalid padding value '{$this -> Padding}' for the 'padding' attribute of the '$name' parameter." ) ) ;
+
+					if  ( $this -> Padding  >  $this -> MaxLength )
+						error ( new CLException ( "The 'padding' attribute value ({$this -> Padding}) must not exceed the value of the 'max-length' attribute ({$this -> MaxLength}) for the '$name' parameter." ) ) ;
+
+					$padcount = $this -> Padding - $length ;
+			    }
+
+			// If padding needed...
+   			if  ( $padcount )
+   			   {
+   			   	// Compute the new total with
+   			   	$total	=  $length + $padcount ;
+
+   			   	// Then align according to the alignment option
+				switch ( $this -> PaddingAlignment )
+				   {
+					case	self::PAD_ALIGN_LEFT :
+						$value = Formatting::AlignString ( $value, $total, TEXT_ALIGN_LEFT, $this -> PaddingCharacter ) ;
+						break ;
+
+					case	self::PAD_ALIGN_RIGHT :
+						$value = Formatting::AlignString ( $value, $total, TEXT_ALIGN_RIGHT, $this -> PaddingCharacter ) ;
+						break ;
+
+					case	self::PAD_ALIGN_CENTER :
+						$value = Formatting::AlignString ( $value, $total, TEXT_ALIGN_CENTER, $this -> PaddingCharacter ) ;
+						break ;
+				    }
+   			    }
+		    }
+
+		// Check min length
+		$length = strlen ( $value ) ;
+
+		if ( $length  <  $this -> MinLength )
+			error ( new CLException ( "The specified value should contain at least " . $this -> MinLength . " characters for the '$name' parameter." ) ) ;
+
+		// Truncate option
+		if  ( $this -> Truncate )
+		   {
+			$length = strlen ( $value ) ;
+
+			if  ( $length  >  $this -> MaxLength )
+				$value = substr ( $value, 0, $this -> MaxLength ) ;
+		    }
+		else if  ( $length  >  $this -> MaxLength )
+			error ( new CLException ( "The specified value should not exceed " . $this -> MaxLength . " characters for the '$name' parameter." ) ) ;
+
+		// Factorization options 
+		if  ( $this -> AllowFactorization )
+			$value	=  Regex::DevelopExpression ( $value, $this -> FactorizationLimit ) ;
+		
+             	// All done, return
+		return ( $value ) ;
+  	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Padding option validator.
+
+	 --------------------------------------------------------------------------------------------*/
+   	protected function  PaddingOptionValidator ( $object, $definition, $tag, $name, $value )
+   	   {
+		switch ( strtolower ( $value ) )
+		   {
+			case	'min' :
+				return ( self::PAD_TO_MINLENGTH ) ;
+				break ;
+
+			case	'max' :
+				return ( self::PAD_TO_MAXLENGTH ) ;
+				break ;
+
+			case	'nopadding' :
+			case	'nopad' :
+			case	'none' :
+				return ( self::PAD_NO_PADDING ) ;
+				break ;
+
+			default :
+				if  ( ! String::IsInteger ( $value, false ) )
+					error ( new CLException ( "The padding attribute of the '$name' parameter must either be the keywords min, max or nopadding/nopad/none, or a positive integer." ) ) ;
+
+				return ( String::ToInteger ( $value ) ) ;
+	    	    }
+   	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Validates min and max string lengths.
+
+	 --------------------------------------------------------------------------------------------*/
+	protected function  ValidateDefinition ( $tag, $name )
+	   {
+	   	parent::ValidateDefinition ( $tag, $name ) ;
+
+		if  ( $this -> MinLength  >  $this -> MaxLength )
+		   	error ( new CLException ( "<$tag> parameter $name : the min/max string length specified in the 'min-length', 'max-length' or 'length' attributes are incorrect ({$this -> MinLength}..{$this -> MaxLength}) : min is above max." ) ) ;
+	    }
+    }
+
+
+/*==================================================================================================
+
+    CLCharacterParameter class -
+	Implements a parameter who is a single character, or a c-style character specification.
+	Only the ASCII character set is supported.
+	The following attributes are implemented by this class, in addition to the standard
+	attributes defined in the CLAbstractParameter base class :
+
+	min-character, min-char, mincharacter, minchar -
+		Minimum ascii value for the supplied parameter.
+
+	max-character, max-char, maxcharacter, maxchar -
+		Maximum ascii value.
+
+	character-range, char-range, characterrange, charrange -
+		Allows to specify both the min and max ascii value for the character.
+
+	character-class, char-class, characterclass, charclass -
+		Character class that will be checked against the supplied character.
+		This character class must be supported by the preg_match() function. Note
+		however that enclosing brackets are optional.
+
+  ==================================================================================================*/
+class  CLCharacterParameter  extends  \Thrak\Processors\CL\CLAbstractParameter
+   {
+	// Character-specific definitions
+   	private		$CharacterDefinitions = array
+   	   (
+	    	array
+	    	   (
+	    	   	'names'		=>  array ( 'min-character', 'min-char', 'mincharacter', 'minchar' ),
+	    	   	'type'		=>  self::ATTRIBUTE_TYPE_CHARACTER,
+	    	   	'member'	=>  'MinCharacter',
+	    	   	'preprocessor'	=>  'CLCharacterValidator',
+	    	   	'help'		=>  'Specifies if the character has a minimum value'
+      		    ),
+	    	array
+	    	   (
+	    	   	'names'		=>  array ( 'max-character', 'max-char', 'maxcharacter', 'maxchar' ),
+	    	   	'type'		=>  self::ATTRIBUTE_TYPE_CHARACTER,
+	    	   	'member'	=>  'MaxCharacter',
+	    	   	'preprocessor'	=>  'CLCharacterValidator',
+	    	   	'help'		=>  'Specifies if the character has a maximum value'
+      		    ),
+	    	array
+	    	   (
+	    	   	'names'		=>  array ( 'character-range', 'char-range', 'characterrange', 'charrange' ),
+	    	   	'type'		=>  self::ATTRIBUTE_TYPE_RANGE,
+	    	   	'attributes'	=>  array ( 'MinCharacter', 'MaxCharacter' ),
+	    	   	'preprocessor'	=>  'CLCharacterValidator',
+	    	   	'help'		=>  'Specifies the minimum and maximum character value'
+      		    ),
+	    	array
+	    	   (
+	    	   	'names'		=>  array ( 'character-class', 'char-class', 'characterclass', 'charclass' ),
+	    	   	'type'		=>  self::ATTRIBUTE_TYPE_STRING,
+	    	   	'default'	=>  false,
+	    	   	'member'	=>  'CharacterClass',
+	    	   	'processor'	=>  'CLCharacterClassValidator',
+	    	   	'help'		=>  'Specifies the authorized character class, as in a regular expression character class'
+      		    )
+	    ) ;
+
+    	// Min and max character values
+    	public	$MinCharacter 		=  null ;
+    	public  $MaxCharacter		=  null ;
+    	public	$CharacterClass		=  null ;
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Class constructor.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __construct ( $parent, $tags, $valuetext = "char" )
+	   {
+	   	$this -> Help 		  =  "Defines a single-character parameter, whose value can be specified either as a string or as a C-style integer value." ;
+	   	$this -> ReturnValueHelp  =  "Returns the specified character. If a C-style integer value has been specified, it will be converted to the corresponding character." ;
+		parent::__construct ( $parent, $tags, $valuetext, $this -> CharacterDefinitions ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Preprocess value.
+
+	 --------------------------------------------------------------------------------------------*/
+  	protected function  ProcessValue ( $name, $value )
+  	   {
+  	   	// If the specified value is a string, then check for an integer specification
+		if  ( strlen ( $value )  !=  1 )
+		   {
+			if  ( String::IsInteger ( $value, false ) )
+				$value = chr ( Convert::ToInteger ( $value ) ) ;
+			else
+				error ( new CLException ( "The value for the '$name' parameter should be a character ; '$value' was specified." ) ) ;
+		    }
+
+		// If a min character has been set, check that the specified value is greater or equal to that minimum
+		if  ( $this -> MinCharacter  !==  null  &&  $value  <  $this -> MinCharacter )
+			error ( new CLException ( "The value for the '$name' parameter should be greater than or equal to '{$this -> MinCharacter}' ; '$value' was specified." ) ) ;
+
+		// Same for max character : check that the specified value is less than or equal
+		if  ( $this -> MaxCharacter  !==  null  &&  $value  >  $this -> MaxCharacter )
+			error ( new CLException ( "The value for the '$name' parameter should be greater than or equal to '{$this -> MaxCharacter}' ; '$value' was specified." ) ) ;
+
+		// Check that the specified characters fits into the defined character class
+		if  ( $this -> CharacterClass )
+		   {
+			if  ( ! preg_match ( '/^' . $this -> CharacterClass . '$/', $value ) )
+				error ( new CLException ( "The '$value' value specified for the '$name' parameter is not included in the specified character class '{$this -> CharacterClass}'." ) ) ;
+		    }
+
+		// All done, return
+   		return ( $value ) ;
+  	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Validates min and max characters.
+
+	 --------------------------------------------------------------------------------------------*/
+	protected function  ValidateDefinition ( $tag, $name )
+	   {
+	   	parent::ValidateDefinition ( $tag, $name ) ;
+
+		if  ( $this -> MinCharacter  >  $this -> MaxCharacter )
+		   	error ( new CLException ( "<$tag> parameter $name : the min/max characters specified in the 'min-character', 'max-character' or 'character-range' attributes are incorrect ({$this -> MinCharacter}..{$this -> MaxCharacter}) : min is above max." ) ) ;
+	    }
+    }

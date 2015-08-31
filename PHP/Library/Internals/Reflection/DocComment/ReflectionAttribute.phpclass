@@ -1,0 +1,38 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        ReflectionAttribute.phpclass
+
+    DESCRIPTION
+        Definition of an attribute located in a bloc comment.
+  
+ 	An attribute description has the following syntax :
+  
+ 		[attribute_name	 param1="value1" ... paramn="valuen"]
+ 
+    AUTHOR
+        Christian Vigh, 11/2014.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2014/11/09]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Reflection ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use  	Thrak\System\Object ;
+use	Thrak\Reflection\DocCommentElement ;
+
+
+/*==============================================================================================================
+
+    ReflectionAttribute -
+        Implements an attribute.
+
+  ==============================================================================================================*/
+class	ReflectionAttribute		extends  DocCommentElement
+   {
+    }

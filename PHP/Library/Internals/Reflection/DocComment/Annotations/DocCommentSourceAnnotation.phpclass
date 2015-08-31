@@ -1,0 +1,72 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        DocCommentSourceAnnotation.phpclass
+
+    DESCRIPTION
+        Implements an @Source annotation.
+
+    Source
+        Christian Vigh, 11/2014.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2014/11/09]     [Source : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Reflection\Annotations ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use  	Thrak\System\Object ;
+use	Thrak\Reflection\DocCommentAnnotation ;
+
+
+/*==============================================================================================================
+
+    DocCommentSourceAnnotation -
+        Implements an @Source annotation.
+ 
+	Available members :
+ 	- startLine :
+ 		Starting line number in the source Source file, or false if none specified.
+  
+ 	- lineCount :
+ 		Number of lines from startLine that represent the Source from the source file, or false if none
+		specified.
+  
+ 	- description :
+ 		Source description.
+
+  ==============================================================================================================*/
+class	DocCommentSourceAnnotation		extends  DocCommentAnnotation
+   {
+	public function  __construct ( $name, $params_array )
+	   {
+		parent::__construct ( $name, $params_array ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    __tostring -
+	        Customized presentation of an @Source annotation.
+	
+	  ==============================================================================================================*/
+	public function  __tostring ( )
+	   {
+		$values		=  $this -> Parameters ;
+		$result		=  "@" . $this -> Name . " " ;
+		
+		if  ( $values -> startLine  !==  false )
+			$result		.=  $values -> startLine . " " ;
+		
+		if  ( $values -> lineCount  !==  false )
+			$result		.=  $values -> lineCount . " " ;
+		
+		$result		.=  $values -> description ;
+		
+		return ( rtrim ( $result ) ) ;
+	    }
+    }

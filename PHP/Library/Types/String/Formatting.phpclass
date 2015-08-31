@@ -1,0 +1,1047 @@
+<?php
+/***************************************************************************************************
+
+    NAME
+	Formatting.phpclass
+
+    DESCRIPTION
+	Simple text formatting facilities.
+
+    AUTHOR
+	Christian Vigh, 10/2012.
+
+    HISTORY
+    [Version : 1.0]		[Date : 2012/10/02]		[Author : CV]
+	Initial release for Thrak library version 2. Most of the code comes from the original
+	String.phpclass file.
+
+    [Version : 1.0.1]		[Date : 2015/01/08]		[Author : CV]
+ 	. Corrected a bug in the AlignTextMargins() method that caused an extra empty line to be
+ 	  inserted for each empty input line.
+
+    [Version : 1.0.2]		[Date : 2015/03/14]		[Author : CV]
+	. Added the InsertLineAtColumn() method.
+	
+    [Version : 1.0.3]		[Date : 2015/03/17]		[Author : CV]
+	. Added the FormatXml() method.
+	
+    [Version : 1.0.4]		[Date : 2015/04/12]		[Author : CV]
+ 	. Added the IndentList() method.
+	
+    [Version : 1.0.5]		[Date : 2015/04/12]		[Author : CV]
+	. Corrected a bug in the FormatParagraph() method : the value of the left margin was not
+	  included in the total width.
+	
+    [Version : 1.0.6]		[Date : 2015/06/22]		[Author : CV]
+	. Added the IntegerWidth() method.
+	   
+ ***************************************************************************************************/
+namespace 	Thrak\Types\String ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces & objects
+use 		Thrak\System\Object ;
+use 		Thrak\Types\String ;
+
+
+/*===========================================================================================
+
+	Text justification constants.
+
+ ===========================================================================================*/
+define ( 'TEXT_ALIGN_LEFT'		, 1 ) ;			// Align text to left
+define ( 'TEXT_ALIGN_RIGHT'		, 2 ) ;			// Align text to right
+define ( 'TEXT_ALIGN_CENTER'		, 3 ) ;			// Center text
+define ( 'TEXT_ALIGN_JUSTIFY'		, 4 ) ;			// Justify text
+define ( 'TEXT_ALIGN_MULTILINE_JUSTIFY' , 0x8000 ) ;		// When set, text alignment takes into account that the input string may be multiline
+
+
+/*===========================================================================================
+
+    Formatting class -
+	Simple text formatting facilities.
+
+ ===========================================================================================*/
+class  	Formatting 	extends  Object
+   {
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		AlignString - Aligns a string.
+
+	    PROTOTYPE
+		$string = Formatting::AlignString ( $string, $width, $alignment = TEXT_ALIGN_LEFT,
+							$pad_character = " " ) ;
+
+	    DESCRIPTION
+		Aligns a string within $width characters.
+
+	    PARAMETERS
+		$string (string) -
+			String to be aligned.
+
+		$width (integer) -
+			Number of characters to use for string-alignement.
+			If the string length is greater than this value, the string will remain
+			unchanged.
+
+		$alignment (integer) -
+			Alignment option ; can be any of the following constants :
+
+			TEXT_ALIGN_LEFT -
+				The text will be left-aligned.
+
+			TEXT_ALIGN_RIGHT -
+				The text will be right-aligned.
+
+			TEXT_ALIGN_CENTER -
+				The text will be centered.
+
+			TEXT_ALIGN_JUSTIFIED -
+				The text will be justified to the left and to the right.
+
+		$pad_character (string) -
+			Pad character to be used.
+
+	    RETURN VALUE
+		The function returns the string, aligned to fit the specified number of characters.
+		Extra space characters are appended if needed.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  AlignString ( $string, $width, $alignment = TEXT_ALIGN_LEFT, $pad_character = " " )
+	   {
+		$length 		=  strlen ( $string ) ;
+
+		if  ( ! $pad_character )
+			$pad_character = " " ;
+		else
+			$pad_character = $pad_character [0] ;
+
+		// Don't do anything if the string is longer than the desired width
+		if  ( $width  <=  $length )
+			return ( $string ) ;
+
+		// Compute the extra spaces needed
+		$delta 			=  $width - $length ;
+
+		// Process the alignment option
+		switch  ( $alignment )
+		   {
+		   	// TEXT_ALIGN_JUSTIFY -
+		   	//	Justifies the text to the left and to the right.
+		   	case	TEXT_ALIGN_JUSTIFY :
+		   		$words 	=  explode ( ' ', $string ) ;
+		   		$count  =  count ( $words ) ;
+
+				// Make sure more than one word exists in the input string
+		   		if  ( $count  >  1 )
+ 		    		   {
+					// Compute total word length
+					$length 	=  0 ;
+
+					for  ( $i = 0 ; $i  <  $count ; $i ++ )
+						$length += strlen ( $words [$i] ) ;
+
+					// Then distribute spaces over each word
+					$remaining 	=  $width - $length ;
+					$index 		=  1 ;
+
+					while  ( $remaining )
+					   {
+						$words [ $index ] = $pad_character . $words [ $index ] ;
+
+						$index 	=  ( $index + 1 ) % $count ;
+
+						if  ( ! $index )
+							$index = 1 ;
+
+						$remaining -- ;
+					    }
+
+					// Now join back the whole string
+					$result = implode ( '', $words ) ;
+ 		    		    }
+ 		    		// Otherwise perform a simple left text alignment
+		    		else
+		    			$result = $string . str_repeat ( $pad_character, $delta ) ;
+	    			break ;
+
+		   	// TEXT_ALIGN_CENTER -
+		   	//	Centers text.
+		   	case	TEXT_ALIGN_CENTER :
+		   		$delta_left  	=  round ( $delta / 2, 0 ) ;
+		   		$delta_right 	=  $delta - $delta_left ;
+		   		$result 	=  str_repeat ( $pad_character, $delta_left ) . $string . str_repeat ( $pad_character, $delta_right ) ;
+		   		break ;
+
+		   	// TEXT_ALIGN_RIGHT -
+		   	//	Aligns text to the right
+		   	case	TEXT_ALIGN_RIGHT :
+		   		$result =  str_repeat ( $pad_character, $delta ) . $string ;
+		   		break ;
+
+		   	// TEXT_ALIGN_LEFT or any other value -
+		   	//	Align text to left, right-pad with spaces if necessary.
+			case	TEXT_ALIGN_LEFT :
+			default :
+				$result =  $string . str_repeat ( $pad_character, $delta ) ;
+		    }
+
+		// All done, return
+		return ( $result ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		AlignTextMargins - Formats unstructured XML inner contents.
+
+	    PROTOTYPE
+		$text = Formatting::AlignTextMargins ( $contents, $rtrim = true, $eol = "\n" ) ;
+
+	    DESCRIPTION
+		The purpose of this function is to handle inner XML node contents, that can be
+		formatted text such as :
+
+		<some-text>
+			This is some text line 1.
+			This is some text line 2 :
+			   - option 1
+			   - option 2
+
+
+		</some-text>
+
+		What the XML API returns when getting the <some-text> node inner contents is something
+		like :
+
+			"\n\tThis is some text line 1.\n\tThis is some text line 2 :\n\t   - option 1\n   - option 2\n\n\n"
+
+		What we would like to have is the following text (the '|' bar below means 'start of line') :
+		|This is some text line 1
+		|This is some text line 2
+		|   - option 1
+		|   - option 2
+
+		This is the transformation process performed by the FormatXMLInnerContents() function.
+		In the above example, the returned string will be :
+
+			"This is some text line 1.\nThis is some text line 2 :\n   - option 1\n   - option 2\n"
+
+		This is the first line that gives the number of spaces to be removed.
+		Every subsequent line that starts before the first line will be aligned accordingly.
+
+	    PARAMETERS
+		$contents (string of simpleXMLNode) -
+			String to be formatted. This can be an XML node.
+
+		$rtrim (boolean) -
+			When true, extra spaces and newlines at the end of the input string are removed.
+
+		$eol (string) -
+			End of line string. Whathever the end of line is, carriage returns are
+			systematically removed from the input string.
+
+	    RETURN VALUE
+		 The formatted input string. The result does not include a final newline.
+
+	    NOTES
+	    	- This function can align any kind of text, not just XML inner contents.
+	    	- If the input string contains tab characters, they will be replaced with the
+	    	  equivalent number of spaces to reach the next tab stop.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  AlignTextMargins ( $contents, $rtrim = true, $eol = "\n" )
+	   {
+	   	// Suppress carriage returns and replace tabs
+	   	$contents	=  ( string ) $contents ; 	// In case we have a simpleXMLNode
+		$contents	=  str_replace ( "\r", '', String::ExpandTabs ( $contents ) ) ;
+
+		// Paranoia : handle the case that the inner contents are empty of simply made of spaces
+		if  ( trim ( $contents )  ==  "" )
+			return ( $contents ) ;
+
+		// Handle the following case :
+		//	<some-text>
+		//		Hellow world.
+		//	</some-text>
+		// We need in this case to remove the leading newline after the <some-text> tag.
+		if  ( $contents [0]  ==  "\n" )
+			$contents = substr ( $contents, 1 ) ;
+
+		// Convert input into an array of lines
+		$lines 		=  explode ( "\n", $contents ) ;
+
+		// Compute the number of leading spaces that make the lines aligned. For that, we must
+		// identify the first non-empty line
+		$margin 	=  0 ;
+
+		foreach  ( $lines  as  $line )
+		   {
+			if  ( trim ( $line )  !=  '' )
+			   {
+				$length = strlen ( $line ) ;
+
+				for  ( $i = 0 ; $i < $length ; $i ++ )
+				   {
+					if  ( $line [$i]  ==  ' ' )
+						$margin ++ ;
+					else
+						break ;
+				    }
+
+				break ;
+			    }
+		    }
+
+		// Now we should have the number of spaces that start the first non-empty line
+		// Suppress this number of spaces from all lines
+		$output_lines 	=  array ( ) ;
+
+		foreach  ( $lines  as  $line )
+		   {
+		   	// Don't process empty lines
+			if  ( trim ( $line )  ==  '' )
+				$output_lines [] = '' ;
+			// Otherwise remove $margin spaces at the beginning of the current line
+			// but make sure that there are enough spaces
+			else if  ( $margin )
+			   {
+			   	$length 	=  strlen ( $line ) ;
+			   	$limit 		=  min ( $margin, $length ) ;
+
+			   	for  ( $i = 0 ; $i < $margin ; $i ++ )
+			   	    {
+					if  ( $line [$i]  !=  ' ' )
+						break ;
+			   	     }
+
+			   	if  ( $margin  >  0 )
+			   		$line = substr ( $line, $margin ) ;
+
+				$output_lines [] = $line ;
+			    }
+			else
+				$output_lines [] = $line ;
+		    }
+
+		// Build the result string
+		$result = implode ( $eol, $output_lines ) ;
+
+		// Trim last space characters if necessary
+		if  ( $rtrim )
+			$result = rtrim ( $result ) ;
+		else
+			$result = rtrim ( $result, " \t" ) ;
+
+		// Make sure we don't end with an eol sequence.
+		if  ( String::EndsWith ( $result, $eol ) )
+			$result = substr ( $result, 0, strlen ( $result ) - strlen ( $eol ) ) ;
+
+		// All done, return
+		return ( $result ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		FormatParagraph - Formats a paragraph.
+
+	    PROTOTYPE
+	        $result = Formatting::FormatParagraph ( $contents,
+						    $alignment = TEXT_ALIGN_LEFT | TEXT_ALIGN_MULTILINE_JUSTIFY,
+						    $maxwidth = 0, $margin = 0,
+					  	    $eol = "\n" ) ;
+
+	    DESCRIPTION
+		Formats a paragraph.
+
+	    PARAMETERS
+		$contents (string or simpleXML_node) -
+			Text to be formatted.
+
+		$align (integer) -
+			Alignment option ; can be any of the following constants :
+
+			TEXT_ALIGN_LEFT -
+				The text will be left-aligned.
+
+			TEXT_ALIGN_RIGHT -
+				The text will be right-aligned.
+
+			TEXT_ALIGN_CENTER -
+				The text will be centered.
+
+			TEXT_ALIGN_JUSTIFY -
+				The text will be justified to the left and to the right, not
+				including the last line.
+
+			TEXT_ALIGN_MULTILINE_JUSTIFY -
+				Only justifies the strings that have been splitted because they
+				exceed $maxwidth characters.
+				This is a flag that can be or'ed with any of the above options.
+
+			Note that this option works only if a max width has been specified.
+
+		$maxwidth (integer) -
+			Max width for each paragraph line. If this parameter is null or zero, then
+			no limit will be imposed on each paragraph line length. Consequently, the
+			$align parameter will not be taken into account.
+
+		$margin (integer) -
+			Margin to be added to the left of the text. Note that this option is processed
+			AFTER the text has been aligned.
+
+		$eol (string) -
+			End-of-line sequence.
+
+	    RETURN VALUE
+		The return value is a single string containing the formatted paragraph.
+
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  FormatParagraph ( $contents, $align = null, $maxwidth = 0, $margin = 0, $eol = "\n" )
+	   {
+	   	// First, align the paragraph lines with the first non-empty line.
+	   	$contents 	=  Formatting::AlignTextMargins ( $contents, true, $eol ) ;
+
+		// Split lines
+		$lines		=  explode ( $eol, $contents ) ;
+
+		// Provide a default value for the alignment option
+		if  ( ! $align )
+			$align = TEXT_ALIGN_LEFT | TEXT_ALIGN_MULTILINE_JUSTIFY ;
+
+		// If a margin width has been specified, build the string of spaces that will be prepended to each output line
+		if  ( $margin )
+		   {
+			$spaces 	=  str_repeat ( ' ', $margin ) ;
+			$maxwidth      -=  $margin ;
+		    }
+		else
+			$spaces 	=  "" ;
+
+		// Get the "justify splitted lines flag"
+		if  ( $align  &  TEXT_ALIGN_MULTILINE_JUSTIFY )
+		   {
+			$multiline_justify 	=  true ;
+			$align 			=  ( $align  &  ~TEXT_ALIGN_MULTILINE_JUSTIFY ) ;
+		    }
+   		else
+   			$multiline_justify 	=  false ;
+
+		// Process text alignment
+		$output_lines 		=  array ( ) ;
+
+		foreach  ( $lines  as  $line )
+		   {
+		   	$length = strlen ( $line ) ;
+
+			// Non-zero width : break the line if necessary
+		   	if  ( $maxwidth )
+			   {
+			   	// First, break the line into leading white spaces and actual contents
+			   	preg_match ( '/^(?P<spaces> [ \t]*) (?P<string> .*)$/x', $line, $matches ) ;
+
+			   	$line_spaces	=  isset ( $matches [ 'spaces' ] ) ?  $matches [ 'spaces' ] : "" ;
+			   	$line_contents 	=  isset ( $matches [ 'string' ] ) ?  rtrim ( $matches [ 'string' ] ) : "" ;
+
+			   	// Compute the actual line width before breaking the line if it exceeds $maxwidth ;
+			   	// We will indeed at the same number of white spaces to each broken line
+			   	$actual_width 	=  strlen ( $line_contents ) ;
+			   	$space_length 	=  strlen ( $line_spaces ) ;
+
+				// Break the line if it makes senses
+			   	if  ( $actual_width  >  $maxwidth )
+					$broken_strings	=  explode ( "\n", wordwrap ( $line_contents, $maxwidth, "\n", true ) ) ;
+				// Otherwise, simply add the current line to the broken strings array
+				else
+					$broken_strings =  array ( $line_contents ) ;
+
+				// Then proceed with the alignment of each broken string
+				$broken_count  	=  count ( $broken_strings ) ;
+				
+				for  ( $i = 0 ; $i  <  $broken_count ; $i ++ )
+				   {
+		   			$broken_string = $broken_strings [$i] ;
+
+		   			// If the justify option is specified, allow it except for the last string, and only
+		   			// if the string has been splitted.
+		   			if  ( $multiline_justify  &&  $broken_count  >  1  &&  $i + 1  <  $broken_count )
+		   				$real_align = TEXT_ALIGN_JUSTIFY ;
+					else
+						$real_align = TEXT_ALIGN_LEFT ;
+
+				   	// Don't forget to add the leading spaces to each broken line
+					$broken_string =  Formatting::AlignString ( $broken_string, $maxwidth - $space_length, $real_align ) ;
+
+					// Add the result to the output array
+					$output_lines [] = $line_spaces . $broken_string ;
+				    }
+			    }
+    			// Otherwise, simply collect the current line
+			else
+				$output_lines [] = $line ;
+		    }
+
+		// Add left margin
+		$result_lines	=  array ( ) ;
+
+		foreach  ( $output_lines  as  $line )
+			$result_lines [] = $spaces . $line ;
+
+		// All done, build the result and return
+		$result 	=  implode ( $eol, $result_lines ) ;
+
+		return ( $result ) ;
+	    }
+
+	
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		FormatXml - Returns a formatted XML string.
+
+	    PROTOTYPE
+		$result		=  Formatting::FormatXml ( $text, $indent_size = 2 ) ;
+	  
+	    DESCRIPTION
+	 	Formats an Xml string.
+
+	    PARAMETERS
+	 	$text (string) -
+	 		Text to be processed.
+	  
+	 	$indent_size (integer) -
+	 		Number of spaces to be used for indentation.
+
+	    RETURN VALUE
+		Formatted Xml text.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  FormatXml ( $text, $indent_size =  4 )
+	   {
+		$default_indent_size		=  2 ;
+		$doc				=  new \DOMDocument ;
+		$doc -> preserveWhiteSpace	=  false ;
+		$doc -> formatOutput		=  true ;
+		
+		$doc -> loadXML ( $text ) ;
+		
+		$data	=  $doc -> saveXML ( ) ;
+		
+		if  ( $indent_size  !=  $default_indent_size )
+		   {
+			$lines	=  explode ( "\n", $data ) ;
+			
+			foreach  ( $lines  as  &$line )
+			   {
+				if  ( preg_match ( '/^ (?P<spaces> \s+) </imsx', $line, $match ) )
+				   {
+					$count	=  strlen ( $match [ 'spaces' ] ) / $default_indent_size ;
+						
+					if  ( $count )
+					   {
+						$line	=  str_repeat ( ' ', $count * $indent_size ) . ltrim ( $line ) ;
+					    }
+				    }
+			    }
+
+			$data	=  implode ( "\n", $lines ) ;
+		    }
+		
+		return ( $data ) ;
+	    }
+	
+	
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		IndentList - Generates an indented list.
+
+	    PROTOTYPE
+		$result		=  Formatting::IndentList ( $text, $symbol = '.',
+					$tabs = "", $spaces_after = null, $line_break = true ) ;
+	  
+	    DESCRIPTION
+	 	Generates an indented list, either numbered or with bullets.
+
+	    PARAMETERS
+		$text (string or array) -
+	 		Either a multiline string or an array of strings. Each line will be numbered
+	 		or bulleted, depending on the value of $symbol parameter.
+	  
+	 	$symbol (character or integer) -
+	 		If this parameter is specified as a character (or a string), then each item
+	 		will be preceded by it in the returned indented list.
+	 		When this parameter is specified as an integer, the list will automatically
+	 		be numbered.
+	  
+	 	$tabs (string) -
+	 		A string containing tabs or spaces (well, potentially anything in fact) to be
+	 		prepended to each item in the list.
+	  
+	 	$spaces_after (string) -
+	 		String to be added after the bullet or item number. Generally containing 
+	 		spaces.
+	 		If $symbol is numeric, the default value for $spaces_after will be '. ' ; 
+	 		otherwise it will be ' '.
+	  
+	 	$line_break (boolean) -
+	 		When true, a newline followed by $tabs is prepended to the resulting string.
+	  
+	    RETURN VALUE
+		Indented list.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  IndentList ( $text, $symbol = '.', $tabs = '', $spaces_after = null, $line_break = true )
+	   {
+		// Whether a string or an array, the source text must be converted to an array
+		if  ( is_array ( $text ) )
+			$lines	=  $text ;
+		else
+			$lines	=  explode ( "\n", $text ) ;
+		
+		// If the list is to be numbered, compute its max width for alignment purposes
+		$item_index	=  1 ;
+		$numeric	=  false ;
+		
+		if  ( is_numeric ( $symbol ) )
+		   {
+			$numeric	=  true ;
+			$item_index	=  ( integer ) $symbol ;
+			$max_length	=  strlen ( count ( $lines ) ) ;
+			$format		=  "%0{$max_length}d" ;
+			
+			if  ( $spaces_after  ===  null )
+				$spaces_after	=  '. ' ;
+		    }
+		else
+		   {
+			$format		=  "%s" ;
+			
+			if  ( $spaces_after  ===  null )
+				$spaces_after	=  ' ' ;
+		    } 
+
+		// Build the final result
+		$result		=  "" ;
+		
+		if  ( $line_break )
+			$result		=  "\n" ;
+		
+		foreach  ( $lines  as  $line )
+		   {
+			$result		.=  $tabs ;
+			
+			if  ( $numeric )
+				$result		.=  sprintf ( $format, $item_index ++ ) ;
+			else
+				$result		.=  $symbol ;
+			
+			$result		.=  $spaces_after . $line . "\n" ;
+		    }
+		
+		// All done, return 
+		return ( $result ) ;
+	    }
+	
+	
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		InsertTextAtColumn - Inserts a hint line aligned on the specified column.
+
+	    PROTOTYPE
+		$result		=  Formatting::InsertLineAtColumn ( $text, $message, $column,
+	 								$line = false ) ;
+	  
+	    DESCRIPTION
+		When parsing input text and a syntax error is found, it is sometimes necessary to
+		display this input text with an additional line after the line in error, aligned on
+		the column where the syntax error has been encountered.
+	 	InsertLineAtColumn helps doing that automatically ; given the following input text :
+	  
+	 		$badxml		=  "<xmltag></mismatch>" ;
+	  
+	 	and a given character position of 18 for the syntax error (closing tag mismatch), one 
+	 	could display the error text in the following way :
+	  
+	 		$error	=  Formatting::InsertLineAtColumn ( $badxml, "^ Closing tag mismatch", 18 ) ;
+	 		echo $error ;
+	  
+	 	which would display :
+	  
+	 		<xmltag></mismatch>
+	 				 ^ Closing tag mismatch
+
+	    PARAMETERS
+	 	$text (string) -
+	 		Text to be processed.
+	  
+	 	$message (string) -
+	 		Message to be inserted.
+	  
+	 	$column (integer) -
+	 		Column number, starting from 1, where the text is to be inserted.
+	  
+	 	$line (integer) -
+	 		Line number, starting from 1. If this parameter is specified as boolean false,
+	 		then the $column parameter specifies an absolute character position. Otherwise,
+	 		it specifies a column number in that particular line.
+
+	    RETURN VALUE
+		The original text, with the inserted message.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  InsertTextAtColumn ( $text, $message, $column, $line = false ) 
+	   {
+		// On empty input string, simply return the message
+		if (  ! $text )
+			return ( $message ) ;
+		
+		// Be kind for developers who specified a column of zero
+		if  ( ! $column )
+			$column		=  1 ;
+		
+		// Explode input string into array
+		$text_lines	=  explode ( "\n", $text ) ;
+		$text_length	=  strlen ( $text ) ;
+		$text_count	=  count ( $text_lines ) ;
+
+		// A line number has been specified : column position is relative to the start of the line
+		if  ( $line  !==  false )
+		   {
+			// Be kind again...
+			if  ( ! $line )
+				$line	=  1 ;
+			
+			// Line number exceeds current number of line : add the message past the last character of the last line,
+			// without consideration to the specified column index
+			if  ( $line  >  $text_count )
+				$text_lines []	=  str_repeat ( ' ', strlen ( $text_lines [ $text_count - 1 ] ) ) . $message ;
+			// Otherwise, insert the message at the specified column position, after the specified line
+			else
+				array_splice ( $text_lines, $line, 0, 
+					str_repeat ( ' ', min ( $column - 1, strlen ( $text_lines [ $line - 1 ] ) ) ) . $message ) ;
+			
+			return ( implode ( "\n", $text_lines ) ) ;
+		    }
+
+		// No line number has been specified : specified column indicates an absolute position
+		$current_pos	=  0 ;
+		
+		// However, handle the case where the character position is past the end of string
+		if  ( $column  >  $text_length )
+			return ( rtrim ( $text ) . "\n" . str_repeat ( ' ', strlen ( $text_lines [ $text_count - 1 ] ) ) . $message . "\n" ) ;
+		
+		// Character position is inside the supplied string
+		for  ( $i = 0 ; $i  <  $text_count ; $i ++ )
+		   {
+			$text_line	=  $text_lines [$i] ;
+			$length		=  strlen ( $text_line ) + 1 ;	// + 1 because we have to count the newline character
+			
+			// Column is between current character position and the end of line : insert the message after this line (*)
+			if (  $current_pos + $length  >=  $column )
+			   {
+				$extra		=  str_repeat ( ' ', $column - $current_pos - 1 ) . $message ;
+				array_splice ( $text_lines, $i + 1, 0, $extra ) ;
+				
+				return ( implode ( "\n", $text_lines ) ) ;
+			    }
+			// Otherwise count character position after current line
+			else
+				$current_pos	+=  $length ;
+		    }
+		
+		// (*) Code should be the only way to exit this function, but keep being paranoid here. This would mean that the developer
+		// (me) have missed something
+		error ( new \Thrak\System\ParanoidException ( ) ) ;
+	    }
+	
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        IntegerWidth - Computes the maximum width of an integer value.
+	 
+	    PROTOTYPE
+	        $width	=  Formatting::IntegerWidth ( $max_value, $base = 10, $min_value = null ) ;
+	 
+	    DESCRIPTION
+	        Computes the maximum width that will be occupied by an integer value, after its conversion to a string.
+	 
+	    PARAMETERS
+	        $max_value (integer) -
+	                Max value taken.
+			
+		$base (integer) -
+			Number base.
+			
+		$min_value (integer) -
+			When specified, indicates the minimum value that an integer can take.
+	 
+	    RETURN VALUE
+	        The width, in characters, of an integer value falling in the range $min_value..$max_value, when
+		converted to a string in the specified base.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public static function  IntegerWidth ( $max_value, $base = 10, $min_value = null )
+	   {
+		$width		=  strlen ( base_convert ( $max_value, 10, $base ) ) ;
+		
+		if  ( $min_value  !==  null )
+		   {
+			$width2		=  strlen ( base_convert ( $min_value, 10, $base ) ) ;
+			
+			if  ( $width2  >  $width ) 
+				$width	=  $width2 ;
+		    }
+		    
+		return ( $width ) ;
+	    }
+	 
+	 
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		NormalizeString - Normalizes a string.
+
+	    PROTOTYPE
+		$result = Formatting::NormalizeString  ( $str,
+							    $return_value = NORMALIZE_RETURN_STRING,
+							    $options  = Formatting::NORMALIZE_ALL,
+							    $words ) ;
+
+	    DESCRIPTION
+	    	Sometimes it is necessary to normalize a string coming from elsewhere in order to be
+	    	able to compare it with some normalized value stored in a database ; for example,
+	    	a city name or company name.
+	    	The NormalizedString function normalizes a string by applying the following processes :
+	    	- All characters are converted to lowercase
+	    	- Accentuated characters are replaced with their ASCII non-accentuated version
+	    	- Articles are removed
+		The value of the $options parameter determines which transformation is to be applied.
+
+	    PARAMETERS
+	    	$str (string) -
+			String to be normalized.
+
+		$return_value (constant) -
+			Specifies the return value type ; can be any one of the following :
+			- NORMALIZE_RETURN_STRING :
+				The normalized input string is returned as a single string.
+			- NORMALIZE_RETURN_ARRAY :
+				The normalized input string is returned as an array of words.
+			- NORMALIZE_RETURN_BOTH :
+				The normalized input string is returned as an array of two elements
+				containing the normalized string itself and its individual words.
+
+		$options (set of flags) -
+			Bit mask that specifies the transformations to apply to the string ; it can be
+			any combination of the following options :
+			- NORMALIZE_LOWERCASE :
+				The string is converted to lowercase letters.
+			- NORMALIZE_UPPERCASE :
+				The string is converted to uppercase letters.
+			- NORMALIZE_UNACCENTUATE :
+				Accentuated characters are replaced with their ascii, non-accentuated
+				equivalent.
+			- NORMALIZE_REMOVE_ARTICLES :
+				Remove articles that may be present in the string. Articles are those
+				pertaining to the french language.
+			- NORMALIZE_REMOVE_SPECIAL :
+				Remove the words in the input string that are specified by the $words
+				parameter.
+			- NORMALIZE_REMOVE_PUNCTUATION :
+				Remove the punctuation signs.
+			- NORMALIZE_ALL :
+				Shortcut for NORMALIZE_LOWERCASE | NORMALIZE_UNACCENTUATE |
+				NORMALIZE_REMOVE_ARTICLES.
+			- NORMALIZE_ALL_SPECIAL :
+				Equivalent to NORMALIZE_ALL | NORMALIZE_ALL_SPECIAL.
+
+		$words (array of strings) -
+			When the NORMALIZE_REMOVE_SPECIAL option is specified, this array specifies
+			the words to be removed from the string. The NORMALIZE_UPPERCASE,
+			NORMALIZE_UPPERCASE and NORMALIZE_UNACCENTUATE flags also apply to each string
+			of this array.
+
+	 --------------------------------------------------------------------------------------------*/
+	 // Normalization options
+	 const	NORMALIZE_LOWERCASE		=  0x0001 ;
+	 const	NORMALIZE_UNACCENTUATE		=  0x0002 ;
+	 const  NORMALIZE_REMOVE_ARTICLES	=  0x0004 ;
+	 const  NORMALIZE_REMOVE_SPECIAL	=  0x0008 ;
+	 const  NORMALIZE_UPPERCASE		=  0x0010 ;
+	 const  NORMALIZE_REMOVE_PUNCTUATION	=  0x0020 ;
+	 const	NORMALIZE_ALL			=  0x0027 ;
+	 const  NORMALIZE_ALL_SPECIAL		=  0x002F ;
+
+	 // Return options
+	 const  NORMALIZE_RETURN_STRING		=  0 ;
+	 const	NORMALIZE_RETURN_ARRAY		=  1 ;
+	 const	NORMALIZE_RETURN_BOTH		=  2 ;
+
+	// Articles (french)
+	static private 	$NormalizedArticles	=  array ( "d'", "du", "des", "de", "a", "au", "aux", "le", "la", "les", "l'" ) ;
+	// Punctuation
+	static private	$NormalizedPunctuation	=  array ( '.', ';', ':', ',', '!', '?', '-' ) ;
+
+
+	public static function  NormalizeString ( $str,
+ 						  $return_value = self::NORMALIZE_RETURN_STRING,
+	 					  $options      = self::NORMALIZE_ALL,
+	 					  $words	= null )
+  	   {
+  	   	$value = $str ;
+
+ 		// Make sure the $words parameter is an array
+  	   	if  ( ( $options  &  self::NORMALISE_REMOVE_SPECIAL )  &&  ( ! $words  ||  ! is_array ( $words ) ) )
+		     $words = array ( ) ;
+
+		// Remove accentuated letters if needed
+  	   	if  ( $options  &  self::NORMALIZE_UNACCENTUATE )
+			$value = String::Unaccentuated ( $value ) ;
+
+		// Convert to lower- or upper- case if needed
+		if  ( $options  &  self::NORMALIZE_LOWERCASE )
+			$value = strtolower ( $value ) ;
+		else if  ( $options  &  self::NORMALIZE_UPPERCASE )
+			$value = strtoupper ( $value ) ;
+
+		// Remove punctuation signs
+		$value = str_replace ( self::NormalizedPunctuation, ' ', $value ) ;
+
+		// Apply the same transformations to specific word list
+		if  ( $options  &  self::NORMALIZE_REMOVE_SPECIAL )
+		   {
+		   	foreach ( $words  as  &$word )
+		   	   {
+				if  ( $options  &  self::NORMALIZE_UNACCENTUATE )
+					$word = String::Unaccentuated ( $word ) ;
+
+				if  ( $options  &  self::NORMALIZE_LOWERCASE )
+					$word = strtolower ( $word ) ;
+				else if  ( $options  &  self::NORMALIZE_UPPERCASE )
+					$word = strtoupper ( $word ) ;
+		   	    }
+		    }
+
+		// Build the list of words to be removed ; this includes articles and special words, if specified
+		$remove = array ( ) ;
+
+		if  ( $options  &  self::NORMALIZE_REMOVE_ARTICLES )
+			$remove += self::Articles ;
+
+		if  ( $options  &  self::NORMALIZE_REMOVE_SPECIAL )
+			$remove += $words ;
+
+		foreach  ( $remove  as  $item )
+		   {
+			if  ( strpos ( $item, "'" )  !==  false )
+				$value = str_replace ( $item, $item . ' ', $str ) ;
+		    }
+
+	    	// Replace sequences of multiple spaces with a single space
+		$value 		=  preg_replace ( '/\s+/', ' ' ) ;
+
+		// Split the input string into a word array...
+		$strwords	=  explode ( ' ', $str ) ;
+		$result		=  array ( ) ;
+
+		// ... then remove unneeded ones (either articles or else)
+		foreach ( $strwords  as  $words )
+		   {
+			if  ( ! in_array ( $word, $remove ) )
+				$result [] = $word ;
+		    }
+
+		// Handle the desired return value type
+    		switch ( $return_value )
+    		   {
+			case	self::NORMALIZE_RETURN_ARRAY :
+				return ( $result ) ;
+
+			case  	self::NORMALIZE_RETURN_BOTH :
+				return ( array ( implode ( ' ', $result ), $result ) ) ;
+
+			case	self::NORMALIZE_RETURN_STRING :
+			default :
+				return ( implode ( ' ', $result ) ) ;
+    		    }
+  	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		NormalizeZipcode - Normalizes a zipcode.
+
+	    PROTOTYPE
+		$zipcode = Formatting::NormalizeZipcode ( $zipcode, $country = "fr" ) ;
+
+	    DESCRIPTION
+	    	Normalizes a zipcode.
+
+	    PARAMETERS
+	    	$zipcode (integer) -
+	    		Zipcode to be normalized.
+
+    		$country (string) -
+    			2-letters country code.
+
+	     RETURN VALUE
+	     	The normalized zipcode, or false if the input zipcode is not numeric or exceeds the
+	     	country maximum zipcode.
+
+     	     EXAMPLE
+     	     	The following examples are for the "fr" country :
+
+     	     	Input zipcode	Output zipcode
+     	     	-------------	--------------
+     	     	7		07000
+     	     	72              72000
+     	     	6140		06140
+     	     	75011		75011
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  NormalizeZipcode ( $zipcode, $country )
+	   {
+		$result = false ;
+		$length = strlen ( $zipcode ) ;
+
+		switch ( strtolower ( $country ) )
+		   {
+		   	case	'fr' :
+			   	if  ( ! is_numeric ( $zipcode ) )
+			   		break ;
+
+				if  ( $zipcode  <  0  ||  $zipcode  >  101000 )
+					break ;
+
+				switch ( $length )
+				  {
+				  	// "7" -> "07000"
+					case	1 : $result = '0' . $zipcode . '000' 	; break ;
+					// "72" -> "72000"
+					case	2 : $result = $zipcode . '000' 		; break ;
+					// "101" -> "101000"
+					case	3 : $result = $zipcode . '000' 		; break ;
+					// "6200" -> "06200"
+					case	4 : $result = '0' . $zipcode 		; break ;
+					// "72000" -> "72000"
+					// "101000" -> "101000"
+					case	5 :
+					case	6 : $result = $zipcode 			; break ;
+					// Otherwise return false
+					default	  : break ;
+				   }
+		    }
+
+		return ( $result ) ;
+	    }
+   }

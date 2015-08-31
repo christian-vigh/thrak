@@ -1,0 +1,172 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        WebSite.phpclass
+
+    DESCRIPTION
+        Implements facilities for website management.
+
+    AUTHOR
+        Christian Vigh, 06/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/06/01]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Web ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces & objects
+use 	Thrak\System\Object ;
+use	Thrak\IO\Path ;
+use	Thrak\Types\String ;
+use	Thrak\Types\AssociativeArray ;
+use	Thrak\Network\RfcProtocols\Http ;
+use	Thrak\Web\Sanitizer ;
+use	Thrak\Web\UploadedFiles ;
+use	Thrak\Web\Cookies ;
+use	Thrak\Security\Session ;
+
+
+/*==============================================================================================================
+
+    WebSite -
+        Implements facilities for website management.
+
+  ==============================================================================================================*/
+class  WebSite			extends	Object 
+   {
+	// Site running modes
+	const		SITE_MODE_PRODUCTION		=  0 ;		// Reduced error messages
+	const		SITE_MODE_MAINTENANCE		=  1 ;		// Displays a maintenance message, unless the "debug" GET parameter is set
+	const		SITE_MODE_DEBUG			=  2 ;		// Like "Production", with debug messages enabled
+
+	// Site root
+	public		$Root ;
+	// Email contacts
+	public		$Emails ;
+	// Site running mode
+	public		$Mode ;
+	// Maintenance mode parameters
+	public		$MaintenanceMessage ;
+	public		$MaintenanceUntil ;
+	public		$MaintenancePage ;
+	// Default page
+	public		$DefaultPage ;
+	// Client language
+	public		$ClientLanguage ;
+	// User and group 
+	public		$User ;
+	public		$Group ;
+	
+	
+	/*==============================================================================================================
+	
+	    Constructor -
+	        Initializes a WebSite object.
+	
+	  ==============================================================================================================*/
+	public function  __construct ( )
+	   {
+		global		$SITE_ROOT, $Configuration ;
+		
+		// Get real site root
+		$root	=  Path::RealPath ( $SITE_ROOT ) ;
+		
+		if  ( ! is_dir ( $root ) )
+			error ( new \Thrak\System\FileNotDirectoryException ( "Site root \"$root\" is not a valid directory." ) ) ;
+
+		// Configuration : Site/Emails -
+		//	List of available mail contacts.
+		$this -> Emails		=  new AssociativeArray ( $Configuration -> Get ( 'Site/emails', [] ) ) ;
+		$missing		=  $this -> Emails -> ensure_exists 
+					      ( 
+						[ 'contact', 'webmaster', 'support' ], 
+						[ 'contact', 'webmaster', 'support' ] 
+					       ) ;
+		
+		if  ( count ( $missing ) )
+			error ( new \Thrak\System\ConfigurationFileException ( "The following email entries are missing from configuration " .
+					"at section \"Site/Emails\" : " . implode ( ', ', $missing ) ) ) ;
+		
+		// Configuration : Site/Mode -
+		//	Site running mode.
+		$mode	=  $Configuration -> Get ( 'Site/mode', 'production' ) ;
+		
+		switch ( strtolower ( $mode ) )
+		   {
+			case	'production'	:  $this -> Mode =  self::SITE_MODE_PRODUCTION		; break ;
+			case	'maintenance'	:  $this -> Mode =  self::SITE_MODE_MAINTENANCE		; break ;
+			case	'debug'		:  $this -> Mode =  self::SITE_MODE_DEBUG		; break ;
+			default :
+				error ( new \Thrak\System\ConfigurationFileException ( "Invalid site running mode value \"$mode\" for " .
+						"configuration value \"Site/mode\"." ) ) ;
+		    }
+		
+		// Configuration : Site/Maintenance -
+		//	Contains the following entries :
+		//	- 'message' :
+		//		Message to be displayed when the site is under maintenance.
+		//	- 'until' :
+		//		Reopening date. Default is not specified.
+		//	- 'page' :
+		//		Page to be displayed.
+		$this -> MaintenanceMessage	=  $Configuration -> Get ( 'Site/maintenance/message', "Site is under construction." ) ;
+		$this -> MaintenanceUntil	=  $Configuration -> Get ( 'Site/maintenance/until', false ) ;
+		$page				=  $Configuration -> Get ( 'Site/maintenance/page', false ) ;
+		
+		if  ( $page )
+			$page	=  Path::RealPath ( $SITE_ROOT . $page ) ;
+		
+		$this -> MaintenancePage	=  $page ;
+		
+		// Configuration : Site/default-page -
+		//	Default page to be displayed.
+		$this -> DefaultPage		=  $Configuration -> Get ( 'Site/default-page', '/index.html' ) ;
+		
+		// Client language - don't use local variants
+		$language_header		=  new Http\HttpAcceptLanguageHeader ( $_SERVER [ 'HTTP_ACCEPT_LANGUAGE' ] ) ;
+		$language			=  $language_header -> GetHighestPriorityValue ( ) ;
+		
+		if  ( $language )
+		   {
+			$language_value		=  $language -> Value ;
+			
+			if  ( preg_match ( '/(?P<lang>\w+)-.*/', $language_value, $match ) )
+				$language_value		=  $match [ 'lang' ] ;
+		    }
+		else
+			$language_value	=  'fr' ;
+		
+		switch ( strtolower ( $language_value ) )
+		   {
+			case	'fr'	:  $this -> ClientLanguage	=  'fr' ; break ;
+			default		:  $this -> ClientLanguage	=  'en' ;
+		    }
+		
+		// User and group
+		$this -> User		=  $Configuration -> Get ( 'Site/user', 'www-data' ) ;
+		$this -> Group		=  $Configuration -> Get ( 'Site/group', 'www-data' ) ;
+		    
+		// Unset the $_REQUEST array for security reasons
+		unset ( $_REQUEST ) ;
+
+		// Create a session
+		global		$Session ;
+		
+		$Session	=  new Session ( ) ;
+		
+		// Wrap superglobals
+		$_GET		=  Sanitizer::Wrap ( $_GET ) ;
+		$_POST		=  Sanitizer::Wrap ( $_POST ) ;
+		
+		// Uploaded files (if any)
+		$_FILES		=  new UploadedFiles ( $_FILES ) ;
+		
+		// Cookies
+		$_COOKIE	=  new Cookies ( ) ;
+	    }
+    }

@@ -1,0 +1,90 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        LiteralNumber.phpclass
+
+    DESCRIPTION
+        A class to convert numbers to literal words.
+
+    AUTHOR
+        Christian Vigh, 12/2013.
+	
+    CREDITS
+	Largely inspired by the thorough and excellent explanation of Olivier Miakinen :
+	http://www.miakinen.net/vrac/nombres (for the explanation)
+	http://www.miakinen.net/vrac/source/nec.php (for the source code)
+
+    NOTES
+	Although the class has been designed to provide multilingual support, only the french language and its
+	variations have been implemented so far.
+	
+    HISTORY
+    [Version : 1.0]    [Date : 2013/12/25]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+ namespace 	Thrak\Types ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces & objects
+use 		Thrak\System\Object 		as  Object ;
+use		Thrak\Types\String		as  String ;
+
+
+/*==============================================================================================================
+
+    LiteralNumber -
+        A class to convert a number to its language representation.
+
+  ==============================================================================================================*/
+abstract class	LiteralNumber	extends  Object
+   {
+	public		$Options		=  0 ;
+	
+	
+	public function	 __construct ( $options )
+	   {
+		parent::__construct ( ) ;
+		$this -> Option		=  $options ;
+	    }
+	    
+	    
+	public static function  GetInstance ( $language	= 'fr-FR', $options = 0 )
+	   {
+		$items	=  explode ( '-', $language ) ;
+		
+		if  ( count ( $items )  ==  2 )
+			$classname	=  "LiteralNumber_{$items [0]}_{$items [1]}" ;
+		else
+			$classname	=  "LiteralNumber_{$items [0]}" ;
+			
+		if  ( ! class_exists ( $classname ) )
+			error ( new \Thrak\System\RuntimeException ( "No literal number class converter exists for the specified language, '$language'" ) ) ;
+			
+		return ( new $classname ( $options ) ) ;
+	    }
+	    
+	    
+	public abstract function  ToString ( $value ) ;
+	public abstract function  ToNumber ( $value ) ;
+    }
+    
+    
+class	LiteralNumber_fr	extends  LiteralNumber
+   {
+	public function  __construct ( $options )
+	   {
+		parent::__construct ( $options ) ;
+	    }
+    }
+    
+    
+class   LiteralNumber_fr_FR	extends  LiteralNumber_fr
+   {
+	public function  __construct ( $options )
+	   {
+		parent::__construct ( $options ) ;
+	    }
+    }

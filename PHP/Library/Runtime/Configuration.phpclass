@@ -1,0 +1,361 @@
+<?php
+/***************************************************************************************************
+
+    NAME
+	Configuration.phpclass
+
+    DESCRIPTION
+	A class that holds all the configuration parameters.
+
+    AUTHOR
+	Christian Vigh, 10/2012.
+
+    HISTORY
+    [Version : 1.0]		[Date : 2012/10/02]		[Author : CV]
+	Initial release.
+
+    [Version : 2.0]		[Date : 2013/12/12]		[Author : CV]
+	Migrated to version 2 of the Thrak library.
+	Added a $mode parameter to the GetExistingDirectory() function.
+
+ ***************************************************************************************************/
+namespace 	Thrak\Runtime ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces & objects
+use 		Thrak\System\Object 		as  Object ;
+use 		Thrak\Types\String		as  String ;
+
+
+/*===========================================================================================
+
+    Configuration class -
+	Holds all the configuration parameters for the application. May represent the merge
+	of several configuration files.
+
+	Since site configuration files are designed to be read-only, the Configuration class
+	to be simple and fast. In fact, only the following methods exist :
+
+	- Load(), that adds a PHP file containing a class named Configuration and whatever
+	  variables you need within. Several files can be loaded this way.
+	- Get(), which retrieves the value of a parameter.
+
+	A sample configuration file is listed below :
+
+		class  Configuration
+		   {
+			public $Environment 	=  array
+			   (
+			   	'include-path'		=>  array
+			   	    (
+			   	    	".",
+			   	    	"thrak://PHP/Library"
+			   	     )
+			    ) ;
+
+			public $Console 	=  array
+			   (
+			   	'display-width'		=>  80
+			    ) ;
+		    }
+
+	To retrieve the value of a parameter, simply follow the path that leads to the final
+	value and separate each element with a slash ; the variable name itself (without the
+	leading "$" sign) is itself the root of the path ; for example :
+
+		"console/display-width"
+
+	Key names are not case-sensitive.
+
+ ===========================================================================================*/
+class  Configuration
+   {
+	// This static variable is here to make the object gardenkeeper happy
+	public static	$IsObject			=  false ;
+	
+   	// Array that holds the configuration parameters
+	public  	$Values 		=  array ( ) ;
+
+
+	/*==================================================================================================
+
+	    Constructor -
+		Builds a Configuration object. If a configuration file has been specified, loads it.
+
+	  ==================================================================================================*/
+	public function  __construct ( $path = null )
+	   {
+		if  ( $path )
+			Load ( $path ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Load - Loads a configuration file.
+
+	    PROTOTYPE
+		$Configuration -> Load ( $path ) ;
+
+	    DESCRIPTION
+		Loads the specified configuration file, which must contain a class named Configuration.
+		This class can contain any variables, which in turn can be associative arrays containing
+		further parameters.
+		If several files are loaded this way, existing values will be overwritten ; new values
+		will be added.
+
+	    PARAMETERS
+		$path -
+			Path to the configuration file to be loaded.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  Load ( $path )
+	   {
+	   	global		$Autoloader ;
+
+	   	// Check that the file exists
+	   	if  ( ! file_exists ( $path ) )
+		    {
+			echo ( "Unable to find configuration file \"$path\"." ) ;
+			exit ;
+		     }
+
+		// Load file contents
+		require_once ( $path ) ;
+
+		// Replace the existing values and add the new ones.
+		$this -> Values =  $this -> Merge ( $this -> Values, $Configuration ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Get - Gets a configuration parameter.
+
+	    PROTOTYPE
+		$value = $Configuration -> Get ( $key, $default = null ) ;
+
+	    DESCRIPTION
+		Gets a configuration parameter.
+
+	    PARAMETERS
+		$key -
+			Parameter key name.
+
+		$default -
+			Default value, if parameter does not exist.
+
+	    RETURN VALUE
+	    	Returns the value of the specified parameter, or $default if the parameter does not
+	    	exist.
+
+	    NOTES
+	    	If you want to retrieve a reference to the specified parameter (and not its value),
+	    	change :
+
+			$value = $Configuration -> Get ( $key, $default = null ) ;
+
+		with :
+
+			$value = &$Configuration -> Get ( $key, $default = null ) ;
+
+		You can later assign a different value :
+
+			$value = "something new" ;
+
+		Note that this will change the parameter value only during runtime, not in the
+		original configuration file.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  &Get ( $key_index, $default = null )
+	   {
+		$keys 		=  explode ( '/', $key_index ) ;
+		$array 		=  &$this -> Values ;
+
+		// Loop through keys
+	   	// Get individual key values
+		foreach  ( $keys  as  $key )
+		   {
+		   	// For each key in the supplied $key_index, check if the same key exist in $this -> Values
+		   	// (which contains the parameter values for all configuration files loaded so far)
+		   	$found = false ;
+
+		   	foreach  ( $array  as  $akey => $avalue )
+		   	   {
+		   		if  ( ! strcasecmp ( $akey, $key ) )
+		   		   {
+		   			$found 		=  true ;
+		   			$new_key    	=  $akey ;
+		   			break ;
+		   		    }
+		   	    }
+
+		   	// If found, then we can continue with the current array value
+			if  ( $found )
+				$array 		=  &$array [ $new_key ] ;
+			// Otherwise the key does not exist : return the supplied default value
+			else
+				return  $default  ;
+		    }
+
+		// We arrive here when we have found a match for all the keys specified in the $key_index parameter.
+		return  $array ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	    	GetExistingDirectory - Gets a directory.
+
+	    PROTOTYPE
+		$path = $Configuration -> GetExistingDirectory ( $create, $mode, $key, ... ) ;
+
+	    DESCRIPTION
+		Returns a valid directory either from the configuration parameter $key, or from the
+		list of directories specified after this parameter ("...").
+		If the directory does not exist, it will be created if the $create parameter is true.
+
+	    PARAMETERS
+	    	$create (boolean) -
+			Creates the directory if it does not exist.
+
+		$mode (integer) - 
+			Access modes to be applied if the directory is created by this function.
+			
+		$key (string) -
+			Parameter name, in the configuration file, of the searched directory.
+
+		... (path) -
+			Additional list of directories to be scanned if the $key parameter points to
+			an invalid directory.
+
+	    RETURN VALUE
+		The path to an existing directory, taken from the first existing or creatable path
+		given by $key or "...".
+		If no existing directory has been found, or no directory could be created, null is
+		returned.
+
+	    NOTES
+	    	The returned path always end with a slash.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  GetExistingDirectory ( $create, $mode, $key_index )
+	   {
+		$value 		=  $this -> Get ( $key_index ) ;
+		$list  		=  array ( ) ;
+		
+		if  ( ! $mode ) 
+			$mode = 0744 ;
+
+		if  ( $value  !==  null )
+			$list   = array ( $value ) ;
+
+		for  ( $i = 3 ; $i  <  func_num_args ( ) ; $i ++ )
+			$list [] = func_get_arg ( $i ) ;
+
+		foreach  ( $list  as  $path )
+		   {
+		   	$path = \Thrak\IO\Path::ToUnix ( \Thrak\IO\Path::RealPath ( $path ) ) ;
+
+		   	if  ( substr ( $path, -1, 1 )  !=  '/' )
+		   		$path .= '/' ;
+
+		   	if  ( file_exists ( $path ) )
+			   {
+				if  ( is_dir ( $path ) )
+					return ( $path ) ;
+
+				warning ( "Configuration::GetExistingDirectory : the \"$path\" path is not a directory." ) ;
+			    }
+			else if  ( $create )
+			   {
+				@mkdir ( $path, $mode, true ) ;
+
+				if  ( ! file_exists ( $path ) )
+					warning ( "Configuration::GetExistingDirectory : could not create the \"$path\" directory." ) ;
+				else
+					return ( $path ) ;
+			    }
+		    }
+
+		return ( null ) ;
+	    }
+	    
+	    
+	    
+	/*==============================================================================================================
+	
+	    NAME
+	        Merge - Recursively merges two arrays.
+	
+	    PROTOTYPE
+	        $result		=  $obj -> Merge ( $array1, $array2 ) ;
+	
+	    DESCRIPTION
+	        Recursively merges $array1 and $array2.
+	
+	    PARAMETERS
+	        $array1, $array2 (array) -
+	                Array to be merged.
+	
+	    RETURN VALUE
+	        The result of merging $array1 to $array2.
+	
+	    NOTES
+	        This function behaves differently from array_merge_recursive : if numeric indexes are present in $array2,
+		they are simply added to $array1. This is useful for configuration entries like 'include-path', where
+		entries are not associative and simply accumulated.
+	
+	  ==============================================================================================================*/
+	protected function  Merge ( $array1, $array2 )
+	   {
+		$array1		=  array_change_key_case ( $array1, CASE_LOWER ) ;
+		$array2		=  array_change_key_case ( $array2, CASE_LOWER ) ;
+		
+		// If initial array is empty, override it with $array2
+		if  ( ! $array1 )
+			return ( $array2 ) ;
+			
+		// Make sure every key is present in both $array1 and $array2
+		foreach  ( array_keys ( $array1 )  as  $key )
+		   {
+			if  ( ! isset ( $array2 [ $key ] ) )
+				$array2 [ $key ]	=  null ;
+		    }
+		    
+		foreach  ( array_keys ( $array2 )  as  $key )
+		   {
+			if  ( ! isset ( $array1 [ $key ] ) )
+				$array1 [ $key ]	=  null ;
+		    }
+		    
+		// Compare each individual entries of $array1 and $array2
+		foreach  ( array_keys ( $array1 )  as  $key )
+		   {
+			$handled	=  false ;
+			
+			if  ( is_array ( $array1 [ $key ] ) )
+			   {
+				if  ( is_array ( $array2 [ $key ] ) )
+				   {
+					$array1 [ $key ]	=  $this -> Merge ( $array1 [ $key ], $array2 [ $key ] ) ;
+					$handled		=  true ;
+				    }
+			    }
+			    
+			if  ( ! $handled  &&  $array2 [ $key ]  !==  null )
+			   {
+				if  ( is_numeric ( $key ) )
+					$array1 []		=  $array2 [ $key ] ;
+				else
+					$array1 [ $key ]	=  $array2 [ $key ] ;
+			    }
+		    }
+		    
+		return ( $array1 ) ;
+	    }
+    }

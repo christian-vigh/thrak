@@ -1,0 +1,182 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        COMClassDefinitions.phpclass
+
+    DESCRIPTION
+        This file holds the classes needed to hold a class definition for COM object.
+        A class definition is represented by a COMClassDefinition object, which has the following properties :
+        - Name     : name of the class
+        - GUID     : Class GUID
+        - Members  : An array of COMClassElementDefinitionBase objects (which can be either COMClassMethodDefinition or
+                                COMClassPropertyDefinition).
+                
+        Methods return values and property types are represented by a COMClassValueTypeDefinition class.
+        Methods parameters are represented by a COMClassMethodParameterDefinition class.
+        Note that the class design has been made really simple ; the goal was to be able to hold the structure
+        of a class definition as given by the com_print_typeinfo() function, not to provide a complete 
+        framework !
+ 
+    AUTHOR
+        Christian Vigh, 10/2014.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2014/10/22]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Windows\COM ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use  	Thrak\System\Object ;
+use	Thrak\Windows\AbstractWindowsBase ;
+
+
+/*===========================================================================================================
+
+                Class definition objects.
+                
+*===========================================================================================================*/ 
+
+// COMClassDefinitionBase -
+//           The base class for all classes involved into class definition representation. Currently does nothing,
+//           but who knows ?
+abstract class COMClassDefinitionBase               extends Object
+   {
+	public function  __construct ( )
+	   {
+	               parent::__construct ( ) ;
+	    }
+    }
+
+// COMClassElementDefinitionBase -
+//            The base class for a property or method definition. 
+abstract class  COMClassElementDefinitionBase              extends  COMClassDefinitionBase
+   {
+	public    $Name ;
+	public    $DispId                =  null ;
+	public  $Comment          =  null ;
+	public    $ReturnValue   =  null ;
+	
+	
+	public function  __construct ( $name )
+	   {
+	               parent::__construct ( ) ;
+	               $this -> Name   =  $name ;
+	    }
+	    
+	public abstract function  IsMethod ( ) ;
+	public abstract function  IsProperty ( ) ;
+    }
+
+// COMClassValueTypeDefinition -
+//            Definition that represents a value type and holds the value type constant name (VT_xxx)
+//            together with its integer value.
+//            COMClassValueTypeDefinition objects are used in the following situations :
+//            - To represent the return value type of a method
+//            - To represent the type of a property
+//            - To represent the type of a method parameter (input type, output type)    
+class  COMClassValueTypeDefinition     extends  COMClassDefinitionBase
+   {
+	public    $ConstantName ;
+	public  $ConstantValue ;
+	
+	
+	public function  __construct ( $name, $value )
+	   {
+	               parent::__construct ( ) ;
+	               $this -> ConstantName =  $name ;
+	               $this -> ConstantValue =  $value ;
+	    }
+    }
+    
+// COMClassMethodParameterDefinition -
+//            Holds a method parameter definition.   
+class  COMClassMethodParameterDefinition  extends COMClassDefinitionBase
+   {
+	public    $Name ;
+	public  $InOut ;
+	public    $InType ;
+	public  $OutType ;
+	
+	
+	public function  __construct ( $name, $inout, $intype, $outtype =  false ) 
+	   {
+	               parent::__construct ( ) ;
+	               $this -> Name                   =  $name ;
+	               $this -> InOut                   =  $inout ;
+	               $this -> InType                 =  $intype ;
+	               $this -> OutType             =  $outtype ;
+	    }
+	  
+	public function  IsReference ( )
+	   { return ( $this -> Name [0]  ==  '&' ) ; }
+   }
+
+// COMClassMethodDefinition -
+//            Holds a method definition. 
+class  COMClassMethodDefinition          extends  COMClassElementDefinitionBase
+   {
+	public    $Parameters     =  array ( ) ;
+	
+	
+	public function  __construct ( $name )
+	   {
+	               parent::__construct ( $name ) ;
+	    }
+	
+	public function  AddParameter ( $parameter ) 
+	   {
+	               $name                                                 =  preg_replace ( '/[$&]/', '', $parameter -> Name ) ;
+	               $this -> Parameters [ $name ]   =  $parameter ;
+	    }
+	
+	public function  IsMethod ( )
+	   { return ( true ) ; }
+	   
+	public function  IsProperty ( )
+	   { return ( false ) ; }
+    }  
+ 
+
+// COMClassPropertyDefinition -
+//            Holds a property definition.
+class  COMClassPropertyDefinition         extends  COMClassElementDefinitionBase
+   {
+	public function  __construct ( $name )
+	   {
+	               parent::__construct ( $name ) ;
+	    }
+	    
+	public function  IsMethod ( )
+	   { return ( false ) ; }
+	   
+	public function  IsProperty ( )
+	   { return ( true ) ; }
+    }  
+
+
+// COMClassDefinition -
+//            Holds a whole class definition.
+class  COMClassDefinition           extends COMClassDefinitionBase
+  {
+	public    $Name ;
+	public    $GUID ;
+	public  $Members           =  array ( ) ;
+	
+	
+	public function  __construct ( $name )
+	  {
+	               parent::__construct ( ) ;
+	               $this -> Name   =  $name ;
+	    }
+	    
+	    
+	public function  Add ( $method_or_property ) 
+	   {
+	               $name                                                 =  preg_replace ( '/[$&]/', '', $method_or_property -> Name ) ;
+	               $this -> Members [ $name ]      =  $method_or_property ;
+	    }
+    }

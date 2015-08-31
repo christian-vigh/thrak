@@ -1,0 +1,761 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        RandomOrg.phpclass
+
+    DESCRIPTION
+        A class for retrieving random values from Random.org.
+
+    AUTHOR
+        Christian Vigh, 10/2014.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2014/10/19]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Internet ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use  	Thrak\System\Object ;
+
+
+/*==============================================================================================================
+
+    RandomOrg class -
+        Accesses the random.org site to retrieve random values.
+
+  ==============================================================================================================*/
+class  RandomOrg	extends Object
+   {
+	// Url of random.org
+	const	WWW_RANDOM_ORG				=  "https://www.random.org/" ;
+	
+	// URLs for specialized task :
+	const	INTEGERS_URL				=  "integers/" ;			// Integer numbers generation
+	const	SEQUENCES_URL				=  "sequences/" ;			// Sequences of integers within a range
+	const	STRINGS_URL				=  "strings/" ;				// Random strings
+	const   DECIMALS_URL				=  "decimal-fractions/" ;		// Float values between 0 and 1
+	const   BYTES_URL				=  "cgi-bin/randbyte" ;			// Random bytes
+	const	QUOTA_URL				=  "quota/" ;				// Do nothing but reporting currently authorized quota
+	
+	// Be kind, put your own email address here so that random.org people can contact you in case of problem
+	const	USER_AGENT_STRING			=  "christian.vigh@orange.fr" ;
+	
+	// Request output format : plain text
+	const	PLAIN_TEXT_FORMAT			=  "format=plain" ;
+
+	// This class enforces some kind of quota management
+	const	QUOTA_PER_DAY				=  1000000 ;				// Max random.org authorized quota, in bits
+	const   QUOTA_REJECT_LARGE_REQUESTS		=  100000 ;				// Below this quota, large requests will be rejected by the RandomOrg class
+	const   QUOTA_REJECT_SMALL_REQUESTS		=  5000 ;				// Up to this limit, small requests will continue to be served
+	const   QUOTA_SMALL_REQUEST_SIZE		=  144 ;				// Maximum size in bits of a small request
+	
+	// Limits for query parameters
+	const	MIN_INTEGER_VALUE			=  -1000000000 ;			// Min/max values for an integer
+	const   MAX_INTEGER_VALUE			=  1000000000 ;
+	const   MAX_STRING_LENGTH			=  20 ;					// Max random string length
+	const   MIN_PASSWORD_LENGTH			=  6 ;					// Min/max password lengths
+	const   MAX_PASSWORD_LENGTH			=  24 ;
+	const   MAX_SEQUENCE_RANGE			=  10000 ;				// Max range of values for sequence generation
+	const	MAX_DECIMAL_PLACES			=  20 ;					// Max decimal places for fraction generaion
+
+	// Limits for query parameters (again) : Max number of values tht can be generated
+	const   MAX_VALUES				=  10000 ;				// For anything but...
+	const   MAX_BYTE_VALUES				=  16384 ;				// ... bytes
+	const   MAX_PASSWORD_VALUES			=  100 ;				// ... or passwords
+	
+	// Random string generation options
+	const   STRING_DIGITS				=  0x01 ;				// String will contain digits
+	const   STRING_UPPER				=  0x02 ;				// String will contain uppercase letters
+	const   STRING_LOWER				=  0x04 ;				// String will contain lowercase letters
+	const   STRING_ALPHA				=  0x0F ;				// String will contain letters & digits
+	
+	// Global user agent string. If not specified in the class constructor, this is the user agent
+	// string that will be used
+	private static $GlobalUserAgent			=  self::USER_AGENT_STRING ;
+	
+	// Global statistics & quota (results of the last instance query)
+	private static $GlobalLastQueryType		=  false ;
+	private static $GlobalLastQuery			=  false ;
+	private static $GlobalLastResult		=  false ;
+	private static $GlobalLastQueryTime		=  0 ;
+	private static $GlobalLastResultTime		=  0 ;
+	private static $GlobalLastQueryExecutionTime	=  0 ;
+	private static $GlobalCurrentQuota		=  0 ;
+	
+	// User agent string for this instance ; either the one specified in the constructor, or the global one
+	private $UserAgent				=  null ;
+	
+	// Instance-specific statistics
+	private $LastQueryType				=  false ;
+	private $LastQuery				=  false ;
+	private $LastResult				=  false ;
+	private $LastQueryTime				=  0 ;
+	private $LastResultTime				=  0 ;
+	private $LastQueryExecutionTime			=  0 ;
+	private $CurrentQuota				=  0 ;
+	
+
+	/*==============================================================================================================
+	
+	    NAME
+	        Constructor - Builds a RandomOrg object.
+	
+	    PROTOTYPE
+	        $rand	=  new RandomOrg ( $user_agent = null ) ;
+	
+	    DESCRIPTION
+	        Builds a RandomOrg object. The current quota is automatically retrieved from the random.org website.
+	
+	    PARAMETERS
+	        $user_agent (string) -
+	                User agent string. Can be set to any string but can be set, as recommended by random.org people,
+			to the owner email address, so that they can report problems if any.
+			If not specified, the default user agent string is used.
+	
+	  ==============================================================================================================*/
+	public function  __construct ( $user_agent =  null ) 
+	   {
+		if  ( $user_agent )
+			$this -> UserAgent	=  $user_agent ;
+		else
+			$this -> UserAgent	=  self::$GlobalUserAgent ;
+		
+		$this -> GetQuota ( false ) ;
+	    }
+	
+
+	/**************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 ******                                       PRIVATE METHODS                                            ******
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************/
+
+	/*==============================================================================================================
+	
+	    __overquota -
+	        Checks if the current quota allows for retrieving the specified number of bits.
+	
+	  ==============================================================================================================*/
+	private function  __overquota ( $requested_bits )
+	   {
+		$new_quota	=  $this -> CurrentQuota - $requested_bits ;
+		
+		// No more requests will be accepted if it force up to go below QUOTA_REJECT_SMALL_REQUESTS bits
+		if  ( $new_quota  <=  self::QUOTA_REJECT_SMALL_REQUESTS )
+			return ( true ) ;
+
+		// Quota is in the range [QUOTA_REJECT_SMALL_REQUESTS..QUOTA_REJECT_LARGE_REQUESTS] : accept only request
+		// not exceeding QUOTA_SMALL_REQUEST_SIZE bits
+		if  ( $this -> CurrentQuota  >  self::QUOTA_REJECT_SMALL_REQUESTS  &&  $this -> CurrentQuota  <  self::QUOTA_REJECT_LARGE_REQUESTS )
+		   {
+			if  ( $requested_bits  <=  self::QUOTA_SMALL_REQUEST_SIZE )
+				return ( false ) ;
+			else 
+				return ( true ) ;
+		    }
+		
+		// All checkings passed, say it's ok
+		return ( false ) ;
+	    }
+
+	
+	/*==============================================================================================================
+	
+	    __retrieve -
+	        Executes a request and retrieves returned information.
+	
+	  ==============================================================================================================*/
+	private function  __retrieve ( $query_type, $suburl, $parameters, $update_statistics = true )
+	   {
+		$last_query_time		=  time ( ) ;
+		$last_query_microtime		=  microtime ( true ) ;
+		
+		$options	=  array 
+		   ( 
+			CURLOPT_RETURNTRANSFER		=>  true,
+			CURLOPT_HEADER			=>  false,
+			CURLOPT_FOLLOWLOCATION		=>  true,
+			CURLOPT_ENCODING		=>  '',
+			CURLOPT_USERAGENT		=>  self::USER_AGENT_STRING,
+			CURLOPT_AUTOREFERER		=>  true,
+			CURLOPT_CONNECTTIMEOUT		=>  30,
+			CURLOPT_TIMEOUT			=>  30,
+			CURLOPT_MAXREDIRS		=>  10,
+			CURLOPT_SSL_VERIFYPEER		=>  false
+		    ) ;
+		
+		$query		=  self::WWW_RANDOM_ORG . $suburl . "?$parameters" ;
+		$curl_request	=  curl_init ( $query ) ;
+		curl_setopt_array ( $curl_request, $options ) ;
+		$contents	=  curl_exec ( $curl_request ) ;
+		curl_close ( $curl_request ) ;
+
+		$last_result_time		=  time ( ) ;
+		$last_result_microtime		=  microtime ( true ) ;
+		
+		if  ( $update_statistics )
+			$this -> __update_statistics ( $query_type, $last_query_time, $query, $last_result_time, $contents,
+				$last_result_microtime - $last_query_microtime ) ;
+		
+		return ( trim ( $contents ) ) ;		
+	    }
+
+
+	/*==============================================================================================================
+	
+	    __update_statistics -
+	        Updates usage statistics.
+	
+	  ==============================================================================================================*/
+	private function  __update_statistics ( $last_query_type, $last_query_time, $query, $last_result_time, $result, $elapsed ) 
+	   {
+		$this -> LastQueryType			=  
+		self::$GlobalLastQueryType		=  $last_query_type ;
+		
+		$this -> LastQuery			=
+		self::$GlobalLastQuery			=  $query ;
+
+		$this -> LastResult			= 
+		self::$GlobalLastResult			=  $result ;
+		
+		$this -> LastQueryTime			=
+		self::$GlobalLastQueryTime		=  $last_query_time ;
+		
+		$this -> LastResultTime			=
+		self::$GlobalLastResultTime		=  $last_result_time ;
+		
+		$this -> LastQueryExecutionTime		=
+		self::$GlobalLastQueryExecutionTime	=  ( integer ) ( $elapsed * 1000 ) ;	// Milliseconds
+		
+		$this -> CurrentQuota			=  
+		self::$GlobalCurrentQuota		=  $this -> GetQuota ( false ) ;
+	    }
+
+	
+	/*==============================================================================================================
+	
+	    __to_integer_array, __to_float_array -
+	        Converts an array of strings to an array of integers or floats.
+	
+	  ==============================================================================================================*/
+	private function  __to_integer_array ( &$array )
+	   {
+		foreach  ( $array  as  &$item )
+			$item	=   ( integer ) $item ;
+		
+		return ( $array ) ;
+	    }
+	
+	
+	private function  __to_float_array ( &$array )
+	   {
+		foreach  ( $array  as  &$item )
+			$item	=   ( double ) $item ;
+		
+		return ( $array ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        GetBytes - Retrieves a sequence of random bytes.
+	
+	    PROTOTYPE
+	        $array	=  $rand -> GetBytes ( $count ) ;
+	
+	    DESCRIPTION
+	        Retrieves $count random bytes as an integer array.
+	
+	    PARAMETERS
+	        $count (integer) -
+	                Number of bytes to retrieve. Must be between 1 and RandomOrg::MAX_BYTE_VALUES.
+	
+	    RETURN VALUE
+	        An array of integers containing the byte values.
+	
+	  ==============================================================================================================*/
+	public function  GetBytes ( $count )
+	   {
+		if  ( $count  <  1  ||  $count  >  self::MAX_BYTE_VALUES )
+			error ( new \Thrak\System\InvalidArgumentException ( "Number of bytes to generate should be in the range [1.." .
+					self::MAX_BYTE_VALUES . "]." ) ) ;
+		
+		if  ( $this -> __overquota ( $count * 8 ) )
+			return ( false ) ;
+		
+		$params		=  "&nbytes=$count" .
+				   "&format=d" ;
+		
+		$result		=  $this -> __retrieve ( 'bytes', self::BYTES_URL, $params ) ;
+		$result		=  preg_replace ( '/\s+/', ' ', $result ) ;
+		$values		=  explode ( ' ', $result ) ;
+		
+		return ( $this -> __to_integer_array ( $values ) ) ;
+	    }
+
+
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        GetFloat, GetFloats - Retrieves an array of random float values.
+	
+	    PROTOTYPE
+	        $float	=  $rand -> GetFloat  ( $decimal_places = self::MAX_DECIMAL_PLACES ) ;
+	        $array	=  $rand -> GetFloats ( $count, $decimal_places = self::MAX_DECIMAL_PLACES ) ;
+	
+	    DESCRIPTION
+	        GetFloats() retrieves $count random floats as an array. GetFloat() retrieves a single float value.
+		Returned values are in the interval [0..1].
+	
+	    PARAMETERS
+	        $count (integer) -
+	                Number of floats to retrieve. Must be between 1 and MAX_VALUES.
+	
+	 	$decimal_places (integer) -
+	 		Maximum number of decimal places for the float values.
+	  
+	    RETURN VALUE
+	        GetFloats() returns an array of float values in the range [0..1].
+		GetFloat() returns a single float value.
+	
+	  ==============================================================================================================*/
+	public function  GetFloat ( $decimal_places = self::MAX_DECIMAL_PLACES )
+	   {
+		$values		=  $this -> GetFloats ( 1, $decimal_places ) ;
+		
+		if  ( count ( $values ) )
+			return ( $values [0] ) ;
+		else
+			return ( false ) ;
+	    }
+
+	public function  GetFloats ( $count, $decimal_places = self::MAX_DECIMAL_PLACES )
+	   {
+		if  ( $count  <  1  ||  $count  >  self::MAX_VALUES )
+			error ( new \Thrak\System\InvalidArgumentException ( "Number of floats to generate should be in the range [1.." .
+					self::MAX_VALUES . "]." ) ) ;
+		
+		if  ( $decimal_places  <  1  ||  $decimal_places  >  self::MAX_DECIMAL_PLACES )
+			error ( new \Thrak\System\InvalidArgumentException ( "Number of decimal places to generate should be in the range [1.." .
+					self::MAX_DECIMAL_PLACES . "]." ) ) ;
+			
+		if  ( $this -> __overquota ( $count * 64 ) )
+			return ( false ) ;
+		
+		$params		=  self::PLAIN_TEXT_FORMAT .
+				   "&num=$count" .
+				   "&col=$count" .
+				   "&dec=$decimal_places" .
+				   "&rnd=new" ;
+		
+		$result		=  $this -> __retrieve ( 'floats', self::DECIMALS_URL, $params ) ;
+		$result		=  preg_replace ( '/\s+/', ' ', $result ) ;
+		$values		=  explode ( ' ', $result ) ;
+		
+		return ( $this -> __to_float_array ( $values ) ) ;
+	    }
+
+		
+
+	/*==============================================================================================================
+	
+	    NAME
+	        GetInteger, GetIntegers - Retrieves an array of random integer values.
+	
+	    PROTOTYPE
+	        $integer	=  $rand -> GetInteger  ( $min = self::MIN_INTEGER_VALUE, $max = self::MAX_INTEGER_VALUE ) ;
+	        $array		=  $rand -> GetIntegers ( $count, 
+						$min = self::MIN_INTEGER_VALUE, $max = self::MAX_INTEGER_VALUE ) ;
+	
+	    DESCRIPTION
+	        GetIntegers() retrieves $count random integers as an array. GetInteger() retrieves a single integer value.
+	
+	    PARAMETERS
+	        $count (integer) -
+	                Number of integers to retrieve. Must be between 1 and MAX_VALUES.
+	
+		$min (integer) -
+	 		Min integer value that can be returned. Cannot be below RandomOrg::MIN_INTEGER_VALUE.
+	  
+	 	$max (integer) -
+	 		Max integer value that can be returned. Cannot exceed RandomOrg::MAX_INTEGER_VALUE.
+	    RETURN VALUE
+	        GetIntegers() returns an array of random integer values.
+		GetInteger() returns a single integer value.
+	
+	  ==============================================================================================================*/
+	public function  GetInteger ( $min = self::MIN_INTEGER_VALUE, $max = self::MAX_INTEGER_VALUE )
+	   {
+		$values		=  $this -> GetIntegers ( 1, $min, $max ) ;
+		
+		if  ( count ( $values ) )
+			return ( $values [0] ) ;
+		else
+			return ( false ) ;
+	    }
+	
+	
+	public function  GetIntegers ( $count, $min = self::MIN_INTEGER_VALUE, $max = self::MAX_INTEGER_VALUE )
+	   {
+		if  ( $min  ===  null ) 
+			$min	=  self::MIN_INTEGER_VALUE ;
+		
+		if  ( $max  ===  null ) 
+			$max	=  self::MAX_INTEGER_VALUE ;
+		
+		if  ( $min  <  self::MIN_INTEGER_VALUE )
+			error ( new \Thrak\System\InvalidArgumentException ( "The minimum value is " . self::MIN_INTEGER_VALUE ) ) ;
+		
+		if  ( $max  >  self::MAX_INTEGER_VALUE )
+			error ( new \Thrak\System\InvalidArgumentException ( "The maximum value is " . self::MIN_INTEGER_VALUE ) ) ;
+		
+		if  ( $count  <  1  ||  $count  >  self::MAX_VALUES )
+			error ( new \Thrak\System\InvalidArgumentException ( "Number of integers to generate should be in the range [1.." .
+					self::MAX_VALUES . "]." ) ) ;
+		
+		if  ( $this -> __overquota ( $count * 32 ) )
+			return ( false ) ;
+		
+		$params		=  self::PLAIN_TEXT_FORMAT .
+				   "&num=$count" .
+				   "&col=$count" .
+				   "&min=$min" .
+				   "&max=$max" .
+				   "&base=10" .
+				   "&rnd=new" ;
+		
+		$result		=  $this -> __retrieve ( 'integers', self::INTEGERS_URL, $params ) ;
+		$result		=  preg_replace ( '/\s+/', ' ', $result ) ;
+		$values		=  explode ( ' ', $result ) ;
+		
+		return ( $this -> __to_integer_array ( $values ) ) ;
+	    }
+
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        GetPassword, GetPassword - Retrieves an array of random passwords.
+	
+	    PROTOTYPE
+	        $password	=  $rand -> GetPassword  ( $length ) ;
+	        $array		=  $rand -> GetPasswords ( $count, $length ) ; 
+	
+	    DESCRIPTION
+	        GetPasswords() retrieves $count random passwords as an array. GetPassword() retrieves a single password.
+	
+	    PARAMETERS
+	        $count (integer) -
+	                Number of passwords to retrieve. Must be between 1 and MAX_VALUES.
+	
+		$length (integer) -
+	 		Password length. Must be in the range RandomOrg::MIN_PASSWORD_LENGTH and RandomOrg::MAX_PASSWORD_LENGTH.
+	  
+	    RETURN VALUE
+	        GetPasswords() returns an array of password strings.
+		GetPassword() returns a single password string.
+	
+	  ==============================================================================================================*/
+	public function  GetPassword  ( $length )
+	   {
+		$values		=  $this -> GetPasswords ( 1, $length ) ;
+		
+		if  ( count ( $values ) )
+			return ( $values [0] ) ;
+		else
+			return ( false ) ;
+	    }
+	
+	
+	public function  GetPasswords  ( $count, $length )
+	   {
+		if  ( $count  <  1  ||  $count  >  self::MAX_VALUES )
+			error ( new \Thrak\System\InvalidArgumentException ( "Number of passwords to generate should be in the range [1.." .
+					self::MAX_PASSWORD_VALUES . "]." ) ) ;
+
+		if  ( $length  <  self::MIN_PASSWORD_LENGTH  ||  $length  >  self::MAX_PASSWORD_LENGTH )
+			error ( new \Thrak\System\InvalidArgumentException ( "String length should be in the range [" .
+					self::MIN_PASSWORD_LENGTH . ".." .
+					self::MAX_PASSWORD_LENGTH . "]." ) ) ;
+			
+		if  ( $this -> __overquota ( $count * $length * 8 ) )
+			return ( false ) ;
+		
+		$params		=  self::PLAIN_TEXT_FORMAT .
+				   "&num=$count" .
+				   "&len=$length" . 
+				   "&rnd=new" ;
+
+		$result		=  $this -> __retrieve ( 'strings', self::STRINGS_URL, $params ) ;
+		$result		=  preg_replace ( '/\s+/', ' ', $result ) ;
+		$values		=  explode ( ' ', $result ) ;
+		
+		return ( $values ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        GetQuota - Returns the available quota in bits.
+	
+	    PROTOTYPE
+	        $quota	=  $rand -> GetQuota ( $current = true, $ip = null ) ;
+	
+	    DESCRIPTION
+	        Retrieves the currently authorized quota, in bits.
+	
+	    PARAMETERS
+	        $current (boolean) -
+	                When true, the last-known quota value is returned. When false, the random.org site is queried
+			to fetch the current quota value.
+	
+	    RETURN VALUE
+	        Authorized quota, in bits.
+	
+	    NOTES
+	        If the quota is exhausted, no more requests will be allowed.
+	
+	  ==============================================================================================================*/
+	public function  GetQuota ( $current = true, $ip  =  null )
+	   {
+		if  ( $current ) 
+			return ( $this -> CurrentQuota ) ;
+		
+		$params		=  self::PLAIN_TEXT_FORMAT ;
+		
+		if  ( $ip )
+			$params		.=  "&ip=$ip" ;
+		
+		$result		=  $this -> __retrieve ( 'quota', self::QUOTA_URL, $params, false ) ;
+
+		if  ( is_numeric  ( $result ) )
+		   {
+			if  ( ! $result ) 
+				$result		=  1000000 ;
+
+			$this -> CurrentQuota			=  
+			self::$GlobalCurrentQuota		=  $result ;
+
+			return ( $result ) ;
+		    }
+		else
+			return ( false ) ;
+	    }
+
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        GetSequence - Returns a sequence of values.
+	
+	    PROTOTYPE
+	        $array	=  $rand -> GetSequence ( $min, $max ) ;
+	
+	    DESCRIPTION
+	        Returns a sequence, ie a random arrangement of all the values between $min and $max.
+	
+	    PARAMETERS
+	        $min (integer) -
+	                Min value of the range. Must be between RandomOrg::MIN_INTEGER_VALUE and RandomOrg::MAX_INTEGER_VALUE.
+			( $max - $min ) must be greater than zero, and cannot exceed RandomOrg::MAX_SEQUENCE_RANGE.
+	 
+	        $max (integer) -
+	                Min value of the range. Must be between RandomOrg::MIN_INTEGER_VALUE and RandomOrg::MAX_INTEGER_VALUE.
+	
+	    RETURN VALUE
+	        Returns an array of integer values, which contains a random disposition of all the values between $min
+		and $max.
+	
+	  ==============================================================================================================*/
+	public function  GetSequence ( $min, $max )
+	   {
+		if  ( $min  <  self::MIN_INTEGER_VALUE )
+			error ( new \Thrak\System\InvalidArgumentException ( "The minimum value is " . self::MIN_INTEGER_VALUE ) ) ;
+		
+		if  ( $max  >  self::MAX_INTEGER_VALUE )
+			error ( new \Thrak\System\InvalidArgumentException ( "The maximum value is " . self::MIN_INTEGER_VALUE ) ) ;
+
+		if  ( $max - $min  >  self::MAX_SEQUENCE_RANGE )
+			error ( new \Thrak\System\InvalidArgumentException ( "The range specified by the min and max parameters should not exceed " . 
+					self::MAX_SEQUENCE_RANGE ) ) ;
+		
+		$cols		=  $max - $min + 1 ;
+
+		if  ( $this -> __overquota ( $cols * 32 ) )
+			return ( false ) ;
+		
+		$params		=  self::PLAIN_TEXT_FORMAT .
+				   "&col=$cols" .
+				   "&min=$min" .
+				   "&max=$max" .
+				   "&rnd=new" ;
+		
+		$result		=  $this -> __retrieve ( 'sequences', self::SEQUENCES_URL, $params ) ;
+		$result		=  preg_replace ( '/\s+/', ' ', $result ) ;
+		$values		=  explode ( ' ', $result ) ;
+		
+		return ( $this -> __to_integer_array ( $values ) ) ;
+	    }
+
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        GetString, GetString - Retrieves an array of random strings.
+	
+	    PROTOTYPE
+	        $string	=  $rand -> GetString  ( $length, $options = self::STRING_ALPHA ) ;
+	        $array	=  $rand -> GetStrings ( $count, $length, $options = self::STRING_ALPHA ) ;
+	
+	    DESCRIPTION
+	        GetStrings() retrieves $count random strings as an array. GetString() retrieves a single string.
+	
+	    PARAMETERS
+	        $count (integer) -
+	                Number of strings to retrieve. Must be between 1 and MAX_VALUES.
+	
+		$length (integer) -
+	 		String length. Must be in the range [1..RandomOrg::MAX_STRING_LENGTH].
+	 
+		$options (integer)
+	 		A combination of the following flags :
+	 		- RandomOrg::STRING_DIGITS :
+	 			The generated string will contain digits.
+	 		- RandomOrg::STRING_UPPER :
+	 			The generated string will contain uppercase letters.
+	 		- RandomOrg::STRING_LOWER :
+	 			The generated string will contain lowercase letters.
+	 		- RandomOrg::STRING_ALPHA :
+	 			The generated string will contain letters (both lower- and uppercase) and digits.
+	  
+	    RETURN VALUE
+	        GetStrings() returns an array of random strings.
+		GetString() returns a single random string.
+	
+	  ==============================================================================================================*/
+	public function  GetString  ( $length, $options = self::STRING_ALPHA ) 
+	   {
+		$values		=  $this -> GetStrings ( 1, $length, $options ) ;
+		
+		if  ( count ( $values ) )
+			return ( $values [0] ) ;
+		else
+			return ( false ) ;
+	    }
+	
+	
+	public function  GetStrings  ( $count, $length, $options = self::STRING_ALPHA, $unique = false )
+	   {
+		if  ( $count  <  1  ||  $count  >  self::MAX_VALUES )
+			error ( new \Thrak\System\InvalidArgumentException ( "Number of integers to generate should be in the range [1.." .
+					self::MAX_VALUES . "]." ) ) ;
+
+		if  ( $length  <  1  ||  $length  >  self::MAX_STRING_LENGTH )
+			error ( new \Thrak\System\InvalidArgumentException ( "String length should be in the range [1.." .
+					self::MAX_STRING_LENGTH . "]." ) ) ;
+			
+		if  ( $this -> __overquota ( $count * $length * 8 ) )
+			return ( false ) ;
+		
+		$digits		=  ( $options  &  self::STRING_DIGITS ) ?  "on" : "off" ;
+		$upperalpha	=  ( $options  &  self::STRING_UPPER  ) ?  "on" : "off" ;
+		$loweralpha	=  ( $options  &  self::STRING_LOWER  ) ?  "on" : "off" ;
+		$is_unique	=  ( $unique ) ?  "on" : "off" ;
+
+		$params		=  self::PLAIN_TEXT_FORMAT .
+				   "&num=$count" .
+				   "&len=$length" . 
+				   "&digits=$digits" .
+				   "&upperalpha=$upperalpha" .
+				   "&loweralpha=$loweralpha" .
+				   "&unique=$is_unique" .
+				   "&rnd=new" ;
+
+		$result		=  $this -> __retrieve ( 'strings', self::STRINGS_URL, $params ) ;
+		$result		=  preg_replace ( '/\s+/', ' ', $result ) ;
+		$values		=  explode ( ' ', $result ) ;
+		
+		return ( $values ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+		Miscellaneous property retrieval methods.
+	
+	  ==============================================================================================================*/
+
+	// GetQuery -
+	//	Get last executed query.
+	public function  GetQuery  ( $global =  false ) 
+	   { return ( ( $global ) ?  self::$GlobalLastQuery : $this -> LastQuery ) ; }
+	
+	// GetQueryTime -
+	//	Gets the time of the start of execution of the last query.
+	public function  GetQueryTime  ( $global =  false ) 
+	   { return ( ( $global ) ?  self::$GlobalLastQueryTime : $this -> LastQueryTime ) ; }
+	
+	// GetResult -
+	//	Gets the last fetched result, in plain text.
+	public function  GetResult  ( $global =  false ) 
+	   { return ( ( $global ) ?  self::$GlobalLastResult : $this -> LastResult ) ; }
+	
+	// GetElapsed -
+	//	Gets execution time of the last query, in milliseconds.
+	public function  GetElapsed  ( $global =  false ) 
+	   { return ( ( $global ) ?  self::$GlobalLastQueryExecutionTime : $this -> LastQueryExecutionTime ) ; }
+	
+	// GetResultTime -
+	//	Get the time when the last query result was obtained.
+	public function  GetResultTime  ( $global =  false ) 
+	   { return ( ( $global ) ?  self::$GlobalLastResultTime : $this -> LastResultTime ) ; }
+	
+	// GetQueryInfo -
+	//	Gets informations about the last executed query.
+	public function  GetQueryInfo ( $global = false )
+	   {
+		if  ( $global )
+		   {
+			$result		=  array 
+			   (
+				'type'		=>  self::$GlobalLastQueryType,
+				'query'		=>  self::$GlobalLastQuery,
+				'query-time'	=>  self::$GlobalLastQueryTime,
+				'result'	=>  self::$GlobalLastResult,
+				'result-time'	=>  self::$GlobalLastResultTime,
+				'elapsed'	=>  self::$GlobalLastQueryExecutionTime,
+				'quota'		=>  self::$GlobalCurrentQuota
+			    ) ;
+		    }
+		else
+		   {
+			$result		=  array 
+			   (
+				'type'		=>  $this -> LastQueryType,
+				'query'		=>  $this -> LastQuery,
+				'query-time'	=>  $this -> LastQueryTime,
+				'result'	=>  $this -> LastResult,
+				'result-time'	=>  $this -> LastResultTime,
+				'elapsed'	=>  $this -> LastQueryExecutionTime,
+				'quota'		=>  $this -> CurrentQuota
+			    ) ;
+		    }
+
+		return ( $result ) ;
+	    }
+	
+	
+    }

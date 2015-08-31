@@ -1,0 +1,84 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        DocCommentMethodAnnotation.phpclass
+
+    DESCRIPTION
+        Implements an @Method annotation.
+
+    AUTHOR
+        Christian Vigh, 11/2014.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2014/11/09]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Reflection\Annotations ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use  	Thrak\System\Object ;
+use	Thrak\Reflection\DocCommentAnnotation ;
+
+
+/*==============================================================================================================
+
+    DocCommentMethodAnnotation -
+        Implements an @Method annotation.
+ 
+	Available members :
+ 	- name :
+ 		Method name.
+  
+ 	- returns :
+ 		Return value type.
+  
+ 	- parameters :
+ 		An associative array whose keys are parameter names and values are parameter types.
+  
+ 	- description :
+ 		Method description.
+
+  ==============================================================================================================*/
+class	DocCommentMethodAnnotation		extends  DocCommentAnnotation
+   {
+	public function  __construct ( $name, $params_array )
+	   {
+		parent::__construct ( $name, $params_array ) ;
+	    }
+	
+	/*==============================================================================================================
+	
+	    __tostring -
+	        Provides a formatted @Method annotation.
+	
+	  ==============================================================================================================*/
+	public function  __tostring ( )
+	   {
+		$result		=  "@" . $this -> Name ;
+
+		if  ( $this -> Parameters -> returns  !==  "" )
+			$result		.=  " " . $this -> Parameters -> Returns ;
+		
+		$result		.= " " . $this -> Parameters -> name . " ( " ;
+		
+		if  ( count ( $this -> Parameters -> parameters ) )
+		   {
+			$defs	=  [] ;
+			
+			foreach  ( $this -> Parameters -> parameters  as  $name => $type )
+				$defs []	=  "$type  $name" ;
+			
+			$result		.=  implode ( ", ", $defs ) . " )" ;
+		    }
+		else
+			$result		.= ")" ;
+		
+		if  ( $this -> Parameters -> description  !==  "" )
+			$result		.=  " " . $this -> Parameters -> description ;
+		
+		return ( $result ) ;
+	    }
+    }

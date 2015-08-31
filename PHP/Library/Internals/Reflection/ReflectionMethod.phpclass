@@ -1,0 +1,152 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        ReflectionMethod.phpclass
+
+    DESCRIPTION
+        An enhanced ReflectionMethod class.
+
+    AUTHOR
+        Christian Vigh, 10/2014.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2014/11/08]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+ namespace 	Thrak\Reflection ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use  	Thrak\System\Object ;
+use     Thrak\System\IsNonObject ;
+use     Thrak\Reflection\DocCommentExtender ;
+use	Thrak\Reflection\Sourcers\ReflectionSourcerInterface ;
+use	Thrak\Reflection\Sourcers\ReflectionMethodSourcer ;
+
+
+/*==============================================================================================================
+
+    ReflectionMethod class -
+        An enhanced ReflectionMethod class.
+
+  ==============================================================================================================*/
+class  ReflectionMethod		extends 	\ReflectionMethod
+				implements 	\Reflector, ReflectionSourcerInterface
+   {
+	use IsNonObject, DocCommentExtender ;
+	
+	// The \ReflectionMethod constructor sets the $class member to the name of the declaring class, not the
+	// class that has been instanciated. We need to keep track of the original class 
+	public		$usingClass ;
+	
+	// Methods coming from traits and renamed keep their original name in the "name" property of a ReflectionMethod
+	// Remember the aliased name
+	public		$usageName ;
+	
+	// Reflector object for the class declaring this Method
+	protected	$classReflector ;
+	
+	
+	/*==============================================================================================================
+	
+	    Constructor -
+	        Initializes the instance.
+	
+	  ==============================================================================================================*/
+	public function  __construct ( $class, $name )
+	   {
+		parent::__construct ( $class, $name ) ;
+		
+		$this -> usingClass	=  $class ;
+		$this -> classReflector	=  new ReflectionClass ( $this -> class ) ;
+		$this -> usageName	=  $name ;
+	    }
+
+
+	/*==============================================================================================================
+	
+	    getDocComment -
+	        Retrieves the doc comment contents.
+	
+	  ==============================================================================================================*/
+	public function  getDocComment ( )
+	   {
+		$comment	=  $this -> formatDocComment ( parent::getDocComment ( ) ) ;
+		
+		return ( $comment ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    getParameters -
+	        Returns the function parameters.
+	
+	  ==============================================================================================================*/
+	public function  getParameters ( )
+	   {
+		$php_parameters		=  parent::getParameters ( ) ;
+		$parameters		=  [] ;
+		
+		foreach  ( $php_parameters  as  $php_parameter )
+		   {
+			// ReflectionParameter constructor accepts a "callable" parameter (such as : array ( class, function ))
+			$function	=  $php_parameter -> getDeclaringFunction ( ) ;
+			$class_name	=  $function -> getNamespaceName ( ) . "\\" . $php_parameter -> getDeclaringClass ( ) -> name ;
+			$function_name	=  $function -> name ;
+			
+			$parameters []	=  new ReflectionParameter ( array ( $class_name, $function_name ), $php_parameter -> name ) ;
+		    }
+		
+		return ( $parameters ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    getUsageName -
+	        Returns the aliased name of the method, if any.
+	
+	  ==============================================================================================================*/
+	public function  getUsageName ( )
+	   { return ( $this -> usageName ) ; }
+	
+	
+	/*==============================================================================================================
+	
+	    getUsingClass -
+	        Returns the name of the class that is using this Method (not the class where it is declared).
+	
+	  ==============================================================================================================*/
+	public function  getUsingClass ( )
+	   { return ( $this -> usingClass ) ; }
+	
+	
+	/*==============================================================================================================
+	
+	    isLocal -
+		Returns a flag indicating whether the Method is local to the class or has been defined in a parent
+		class.
+	 
+	  ==============================================================================================================*/
+	public function  isLocal ( )
+	   {
+		return ( $this -> usingClass  ==  $this -> getDeclaringClass ( ) -> name ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	        Implementation of the RefelectionSourcerInterface interface.
+	
+	  ==============================================================================================================*/
+	public function  getText ( $include_source = false )
+	   {
+		$sourcer 	=  new  ReflectionMethodSourcer ( $this ) ;
+		
+		return  ( $sourcer -> getText ( $include_source ) ) ;
+	    }
+    }
+

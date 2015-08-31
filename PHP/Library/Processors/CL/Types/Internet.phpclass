@@ -1,0 +1,1227 @@
+<?php
+/***************************************************************************************************
+
+    NAME
+	Internet.phpclass
+
+    DESCRIPTION
+	Various parameter types related to internet.
+
+    AUTHOR
+     	Christian Vigh, 07/2011.
+
+    HISTORY
+    [Version : 1.0]	[Date : 2011/07/02]	[Author : CV]
+     	Initial version.
+
+   [Version : 2.0]	[Date : 2012/10/06]		[Author : CV]
+	Migrated to the Thrak library version 2.
+ 
+   [Version : 2.0.1]	[Date : 2015/04/11]		[Author : CV]
+	. Replaced each exception throwing with "error ( new CLException (...) )".
+ 
+   [Version : 2.0.2]	[Date : 2015/07/10]		[Author : CV]
+	. Added the CLIPRange parameter.
+	. Changed references to Thrak\Internet\IP to Thrak\Types\String\Convert.
+	. Added the $valuetext parameter to the CLIPMaskParameter and CLIPRangeParameter classes.
+	. Made both classes inherit from CLIPAddressParameter instead of CLAbstractInternetParameter.
+	. The CLIPMaskParameter and CLIPRangeParameter classes only support ip v4 addresses.
+ 
+   [Version : 2.0.3]	[Date : 2015/08/11]		[Author : CV]
+	. Added the 'ip' integer entry for CLIPAddressParameter parameters (IP V4 only).
+
+ ***************************************************************************************************/
+namespace  	Thrak\Processors\CL ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces and classes
+use     Thrak\System\Object ;
+use 	Thrak\Processors\CL\CLException ;
+use     Thrak\Types\String ;
+use     Thrak\Types\String\Convert ;
+use  	Thrak\Internet\URI ;
+use     Thrak\Internet\URIProtocols ;
+use     Thrak\Internet\TLDList ;
+use     Thrak\Internet\MimeTypes ;
+use     Thrak\Internet\CallingCodes ;
+use     Thrak\Internet\CountryCodes ;
+use     Thrak\Internet\Http\HttpRequest ;
+use     Thrak\IO\Path ;
+
+
+/*==================================================================================================
+
+    CLEmailParameter class -
+	Implements an email parameter.
+
+  ==================================================================================================*/
+class  CLEmailParameter  extends  \Thrak\Processors\CL\CLAbstractParameter
+   {
+	/*-------------------------------------------------------------------------------------------
+
+		Class constructor.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __construct ( $parent, $tags )
+	   {
+	   	$this -> Help 			=  "Defines an email parameter." ;
+	   	$this -> ReturnValueHelp	=  "Returns the specified email if it is a valid email address." ;
+		parent::__construct ( $parent, $tags, "email" ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Preprocess value.
+
+	 --------------------------------------------------------------------------------------------*/
+  	protected function  ProcessValue ( $name, $value )
+  	   {
+		if  ( ! String::IsValidEmail ( $value ) )
+			error ( new CLException ( "Invalid email address '$value' for the '$name' parameter." ) ) ;
+
+		// All done, return
+   		return ( $value ) ;
+  	    }
+    }
+
+
+/*==================================================================================================
+
+    CLAbstractInternetParameter class -
+	Implements an abstract parameter. This is a base class so that derived classes can use
+	predefined constants and so on.
+
+  ==================================================================================================*/
+abstract class  CLAbstractInternetParameter  extends  \Thrak\Processors\CL\CLAbstractParameter
+   {
+	// IP Address types
+	const	IP_ADDRESS_V4		=  0x01 ;	// Only IPV4 addresses are accepted
+	const	IP_ADDRESS_V6		=  0x02 ;	// Or only IPV6...
+	const	IP_ADDRESS_ALL		=  0x04 ;	// Or both...
+	const 	IP_ADDRESS_NONE		=  0x00 ;	// Or none
+
+	// Defined protocols
+	private static 	$__Protocols	=  null ;
+	// Defined TLDs
+	private static	$__TLDS		=  null ;
+	// Defined MIME types
+	private static  $__MimeTypes	=  null ;
+	// Country codes
+	private static 	$__CountryCodes	=  null ;
+	// Country calling codes
+	private static  $__CallingCodes	=  null ;
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    __get -
+	    	Delayed load alternative for protocols, tlds and so on...
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __get  ( $member )
+	   {
+		switch  ( strtolower ( $member ) )
+		   {
+			case 	'protocols' :
+				if  ( ! CLAbstractInternetParameter::$__Protocols )
+					CLAbstractInternetParameter::$__Protocols = new URIProtocols ( ) ;
+
+				return ( CLAbstractInternetParameter::$__Protocols ) ;
+
+			case	'tlds' :
+				if  ( ! CLAbstractInternetParameter::$__TLDS )
+					CLAbstractInternetParameter::$__TLDS = new TLDList ( ) ;
+
+				return ( CLAbstractInternetParameter::$__TLDS ) ;
+
+			case	'mimetypes' :
+				if  ( ! CLAbstractInternetParameter::$__MimeTypes )
+					CLAbstractInternetParameter::$__MimeTypes = new MimeTypes ( ) ;
+
+				return ( CLAbstractInternetParameter::$__MimeTypes ) ;
+
+			case	'countrycodes' :
+				if  ( ! CLAbstractInternetParameter::$__CountryCodes )
+					CLAbstractInternetParameter::$__CountryCodes = new CountryCodes ( ) ;
+
+				return ( CLAbstractInternetParameter::$__CountryCodes ) ;
+
+			case	'callingcodes' :
+				if  ( ! CLAbstractInternetParameter::$__CallingCodes )
+					CLAbstractInternetParameter::$__CallingCodes = new CallingCodes ( ) ;
+
+				return ( CLAbstractInternetParameter::$__CallingCodes ) ;
+
+			default :
+				error ( new CLException ( "Invalid data member '$member'." ) ) ;
+		    }
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    ValidateTLD -
+	    	Checks the top-level domain of the specified domain.
+
+	 --------------------------------------------------------------------------------------------*/
+	protected function  ValidateTLD ( $name, $domain )
+	   {
+		if  ( ! isset ( $this -> TLDS [ $domain ] ) )
+			error ( new CLException ( "The specified top-level domain (\"$domain\") is not a valid TLD for parameter '$name'." ) ) ;
+	     }
+   }
+
+
+/*==================================================================================================
+
+    CLURLParameter class -
+	Implements an URL parameter.
+
+  ==================================================================================================*/
+class  CLURLParameter  extends  CLAbstractInternetParameter
+   {
+	// url-specific definitions
+   	private		$URLDefinitions = array
+   	   (
+	    	array
+	    	   (
+	    	   	'names'		=>  array ( 'allowed-schemes' ),
+	    	   	'type'		=>  self::ATTRIBUTE_TYPE_LIST,
+	    	   	'default'	=>  "all",
+	    	   	'member'	=>  'AllowedSchemes',
+	    	   	'help'		=>  'Specifies which URI schemes are authorized. Supply the value "all" or "*" for all protocols.'
+      		    ),
+	    	array
+	    	   (
+	    	   	'names'		=>  array ( 'default-scheme' ),
+	    	   	'type'		=>  self::ATTRIBUTE_TYPE_STRING,
+	    	   	'default'	=>  "http",
+	    	   	'member'	=>  'DefaultScheme',
+	    	   	'help'		=>  'Specifies the default scheme to be used if none has been provided.'
+      		    ),
+	    	array
+	    	   (
+	    	   	'names'		=>  array ( 'address-type', 'addr-type' ),
+	    	   	'type'		=>  self::ATTRIBUTE_TYPE_KEYWORD,
+	    	   	'default'	=>  'ipv4',
+	    	   	'member'	=>  'AllowIPAddress',
+			'keywords'	=>  array
+			   (
+			   	'ipv4'		=>  self::IP_ADDRESS_V4,
+			   	'v4'		=>  self::IP_ADDRESS_V4,
+			   	'ipv6'		=>  self::IP_ADDRESS_V6,
+			   	'v6'		=>  self::IP_ADDRESS_V6,
+			   	'none'		=>  self::IP_ADDRESS_NONE,
+			   	'all'		=>  self::IP_ADDRESS_ALL,
+			   	'*'		=>  self::IP_ADDRESS_ALL
+			    ),
+	    	   	'help'		=>  'Specifies if IP addresses are accepted as URLs. It can be any of : ipv4 (or V4), ipv6 (or V6), none or all (or *)'
+      		    ),
+    		array
+    		   (
+    		   	'names'		=>  array ( 'strict' ),
+    		   	'type'		=>  self::ATTRIBUTE_TYPE_BOOLEAN,
+    		   	'default'	=>  "true",
+    		   	'member'	=>  "Strict",
+    		   	'help'		=>  "When true, the URI scheme used is checked against the existing URI schemes list."
+		    ),
+    		array
+    		   (
+    		   	'names'		=>  array ( 'check-tld' ),
+    		   	'type'		=>  self::ATTRIBUTE_TYPE_BOOLEAN,
+    		   	'default'	=>  "true",
+    		   	'member'	=>  "CheckTLD",
+    		   	'help'		=>  "When true, the domain name is checked against the existing top-level domains list."
+		    )
+    	    ) ;
+
+	// Allowed protocols
+	public		$AllowedSchemes ;
+	// Tells if IP addresses are accepted
+	public		$AllowIPAddress;
+	// Tells if non-standard protocols are allowed
+	public		$Strict;
+	// Specifies if top-level domain names are to be checked
+	public		$CheckTLD ;
+	// Default scheme
+	public		$DefaultScheme ;
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Class constructor.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __construct ( $parent, $tags )
+	   {
+		// Build the object
+	   	$this -> Help 			=  "Defines an url parameter." ;
+	   	$this -> ReturnValueHelp	=  "Returns the specified url if valid." ;
+		parent::__construct ( $parent, $tags, "url", $this -> URLDefinitions ) ;
+
+		// Normalize scheme names
+		$count = count ( $this -> AllowedSchemes ) ;
+
+		if  ( $count )
+		   {
+		   	if  ( $count  ==  1  &&
+			   	( ! strcasecmp ( $this -> AllowedSchemes [0], 'all' )  ||  ! strcasecmp ( $this -> AllowedSchemes [0], '*' ) ) )
+		   		$this -> AllowedSchemes = array ( ) ;
+	   		else
+	   		   {
+				foreach  ( $this -> AllowedSchemes  as  &$allowed_scheme )
+					$allowed_scheme = $this -> __normalize_scheme_name ( $allowed_scheme ) ;
+			    }
+		    }
+
+    		$this -> DefaultScheme 	=  $this -> __normalize_scheme_name ( $this -> DefaultScheme ) ;
+	    }
+
+
+	// Normalize scheme name
+	private function  __normalize_scheme_name ( $name )
+	   {
+		if  ( String::EndsWith ( $name, "://" ) )
+			$result = substr ( $name, 0, strlen ( $name ) - 3 ) ;
+		else
+			$result = $name ;
+
+		return ( strtolower ( $name ) ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Preprocess value.
+
+	 --------------------------------------------------------------------------------------------*/
+  	protected function  ProcessValue ( $name, $value )
+  	   {
+  	   	// Split the supplied URI and issue an exception if invalid
+		$result 	=  URI::DecodeUrl ( $value, $this -> DefaultScheme ) ;
+
+		if  ( $result  ===  false )
+			error ( new CLException ( "The value supplied for the '$name' parameter ($value) is not a valid URI." ) ) ;
+
+		// Check that IPV4 addresses are allowed
+		if  ( $result [ 'ip-version' ]  ==  4  &&  ! ( $this -> AllowIPAddress  &  self::IP_ADDRESS_V4 ) )
+			error ( new CLException ( "The '$name' parameter cannot accept IP V4 addresses." ) ) ;
+
+		// Same for IPV6
+		if  ( $result [ 'ip-version' ]  ==  6  &&  ! ( $this -> AllowIPV6Address  &  self::IP_ADDRESS_V6 ) )
+			error ( new CLException ( "The '$name' parameter cannot accept IP V6 addresses." ) ) ;
+
+		// Check that the default scheme falls within the allowed schemes, if specified
+		if  ( $result [ 'scheme-name' ]  &&  count ( $this -> AllowedSchemes ) )
+		   {
+			if  ( ! in_array ( $result [ 'scheme-name' ], $this -> AllowedSchemes ) )
+				error ( new CLException ( "The specified scheme (\"{$result [ 'scheme-name' ]}://\") is not in the list of allowed schemes for parameter '$name' (" .
+						implode ( ', ', $this -> AllowedSchemes ) . ').' ) ) ;
+		    }
+
+		// If the 'strict' attribute is set to true, check that the specified scheme name belongs to the official scheme list
+		if  ( $this -> Strict )
+		   {
+			if  ( isset ( $this -> Protocols [ $result [ 'scheme-name' ] ] ) )
+				$result [ 'port' ]	=  $this -> Protocols [ $result [ 'scheme-name' ] ] -> GetDefaultPort ( ) ;
+			else
+				error ( new CLException ( "The specified scheme (\"{$result [ 'scheme-name' ]}://\") is not in the list of official schemes for parameter '$name'." ) ) ;
+		    }
+
+		// If the 'check-tld' attribute is set to true, then check that the last domain name part belongs to the official top-level domain list
+		if  ( $this -> CheckTLD  &&  $result [ 'top-level-domain'] )
+			$this -> ValidateTLD ( $name, $result [ 'top-level-domain' ] ) ;
+
+		// All done, return
+   		return ( $result ) ;
+  	    }
+    }
+
+
+/*==================================================================================================
+
+    CLIPAddressParameter class -
+	Implements an IP address parameter.
+
+  ==================================================================================================*/
+class  CLIPAddressParameter  extends  CLAbstractInternetParameter
+   {
+	// url-specific definitions
+   	protected	$IPDefinitions = array
+   	   (
+	    	array
+	    	   (
+	    	   	'names'		=>  array ( 'address-type', 'addr-type' ),
+	    	   	'type'		=>  self::ATTRIBUTE_TYPE_KEYWORD,
+	    	   	'default'	=>  'ipv4',
+	    	   	'member'	=>  'AddressType',
+			'keywords'	=>  array
+			   (
+			   	'ipv4'		=>  self::IP_ADDRESS_V4,
+			   	'v4'		=>  self::IP_ADDRESS_V4,
+			   	'ipv6'		=>  self::IP_ADDRESS_V6,
+			   	'v6'		=>  self::IP_ADDRESS_V6,
+			   	'all'		=>  self::IP_ADDRESS_ALL,
+			   	'*'		=>  self::IP_ADDRESS_ALL
+			    ),
+	    	   	'help'		=>  'Specifies which kind of IP address is accepted. It can be any of : ipv4 (or V4), ipv6 (or V6) or all (*)'
+      		    )
+	     ) ;
+
+ 	// Type of supported address formats
+ 	public	 	$AddressType ;
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Class constructor.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __construct ( $parent, $tags, $valuetext = "ip-address" )
+	   {
+		// Build the object
+	   	$this -> Help 			=  "Defines an IP address parameter." ;
+	   	$this -> ReturnValueHelp	=<<<END
+Returns an associative array containing the following entries :
+
+'ip-address' -
+	IP Address.
+'ip-version' -
+	An integer value specifying 4 for an IP V4 address, or 6 for an IP V6 address.
+'ip-bytes' -
+	Array of IP address bytes.
+END;
+
+		parent::__construct ( $parent, $tags, $valuetext, $this -> IPDefinitions ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Process command-line value.
+
+	 --------------------------------------------------------------------------------------------*/
+	protected function  ProcessValue ( $name, $value )
+	   {
+	   	$isv4 	=  String::IsIPV4Address ( $value ) ;
+		$isv6 	=  String::IsIPV6Address ( $value ) ;
+
+		if  ( $isv4 )
+		   {
+			$result 	=  array
+			   (
+			   	'ip-address'	=>  $value,
+			   	'ip-version'	=>  4,
+			   	'ip-bytes'	=>  Convert::StringToIPV4Address ( $value ),
+				'ip'		=>  Convert::IpStringToInteger ( $value ) 
+			    ) ;
+		    }
+		else if  ( $isv6 )
+		   {
+		   	$bytes 		=  Convert::StringToIPV6Address ( $value ) ;
+			$result 	=  array
+			   (
+			   	'ip-address'	=>  implode ( ':', $bytes ),
+			   	'ip-version'	=>  6,
+			   	'ip-bytes'	=>  $bytes
+			    ) ;
+		    }
+		else
+			error ( new CLException ( "Invalid IP address '$value' for parameter '$name'." ) ) ;
+
+		return ( $result ) ;
+	    }
+    }
+
+
+/*==================================================================================================
+
+    CLIPMaskParameter class -
+	Implements an IPV4 address parameter.
+
+  ==================================================================================================*/
+class  CLIPMaskParameter  extends  CLIPAddressParameter
+   {
+	/*-------------------------------------------------------------------------------------------
+
+		Class constructor.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __construct ( $parent, $tags, $valuetext = "ip-mask" )
+	   {
+		// Build the object
+	   	$this -> Help 			=  "Defines an IP V4 address mask parameter. Missing IP address bytes will be defaulted to \"*\"." ;
+	   	$this -> ReturnValueHelp	=<<<END
+Returns an associative array containing the following entries :
+
+'ip-address' -
+	IP Address.
+'ip-version' -
+	An integer value specifying 4 for an IP V4 address, or 6 for an IP V6 address.
+'ip-bytes' -
+	Array of IP address bytes.
+END;
+
+		parent::__construct ( $parent, $tags, $valuetext ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Process command-line value.
+
+	 --------------------------------------------------------------------------------------------*/
+	protected function  ProcessValue ( $name, $value )
+	   {
+		if  ( $this -> AddressType  ==  self::IP_ADDRESS_V6 )
+			error ( new CLException ( "IPV6 addresses are not supported for parameters of type '$name'." ) ) ;
+
+	   	$bytes 		=  explode ( '.', $value ) ;
+
+	   	if  ( count ( $bytes )  <  4 )
+	   	   {
+	   		while ( count ( $bytes )  <  4 )
+	   			$bytes [] = "*" ;
+	   	    }
+
+	   	$value 		=  implode ( '.', $bytes ) ;
+		$bytes 		=  Convert::StringToIPV4Address ( $value, true ) ;
+
+		if  ( $bytes  !==  false )
+		   {
+			$result 	=  array
+			   (
+			   	'ip-address'	=>  $value,
+				'ip-version'	=>  4,
+			   	'ip-bytes'	=>  $bytes
+			    ) ;
+		    }
+		else
+			error ( new CLException ( "Invalid IP address mask '$value' for parameter '$name'." ) ) ;
+
+		return ( $result ) ;
+	    }
+    }
+
+
+/*==================================================================================================
+
+    CLIPRangeParameter class -
+	Implements an IPV4 range parameter. A range can either be specified as a real range :
+		1.2.3.0..1.2.3.255
+	or using a bitmask :
+		1.2.3.0/24
+
+  ==================================================================================================*/
+class  CLIPRangeParameter  extends  CLIPAddressParameter
+   {
+    	// Range separator
+    	public		$RangeSeparator ;
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Class constructor.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __construct ( $parent, $tags, $valuetext = "ip-range" )
+	   {
+		// Build the object
+	   	$this -> Help 			=  "Defines an IP V4 address range parameter. Ranges can be specified as normal ranges, such as " .
+						   "1.2.3.0..1.2.3.255, or as a mask such as 1.2.3.0/24." ;
+	   	$this -> ReturnValueHelp	=<<<END
+Returns an associative array containing the following entries :
+
+'low', 'high' -
+	Associative arrays representing the low and high ip addresses. It contains the following entries :
+	'ip-address' -
+		IP Address.
+	'ip-version' -
+		An integer value specifying 4 for an IP V4 address, or 6 for an IP V6 address.
+	'ip-bytes' -
+		Array of IP address bytes.
+END;
+
+		$this -> IPDefinitions []	=  
+		   [
+    		   	'names'		=>  array ( 'separator', 'sep' ),
+    		   	'type'		=>  self::ATTRIBUTE_TYPE_STRING,
+    		   	'member'	=>  'RangeSeparator',
+    		   	'default'	=>  '..',
+    		   	'help'		=>  'Specifies the string sequence that separates the low and high values of an ip address range.'
+		     ] ;
+
+		parent::__construct ( $parent, $tags, $valuetext ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Process command-line value.
+
+	 --------------------------------------------------------------------------------------------*/
+	protected function  ProcessValue ( $name, $value )
+	   {
+		// Currently, IPV6 addresses are not supported
+		if  ( $this -> AddressType  ==  self::IP_ADDRESS_V6 )
+			error ( new CLException ( "IPV6 addresses are not supported for parameters of type '$name'." ) ) ;
+
+	   	// Check separator
+	   	if  ( $this -> RangeSeparator  ==  "" )
+	   		error ( new CLException ( "An empty separator has been defined for ip v4 range parameter '$name'." ) ) ;
+
+		// Address range is specified as a real range (eg, "1.1.1.0..1.1.1.255")
+		if  ( strpos ( $value, $this -> RangeSeparator )  !==  false )
+		   {
+			$values		=  explode ( $this -> RangeSeparator, $value ) ;
+
+			if  ( ! $values [0] )
+				$values [0]	=  '0.0.0.0' ;
+
+			if  ( ! $values [1] )
+				$values [1]	=  '255.255.255.255' ;
+
+			$low	=  Convert::StringToIPV4Address ( $values [0] ) ;
+
+			if  ( ! $low )
+				error ( new CLException ( "Invalid ip low range value '{$values [0]}' for parameter '$name'." ) ) ;
+
+			$high	=  Convert::StringToIPV4Address ( $values [1] ) ;
+
+			if  ( ! $high )
+				error ( new CLException ( "Invalid ip high range value '{$values [1]}' for parameter '$name'." ) ) ;
+
+			$dwlow		=  Convert::IpStringToInteger ( $values [0] ) ;
+			$dwhigh		=  Convert::IpStringToInteger ( $values [1] ) ;
+
+			if  ( $dwlow  >  $dwhigh )
+				error ( new CLException ( "Low ip range value '{$values [0]}' cannot be greater than high value '{$values [1]}' for parameter '$name'." ) ) ;
+
+			$result =  
+			   [
+				'low'	=> [ 'ip-address' => $values [0], 'ip-version' => 4, 'ip-bytes' => $low ],
+				'high'	=> [ 'ip-address' => $values [1], 'ip-version' => 4, 'ip-bytes' => $high ]
+			    ] ;
+
+			return ( $result ) ;
+		    }
+		// Address range is specified by a mask (eg, "1.1.1.0/24")
+		else if  ( ( $range = Convert::StringToIPV4AddressRange ( $value, false ) )  !==  false )
+		   {
+			$result		=  
+			   [
+				'low'	=>
+				   [
+					'ip-address'	=>  implode ( '.', $range [0] ),
+					'ip-version'	=>  4,
+					'ip-bytes'	=>  $range [0]
+				    ],
+				'high'	=>
+				   [
+					'ip-address'	=>  implode ( '.', $range [1] ),
+					'ip-version'	=>  4,
+					'ip-bytes'	=>  $range [1]
+				    ] 
+			    ] ;
+
+			return ( $result ) ;
+		    }
+		// Bad range has been provided
+		else
+			error ( new CLException ( "Invalid IP address mask '$value' for parameter '$name'." ) ) ;
+	    }
+    }
+
+
+/*==================================================================================================
+
+    CLDomainNameParameter class -
+	Implements a domain name parameter.
+
+  ==================================================================================================*/
+class  CLDomainNameParameter  extends  CLAbstractInternetParameter
+   {
+   	// Specific attributes
+   	private 	$DomainNameParameters 	=  array
+   	   (
+    		array
+    		   (
+    		   	'names'		=>  array ( 'check-tld' ),
+    		   	'type'		=>  self::ATTRIBUTE_TYPE_BOOLEAN,
+    		   	'default'	=>  "true",
+    		   	'member'	=>  "CheckTLD",
+    		   	'help'		=>  "When true, the domain name is checked against the existing top-level domains list."
+		    )
+	    ) ;
+
+    	// When true, the top-level domain is checked against the list of existing domains
+	public		$CheckTLD ;
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Class constructor.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __construct ( $parent, $tags )
+	   {
+		// Build the object
+	   	$this -> Help 			=  "Defines a domain name parameter." ;
+	   	$this -> ReturnValueHelp	=  "Returns the validated domain name." ;
+
+		parent::__construct ( $parent, $tags, "domain-name", $this -> DomainNameParameters ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Process command-line value.
+
+	 --------------------------------------------------------------------------------------------*/
+	protected function  ProcessValue ( $name, $value )
+	   {
+  		if  ( $this -> CheckTLD )
+  		   {
+  		   	$index 	=  strrpos ( $value, '.' ) ;
+
+  		   	if  ( $index  >=  0 )
+  			$this -> ValidateTLD ( $name, substr ( $value, $index ) ) ;
+  		    }
+
+		return ( $value ) ;
+	    }
+    }
+
+
+/*==================================================================================================
+
+    CLMimeTypeParameter class -
+	Implements a MIME type name parameter.
+
+  ==================================================================================================*/
+
+class  CLMimeTypeParameter  extends  CLAbstractInternetParameter
+   {
+   	// Specific attributes
+   	private 	$MimeTypeParameters 	=  array
+   	   (
+    		array
+    		   (
+    		   	'names'		=>  array ( 'search-by' ),
+    		   	'type'		=>  self::ATTRIBUTE_TYPE_KEYWORD_LIST,
+    		   	'member'	=>  "SearchOptionList",
+    		   	'help'		=>  array
+    		   	   (
+    		   	   	"Performs a search on the specified item type(s) :\n\n",
+				"extension, ext -\n",
+				"\tThe search is performed on the file extension. The leading dot is optional.\n",
+				"application, app -\n",
+				"\tThe search is performed on the whole app/module name.\n",
+				"application-name, app-name, appname -\n",
+				"\tThe search is performed on the application name only.\n",
+				"application-module, app-module, app-mod, appmod -\n",
+				"\tThe search is performed on the application module name only."
+		  	    ),
+    			'keywords'	=>  array
+    			   (
+    			   	'extension'		=>  'MIME_TYPE_SEARCH_BY_EXTENSION',
+    			   	'ext'			=>  'MIME_TYPE_SEARCH_BY_EXTENSION',
+    			   	'application'		=>  'MIME_TYPE_SEARCH_BY_APPLICATION',
+    			   	'app'			=>  'MIME_TYPE_SEARCH_BY_APPLICATION',
+    			   	'application-name'	=>  'MIME_TYPE_SEARCH_BY_APPLICATION_NAME',
+    			   	'app-name'		=>  'MIME_TYPE_SEARCH_BY_APPLICATION_NAME',
+    			   	'appname'		=>  'MIME_TYPE_SEARCH_BY_APPLICATION_NAME',
+    			   	'application-module'	=>  'MIME_TYPE_SEARCH_BY_APPLICATION_MODULE',
+    			   	'app-module'		=>  'MIME_TYPE_SEARCH_BY_APPLICATION_MODULE',
+    			   	'app-mod'		=>  'MIME_TYPE_SEARCH_BY_APPLICATION_MODULE',
+    			   	'appmod'		=>  'MIME_TYPE_SEARCH_BY_APPLICATION_MODULE'
+			    )
+		    ),
+		array
+		   (
+		   	'names'		=>  array ( 'loose-search', 'loose' ),
+		   	'type'		=>  self::ATTRIBUTE_TYPE_BOOLEAN,
+		   	'default'	=>  'false',
+		   	'member'	=>  'LooseSearch',
+		   	'help'		=>  'Indicates if loose searches are allowed (searches based on the start of the searched string).'
+		    )
+	    ) ;
+
+    	// Search options
+    	public		$SearchOptionList ;
+    	// Loosee search
+    	public 		$LooseSearch ;
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Class constructor.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __construct ( $parent, $tags )
+	   {
+		// Build the object
+	   	$this -> Help 			=  "Defines a MIME-type name parameter." ;
+	   	$this -> ReturnValueHelp	=  "Returns the corresponding MIME-type information." ;
+
+		parent::__construct ( $parent, $tags, "mime-type", $this -> MimeTypeParameters ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Process command-line value.
+
+	 --------------------------------------------------------------------------------------------*/
+	protected function  ProcessValue ( $name, $value )
+	   {
+	   	$result 	=  array ( ) ;
+
+	   	foreach  ( $this -> SearchOptionList  as  $option )
+	   	   {
+	   	   	$temp  =  $this -> MimeTypes -> GetBy ( $value, $this -> LooseSearch, $option ) ;
+
+	   	   	if  ( $temp  !==  false )
+				$result = array_merge ( $result, $temp ) ;
+ 		    }
+
+		if  ( ! count ( $result ) )
+			error ( new  CLException ( "Invalid Mime type '$value' for parameter '$name'." ) ) ;
+
+		return ( $result ) ;
+	    }
+    }
+
+
+/*==================================================================================================
+
+    CLURLContentsParameter class -
+	Implements an URL contents parameter.
+
+  ==================================================================================================*/
+
+// URL retrieval method
+define ( 'URL_CONTENTS_METHOD_GET'	, 0 ) ;
+define ( 'URL_CONTENTS_METHOD_POST'	, 1 ) ;
+
+
+class  CLURLContentsParameter  extends  CLAbstractInternetParameter
+   {
+	// url-specific definitions
+   	private		$URLContentsDefinitions = array
+   	   (
+	    	array
+	    	   (
+	    	   	'names'		=>  array ( 'method' ),
+	    	   	'type'		=>  self::ATTRIBUTE_TYPE_KEYWORD,
+	    	   	'default'	=>  'get',
+	    	   	'member'	=>  'URLRetrievalMethod',
+			'keywords'	=>  array
+			   (
+			   	'get'	=>  URL_CONTENTS_METHOD_GET,
+			   	'post'	=>  URL_CONTENTS_METHOD_POST
+			    ),
+	    	   	'help'		=>  'Specifies the method to be used for contents retrieval (get or post).'
+      		    ),
+   		array
+   		   (
+   		   	'names'		=>  array ( 'timeout' ),
+   		   	'type'		=>  self::ATTRIBUTE_TYPE_UNSIGNED_INTEGER,
+   		   	'default'	=>  0,
+   		   	'member'	=>  'Timeout',
+   		   	'help'		=>  'Timeout in seconds. If zero, the default timeout value (30s) will be used.'
+		    ),
+	    	array
+	    	   (
+	    	   	'names'		=>  array ( 'abort-on-failure' ),
+	    	   	'type'		=>  self::ATTRIBUTE_TYPE_BOOLEAN,
+	    	   	'default'	=>  "true",
+	    	   	'member'	=>  "AbortOnFailure",
+	    	   	'help'		=>  "When true (the default), the program will be aborted if URL contents cannot be retrieved. When false, an empty string is returned."
+		    )
+    	    ) ;
+
+	// URL retrieval option
+	public		$URLRetrievalMethod ;
+	// Timeout
+	public		$Timeout ;
+	// Abort on failure option
+	public		$AbortOnFailure ;
+	// HTTP request additional headers
+	public		$HTTPHeaders	=  array ( ) ;
+
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Class constructor.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __construct ( $parent, $tags )
+	   {
+		// Build the object
+	   	$this -> Help 			=<<<END
+Defines an url content-parameter. Additional HTTP headers can be added with through the <header> sub-tag :
+
+<header name="hearder-name">
+	header contents...
+</header>
+END;
+	   	$this -> ReturnValueHelp	=  "Returns the contents of the specified URL." ;
+		parent::__construct ( $parent, $tags, "url-content", $this -> URLContentsDefinitions ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Preprocess value.
+
+	 --------------------------------------------------------------------------------------------*/
+  	protected function  ProcessValue ( $name, $value )
+  	   {
+  	   	// Create the HTTP request
+		$request =  new HttpRequest ( $value ) ;
+		$result  =  false ;
+
+		// Add or modify existing HTTP headers
+		foreach  ( $this -> HTTPHeaders  as  $header_name => $header_value )
+			$request -> Headers [] = "$header_name: $header_value" ;
+
+		// Run the request (either GET or POST)
+		switch  ( $this -> URLRetrievalMethod )
+		   {
+			case	URL_CONTENTS_METHOD_GET :
+				$result = $request -> Get ( $this -> Timeout ) ;
+				break ;
+
+			case	URL_CONTENTS_METHOD_POST :
+				$result = $request -> Post ( $this -> Timeout ) ;
+		    }
+
+		// Abort if requested contents not found and the 'abort-on-failure' attribute has been set
+    		if  ( ! $result )
+    		   {
+    		   	if  ( $this -> AbortOnFailure )
+    				error ( new CLException ( "Unable to retrieve URL contents for the '$value' value of the '$name' parameter." ) ) ;
+			else
+				$result = "" ;
+		    }
+
+		// All done, return
+		return ( $result -> Text ) ;
+  	    }
+
+
+ 	/*-------------------------------------------------------------------------------------------
+
+	    ProcessChildTag -
+	    	Processes <header> tags.
+
+ 	 --------------------------------------------------------------------------------------------*/
+	protected function  ProcessChildTag ( $child )
+	   {
+	   	// Get child and parent tagname
+	   	$tag 			=  $child [ 'tag' ] ;
+	   	$parameter_name 	=  $this -> GetUsageParameterName ( ) ;
+
+		// Check if they are allowed
+		if  ( strcasecmp ( $tag, 'header' ) )
+		   {
+			parent::ProcessChildTag ( $child ) ;
+			exit ( ) ;
+   		    }
+
+		// Get attributes
+		$name 		=  null ;
+		$value 		=  null ;
+
+		foreach  ( $child [ 'attributes' ]  as  $attribute )
+		   {
+			$attr_name	=  strtolower ( $attribute [ 'name' ] ) ;
+			$attr_value 	=  $attribute [ 'value' ] ;
+
+			switch  ( $attr_name )
+			   {
+				case	'name' :
+					$name = $attr_value ;
+					break ;
+
+				case	'value' :
+					$value = $attr_value ;
+					break ;
+
+				default :
+					error ( new CLException ( "Invalid attribute '$attr_name' for the <header> sub-tag of the '$parameter_name' parameter." ) ) ;
+			    }
+		    }
+
+		// Check that both header name and value has been supplied
+		if  ( $name  ===  null )
+			error ( new CLException ( "The 'name' attribute in the <header> sub-tag of the '$parameter_name' parameter is mandatory." ) ) ;
+
+		if  ( $value  ===  null )
+			error ( new CLException ( "The 'value' attribute in the <header> sub-tag of the '$parameter_name' parameter is mandatory." ) ) ;
+
+		// Add the header to the list of modified/supplementary headers
+		$this -> HTTPHeaders [ $name ] = $value ;
+  	    }
+    }
+
+/*==================================================================================================
+
+    CLCountryCodeParameter class -
+	Implements a country code parameter.
+
+  ==================================================================================================*/
+class  CLCountryCodeParameter  extends  CLAbstractInternetParameter
+   {
+	/*-------------------------------------------------------------------------------------------
+
+		Class constructor.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __construct ( $parent, $tags )
+	   {
+		// Build the object
+	   	$this -> Help 			=  "Defines a country code parameter." ;
+	   	$this -> ReturnValueHelp	=<<<END
+Returns an array containing the following entries :
+
+code -
+	Alphanumeric 2-character country code.
+
+long-code -
+	3-character country code.
+
+iso-code -
+	ISO country code.
+
+name -
+	Country name (uppercase, no accents).
+
+short-name -
+	Country name (short version with accents).
+
+long-name -
+	Country name (long version with accents).
+END;
+
+		parent::__construct ( $parent, $tags, "country-code" ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Process command-line value. Allow both 2- or 3-character country codes.
+
+	 --------------------------------------------------------------------------------------------*/
+	protected function  ProcessValue ( $name, $value )
+	   {
+	   	$countries 	=  $this -> CountryCodes ;
+	   	$key 		=  strtolower ( $value ) ;
+	   	$result 	=  null ;
+
+		// If the short country code exists, return it
+	   	if  ( isset ( $countries [ $key ] ) )
+		   	$result 	=  $countries [ $key ] ;
+	   	// Otherwise, search through the country code list
+		else
+		   {
+			foreach  ( $countries -> Countries  as  $country )
+			   {
+				if  ( ! strcasecmp ( $country -> CountryCode, $value )  ||  ! strcasecmp ( $country -> CountryLongCode, $value ) )
+				   {
+				   	$result 	=  $country ;
+					break ;
+				    }
+			    }
+		    }
+
+		// If country code does not exist, throw an exception
+    		if  ( $result  ===  null )
+    			error ( new CLException ( "Invalid country code '$value' for parameter '$name'." ) ) ;
+
+		// Return value
+		$return_value 	=  array
+		   (
+		   	'code'		=>  $result -> CountryCode,
+		   	'long-code'	=>  $result -> CountryLongCode,
+		   	'iso-code'	=>  $result -> ISOCode,
+		   	'name'		=>  $result -> CountryName,
+		   	'short-name'	=>  $result -> CountryShortName,
+		   	'long-name'	=>  $result -> CountryLongName
+		    ) ;
+
+	    	return ( $return_value ) ;
+	    }
+    }
+
+
+/*==================================================================================================
+
+    CLPhoneParameter class -
+	Implements a phone number parameter.
+
+  ==================================================================================================*/
+class  CLPhoneParameter  extends  CLAbstractInternetParameter
+   {
+	// url-specific definitions
+   	private		$PhoneDefinitions = array
+   	   (
+	    	array
+	    	   (
+	    	   	'names'		=>  array ( 'country', 'country-code' ),
+	    	   	'type'		=>  self::ATTRIBUTE_TYPE_STRING,
+	    	   	'default'	=>  'fr',
+	    	   	'member'	=>  'CountryCode',
+	    	   	'help'		=>  "Specifies the country code to be used. The file 'thrak://Data/CallingCodes.txt' serves as a reference."
+      		    ),
+    		array
+    		   (
+    		   	'names'		=>  array ( 'local-number-format', 'number-format' ),
+    		   	'type'		=>  self::ATTRIBUTE_TYPE_STRING,
+    		   	'default'	=>  null,
+    		   	'member'	=>  'LocalNumberFormat',
+    		   	'help'		=>  array
+		          (
+			  	"Local number formatting. It can contain the following formats :\n\n",
+			  	"'%c' -\n",
+			  	"\tReplaced by the default or specified country code.\n",
+			  	"'[x-y]' -\n",
+			  	"\tReplaced by the digits 'x' through 'y' from the supplied input phone number.\n",
+			  	"\tThe [x-] construct means 'from digit \"x\" until the last digit.\n",
+			  	"\tThe [-y] construct means 'from first digit to digit \"y\".\n",
+			  	"\tThe [x] construct means 'single digit at position \"x\".\n",
+			  	"\tThe special construct '[]' means 'all digits'."
+
+	  		   )
+		    ),
+    		array
+    		   (
+    		   	'names'		=>  array ( 'international-number-format', 'intl-number-format' ),
+    		   	'type'		=>  self::ATTRIBUTE_TYPE_STRING,
+    		   	'default'	=>  null,
+    		   	'member'	=>  'InternationalNumberFormat',
+    		   	'help'		=>  'International number formatting.'
+		    )
+	    ) ;
+
+	// Country code
+	public		$CountryCode ;
+	// Local and international number formats
+	public		$LocalNumberFormat ;
+	public		$InternationalNumberFormat ;
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Class constructor.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __construct ( $parent, $tags, $valuetext = "phone-number" )
+	   {
+   		$this -> Help 			=<<<END
+Specifies a phone number of the following form :
+
+	[+calling_code or country 2-letters code] phone_number
+
+Parentheses can surround either the calling code or country code.
+If parentheses or country code are specified, spaces are optional before the phone number.
+Country code is optional.
+END;
+
+   		$this -> ReturnValueHelp	=<<<END
+Returns an associative array containing the following entries :
+
+'calling-code' -
+	Country calling code, eg '+33' for France.
+'calling-code-number' -
+	Country calling code number as an integer value, eg '33' for France.
+'country-code' -
+	Country code. The default country code is given by the "country-code" attribute.
+'country-name' -
+	Full country name.
+'number' -
+	Phone number.
+'local-phone-number' -
+	Local phone number, as defined by the formatting option specified by the "local-number-format" attribute.
+'international-phone-number' -
+	International phone number, as defined by the formatting option specified by the "international-phone-nuber" attribute.
+END;
+		$this -> AllowSwitchCharacter	=  true ;
+
+		parent::__construct ( $parent, $tags, $valuetext, $this -> PhoneDefinitions ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Process value.
+
+	 --------------------------------------------------------------------------------------------*/
+ 	protected function  ProcessValue ( $name, $value )
+ 	   {
+ 	   	$codes 	=  $this -> CallingCodes ;
+
+ 	   	$re	=  '/^ \s*' .
+  				'(?P<code>' .
+ 	   				'( ( ([a-zA-Z]+) \s*) | ( ([+]? \d+) \s+ ) ) |' .
+ 	   				'(  \( \s* ( ([a-zA-Z]+) | ([+]? \d+) ) \s* \) \s* )' .
+			  	')?' .
+ 	   			'(?P<number> \d+)' .
+		    	   '\s* $/imsx' ;
+
+    	   	if  ( preg_match ( $re, $value, $matches  ) )
+    	   	   {
+    	   	   	if  ( isset ( $matches [ 'code' ] )  &&  $matches [ 'code' ] )
+    	   	   	   {
+    	   	   	   	$cc 		=  $matches [ 'code' ] ;
+    	   	   	   	$cc 		=  trim ( str_replace ( array ( '(', ')', ' ' ), '', $cc ) ) ;
+				$code		=  $codes -> Find ( $cc ) ;
+			     }
+			else
+			   {
+			   	if  ( $this -> CountryCode )
+					$code 	=  $codes -> Find ( $this -> CountryCode ) ;
+				else
+					$code 	=  $codes -> Find ( "fr" ) ;
+			    }
+
+
+			if  ( $code  ===  false )
+				error ( new CLException ( "Invalid calling code '{$matches ['code' ]}' in phone number '$value' for parameter '$name'." ) ) ;
+
+			$calling_code 	=  $code [1] ;
+			$code 		=  $code [0] ;
+
+			$country_code	=  $code -> CountryCode ;
+			$country_name 	=  $code -> CountryName ;
+
+			$number 	=  $matches [ 'number' ] ;
+    	   	    }
+   	    	else
+   	    		error ( new CLException ( "Invalid phone number '$value' for parameter '$name'." ) ) ;
+
+		$local_number 		=  $code -> GetPhoneNumber ( $number, false ) ;
+
+		if  ( $local_number  ===  false )
+			error ( new CLException ( "Invalid phone number '$number' for parameter '$name'." ) ) ;
+
+		$international_number 	=  $code -> GetPhoneNumber ( $number, true ) ;
+
+		$result = array
+		   (
+		   	"calling-code"		=>  $calling_code,
+		   	"calling-code-number"	=>  substr ( $calling_code, 1 ),
+		   	"country-code"		=>  $country_code,
+		   	"country-name"		=>  $country_name,
+		   	"number"		=>  $number,
+		   	"local-number"		=>  $local_number,
+		   	"international-number"	=>  $international_number
+		    ) ;
+
+	    	return ( $result ) ;
+ 	    }
+    }

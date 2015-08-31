@@ -1,0 +1,744 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        ArrayHelpers.phpclass
+
+    DESCRIPTION
+        Array helper functions.
+
+    AUTHOR
+        Christian Vigh, 04/2015.
+
+    HISTORY
+    [Version : 1.0]	[Date : 2015/04/04]     [Author : CV]
+        Initial version.
+
+    [Version : 1.0.1]	[Date : 2015/06/09]     [Author : CV]
+ 	. Added the CrossReference() method
+
+    [Version : 1.0.2]	[Date : 2015/06/27]     [Author : CV]
+	. Added the SortedFind and SortedFindLE/LT/GE/GT methods.
+
+    [Version : 1.0.3]	[Date : 2015/08/02]     [Author : CV]
+	. Added the Unique() method.
+	. Added the InArray() method. 
+
+    [Version : 1.0.4]	[Date : 2015/08/04]     [Author : CV]
+	. Added the MergeAssoc() and MergeAssocRecursive() methods.
+
+    [Version : 1.0.5]	[Date : 2015/08/10]     [Author : CV]
+	. Added the ExtractValues() and ExtractValuesEx() methods.
+
+    [Version : 1.0.6]	[Date : 2015/08/27]     [Author : CV]
+	. Added the ToRanges() method.
+  
+ **************************************************************************************************************/
+namespace 	Thrak\Types ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces & objects
+use 		Thrak\System\Object ;
+
+
+/*==============================================================================================================
+
+    ArrayHelpers -
+        Helper functions for arrays.
+
+  ==============================================================================================================*/
+class  ArrayHelpers		extends  Object 
+   {
+	/*==============================================================================================================
+	
+	    NAME
+	        CombinationsOf - Returns a set of combinations from an array.
+	
+	    PROTOTYPE
+	        $results	=  ArrayHelpers::CombinationsOf ( $array, $max_results = 10000 ) ;
+	
+	    DESCRIPTION
+	        Takes an array containing values and nested arrays (no more than one level of nesting is authorized) and 
+	 	generates all the possible combinations, each nested array providing alternatives for the generation.
+	  
+	 	For example, the following input array :
+	  
+	 		[ [ 'a', 'b' ], 1, 2, [ 'x', 'y', 'z' ] ]
+	  
+	 	will generate the following results :
+	  
+	 		[
+	 			[0] => [ 'a', 1, 2, 'x' ] 
+	 			[1] => [ 'b', 1, 2, 'x' ] 
+	 			[2] => [ 'a', 1, 2, 'y' ] 
+	 			[3] => [ 'b', 1, 2, 'y' ] 
+	 			[4] => [ 'a', 1, 2, 'z' ] 
+	 			[5] => [ 'b', 1, 2, 'z' ] 
+	 		 ]
+	  
+	 	Note that the combination generation is computed from left to right.
+	
+	    PARAMETERS
+	        $array (array) -
+	                Input array.
+	  
+	 	$max_results (integer) -
+	 		This parameter is provided to limit exponential combinations generation.
+	
+	    RETURN VALUE
+	        An array of arrays containing all the combinations of the supplied input array.
+	
+	  ==============================================================================================================*/
+
+	// __develop_non_recursive -
+	//	A non-recursive version for the CombinationsOf() method, that allows only one nesting level of arrays.
+	private static function  __develop_non_recursive ( &$results, $array, $max_results = 10000 )
+	   {
+		$array_count	=  count ( $array ) ;
+		
+		// Loop through input array, which is processed from right to left to generate the resulting array
+		for  ( $i = $array_count - 1 ; $i  >=  0 ; $i -- )
+		   {
+			$item		=  $array [$i] ;
+			$result_count	=  count ( $results ) ;
+			
+			// Current item is a nested array : we will have to demultiplicate each result in the $results array
+			// to hold each $array items
+			if  ( is_array ( $item ) )
+			   {
+				$item_count	=  count ( $item ) ;
+				
+				// Check for possible quota overflow
+				if  ( $result_count * $item_count  >  $max_results )
+					error ( new \Thrak\System\OverflowException ( "Array development limit of $max_results results exceeded." ) ) ;
+				
+				// Then check that each subitem of this array is not an array in itself
+				foreach  ( $item  as  $subitem )
+				   {
+					if  ( is_array ( $subitem ) )
+						error ( new \Thrak\System\LogicException ( "No more than one nesting level is allowed in arrays to be developed." ) ) ;
+				    }
+				
+				// Demultiplicate existing results
+				if  ( $result_count )
+				   {
+					$new_results	=  [] ;
+					
+					for  ( $j = 0 ; $j  <  $result_count ; $j ++ )
+					   {
+						for  ( $k = 0 ; $k  <  $item_count ; $k ++ )
+						   {
+							$subitem	=  $item [$k] ;
+							$new_results []	=  array_merge ( [ $subitem ], $results [$j] ) ;
+						    }
+					    }
+					
+					$results	=  $new_results ;
+				    }
+				// ... but for the first iteration, only add the elements of the current array item
+				else
+				   {
+					foreach  ( $item  as  $subitem )
+						$results []	=  [ $subitem ] ;
+				    }
+			    }
+			// Current item is not an array
+			else
+			   {
+				// Prepend it to the existing items
+				if  ( $result_count )
+				   {
+					foreach  ( $results  as  &$result )
+						array_unshift ( $result, $item ) ;
+				    }
+				// ... or simply add it, if the results array is empty
+				else
+				   {
+					$results []	=  [ $item ] ;
+				    }
+			    }
+		    }
+	    }
+	
+	
+	public static function  CombinationsOf ( $array, $max_results = 10000 )
+	   {
+		$array_count	=  count ( $array ) ;
+		
+		if  ( ! $array_count )
+			return ( [] ) ;
+
+		$results	=  [] ;
+		
+		self::__develop_non_recursive ( $results, $array, $max_results ) ;
+		
+		return ( $results ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        CrossReference - Performs arrays cross-references.
+	
+	    PROTOTYPE
+	        ArrayHelpers::CrossReference ( $keys, $array, &$missing = [], &$extra = [], $case_sensitive = true ) ;
+	
+	    DESCRIPTION
+	        Performs a cross-reference between two arrays. The first array contains key names, and the second one
+	 	is either an associative array (with key names) or a regular array (with indexes).
+	 	The function checks that each element in $array (identified either by its key or its numeric index) has
+	 	a correspondance in $keys.
+	 	The $missing output array will be updated to reference the indexes in $array that are not present in
+	 	$keys ; the $extra array will reference the indexes in $array that are not present in $keys.
+	
+	    PARAMETERS
+	        $keys (array) -
+	                An array which contains the keys to be checked in $array.
+	  
+	 	$array (array) -
+	 		The array to be checked. Numeric keys must have a numeric correspondance in $keys, while
+	 		non-numeric keys must be referenced in the values present in $key.
+	  
+	 	$missing (array) -
+	 		On output, will contain the elements in $keys whose indexes are not present in $array.
+	  
+	 	$extra (array) -
+	 		On output, will contain the elements in $array whose indexes are not present in $keys.
+	  
+	 	$case_sensitive (boolean) -
+	 		Specifies whether array key comparisons are case-sensitive or not.
+	
+	    RETURN VALUE
+	        Returns true if the keys in the $array array are strictly the same as those referenced in the $keys
+		array, false otherwise.
+	
+	  ==============================================================================================================*/
+	public static function  __crossref_find ( $ref, $key, $compare_function )
+	   {
+		$index		=  0 ;
+		
+		foreach  ( $ref  as  $ref_entry )
+		   {
+			if  ( ! $compare_function ( $ref_entry [ 'key' ], $key ) )
+				return ( $index ) ;
+			
+			$index ++ ;
+		    }
+		
+		return ( false ) ;
+	    }
+	
+	
+	public static function  CrossReference ( $keys, $array, &$missing = [], &$extra = [], $case_sensitive = true )
+	   {
+		$compare_function	=  ( $case_sensitive ) ?  'strcmp' : 'strcasecmp' ;
+		$reference_array	=  [] ;
+		
+		
+		foreach  ( $keys  as  $key )
+			$reference_array []	=  [ 'key' => $key, 'found' => false ] ;
+		
+		foreach  ( $array  as  $array_key => $array_value )
+		   {
+			$index	=  self::__crossref_find ( $reference_array, $array_key, $compare_function ) ;
+			
+			if  ( $index  ===  false )
+				$extra [ $array_key ]			=  $array_value ;
+			else
+				$reference_array [ $index ] [ 'found' ]	=  true ;
+		    }
+		
+		foreach  ( $reference_array  as  $reference )
+		   {
+			if  ( ! $reference [ 'found' ] )
+				$missing []	=  $reference [ 'key' ] ;
+		    }
+		
+		return ( ! ( count ( $missing )  ||  count ( $extra ) ) ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        ExtractValues, ExtractValuesEx - Extracts values from an array.
+	 
+	    PROTOTYPE
+	        $result		=  ArrayHelpers::ExtractValues ( $array, $index ) ;
+		$result		=  ArrayHelpers::ExtractValuesEx ( $array, $index_array ) ;
+	 
+	    DESCRIPTION
+	        ExtractValues extracts the values in $array at the specified index, and returns a non-associative array
+		containing the values.
+		ExtractValuesEx extracts a set of values specified by $index_array and returns an associative array
+		containing the values for the indexes specified by $index_array.
+	 
+	    PARAMETERS
+	        $array (array) -
+	                Array whose values are to be extracted.
+
+		$index (mixed) -
+			Index or string specifying the array item to be extracted.
+
+		$index_array (array) -
+			Array of indexes to be extracted from $array.
+
+	    NOTES
+		Both function returns an array including only the $array elements that have a sub-index equal to $index
+		or one of the indexes defined in $index_array.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public static function  ExtractValues ( $array, $index )
+	   {
+		$result		=  [] ;
+
+		foreach  ( $array  as  $item )
+		   {
+			if  ( isset ( $item [ $index ] ) )
+				$result []	=  $item [ $index ] ;
+		    }
+
+		return ( $result ) ;
+	    }
+
+
+	public static function  ExtractValuesEx ( $array, $index_array )
+	   {
+		$result		=  [] ;
+
+		foreach  ( $array  as  $item )
+		   {
+			$result_item	=  [] ;
+
+			foreach  ( $index_array  as  $index )
+			   {
+				if  ( isset ( $item [ $index ] ) )
+					$result_item []	=  $item [ $index ] ;
+			    }
+
+			if  ( count ( $result_item ) )
+				$result []	=  $result_item ;
+		    }
+
+		return ( $result ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        InArray - Checks if a value is in an array.
+	 
+	    PROTOTYPE
+	        $status		=  ArrayHelpers::InArray ( $array, $value, $case_insensitive = true ) ;
+	 
+	    DESCRIPTION
+	        Searches for a value in an array.
+	 
+	    PARAMETERS
+	        $array (array) -
+	                Array to be searched.
+
+		$value (string) -
+			Value to search for.
+
+		$case_insensitive (boolean) -
+			When true, search is case-insensitive.
+	 
+	    RETURN VALUE
+	        Returns true if the searched value is in the specified array, false otherwise.
+	 
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public static function  InArray ( $array, $value, $case_insensitive = true )
+	   {
+		if  ( $case_insensitive )
+		   {
+			foreach  ( $array  as  $item )
+			   {
+				if  ( ! strcasecmp ( $item, $value ) )
+					return ( true ) ;
+			    }
+
+			return ( false ) ;
+		    }
+		else
+			return ( in_array ( $value, $array ) ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        MergeAssoc, MergeAssocRecursive - Merges two or more arrays.
+	 
+	    PROTOTYPE
+	        $result		=  ArrayHelpers::MergeAssoc ( $array [, ...] ) ;
+		$result		=  ArrayHelpers::MergeAssocRecursive ( $array [, ...] ) ;
+	 
+	    DESCRIPTION
+	        Behaves quite similarly to the array_merge/array_merge_recursive functions, but considers that all
+		arrays (and nested arrays) are associative, even if they have a numeric key.
+
+		For example, with the following input data : 
+
+			$a = [ 17 => 1 ] ; 
+			$b = [ 17 => 2, 18 => 3 ] ;
+
+		array_merge() will produce :
+
+			Array
+			(
+			    [0] => 1
+			    [1] => 2
+			    [2] => 3
+			)
+
+		while MergeAssoc will produce :
+
+			Array
+			(
+			    [17] => 2,
+			    [18] => 3
+			 )
+	 
+	    PARAMETERS
+	        $array (list of arrays) -
+	                Arrays to be merged.
+	 
+	    RETURN VALUE
+	        A resulting array containing the merged values of the supplied input arrays.
+		If only one array is supplied, it will be returned as is.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	private static function  __do_merge ( $array1, $array2, $recursive ) 
+	   {
+		if  ( is_array ( $array2 ) )
+		   {
+			foreach ( $array2  as  $key => $value )
+			   {
+				if  ( isset ( $array1 [ $key ] ) )
+				   {
+					if  ( $recursive )
+						$array1 [ $key ]	=  self::__do_merge ( $array1 [ $key ], $array2 [ $key ], $recursive ) ;
+					else
+						$array1 [ $key ]	=  $array2 [ $key ] ;
+				    }
+				else
+					$array1 [ $key ]	=  $array2 [ $key ] ;
+			    }
+		    }
+		else
+			$array1  =  $array2 ;
+
+		return ( $array1 ) ;
+	    }
+
+
+	public static function  MergeAssoc ( )
+	   {
+		$argv	=  func_get_args ( ) ;
+		$argc	=  count ( $argv ) ;
+
+		if  ( $argc  <  2 )
+			error ( new \Thrak\System\InvalidArgumentException ( "At least 2 arrays must be supplied." ) ) ;
+
+		for  ( $i = 0 ; $i  <  $argc ; $i ++ )
+		   {
+			if  ( ! is_array ( $argv [$i] ) )
+			   {
+				$index	=  $i + 1 ;
+
+				error ( new \Thrak\System\InvalidArgumentException ( "Argument #$index must be an array." ) ) ;
+			    }
+		    }
+
+		$result		=  $argv [0] ;
+
+		for  ( $i = 1 ; $i  <  $argc ; $i ++ )
+			$result		=  self::__do_merge ( $result, $argv [$i], false ) ;
+
+		return ( $result ) ;
+	    }
+
+
+	public static function  MergeAssocRecursive ( )
+	   {
+		$argv	=  func_get_args ( ) ;
+		$argc	=  count ( $argv ) ;
+
+		if  ( $argc  <  2 )
+			error ( new \Thrak\System\InvalidArgumentException ( "At least 2 arrays must be supplied." ) ) ;
+
+		for  ( $i = 0 ; $i  <  $argc ; $i ++ )
+		   {
+			if  ( ! is_array ( $argv [$i] ) )
+			   {
+				$index	=  $i + 1 ;
+
+				error ( new \Thrak\System\InvalidArgumentException ( "Argument #$index must be an array." ) ) ;
+			    }
+		    }
+
+		$result		=  $argv [0] ;
+
+		for  ( $i = 1 ; $i  <  $argc ; $i ++ )
+			$result		=  self::__do_merge ( $result, $argv [$i], true ) ;
+
+		return ( $result ) ;
+	    }
+
+
+	/*==============================================================================================================
+	
+	    NAME
+		SortedFind* - Perform dichotomic search operations on sorted arrays.
+	
+	    PROTOTYPE
+	     	$index	=  ArrayHelpers::SortedFind   ( $array, $value ) ;
+	     	$index	=  ArrayHelpers::SortedFindLE ( $array, $value ) ;
+	     	$index	=  ArrayHelpers::SortedFindLT ( $array, $value ) ;
+	     	$index	=  ArrayHelpers::SortedFindGE ( $array, $value ) ;
+	     	$index	=  ArrayHelpers::SortedFindGT ( $array, $value ) ; 
+	
+	    DESCRIPTION
+	     	SortedFind() returns the index of the element in $array whose value is equal to the specified one.
+	      	SortedFindLE() finds the index of the first element in $array which is less or equal to the specified
+		value. Similarly, "LT" stands for "less than", "GE" for "greater or equal" and "GT" for "greater than".
+	
+	    PARAMETERS
+		$array (array) -
+			A sorted array to be searched. The return value will be unpredictable if the array is not sorted.
+			  
+		$value (scalar) -
+			Value to be searched.
+	
+	    RETURN VALUE
+		Returns the index of the found value, or false if no value has been found.
+	
+	  ==============================================================================================================*/
+
+	// __find_eq -
+	//	Searches the specified value in the specified array and returns its index if found, or false if not found.
+	//	$last_low and $last_high, if specified, will receive the value of the last range used during the 
+	//	dichotomic search.
+	static function  __find_eq ( $array, $value, &$last_low = null, &$last_high = null )
+	   {
+		$array_size		=  count ( $array ) ;
+		$low			=  0 ;
+		$high			=  $array_size - 1 ;
+		$last_low		=  $low ;
+		$last_high		=  $high ;
+
+		while  ( $low  <=  $high )
+		   {
+			$last_low	=  $low ;
+			$last_high	=  $high ;
+			$middle		=  ( integer ) ( $low + ( ( $high - $low ) / 2 ) ) ;
+			$current	=  $array [ $middle ] ;
+
+			if  ( $current  <  $value ) 
+				$low	=  $middle + 1 ;
+			else if  ( $current  >  $value )
+				$high	=  $middle - 1 ;
+			else if  ( $current  ==  $value )
+				return ( $middle ) ;
+		    }
+
+		return ( false ) ;
+	    }
+
+
+	static function  SortedFind ( $array, $value )
+	   {
+		return ( self::__find_eq ( $array, $value ) ) ;
+	    }
+
+
+	static function  SortedFindLE ( $array, $value )
+	   {
+		$result		=  self::__find_eq ( $array, $value, $first, $last ) ;
+
+		if  ( $result  ===  false  ||  $array [ $result ]  >  $value )
+		   {
+			if  ( $first  &&  $first  ==  $last )
+				$first -- ;
+
+			for  ( $i = $first ; $i  <=  $last ; $i ++ )
+			   {
+				if  ( $array [$i]  >  $value )
+				   {
+					$result		=  $array [$i - 1] ;
+					break ;
+				    }
+			    }
+		    }
+
+		return ( $result ) ;
+	    }
+
+
+	static function  SortedFindLT ( $array, $value )
+	   {
+		$result		=  self::__find_eq ( $array, $value, $first, $last ) ;
+
+		if  ( $result  ===  false  ||  $array [ $result ]  >=  $value )
+		   {
+			if  ( $first  &&  $first  ==  $last )
+				$first -- ;
+
+			for  ( $i = $first ; $i  <=  $last ; $i ++ )
+			   {
+				if  ( $array [$i]  >=  $value )
+				   {
+					$result		=  $array [$i - 1] ;
+					break ;
+				    }
+			    }
+		    }
+
+		return ( $result ) ;
+	    }
+
+
+	static function  SortedFindGE ( $array, $value )
+	   {
+		$result		=  self::__find_eq ( $array, $value, $first, $last ) ;
+
+		if  ( $result  ===  false  ||  $array [ $result ]  <  $value )
+		   {
+			if  ( $last + 1  <  count ( $array ) )
+				$last ++ ;
+
+			for  ( $i = $first ; $i  <=  $last ; $i ++ )
+			   {
+				if  ( $array [$i]  >=  $value )
+				   {
+					$result		=  $array [$i] ;
+					break ;
+				    }
+			    }
+		    }
+
+		return ( $result ) ;
+	    }
+
+
+	static function  SortedFindGT ( $array, $value )
+	   {
+		$result		=  self::__find_eq ( $array, $value, $first, $last ) ;
+
+		if  ( $result  ===  false  ||  $array [ $result ]  <=  $value )
+		   {
+			if  ( $last + 1  <  count ( $array ) )
+				$last ++ ;
+
+			for  ( $i = $first ; $i  <=  $last ; $i ++ )
+			   {
+				if  ( $array [$i]  >  $value )
+				   {
+					$result		=  $array [$i] ;
+					break ;
+				    }
+			    }
+		    }
+
+		return ( $result ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        ToRanges - Extracts ranges of values from a numeric array.
+	 
+	    PROTOTYPE
+	        $ranges		=  ArrayHelpers::ToRanges ( $array ) ;
+	 
+	    DESCRIPTION
+	        Extracts ranges of values from an array containing integer elements.
+	 
+	    PARAMETERS
+	        $array (array of integers) -
+	                Values to be assembled as ranges.
+	 
+	    RETURN VALUE
+	        An array of two-elements arrays, containing the lower and upper bounds of each range.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public static function  ToRanges ( $array ) 
+	   {
+		$ranges		=  [] ;
+		$count		=  count ( $array ) ;
+		sort ( $array ) ;
+
+		if  ( ! $count ) 
+			return ( [] ) ;
+		else if  ( $count  ==  1 )
+			return ( [ [ $array [0], $array [0] ] ] ) ;
+
+		$start_value	=  $array [0] ;
+
+		for  ( $i = 1 ; $i  <  $count ; $i ++ )
+		   {
+			if  ( $array [$i]  !=  $array [$i-1] + 1 )
+			   {
+				$ranges []	=  [ $start_value, $array [$i - 1] ] ;
+				$start_value	=  $array [$i] ;
+			    }
+		    }
+
+		$ranges []	=  [ $start_value, $array [ $count - 1 ] ] ;
+
+		return ( $ranges ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        Unique - Returns the unique elements of an array.
+	 
+	    PROTOTYPE
+	        $array	=  ArrayHelpers::Unique ( $array, $sort = true ) ;
+	 
+	    DESCRIPTION
+	        Returns the unique elements of an array. 
+		Comparisons are case-insensitive.
+	 
+	    PARAMETERS
+	        $array (array) -
+	                Array whose unique elements are to be extracted.
+
+		$sort (boolean) -
+			When true, results are sorted.
+	 
+	    RETURN VALUE
+	        A new array, with the unique values present in $array.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public static function  Unique ( $array, $sort = true ) 
+	   {
+		$unique_values		=  [] ;
+
+		foreach ( $array  as  $item )
+		   {
+			if  ( is_string ( $item ) )
+				$lc_item	=  strtolower ( $item ) ;
+			else 
+				$lc_item	=  $item ;
+
+			if  ( ! isset ( $unique_values [ $lc_item ] ) )
+				$unique_values	[ $lc_item ]	=  $item ;
+		    }
+		
+		$result		=  array_values ( $unique_values ) ;
+
+		if  ( $sort )
+			sort ( $result, SORT_FLAG_CASE | SORT_STRING ) ;
+
+		return ( $result ) ;
+	    }
+    }

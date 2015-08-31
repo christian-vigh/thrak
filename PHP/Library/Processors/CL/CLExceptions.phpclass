@@ -1,0 +1,84 @@
+<?php
+/***************************************************************************************************
+
+    NAME
+	CLExceptions.phpclass
+
+    DESCRIPTION
+	Exceptions related to command-line parsing.
+
+    AUTHOR
+     	Christian Vigh, 05/2011.
+
+    HISTORY
+    [Version : 1.0]	[Date : 2011/05/21]	[Author : CV]
+     	Initial version.
+
+   [Version : 2.0]	[Date : 2012/10/06]		[Author : CV]
+	Migrated to the Thrak library version 2.
+
+ ***************************************************************************************************/
+namespace 	Thrak\Processors\CL ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces & objects
+use 		Thrak\System\Object 		as  Object ;
+use 		Thrak\System\Exception		as  Exception ;
+
+
+/*==================================================================================================
+
+    CLException class -
+	Base class for all command-line exceptions.
+
+  ==================================================================================================*/
+class  CLException  extends Exception
+   {
+	public function  __construct  ( $message, $code = 0 )
+	   {
+		parent::__construct ( $message, $code ) ;
+	    }
+    }
+
+
+/*==================================================================================================
+
+    CLSpecificationException class -
+	Thrown when a parameter specification error is detected.
+
+  ==================================================================================================*/
+class  CLSpecificationException  extends CLException
+   {
+	public function  __construct  ( $object, $message, $code = 0 )
+	   {
+	   	if  ( count ( $object -> Names ) )
+	   		$name = "'" . $object -> Names [0] . "'" ;
+		else
+			$name = " " ;
+
+		parent::__construct ( "Command-line parameter {$name}internal class specification error : $message", $code ) ;
+	    }
+    }
+
+
+/*==================================================================================================
+
+    CLCallerException class -
+	Thrown when a parameter error occurs. Gives the location of the exception origin from the
+	caller function.
+
+  ==================================================================================================*/
+
+class  CLCallerException  extends CLException
+   {
+	public function  __construct  ( $message, $code = 0 )
+	   {
+		parent::__construct ( $message, $code ) ;
+
+		$trace = debug_backtrace ( ) ;
+
+		$this -> file = $trace [1] [ 'file' ] ;
+		$this -> line = $trace [1] [ 'line' ] ;
+	    }
+    }

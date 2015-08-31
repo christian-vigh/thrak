@@ -1,0 +1,634 @@
+<?php
+
+/***************************************************************************************************
+
+	NAME
+		Object.phpclass
+
+	DESCRIPTION
+		Top-level Crimson object.
+
+	AUTHOR
+		Christian Vigh, 01/2010.
+
+	HISTORY
+	[Version : 1.0]		[Date : 2010/01/23]		[Author : CV]
+		Initial release.
+
+	[Version : 1.0.1]	[Date : 2010/08/23]		[Author : CV]
+		Modified the AreEqualReferences function so that it does not generate an error
+		message
+
+	[Version : 2.0]		[Date : 2012/10/02]		[Author : CV]
+		. Migrated to the new Thrak library.
+		. Introduced namespace usage.
+
+	[Version : 2.0.1]		[Date : 2013/12/16]		[Author : CV]
+		. Added the $ConstructorCalled member.
+		. Added the GenerateGUID() function.
+
+	[Version : 2.0.2]		[Date : 2014/07/28]		[Author : CV]
+		. Renamed the GUID member to __INSTANCE_GUID__
+		. Added the __CLASS_GUID__ static member and the GenerateClassGUID() method
+		. Removed the ConstructorCalled member ; An object constructor is considered to have
+		  been called if its __INSTANCE_GUID__ member is non-null.
+		. __CLASS_GUID__ and __INSTANCE_GUID__ are now private members that can be retrieved 
+		  through the GetClassGUID() and GetInstanceGUID() methods, respectively
+
+	[Version : 2.0.3]		[Date : 2014/08/12]		[Author : CV]
+		. Added the DynamicObject class.
+
+ 	[Version : 2.0.4]		[Date : 2014/08/12]		[Author : CV]
+		. Added the IsInstanceOf() method.
+
+	[Version : 2.0.5]		[Date : 2014/08/14]		[Author : CV]
+		. Modified the IsInstanceOf() and IsSubclassOf() methods to work only in a static
+		  context (the 'self' keyword is not defined when a static function is called in a
+		  dynamic context).
+ 
+	[Version : 2.0.6]		[Date : 2014/08/15]		[Author : CV]
+		. Added the IsObject and IsNonObject traits. Both define the global ::$IsObject
+		  variable, which is respectively true and false for IsObject and IsNonObject.
+		  This trick simplifies the gardenkeeper function : Classes voluntarily not 
+ 		  inheriting from Object must use the IsNonObject trait, while the Object class uses
+ 		  the IsObject trait.
+ 		  This way, distinguishing classes where the developer forgot to inherit from
+ 		  the Object class is pretty much faster.
+
+ 	[Version : 2.0.7]		[Date : 2014/08/17]		[Author : CV]
+		. Renamed the HackThis trait to CoreInit
+		. Added the NonPublicConstructor trait for classes inheriting from Object but which
+		  do not want their constructor to be public.
+
+ 	[Version : 2.0.8]		[Date : 2015/05/09]		[Author : CV]
+ 		. Added the __dump_debuginfo() pseudo-magic function, used by Debug::Dump() to hide,
+ 		  select or rename properties.
+
+ 	[Version : 2.0.9]		[Date : 2015/08/02]		[Author : CV]
+		. Added the $MyClass property.
+ 
+ ***************************************************************************************************/
+namespace  	Thrak\System ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use	Thrak\Internals\Prototype ;
+
+
+/*===========================================================================================
+
+	IsNonObject, IsObject class -
+		Used to explicitly declare that a class does/does not inherit from the Object
+		class.
+		When defining a new class, you must either inherit from Object or use the
+		IsNonObject class, so that the gardenkeeper will not issue a warning.
+
+  ===========================================================================================*/
+
+// NonPublicConstructor trait -
+//	A derived class can use this trait to declare that its constructor, which must be public
+//	to be compatible with the constructor of the Object class, should be considered as non
+//	public.
+//	Note however that there will be no distinction between private and protected visibilities.
+trait  NonPublicConstructor
+   {
+	private static	$__non_public_constructor	=  true ;
+	
+	// InternalConstructorCall -
+	//	Sets a private flag indicating whether the class constructor is called from outside or not.
+	private static function  InternalConstructorCall ( $internal = null )
+	   {
+		if  ( isset ( static::$__non_public_constructor ) )
+		   {
+			if  ( $internal  ===  null )
+				static::$__non_public_constructor	=  ! self::$__non_public_constructor ;
+			else
+				static::$__non_public_constructor	=  $internal ;
+		    }
+	    }
+	
+	
+	// IsNotPublic -
+	//	Issues an error if the constructor has not be called internally.
+	private static function  IsNotPublic ( )
+	   {
+		if  ( ! self::$__non_public_constructor )
+			error ( new \Thrak\System\BadMethodCallException ( "Call to " . get_called_class ( ) . "::_construct() from invalid context." ) ) ;
+	    }
+    }
+
+
+// CoreInit trait -
+//	Contains an initialization function for all objects, that takes into account the used traits.
+trait  CoreInit
+   {
+	// CoreInit -
+	//	This function is called from the Object constructor and performs initializations
+	//	based on the traits used by the derived class.
+	private function  CoreInit ( ) 
+	   {
+		if  ( isset  ( self::$__non_public_constructor )  &&  ! self::$__non_public_constructor ) 
+			error ( new \Thrak\System\BadMethodCallException ( get_called_class ( ) . "::__construct() can only be called internally" ) ) ;
+		
+		// Causes dump() to go into infinite recursion !
+		// \Thrak\Internals\Prototype::Prototype ( $this ) ;
+	    }
+    }
+
+// IsNonObject trait -
+//	A class not inheriting from the Object class can use this trait so that the gardenkeeper won't 
+//	issue an error stating that it does not inherit from Object.
+trait  IsNonObject
+   {
+	use  CoreInit ;
+	
+	public static	$IsObject	=  false ;
+    }
+
+// IsObject -
+//	Used by the Object class only.
+trait  IsObject
+   {
+	use  CoreInit ;
+	
+	public static	$IsObject	=  true ;
+	
+    }
+
+/*===========================================================================================
+
+	Object class -
+		Base object class for all Crimson classes.
+
+  ===========================================================================================*/
+class  Object
+   {
+	use		IsObject ;
+	
+	// Unique ID of this class
+	private static	$__CLASS_GUID__			=  null ;
+	// Unique ID of this instance
+   	private		$__INSTANCE_GUID__		=  null ;
+	// Name of the calling class
+	protected	$MyClass ;
+
+
+	/*==============================================================================================================
+
+	    NAME
+		Class constructor.
+
+	  ==============================================================================================================*/
+   	function  __construct ( )
+   	   {
+		// Compute the class GUID
+		if  ( self::$__CLASS_GUID__  ===  null )
+			self::$__CLASS_GUID__	=  self::GenerateClassGuid ( ) ;
+			
+   	   	// Assigns a unique GUID to this instance
+   		$this -> __INSTANCE_GUID__ 	=  self::GenerateGUID ( ) ;
+
+		// Add a prototype object
+		$this -> CoreInit ( ) ;
+
+		// Get calling class name 
+		$this -> MyClass		=  get_called_class ( ) ;
+		   
+		// Since not all objects may inherit from the Object class, or not call their parent's constructor,
+		// ensure that a warning message will be displayed to the developer upon program termination.
+		// This will only work if at least one descendent of the Object object has been instanciated.
+		// To be activated until we are sure that all classes inherit from the Object class and that the Object class
+		// constructor is called.
+		// The Thrak.phpinclude file is the ideal place to enable this setting.
+		if  ( isset ( $GLOBALS [ 'OBJECT_GARDENKEEPER' ] )  &&  $GLOBALS [ 'OBJECT_GARDENKEEPER' ] )
+		   {
+			$garden_keeper_function	=  function ( )
+			   {
+				$candidates		=  array ( ) ;		// Thrak classes that did not call their parent's Object constructor
+				$orphans		=  array ( ) ;		// Thrak classes that do not inherit from Object. Exception is the only exception
+				$seen_classes		=  array ( ) ;		// A memory to hold the already processed classes
+				
+				// This function traverses the specified variable, seeking for candidate or orphan instances
+				$traverse_object	=  function  ( $variable_name, $variable_value )  
+								use ( &$traverse_object, &$candidates, &$seen_classes ) 
+				   {
+					// Arrays can contain objects, so process them
+					if  ( is_array ( $variable_value ) )
+					   {
+						foreach  ( $variable_value  as  $key => $value )
+						   {
+							// Make sure we skip the $GLOBALS variable, otherwise we would enter an infinite loop
+							if  ( $key  ==  'GLOBALS' )
+								continue ;
+								
+							// Process this array item
+							if  ( is_object ( $variable_name )  ||  is_array ( $variable_name ) )
+								$traverse_object ( $key, $value ) ;
+						    }
+							
+						return ;
+					    }
+					    
+					// Ignore non-objects
+					if  ( ! is_object ( $variable_value ) )
+						return ;
+						
+					// Get this object's class
+					$class	=  get_class ( $variable_value ) ;		
+					
+					// Skip variables that are nor Exception, neither Object and do not belong to some Thrak class
+					if  ( strncasecmp ( $class, "Thrak\\", 6 )  ||  ( isset ( $class::$IsObject )  &&  ! $class::$IsObject ) )
+						return ;
+					
+					// Also, skip the classes we already seen so far
+					if  ( isset ( $seen_classes [ $class ] ) ) 
+						return ;
+						
+					// Remember this new class
+					$seen_classes [ $class ]	=  true ;
+					
+					// If the instance does not contain a GUID member, then the Object class constructor was never called
+					if  ( ! isset ( $variable_value -> __INSTANCE_GUID__ )  ||  ! $variable_value -> __INSTANCE_GUID__ )
+						$candidates [ $class ]	=  $variable_name ;
+						
+					// Loop through the variables of this object
+					$variables	=  get_object_vars ( $variable_value ) ;
+
+					foreach  ( $variables  as  $variable_name => $variable_value )
+					   {
+						if  ( is_object ( $variable_name )  ||  is_array ( $variable_name ) )
+							$traverse_object ( $variable_name, $variable_value ) ;
+					    }
+				    } ;
+			   
+				// The first step is to enumerate all classes that do not have Object as an ancestor
+				$classes	=  get_declared_classes ( ) ;
+				$variables	=  array_merge ( $GLOBALS, get_defined_vars ( ) ) ;
+				
+				// Get list of classes that might not inherit from Object
+				foreach  ( $classes  as  $class )
+				   {
+					// Exclude non-thrak objects along with the object class
+					if  ( strncasecmp ( $class, "Thrak\\", 6 )  ||  isset ( $class::$IsObject ) )
+						continue ;
+						
+					$orphans []	=  $class ;
+				    }
+				    
+				// Get list of instances that did not call the Object class constructor ; we start from the list
+				// of variables defined in $GLOBALS along with the list of defined variables (which may reference
+				// some variables present in $GLOBALS)
+				foreach  ( $variables  as  $variable_name => $variable_value )
+				   {
+					if  ( is_object ( $variable_name )  ||  is_array ( $variable_name ) )
+						$traverse_object ( $variable_name, $variable_value ) ;
+				    }
+				
+				 if  ( $orphans  ||  $candidates )
+					output ( "" ) ;
+					
+				 // Print objects non inheriting from Object
+				 if  ( $orphans )
+				    {
+					$message	=  "The following classes do not inherit from Thrak\\System\\Object :\n" ;
+					
+					foreach  ( $orphans  as  $orphan )
+						$message	.=  "$orphan\n" ;
+						
+					warning ( $message ) ;
+				     }
+				     
+				 // Print object variables that did not call their parent object constructor
+				 if  ( $candidates )
+				    {
+					$message	=  "The following classes did not call the Thrak\\System\\Object constructor :\n" ;
+					
+					foreach  ( $candidates  as  $class => $variable )
+						$message	.=  "$class (\$$variable)\n" ;
+						
+					warning ( $message ) ;
+				     }
+			    } ;
+
+			// Register the function that will scan orphan objects, or objects not calling their parent constructor
+			register_shutdown_function ( $garden_keeper_function ) ;
+			
+			// Whatever the number of Thrak objects instanciated, we need to register only once the garden keeper function
+			unset ( $GLOBALS [ 'OBJECT_GARDENKEEPER' ] ) ;
+		    }
+   	    }
+
+
+	/*==============================================================================================================
+
+	    NAME
+		AreEqualReferences - Check if two objects reference the same instance.
+
+	    PROTOTYPE
+	  	$status = CrimsonObject::AreEqualReferences ( $a, $b ) ;
+
+	    DESCRIPTION
+	    	Checks if two objects reference the same instance.
+
+	     PARAMETERS
+	     	$a, $b (object) -
+			Objects to check.
+
+	     NOTES
+	     	Checking that objects $a and $b reference the same object consists in creating a temp
+		property in object $a, then checking for its presence in object $b.
+		Once the checking has been made, the temp property is removed from object $a.
+
+	  ==============================================================================================================*/
+	public static function  AreEqualReferences ( $a, $b )
+	   {
+		$temp_property 		=  '_' . uniqid ( rand ( ) ) ;
+		$a -> $temp_property 	=  true ;
+		$result			=  ! empty ( $b -> $temp_property ) ;
+		unset ( $a -> $temp_property ) ;
+
+		return ( $result ) ;
+	    }
+
+
+
+
+	/*==============================================================================================================
+
+	    NAME
+		GenerateGUID - Generates a Windows-like unique id.
+
+	    PROTOTYPE
+		$result = Object::GenerateGUID ( ) ;
+
+	    DESCRIPTION
+	    	Returns a Windows-like GUID for an object.
+
+	    RETURN VALUE
+	    	A unique GUID.
+		    
+	    NOTES
+		This general-purpose function can be used to generate GUIDs, but is also used when the instance of a class
+		deriving from the Object class is created, to assign a GUID to the class instance.
+
+	  ==============================================================================================================*/
+	public static function  GenerateGUID ( )
+	   {
+	    	return
+	    	   (
+	    		sprintf
+	    		   (
+	    		   	'%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
+
+			        // 32 bits for "time_low"
+			        mt_rand( 0, 0xffff ), mt_rand( 0, 0xffff ),
+
+			        // 16 bits for "time_mid"
+			        mt_rand( 0, 0xffff ),
+
+			        // 16 bits for "time_hi_and_version",
+			        // four most significant bits holds version number 4
+			        mt_rand( 0, 0x0fff ) | 0x4000,
+
+			        // 16 bits, 8 bits for "clk_seq_hi_res",
+			        // 8 bits for "clk_seq_low",
+			        // two most significant bits holds zero and one for variant DCE1.1
+			        mt_rand( 0, 0x3fff ) | 0x8000,
+
+			        // 48 bits for "node"
+			        mt_rand( 0, 0xffff ), mt_rand( 0, 0xffff ), mt_rand( 0, 0xffff )
+	    		    )
+	    	    ) ;
+	    }
+
+	    
+	/*==============================================================================================================
+
+	    NAME
+		GenerateClassGUID - Generates a Windows-like unique id for this class.
+
+	    PROTOTYPE
+		$result = Object::GenerateClassGUID ( ) ;
+
+	    DESCRIPTION
+	    	Returns a Windows-like GUID for this class.
+
+	    RETURN VALUE
+	    	A unique GUID.
+
+	  ==============================================================================================================*/
+	private static function  GenerateClassGUID ( )
+	   {
+		$hash	=  md5 ( __CLASS__ ) ;
+		$result	=  str_split ( $hash, 4 ) ;
+		
+		return 
+		   ( 
+			$result [0] . $result [1] . '-' . $result [2] . '-' . $result [3] . '-' . $result [4] . '-' .
+			$result [5] . $result [6] . $result [7]
+		    ) ;
+	    }
+	    
+
+	    
+	/*==============================================================================================================
+
+	    NAME
+		GetClassGUID - Returns the GUID for this class.
+
+	    PROTOTYPE
+	  	$name = $object -> GetClassGUID ( ) ;
+
+	    DESCRIPTION
+		Returns the class GUID.
+
+	  ==============================================================================================================*/
+	public function  GetClassGUID ( )
+	   {
+		return ( self::$__CLASS_GUID__ ) ;
+	    }
+	    
+	    
+	/*==============================================================================================================
+
+	    NAME
+		GetClassName - Returns the object class.
+
+	    PROTOTYPE
+	  	$name = $object -> GetClassName ( ) ;
+
+	    DESCRIPTION
+		Returns the class object's name.
+
+	  ==============================================================================================================*/
+ 	public function  GetClassName ( )
+	   {
+		if  ( $this  ==  null )
+			return ( get_called_class ( __CLASS__ ) ) ;
+		else
+			return ( get_class ( $this ) ) ;
+	    }
+
+
+	/*==============================================================================================================
+
+	    NAME
+		GetHashCode - returns an object's unique hash code.
+
+	    PROTOTYPE
+		$result = $object -> GetHashCode ( $object = null ) ;
+
+	    DESCRIPTION
+	    	Returns the unique hash code for an object.
+
+	    RETURN VALUE
+	    	The object's unique hash code or an empty string if no object has been supplied.
+
+	    NOTES
+	    	This function can be used in both static and non-static contexts.
+
+	  ==============================================================================================================*/
+	 public static function  GetHashCode ( $object = null )
+	    {
+		if  ( $this  ==  null )
+		   {
+			if  ( $object  ==  null )
+				return ( "" ) ;
+
+			return ( spl_object_hash ( $object ) ) ;
+		    }
+		else
+			return ( spl_object_hash ( $this ) ) ;
+	     }
+	     
+	     
+	/*==============================================================================================================
+
+	    NAME
+		GetInstanceGUID - Returns the GUID for this object's instance.
+
+	    PROTOTYPE
+	  	$name = $object -> GetInstanceGUID ( ) ;
+
+	    DESCRIPTION
+		Returns the object instance GUID.
+
+	  ==============================================================================================================*/
+	public function  GetInstanceGUID ( )
+	   {
+		return ( $this -> __INSTANCE_GUID__ ) ;
+	    }
+	    
+	    
+	/*==============================================================================================================
+	
+	    NAME
+	        ImplementsInterface - Checks if a class or instance implements a given interface.
+	
+	    PROTOTYPE
+	        $result		=  Object::ImplementsInterface ( $interface_name ) ;
+	
+	    DESCRIPTION
+	        Checks if a class or an object instance implements the specified interface.
+	
+	    PARAMETERS
+	        $interface_name (string) -
+	                Interface name to be tested.
+			
+	    RETURN VALUE
+	        True if the specified interface is implemented by the specified class, false otherwise.
+	
+	  ==============================================================================================================*/
+	public static function  ImplementsInterface ( $interface_name )
+	   {
+		return ( is_subclass_of ( get_called_class ( ), $interface_name ) ) ;
+	    }
+	    
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        IsInstanceOf - Checks if this object is an instance of the specified class.
+	
+	    PROTOTYPE
+	        Object::IsInstanceOf ( $object, $class ) ;
+	
+	    DESCRIPTION
+	        Checks if the current object is an instance of the specified object class or class name.
+	
+	    PARAMETERS
+		$object (object) -
+			Object to be tested.
+	 
+	        $class (object or string) -
+	                Either an object or a class name.
+	
+	    RETURN VALUE
+	        True if the current object is derived from the specified class or object's class, false otherwise.
+	
+	  ==============================================================================================================*/
+	public static function  IsInstanceOf ( $object, $class )
+	   {
+		if  ( is_object ( $class ) )
+			$class	=  get_class ( $class ) ;
+		
+		return ( is_a ( $object, $class ) ) ;
+	    }
+	    
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        IsSubClassOf - Checks if the specified class or class instance is a subclass of the specified parent.
+
+	    PROTOTYPE
+	        $result		=  Object::IsSubClassOf ( $object, $class ) ;
+	
+	    DESCRIPTION
+	        Checks if a class or an object instance is a subclass of the specified class.
+	
+	    PARAMETERS
+		$object (object) -
+			Object to be tested.
+	 
+	        $class (object or string) -
+	                Either an object or a class name.
+	
+	    RETURN VALUE
+	        True if the specified class derives from the specified class, false otherwise.
+	
+	  ==============================================================================================================*/
+	public static function  IsSubclassOf ( $object, $class )
+	   {
+		if  ( is_object ( $class ) )
+			$class	=  get_class ( $class ) ;
+		
+		return ( is_a ( $object, $class ) ) ;
+	    }
+
+	
+	/*==============================================================================================================
+	
+		Helper function for Debug::Dump().
+	
+	  ==============================================================================================================*/
+	public static function  __dump_debuginfo ( )
+	   {
+		return ( [ 'hidden' => [ 'IsObject', '__non_public_constructor', 'MyClass' ] ] ) ;
+	    }
+    }  ;
+    
+    
+/*==============================================================================================================
+
+    DynamicObject -
+	Constants and non-public members of objects inheriting from this class will be hidden when dumped.
+
+  ==============================================================================================================*/
+class	DynamicObject	extends  Object
+   {
+	public function  __construct ( )
+	   {
+		parent::__construct ( ) ;
+	    }
+    }

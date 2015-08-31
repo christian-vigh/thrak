@@ -1,0 +1,3368 @@
+<?php
+/***************************************************************************************************
+
+    NAME
+	String.phpclass
+
+    DESCRIPTION
+	String utilities.
+
+    AUTHOR
+	Christian Vigh, 01/2010.
+
+    HISTORY
+    [Version : 1.0]		[Date : 2010/01/24]		[Author : CV]
+	Initial release.
+
+    [Version : 1.1.0]	[Date : 2011/05/29]		[Author : CV]
+	- Corrected the ExpandTabs() method which did not take into account multiline inputs.
+	- Added the AlignString(), AlignTextMargins() and FormatParagraph() functions.
+
+    [Version : 1.1.1]	[Date : 2011/07/02]		[Author : CV]
+	-  Created the IsValidEmail() function from the CrimsonMail::IsValidAddress() one.
+	   IsValidAddress() now uses the CrimsonString::IsValidEmail() function.
+  	-  Added the IsValidWindowsFilename and  IsValidUnixFilename functions
+
+    [Version : 1.1.2]	[Date : 2011/07/08]		[Author : CV]
+	Added the SafeStringToRegex() function.
+
+    [Version : 1.1.3]	[Date : 2011/10/08]		[Author : CV]
+	Modified the ExplodeWithQuotedStrings() method so that it accepts an additional parameter,
+	$tokens, that specify characters sequences to be considered as a single element.
+
+    [Version : 1.1.4]	[Date : 2011/10/18]		[Author : CV]
+	Added the $preserve_quotes parameter to the ExplodeWithQuotedString() method.
+
+    [Version : 1.1.5]	[Date : 2011/11/02]		[Author : CV]
+	Added the GetPHPTokens() and GetPHPTokenName() methods.
+	Added the DecimalToRoman() and RomanToDecimal() methods.
+	Added the DecimalToText() and DecimalToCurrency() methods.
+	Added the ParseCallback() method.
+
+    [Version : 1.1.6]	[Date : 2011/11/23]		[Author : CV]
+	Added the StringToSize() method.
+
+    [Version : 2.0.0]	[Date : 2012/10/06]		[Author : CV]
+	Migrated to the Thrak library version 2.
+	Introduced namespace usage.
+	Splitted the String.phpclass file into several files in Library/Text/String directory.
+
+    [Version : 2.0.1]	[Date : 2013/04/15]		[Author : CV]
+    	Added the following functions :
+    	. MySqlDateToFrench
+    	. FrenchToMySqlDate
+ 
+    [Version : 2.0.2]	[Date : 2013/08/13]		[Author : CV]
+	Added the following functions :
+	. Unescape
+	. ToDigit
+
+     [Version : 2.0.3]	[Date : 2013/08/15]		[Author : CV]
+	Added the following functions :
+	. Escape
+
+     [Version : 2.0.4]	[Date : 2013/11/09]		[Author : CV]
+	Added the following functions :
+	. SetEOS
+
+     [Version : 2.0.5]	[Date : 2013/12/17]		[Author : CV]
+	Added the following functions :
+	- ToTimeString()
+	- IsUTF8()
+
+     [Version : 2.0.6]	[Date : 2014/09/20]		[Author : CV]
+	. ToTimeString() : changed the rounding for micrososeconds from 0 to 3. This was causing
+	  incorrect roundings such as "40ms 1000us".
+ 
+     [Version : 2.0.7]	[Date : 2014/10/05]		[Author : CV]
+	. Added the IsJson() and IsSerialized() methods.
+
+     [Version : 2.0.8]	[Date : 2014/10/12]		[Author : CV]
+	. Added the IsDate(), IsDateTime() and IsTime() methods.
+
+     [Version : 2.0.9]	[Date : 2014/10/23]		[Author : CV]
+	. Added the Tabify() and Untabify() methods.
+
+     [Version : 2.0.10]	[Date : 2014/11/08]		[Author : CV]
+	. Added the ArrayRepresentation() function.
+
+     [Version : 2.0.11]	[Date : 2014/11/10]		[Author : CV]
+	. Moved the ToDigit and ToTimeString functions from String to Convert.
+ 
+     [Version : 2.0.12]	[Date : 2014/12/05]		[Author : CV]
+	. Added the DevelopExpression() method.
+ 
+     [Version : 2.0.13]	[Date : 2014/12/22]		[Author : CV]
+	. Added the WildcardToRegex() method.
+ 
+     [Version : 2.0.14]	[Date : 2015/03/08]		[Author : CV]
+	. Move the TTS_UNIT_* constants to String/Convert.phpclass.
+ 
+     [Version : 2.0.15]	[Date : 2015/03/14]		[Author : CV]
+	. Added the RemoveDuplicateCharacters() method.
+ 
+     [Version : 2.0.16]	[Date : 2015/03/17]		[Author : CV]
+	. Added the StringArrayLength() method.
+ 
+     [Version : 2.0.17]	[Date : 2015/03/25]		[Author : CV]
+ 	. Added the CSet() method.
+ 
+     [Version : 2.0.18]	[Date : 2015/03/25]		[Author : CV]
+	. Moved the following elements to String\Regex.phpclass :
+ 		- DevelopExpression() method
+ 		- RegReplacePatterns() method
+ 
+     [Version : 2.0.19]	[Date : 2015/04/10]		[Author : CV]
+	. Moved the Matches() method from the Path class to this class.
+ 
+     [Version : 2.0.20]	[Date : 2015/04/12]		[Author : CV]
+ 	. Changed the BooleanValue(), IsTrue() and IsFalse() methods to return null if the supplied
+ 	  value does not represent a boolean.
+ 
+     [Version : 2.0.21]	[Date : 2015/05/12]		[Author : CV]
+ 	. Added the GetLineNumber() and GetCharacterLocation() methods.
+ 
+     [Version : 2.0.22]	[Date : 2015/05/31]		[Author : CV]
+	. Added the IsDateString() method.
+ 
+     [Version : 2.0.23]	[Date : 2015/06/19]		[Author : CV]
+	. Added the $separator parameter to the ImplodeWithQuotedStrings() method (the separator was
+	  initially a space...)
+ 
+     [Version : 2.0.24]	[Date : 2015/07/10]		[Author : CV]
+	. Added the IsIPV4AddressMask() method.
+	. Added a &$result parameter to all IsIPV4xxx() methods.
+ 
+     [Version : 2.0.25]	[Date : 2015/07/31]		[Author : CV]
+	. Changed the IsRegex() method, which was really too naive.
+	. Added the Split() method.
+ 
+     [Version : 2.0.26]	[Date : 2015/08/03]		[Author : CV]
+	. Changed the IsRegex() method to be conformant with delimiters authorized by the pcre
+	  functions :
+	  - Asymetric delimiters : [], {}, () and <>
+	  - All other delimiters must be non-alphanumeric, non-backslash and non-whitespace.
+ 
+     [Version : 2.0.27]	[Date : 2015/08/04]		[Author : CV]
+	. Changed the IsDateString() method to process dates such as 'yyyymmdd', which are normally
+	  considered as a timestamp.
+ 
+     [Version : 2.0.28]	[Date : 2015/08/05]		[Author : CV]
+	. Changed the Split() method to handle a bitset of split options. Added the possibility to
+	  keep the separator line with the contents.
+	. Added the MatchesEx() method.
+ 
+ ***************************************************************************************************/
+namespace 	Thrak\Types ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces & objects
+use 		Thrak\System\Object ;
+use		Thrak\Types\String\Convert ;
+use 		Thrak\Types\String\Formatting ;
+
+
+/*===========================================================================================
+
+	Useful regular expressions (without enclosing delimiters).
+
+ ===========================================================================================*/
+define ( 'REGEX_UNSIGNED_INTEGER'	, '[0-9]+' ) ;
+define ( 'REGEX_SIGNED_INTEGER'		, '[+\-]?[0-9]+' ) ;
+define ( 'REGEX_INTEGER'		, REGEX_SIGNED_INTEGER ) ;
+define ( 'REGEX_BINARY_INTEGER'		, '0[bB][01]+' ) ;
+define ( 'REGEX_OCTAL_INTEGER'		, '0[oO][0-7]+' ) ;
+define ( 'REGEX_HEX_INTEGER'		, '0[xX][0-9a-fA-F]+' ) ;
+define ( 'REGEX_SIGNED_FLOAT'		, '([+\-]?((\.[0-9]+)|([0-9]+(\.[0-9]*)?))(([eE][+\-]?[0-9]+)?))' ) ;
+define ( 'REGEX_UNSIGNED_FLOAT'		, '(((\.[0-9]+)|([0-9]+(\.[0-9]*)?))(([eE][+\-]?[0-9]+)?))' ) ;
+define ( 'REGEX_FLOAT'			, REGEX_SIGNED_FLOAT ) ;
+define ( 'REGEX_DOMAIN_NAME'		, '([a-zA-Z\-0-9]+(\. [a-zA-Z\-0-9]+)*)' ) ;
+define ( 'REGEX_REGEX'			, '/((\\/)|[^/])+/[a-zA-Z]*' ) ;
+define ( 'REGEX_IPV4_ADDRESS'		, '(?P<address>(?P<b1>[0-9]+)\.(?P<b2>[0-9]+)\.(?P<b3>[0-9]+)\.(?P<b4>[0-9]+))' ) ;
+define ( 'REGEX_EMAIL_ADDRESS'		, '^(?P<user>[a-zA-Z0-9_.+-]+)@(?P<domain>[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)$' ) ;
+define ( 'REGEX_IPV4_ADDRESS_MASK'	, '(?P<address>(?P<b1>[0-9]+)(\.(?P<b2>[0-9]+)(\.(?P<b3>[0-9]+)(\.(?P<b4>[0-9]+))?)?)?)(\\/(?P<mask>[0-9]+))?' ) ;
+
+
+/*===========================================================================================
+
+	Split() options.
+
+ ===========================================================================================*/
+define ( 'SPLIT_RETURN_AS_LINES'	,  0x0001 ) ;		// Data blocks are returned as an array of lines
+define ( 'SPLIT_IGNORE_EMPTY_BLOCKS'	,  0x0002 ) ;		// Empty blocks are not included in the results
+	 
+
+/*===========================================================================================
+
+	Misc constants.
+
+ ===========================================================================================*/
+define ( 'CASE_ASIS'			, CASE_LOWER + CASE_UPPER + 1 ) ;		// A complement to CASE_LOWER and CASE_UPPER
+
+
+/*===========================================================================================
+
+	String static class -
+		String utilities.
+
+  ===========================================================================================*/
+class String  extends  Object
+   {
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		ArrayRepresentation - Gets a string representation of an array.
+	  
+	    PROTOTYPE
+		$str	=  String::ArrayRepresentation ( $array, $spaces = "" ) ;
+	  
+	    DESCRIPTION
+		Returns a one-line string representation of an array. This method is intended for
+	 	getting a string representation of a simple array made of constants.
+	  
+	    PARAMETERS
+		$array (array) -
+	 		Array to be converted.
+	  
+	 	$spaces (string) -
+	 		Spaces to insert between two consecutive elements.
+	  
+	    RETURN VALUE
+		A string representation of a simple array.
+	  
+	 --------------------------------------------------------------------------------------------*/
+	private static function __array_representation ( $array, $spaces )
+	   {
+		$count		=  0 ;
+		$result		=  "" ;
+		$numeric_only	=  true ;
+		$last_key	=  -1 ;		
+		
+		foreach  ( $array  as  $key => $item )
+		   {
+			if  ( $count )
+				$result	.=  ",$spaces" ;
+			
+			$numeric_key	=  is_numeric ( $key ) ;
+			
+			if  ( $numeric_key )
+			   {
+				if  ( $last_key + 1  !=  $key )
+					$result		.=  "$key => " ;
+			    }
+			else
+				$result		.=  "'$key' => " ;
+				
+			if  ( is_array ( $item ) )
+				$result		.=  "array$spaces($spaces" . self::__array_representation ( $item, $spaces ) . "$spaces)" ;
+			else if  ( is_object ( $item ) )
+				$result		.=  '*** Object ***' ;
+			else if  ( is_resource ( $item ) )
+				$result		.=  '*** Resource ***' ;
+			else if  ( is_string ( $item ) )
+				$result		.=  '"' . str_replace ( '"', "\\\"", $item ) . '"' ;
+			else if  ( is_bool ( $item ) )
+				$result		.=  ( $item ) ?  "true" : "false" ;
+			else
+				$result		.=  $item ;
+			
+			if  ( $numeric_key )
+				$last_key	=  $key ;
+			
+			$count ++ ;
+		    }
+		
+		return ( $result ) ;
+	    }
+	
+	
+	public static function  ArrayRepresentation ( $array, $spaces = "" )
+	   {
+		$result		=  "array$spaces(" ;
+		$rep		=  trim ( self::__array_representation ( $array, $spaces ) ) ;
+		
+		if  ( $rep )
+			$result		.=  "$spaces$rep$spaces)" ;
+		else
+			$result		.=  ")" ;
+		
+		return ( $result ) ;
+	    }
+		
+	
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		ConstantText - Returns the constant string associated with the specified input.
+
+	    PROTOTYPE
+		$text = String::ConstantText ( $definition ) ;
+
+	    DESCRIPTION
+		Returns the text associated with the constant specified by $definition.
+
+	    PARAMETERS
+		$definition (string) -
+			Constant name.
+
+	    RETURN VALUE
+		Either the value of the specified constant or :
+		- The input string itself if its not a defined constant
+		- The value of the constant, if any.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  ConstantText ( $definition )
+	   {
+	   	$trimmed_definition = trim ( $definition ) ;
+
+		if ( defined ( $trimmed_definition ) )
+			$result = constant ( $trimmed_definition ) ;
+		else
+			$result = $definition ;
+
+   		return ( $result ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		CSet - Generates a character set.
+	  
+	    PROTOTYPE
+		$str	=  String::CSet ( $expression, $option = self::CSET_RETURN_STRING ) ;
+	  
+	    DESCRIPTION
+		Generates a string containing all the characters specified in the expression.
+	  
+	    PARAMETERS
+		$expression (string) -
+	 		Character set expression, in regex format. Character ranges and constant 
+	 		values can be specified, such as in :
+	 			[a-c]012
+	 		which will yield to the string :
+	 			abc012
+	  
+	 	$option (integer) -
+	 		Specifies the return value format ; can be one of the following values :
+	  
+	 		- String::CSET_RETURN_STRING :
+	 			The returned value will be a string containing the expanded cset
+	 			characters.
+	  
+	 		- String::CSET_RETURN_ORD :
+	 			Returns an array of character ordinals.
+	  
+	 		- String::CSET_RETURN_ASSOC_BY_CHAR :
+	 			Returns an associative array of character/ordinal pairs.
+	  
+	 		- String::CSET_RETURN_ASSOC_BY_ORD :
+	 			Returns an associative array of ordinal/character pairs.
+	  	  
+	    RETURN VALUE
+		The return value format depends on the $option parameter. Note however that the values
+	 	will be sorted into ascending order.
+	  
+	 --------------------------------------------------------------------------------------------*/
+	const   CSET_RETURN_TYPE_MASK		=  0x0003 ;		// Mask for the return value type
+	const	CSET_RETURN_STRING		=  0 ;
+	const   CSET_RETURN_ORD			=  1 ;
+	const	CSET_RETURN_ASSOC_BY_CHAR	=  2 ;
+	const   CSET_RETURN_ASSOC_BY_ORD	=  3 ;
+	
+	
+	//  __cset_escape -
+	//	Processes escaped characters in the input string.
+	private static function  __cset_escape ( $input, $length, &$index )
+	   {
+		// Paranoid case : the string ends with a backslash
+		if  ( $index + 1  >=  $length )
+		   {
+			$message	=  Formatting::InsertTextAtColumn ( $expression, "^ Unterminated escape sequence.", $i + 1 ) ;
+			error ( new \Thrak\System\ParseException ( $message ) ) ;
+		    }
+				
+		$ch		=  $input [++ $index] ;
+		$result		=  [] ;
+				
+		// Special constructs
+		switch ( $ch )	
+		   {
+			// Space characters
+			case	'n' :  $result [ "\n" ]	= true ; break ;
+			case	'r' :  $result [ "\r" ] = true ; break ;
+			case	't' :  $result [ "\t" ] = true ; break ;
+			case	'v' :  $result [ "\v" ] = true ; break ;
+					
+			// \s construct : expand to space characters
+			case    's' :
+			case    'S' :
+				$result [ "\n" ]	=
+				$result [ "\r" ]	=
+				$result [ "\t" ]	=
+				$result [ "\v" ]	=
+				$result [ ' ' ]		=  true ;
+				break ;
+						
+			// \w construct : expands to all characters authorized in an identifier
+			case    'w' :
+			case	'W' :
+				for  ( $j = ord ( 'A' ) ; $j  <=  ord ( 'Z' ) ; $j ++ )
+					$result [ chr ( $j ) ]	=  true ;
+							
+				for  ( $j = ord ( 'a' ) ; $j  <=  ord ( 'z' ) ; $j ++ )
+					$result [ chr ( $j ) ]	=  true ;
+							
+				for  ( $j = ord ( '0' ) ; $j  <=  ord ( '9' ) ; $j ++ )
+					$result [ chr ( $j ) ]	=  true ;
+							
+				$result [ '_' ]		=  true ;
+				break ;
+							
+			// Other cases : process the escaped character as a simple character
+			default :
+				$result [ $ch ]		=  true ;
+		    }
+		
+		return ( $result ) ;
+	    }
+	
+	
+	// __cset_range -
+	//	Called whenever the sign that a character range is terminating has been found.
+	private static function  __cset_range ( $input, $length, $index, $start_character, $current_character )
+	   {
+		// Last character (range start) yielded to more than one character (\s or \w)
+		if  ( count ( $start_character )  >  1 )
+		   {
+			$message	=  Formatting::InsertTextAtColumn ( $input, "^ Start of character range is an expression representing several characters.", $index + 1 ) ;
+			error ( new \Thrak\System\ParseException ( $message ) ) ;
+		    }
+		
+		// Get the character that started the range
+		$array	=  array_keys ( $start_character ) ;
+		$start	=  $array [0] ;
+		
+		// Check that the start character is not greater than the ending character
+		if  ( $start  >  $current_character )
+		   {
+			$message	=  Formatting::InsertTextAtColumn ( $input, "^ Bad range : start character is greater than end character.", $index + 1 ) ;
+			error ( new \Thrak\System\ParseException ( $message ) ) ;
+		    }
+		
+		// Build the resulting character set
+		$result		=  [] ;
+		
+		for  ( $i = ord ( $start ) ; $i  <=  ord ( $current_character ) ; $i ++ )
+			$result [ chr ( $i ) ]	=  true ;
+		
+		// All done, return
+		return ( $result ) ;
+	    }
+	
+	
+	public static function  CSet ( $expression, $option = self::CSET_RETURN_STRING )
+	   {
+		$result			=  [] ;
+		$length			=  strlen ( $expression ) ;	
+		$in_cset		=  false ;
+		$in_range		=  false ;
+		$last_character		=  false ;
+		
+		// Loop through input characters
+		for  ( $i = 0 ; $i  <  $length ; $i ++ )
+		   {
+			$ch	=  $expression [$i] ;
+			
+			// Process special characters
+			switch  ( $ch )
+			   {
+				// Escape sequence
+				case	'\\' :
+					// Get the escape sequence (may yield to several character
+					$escapes		=  self::__cset_escape ( $expression, $length, $i ) ;
+					
+					// A character at both ends of a range can be escaped...
+					if  ( $in_range )
+					   {
+						// ... but we have to take into account that the last found character yielded to several ones,
+						// such as \s or \w
+						if  ( count ( $escapes )  >  1 )
+						   {
+							$message	=  Formatting::InsertTextAtColumn ( $expression, 
+										"^ End of character range is an expression representing several characters", $i + 1 ) ;
+							error ( new \Thrak\System\ParseException ( $message ) ) ;
+						    }
+						// Normal case : just build a range
+						else
+						   {
+							$keys		=  array_keys ( $escapes ) ;
+							$result		=  array_merge ( $result, self::__cset_range ( $expression, $length, $i, $last_character, $keys [0] ) ) ;
+							$last_character	=  false ;
+							$in_range	=  false ;
+						    }
+					    }
+					// Really normal case : simply add this new one to the list of characters found so far
+					else
+					   {
+						$result		=  array_merge ( $result, $escapes ) ;
+						$last_character	=  $escapes ;		// Don't forget to store last character found so far
+					    }
+					
+					break ;
+					
+				// '[' : Start a character set
+				case	'[' :
+					$in_cset	=  true ;
+					$last_character	=  false ;
+					break ;
+					
+				// ']' : Ends a character set, if one was started
+				case	']' :
+					// Check that a character set was started
+					if  ( $in_cset )
+					   {
+						// If a range was specified, process it ; the other case where this happens is in the 'default:' case
+						if ( $in_range )
+						   {
+							$result		=  array_merge ( $result, self::__cset_range ( $expression, $length, $i, $last_character, '~' ) ) ;
+							$in_range	=  false ;
+						    }
+
+						$last_character		=  false ;
+						$in_cset		=  false ;
+					    }
+					// Allow unescaped ']' characters to be specified as is when not in a character set
+					else
+					   {
+						$result [ ']' ]		=  true ;
+						$last_character		=  false ;
+					    }
+					break ;
+					
+				// '-' : Range in cset or character to be used as is
+				case	'-' :
+					// We are in a range specification, but only if a character set has been started using '['
+					if  ( $in_cset )
+					   {
+						if  ( $in_range )
+							$result		=  array_merge ( $result, self::__cset_range ( $expression, $length, $i, $last_character, '-' ) ) ;
+						else
+						   {
+							if  ( ! $last_character )
+								$last_character		=  [ ' ' => true ] ;
+							
+							$in_range	=  true ;
+						    }
+					    }
+					// Not in a cset : consider '-' as a normal character
+					else
+						$result [ '-' ]		=  true ;
+					
+					break ;
+					
+				// Other cases : normal character
+				default :
+					// If in a character set, and a range has been started, generate the range
+					if  ( $in_cset  &&  $in_range )
+					   {
+						$result		=  array_merge ( $result, self::__cset_range ( $expression, $length, $i, $last_character, $ch ) ) ;
+						$last_character	=  false ;
+						$in_range	=  false ;
+					    }
+					// Otherwise store the current character 
+					else
+					   {
+						$result [ $ch ]		=  true ;
+						$last_character		=  [ $ch => true ] ;
+					    }
+			    }
+		    }
+
+		// Input expression processed : if a range was started but not terminated, complain
+		if  ( $in_range )
+		   {
+			$message	=  Formatting::InsertTextAtColumn ( $expression, 
+							"^ Unfinished character range.", $length ) ;
+			error ( new \Thrak\System\ParseException ( $message ) ) ;
+		    }
+		
+		// Same for character set
+		if  ( $in_cset )
+		   {
+			$message	=  Formatting::InsertTextAtColumn ( $expression, 
+							"^ Unfinished character set.", $length ) ;
+			error ( new \Thrak\System\ParseException ( $message ) ) ;
+		    }
+		
+		// Get return type and convert return value accordingly
+		$return_type	=  $option & self::CSET_RETURN_TYPE_MASK ;
+		
+		switch  ( $return_type )
+		   {
+			// Return results as a string
+			case	self::CSET_RETURN_STRING :
+				ksort ( $result ) ;
+				return ( implode ( '', array_keys ( $result ) ) ) ;
+				
+			// Return results as an array of character ordinals
+			case	self::CSET_RETURN_ORD :
+				$array	=  [] ;
+				
+				foreach  ( array_keys ( $result )  as  $chr )
+					$array []	=  $chr ;
+				
+				ksort ( $array ) ;
+				return ( $array ) ;
+
+			// Return results as an array of character/ordinal pairs
+			case	self::CSET_RETURN_ASSOC_BY_CHAR :
+				$array	=  [] ;
+				
+				foreach  ( array_keys ( $result )  as  $chr )
+					$array [ $chr ]	=  ord ( $chr ) ;
+				
+				ksort ( $array ) ;
+				return ( $array ) ;
+
+			// Return results as an array of ordinal/character pairs
+			case	self::CSET_RETURN_ASSOC_BY_ORD :
+				$array	=  [] ;
+				
+				foreach  ( array_keys ( $result )  as  $chr )
+					$array [ ord ( $chr ) ]	=  $chr ;
+				
+				ksort ( $array ) ;
+				return ( $array ) ;
+
+			// Should never happen
+			default :
+				error ( new \Thrak\System\ParanoidException ( "Invalid option $option specified for the CSet() method." ) ) ;
+		    }
+	    }
+	
+	
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	    	EndsWith - Checks if a string ends with the specified string.
+
+	    PROTOTYPE
+		$status = String::EndsWith ( $value, $substring, $case_insensitive = false ) ;
+
+	    DESCRIPTION
+	    	Checks if the specified string ($value) starts with the specified substring.
+
+	    PARAMETERS
+	    	$value (string) -
+	    		String to be checked.
+
+    		$substring (string) -
+    			Substring to be checked.
+
+		$case_insensitive (boolean) -
+			When true, comparison is case-insensitive.
+
+	    RETURN VALUE
+	    	True if $string ends with $substring, false otherwise.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  EndsWith ( $string, $substring, $case_insensitive = false )
+	   {
+	   	$length = strlen ( $substring ) ;
+	   	$end    = substr ( $string, - $length ) ;
+
+		if  ( $case_insensitive )
+			$status = ! strcasecmp ( $end, $substring ) ;
+		else
+			$status = ! strcmp ( $end, $substring ) ;
+
+		return ( $status ) ;
+	    }
+
+	
+  	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	    	Escape - Escapes a string.
+
+	    PROTOTYPE
+		$value = String::Escape ( $input, $string_delimiter = '"' ) ;
+
+	    DESCRIPTION
+	    	Escapes a string, ie replace any control character by its equivalent. For example,
+		a newline character in the input string will be replaced with the string literal "\n".
+		Any value below Ascii 32 or above 127 will be replaced with a "\0xnn" construct,
+		except for special values such as newline or carriage return.
+
+	    PARAMETERS
+	    	$input (string) -
+	    		String to be escaped.
+
+    		$string_delimiter (string) -
+    			String delimiter. If this character is found within a string, it will be 
+			returned as an escaped string litteral.
+
+	    RETURN VALUE
+	    	The escaped input string.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  Escape ( $input, $string_delimiter = '"' )
+	   {
+		$output		=  "" ;
+		$length		=  strlen ( $input ) ;
+		
+		for  ( $i = 0 ; $i  <  $length ; $i ++ )
+		   {
+			$ch	=  $input [$i] ;
+			
+			switch  ( $ch )
+			   {
+				case	"\n" :	$output .= "\\n"  ; break ;
+				case	"\r" :	$output .= "\\r"  ; break ;
+				case	"\t" :	$output .= "\\t"  ; break ;
+				case	"\v" :	$output .= "\\v"  ; break ;
+				case	"\e" :	$output .= "\\e"  ; break ;
+				case	"\f" :	$output .= "\\f"  ; break ;
+				case	"\\" :	$output .= "\\\\" ; break ;
+
+				default :
+					$value	=  ord ( $ch ) ;
+					
+					if  ( $value  >  31  &&  $ch  >  127 )
+						$output .= "\\0x" . sprintf ( "%02X", $value ) ;
+					else
+						$output .= $ch ;
+			    }
+		    }
+		
+		return ( $output ) ;
+	    }
+
+	
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	    	EscapedCharInString, EscapedChar - Processes an escaped character within a string.
+
+	    PROTOTYPE
+	    	$result = String::EscapedCharInString ( $input, $index ) ;
+	    	$ch     = String::EscapedChar ( $input ) ;
+
+	    DESCRIPTION
+	    	Processes an escaped sequence within a string. Escape sequences are any C-like sequences
+		with some enhancements.
+		The authorized escape sequences are :
+
+		- \n, \r, \t, \v, \b :
+			Newline, carriage return, tab, vertical tab and BEL characters
+		- \0aaa :
+			The character represented by the octal value 'aaa'.
+		- \0xaa :
+			Hexadecimal value.
+		- \0daaa, or \aaa when the first 'a' is not a zero :
+			Decimal value.
+		- \baaa :
+			Binary value.
+		- Any other character preceded by a backslash :
+			The character itself.
+
+	    PARAMETERS
+	    	$input (string) -
+	    		String to be processed. For the EscapedCharInString function, the $index
+	    		parameter gives the index of the backslash character introducing the escape
+	    		sequence. For the EscapedChar function, the string must start with a backslash.
+
+		$index (integer) -
+			Position in the string of the start of the escape sequence.
+
+	    RETURN VALUE
+	    	EscapedCharInString() returns a two-elements array :
+	    	- Element 0 is the escaped character
+	    	- Element 1 is the position of the first character in the input string, after the
+	    	  escape sequence.
+
+   	  	EscapedChar() returns the escaped character itself.
+
+   	  	Both functions return the backslash character if the escape sequence is not a valid one,
+   	  	except when the first input is not a slash ; in this case both functions return false.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  __Escape ( $input, $index )
+	   {
+	   	$length = strlen ( $input ) ;
+
+		// Check that we have a valid string, and that the escape sequence starts with a backslash
+	   	if  ( $index  >=  $length  ||  substr ( $input, $index, 1 )  !=  "\\" )
+		   	return ( false ) ;
+
+		// If the string ends after the backslash, simply return the backslash character itself without complaining
+		if  ( $index + 1  ==  $length )
+			return ( array ( "\\", $index + 1 ) ) ;
+
+		// Skip to the next character
+		$index ++ ;
+		$ch = substr ( $input, $index, 1 ) ;
+
+		// Then analyze it
+		switch ( $ch )
+		   {
+		   	// Special control characters
+		   	case  'n' 	: return ( array ( "\n", $index + 1 ) ) ;
+			case  'r' 	: return ( array ( "\r", $index + 1 ) ) ;
+ 			case  't'	: return ( array ( "\t", $index + 1 ) ) ;
+			case  'v'	: return ( array ( chr ( 11 ), $index + 1 ) ) ;
+			case  'b'	: return ( array ( chr ( 7 ), $index + 1 ) ) ;
+
+			// '\0' means that we have to expect an octal number, or a number prefixed with a character
+			// indicating the numeric base ('b' for binary, 'o' for octal, 'd' for decimal, 'x' for hexadecimal)
+			case  '0' :
+				$base = 8 ;
+				if  ( $index + 1  >=  $length )
+					return ( array ( chr ( 0 ), $index + 1 ) ) ;
+
+				$index ++ ;
+				$ch2 = substr ( $input, $index, 1 ) ;
+
+				// Identify the numeric base
+				switch ( strtolower ( $ch2 ) )
+				   {
+					case 'd' : $base = 10 ; $index ++ ; break ;
+					case 'o' : $base = 8  ; $index ++ ; break ;
+					case 'x' : $base = 16 ; $index ++ ; break ;
+					case 'b' : $base = 2  ; $index ++ ; break ;
+				    }
+
+				$value = 0 ;
+
+				// Collect all the digits valid in the specified base
+				while  ( $index  <  $length )
+				   {
+					$ch2 	= substr ( $input, $index, 1 ) ;
+					$digit  = String::ToDigit ( $ch2, $base ) ;
+
+					if  ( $digit  ===  false )
+						break ;
+
+					$value = ( $value * $base ) + $digit ;
+					$index ++ ;
+				    }
+
+				return ( array ( chr ( $value ), $index ) ) ;
+
+			// If the digit after the backslash is different from '0', then assume the number is expressed in the decimal base
+			case  '1' : case '2' : case '3' : case '4' : case '5' : case '6' : case '7' : case '8' : case '9' :
+				$base  = 10 ;
+				$value = 0 ;
+
+				while  ( $index  <  $length )
+				   {
+					$ch2 	= substr ( $input, $index, 1 ) ;
+					$digit  = String::ToDigit ( $ch2, $base ) ;
+
+					if  ( $digit  ===  false )
+						break ;
+
+					$value = ( $value * $base ) + $digit ;
+					$index ++ ;
+				    }
+
+				return ( array ( chr ( $value ), $index ) ) ;
+
+
+			// Other cases : simply return the character after the backslash
+			default  	:
+				return ( array ( $ch, $index + 1 ) ) ;
+
+		    }
+	    }
+
+
+	public static function  EscapedChar ( $input )
+	   {
+		$array = String::__Escape ( $input, 0 ) ;
+
+		if  ( $array  ===  false )
+			return ( false ) ;
+
+		return ( $array [0] ) ;
+	    }
+
+
+	public static function  EscapedCharInString ( $input, $index )
+	    {
+	    	$array = String::__Escape ( $input, $index ) ;
+
+	    	if  ( $array  ===  false )
+	    		return ( false ) ;
+
+		return ( $array ) ;
+	     }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		EscapeRegexCharacters - Escape characters in a string for use in a regex.
+
+	    PROTOTYPE
+		$result = String::EscapeRegexCharacters ( $string ) ;
+
+	    DESCRIPTION
+		Escapes the characters in a string that could have a special meaning when used within
+		a regular expression.
+
+	    PARAMETERS
+		$string (string) -
+			String to be escaped.
+
+	    RETURN VALUE
+		The escaped string.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  EscapeRegexCharacters ( $string )
+	   {
+	   	static 		$escapes 	=  array
+	   	   (
+	   	   	"\\"	=>  "\\\\",
+	   	   	"^"	=>  "\\^",
+			"\$"	=>  "\\\$",
+			"."	=>  "\\.",
+			"("	=>  "\\(",
+			")"	=>  "\\)",
+			"["	=>  "\\[",
+			"]"	=>  "\\]",
+			"<"	=>  "\\<",
+			">"	=>  "\\>",
+			"{"	=>  "\\{",
+			"}"	=>  "\\}",
+			"?"	=>  "\\?",
+			"*"	=>  "\\*",
+			"+"	=>  "\\+",
+			"-"	=>  "\\-",
+			"|"	=>  "\\|",
+			":"	=>  "\\:",
+			"!"	=>  "\\!",
+			"="	=>  "\\=",
+			"#"	=>  "\\#",
+			" "	=>  "\\ ",
+			"\t"	=>  "\\\t"
+		    ) ;
+
+		$result 	=  "" ;
+		$length 	=  strlen ( $string ) ;
+
+		for  ( $i = 0 ; $i  <  $length ; $i ++ )
+		   {
+			$ch 	=  $string [$i] ;
+
+			if  ( array_key_exists ( $ch, $escapes ) )
+				$ch = $escapes [ $ch ] ;
+
+			$result .= $ch ;
+		    }
+
+		return ( $result ) ;
+	    }
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		ExpandTabs - Expands tab characters.
+
+	    PROTOTYPE
+	    	$result = String::ExpandTabs ( $string, $width = 8 ) ;
+
+	    DESCRIPTION
+		ExpandTabs expands all the tab characters in the input string. The $width parameter
+		specifies the tab width, which means that a tab stop will be effective every $width
+		characters.
+
+	    PARAMETERS
+	    	$string (string) -
+			String whose tabs are to be expanded.
+
+		$width (integer) -
+			Tab character width.
+
+	    NOTES
+	    	- Multilines are correctly handled.
+	    	- The function handles CRLF or LF-terminated lines.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  ExpandTabs ( $string, $width = 8 )
+	   {
+		$result = "" ;
+		$length = strlen ( $string ) ;
+		$index  = 0 ;
+
+		for  ( $i = 0 ; $i < $length ; $i ++ )
+		   {
+			$ch = substr ( $string, $i, 1 ) ;
+
+			// Handle current character
+			switch  ( $ch )
+			   {
+			   	// Tab character -
+			   	//	Replace it with the necessary number of spaces to go to the next tab stop.
+				case	"\t" :
+					$step    = $width - ( $index % 8 ) ;
+					$result .= str_repeat ( ' ', $step ) ;
+					$index  += $step ;
+					break ;
+
+				// Carriage return -
+				//	Next tab starts at character 0.
+				//	If followed by a newline, add both characters to the result.
+				case	"\r" :
+					$result .=  $ch ;
+					$index   =  0 ;
+
+					if  ( $i + 1  <  $length  &&  $string [$i]  ==  "\n" )
+					   {
+						$result .= "\n" ;
+						$i ++ ;
+					    }
+
+					break ;
+
+				// Newline -
+				//	Next tab stop starts at character 0.
+				case	"\n" ;
+					$index = 0 ;
+					$result .= $ch ;
+					break ;
+
+				// Default -
+				//	Simply add the input character to the result.
+				default :
+					$result .= $ch ;
+					$index ++ ;
+			    }
+		    }
+
+		// All done, return
+		return ( $result ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+     	    NAME
+     		ExplodeAndTrim - Explodes a list.
+
+     	    PROTOTYPE
+		$array = String::ExplodeAndTrim ( $separator, $string ) ;
+
+     	    DESCRIPTION
+		Explodes a list and trims all values.
+
+     	    PARAMETERS
+     		$separator (string) -
+     			Separator string.
+
+		$string (string) -
+			String to be exploded.
+
+     	    RETURN VALUE
+		An array containing the exploded string.
+
+     	    NOTES
+		Unlike the built-in explode() function, ExplodeAndTrim() returns an empty array if the
+		input string is the empty string.
+
+     	 --------------------------------------------------------------------------------------------*/
+ 	public static function  ExplodeAndTrim ( $separator, $string )
+ 	   {
+		$result = explode ( $separator, $string ) ;
+
+		if  ( $result  ===  false )
+			return ( array ( ) ) ;
+
+		foreach  ( $result  as  &$entry )
+			$entry = trim ( $entry ) ;
+
+		return ( $result ) ;
+ 	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		ExplodeWithQuotedStrings - Explodes a string possibly containing quoted strings.
+
+	    PROTOTYPE
+		$values = String::ExplodeWithQuotedStrings ( $input, $process_escapes = true,
+							$tokens = null, $preserve_quotes = false ) ;
+
+	    DESCRIPTION
+	    	Explodes a string that can contain quoted strings. The separator is any space character ;
+	    	However, a space character is assumed at the end of a quoted string if no space exists
+	    	between the end of the quoted string and the next character.
+
+	    PARAMETERS
+	    	$input (string) -
+	    		String to be splitted. If a quoted string is present (a sequence of characters
+		      	enclosed with single or double quotes), it can contain escaped characters such
+		      	as \\, \n, \', \" or \0aaa, \aa, \0xaa, etc. that will be interpreted if the
+		      	$process_escapes parameter is set to true.
+
+      		$process_escapes (boolean) -
+      			When true, escape sequences are interpreted.
+
+		$tokens (string or array of strings) -
+			Array of tokens to be considered as a single element. For example, suppose
+			that you want to split the following string :
+				[1,2]
+			to get the following result :
+				array ( '[', 1, ',', '2', ']' )
+			You will call this function like this :
+
+				$result = String::ExplodeWithQuotedString ( "[1,2]", true, array ( '[', ']', ',' ) ) ;
+
+			If only one token is needed, it can be specified as a single string.
+
+		$preserve_quotes (boolean) -
+			When true, the quotes surrounding quoted strings are preserved.
+
+	    RETURN VALUE
+	    	An array of strings containing the individual splitted items.
+
+    	    EXAMPLE
+   	    	If the input string contains :
+   	    		"hello world";test;'the "hello" \'world\' sentence'
+    		it will return :
+    			array ( "hello world", ";", "the \"hello\" 'world' sentence" )
+
+ 	    NOTES
+ 	    	If the input string contains an unterminated quoted string such as :
+ 	    		"this is an unterminated quoted string
+		it will be returned as a single element :
+			array ( "this is an unterminated quoted string" ) ;
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  ExplodeWithQuotedStrings ( $input, $process_escapes = true, $tokens = null, $preserve_quotes = false )
+	   {
+		$in_quote 	=  false ;		// Contains a single or double quote character if we are within a string
+		$length		=  strlen ( $input ) ;
+		$result 	=  array ( ) ;		// Result array (tokenized input sequences)
+		$current 	=  "" ;			// Current token
+
+		if  ( $tokens  !==  null  &&  ! is_array ( $tokens ) )
+			$tokens = array ( $tokens ) ;
+
+		// Loop through each input character
+		for  ( $i = 0 ; $i < $length ; $i ++ )
+		   {
+		   	// Get next input character
+		   	$ch = substr ( $input, $i, 1 ) ;
+
+		   	// Then process it
+			switch  ( $ch )
+			   {
+			   	// Space character :
+			   	//	Add the current token to the result array if non empty
+				case	"\n" : case "\t" : case "\r" : case "\v" : case ' ' :
+					if  ( $in_quote )
+						$current .= $ch ;
+					else if  ( $current  !==  "" )
+					   {
+						$result [] = $current ;
+						$current   = "" ;
+					    }
+					break ;
+
+				// Single or double quote :
+				//	This may be the start or the end of a string
+				case	"'" : case  '"' :
+					// If current character is the same as the one stored in the $in_quote variable,
+					// then this means that we encountered the end of the quoted string
+					if  ( $ch  ==  $in_quote )
+					   {
+						$in_quote 	= false ;
+						if  ( $preserve_quotes )
+							$current .= $ch ;
+
+						$result []	= $current ;
+
+						$current 	= "" ;
+					    }
+	    				// If it is a single or double quote character, this means we have the start of a new string
+					else if  ( $in_quote  ===  false )
+					   {
+						$in_quote 	= $ch ;
+
+						// If start of string is immediately after a non-space sequence, then add this sequence
+						// to the result array
+						if  ( $current  !==  "" )
+						   {
+							$result [] = $current ;
+							$current   = "" ;
+						    }
+
+						if  ( $preserve_quotes )
+							$current .= $ch ;
+					    }
+			    		// Other cases : we encountered a single quote while we were in a double-quoted string, or vice-versa
+					else
+						$current .= $ch ;
+					break ;
+
+				// Escape sequence : analyze it
+				case	'\\' :
+					if  ( $process_escapes  &&  $in_quote )
+					   {
+						$a = String::EscapedCharInString ( $input, $i ) ;
+						$ch = $a [0] ;
+						$i  = $a [1] - 1 ;	// -1 because we are in a for() loop which will increment $i
+					     }
+
+					$current .= $ch ;
+					break ;
+
+				// Other cases :
+				//	Simply add the input character to the current token.
+				//	If a token list has been specified, also check for them.
+				default :
+					// If tokens (separators) have been specified, and if we are not within a quoted string,
+					// check if the current input does not belong to the token list
+					if  ( $tokens  &&  ! $in_quote )
+					   {
+					   	$found  	=  false ;
+					   	$found_length 	=  0 ;
+					   	$subline 	=  substr ( $input, $i ) ;
+
+						// Loop through token list
+					   	foreach  ( $tokens  as  $token )
+					   	   {
+							$token_length 	=  strlen ( $token ) ;
+
+							// If found, then we will have to consider a separate array element
+							if  ( ! strncmp ( $subline, $token, $token_length ) )
+							   {
+								$found 		=  $token ;
+								$found_length 	=  $token_length ;
+								break ;
+							    }
+					   	    }
+
+						// If no token found, simply add the character to the current string
+						if  ( $found  ===  false )
+							$current .= $ch ;
+						// Otherwise...
+						else
+						   {
+						   	// ... add the current string (if any) to the result list
+						   	if  ( $current  !==  "" )
+								$result [] = $current ;
+
+							// ... then add the found token to the result list
+							$result [] = $found ;
+
+							// Update current string index (-1 is because next iteration will increment $i)
+							$i += $found_length - 1 ;
+							$current = "" ;
+						    }
+					    }
+			    		// Normal case, add the current character to the current string
+				    	else
+						$current .= $ch ;
+			    }
+		    }
+
+		// If a non-white space token was unterminated, add it to the result array
+		if  ( $current  !==  "" )
+			$result [] = $current ;
+
+		// All done, return
+		return ( $result ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		FrenchToMySqlDate - Converts a french date into MySql format.
+
+	    PROTOTYPE
+		$result = String::FrenchToMySqlDate ( $date ) ;
+
+	    DESCRIPTION
+	    	Converts a french date (dd/mm/yyyy) into MySql format (yyyy-mm-dd).
+
+	    PARAMETERS
+		$date (string) -
+			Date to be converted.
+
+	    RETURN VALUE
+		The converted date.
+
+	    NOTES
+	    	Extra hours, minutes and seconds are ignored.
+	    	This function also accepts dates in the 'dd/mm/yy' format.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  FrenchToMySqlDate ( $date )
+	   {
+		$date 	=  substr ( $date, 0, 10 ) ;
+
+		if  ( ! $date )
+			return ( '' ) ;
+
+		$parts 	=  explode ( '/', $date ) ;
+
+		if  ( strlen ( $parts [2] )  ==  2 )
+		   {
+		   	$year		=  date ( 'y' ) ;
+		   	$century	=  substr ( date ( 'Y', 0, 2 ) ) ;
+			$delta 		=  $parts [2] - $year ;
+
+			// If specified year is greater than current year, consider we're in the current century
+			// Consider arbitrarily that year greater that current year + 10 are in the past century
+			if  ( $delta  <  0  ||  ( $delta  >=  0  &&  $delta  <=  $year + 10 ) )
+				$parts [2] 	.=  $century + $parts  [2] ;
+			else
+				$parts [2] 	.=  ( $century - 1 ) + $parts [2] ;
+		    }
+
+		return ( $parts  [2] . '-' . $parts [1] . '-' . $parts [0] ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	  	GetLineNumber, GetCharacterLocation - Returns a line number corresponding to an offset
+
+	    PROTOTYPE
+		$line	= String::GetLineNumber ( $str, $offset ) ;
+		$array  = String::GetCharacterLocation ( $str, $offset ) ;
+
+	    DESCRIPTION
+		Returns the line number in $str of the character located at $offset. Line numbers start
+		at offset 1.
+	 	GetCharacterLocation() returns also the character position within the line.
+	  
+	    PARAMETERS
+		$str (string) -
+	 		Input text contents.
+	  
+	 	$offset (integer) -
+	 		Character offset whose line number and character position within the line are
+	 		to be retrieved.
+	    RETURNS
+	 	GetLineNumber() returns the line number corresponding to character position $offset.
+	 	GetCharacterLocation() returns an associative array with the following entries :
+	 	- 'line' :
+	 		Line number.
+	 	- 'column' :
+	 		Column number.
+	  
+	 	Returns false if the offset is invalid.
+	  
+	    NOTES
+	 	Line and character numbers start from 1.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  GetLineNumber ( $str, $offset )
+	   {
+		if  ( $offset  >=  0  &&  $offset  <  strlen ( $str ) )
+		   {
+			$current	=  0 ;
+			$count		=  0 ;
+			
+			while  ( ( $current = strpos ( $str, "\n", $current ) )  !==  false  &&  $current  <  $offset )
+			   {
+				$count	++ ;
+				$current ++ ;
+			    }
+			
+			return ( $count + 1 ) ;
+		    }
+		else
+			return ( false ) ;
+	    }
+	
+	
+	public static function  GetCharacterLocation ( $str, $offset )
+	   {
+		if  ( $offset  >=  0  &&  $offset  <  strlen ( $str ) )
+		   {
+			$current		=  0 ;
+			$previous_current	=  -1 ;
+			$count			=  0 ;
+			
+			while  ( ( $current = strpos ( $str, "\n", $current + 1 ) )  !==  false  &&  $current  <  $offset )
+			   {
+				$previous_current	=  $current ;
+				$count	++ ;
+				$current ++ ;
+			    }
+			
+			return ( [ 'line' => $count + 1, 'column' => $offset - $previous_current ] ) ;
+		    }
+		else
+			return ( false ) ;
+	    }
+	
+	
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		ImplodeWithQuotedStrings - Implodes array values, quoting them if necessary.
+
+	    PROTOTYPE
+		$string = String::ImplodeWithQuotedStrings ( $separator, $array, $quote = '"', $forced = false ) ;
+
+	    DESCRIPTION
+		Implodes an array of strings, quoting them if necessary.
+
+	    PARAMETERS
+	        $separator (string) -
+			Separator string.
+			 
+		$array (array of strings) -
+			Array of strings to be imploded as a single string.
+
+		$quote (string) -
+			Character used for quoting individual strings.
+
+		$forced (boolean) -
+			When true, the strings are systematically quoted. Otherwise, they only be
+			quoted if the contain characters such as spaces or quotes.
+
+	    RETURN VALUE
+		The implode result of the strings array.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  ImplodeWithQuotedStrings ( $separator, $array, $quote = '"', $forced = true )
+	   {
+		$result 	=  array ( ) ;
+
+		foreach (  $array  as  $item )
+		   	$result [] = String::QuotedString ( $item, $quote, $forced ) ;
+
+		return  ( implode ( $separator, $result ) ) ;
+	    }
+
+	
+	
+	/*-------------------------------------------------------------------------------------------
+	
+	    NAME
+	        IsJson - Checks if a string is JSON data.
+	
+	    PROTOTYPE
+	        $status = String::IsJson ( $str, $quick_check = true ) ;
+	
+	    DESCRIPTION
+	        Checks if the supplied string contains JSON data.
+	
+	    PARAMETERS
+	        $str (string) -
+	                Value to be checked.
+	  
+		$quick_check (boolean) -
+			When true, the json_encode() function is called after checking.
+	
+	    RETURN VALUE
+	        True when the supplied input string is valid JSON data (at least globally, when
+		$quick_check is true), false otherwise.
+	
+	  --------------------------------------------------------------------------------------------*/
+	public static function  IsJson  ( $str, $quick_check = true )
+	   {
+		$result  =  false ;
+		$value 	 =  trim ( $value ) ;
+		$first 	 =   $value [0] ;
+	
+		if  ( $first  ==  '['  ||  $first  ==  '{' )
+		   {
+			$last 	=  $value [ strlen ( $value ) - 1 ] ;
+		
+			if  ( ( $first  ==  '['  &&  $last  ==  ']' )  ||
+			      ( $first  ==  '{'  &&  $last  ==  '}' ) )
+			   {
+				if  ( $quick_check )
+					$result 	=  true ;
+				else
+					$result 	=  is_object ( @json_decode ( $value ) ) ;
+			    }
+		    }
+	    
+		return ( $result ) ;
+	    }
+	
+	
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	  	IsMadeOf - Checks if a string contains only the specified characters.
+
+	    PROTOTYPE
+		$status = String::IsMadeOf ( $str, $chars ) ;
+
+	    DESCRIPTION
+		Checks if the specified string is only made of the specified characters.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  IsMadeOf ( $str, $chars )
+	   {
+	   	$count = strspn ( $str, $chars ) ;
+
+		if  ( $count  ==  strlen ( $str ) )
+			return ( true ) ;
+		else
+			return ( false ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	  	IsSerialized - Checks if a string contains serialized data.
+
+	    PROTOTYPE
+		$status = String::IsSerialized ( $value, $quick_check = true, &$result = null ) ;
+
+	    DESCRIPTION
+		Checks if the specified string contains serialized data.
+	 
+		Serialized data can take one of the following forms :
+		- boolean	:  b:1;
+		- integer	:  i:1;
+		- double	:  d:0.2;	
+		- string	:  s:4:"test";
+		- array		:  a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}
+		- object	:  O:8:"stdClass":0:{}
+		- null		:  N;
+	 
+	    PARAMETERS
+		$value (string) -
+			Value to be checked.
+	  
+	 	$quick_check (boolean) -
+	 		When true (the default), the unserialize() function will not be called after 
+	 		quick checks.
+	  
+	 	&$result (any) -
+	 		When $quick_check is false, this reference will receive the result of 
+	 		unserialization.
+	 
+	    RETURN VALUE
+		Returns true if the value is serialized data, false otherwise.
+		Note that when the $quick_check parameter is set to true, the return value does not
+		guarantee that the input string is really a valid serialized data.
+	 
+	 --------------------------------------------------------------------------------------------*/
+	public static function  IsSerialized ( $value, $quick_check = true, &$result = null )
+	   {
+		// Not a string : this cannot be serialized data...
+		if  ( ! is_string  ( $value ) )
+			return ( false ) ;
+		
+		// Empty value
+		$value	=  trim ( $value ) ;
+		
+		if  ( ! $value )
+			return ( false ) ;
+		
+		// If the supplied string contains a serialized boolean set to false, it will return false
+		// and there will be no way to distinguish it from an invalid serialized string, so eliminate
+		// this possibility
+		if  ( $value  ===  'b:0;' )
+		   {
+			if  ( ! $quick_check )				// Don't touch $result for quick checks
+				$result		=  false ;
+			
+			return ( true ) ;				// Return a status indicating that this is real serialized data
+		    }
+		// Also check for null
+		else if  ( $value  ===  'N;' )
+		   {
+			if  ( ! $quick_check )
+				$result		=  null ;
+			
+			return ( true ) ;
+		    }
+		
+		$length		=  strlen ( $value ) ;
+		
+		// Check the kind of serialization we have here
+		switch  ( $value [0] )
+		   {
+			// String
+			case	's' :
+				if ( '"' !==  $value [ $length - 2 ]  ||  $value [ $length - 1 ]  !==  ';' )
+					return ( false ) ;
+				
+				break ;
+				
+			// Scalar value types
+			case	'b' :
+			case	'i' :
+			case	'd' :
+				if  ( $value [ $length - 1 ]  !==  ';' )
+					return ( false ) ;
+				
+				break ;
+				
+			// Array or object
+			case	'a' :
+			case	'O' :
+				if  ( $length  <  2 ) 
+					return ( false ) ;
+				
+				if  ( $value [1]  !==  ':'  ||  ! ctype_digit ( $value [2] )  ||  $value [ $length - 1 ]  !==  '}' )
+					return ( false ) ;
+				
+				break ;
+				
+			// Default : could have looked as serialized data...
+			default :
+				return ( false ) ;
+		    }
+
+		// Quick check : consider that this is serialized data
+		if  ( $quick_check )
+			return ( true ) ;
+		// If complete check requested, we can now safely try unserialize() on the input value, since we have 
+		// eliminated the case 'b:0;' where the function would return false (the value of the boolean), as if 
+		// it contained bad serialization data
+		else
+		   {
+			if  ( ( $decoded = @unserialize ( $value ) )  ===  false )
+				return ( false ) ;
+			else
+			   {
+				$result		=  $decoded ;
+				return ( true ) ;
+			    }
+		    }
+	    }
+
+	
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	  	IsPhpName - Checks if a string is a valid PHP name.
+
+	    PROTOTYPE
+		$status = String::IsPhpName ( $str ) ;
+
+	    DESCRIPTION
+		Checks if the specified string is a valid PHP name.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  IsPhpName ( $str )
+	   {
+		$status = preg_match ( '/^[a-z_][a-z0-9_]*$/imsx', $str ) ;
+
+		return ( $status ) ;
+	    }
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	  	IsRegex - Checks if the supplied string is a regular expression.
+
+	    PROTOTYPE
+		$status = String::IsRegex ( $str, $delimiter = false ) ;
+
+	    DESCRIPTION
+		Checks if the specified string is a valid regular expression.
+
+	    PARAMETERS
+	    	$str (string) -
+	    		String to be checked.
+
+	    	$delimiter (string) -
+	    		Regular expression delimiter. If not specified, the delimiter is taken from
+			the first character of the specified input string.
+
+	    RETURN VALUE 
+		True if the specified string is a regular expression, false otherwise.
+
+	    NOTES
+		Authorized PCRE delimiters are :
+		  - Asymetric delimiters : [], {}, () and <>
+		  - Non-alphanumeric, non-backslash and non-whitespace.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  IsRegex ( $str, $delimiter = false )
+	   {
+		static		$pcre_options	=  'imsxe' ;
+
+		$length		=  strlen ( $str ) ;
+
+		// Basic re's must have at least 3 characters : 2 delimiters and a character inside
+		if  ( $length  <  3 )
+			return ( false ) ;
+
+		// Check that the starting character is not an alphanumeric, backslash or whitespace character
+		if  ( $str [0]  ==  '\\'  ||  ctype_alnum ( $str [0] )  ||  ctype_space ( $str [0] ) )
+			return ( false ) ;
+
+		// If a delimiter has been specified, check that the supplied string starts with it
+		if  ( $delimiter  !==  false )
+		   {
+			if  ( $str [0]  !=  $delimiter )
+				return ( false ) ;
+		    }
+		// Otherwise, the delimiter will be the first character of the string
+		else
+			$delimiter	=  $str [0] ;
+
+		// Handle asymetric delimiters
+		switch  ( $delimiter ) 
+		   {
+			case  '<' :  $end_delimiter	=  '>' ; break ;
+			case  '{' :  $end_delimiter	=  '}' ; break ;
+			case  '[' :  $end_delimiter	=  ']' ; break ;
+			case  '(' :  $end_delimiter	=  ')' ; break ;
+			default   :  $end_delimiter	=  $delimiter ;
+		    }
+
+		// Find the trailing delimiter from the end of the string
+		for  ( $i = $length - 1 ; $i  >  0 ; $i -- )
+		   {
+			$ch	=  $str [$i] ;
+
+			// Delimiter found : we can safely say this is a regex
+			if  ( $ch  ==  $end_delimiter )
+			   {
+				// ... but only if the previous character is not an escape character
+				if  ( $i  >  0  &&  $str [ $i - 1 ]  ==  '\\' )
+					return ( false ) ;
+
+				return ( true ) ;
+			    }
+			// But if we find a non-pcre option after the trailing delimiter, then this definitely is not a regex
+			else if  ( stripos ( $pcre_options, $ch )  ===  false )
+				return ( false ) ;
+		    }
+
+		// No trailing delimiter found
+		return ( false ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		IsTrue, IsFalse - Checks the boolean value of a variable.
+
+	    PROTOTYPE
+		$result = String::IsTrue  ( $value ) ;
+		$result = String::IsFalse ( $value ) ;
+
+	    DESCRIPTION
+		Checks the specified value and returns its boolean state.
+
+		IsTrue() is true when the supplied value contains one of the following :
+		- A numerical, non-null value or
+		- One of those keywords : 'true', 'yes', 'on', 'checked'
+
+		IsFalse() is true when the supplied value verifies one of the following conditions :
+		- $value is not set or is empty
+		- $value is numerical and contains 0
+		- $value is one of the following keywords : 'false', 'no', 'off' or 'unchecked'
+
+	    PARAMETERS
+	    	$value (any) -
+			Value whose boolean state is to be checked.
+
+	    RETURN VALUE
+		IsTrue() returns true if the supplied value is true, or false if false.
+		IsFalse() returns true if the supplied value is false, or false if true.
+		Both functions returns the boolean value 'false' if the supplied value is not a
+		boolean constant.
+
+	    NOTES
+	    	String comparisons are case-insensitive.
+
+	 --------------------------------------------------------------------------------------------*/
+	private static  $BooleanValuesTable	=  array (
+				""		=> false,
+				"on"		=> true,
+				"yes"		=> true,
+				"true"		=> true,
+				"checked"	=> true,
+				"1"		=> true,
+				"off"		=> false,
+				"no"		=> false,
+				"false"		=> false,
+				"unchecked"	=> false,
+				"0"		=> false
+				) ;
+
+
+	public static function  IsBoolean ( $value )
+	   {
+		$value		=  trim ( strtolower ( $value ) ) ;
+		
+		if  ( isset ( self::$BooleanValuesTable [ $value ] ) )
+			return ( true ) ;
+		else
+			return ( false ) ;
+	    }
+
+	public static function  BooleanValue ( $value )
+	   {
+	   	// Trim any whitespace and convert to lowercase
+	   	$value = trim ( strtolower ( $value ) ) ;
+
+	   	// If the value is numeric, return either true (non-zero) or false (null value)
+		if  ( is_numeric ( $value ) )
+			return ( ( $value ) ? true : false ) ;
+
+		// Other cases : loop through the boolean value keywords to retrieve the appropriate boolean constant
+		foreach  ( String::$BooleanValuesTable  as  $name => $constant )
+		   {
+		   	if  ( ! strcmp ( $name, $value ) )
+		   		return ( $constant ) ;
+		    }
+
+		// Otherwise return false : this means that we failed to interpret the value as a boolean constant
+		return ( null ) ;
+	    }
+
+
+	public static function  IsTrue ( $value )
+	   {
+		$value = String::BooleanValue ( $value ) ;
+
+		if  ( $value  ===  null )
+			return ( null ) ;
+		else
+			return ( ( $value ) ?  true : false ) ;
+	    }
+
+
+	public static function  IsFalse ( $value )
+	   {
+		$value = String::BooleanValue ( $value ) ;
+
+		if  ( $value  ===  null )
+			return ( null ) ;
+		else
+			return ( ( $value ) ? false : true ) ;
+	    }
+	
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		IsDate, IsDateTime, IsTime - Checks a string for date, datetime and time specification.
+
+	    PROTOTYPE
+		$status = String::IsDate ( $value ) ;
+		$status = String::IsDateTime ( $value ) ;
+		$status = String::IsTime ( $value ) ;
+
+	    DESCRIPTION
+	    	Checks if the specified value is a date / datetime / time specification.
+
+    	    PARAMETERS
+    	    	$value (string) -
+    	    		Value to be checked.
+
+	    RETURN VALUE
+		True if the specified string is a valid date, datetime or time (in a formt that
+		the strtotime function can recognize), false otherwise.
+	 
+	 --------------------------------------------------------------------------------------------*/
+	public static function  IsDate ( $value )
+	   {
+		$value	=  trim ( $value ) ;
+		
+		return  
+		   ( 
+			( preg_match ( '/^ ( \d{2} | \d{4} ) [-] \d{2} [-] \d{2} $/imsx', $value ) ||
+			  preg_match ( '-^ \d{2} [/] \d{2} [/] ( \d{2} | \d{4} ) $-imsx', $value ) )  &&
+			strtotime ( $value )  !==  false
+		    ) ;
+	    }
+	
+	public static function  IsTime ( $value ) 
+	   {
+		return 
+		   (
+			preg_match ( '/^ \d{1,2} [:] \d{1,2} ( [:] \d{1,2} ( [.] \d* )? )? $/imsx', $value )  &&
+			strtotime ( $value )  !==  false 
+		    ) ;
+	    }
+	
+	public static function  IsDateTime ( $value ) 
+	   {
+		$value	=  trim ( $value ) ;
+		
+		return  
+		   ( 
+			String::IsDate ( $value )  ||  String::IsTime ( $value )  ||
+			( preg_match ( '/
+					   (
+						( ^ ( \d{2} | \d{4} ) [-] \d{2} [-] \d{2} ) |
+						( ^ \d{2} [\/] \d{2} [\/] ( \d{2} | \d{4} ) ) 
+					    ) 
+					\s+
+					\d{1,2} [:] \d{1,2} ( [:] \d{1,2} ( [.] \d* )? )? 
+					$/imsx', $value ) ||
+			  preg_match ( '-^ \d{2} [/] \d{2} [/] ( \d{2} | \d{4} ) $-imsx', $value ) )  &&
+			strtotime ( $value )  !==  false
+		    ) ;
+	    }
+	
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		IsDateString - Checks if the specified value is a date string.
+
+	    PROTOTYPE
+		$status = String::IsDateString ( $value ) ;
+
+	    DESCRIPTION
+	    	Checks if the specified value is a date string, 
+
+    	    PARAMETERS
+    	    	$value (string) -
+    	    		Date/time value to be checked.
+
+	    RETURN VALUE
+		False if the supplied value is not a valid date/time string. Otherwise, the real Unix
+		time is returned.
+	 
+	 --------------------------------------------------------------------------------------------*/
+	public static function  IsDateString ( $value ) 
+	   {
+		if  ( strlen ( $value )  ==  8  &&  preg_match ( '/\d+/', $value ) )
+		   {
+			$value	=  substr ( $value, 0, 4 ) .	
+				   '-' .
+				   substr ( $value, 4, 2 ) .
+				   '-' .
+				   substr ( $value, 6, 2 ) ;
+		     }
+
+		$time	=  @strtotime ( $value ) ;
+		
+		return ( $time ) ;
+	    }
+	
+	
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		IsDigit  - Checks if the specified character is a valid digit.
+
+	    PROTOTYPE
+		$status = String::IsDigit ( $ch, $base = 10 ) ;
+
+	    DESCRIPTION
+	    	Checks if the specified character is a digit.
+
+    	    PARAMETERS
+    	    	$ch (string or integer) -
+    	    		Character to be checked.
+
+    		$base (integer) -
+    			Base to be used for checking. It can be any number from 2 to 36.
+
+	    RETURN VALUE
+	    	The function returns true if the digit belongs to the specified base, or false if :
+		- The digit does not belong to the specified base
+		- The input character is an empty string
+		- The specified base is incorrect.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  IsDigit ( $ch, $base = 10 )
+	   {
+	   	if  ( String::ToDigit ( $ch, $base )  ===  false )
+	   		return ( false ) ;
+   		else
+   			return ( true ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		IsInteger - Checks if a string represents an integer.
+
+	    PROTOTYPE
+		$status = IsInteger ( $string, $signed = true ) ;
+
+	    DESCRIPTION
+	    	Checks if the specified string represents an integer that can be accepted by the
+	    	ToInteger() function.
+
+    	    PARAMETERS
+    	    	$string (string) -
+    	    		String to be checked.
+
+    		$signed (boolean) -
+    			When true, the integer can include a leading sign.
+    			When false, no leading sign is allowed.
+
+	    RETURN VALUE
+	    	true if the supplied value represents an integer, false otherwise.
+
+    	    NOTES
+    	    	Positive/negative signs are not allowed when a numeric base has been specified.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  IsInteger ( $string, $signed = true )
+	   {
+	   	if  ( $signed )
+	   		$sign = '[+\-]?' ;
+   		else
+   			$sign = "" ;
+
+		$re	=  '/^(' .
+				'( ' . $sign . '[0-9][0-9]* ) |' .
+				'( 0 [bB] [01]+ ) |' .
+				'( 0 [oO]? [0-7]+ ) |' .
+				'( 0 [dD] [0-9]+ ) |' .
+				'( 0 [xX] [0-9a-f]+ )' .
+			   ')$/ix' ;
+
+		$value =  preg_match ( $re, $string ) ;
+
+		return ( $value ) ;
+	    }
+	    
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		IsIPAddress, IsIPV4Address, IsIPV6, IsIPV4AddressMask address - IP address checker.
+
+	    PROTOTYPE
+		$status =  String::IsIPAddress		( $string, &$result = null ) ;
+		$status =  String::IsIPV4Address	( $string, &$result = null ) ;
+		$status =  String::IsIPV6Address	( $string, &$result = null ) ;
+		$status =  String::IsIPV4AddressMask	( $string, &$result = null ) ;
+
+	    DESCRIPTION
+	    	Checks if the supplied string is an IP address. IsIPAddress recognizes both V4 and
+	    	V6 addresses.
+		IsIPV4AddressMask recognizes ip masks of the form '1.2.3.4/24'.
+
+    	    PARAMETERS
+    	    	$string (string) -
+			IP address to be checked.
+
+	    RETURN VALUE
+	    	true if the supplied input string is a valid IP address, false otherwise.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  IsIPAddress ( $string, &$result = null )
+	   {
+		$status		=  String::IsIPV4Address ( $string, $result ) ;
+
+		if  ( $status )
+			return ( true ) ;
+
+		$status		=  String::IsIPV6Address ( $string, $result ) ;
+
+		return ( $status ) ;
+	    }
+
+
+	public static function  IsIPV4Address ( $string, &$result = null )
+	   {
+	   	if  ( ( $result = Convert::StringToIPV4Address ( $string ) )  !==  false )
+		   	return ( true ) ;
+	   	else
+	   		return ( false ) ;
+	    }
+
+
+	public static function  IsIPV6Address ( $string, &$result = null )
+	   {
+	   	if  ( ( $result = Convert::StringToIPV6Address ( $string ) )  !==  false )
+		   	return ( true ) ;
+	   	else
+	   		return ( false ) ;
+	    }
+
+
+	function  IsIPV4AddressMask ( $value, &$result = null )
+	   {
+		$result		=  Convert::IPV4AddressMaskToRange ( $value ) ;
+
+		return ( ( $result ) ?  true : false ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		IsLetter - Checks if the specified character is a letter.
+
+	    PROTOTYPE
+		$status = String::IsLetter ( $ch ) ;
+
+	    DESCRIPTION
+	    	Checks if the specified character is a letter.
+
+    	    PARAMETERS
+    	    	$ch (string) -
+    	    		String to be checked.
+
+	    RETURN VALUE
+	    	true if the first character of the input string is a letter, false otherwise.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  IsLetter ( $ch )
+	   {
+		if  ( ! $ch  ||  ! is_string ( $ch )  ||  ! strlen ( $ch ) )
+			return ( false ) ;
+
+		$ch =  strtolower ( substr ( $ch, 0, 1 ) ) ;
+
+		if  ( $ch  >=  'a'  &&  $ch  <=  'z' )
+			return ( true ) ;
+
+		return ( false ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		IsPunctuation - Checks if the specified character is a punctuation character.
+
+	    PROTOTYPE
+		$status = String::IsPunctuation ( $ch ) ;
+
+	    DESCRIPTION
+	    	Checks if the specified character is a punctuation character.
+
+    	    PARAMETERS
+    	    	$ch (string or integer) -
+    	    		Character to be checked.
+
+	    RETURN VALUE
+	    	The function returns true if the character belongs to the punctuation character group.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  IsPunctuation ( $ch )
+	   {
+	   	static	$Punctuations	=  '&~#"\'{([-|`_\\^)]=+}$*%!/:;.,?' ;
+
+	   	if  ( strchr ( $Punctuations, $ch )  ===  FALSE )
+	   		return ( false ) ;
+   		else
+   			return ( true ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		IsSpace - Checks if the specified character is a space.
+
+	    PROTOTYPE
+		$bool = String::IsSpace ( $ch ) ;
+
+	    DESCRIPTION
+	    	Checks if the specified character is a space (newline, carriage return, tab or space).
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  IsSpace  ( $ch )
+	   {
+		switch  ( $ch )
+		   {
+			case  "\n" : case  "\r" : case  "\t" : case  "\v" : case  ' ' :
+				return ( true ) ;
+
+			default :
+				return ( false ) ;
+		    }
+	    }
+
+
+ 	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		IsUTF8 - Checks if a string is UTF8-encoded.
+
+	    PROTOTYPE
+		$bool = String::IsUTF8 ( $value ) ;
+
+	    DESCRIPTION
+	    	Checks if the specified value is encodeed in the UTF8 character set.
+		    
+	    NOTES
+		This function returns true when the string is empty. It is thus necessary to check for
+		empty string before calling this function.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  IsUTF8 ( $value ) 
+	   {
+		$length	=  strlen ( $value ) ;
+		
+		for  ( $i = 0 ; $i  <  $length ; $i ++ )
+		   {
+			$c1	=  ord ( $value [$i] ) ;
+
+			// Compute the size of the potential UTF8 character
+			if  ( $c1  >  128 )
+			   {
+				if  ( $c1  >=  254 )
+					return ( false ) ;	// Not UTF8 encoding
+				else if  ( $c1  >=  252 )
+					$bytes	=  5 ;
+				else if  ( $c1  >=  248 )
+					$bytes	=  4 ;
+				else if  ( $c1  >=  240 )
+					$bytes	=  3 ;
+				else if  ( $c1  >=  224 )
+					$bytes	=  2 ;
+				else if  ( $c1  >=  192 )
+					$bytes	=  1 ;
+				else
+					return ( false ) ;	// Not UTF8 encoding
+			    }
+			    
+			// Check that it remains enough characters for our current potential UTF8 encoding
+			if  ( $i + $bytes  >  $length )
+				return ( false ) ;
+				
+			// Maybe UTF8 ; subsequent bytes must be in the range 128..191
+			while  ( $bytes )
+			   {
+				$i ++ ;
+				$c2	=  ord ( $value [$i] ) ;
+				
+				if  ( $c2  <  128  ||  $c2  >  191 )
+					return ( false ) ;
+					
+				$bytes -- ;
+			    }
+		    }
+		    
+		return ( true ) ;
+	    }
+
+	    
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		IsValidEmail - Checks if an email address is valid.
+
+	    PROTOTYPE
+		$status = String::IsValidEmail ( $email ) ;
+
+	    DESCRIPTION
+		Checks if the specified email address is valid.
+
+	    PARAMETERS
+		$email (string) -
+			Email address to be checked.
+
+	    RETURN VALUE
+		true if the email address is valid, false otherwise.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  IsValidEmail ( $email )
+	   {
+		// First, we check that there's one @ symbol, and that the lengths are right
+		if ( ! preg_match ( "/^[^@]{1,64}@[^@]{1,255}$/", $email ) )
+		   {
+			// Email invalid : wrong number of characters in one section, or wrong number of @ symbols.
+			return false ;
+		    }
+
+		// Split it into sections to make life easier
+		$email_array = explode ( "@", $email ) ;
+		$local_array = explode ( ".", $email_array [0] ) ;
+
+		// Checl individual parts
+		for ( $i = 0 ; $i < sizeof ( $local_array ) ; $i ++ )
+		   {
+			if ( ! preg_match ( '/^(([A-Za-z0-9!#$%&\'*+\/=?^_`{|}~-][A-Za-z0-9!#$%&\'*+\/=?^_`{|}~\.-]{0,63})|(\"[^(\\|\")]{0,62}\"))$/',
+					$local_array [$i] ) )
+				return false ;
+		    }
+
+		// Check if domain is IP. If not, it should be valid domain name
+		if ( ! preg_match ( "/^\[?[0-9\.]+\]?$/", $email_array [1] ) )
+		   {
+			$domain_array = explode ( ".", $email_array [1] ) ;
+
+			if ( sizeof ( $domain_array ) < 2 )
+				return false ; // Not enough parts to domain
+
+			for ( $i = 0 ; $i < sizeof ( $domain_array ) ; $i ++ )
+			   {
+				if ( ! preg_match ( "/^(([A-Za-z0-9][A-Za-z0-9-]{0,61}[A-Za-z0-9])|([A-Za-z0-9]+))$/", $domain_array [$i] ) )
+					return false ;
+			    }
+		    }
+
+		// Email address is correct
+		return true ;
+	    }
+
+	
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	  	Matches - Checks if a filename corresponds to a filemask.
+
+	    PROPERTY
+	    	$status = String::Matches ( $file, $pattern, $case_sensitive = false ) ;
+
+	    DESCRIPTION
+		Checks if the specified file matches the supplied file pattern.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  Matches ( $file, $pattern, $case_sensitive = false )
+	   {
+		$length 	= strlen ( $pattern ) ;
+		$newpattern 	= "" ;
+
+		for ( $i = 0 ; $i < $length ; $i ++ )
+		   {
+			$char  = $pattern [ $i ] ;
+			$depth = 0 ;
+
+			switch ( $char )
+			   {
+				case '/' : case '\\' :
+					$newpattern	.=  '[\\/\\\\]' ;
+					break ;
+		
+				case '.' : case '+' : case '^' : case '$' : case '(' : case ')' : case '|' :
+				case '{' : case '}' : case '=' : case '!' : case '<' : case '>' : case '/' :
+					$newpattern .= '\\' . $char ;
+					break ;
+
+				case '?' : case '*' :
+				        $newpattern .= '[^\\/\\\\]' . $char ;
+				        break ;
+
+				case '[' :
+				        $newpattern .= '[' ;
+				        $depth ++ ;
+				        break ;
+
+				case ']' :
+				        if  ( ! $depth )
+				                return ( false ) ;
+					$newpattern .= ']' ;
+					break ;
+
+				default :
+				        $newpattern .= $char ;
+			    }
+		    }
+
+		if  ( $case_sensitive )
+			$extra = '' ;
+		else
+			$extra = 'i' ;
+
+		$status		=  preg_match ( '/^' . $newpattern . '$/' . $extra, $file ) ;
+		
+		return ( $status ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	  	MatchesEx - Checks if a filename corresponds to a filemask or a regular expression.
+
+	    PROPERTY
+	    	$status = String::MatchesEx ( $file, $pattern, $case_sensitive = false ) ;
+
+	    DESCRIPTION
+		Checks if the specified file matches the supplied file pattern. $pattern can either
+		be a wildcard or a regex. 
+		Note that the $case_sensitive parameter only applies to wilcard expressions.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  MatchesEx ( $string, $pattern, $case_sensitive = false )
+	   {
+		if  ( self::IsRegex ( $pattern ) )
+			return ( preg_match ( $pattern, $string ) ) ;
+		else
+			return ( self::Matches ( $string, $pattern, $case_sensitive ) ) ;
+	    }
+
+	
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		MySqlToFrenchDate - Converts a Mysql date into the french format.
+
+	    PROTOTYPE
+		$result = String::MySqlToFrenchDate ( $date ) ;
+
+	    DESCRIPTION
+	    	Converts a MySql date (yyyy-mm-dd) to french format (dd/mm/yyyy).
+
+	    PARAMETERS
+		$date (string) -
+			Date to be converted.
+
+	    RETURN VALUE
+		The converted date.
+
+	    NOTES
+	    	Extra hours, minutes and seconds are ignored.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  MySqlToFrenchDate ( $date )
+	   {
+		$date 	=  substr ( $date, 0, 10 ) ;
+
+		if  ( $date  ==  '0000-00-00' )
+			return ( '' ) ;
+
+		$parts 	=  explode ( '-', $date ) ;
+
+		return ( $parts [2] . '/' . $parts [1] . $parts [0] ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		NormalizeRegex - Normalizes a regex expression.
+
+	    PROTOTYPE
+		$re = String::NormalizeRegex ( $re, $fullmatch = false ) ;
+
+	    DESCRIPTION
+	    	Normalizes a regex value and adds delimiters if not present.
+
+    	    PARAMETERS
+    	    	$re (string) -
+    	    		Regex expression, with or without delimiters.
+
+    		$fullmatch (boolean) -
+    			When true, the regex will be added the '^' and '$' anchors at the beginning
+    			and end of the regex, if not already specified.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  NormalizeRegex ( $re, $fullmatch = true )
+	   {
+	   	// Don't lose time if the caller supplied an incorrect value
+	   	if  ( ! $re )
+	   		return ( $re ) ;
+
+		// Check if we need to add delimiters
+		$first 	=  $re [0] ;
+		$length =  strlen ( $re ) ;
+		$delim  =  '/' ;
+
+		// Remove the delimiters
+		if  ( $re [ $length - 1 ]  ==  $first )
+		   {
+			$delim =  $first ;
+			$re    =  substr ( $re, 1, $length - 2 ) ;
+		    }
+
+		// If necessary, add the '^' and '$' anchors
+		if  ( $fullmatch )
+		   {
+			if  ( $re [0]  !=  '^' )
+				$re = '^' . $re ;
+
+			if  ( $re [ strlen ( $re ) - 1 ]  !=  '$' )
+				$re .= '$' ;
+		    }
+
+		// Then add back the delimiters
+		$re = $delim . $re . $delim ;
+
+		// All done, return
+		return ( $re ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		QuotedString 		- Quotes a string.
+		QuoteStringArray        - Quotes an array of strings.
+
+	    PROTOTYPE
+		$string = String::QuotedString ( $string, $quote = '"', $force = false ) ;
+		$string = String::QuotedStringArray ( $array, $quote = '"', $force = false ) ;
+
+	    DESCRIPTION
+		Quotes a string using the specified quote character.
+		QuotedStringArray performs the same thing on an array and returns a single string,
+		with array elements separated by a space character.
+
+	    PARAMETERS
+		$string (string) -
+			String to be quoted.
+
+		$array (array of strings) -
+			Array of strings to be quoted.
+
+		$quote (character) -
+			Quote character.
+
+		$force (boolean) -
+			When true, the string is systematically quoted.
+			When false, the string is quoted only if it contains spaces or the quote
+			character itself.
+			In both cases, if the string contains the specified quote character, it will
+			be escaped.
+
+	    RETURN VALUE
+		The quoted string.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  QuotedString  ( $string, $quote = '"', $force = false )
+	   {
+		if  ( $force )
+			$do_quote 	=  true ;
+		else
+			$do_quote 	=  preg_match ( "/\\s|\$quote/", $string ) ;
+
+		if  ( $do_quote )
+			$string = $quote . str_replace ( $quote, '\\' . $quote, $string ) . $quote ;
+
+		return ( $string ) ;
+	    }
+
+
+	public static function  QuotedStringArray ( $array, $quote = '"', $force = false )
+	   {
+		$result 	=  array ( ) ;
+
+		foreach  ( $array  as  $item )
+			$result [] = String::QuotedString ( $item, $quote, $force ) ;
+
+		return ( implode ( ' ', $result ) ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+	 
+	    NAME
+		RemoveDuplicateCharacters - Removes duplicate characters in a string.
+
+	    PROTOTYPE
+		$str = String::RemoveDuplicateCharacters ( $str, bool  $sort = false ) ;
+
+	    DESCRIPTION
+	 	Removes duplicate characters in a string.
+	  
+	    PARAMETERS
+	 	$str (string) -
+	 		String whose duplicate characters are to be removed.
+	  
+	 	$sort (boolean) -
+	 		When true, resulting string characters are sorted.
+	  
+	    RETURN VALUE
+	 	The initial input string, where all the duplicate characters have been removed.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  RemoveDuplicateCharacters ( $str, $sort = false )
+	   {
+		$keys	=  [] ;
+		$length	=  strlen ( $str ) ;
+		
+		for  ( $i  =  0 ; $i  <  $length ; $i ++ )
+		   {
+			$ch	=  $str [$i] ;
+			
+			if  ( ! isset ( $keys [$ch] ) )
+				$keys [$ch]	=  true ;
+		    }
+		
+		if  ( $sort )
+			ksort ( $keys ) ;
+		
+		$result	=  implode ( '', array_keys ( $keys ) ) ;
+
+		return ( $result ) ;
+	    }
+	
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		RemoveDuplicateSpaces - Removes duplicated spaces.
+
+	    PROTOTYPE
+		$str = String::RemoveDuplicateSpaces ( $str, bool  $trim = true ) ;
+
+	    DESCRIPTION
+	    	Removes duplicated spaces from the specified string. If $trim is true, the string
+		will also be trimmed.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  RemoveDuplicateSpaces  ( $str, $trim  =  true )
+	   {
+		$str = preg_replace ( '/\s\s*/', ' ', $str ) ;
+
+		if  ( $trim )
+			$str = trim ( $str ) ;
+
+		return ( $str ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		RemoveSpaces - Removes all spaces.
+
+	    PROTOTYPE
+		$str = String::RemoveSpaces ( $str ) ;
+
+	    DESCRIPTION
+	    	Removes duplicated spaces from the specified string. If $trim is true, the string
+		will also be trimmed.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  RemoveSpaces  ( $str, $trim  =  true )
+	   {
+		$str = preg_replace ( '/\s+/', '', $str ) ;
+
+		return ( $str ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		ReplaceRegex - Uses preg_replace.
+
+	    PROTOTYPE
+	    	$result = String::ReplaceRegex ( $array, $subject, $limit = -1, &$count = null ) ;
+
+	    DESCRIPTION
+	    	Uses preg_replace with an array whose keys are the regular expressions and whoses values
+	    	are the replacement strings.
+
+	    PARAMETERS
+	    	$array (associative array) -
+	    		Associative array whose keys are the searched regular expressions, and whose
+	    		values are the replacement strings.
+
+    		$subject (string) -
+    			String to be processed.
+
+		$limit (integer) -
+			Maximum number of occurrences to be processed.
+
+		$count (integer) -
+			If specified, receives the number of occurrences replaced.
+
+	 --------------------------------------------------------------------------------------------*/
+	 public static function  ReplaceRegex ( $array, $subject, $limit = -1, &$count = null )
+	    {
+		$out = 0 ;
+		$result = preg_replace ( array_keys ( $array ), array_values ( $array ), $subject, $limit, $out ) ;
+
+		if  ( $count  !==  null )
+			$count = $out ;
+
+		return ( $result ) ;
+	     }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	  	ReplaceStrings - Replace strings defined in a associative array.
+
+	    PROTOTYPE
+		$array = String::ReplaceStrings ( $array, $input ) ;
+
+	    DESCRIPTION
+		Replaces the contents of $input that contains the strings defined in $array. The
+		function calls preg_replace to perform the substitution.
+		$array is an associative array whose keys are the searched strings and whose values
+		are the replacement values.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  ReplaceStrings ( $array, $input )
+	   {
+	   	$searches 	= array ( ) ;
+		$substitutions	= array ( ) ;
+
+		foreach ( $array  as  $key => $value )
+		   {
+		   	$searches []      = "/$key/" ;
+			$substitutions [] = $value ;
+		    }
+
+		return ( preg_replace ( $searches, $substitutions, $input ) ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		SafeStringToRegex - Converts a string to its regex equivalent.
+
+	    PROTOTYPE
+		$value = String::SafeRegex ( $string ) ;
+
+	    DESCRIPTION
+		Converts a string to a regular expression. This function can be used to search for a
+		particular string to be included within a regex, which may contain special regex
+		characters that needs to be escaped.
+		For example, the following string :
+
+			abc[-]
+
+		will be returned as :
+
+			[a][b][c][\[][\-][\]]
+
+	    PARAMETERS
+		$string (string) -
+			String to be transformed into a regex.
+
+	    RETURN VALUE
+		The input string, that can be used within a regular expression.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  SafeRegex ( $string )
+	   {
+	   	static 	$Reserved 	=  "\"'[]{}()=:.?*+^\$&<>|/" ;
+
+		$result =  "" ;
+		$length =  strlen ( $string ) ;
+
+		for  ( $i = 0 ; $i < $length ; $i ++ )
+		   {
+		   	$ch = $string [$i] ;
+
+		   	if  ( strpos ( $Reserved, $ch )  !==  false )
+		   		$ch = "\\" . $ch ;
+
+		   	$result .= $ch ;
+		    }
+
+		return ( $result ) ;
+	    }
+
+	    
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	  	SetEOS - Make sure a string ends with a specified character sequence.
+
+	    PROTOTYPE
+		$value = String::SetEOS ( $value, $end ) ;
+
+	    DESCRIPTION
+		If $value does not end with $end, appends $end to it and return the result.
+		
+	 --------------------------------------------------------------------------------------------*/
+	public static function  SetEOS ( $value, $end )
+	   {
+		$value_length	=  strlen ( $value ) ;
+		$end_length	=  strlen ( $end ) ;
+		
+		if  ( substr ( $value, $value_length - $end_length )  !=  $end )
+			$value	=  $value . $end ;
+			
+		return ( $value ) ;
+	    }
+	
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        Split - Splits text contents according to a regex or a string.
+	 
+	    PROTOTYPE
+	        $result		=  String::Split ( $contents, $separator, 
+						   $options = SPLIT_IGNORE_EMPTY_BLOCKS ) ;
+	 
+	    DESCRIPTION
+	        Splits text contents according to the specified regex or string.
+	 
+	    PARAMETERS
+	        $contents (string) -
+	                Contents to be splitted.
+
+		$separator (string) -
+			Either a plain string, or a regular expression.
+
+		$options (integer) -
+			A combination of the following flags :
+
+			- SPLIT_RETURN_AS_LINES :
+				Indicates whether the individual splitted text blocks should be returned as is or as 
+				arrays of individual lines.
+
+			- SPLIT_IGNORE_EMPTY_BLOCKS :
+				Empty splitted blocks will not be included in the results.
+	 
+	    RETURN VALUE
+	        Returns :
+		- An array of strings, if the $return_as_lines parameter is false 
+		- Otherwise, an array of arrays of strings
+	 
+	    NOTES
+	        Carriage returns are removed from the input string.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public static function  Split ( $contents, $separator, $options = SPLIT_IGNORE_EMPTY_BLOCKS )
+	   {
+		$contents	=  str_replace ( "\r", '', $contents ) ;
+
+		if  ( self::IsRegex ( $separator ) )
+		   {
+			if  ( $options & SPLIT_IGNORE_EMPTY_BLOCKS )
+				$preg_split_options	=  PREG_SPLIT_NO_EMPTY ;
+			else
+				$preg_split_options	=  0 ;
+
+			$blocks		=  preg_split ( $separator, $contents, -1, $preg_split_options ) ;
+		    }
+		else
+		   {
+			$list		=  explode ( $separator, $contents ) ;
+
+			if  ( $options & SPLIT_IGNORE_EMPTY_BLOCKS )
+			   {
+				$blocks		=  [] ;
+
+				foreach  ( $list  as  $item )
+				   {
+					if  ( $item )
+						$blocks []	=  $item ;
+				    }
+			    }
+			else
+				$blocks		=  $list ;
+		    }
+
+		if  ( $options & SPLIT_RETURN_AS_LINES )
+		   {
+			$count		=  count ( $blocks ) ;
+
+			for  ( $i = 0 ; $i  <  $count ; $i ++ )
+				$blocks [$i]	=  explode ( "\n", $blocks [$i] ) ;
+		    }
+
+		return ( $blocks ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	  	SplitList - Splits a list.
+
+	    PROTOTYPE
+		$array = String::SplitList ( $string, $separators = '[\s,]' ) ;
+
+	    DESCRIPTION
+		Splits a list of values delimited by the specified separators. This function returns
+		false if no element is contained in the input list.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function SplitList ( $string, $separators = '[\s,]' )
+	   {
+		$keywords =  preg_split ( "/$separators" . '/', $string ) ;
+		$result   =  array ( ) ;
+
+		foreach ( $keywords  as  $keyword )
+		   {
+		   	$keyword = trim ( $keyword ) ;
+
+		   	if  ( $keyword )
+				$result [] = $keyword ;
+		    }
+
+		return ( $result ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	    	StartsWith - Checks if a string starts with the specified string.
+
+	    PROTOTYPE
+		$status = String::StartsWith ( $value, $substring, $case_insensitive = false ) ;
+
+	    DESCRIPTION
+	    	Checks if the specified string ($value) starts with the specified substring.
+
+	    PARAMETERS
+	    	$value (string) -
+	    		String to be checked.
+
+    		$substring (string) -
+    			Substring to be checked.
+
+		$case_insensitive (boolean) -
+			When true, comparison is case-insensitive.
+
+	    RETURN VALUE
+	    	True if $string starts with $substring, false otherwise.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  StartsWith ( $string, $substring, $case_insensitive = false )
+	   {
+	   	$length = strlen ( $substring ) ;
+
+		if  ( $case_insensitive )
+			$status = strncasecmp ( $string, $substring, $length ) ;
+		else
+			$status = strncmp ( $string, $substring, $length ) ;
+
+		return ( $status ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	  	StringArrayLength - Returns the number of characters in a string array.
+
+	    PROTOTYPE
+		$length = String::StringArrayLength ( $array ) ;
+
+	    DESCRIPTION
+		Returns the number of characters in a string array.
+
+	    RETURN VALUE
+	    	Total length of all the strings in the specified array.
+	  
+	    NOTES
+	 	. Empty or null strings are counted as 0 characters
+	 	. Well, the input array can also be a single string...
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  StringArrayLength ( $array )
+	   {
+		if  ( ! is_array ( $array ) )
+			$array	=  [ $array ] ;
+		
+		$length		=  0 ;
+		
+		foreach  ( $array  as  $string )
+		   {
+			if  ( $string  !==  ""  &&  $string  !==  null )
+				$length		+=  strlen ( $string ) ;
+		    }
+		
+		return ( $length ) ;
+	    }
+	
+	
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	  	StripEOL - remove end of line character(s) at the end of a string.
+
+	    PROTOTYPE
+		$text = String::StripEOL ( $text ) ;
+
+	    DESCRIPTION
+		Removes EOL characters from a string.
+
+	    RETURN VALUE
+	    	An array representing the list of lines.
+
+	 --------------------------------------------------------------------------------------------*/
+	private static $EOLChars = array ( "\r", "\n", "\r\n" ) ;
+
+	public static function  StripEOL ( $line )
+	   {
+	   	$result = preg_split ( String::$EOLChars, $line ) ;
+
+		return ( $result ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	  	StripSpaces - remove space characters in a string.
+
+	    PROTOTYPE
+		$text = String::StripSpaces ( $text ) ;
+
+	    DESCRIPTION
+		Removes space characters from a string.
+
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  StripSpaces ( $line )
+	   {
+	   	$result = preg_replace ( '/\s/', '', $line ) ;
+
+		return ( $result ) ;
+	    }
+
+
+	
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	  	Tabify - Replace consecutive spaces with tabs.
+
+	    PROTOTYPE
+		$text = String::Tabify ( $text, $tabstop = 8 ) ;
+
+	    DESCRIPTION
+		Replaces series of spaces in $text with tabulations, taking into account the tab size
+		given by the $tabstop parameter.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  Tabify ( $string, $tabsize = 8 )
+	   {
+		$current 	=  0 ;				// Current column position in current line
+		$string        .=  '!' ;			// Little trick : add an end-marker to the input string so that it never ends with spaces
+		$length 	=  strlen ( $string ) ;		// Input string length
+		$result 	=  "" ;				// Output result
+		$prev 		=  "" ;				// Previous char : if we encounter LF not preceded by CR, consider it is CR+LF
+		$in_space 	=  false ;			// True when a space (or a series of spaces) has been found
+		$space_start	=  false ;			// Space start index, if any
+
+		// Loop trough input chars
+		for  ( $i = 0 ; $i  <  $length ; $i ++ )
+		   {
+			$ch 		=  $string [$i] ;
+		
+			// Series of spaces and tabs will only be processed when a non-space character will be met
+			// (this is why it is important to terminate our input string with a non-space character)
+			$found_nonspace =  false ;
+		
+			// Process current character
+			switch  ( $ch )
+			   {
+				// Carriage return : current column restarts at zero
+				case 	"\r" :
+					$current	 	 =  0 ;
+					$found_nonspace  	 =  true ;
+					break ;
+				
+				// Line feed : if not preceded by a carriage return, restart current column at zero
+				case 	"\n" :
+					if  ( $prev  !=  "\r" )
+						$current 	 =  0 ;
+					
+					$found_nonspace 	 =  true ;
+					break ;
+			
+				// Tab : maybe the start or the continuation of a series of spaces...
+				case 	"\t" :
+					// If starting a series of spaces, remember the position of the first one
+					if  ( ! $in_space )
+						$space_start 	 =  $current ;
+					
+					$in_space 		 =  true ;		// Say series of spaces started
+				
+					// Next tab position
+					$current 		+=  $tabsize - ( $current % $tabsize ) ;
+					break ;
+				
+				// Space : maybe the start or the continuation of a series of spaces...
+				case	" " :
+					// If starting a series of spaces, remember the position of the first one
+					if  ( ! $in_space )
+						$space_start 	 =  $current ;
+					
+					$in_space 		 =  true ;		// Say series of spaces started
+					$current ++ ;
+					break ;
+				
+				// Non space : process the possible series of spaces before this character
+				default :
+					$found_nonspace 	 =  true ;
+					$current ++ ;
+			    }
+		    
+			// Non space char found...
+			if  ( $found_nonspace )
+			   {
+				// Check if it follows a series of spaces
+				if  ( $in_space )
+				   {
+					// Yes, compute series limit
+					$space_end 	=  $current - 1 ;
+				
+					// Insert as many tabs as possible
+					while  ( $space_start  <  $space_end )
+					   {
+						// Compute position of next tab stop
+						$jump 		=  $tabsize - ( $space_start % $tabsize ) ;
+						$next_tab 	=  $space_start + $jump ;
+					
+						// If over the end of our series of spaces, or if there is only one space character to be replaced,
+						// simply pad with spaces until the next tab stop
+						if  ( $next_tab  >  $space_end  ||  $space_end - $next_tab  ==  1 )
+						   {
+							$jump 		 =  $space_end - $space_start ;
+							$result 	.=  str_repeat ( " ", $jump ) ;
+							break ;
+						    }
+						// Otherwise, there is still enough room to put a tab without jumping past the end of the space series
+						else
+							$result 	.=  "\t" ;
+						
+						// Update space start with the number of characters positions jumped
+						$space_start	+= $jump ;
+					    }
+
+					// ok, no more space to process
+					$in_space = false ;
+				    }
+			
+				// Don't forget : if we arrive here, this is because we found a non-space character
+				// But don't include our end-marker...
+				if  ( $i + 1  <  $length )
+					$result  .=  $ch ;
+			    }
+		    }
+	    
+		// All done, return
+		return ( $result ) ;
+	    }
+    
+	
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		TextToArray - Converts text to an array of lines.
+
+	    PROTOTYPE
+		$array = String::TextToArray ( $text ) ;
+
+	    DESCRIPTION
+	    	Splits a text containing crlf-terminated strings into an array of strings.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function TextToArray ( $text )
+	   {
+		$result = preg_split ( '/(\r\n)|(\n\r)|(\r)|(\n)/', $text ) ;
+		return ( $result ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	  	Unaccentuated - Replace accentuated letters in a string with their ascii equivalent.
+
+	    PROTOTYPE
+		$str = String::Unaccentuated ( $input ) ;
+
+	    DESCRIPTION
+		Replaces the accentuated letters in $input with their ascii, non-accentuated, equivalent.
+
+	 --------------------------------------------------------------------------------------------*/
+	private static  $AccentuatedLetters 	= array (
+		"À" =>  "A", "Á" =>  "A", "Â" =>  "A", "Ã" =>  "A", "Ä" =>  "A", "Å" =>  "A", "Æ" => "AE",
+		"Ç" =>  "C", "È" =>  "E", "É" =>  "E", "Ê" =>  "E", "Ë" =>  "E", "Ì" =>  "I", "Í" =>  "I",
+		"Î" =>  "I", "Ï" =>  "I", "Ð" =>  "D", "Ñ" =>  "N", "Ò" =>  "O", "Ó" =>  "O", "Ô" =>  "O",
+		"Õ" =>  "O", "Ö" =>  "O", "Ø" =>  "O", "Ù" =>  "U", "Ú" =>  "U", "Û" =>  "U", "Ü" =>  "U",
+		"Ý" =>  "Y", "ß" =>  "s", "à" =>  "a", "á" =>  "a", "â" =>  "a", "ã" =>  "a", "ä" =>  "a",
+		"å" =>  "a", "æ" => "ae", "ç" =>  "c", "è" =>  "e", "é" =>  "e", "ê" =>  "e", "ì" =>  "i",
+		"í" =>  "i", "î" =>  "i", "ï" =>  "i", "ð" =>  "o", "ñ" =>  "n", "ò" =>  "o", "ó" =>  "o",
+		"ô" =>  "o", "õ" =>  "o", "ö" =>  "o", "ø" =>  "o", "ú" =>  "u", "û" =>  "u", "ü" =>  "u",
+		"ý" =>  "y", "ÿ" =>  "y", "A" =>  "A", "a" =>  "a", "A" =>  "A", "a" =>  "a", "A" =>  "A",
+		"a" =>  "a", "C" =>  "C", "c" =>  "c", "C" =>  "C", "c" =>  "c", "c" =>  "c", "C" =>  "C",
+		"c" =>  "c", "D" =>  "D", "d" =>  "d", "Ð" =>  "D", "d" =>  "d", "E" =>  "E", "e" =>  "e",
+		"E" =>  "E", "e" =>  "e", "E" =>  "E", "e" =>  "e", "E" =>  "E", "e" =>  "e", "E" =>  "E",
+		"e" =>  "e", "G" =>  "G", "g" =>  "g", "g" =>  "g", "G" =>  "G", "g" =>  "g", "g" =>  "g",
+		"H" =>  "H", "h" =>  "h", "H" =>  "H", "h" =>  "h", "I" =>  "I", "i" =>  "i", "I" =>  "I",
+		"i" =>  "i", "I" =>  "I", "i" =>  "i", "I" =>  "I", "i" =>  "i", "I" =>  "I", "i" =>  "i",
+		"?" => "IJ", "?" => "ij", "J" =>  "J", "j" =>  "j", "K" =>  "K", "k" =>  "k", "?" =>  "K",
+		"L" =>  "L", "l" =>  "l", "L" =>  "L", "l" =>  "l", "L" =>  "L", "l" =>  "l", "?" =>  "L",
+		"?" =>  "l", "L" =>  "L", "l" =>  "l", "N" =>  "N", "n" =>  "n", "N" =>  "N", "n" =>  "n",
+		"N" =>  "N", "n" =>  "n", "?" =>  "n", "?" =>  "N", "?" =>  "n", "O" =>  "O", "o" =>  "o",
+		"o" =>  "o", "O" =>  "O", "O" =>  "O", "o" =>  "o", "Œ" => "OE", "œ" => "oe", "R" =>  "R",
+		"r" =>  "r", "R" =>  "R", "r" =>  "r", "R" =>  "R", "r" =>  "r", "S" =>  "S", "S" =>  "S",
+		"s" =>  "s", "S" =>  "S", "s" =>  "s", "Š" =>  "S", "š" =>  "s", "T" =>  "T", "t" =>  "t",
+		"T" =>  "T", "t" =>  "t", "T" =>  "T", "t" =>  "t", "U" =>  "U", "u" =>  "u", "U" =>  "U",
+		"u" =>  "u", "u" =>  "u", "u" =>  "u", "U" =>  "U", "u" =>  "u", "U" =>  "U", "u" =>  "u",
+		"W" =>  "W", "w" =>  "w", "Y" =>  "Y", "y" =>  "y", "Ÿ" =>  "Y", "Z" =>  "Z", "z" =>  "z",
+		"Ž" =>  "Z", "ž" =>  "z",
+		"ù" =>  "u", "ë" =>  "e",
+	  ) ;
+
+	public static function Unaccentuated ( $input )
+	   {
+	   	$result = "" ;
+
+		for  ( $i = 0 ; $i  <  strlen ( $input ) ; $i ++ )
+		   {
+		   	$c   = $input [$i] ;
+
+			if  ( isset ( String::$AccentuatedLetters [ $c ] ) )
+				$c  = String::$AccentuatedLetters [ $c ] ;
+
+			$result .= $c ;
+		    }
+
+		return ( $result ) ;
+	    }
+
+	
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	  	Unescape - Interpret escape sequences within a string.
+
+	    PROTOTYPE
+		$str = String::Unescape ( $input ) ;
+
+	    DESCRIPTION
+		Replaces the accentuated letters in $input with their ascii, non-accentuated, equivalent.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  Unescape ( $input )
+	   {
+		$output		=  "" ;
+		
+		for  ( $i = 0 ; $i  <  strlen ( $input ) ; $i ++ )
+		   {
+			$ch	=  $input [$i] ;
+			
+			if  ( $ch  ==  "\\" )
+			   {
+				$a	=  String::EscapedCharInString ( $input, $i ) ;
+				$ch	=  $a [0] ;
+				$i	=  $a [1] - 1 ;
+			    }
+		
+			$output .= $ch ;
+		    }
+		
+		return ( $output ) ;
+	    }
+	
+	
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	  	Untabify - Replaces tabs with equivalent spaces.
+
+	    PROTOTYPE
+		$str = String::Untabify ( $input, $tabsize = 8 ) ;
+
+	    DESCRIPTION
+		Replaces tabulations in $input with the sufficient number of spaces to reach the
+		next tab stop, whose size is given by the $tabsize parameter.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  Untabify ( $string, $tabsize = 8 )
+	   {
+		$current 	=  0 ;				// Current column position in current line
+		$length 	=  strlen ( $string ) ;		// Input string length
+		$result 	=  "" ;				// Output result
+		$prev 		=  "" ;				// Previous char : if we encounter LF not preceded by CR, consider it is CR+LF
+
+		// Loop through each character
+		for  ( $i = 0 ; $i  <  $length ; $i ++ )
+		   {
+			$ch 	=  $string [$i] ;
+		
+			switch  ( $ch )
+			   {
+				// Carriage return : current column restarts at zero
+				case 	"\r" :
+					$current	 	 =  0 ;
+					$found_nonspace  	 =  true ;
+					break ;
+				
+				// Line feed : if not preceded by a carriage return, restart current column at zero
+				case 	"\n" :
+					if  ( $prev  !=  "\r" )
+						$current 	=  0 ;
+					
+					$result 	.=  $ch ;
+					break ;
+
+				// Tab : pad with the necessary amount of spaces to jump to the next tab stop
+				case 	"\t" :
+					$count 		 =  $tabsize - ( $current % $tabsize ) ;
+					$result 	.=  str_repeat ( " ", $count ) ;
+					$current 	+=  $count ;
+					break ;
+				
+				// Other : simply add it to the output string
+				default :
+					$result 	.=  $ch ;
+					$current ++ ;
+			    }
+		    
+			$prev 	=  $ch ;
+		    }
+	    
+		// All done, return
+		return ( $result ) ;
+	    }
+    
+	
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	  	WildcardToRegex - Transforms a wildcard expression to a regex.
+
+	    PROTOTYPE
+		$str = String::WildcardToRegex ( $pattern, $escaped_chars = "" ) ;
+
+	    DESCRIPTION
+		Transforms a wildcard expression into a regular expression.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function WildcardToRegex ( $pattern, $escaped_chars = "" ) 
+	   {
+		$length 	= strlen ( $pattern ) ;
+		$newpattern 	= "" ;
+
+		for ( $i = 0 ; $i < $length ; $i ++ )
+		   {
+			$char  = $pattern [ $i ] ;
+			$depth = 0 ;
+
+			switch ( $char )
+			   {
+				case '.' : case '+' : case '^' : case '$' : case '(' : case ')' : case '|' :
+				case '{' : case '}' : case '=' : case '!' : case '<' : case '>' : case '/' :
+					$newpattern .= '\\' . $char ;
+					break ;
+
+				case '?' : case '*' :
+				        $newpattern .= '[^\\/]' . $char ;
+				        break ;
+
+				case '[' :
+				        $newpattern .= '[' ;
+				        $depth ++ ;
+				        break ;
+
+				case ']' :
+				        if  ( ! $depth )
+				                return ( false ) ;
+					
+					$newpattern .= ']' ;
+					break ;
+
+				default :
+					if  ( strpos ( $escaped_chars, $char )  !==  false )
+						$newpattern	.=  '\\' ;
+					
+				        $newpattern .= $char ;
+			    }
+		    }
+
+		return ( $newpattern ) ;
+	    }
+   }

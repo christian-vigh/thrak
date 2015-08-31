@@ -1,0 +1,174 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        ReflectionProperty.phpclass
+
+    DESCRIPTION
+        An enhanced ReflectionProperty class.
+
+    AUTHOR
+        Christian Vigh, 10/2014.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2014/10/23]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Reflection ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use  	Thrak\System\Object ;
+use     Thrak\System\IsNonObject ;
+use     Thrak\Reflection\DocCommentExtender ;
+use	Thrak\Reflection\Sourcers\ReflectionSourcerInterface ;
+use	Thrak\Reflection\Sourcers\ReflectionPropertySourcer ;
+
+
+/*==============================================================================================================
+
+    ReflectionProperty class -
+        An enhanced ReflectionProperty class.
+
+  ==============================================================================================================*/
+class  ReflectionProperty	extends 	\ReflectionProperty
+				implements 	\Reflector, ReflectionSourcerInterface
+   {
+	use IsNonObject, DocCommentExtender ;
+	
+	// The \ReflectionProperty constructor sets the $class member to the name of the declaring class, not the
+	// class that has been instanciated. We need to keep track of the original class 
+	protected	$usingClass ;
+	
+	// Reflector object for the class declaring this property
+	protected	$classReflector ;
+	
+	/*==============================================================================================================
+	
+	    Constructor -
+	        Initializes the instance.
+	
+	  ==============================================================================================================*/
+	public function  __construct ( $class, $name )
+	   {
+		parent::__construct ( $class, $name ) ;
+		
+		$this -> usingClass	=  $class ;
+		$this -> classReflector	=  new ReflectionClass ( $this -> class ) ;
+	    }
+
+
+	/*==============================================================================================================
+	
+	    getDocComment -
+	        Retrieves the doc comment contents.
+	
+	  ==============================================================================================================*/
+	public function  getDocComment ( )
+	   {
+		$comment	=  $this -> formatDocComment ( parent::getDocComment ( ) ) ;
+		
+		return ( $comment ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    getDefaultValue -
+	        Retrieves the default value for a property (ie, the one that has been defined at the class level).
+	
+	  ==============================================================================================================*/
+	public function  getDefaultValue ( )
+	   {
+		$class_name	=  $this -> getDeclaringClass ( ) -> name ;
+		
+		if  ( ! isset ( self::$__default_values [ $class_name ] ) )
+			self::$__default_values	[ $class_name ]	=  $this -> getDeclaringClass ( ) -> getDefaultProperties ( ) ;
+		
+		return ( self::$__default_values [ $class_name ] [ $this -> name ] ) ;
+	    }
+
+	
+	/*==============================================================================================================
+	
+	    getusingClass -
+	        Returns the name of the class that is using this property (not the class where it is declared).
+	
+	  ==============================================================================================================*/
+	public function  getUsingClass ( )
+	   { return ( $this -> usingClass ) ; }
+	
+	
+	/*==============================================================================================================
+	
+	    getValue -
+	        Retrieves the property value, whatever its access level and static or dynamic state.
+		The $object parameter tells whether to retrieve the property default value (ie, the one that has been
+		defined at the class level) or its current value, which may have been modified at runtime.
+		When $object is set to null, the property default value is returned ; when set to an object instance,
+		the runtime value is returned.
+	
+	  ==============================================================================================================*/
+	public function  getValue ( $object = null )
+	   {
+		$this -> setAccessible ( true ) ;
+		
+		// Static property value
+		if  ( $this -> isStatic ( ) )
+			$value		=  parent::getValue ( ) ;
+		// Runtime value of the property
+		else if  ( $object )
+			$value		=  parent::getValue ( $object_or_default ) ;
+		// Default value of the property, as declared in the class definition
+		else
+			$value		=  $this -> getDefaultValue ( ) ;
+		
+		return ( $value ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    isDefault -
+		Returns a flag indicating whether the property is a default property (declared at compile-time) or a
+		property added at runtime.
+	 
+	  ==============================================================================================================*/
+	public function  isDefault ( )
+	   {
+		static	$defaults	=  null ;
+		
+		if  ( $defaults  ===  null )
+			$defaults	=  $this -> classReflector -> getDefaultProperties ( ) ;
+		
+		return ( array_key_exists ( $this -> name, $defaults ) ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    isLocal -
+		Returns a flag indicating whether the property is local to the class or has been defined in a parent
+		class.
+	 
+	  ==============================================================================================================*/
+	public function  isLocal ( )
+	   {
+		return ( $this -> usingClass  ==  $this -> getDeclaringClass ( ) -> name ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	        Implementation of the RefelectionSourcerInterface interface.
+	
+	  ==============================================================================================================*/
+	public function  getText ( $include_source = false )
+	   {
+		$sourcer 	=  new  ReflectionPropertySourcer ( $this ) ;
+		
+		return  ( $sourcer -> getText ( $include_source ) ) ;
+	    }
+    }
+

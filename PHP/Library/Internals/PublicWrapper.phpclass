@@ -1,0 +1,165 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        PublicWrapper.phpclass
+
+    DESCRIPTION
+        The PublicWrapper class makes an object private/protected methods & properties accessible :
+ 
+	$wrapped	=  new PublicWrapper ( $object ) ;
+ 	echo $wrapped -> my_private_property ;	// Ok
+ 	echo $object -> my_private_property ;	// Error
+
+    AUTHOR
+        Christian Vigh, 10/2014.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2014/10/16]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Internals ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use 	Thrak\System\Object ;
+
+
+/*==============================================================================================================
+
+    PublicWrapper -
+        Wraps an existing object to make public its private and protected methods and properties.
+
+  ==============================================================================================================*/
+class 	PublicWrapper 	extends Object    
+   {
+	// Wrapped object
+	public	 	$Object ;
+	// Reflection class for this object
+	public	 	$Reflector ;
+	// When true, objects stored in properties are also made public
+	public	 	$Recursive	=  false ;
+	// Object class
+	private 	$ObjectClass ;
+	
+
+	/*==============================================================================================================
+	
+	    NAME
+	       Constructor - Creates a wrapper around an object.
+	
+	    PROTOTYPE
+	        $wrapped	=  new  PublicWrapper ( $object, $recursive = false ) ;
+	
+	    DESCRIPTION
+	        Creates PublicWrapper object, which renders public all the protected/private methods and properties of
+		the specified object.
+	
+	    PARAMETERS
+	        $object (object) -
+	                Object to be wrapped.
+	  
+	 	$recursive (boolean) -
+	 		When true, objects assigned to properties are also wrapped recursively.
+	
+	    RETURN VALUE
+	        A PublicWrapper object, which can be used to access all the properties and methods of the supplied object.
+	
+	  ==============================================================================================================*/
+	public function  __construct ( $object, $recursive = false )
+	   {
+		if  ( ! is_object ( $object ) )
+			error ( new \Thrak\System\RuntimeException ( "Object expected as first parameter of " . __CLASS__ . "::__construct" ) ) ;
+			
+		$this -> Recursive 	=  $recursive ;
+		$this -> Object 	=  $object ;
+		$this -> Reflector 	=  new ReflectionClass ( $object ) ;
+		$this -> ObjectClass	=  get_class ( $object ) ;
+	    }
+	    
+	
+	/*==============================================================================================================
+	
+	    __get -
+	        Retrieves a wrapped object property.
+		If the $Recursive property is true, returns a PublicWrapper object if the property is itself an object.
+	
+	  ==============================================================================================================*/
+	public function  __get ( $member )
+	   {
+		if  ( ! $this -> Reflector -> hasProperty ( $member ) )
+			error ( new \Thrak\System\BadMethodCallException ( "Property {$this -> ObjectClass}::$member does not exist." ) ) ;
+		
+		// Get property info
+		$property 	=  $this -> Reflector -> getProperty ( $member ) ;
+		
+		// Make the property accessible if it's a private or protected one
+		if  ( $property -> getModifiers ( )  &  ( ReflectionProperty::IS_PRIVATE | ReflectionProperty::IS_PROTECTED ) )
+			$property -> SetAccessible ( true ) ;
+			
+		// Get property value
+		$value 	=  $property -> getValue ( $this -> Object ) ;
+		
+		// Make it a PublicWrapper object if it's an object and the PublicWrapper::Recursive property is true
+		if  ( is_object ( $value )  &&  $this -> Recursive )
+			$value 	=  new PublicWrapper ( $value, true ) ;
+			
+		// All done, return
+		return ( $value ) ;
+	    }
+	    
+	   
+	/*==============================================================================================================
+	
+	    __set -
+	        Assigns a wrapped object property.
+	
+	  ==============================================================================================================*/
+	public function  __set ( $member, $value )
+	   {
+		if  ( ! $this -> Reflector -> hasProperty ( $member ) )
+			error ( new \Thrak\System\BadMethodCallException ( "Property {$this -> ObjectClass}::$member does not exist." ) ) ;
+		
+		// Get property info
+		$property 	=  $this -> Reflector -> getProperty ( $member ) ;
+		
+		// Make the property accessible if it's a private or protected one
+		if  ( $property -> getModifiers ( )  &  ( ReflectionProperty::IS_PRIVATE | ReflectionProperty::IS_PROTECTED ) )
+			$property -> SetAccessible ( true ) ;
+
+		// Set property value
+		$property -> setValue ( $this -> Object, $value ) ;
+	    }
+	    
+	
+	/*==============================================================================================================
+	
+	    __call -
+	        Calls a wrapped object method.
+	
+	  ==============================================================================================================*/
+	public function  __call ( $method, $args )
+	   {
+		if  ( ! $this -> Reflector -> hasMethod ( $method ) )
+			error ( \Thrak\System\BadMethodCallException ( "Method {$this -> ObjectClass}::$method() does not exist." ) ) ;
+			
+		// Get method info
+		$method 	=  $this -> Reflector -> getMethod ( $method ) ;
+		
+		// Make the method accessible if it's a private or protected one
+		if  ( $method -> getModifiers ( )  &  ( ReflectionMethod::IS_PRIVATE | ReflectionMethod::IS_PROTECTED ) )
+			$method -> SetAccessible ( true ) ;
+			
+		// Ensure we have an empty args array if the method was called without arguments, not a null value
+		if  ( ! is_array ( $args ) )
+			$args 	=  array ( ) ;
+			
+		$result 	=  $method -> invokeArgs ( $this -> Object, $args ) ;
+		
+		// All done, return (exceptionnally the returned value is not within parentheses, in case of the method
+		// returned a reference)
+		return $result ;
+	    }
+    }
+    

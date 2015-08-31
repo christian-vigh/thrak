@@ -1,0 +1,349 @@
+<?php
+/***************************************************************************************************
+
+    NAME
+	DateTime.phpclass
+
+    DESCRIPTION
+	Utility functions for date/time data types.
+
+    AUTHOR
+	Christian Vigh, 10/2012.
+
+    HISTORY
+    [Version : 1.0]		[Date : 2012/10/02]		[Author : CV]
+	Initial release for Thrak library version 2. Most of the code comes from the original
+	String.phpclass file.
+
+    [Version : 1.0.1]		[Date : 2015/03/05]		[Author : CV]
+	. Added the GetDateTimeElements(), GetTimeElements() and GetDateElements() static methods.
+ 
+ ***************************************************************************************************/
+namespace 	Thrak\Types ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces & objects
+use 		Thrak\System\Object 		as  Object ;
+
+
+/*===========================================================================================
+
+    DateTime class -
+	Utility functions for date/time data types.
+
+ ===========================================================================================*/
+class  	DateTime	extends  Object
+   {
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		CompareDatesByOffset,
+		IsToday, IsTomorrow, IsYesterday
+
+	    PROTOTYPE
+	    	$result = CompareDatesByOffset ( $date, $reference, $year_offset, $month_offset,
+						 $day_offset ) ;
+
+	    DESCRIPTION
+		CompareDatesByOffset() adds the specified year/month/day offsets to $date and compares
+		the result with $reference ; it returns true if both dates are equal, false otherwise.
+		$date and $reference can be either a value returned by time() or a string such as
+		'yyyy-mm-dd'.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  CompareDatesByOffset ( $date, $reference, $year_offset, $month_offset, $day_offset )
+	   {
+		if  ( ! is_numeric ( $date ) )
+			$date = mktime ( 0, 0, 0,
+					substr ( $date, 5, 2 ),
+					substr ( $date, 8, 2 ),
+					substr ( $date, 0, 4 ) ) ;
+
+	   	if  ( ! $reference )
+			$reference = time ( ) ;
+		else if  ( ! is_numeric ( $reference ) )
+			$reference = mktime ( 0, 0, 0,
+					substr ( $reference, 5, 2 ),
+					substr ( $reference, 8, 2 ),
+				 	substr ( $reference, 0, 4 ) ) ;
+
+
+	   	$date_year		=  date ( 'Y', $date ) + $year_offset ;
+		$date_month		=  date ( 'm', $date ) + $month_offset ;
+		$date_day		=  date ( 'd', $date ) + $day_offset ;
+
+		$reference_year		=  date ( 'Y', $reference ) ;
+		$reference_month	=  date ( 'm', $reference ) ;
+		$reference_day		=  date ( 'd', $reference ) ;
+
+		$new_date 		=  mktime ( 0, 0, 0, $date_month, $date_day, $date_year ) ;
+		$new_reference		=  mktime ( 0, 0, 0, $reference_month, $reference_day, $reference_year ) ;
+
+		return ( $new_date  ==  $new_reference ) ;
+	    }
+
+
+	public static function  IsToday ( $date, $today = null )
+	   {
+	   	return ( DateTime::CompareDatesByOffset ( $date, $today, 0, 0, 0 ) ) ;
+	    }
+
+	public static function  IsTomorrow ( $date, $today = null )
+	   {
+	   	return ( DateTime::CompareDatesByOffset ( $date, $today, 0, 0, -1 ) ) ;
+	    }
+
+	public static function  IsYesterday ( $date, $today = null )
+	   {
+	   	return ( DateTime::CompareDatesByOffset ( $date, $today, 0, 0, +1 ) ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	  	FirstTimeOfDay, LastTimeOfDay - Returns the first and last time of a given day
+
+	    PROTOTYPE
+		$status = DateTime::FirstTimeOfDay ( $time = '' ) ;
+		$status = DateTime::LastTimeOfDay  ( $time = '' ) ;
+
+	    DESCRIPTION
+		These functions return the first and last time of a day specified by a time value.
+		If $time is not specified, the result of the time() function is given.
+		The first time of the day is 00h00:00 ; the last time of the day is 23:59:59.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  FirstTimeOfDay ( $time = '' )
+	   {
+	   	if  ( ! $time )
+			$time = time ( ) ;
+
+		$result =  strtotime ( date ( 'Y/m/d', $time ) ) ;
+
+		return ( $result ) ;
+	    }
+
+
+	public static function  LastTimeOfDay ( $time = '' )
+	   {
+	   	$result  = DateTime::FirstTimeOfDay ( $time ) ;
+		$result += ( 24 * 60 * 60 ) - 1 ;
+		return ( $result ) ;
+	    }
+
+	
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	  	GetTimeElements, GetDateElements, GetDatetimeElements - 
+			Returns an array of individual date/time elements.
+
+	    PROTOTYPE
+		$array	=  GetTimeElements ( $time ) ;
+		$array	=  GetDateElements ( $time ) ;
+		$array	=  GetDateTimeElements ( $time ) ;
+
+	    DESCRIPTION
+		Returns individual time parts as an array.
+
+	 --------------------------------------------------------------------------------------------*/
+	static public function  GetDateTimeElements ( $value )
+	   {
+	   	$result = array_merge ( self::GetDateElements ( $value ), self::GetTimeElements ( $value ) ) ;
+		$result [ 'datetime' ] = date ( 'Y-m-d H:i:s', $value ) ;
+
+		return ( $result ) ;
+	    }
+
+
+  	static public function  GetDateElements ( $value )
+  	   {
+  	        $result = array ( ) ;
+
+		$result [ 'date' ]  		=  date ( 'Y-m-d', $value ) ;
+		$result [ 'unixtime' ]  	=  $value ;
+		$result [ 'year' ]		=  date ( 'Y', $value ) ;
+		$result [ 'month' ]		=  date ( 'm', $value ) ;
+		$result [ 'day' ]		=  date ( 'd', $value ) ;
+		$result [ 'day-name' ]		=  date ( 'l', $value ) ;
+		$result [ 'day-of-week' ]	=  date ( 'w', $value ) ;
+		$result [ 'day-of-year' ]	=  date ( 'z', $value ) ;
+		$result [ 'leap-year' ]		=  date ( 'L', $value ) ;
+		$result [ 'timezone' ]	   	=  date ( 'T', $value ) ;
+		$result [ 'dst' ]		=  date ( 'I', $value ) ;
+		$result [ 'gmt' ]		=  date ( 'P', $value ) ;
+
+		return ( $result ) ;
+  	    }
+
+
+  	static public function  GetTimeElements ( $value )
+  	   {
+  	        $result = array ( ) ;
+
+		$result [ 'time' ]  		=  date ( 'H:i:s', $value ) ;
+		$result [ 'hour' ]		=  date ( 'H', $value ) ;
+		$result [ 'minute' ]		=  date ( 'i', $value ) ;
+		$result [ 'second' ]		=  date ( 's', $value ) ;
+		$result [ 'day-seconds' ]	=  ( $result [ 'hour' ]  * 3600 ) + ( $result [ 'minute' ] * 60 ) + $result [ 'second' ] ;
+
+		return ( $result ) ;
+  	    }
+   }
+
+
+/*==============================================================================================================
+
+    DateTimeIterator -
+        Implements an iterator with customized increments.
+
+  ==============================================================================================================*/
+class	DateTimeIterator	extends		Object
+				implements	\Iterator 
+   {
+	// Start and end times
+	public		$FromTime,
+			$ToTime ;
+	// Current iterator datetime value
+	public		$CurrentTime ;
+	// Time increment (a string that strtotime() can understand...)
+	public		$Increment ;
+	
+
+	/*==============================================================================================================
+	
+	    NAME
+	        Constructor - Instanciates a DateTimeIterator.
+	
+	    PROTOTYPE
+	        $iterator	=  new  DateTimeIterator ( $from, $to, $increment ) ;
+	
+	    DESCRIPTION
+	        Instanciates a DateTimeIterator object, which can be used in a foreach() loop to step between two dates
+		using the specified time increment.
+	
+	    PARAMETERS
+	        $from (string or integer) -
+	                Represents the start date/time for the iteration. It can be either a Unix timestamp or a string
+			representing a date/time that the strtotime() function can understand.
+	
+	        $to (string or integer) -
+	                Represents the end date/time for the iteration. It can be either a Unix timestamp or a string
+			representing a date/time that the strtotime() function can understand.
+	  
+	 	$increment (string) -
+	 		An increment value that the strtotime() function can understand (for example, "+1 hour +1 minute").
+			This value will be used at each step to increment the supplied initial $from value.
+	
+	  ==============================================================================================================*/
+	public function  __construct ( $from, $to, $increment )
+	   {
+		parent::__construct  ( ) ;
+		
+		// Complain if the supplied start date/time string is incorrect
+		$from	=  $this -> __string_to_time ( $from, "DateTimeIterator : the specified start date (\"$from\") is invalid." ) ;
+		
+		// Same for the end date 
+		$to	=  $this -> __string_to_time ( $to, "DateTimeIterator : the specified end date (\"$to\") is invalid." ) ;
+		
+		// And also same for the increment
+		$this -> __string_to_time ( $increment, "DateTimeIterator : invalid increment value \"$increment\"." ) ;
+		
+		// Sanity checks done, save the values
+		$this -> FromTime	=  $from ;
+		$this -> ToTime		=  $to ;
+		$this -> Increment	=  $increment ;
+		$this -> CurrentTime	=  $from ;
+	    }
+
+
+	/*==============================================================================================================
+	
+	        Private functions.
+	
+	  ==============================================================================================================*/
+
+	// __string_to_time -
+	//	Converts a time specification that can be understood by the strtotime() function into
+	//	a Unix timestamp.
+	//	Complains if the supplied input string is invalid.
+	public function  __string_to_time ( $value, $msg )
+	   {
+		if  ( is_string  ( $value ) ) 
+		   {
+			$value		=  @strtotime ( $value ) ;
+		
+			if  ( $value  ===  false )
+				error ( new \Thrak\System\InvalidArgumentException ( $msg ) ) ;
+		    }
+		
+		return  ( $value ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        IsBetween - Checks if the supplied date/time is within the iterator range.
+	
+	    PROTOTYPE
+	        $iterator -> IsBetween ( $datetime ) ;
+	
+	    DESCRIPTION
+	        Checks if the supplied date/time is within the range of the start and end date/times for this iterator.
+	
+	    PARAMETERS
+	        $time (string or integer) -
+	                String date/time description in a format that can be understood by the strtotime() function, or
+			a Unix time stamp.
+	
+	    RETURN VALUE
+	        True if the supplied date/time is within the iterator range, false otherwise.
+	
+	  ==============================================================================================================*/
+	public function  IsBetween ( $time )
+	   {
+		$time	=  $this -> __string_to_time ( $time, "DateTimeIterator::IsBetween : the supplied date/time value (\"$time\") is invalid." ) ;
+		
+		return  ( $time  >=  $this -> FromTime   &&  $time  <=  $this -> ToTime ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+
+		Iterator interface implementation.
+	
+	  ==============================================================================================================*/
+	
+	// current -
+	//	Returns the current date/time.
+	public function  current ( )
+	   { return ( $this -> CurrentTime ) ; }
+	
+	
+	// key - 
+	//	Returns the key associated with the current step.
+	public function  key ( )
+	   { return  ( $this -> CurrentTime ) ; }
+	
+	
+	// rewind -
+	//	Rewinds the iterator back to the start date/time.
+	public function  rewind ( )
+	   { $this -> CurrentTime	=  $this -> FromTime ; }
+	
+	
+	// next - 
+	//	Jumps to the next date/time increment.
+	public function  next ( ) 
+	   {
+		$this -> CurrentTime	=  strtotime ( $this -> Increment, $this -> CurrentTime ) ;
+	    }
+
+	// valid -
+	//	Checks if the current date/time still falls within the range [$FromTime..$ToTime].
+	public function  valid ( )
+	   { return (  $this -> IsBetween ( $this -> CurrentTime ) ) ; }
+    }

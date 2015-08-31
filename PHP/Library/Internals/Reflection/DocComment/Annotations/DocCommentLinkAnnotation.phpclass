@@ -1,0 +1,64 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        DocCommentLinkAnnotation.phpclass
+
+    DESCRIPTION
+        Implements an @Link annotation.
+
+    AUTHOR
+        Christian Vigh, 11/2014.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2014/11/09]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Reflection\Annotations ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use  	Thrak\System\Object ;
+use	Thrak\Reflection\DocCommentAnnotation ;
+
+
+/*==============================================================================================================
+
+    DocCommentLinkAnnotation -
+        Implements an @Link annotation.
+ 
+	Available members :
+ 	- url :
+ 		Url containing the Link text.
+  
+ 	- description :
+ 		Link description.
+
+  ==============================================================================================================*/
+class	DocCommentLinkAnnotation		extends  DocCommentAnnotation
+   {
+	public function  __construct ( $name, $params_array )
+	   {
+		parent::__construct ( $name, $params_array ) ;
+	    }
+	
+	/*==============================================================================================================
+	
+	    __tostring -
+	        Provides a formatted @Link annotation.
+	
+	  ==============================================================================================================*/
+	public function  __tostring ( )
+	   {
+		$result		=  "@" . $this -> Name ;
+		
+		if  ( $this -> Parameters -> url  !==  "" )
+			$result		.=  " " . $this -> Parameters -> url ;
+		
+		if  ( $this -> Parameters -> description  !==  "" )
+			$result		.=  " " . $this -> Parameters -> description ;
+		
+		return ( $result ) ;
+	    }
+    }

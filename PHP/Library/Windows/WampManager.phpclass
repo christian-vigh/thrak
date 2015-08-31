@@ -1,0 +1,275 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        WampManager.phpclass
+
+    DESCRIPTION
+        An object for managing the Wamp manager.
+
+    AUTHOR
+        Christian Vigh, 10/2014.
+
+    NOTES
+	This class require the presence of the following external SysInternals commands :
+	- PSEXEC
+ 	- PSSERVICE
+ 	- PSKILL
+  
+    HISTORY
+    [Version : 1.0]    [Date : 2014/10/07]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Windows ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use  	Thrak\System\Object ;
+use	Thrak\IO\Path ;
+
+
+define ( 'WAMPMANAGER_EXECUTABLE'		,  "WampManager.exe" ) ;
+
+
+/*===========================================================================================
+
+    WampManager class -
+	Provides facilities to control WampManager.
+
+  ===========================================================================================*/
+class  WampManager extends AbstractWindowsBase
+   {
+	// Installation directory
+	public		$InstallationDirectory ;
+	// WShell object
+	protected	$WShell ;
+	// Wamp configuration data
+	public		$Configuration		=  array
+	   (
+		'wamp'		=>  array ( ),
+		'php'		=>  array ( ),
+		'mysql'		=>  array ( ),
+		'apache'	=>  array ( )
+	    ) ;
+	
+
+	/*==============================================================================================================
+	
+	    NAME
+	        Constructor.
+	
+	    DESCRIPTION
+	        Loads any needed information about current WAMP manager configuration.
+	
+	  ==============================================================================================================*/
+	public function  __construct ( )
+	   {
+		parent::__construct ( ) ;
+
+		// Load configuration data
+		//$this -> __verify_required_executables	( ) ;
+		$this -> __get_wamp_data ( ) ;
+		
+		// Instanciate a Shell object
+		$this -> WShell		=  new WShell ( ) ;
+	    }
+	
+	
+	/**************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 ******                                       PRIVATE METHODS                                            ******
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************/
+
+	// __get_wamp_data -
+	//	Collects all Wamp data.
+	public function  __get_wamp_data ( )
+	   {
+		// Get Wamp installation directory from environment variable
+		$directory	=  getenv ( "WAMPDIR" ) ;
+		
+		if  ( ! $directory )
+			error ( new \Thrak\System\RuntimeException ( "The WAMPDIR environment variable must be set to point at a valid WAMP installation directory." ) ) ;
+		
+		$directory	=  Path::AppendDS ( $directory ) ;
+		
+		// Check if a WampManager.Exe executable exists
+		$wampmanager_path	=  $directory . WAMPMANAGER_EXECUTABLE ;
+		
+		if  ( ! file_exists ( $wampmanager_path ) )
+			error ( new \Thrak\System\RuntimeException ( "The Wamp manager executable ($wampmanager_path) does not exist in the current installation directory $directory." ) ) ;
+		
+		$this -> Configuration [ 'wamp' ] [ 'executable' ]	=  $wampmanager_path ;
+		
+		// Verify that we have bin/apache, mysql and php directories
+		if  ( ! is_dir ( "{$directory}bin/apache" ) )
+			error ( new \Thrak\System\RuntimeException ( "The Wamp installation directory ($directory) does not contain a subdirectory for apache." ) ) ;
+
+		if  ( ! is_dir ( "{$directory}bin/php" ) )
+			error ( new \Thrak\System\RuntimeException ( "The Wamp installation directory ($directory) does not contain a subdirectory for php." ) ) ;
+
+		if  ( ! is_dir ( "{$directory}bin/mysql" ) )
+			error ( new \Thrak\System\RuntimeException ( "The Wamp installation directory ($directory) does not contain a subdirectory for mysql." ) ) ;
+		
+		$global_wampmanager_conf	=  "{$directory}wampmanager.conf" ;
+		
+		if  ( ! file_exists ( $global_wampmanager_conf ) )
+			error ( new \Thrak\System\RuntimeException ( "The global wampmanager.conf file does not exist in the Wamp installation directory ($global_wampmanager_conf)." ) ) ;
+		
+		$this -> Configuration [ 'wamp' ] [ 'install-dir' ]			=  Path::AppendDS ( $directory ) ;
+		$this -> Configuration [ 'wamp' ] [ 'bin' ]				=  
+		$module_dir								=  $directory . "bin/" ;
+		$this -> Configuration [ 'wamp' ] [ 'wampmanager.conf' ]		=  $global_wampmanager_conf ;
+		$this -> Configuration [ 'wamp' ] [ 'wampmanager.conf.contents' ]	=  parse_ini_file ( 
+			$this -> Configuration [ 'wamp' ] [ 'wampmanager.conf' ], true ) ;
+		
+		// Loop through each installed version of each module (php, apache, mysql)
+		foreach ( array ( 'apache', 'php', 'mysql' )  as  $module )
+		   {
+			$subdirs							=  glob ( "$module_dir$module/*" ) ;
+			$this -> Configuration [ $module ] [ 'current-version' ]	=  false ;
+			
+			foreach  ( $subdirs  as  $subdir )
+			   {
+				$module_name						=  basename ( $subdir ) ;
+				$this -> Configuration [ $module ] [ $module_name ]	=  array ( ) ;
+				
+				// Extract information for this module (php, apache or mysql) and its version
+				$module_entry				=  & $this -> Configuration [ $module ] [ $module_name ] ;
+				$module_entry [ 'version' ]		=  substr ( $module_name, strlen ( $module ) ) ;
+				$module_entry [ 'is-current-version' ]	=  ( $this -> Configuration [ 'wamp' ] [ 'wampmanager.conf.contents' ] [ $module ] [ $module . 'Version' ]  ==  $module_entry [ 'version' ] ) ?
+										true : false ;
+				$module_entry [ 'last-known-version' ]	=  $this -> Configuration [ 'wamp' ] [ 'wampmanager.conf.contents' ] [ $module ] [ $module . 'LastKnown' ] ;
+				$module_entry [ 'path' ]		=  $subdir ;
+				$wampserver_conf			=  "$subdir/wampserver.conf" ;
+				
+				if  ( $module_entry [ 'is-current-version' ] )
+					$this -> Configuration [ $module ] [ 'current-version' ]	=  $module_name ;
+				
+				// A module appears in the Wampmanager configuration only if there is a wampserver.conf file in it
+				// (example : php/php5.6.1/wampserver.conf)
+				if  ( file_exists ( $wampserver_conf ) )
+				   {
+					$module_entry [ 'included-by-wamp' ]	=  true ;
+					$module_entry [ 'wampserver.conf' ]	=  Path::ToUnix ( Path::RealPath ( $wampserver_conf ) ) ;
+					
+					// Read the values from the wampserver.conf file, which are regular php variable definitions
+					// Here are samples :
+					//
+					// For apache :
+					//	$apacheConf['apacheExeDir'] = 'bin';
+					//	$apacheConf['apacheConfDir'] = 'conf';
+					//	$apacheConf['apacheExeFile'] = 'httpd.exe';
+					//	$apacheConf['apacheConfFile'] = 'httpd.conf';
+					//	$apacheConf['apacheServiceInstallParams'] = '-n wampapache64 -k install';
+					//	$apacheConf['apacheServiceRemoveParams'] = '-n wampapache64 -k uninstall';
+					// 
+					// For mysql :
+					//	$mysqlConf['mysqlConfDir'] = '.';
+					//	$mysqlConf['mysqlConfFile'] = 'my.ini';
+					//	$mysqlConf['mysqlExeDir'] = 'bin';
+					//	$mysqlConf['mysqlExeFile'] = 'mysqld.exe';
+					//	$mysqlConf['mysqlServiceInstallParams'] = '--install-manual wampmysqld64';
+					//	$mysqlConf['mysqlServiceRemoveParams'] = '--remove wampmysqld64';
+					//	$mysqlConf['libMysqlFile'] = 'bin/libmySQL.dll';
+					//
+					// For php (grrr ! why chosing the 'phpIniDir' name instead of 'phpConfDir' like for mysql and apache ? and why
+					// is the 'phpExeFile' entry missing ?) :
+					//	$phpConf['phpIniDir'] = '.';
+					//	$phpConf['phpExeDir'] = '.';
+					//	$phpConf['phpConfFile'] = 'php.ini';
+					//
+					//	$phpConf['apache']['2.2']['LoadModuleName'] = 'php5_module';
+					//	$phpConf['apache']['2.2']['LoadModuleFile'] = 'php5apache2_2.dll';
+					//	$phpConf['apache']['2.2']['AddModule'] =  '';
+					//
+					//	$phpConf['apache']['2.4']['LoadModuleName'] = 'php5_module';
+					//	$phpConf['apache']['2.4']['LoadModuleFile'] = 'php5apache2_4.dll';
+					//	$phpConf['apache']['2.4']['AddModule'] =  '';
+					require ( $wampserver_conf ) ;
+					
+					// A few adjustments for php
+					if  ( $module  ==  'php' )
+					   {
+						$phpConf [ 'phpConfDir' ]	=  $phpConf [ 'phpIniDir' ] ;
+						
+						if  ( ! isset ( $phpConf [ 'phpExeFile' ] ) )
+							$phpConf [ 'phpExeFile' ]	=  "php.exe" ;
+					    }
+					
+					// Refrence to the array definition loaded from wampmanager.conf
+					$array_variable		=  $module . "Conf" ;
+					$module_array		=  &$$array_variable ;
+					
+					// Array keys
+					$confdir_key		=  $module . "ConfDir" ;
+					$conffile_key		=  $module . "ConfFile" ;
+					$exedir_key		=  $module . "ExeDir" ;
+					$exefile_key		=  $module . "ExeFile" ;
+					$service_install_key	=  $module . "ServiceInstallParams" ;
+					$service_uninstall_key	=  $module . "ServiceRemoveParams" ;
+					
+					// Get conf/exe directories and files
+					$module_entry [ 'configuration-directory' ]	=  
+						Path::ToUnix ( Path::Realpath ( $subdir . '/' . $module_array [ $confdir_key ] ) ) ;
+					$module_entry [ 'configuration-file' ]		=  
+						Path::ToUnix ( Path::Realpath ( $module_entry [ 'configuration-directory' ] . '/' .
+							$module_array [ $conffile_key ] ) ) ;
+					$module_entry [ 'executable-directory' ]	=  
+						Path::ToUnix ( Path::Realpath ( $subdir . '/' . $module_array [ $exedir_key ] ) ) ;
+					$module_entry [ 'executable-file' ]		=  
+						Path::ToUnix ( Path::Realpath ( $module_entry [ 'executable-directory' ] . '/' .
+							$module_array [ $exefile_key ] ) ) ;
+					
+					// Mysql and apache run as service
+					if  ( isset ( $module_array [ $service_install_key ] ) )
+					   {
+						$module_entry [ 'run-as-service' ]	=  true ;
+						$module_entry [ 'service-install' ]	=  $module_array [ $service_install_key ] ;
+						$module_entry [ 'service-uninstall' ]	=  $module_array [ $service_uninstall_key ] ;
+						
+						// Key name for the service name in root wampmanager.conf
+						$keyname	=  'Service' . ucfirst ( $module ) ;
+						$module_entry [ 'service-name' ]	=  
+							$this -> Configuration [ 'wamp' ] [ 'wampmanager.conf.contents' ] [ 'service' ] [ $keyname ] ;
+					    }
+					else
+						$module_entry [ 'run-as-service' ]	=  false ;
+				    }
+				else
+				   {
+					$module_entry [ 'included-by-wamp' ]	=  false ;
+				    }
+					
+				
+			    }
+		    }
+	    }
+	
+	
+	// __verify_paths -
+	//	Verifies that the required executables and paths are present.
+	public function  __verify_paths ( )
+	   {
+		$missing	=  array ( ) ;
+		
+		foreach  ( $this -> RequiredExecutables  as  $executable )
+		   {
+			$path	=  Path::WhereIs ( $executable ) ;
+			
+			if  ( ! $path )
+				$missing []	=  "\t. $executable" ;
+		    }
+		
+		if  ( count ( $missing ) )
+			error ( new \Thrak\System\RuntimeException ( "The following executable files are required but have not been found in path :\n" .
+					implode ( "\n", $missing ) ) ) ;
+	    }
+    }

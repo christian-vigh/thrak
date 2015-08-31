@@ -1,0 +1,52 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        AcceptEncoding.phpclass
+
+    DESCRIPTION
+        Http Accept-Encoding header.
+
+    AUTHOR
+        Christian Vigh, 05/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/05/27]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace  	Thrak\Network\RfcProtocols\Http ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces and classes
+use     Thrak\System\Object ;
+use	Thrak\Network\RfcProtocols\Http\HttpStandardHeader ;
+use	Thrak\Network\RfcProtocols\Http\Traits\HttpEncodings ;
+
+
+/*==============================================================================================================
+
+    HttpAcceptEncodingHeader class -
+        Http ACCEPT header implementation (http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.3).
+  
+ 	Examples :
+ 	       Accept-Encoding: compress, gzip
+	       Accept-Encoding:
+	       Accept-Encoding: *
+	       Accept-Encoding: compress;q=0.5, gzip;q=1.0
+	       Accept-Encoding: gzip;q=1.0, identity; q=0.5, *;q=0
+
+  ==============================================================================================================*/
+class	HttpAcceptEncodingHeader	extends  HttpStandardHeader
+   {
+	use  HttpEncodings ;
+	
+	
+	public function  __construct ( $header )
+	   {
+		parent::__construct ( 'Accept-Encoding', $header, self::HTTP_HEADER_LIST | self::HTTP_HEADER_PARAMETERS ) ;
+		$this -> CheckValues ( self::$OfficialEncodings, $this -> Fields, [ '*', 'identity' ] ) ;		
+	    }
+    }

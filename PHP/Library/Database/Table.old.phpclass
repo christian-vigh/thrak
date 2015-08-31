@@ -1,0 +1,1034 @@
+<?php
+
+/***************************************************************************************************
+
+    NAME
+	Table.phpclass
+
+    DESCRIPTION
+	Generic database table access.
+
+    AUTHOR
+	Christian Vigh, 03/2010.
+
+    HISTORY
+    [Version : 1.0]		[Date : 2010/03/23]		[Author : CV]
+	Initial release.
+
+   [Version : 2.0]	[Date : 2012/10/13]		[Author : CV]
+	Migrated to the Thrak library version 2.
+
+ ***************************************************************************************************/
+namespace 	Thrak\Database ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces and classes
+use  	Thrak\System\Object ;
+use  	Thrak\System\Exception ;
+use     Thrak\IO\AsciiReport ;
+
+
+/*===========================================================================================
+
+    Table class -
+	Generic database table access which can be used for simple, individual table row reads,
+	creations or updates.
+
+  ===========================================================================================*/
+
+class  Table  extends  Object
+   {
+	//======================================================================  Properties
+	// $__GlobalMetadata (array) -
+	//	Static variable holding the metadata for all the tables that have been instanciated.
+	//	It serves as a cache to avoid extra queries when several objects of the same table
+	//	are instanciated.
+	private static 	$__GlobalMetadata ;
+	// $__Database (Database) -
+	//	Database object.
+	private		$__Database ;
+	// $__Metadata (array of column definitions) -
+	//	Array of column definitions. Each entry in this array is itself an associative array
+	//	containing the following keys :
+	//	- Name (string) -
+	//		Field name.
+	//	- SQLType (string) -
+	//		Real SQL type (for example : "varchar(64)").
+	//	- Type (string) -
+	//		Field type.
+	//	- Length (integer) -
+	//		Field length. This value is set to null if the field does not have a length
+	//		specifier.
+	//	- Precision (integer) -
+	//		Field precision (floating point data types). This value is set to null if the
+	//		field does not have a precision specifier.
+	//	- Nullable (boolean) -
+	//		Indicates whether the NULL value is authorized for this field or not.
+	//	- Primary (boolean) -
+	//		Indicates whether the field is included in the primary key.
+	//	- Default (any) -
+	//		Default value for the field.
+	//	- AutoIncrement (boolean) -
+	//		Specifies whether the field is an auto-increment field or not.
+	//	- ExtraData (any) -
+	//		Any extra data provided by the underlying database system.
+	private  	$__Metadata ;
+	// $__TableName (string) -
+	//	Table name. This value can contain the table prefix string ('##').
+	private 	$__TableName ;
+	// $__RealTableName (string) -
+	// 	Contains the real table name, with all '##' references substituted by the table prefix
+	//	value.
+	private  	$__RealTableName ;
+	// $__AutoIncrementColumn (integer) -
+	//	Key to the entry in the $__Metadata array that contains an auto-increment
+	//	attribute, or false if no auto-increment column is defined.
+	private		$__AutoIncrementColumn 		=  false ;
+	// $__PrimaryKeyColumns (array) -
+	//	Array of references to the entries in the $__Metadata array that are marked as
+	//	primary.
+	private		$__PrimaryKeyColumns		=  array ( ) ;
+	// $__IsNew (boolean) -
+	//	Indicates if the data in this record is new. This happens when the object is
+	//	instanciated or the Reset() method has been called. This is especially useful when
+	//	saving the table row, because this will determine if we need to use an SQL INSERT
+	//	statement, or UPDATE.
+	private		$__IsNew ;
+	// $__IsModified (boolean) -
+	//	Indicates if one of the row columns have been modified. Handling this flag can
+	//	eliminate unnecessary updates.
+	private 	$__IsModified ;
+	// $__Row (associative array) -
+	//	Holds the individual column values. This is an associative array whose keys are
+	//	the column names. Each individual entry in this array is itself an associative
+	//	array containing the following fields :
+	//	Name (string) -
+	//		Column name (again).
+	//	Value (any) -
+	//		Current column value.
+	//	Modified (boolean) -
+	//		True if the column value has been modified.
+	private 	$__Row 				=  array ( ) ;
+	// $__UncheckedBind (boolean) -
+	//	When true, the __set() method do not check against modifying auto-increment columns
+	//	and primary key columns. This flag is set by the Load() method when a row is loaded,
+	//	and is always reverted back to 'false' when the load operation is finished.
+	private 	$__UncheckedBind		=  false ;
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	  	Class constructor
+
+	    PROTOTYPE
+		$row = new Table ( $table_name, $prefix = '##', $db = null ) ;
+
+	    DESCRIPTION
+		Creates a table row object based on the specified table name.
+
+	    PARAMETERS
+	    	$table_name (string) -
+			Table name. This parameter can contain the '##' notational shortcut which will
+			be substituted by the actual table name prefix defined in the Configuration.php
+			file.
+
+		$db (Database) -
+			Database object. If this parameter is null, the global $Database variable will
+			be used.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __construct ( $table_name, $prefix = '##', $db = null )
+	   {
+		global		$Database ;
+
+
+		// If no table name specified, this is an error !
+		if  ( ! $table_name )
+		   {
+		   	error ( new \Thrak\System\RuntimeException ( "No table name specified for the creation of a Table object !" ) ) ;
+			return ;
+		    }
+
+		if  ( $db  ==  null )
+			$db = $Database ;
+
+		// Initializations
+		$this -> __Database		=  $db ;
+		$this -> __TableName		=  $table_name ;
+		$this -> __RealTableName	=  str_replace ( $prefix, $db -> DatabaseTablePrefix, $table_name ) ;
+		$this -> __IsNew		=  true ;
+		$this -> __IsModified 		=  false ;
+
+		// Retrieve metadata information ; first, check if it is in our cache
+		$real_table_name = strtolower ( $this -> __RealTableName ) ;
+
+		if  ( isset ( Table::$__GlobalMetadata [ $real_table_name ] ) )
+		    {
+			$this -> __Metadata = Table::$__GlobalMetadata [ $real_table_name ] ;
+			$metadata = &$this -> __Metadata ;
+		     }
+		// Otherwise retrieve metadata information from the server
+		else
+		   {
+			$this -> __Metadata 	=  array ( ) ;
+			$metadata		=  &$this -> __Metadata ;
+
+			// Retrieve field definition information
+			$db -> SetQuery ( "SHOW COLUMNS FROM " . $this -> __RealTableName ) ;
+			$fielddefs = $db -> LoadRows ( ) ;
+
+			// Process each field
+			foreach  ( $fielddefs  as  $definition )
+			   {
+				$entry 	=  array ( ) ;
+
+				// Get field information
+				$entry [ 'Name' ] 		=  $definition [ 'Field' ] ;
+				$entry [ 'SQLType' ] 		=  $definition [ 'Type' ] ;
+				$entry [ 'Type'	]		=  "" ;			// This is here just because I want that these three values
+				$entry [ 'Length' ]		=  "" ;			// come right after the 'SQLType' entry in the array
+				$entry [ 'Precision' ]		=  "" ;			// This is kinda useless...
+				$entry [ 'AutoIncrement' ]	=  ( stristr  ( $definition [ 'Extra' ], 'auto_increment' )  ==  false ) ?  false : true ;
+				$entry [ 'Nullable' ]		=  ( strcasecmp ( $definition [ 'Null' ], 'YES' ) )  ?  false : true ;
+				$entry [ 'Primary' ]		=  ( strcasecmp ( $definition [ 'Key' ], 'PRI' ) ) ?  false : true ;
+				$entry [ 'Default' ]		=  $definition [ 'Default' ] ;
+				$entry [ 'ExtraData' ]		=  $definition [ 'Extra' ] ;
+
+				// Process SQL type to extract type name, length and precision
+				$re = '/' .
+						'(?P<name>[A-Z\-_][A-Z\-_0-9]*)' .
+						'(\s*\(\s*' .
+						  	'(?P<length> [0-9]+)' .
+							'( , (?P<precision> [0-9]+) )?' .
+						'\s*\)\s*)?' .
+				      '/imsx' ;
+
+				if  ( preg_match ( $re, $definition [ 'Type' ], $matches ) )
+				   {
+					$entry [ 'Type' ] = $matches [ 'name' ] ;
+
+					if  ( isset ( $matches [ 'precision' ] ) )
+						$entry [ 'Precision' ] = $matches [ 'precision' ] ;
+
+					if  ( isset ( $matches [ 'length' ] ) )
+						$entry [ 'Length' ] = $matches [ 'length' ] ;
+				   }
+				else 	// Issue an error if no match, since this implies a bug in the regular expression
+					error ( new \Thrak\System\UnexpectedValueException ( "Database table: Regular expression did not match for value '" . $definition [ 'Type' ] . "'." ) ) ;
+
+				// Save the entry ; note that this is an associative array indexed by the column name
+				$name 			=  $entry [ 'Name' ] ;
+				$lname 			=  strtolower ( $name ) ;
+				$metadata [ $lname ] 	=  $entry ;
+
+				// Remember the auto-increment column
+				if  ( $metadata [ $lname ] [ 'AutoIncrement' ] )
+					$this -> __AutoIncrementColumn = $lname ;
+
+				// Don't forget to add this new metadata information to the cache
+				Table::$__GlobalMetadata [ $real_table_name ] = $metadata ;
+			    }
+		    }
+
+		// And also the primary key columns
+		$this -> __PrimaryKeyColumns = array ( ) ;
+
+		foreach  ( $metadata  as  &$data )
+		   {
+			if  ( $data [ 'Primary' ] )
+			   {
+				$key = strtolower ( $data [ 'Name' ] ) ;
+				$this -> __PrimaryKeyColumns [ $key ] = $data ;
+			    }
+		    }
+
+		// Create default row values
+		$this -> Reset ( ) ;
+	    }
+
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	  	__get - Retrieves a column value.
+
+	    DESCRIPTION
+	    	The __get accessor is used to retrieve a value from a row column.
+
+		By default, potentially dangerous HTML tags in the column data are removed. So far
+		today, the list of potentially dangerous tags are "<script>" tags and comments.
+		You can however change this behavior by prefixing one of the keywords listed below to
+		the column name :
+
+		- "Raw" :
+			Returns the unprocessed column data.
+
+		- "Safe" :
+			Strips ALL HTML tags from column data.
+
+		Suppose for example that the "Contents" column of a row contains the following value :
+
+			"hello <script>....some javascript code</script><b>World</b>"
+
+		. $row -> Contents will return : "hello <b>World</b>" (non-potentially dangerous tags
+		  are preserved)
+		. $row -> SafeContents will return : "hello World"
+		. And $row -> RawContents will return the column value as is
+
+	    NOTES
+	    	. In the current version of the Table class, the list of potentially dangerous
+		  HTML tags is hardcoded.
+		. Column names are not case-sensitive
+		. An error is issued if an invalid column name is specified.
+
+	 --------------------------------------------------------------------------------------------*/
+
+	 // Data access modes
+	const		RAW_ACCESS	=  0 ;		// Column data is returned as is
+	const		MEDIUM_ACCESS	=  1 ;		// Column data is stripped from potentially dangerous tags
+	const		SAFE_ACCESS	=  2 ;		// Column data is stripped from all HTML tags
+
+	// Regular substitution expressions used for MEDIUM_ACCESS to column data
+	private static 		$__SafeModeSubstitutions 	=  array (
+									  	"|<!--.*?-->|",
+									  	"|<\s*script[^>]*>.*?<\s*/\s*script[^>]*>|"
+									  ) ;
+
+	public function  __get ( $member )
+	   {
+	   	$member 	=  strtolower ( $member ) ;
+		$preprocess	=  self::MEDIUM_ACCESS ;
+		$regex		=  Table::$__SafeModeSubstitutions ;
+
+
+		// Check if the column name is prefixed by the Raw keyword
+		if  ( ! strncasecmp ( $member, "raw", 3 ) )
+		   {
+		   	$preprocess = self::RAW_ACCESS ;
+			$member = substr ( $member, 3 ) ;
+		    }
+		// Or the Safe keyword
+		elseif  ( ! strncasecmp ( $member, "safe", 4 ) )
+		   {
+			$preprocess = self::SAFE_ACCESS ;
+			$member = substr ( $member, 4 ) ;
+		    }
+
+		// Check if the column name exists
+		if  ( isset ( $this -> __Row [ $member ] ) )
+		   {
+			$value = $this ->  __Row [ $member ] [ 'Value' ] ;
+
+			switch ( $preprocess )
+			    {
+			    	case  self::SAFE_ACCESS :
+					return ( strip_tags ( $value ) ) ;
+
+				case self::MEDIUM_ACCESS :
+					return ( preg_replace ( $regex, "", $value ) ) ;
+
+				default : 	// No html elements are stripped
+					return ( $value ) ;
+			     }
+		    }
+		// Otherwise complain
+		else
+			error ( new \Thrak\System\InvalidArgumentException ( "The '$member' property does not exist." ) ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	  	__set - Sets a column value.
+
+	    DESCRIPTION
+	    	The __set accessor is used to set a new value for a row column.
+
+	    NOTES
+	    	. No processing is performed to remove potential tags ; the data is store as is.
+		. Column names are not case-sensitive
+		. An error is issued if an invalid column name is specified.
+		. Auto-increment fields and primary key fields cannot be changed
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __set ( $member, $value )
+	   {
+	   	$member = strtolower ( $member ) ;
+
+		// Check that the member exists
+		if  ( isset ( $this -> __Row [ $member ] ) )
+		   {
+			$column = &$this -> __Row [ $member ] ;
+			$defs   = $this -> __Metadata [ $member ] ;
+			$name   = $column [ 'Name' ] ;
+
+			// In normal operations, we prevent the modification of columns involved in the primary key
+			// or which have the auto-increment attribute. However, when we load a new row (using the
+			// Load() method), we call Bind() which in turn relies on the __set method to correctly set
+			// the property value. In this latter case, we have to disable all checkings.
+			if  ( $this -> __UncheckedBind )
+				$column [ 'Value' ] = $value ;
+			else
+			   {
+				$column [ 'Modified' ] = true ;
+				$this ->  __IsModified = true ;
+				$column [ 'Value'    ] = $value ;
+			    }
+		    }
+		else
+			error ( new \Thrak\System\InvalidArgumentException ( "The '$member' property does not exist." ) ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	  	__isset - Checks if a column is set.
+
+	    DESCRIPTION
+	    	The __isset accessor is used to check if a row column exists.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __isset ( $member )
+	   {
+		$member		=  strtolower ( $member ) ;
+
+		return ( isset ( $this -> __Row [ $member ] ) ) ;
+	    }
+
+
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	    	__keyvalues - Gets the values of the columns involved in the primary key.
+
+	    PROTOTYPE
+	    	$clause = $this -> __keyvalues ( $keys = null ) ;
+
+	    DESCRIPTION
+		Returns an array containing the values of the row columns involved in the primary key.
+
+	    PARAMETERS
+	    	$keys (any) -
+			Key values. If specified, they will be used in place of the existing key
+			values.
+
+	    RETURN VALUE
+		false if an error occurred ; otherwise, returns the key values as an array.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __keyvalues ( $keys  =  null )
+	   {
+		// If no key value specified, go search it in the existing row
+		if  ( ! $keys )
+		   {
+			$keys = array ( ) ;
+
+			foreach  ( $this -> __Metadata  as  $key => $def )
+			   {
+				if  ( $def [ 'Primary' ] )
+					$keys [] = $this -> __Row [ $key ] [ 'Value' ] ;
+			    }
+		    }
+		// Whatever the number of columns in the primary key, we will always work on array of values
+		else if  ( ! is_array ( $keys ) )
+			$keys = array ( $keys ) ;
+
+		// Check that the number of supplied primary key values matches the actual number of primary key columns
+		if  ( count ( $keys )  !=  count ( $this -> __PrimaryKeyColumns ) )
+		   {
+			error ( new \Thrak\System\RuntimeException ( "The primary key for this table involves " . count ( $this -> __PrimaryKeyColumns ) .
+				 	" columns ; only " . count ( $keys ) . " values were supplied." ) ) ;
+			return ( false ) ;
+		    }
+
+		// All done, return
+		return ( $keys ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	    	__whereclause - Builds a WHERE clause with the specified key values.
+
+	    PROTOTYPE
+	    	$clause = $this -> __whereclause ( $keys ) ;
+
+	    DESCRIPTION
+	    	Builds a part of a WHERE clause using the columns involved in the primary key and the
+		supplied values.
+
+	    RETURN VALUE
+	    	The WHERE clause, without the "WHERE" keyword.
+
+	 --------------------------------------------------------------------------------------------*/
+	private function  __whereclause  ( $keys )
+	   {
+		$result =  array ( ) ;
+		$index  =  0 ;
+		$db     =  $this -> __Database ;
+
+		foreach  ( $this -> __PrimaryKeyColumns  as  $key => $def )
+		   {
+			$name   = $def [ 'Name' ] ;
+			$value  = $db -> QuoteValue ( $keys [ $index ] ) ;
+
+			$str    = "$name = '$value'" ;
+			$result [] = $str ;
+
+			$index ++ ;
+		    }
+
+		return ( implode ( " AND ", $result ) ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	    	Bind - Binds an array of values to record values.
+
+	    PROTOTYPE
+	    	$row -> Bind ( $array ) ;
+
+	    DESCRIPTION
+		Binds the row values to the ones specified in the supplied associative array.
+
+	    PARAMETERS
+	    	$array (associative array) -
+			Array of key/value pairs.
+			Array key names are row column names, and array values will replace the original
+			column values.
+			Column names are not case-sensitive.
+
+	    RETURN VALUE
+	    	Returns the number of changed column values.
+
+	    NOTES
+	    	The input array can contain entries that do not correspond to any row column. In this
+		case this function will not complain and will only process the array entries that
+		correspond to real column names.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  Bind ( $array )
+	   {
+		// If incorrect input have been supplied, then simply say that we processed zero column values
+		if  ( ! $array  ||  ! is_array ( $array )  ||  ! count ( $array ) )
+			return ( 0 ) ;
+
+		// Process each entry in the input array
+		$processed = 0 ;
+
+		foreach  ( $array  as  $key => $value )
+		   {
+			$name = strtolower ( $key ) ;
+
+			// Check if the entry exists. If yes, let the __set() magic function do its job and
+			// count one more entry ; otherwise, simply ignore the supplied entry
+			if  ( isset ( $this -> __Row [ $name ] ) )
+			   {
+				$this -> $key = $value ;
+				$processed ++ ;
+			    }
+		    }
+
+		// Handle new and modified flags
+		$found	=  0 ;
+
+		foreach  ( $this -> __PrimaryKeyColumns  as  $key => $value )
+		   {
+			if  ( isset ( $this -> __Row [ $key ] )  &&  ! $this -> __Row [ $key ] [ 'Value' ] )
+			   {
+				$found ++ ;
+			    }
+		    }
+
+		$this -> __IsNew	=  ( $found  ==  count ( $this -> __PrimaryKeyColumns ) ) ;
+		$this -> __IsModified	=  ( $processed ) ? true : false ;
+
+		// All done, return the number of processed entries
+		return ( $processed ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	    	Delete - Deletes a row.
+
+	    PROTOTYPE
+	    	$row -> Delete ( $keys ) ;
+
+	    DESCRIPTION
+	    	Deletes the row having the specified value(s) in its primary key column(s).
+
+	    PARAMETERS
+	    	$keys (any) -
+			Each row having its primary key column(s), this parameter is used to supply
+			the values for each of them, in order to load exactly one row.
+			When multiple columns are involved in a primary key, they must be supplied as
+			an array of values.
+			However, if the table contains only one primary key column, the value can be
+			supplied as is.
+
+	    RETURN VALUE
+		Returns true if a row has been deleted, false otherwise.
+
+	    NOTES
+	    	. Once the Delete() operation is complete, the whole row object is reset.
+		. Note that the Delete() operation is somewhat unnatural, compared to Load and Store,
+		  since it cannot be based on the current values of the row's columns. This is just a
+		  shortcut to build a single DELETE statement when you know the key values.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  Delete ( $keys = null )
+	   {
+		// Check supplied keys
+		$keys = $this ->  __keyvalues ( $keys ) ;
+
+		if  ( ! $keys )
+			return ( false ) ;
+
+		// Reset the row
+		$this -> Reset ( ) ;
+
+		// Assign the primary key values
+		$db    	= $this -> __Database ;
+		$where 	= $this -> __whereclause ( $keys ) ;
+		$sql	= "DELETE FROM " . $this -> __RealTableName . " WHERE $where LIMIT 1" ;
+
+		// Run the query ; note that we use "LIMIT 1" in case of a bug which would make records to be inadvertently deleted
+		$db -> SetQuery ( $sql ) ;
+		$status = $db -> Query ( ) ;
+
+		// All done, set the New and Modified flags in a consistent state
+		$this -> __IsNew	=  false ;
+		$this -> __IsModified 	=  false ;
+
+		if  ( $status )
+			$status = ( $db -> GetAffectedRows ( )  !=  0 ) ;
+
+		return ( $status ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	    	Dump - Dumps record data
+
+	    PROTOTYPE
+		$row -> Dump ( $title = "ROW CONTENTS" ) ;
+
+	    DESCRIPTION
+	    	Dumps a row contents.
+
+	    PARAMETERS
+	    	$title (string) -
+			Title to display.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  Dump ( $title	=  "ROW CONTENTS" )
+	   {
+		output ( $title . " :" ) ;
+		$array = array ( ) ;
+
+		foreach  ( $this -> __Row  as  $key => $column )
+		   {
+			$metadata = $this -> __Metadata [ $key ] ;
+
+			$array [] = array (
+						'Name' 		=> $column [ 'Name' ],
+						'Type' 		=> $metadata [ 'SQLType' ],
+						'Extra' 	=> $metadata [ 'ExtraData' ],
+						'Value' 	=> $column [ 'Value' ],
+						'Modified' 	=> ( $column [ 'Modified' ] ) ? 'Yes' : ''
+					) ;
+		    }
+
+		$report= new AsciiReport (
+						array ( 'member' => 'Name' 	, 'align' => 'left' ),
+						array ( 'member' => 'Type' 	, 'align' => 'left' ),
+						array ( 'member' => 'Extra'	, 'align' => 'left'  ),
+						array ( 'member' => 'Value'	, 'align' => 'left'  ),
+						array ( 'member' => 'Modified'	, 'align' => 'right' )
+					   ) ;
+
+		echo $report -> Generate ( $array ) ;
+		echo $report -> Summary ( 'field' ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	    	Load 		- Loads a row.
+		LoadWhere	- Loads a row having the specified criterias.
+
+	    PROTOTYPE
+	    	$row -> Load ( $keys ) ;
+		$row -> LodWhere ( $where_clauses ) ;
+
+	    DESCRIPTION
+	    	Loads the row having the specified value(s) in its primary key column(s).
+		LoadWhere() allows for specifying column values instead of primary key values.
+
+	    PARAMETERS
+	    	$keys (any) -
+			Each row having its primary key column(s), this parameter is used to supply
+			the values for each of them, in order to load exactly one row.
+			When multiple columns are involved in a primary key, they must be supplied as
+			an array of values.
+			However, if the table contains only one primary key column, the value can be
+			supplied as is.
+
+		$where_clauses (string) -
+			List of criterias that will be included in the SQL query statement to load
+			the appropriate row.
+
+	    RETURN VALUE
+		Returns true if a row has been loaded, false otherwise.
+
+	    NOTES
+	    	. Once the Load() operation is complete, the IsNew and IsModified flags are set to
+		  false.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  Load ( $keys )
+	   {
+		// Check supplied keys
+		$keys = $this ->  __keyvalues ( $keys ) ;
+
+		if  ( ! $keys )
+			return ( false ) ;
+
+		// Reset the row
+		$this -> Reset ( ) ;
+
+		// Assign the primary key values
+		$db    = $this -> __Database ;
+		$where = $this -> __whereclause ( $keys ) ;
+
+		$db -> SetQuery ( "SELECT * FROM " . $this -> __RealTableName . " WHERE $where LIMIT 1" ) ;
+		$row = $db -> LoadRow ( ) ;
+
+		if  ( $row )
+		   {
+			$this -> __UncheckedBind = true ;
+			$this -> Bind ( $row ) ;
+			$this -> __UncheckedBind = false ;
+
+			// All done, set the New and Modified flags in a consistent state
+			$this -> __IsNew	=  false ;
+			$this -> __IsModified 	=  false ;
+		    }
+
+		return ( ( $row ) ? true : false ) ;
+	    }
+
+
+	public function  LoadWhere ( $where_clauses )
+	   {
+		// Reset the row
+		$this -> Reset ( ) ;
+
+		// Assign the primary key values
+		$db    = $this -> __Database ;
+
+		$db -> SetQuery ( "SELECT * FROM " . $this -> __RealTableName . " WHERE $where_clauses LIMIT 1" ) ;
+		$row = $db -> LoadRow ( ) ;
+
+		if  ( $row )
+		   {
+			$this -> __UncheckedBind = true ;
+			$this -> Bind ( $row ) ;
+			$this -> __UncheckedBind = false ;
+		    }
+
+		// All done, set the New and Modified flags in a consistent state
+		$this -> __IsNew	=  false ;
+		$this -> __IsModified 	=  false ;
+
+		return ( ( $row ) ? true : false ) ;
+	    }
+
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	    	Reset - Reset column values to their defaults.
+
+	    PROTOTYPE
+	    	$row -> Reset ( ) ;
+
+	    DESCRIPTION
+	    	Resets the row contents. This is just like instanciating a new row object, but without
+		the overhead implied by this process.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  Reset ( )
+	   {
+		$row 	=  array ( ) ;
+
+		foreach  ( $this -> __Metadata  as  $key => $column )
+		   {
+			$row [ $key ] 	=  array ( 'Name' => $column [ 'Name' ], 'Value' => $column [ 'Default' ], 'Modified' => false ) ;
+		    }
+
+		$this -> __Row 		=  $row ;
+		$this -> __IsNew 	=  true ;
+		$this -> __IsModified 	=  false ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	    	Store - Store a row.
+
+	    PROTOTYPE
+	    	$row -> Store ( ) ;
+
+	    DESCRIPTION
+	    	Stores the row data.
+
+	    RETURN VALUE
+	    	Returns true if the row store was successful, false otherwise.
+
+	    NOTES
+	    	. No update query is executed if no field has been modified. In this case, the method
+		  returns true, as for a successful writing
+		. The method correctly handles the 'New' state of the row. It will use an SQL INSERT
+		  if the IsNew property is true, and an SQL UPDATE otherwise.
+		. Once the Store() operation is complete, the IsNew and IsModified flags are set to
+		  false, as for the Load() method.
+		. If there is a field having the auto-increment attribute, and the row is new, the
+		  field value will be updated with the last insert ID value.
+		. The value(s) of the primary key column(s) is/are not checked.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  Store ( )
+	   {
+		// Do nothing if nothing has been modified
+		if  ( ! $this -> __IsModified )
+			return ( true ) ;
+
+		// Call the appropriate store operation
+		if  ( $this -> __IsNew )
+			$status = $this -> __StoreAsNew ( ) ;
+		else
+			$status = $this -> __StoreAsModified ( ) ;
+
+		// Update internal flags
+		$this -> __IsNew		=  false ;
+		$this -> __IsModified		=  false ;
+
+		foreach  ( $this -> __Row  as  &$column )
+			$column [ 'Modified' ] = false ;
+
+		// All done, return
+		return ( $status ) ;
+	    }
+
+
+	// Creates a new row using INSERT
+	private function  __StoreAsNew ( )
+	   {
+		// Initializations
+		$db		= $this -> __Database ;
+		$assignments  	= array ( ) ;
+
+		// Loop through each column and retain only the ones that have been modified
+		foreach  ( $this -> __Row  as  $column )
+		   {
+			if  ( $column [ 'Modified' ] )
+			   {
+				$value 		= $column [ 'Name' ] . " = '" .
+							$db -> QuoteValue ( $column [ 'Value' ] ) . "'" ;
+				$value 		= str_replace ( array ( '\n', '\r' ), array ( "\n", "\r" ), $value ) ;
+				$assignments [] = $value ;
+			    }
+		    }
+
+		// Build the sql statement and execute it
+		$sql = "INSERT INTO " . $this ->  __TableName . " SET " .
+				implode ( ", ", $assignments ) ;
+
+		$db -> SetQuery ( $sql ) ;
+		$status = $db -> Query ( ) ;
+
+		// Store the last insert ID if needed
+		if  ( $this -> __AutoIncrementColumn )
+			$this -> __Row [ $this -> __AutoIncrementColumn ] [ 'Value' ] = $db -> GetLastInsertId ( ) ;
+
+		// All done
+		return ( $status ) ;
+	    }
+
+
+	// Updates an existing row using UPDATE
+	private function  __StoreAsModified ( )
+	   {
+		// Initializations
+		$db		= $this -> __Database ;
+		$assignments  	= array ( ) ;
+		$keys		= array ( ) ;
+
+		// First pass : collect primary index key values
+		foreach  ( $this -> __Metadata  as  $name => $def )
+		   {
+			if  ( $def [ 'Primary' ] )
+				$keys [] = $this -> __Row [ $name ] [ 'Value' ] ;
+		    }
+
+		// Second pass : collect the modified values (note that we do not check for primary key values,
+		// since they are never marked as 'modified')
+		foreach  ( $this -> __Row  as  $column )
+		   {
+			if  ( $column [ 'Modified' ] )
+			   {
+				$value 		= $column [ 'Name' ] . " = '" .
+							$db -> QuoteValue ( $column [ 'Value' ] ) . "'" ;
+				$value 		= str_replace ( array ( '\n', '\r' ), array ( "\n", "\r" ), $value ) ;
+				$assignments [] = $value ;
+			    }
+		    }
+
+		// Build the sql statement and execute it
+		$where = $this -> __whereclause ( $keys ) ;
+		$sql = "UPDATE " . $this ->  __TableName . " SET " .
+				implode ( ", ", $assignments ) . " WHERE $where" ;
+
+		$db -> SetQuery ( $sql ) ;
+		$status = $db -> Query ( ) ;
+
+		// All done
+		return ( $status ) ;
+	    }
+
+
+	/*===========================================================================================
+
+		Property-access functions (these methods handle the internal Table properties
+		only ; the individual row columns can be accessed by their name).
+
+	  ===========================================================================================*/
+
+	// Get the auto-increment column name
+	public function  GetAutoIncrementColumn ( )
+	   {
+		if  ( $this -> __AutoIncrementColumn  !==  false )
+		   {
+			$def = $this -> __Metadata [ $this -> __AutoIncrementColumn ] ;
+
+			return ( $def [ 'Name' ] ) ;
+		    }
+		else
+			return ( false ) ;
+	    }
+
+	// Gets the database object
+	public function  GetDatabase ( )
+	   { return ( $this -> __Database ) ; }
+
+	// Gets metadata information
+	public function  GetMetadata ( )
+	   { return ( $this -> __Metadata ) ; }
+
+	// Gets the list of modified/unmodified fields
+	public function  GetModifiedColumns ( )
+	   { return ( $this -> __GetByModifiedState ( true ) ) ; }
+
+	public function  GetUnmodifiedColumns ( )
+	   { return ( $this -> __GetByModifiedState ( false ) ) ; }
+
+	private function  __GetByModifiedState ( $state )
+	   {
+		$result = array ( ) ;
+
+		foreach  ( $this -> __Row  as  $column )
+		   {
+			if  ( $column [ 'Modified' ]  ==  $state )
+				$result [] = $column [ 'Name' ] ;
+		    }
+
+		return ( $result ) ;
+	    }
+
+	// Gets the primary key column names
+	public function  GetPrimaryKeyColumns ( )
+	   {
+		$result = array ( ) ;
+
+		foreach  ( $this -> __PrimaryKeyColumns  as  $column )
+			$result [] = $column [ 'Name' ] ;
+
+		return ( $result ) ;
+	    }
+
+	// Gets the real, expanded table name
+	public function  GetRealTableName ( )
+	   { return ( $this -> __RealTableName ) ; }
+
+
+	// Gets an array of column names/default values
+	public function  GetDefaultValues ( )
+	   {
+		$result = array ( ) ;
+
+		foreach ( $this -> __Metadata  as  $column )
+			$result [ $column [ 'Name' ] ] = $column [ 'Default' ] ;
+
+		return ( $result ) ;
+	    }
+
+	// Gets an array of column names/values
+	public function  GetRow ( )
+	   {
+		$result = array ( ) ;
+
+		foreach  ( $this ->  __Row  as  $column )
+			$result [ $column [ 'Name' ] ] = $column [ 'Value' ] ;
+
+		return ( $result ) ;
+	    }
+
+	// Gets the table name
+	public function  GetTableName ( )
+	   { return ( $this -> __TableName ) ; }
+
+	// Checks if the row is newly created
+	public function  IsNew ( )
+	   { return ( $this -> __IsNew ) ; }
+
+	// Checks if the row has been modified
+	public function  IsModified ( )
+	   { return ( $this -> __IsModified ) ; }
+
+	// Checks if a column has been modified
+	public function  IsColumnModified ( $column )
+	   {
+		if  ( isset ( $this -> _Row [ $column ] ) )
+			return ( $this -> _Row [ $column ] [ 'Modified' ] ) ;
+		else
+			return ( false ) ;
+	     }
+
+	// Sets the IsNew flag
+	public function  SetNew ( $flag )
+	   { $this -> __IsNew = $flag ; }
+
+	// Sets the IsModified flags
+	public function  SetModified ( $flag )
+	   { $this -> __IsModified = $flag ; }
+    }
+
+

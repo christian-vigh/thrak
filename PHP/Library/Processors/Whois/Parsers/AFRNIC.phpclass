@@ -1,0 +1,41 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        AFRNIC.phpclass
+
+    DESCRIPTION
+        A parser for whois information coming from AFRNIC.
+    AUTHOR
+        Christian Vigh, 08/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/08/05]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace  Thrak\Processors\Whois ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces and classes
+use  	Thrak\System\Object ;
+use	Thrak\IO\Path ;
+use	Thrak\Types\String ;
+use	Thrak\Processors\Whois\WhoisRIPEInformation ;
+
+
+/*==============================================================================================================
+
+    WhoisAFRNICInformation -
+        A class for handling whois data coming from ARIN servers.
+
+  ==============================================================================================================*/
+class  WhoisAFRNICInformation		extends  WhoisAPNICInformation
+   {
+	public function  __construct ( $queried_ip, $contents )
+	   {
+		parent::__construct ( $queried_ip, $contents ) ;
+	    }
+    }

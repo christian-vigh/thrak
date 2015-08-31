@@ -1,0 +1,400 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        Query.phpclass
+
+    DESCRIPTION
+        A class to hold parameterized queries.
+ 	Query parameters are expressed in the form :
+ 	
+ 		{keyword [:name]}
+  
+ 	where 'keyword' is one of the keywords defined in the Query::$Keywords array. An additional name can be
+ 	specified, which will be used by the Get and Set methods to index the parameter. If no name is specified,
+ 	the index will be sequential.
+  
+ 	Authorized keywords are : WHERE, ORDER, GROUP, LIMIT,  HAVING, JOIN, LEFTJOIN, RIGHTJOIN, INNERJOIN.
+ 	A typical use is given by the following example :
+  
+ 		$query	=  new Query ( "SELECT * FROM mytable {WHERE}" ) ;
+ 		$query -> Set ( 'WHERE', 'id > 100' ) ;
+ 		$query -> Execute ( ) ;
+ 	
+ 	The Set() method will define a value for the WHERE parameter (parameter names are not case-sensitive).
+ 	Note that there is a third parameter to the Set() method, which is in fact the index of the query
+ 	parameter referenced by the first parameter of the method. Its default value is 0, which corresponds to
+ 	the first (and only) occurrence of {WHERE} in the supplied query.
+  
+ 	Unreferenced parameters will be removed from the input query ; for example :
+  
+ 		$query	=  new Query ( "SELECT * FROM mytable {WHERE}" ) ;
+ 		echo  ( string ) $query ;
+  
+ 	will output :
+ 		SELECT * FROM mytable
+  
+ 	while the following :
+  
+ 		$query	=  new Query ( "SELECT * FROM mytable {WHERE}" ) ;
+ 		$query -> Set ( 'WHERE', 'id > 100' ) ;
+ 		echo  ( string ) $query ;
+  
+ 	will produce :
+ 		SELECT * FROM mytable WHERE id > 100
+  
+ 	Note that the 'WHERE' keyword is automatically prepended to the parameter value.
+  
+ 	Another keyword is available : {PARAMETER}, which can occur anywhere and any times (as for keywords) in the 
+ 	supplied query. Keyword indexes are either determined by their sequential position or the optional name
+ 	after them ; consider the following example :
+  
+ 		$query	=  new Query ( "SELECT {PARAMETER}, {PARAMETER:my-special-value}, {PARAMETER} FROM mytable" ) ;
+ 		$query -> SetParameter ( '1' ) ;
+ 		$query -> SetParameter ( '2', 'my-special-value' ) ;
+ 		$query -> SetParameter ( '3', 2 ) ;
+ 		echo ( string ) $query ;
+  
+ 	will produce the following output :
+ 		SELECT 1, 2, 3 FROM mytable
+  
+ 	Note that SetParameter ( $value, $index) is a shortcut for Set ( 'value', $value, $index ).
+
+ 	In the query :
+ 		SELECT {PARAMETER}, {PARAMETER:my-special-value}, {PARAMETER} FROM mytable
+  
+ 	the first {PARAMETER} will have index 0 (the default) ; parameter {PARAMETER:my-special-value} will have
+ 	the index 'my-special-value' ; and the last {PARAMETER} will have the index 2.
+  
+    AUTHOR
+        Christian Vigh, 06/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/06/13]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace  Thrak\Database ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces and classes
+use  	Thrak\System\Object ;
+use	Thrak\IO\Path ;
+use	Thrak\Types\String ;
+use	Thrak\Types\String\Regex ;
+use	Thrak\Types\AssociativeArray ;
+
+
+
+/*==============================================================================================================
+
+    Query -
+        A class to handle parameterized queries.
+
+  ==============================================================================================================*/
+class  Query		extends  Object
+   {
+	// Parameter definitions :
+	//	Contains the following entries :
+	//	- names :
+	//		An array giving the list of names and aliases for a parameter.
+	//	- prepend :
+	//		When set, the specified string will be prepended to the parameter value.
+	private	static		$ParameterDefinitions		=
+	   [
+		[ 'names' => [ 'WHERE'					], 'prepend' => 'WHERE'			],
+		[ 'names' => [ 'ORDER', 'ORDERBY', 'ORDER BY'		], 'prepend' => 'ORDER BY'		],
+		[ 'names' => [ 'GROUP', 'GROUPBY', 'GROUP BY'		], 'prepend' => 'GROUP BY'		],
+		[ 'names' => [ 'LIMIT'					], 'prepend' => 'LIMIT'			],
+		[ 'names' => [ 'HAVING'					], 'prepend' => 'HAVING'		],
+		[ 'names' => [ 'JOIN'					], 'prepend' => 'JOIN'			],
+		[ 'names' => [ 'LEFTJOIN', 'LEFT JOIN'			], 'prepend' => 'LEFT JOIN'		],
+		[ 'names' => [ 'RIGHTJOIN', 'RIGHT JOIN'		], 'prepend' => 'RIGHT JOIN'		],
+		[ 'names' => [ 'INNERJOIN', 'INNER JOIN'		], 'prepend' => 'INNER JOIN'		],
+		[ 'names' => [ 'PARAMETER', 'PARAM', 'VALUE'		], 'prepend' => null			]
+	    ] ;
+	
+	// Regular expression to match the {parameter[:optional_name]} form in the supplied query string
+	private static	$MatchRegex		=  '#
+								(?P<parameter>
+									\{
+									(?P<type> [^:}]+)
+									(
+										:
+										(?P<name> [^}]* )
+									 )?
+									\}
+								 )
+						     #imsx' ;
+
+	// Regular expression to match the {!constant!} construct for constants
+	private static  $MatchConstantRegex	=  '#
+							(?P<constant>
+								\{ \!
+								(?P<name> [^!]+)
+								\! \}
+							 )
+						    #imsx' ;
+
+	// Associated database object
+	public		$Database ;
+	// Input query
+	public		$Query ;
+	// Query parameters
+	public  	$Parameters		=  [] ;
+	
+	
+	/*--------------------------------------------------------------------------------------------------------------
+	 *
+	 *  NAME
+	 *	Constructor
+	 *
+	 *  PROTOTYPE
+	 *	$query	=  new Query ( $query, $database = null ) ;
+	 * 
+	 *  DESCRIPTION
+	 *	Builds a Query object and recognizes query parameters.
+	 *
+	 *  PARAMETERS
+	 *	$query (string) -
+	 *		Query string.
+	 * 
+	 *	$database (Database) -
+	 *		Database object. If not specified, the global $Database variable will be used.
+	 *
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( $query, $database = null )
+	   {
+		global		$Database ;
+		
+		
+		$this -> Database	=  ( $database ) ?   $database : $Database ;
+		$parameters		=  new  AssociativeArray ( ) ;
+		
+		// Preprocess any references to constants
+		$matches		=  [] ;
+
+		if  ( Regex::PregMatchAllEx ( self::$MatchConstantRegex, $query, $matches, PREG_OFFSET_CAPTURE ) )
+		   {
+			$replacements		=  [] ;
+			$count			=  count ( $matches [ 'constant' ] ) ;
+
+			for  ( $i = 0 ; $i  <  $count ; $i ++ ) 
+			   {
+				$name		=  $matches [ 'name'     ] [$i] [0] ;
+				$offset		=  $matches [ 'constant' ] [$i] [1] ;
+
+				if  ( ! defined ( $name ) )
+					error ( new \Thrak\System\InvalidArgumentException ( "Undefined constant \"$name\" in query." ) ) ;
+
+				$replacements []	=  [ $matches [ 'constant' ] [$i] [0], constant ( $name ), $offset ] ;
+			    }
+
+			if  ( count ( $replacements ) )
+				$query		=  Regex::MultiSubstrReplace ( $query, $replacements ) ;
+		    }
+
+		// Check if the query contains parameters
+		$matches		=  [] ;
+
+		if  ( Regex::PregMatchAllEx ( self::$MatchRegex, $query, $matches, PREG_OFFSET_CAPTURE ) )
+		   {
+			// Parameter count
+			$count			=  count ( $matches [ 'parameter' ] ) ;
+			
+			// Loop through parameters
+			for  ( $i = 0 ; $i  <  $count ; $i ++ )
+			   {
+				// Whole parameter string
+				$param		=  $matches [ 'parameter' ] [$i] ;
+				// Parameter name
+				$type		=  $matches [ 'type' ] [$i] [0] ;
+				// Optional parameter instance name
+				$name		=  ( isset ( $matches [ 'name' ] [$i] ) ) ?  $matches [ 'name' ] [$i] : '' ;	
+
+				// Get parameter definition
+				$entry		=  $this -> __get_parameter_entry ( $type ) ;
+				$type		=  $entry [ 'names' ] [0] ;
+				
+				// Create an array for this type of parameter, if needed
+				if  ( ! isset ( $parameters [ $type ] ) )
+					$parameters [ $type  ]	=  new AssociativeArray ( ) ;
+
+				// $index will be used to index array entries, if no optional parameter name supplied
+				$index		=  count ( $parameters [ $type ] ) ;
+				
+				// Here we are : select either the supplied parameter name, or its index
+				if  ( $name )
+					$name	=  $name [0] ;
+				else
+					$name	=  $index ;
+				
+				// Add item to the list of scanned parameters
+				$item		=  
+				   [ 
+					'match'		=>  $param [0],
+					'definition'	=>  $entry, 
+					'name'		=>  $name, 
+					'length'	=>  strlen ( $param [0] ), 
+					'offset'	=>  $param [1],
+					'value'		=>  ''
+				    ] ; 
+
+				$parameters [ $type ] [ $name ]	=  new AssociativeArray ( $item ) ;
+			    }
+			
+			// Set all associative arrays to 
+			$parameters -> ReadOnly		=  true ;
+			
+			foreach  ( $parameters  as  $array )
+				$array -> ReadOnly	=  true ;
+			
+			$this -> Parameters	=  $parameters ;
+		    }
+
+
+		$this -> Query		=  $query ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    __get_parameter_entry -
+	        Searches for the specified query parameter.
+	
+	  ==============================================================================================================*/
+	public function  __get_parameter_entry ( $name ) 
+	   {
+		$name	=  trim ( preg_replace ( '/\s+/', ' ', $name ) ) ;
+		
+		foreach  ( self::$ParameterDefinitions  as  $definition )
+		   {
+			foreach  ( $definition [ 'names' ]  as  $defname )
+			   {
+				if  ( ! strcasecmp ( $defname, $name ) )
+					return ( $definition ) ;
+			    }
+		    }
+		
+		error ( new \Thrak\System\RuntimeException ( "Undefined query parameter \"$name\"." ) ) ;
+	    }
+	 
+	
+	/*==============================================================================================================
+	
+	    Execute -
+	        Executes the underlying query and returns the results as an array of rows.
+	
+	  ==============================================================================================================*/
+	public function  Execute ( )
+	   {
+		$query		=  $this -> __tostring ( ) ;
+		
+		$this -> Database -> SetQuery ( $query ) ;
+		
+		$result		=  $this -> Database -> LoadRows ( ) ;
+		
+		return ( $result ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    Get -
+	        Returns the value of the specified parameter.
+	
+	  ==============================================================================================================*/
+	public function  Get ( $parameter, $index = 0 )
+	   {
+		$entry			=  $this -> __get_parameter_entry ( $parameter ) ;
+		$parameter_name		=  $entry [ 'names' ] [0] ;
+		
+		if  ( isset ( $this -> Parameters [ $parameter_name ] ) )
+		   {
+			if  ( isset ( $this -> Parameters [ $parameter_name ] [ $index ] ) )
+				return ( $this -> Parameters [ $parameter_name ] [ $index ] [ 'value' ] ) ;
+			else
+				error ( new \Thrak\System\RuntimeException ( "Invalid index $index for parameter type \"$parameter\"" ) ) ;
+		    }
+		else
+			error ( new \Thrak\System\RuntimeException ( "Invalid parameter type \"$parameter\"" ) ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    GetParameter -
+	        Returns the value of a {PARAMETER] reference.
+	
+	  ==============================================================================================================*/
+	public function  GetParameter ( $index )
+	   {
+		return ( $this -> Get ( 'VALUE', $index ) ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    Set -
+	        Sets the value of the specified parameter.
+	
+	  ==============================================================================================================*/
+	public function  Set ( $parameter, $value, $index = 0 )
+	   {
+		$entry			=  $this -> __get_parameter_entry ( $parameter ) ;
+		$parameter_name		=  $entry [ 'names' ] [0] ;
+		
+		if  ( isset ( $this -> Parameters [ $parameter_name ] ) )
+		   {
+			if  ( isset ( $this -> Parameters [ $parameter_name ] [ $index ] ) )
+				$this -> Parameters [ $parameter_name ] [ $index ] [ 'value' ]	=  $value ;
+			else
+				error ( new \Thrak\System\RuntimeException ( "Invalid index $index for parameter type \"$parameter\"" ) ) ;
+		    }
+		else
+			error ( new \Thrak\System\RuntimeException ( "Invalid parameter type \"$parameter\"" ) ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    SetParameter -
+	        Sets the value of a {PARAMETER} reference.
+	
+	  ==============================================================================================================*/
+	public function  SetParameter ( $value, $index = 0 )
+	   {
+		$this -> Set ( 'PARAMETER', $value, $index ) ;
+	    }
+	    
+	
+	/*==============================================================================================================
+	
+	    __tostring -
+	        Returns the preprocessed value of the query string used to build this object.
+	
+	  ==============================================================================================================*/
+	public function  __tostring ( )
+	   {
+		$offsets	=  [] ;
+		
+		foreach  ( $this -> Parameters  as  $parameters )
+		   {
+			foreach  ( $parameters  as  $parameter )
+			   {
+				$value		=  $parameter [ 'value' ] ;
+				
+				if  ( $value  !==  null  &&  $value  !==  ""  &&  $parameter [ 'definition' ] [ 'prepend' ] )
+					$value	=  $parameter [ 'definition' ] [ 'prepend' ] . ' ' . $value ;
+				
+				$offsets []	=  [ $parameter [ 'match' ], $value, $parameter [ 'offset' ] ] ;
+			    }
+		    }
+		
+		$query	=  Regex::MultiSubstrReplace ( $this -> Query, $offsets ) ;
+		
+		return ( $query ) ;
+	    }
+    }

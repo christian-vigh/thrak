@@ -1,0 +1,646 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        DataDumper.phpclass
+
+    DESCRIPTION
+        A class to provide a with a dump of binary data.
+
+    AUTHOR
+        Christian Vigh, 06/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/06/21]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\IO ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces & objects
+use 	Thrak\System\Object ;
+use	Thrak\Types\String\Formatting ;
+	
+
+
+/*==============================================================================================================
+
+    AsciiDumper class -
+        A generic file dumper class to produce dump output.
+
+  ==============================================================================================================*/
+abstract class  AsciiDumper		extends		Object
+					implements	\ArrayAccess, \Countable, \Iterator
+   {
+	// Dump flags :
+	// DUMP_FLAG_NONE :
+	//	When the supplied flags are DUMP_FLAG_NONE, the following flags are automatically set :
+	//	- DUMP_FLAG_AUTOSIZE_OFFSETS
+	//	- DUMP_FLAG_FORMAT_HEXADECIMAL
+	//	- DUMP_FLAG_OFFSET_FORMAT_HEXADECIMAL
+	const	DUMP_FLAG_NONE				=  0x00000000 ;
+	// DUMP_FLAG_AUTOSIZE_OFFSETS :
+	//	When set, offset width depends on the dumped data size. When not set, offsets are printed 
+	//	as 32-bit values.
+	const	DUMP_FLAG_AUTOSIZE_OFFSETS		=  0x00000001 ;
+	// DUMP_FLAG_IGNORE_DUPLICATE_BYTES :
+	//	Duplicate lines (ie, consecutive data chunks that contain the same bytes) are printed only once.
+	//	A message saying : "(above data repeated x times)" is returned instead.
+	//	This works only in foreach() statements.
+	const	DUMP_FLAG_IGNORE_DUPLICATE_BYTES	=  0x00000002 ; 
+	
+	// DUMP_FLAG_FORMAT_* flags :
+	//	Specifies the numeric base to be used to display data bytes.
+	const   DUMP_FLAG_FORMAT_BINARY			=  0x00000010 ;
+	const   DUMP_FLAG_FORMAT_OCTAL			=  0x00000020 ;
+	const   DUMP_FLAG_FORMAT_DECIMAL		=  0x00000040 ;
+	const   DUMP_FLAG_FORMAT_HEXADECIMAL		=  0x00000080 ;
+	
+	// DUMP_FLAG_OFFSET_FORMAT_* flags :
+	//	Specifies the numeric base to be used to display offsets.
+	const   DUMP_FLAG_OFFSET_FORMAT_BINARY		=  0x00000100 ;
+	const   DUMP_FLAG_OFFSET_FORMAT_OCTAL		=  0x00000200 ;
+	const   DUMP_FLAG_OFFSET_FORMAT_DECIMAL		=  0x00000400 ;
+	const   DUMP_FLAG_OFFSET_FORMAT_HEXADECIMAL	=  0x00000800 ;
+	
+	// Masks to isolate DUMP_FLAG_FORMAT_* and DUMP_FLAG_OFFSET_FORMAT_* bits
+	const   DUMP_FLAG_FORMAT_MASK			=  0x000000F0 ;
+	const   DUMP_FLAG_OFFSET_FORMAT_MASK		=  0x00000F00 ;
+
+	// Dump flags
+	public		$Flags ;
+	// Output format 
+	public		$Format ;
+	// Number of bytes per line
+	public		$BytesPerLine ;
+	// Unprintable character value
+	public		$UnprintableCharacter		=  '.' ;
+	// Inexisting character value
+	public		$InexistingCharacter		=  ' ' ;
+
+	// Data length, in bytes
+	protected	$Length ;
+	// Width of offset part in dumped data contents
+	protected	$OffsetWidth ;
+	// Numeric base used to display byte offset
+	protected	$OffsetBase ;
+	// Number of digits needed to print a byte
+	protected	$CharWidth ;
+	// Numeric base used to display byte values
+	protected	$CharBase ;
+	
+	// Number of chunks of at most $BytesPerLine bytes needed to display the data
+	private		$ChunkCount ;
+	// Current iterator index (used for foreach constructs)
+	private		$CurrentIndex		=  -1 ;
+	// Current range to be dumped, if any
+	private		$RangeLow		=  false,
+			$RangeHigh		=  false ;
+	
+	
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        Constructor - Creates an abstract AsciiDumper object with no input data.
+	 
+	    PROTOTYPE
+	        To be used by derived classes :
+		parent::__construct ( $flags = self::DUMP_FLAG_NONE, $bytes_per_line = 16, $format = "%o:  %b  %c" ) ;
+		
+	    DESCRIPTION
+	        Creates an abstract AsciiDumper object. No data is needed at this stage since it must be processed by
+		derived classes.
+	 
+	    PARAMETERS
+	        $flags (integer) -
+	                A combination of the following values :
+			
+			- DUMP_FLAG_NONE :
+				When the supplied flags are DUMP_FLAG_NONE, the following flags are automatically set :
+				- DUMP_FLAG_AUTOSIZE_OFFSETS
+				- DUMP_FLAG_FORMAT_HEXADECIMAL
+				- DUMP_FLAG_OFFSET_FORMAT_HEXADECIMAL				
+				
+			- DUMP_FLAG_AUTOSIZE_OFFSETS :
+				When set, offset width depends on the dumped data size. When not set, offsets are printed 
+				as 32-bit values.
+				
+			- DUMP_FLAG_IGNORE_DUPLICATE_BYTES :
+				Duplicate lines (ie, consecutive data chunks that contain the same bytes) are printed only once.
+				A message saying : "(above data repeated x times)" is returned instead.
+				This works only in foreach() statements.
+			
+			- DUMP_FLAG_FORMAT_* constants :
+				Specifies the numeric base to be used to display data bytes. Can be one of the following constats :
+				- DUMP_FLAG_FORMAT_BINARY :
+					Binary format.
+				- DUMP_FLAG_FORMAT_OCTAL :
+					Octal format.
+				- DUMP_FLAG_FORMAT_DECIMAL :
+					Decimal format.
+				- DUMP_FLAG_FORMAT_HEXADECIMAL :
+					Hexadecimal format.
+	
+			- DUMP_FLAG_OFFSET_FORMAT_* constants :
+				Specifies the numeric base to be used to display byte offsets. Can be one of the following constats :
+				- DUMP_FLAG_OFFSET_FORMAT_BINARY :
+					Binary format.
+				- DUMP_FLAG_OFFSET_FORMAT_OCTAL :
+					Octal format.
+				- DUMP_FLAG_OFFSET_FORMAT_DECIMAL :
+					Decimal format.
+				- DUMP_FLAG_OFFSET_FORMAT_HEXADECIMAL :
+					Hexadecimal format.
+					
+		$bytes_per_line (integer) -
+			Number of bytes to dump per data line.
+			
+		$format (string) -
+			Dump line format. It works like a pseudo-sprintf() function and accepts the following modifiers :
+			- %o :
+				Offset of the first byte in the dumped data line, printed in the numeric base specified
+				by one of the DUMP_FLAG_OFFSET_FORMAT_* constants.
+			- %b :
+				Byte values, converted in the numeric base specified by one of the DUMP_FLAG_FORMAT_*
+				constants.
+			- %c :
+				Ascii characters.
+		 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( $flags = self::DUMP_FLAG_NONE, $bytes_per_line = 16, $format = "%o:  %b  %c" )
+	   {
+		parent::__construct ( ) ;
+		
+		// When no flags are specified, say that offset width is auto-adjusted
+		if  ( ! $flags )
+			$flags	|=  self::DUMP_FLAG_AUTOSIZE_OFFSETS ;
+			
+		// Default offset base is hex
+		if  ( ! ( $flags & self::DUMP_FLAG_FORMAT_MASK ) )
+			$flags	|=  self::DUMP_FLAG_FORMAT_HEXADECIMAL ;
+			
+		// Same for default dumped byte base
+		if  ( ! ( $flags & self::DUMP_FLAG_OFFSET_FORMAT_MASK ) )
+			$flags	|=  self::DUMP_FLAG_OFFSET_FORMAT_HEXADECIMAL ;
+			
+		// Save supplied parameters
+		$this -> Flags		=  $flags ;
+		$this -> Format		=  $format ;
+		$this -> BytesPerLine	=  $bytes_per_line ;
+		
+		// Compute chunk count
+		$this -> ChunkCount	=  ( integer ) ( ( $this -> Length + $bytes_per_line - 1 ) / $bytes_per_line ) ;
+		
+		// Compute the width of dumped bytes, depending on the specified base
+		switch  ( $flags  &  self::DUMP_FLAG_FORMAT_MASK )
+		   {
+			case  self::DUMP_FLAG_FORMAT_BINARY :  
+				$this -> CharWidth		=  8 ; 
+				$this -> CharBase		=  2 ;
+				break ;
+				
+			case  self::DUMP_FLAG_FORMAT_OCTAL :  
+				$this -> CharWidth		=  3 ; 
+				$this -> CharBase		=  8 ;
+				break ;
+				
+			case  self::DUMP_FLAG_FORMAT_DECIMAL :  
+				$this -> CharWidth		=  3 ; 
+				$this -> CharBase		=  10 ;
+				break ;
+				
+			case  self::DUMP_FLAG_FORMAT_HEXADECIMAL :
+			default :
+				$this -> Flags		       |=  self::DUMP_FLAG_FORMAT_HEXADECIMAL ;
+				$this -> CharWidth		=  2 ;
+				$this -> CharBase		=  16 ;
+		    }
+		
+		// Determine the byte offset numeric base
+		switch  ( $flags  &  self::DUMP_FLAG_OFFSET_FORMAT_MASK )
+		   {
+			case  self::DUMP_FLAG_OFFSET_FORMAT_BINARY :  
+				$this -> OffsetBase		=  2 ;
+				break ;
+				
+			case  self::DUMP_FLAG_OFFSET_FORMAT_OCTAL :  
+				$this -> OffsetBase		=  8 ;
+				break ;
+				
+			case  self::DUMP_FLAG_OFFSET_FORMAT_DECIMAL :  
+				$this -> OffsetBase		=  10 ;
+				break ;
+				
+			case  self::DUMP_FLAG_OFFSET_FORMAT_HEXADECIMAL :
+			default :
+				$this -> Flags		       |=  self::DUMP_FLAG_OFFSET_FORMAT_HEXADECIMAL ;
+				$this -> OffsetBase		=  16 ;
+		    }
+		    
+		// Compute the offset width
+		if  ( $flags  &  self::DUMP_FLAG_AUTOSIZE_OFFSETS )
+			$this -> OffsetWidth	=  Formatting::IntegerWidth ( $this -> Length, $this -> OffsetBase ) ;
+		else
+			$this -> OffsetWidth	=  Formatting::IntegerWidth ( PHP_INT_MAX, $this -> OffsetBase ) ;
+	    }
+	    
+	    
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        FormatChunk - Formats a chunk of bytes.
+	 
+	    PROTOTYPE
+	        $result		=  $this -> FormatChunk ( $offset, $chunk ) ;
+	 
+	    DESCRIPTION
+	        Formats a chunk of bytes for one line of dumped data.
+	 
+	    PARAMETERS
+	        $offset (integer) -
+	                Offset of the first byte of the chunk data.
+			
+		$chunk (byte string) -
+			Bytes to be dumped.
+	 
+	    RETURN VALUE
+	        Returns the formatted dumped data.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  FormatChunk ( $offset, $chunk )
+	   {
+		$bytes		=  [] ;
+		$chars		=  '' ;
+		$count		=  strlen ( $chunk ) ;
+		
+		// Collect numeric and printable values from chunk data
+		for  ( $i = 0 ; $i  <  $count ; $i ++ )
+		   {
+			$ch	=  $chunk [$i] ;
+			$ord	=  ord ( $ch ) ;
+			
+			$chars		.=  ( $ord  >=  32  &&  $ord  <=  127 ) ?  $ch : $this -> UnprintableCharacter ;
+			$bytes []	 =  str_pad ( base_convert ( $ord, 10, $this -> CharBase ), $this -> CharWidth, '0', STR_PAD_LEFT ) ;
+		    }
+		   
+		// Pad up to $this -> BytesPerLine, if necessary, for the last chunk
+		if  ( $count  <  $this -> BytesPerLine )
+		   {
+			$pad	= str_repeat ( ' ', $this -> CharWidth ) ;
+			
+			for  ( $i = $count ; $i  <  $this -> BytesPerLine ; $i ++ )
+			   {
+				$bytes []	 =  $pad ;
+				$chars		.=  $this -> InexistingCharacter ;
+			    }
+		    }
+		    
+		// Pad offset, if necessary
+		$offset		=  str_pad ( base_convert ( $offset, 10, $this -> OffsetBase ), $this -> OffsetWidth, '0', STR_PAD_LEFT ) ;
+		
+		// Interpret the format string
+		$result		=  str_replace 
+		   (
+			[ '%o', '%b', '%c' ],
+			[
+				$offset,
+				implode ( ' ', $bytes ),
+				$chars 
+			 ],
+			$this -> Format
+		    ) ;
+		    
+		// All done, return
+		return ( $result ) ;
+	    }
+
+	  
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        GetChunkOffset - Returns the byte offset of a chunk.
+	 
+	    PROTOTYPE
+	        $offset		=  $dumper -> GetChunkOffset ( $index ) ;
+	 
+	    DESCRIPTION
+	        Returns the byte index of a chunk, taking into account the value of the $BytesPerLine property.
+	 
+	    PARAMETERS
+	        $index (integer) -
+	                Index of the chunk whose byte offset is to be returned.
+	 
+	    RETURN VALUE
+	        Offset of the first byte of the specified chunk.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  GetChunkOffset ( $index )
+	   {
+		$start		=  $index * $this -> BytesPerLine ;
+
+		if  ( $this -> RangeLow   ===  false )
+		   {
+			$length		 =  $this -> Length ;
+		    }
+		else
+		   {
+			$start		+=  $this -> RangeLow ;
+			$length		 =  $this -> RangeLow + ( $this -> RangeHigh - $this -> RangeLow + 1 ) ;
+		    }
+		
+		if  ( $start  >  $length )
+			return ( false ) ;
+			
+		$end		=  $start + $this -> BytesPerLine ;
+		
+		if  ( $end  >=  $length )
+			$end	=  $length ;
+			
+		return ( [ $start, $end - $start ] ) ;
+	    }
+	    
+	    
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        GetChunk - Gets a chunk of data as a dump string.
+	 
+	    PROTOTYPE
+	        $result		=  $dumper -> GetChunk ( $index ) ;
+	 
+	    DESCRIPTION
+	         Gets a chunk of data as a dump string.
+	 
+	    PARAMETERS
+	        $index (integer) -
+	                Index of the chunk to be dumped.
+	 
+	    RETURN VALUE
+	        Dumped value of the chunk (which holds $this -> BytesPerLine bytes).
+	 
+	    NOTES
+	        If the DUMP_FLAG_IGNORE_DUPLICATE_BYTES flag is set, and consecutive identical lines have been found,
+		the returned string will be : "(above data repeated x times)".
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  GetChunk ( $index )
+	   {
+		static		$LastChunk		=  '' ;			// Last chunk retrieved
+		static		$LastChunkIndex		=  -1 ;			// Last chunk index
+		static		$IdenticalChunks	=  0 ;			// Number of consecutive identical chunks
+		
+ShootAgain:
+		// Get chunk offset
+		$range	=  $this -> GetChunkOffset ( $index ) ;
+		
+		if  ( $range  ===  false )
+			return ( false ) ;
+			
+		// Then get chunk data
+		$data	=  $this -> GetChunkData ( $range [0], $range [1] ) ;
+		
+		// Ignore duplicate chunks if corresponding flag is set and last chunk data equals current chunk data
+		// But don't try to process duplicate entries if current chunk index does not follow previous one
+		if  ( ! ( $this -> Flags  &  self::DUMP_FLAG_IGNORE_DUPLICATE_BYTES )  ||
+				 $data  !=  $LastChunk  ||  $LastChunkIndex + 1  !=  $index )
+		   {
+			// Identical chunks previously found
+			if  ( $IdenticalChunks )
+			   {
+				$this -> CurrentIndex -- ;		// Point to previous chunk index
+				
+				$return_value	=  "****** above data repeated $IdenticalChunks times"  ;
+			    }
+			// New chunk found : dump it
+			else 
+				$return_value	=  $this -> FormatChunk ( $range [0], $data ) ;
+				
+			// Remember current chunk data and index
+			$LastChunk		=  $data ;
+			$LastChunkIndex		=  $index ;
+			
+			// Now we have no more identical chunks
+			$IdenticalChunks	=  0 ;
+			
+			// All done, return
+			return ( $return_value ) ;
+		    }
+		// Here, we are collecting identical chunks
+		else
+		   {
+			$LastChunkIndex		=  $index ;
+			$IdenticalChunks ++ ;
+			$index ++ ;
+			$this -> CurrentIndex ++ ;
+			
+			goto  ShootAgain ;
+		    }
+	    }
+	    
+	    
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        GetChunkData
+	 
+	    DESCRIPTION
+	        Retrieves a chunk of the specified length at the specified offset.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected abstract function  GetChunkData ( $offset, $length ) ;
+	
+	
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        GetRange
+	 
+	    DESCRIPTION
+	        Returns the range that restricts the dumped bytes (set by the SetRange() method). If no restriction has
+		been defined, returns the range for the whole content length.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  GetRange ( )
+	   {
+		if  ( $this -> RangeLow  ===  false )
+			return ( [ 0, ( $this -> Length ) ?  $this -> Length -1 : 0 ] ) ;
+		else
+			return ( [ $this -> RangeLow, $this -> RangeHigh ] ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        SetRange
+	 
+	    DESCRIPTION
+	        Defines a range of data to be dumped.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  SetRange ( $low, $high )
+	   {
+		$low		=  ( integer ) $low ;
+		$high		=  ( integer ) $high ;
+
+		if  ( $low  <  0 )
+			error ( new \Thrak\System\InvalidArgumentException ( "Low index must be >= 0." ) ) ;
+
+		if  ( $low  >  $high )
+			error ( new \Thrak\System\InvalidArgumentException ( "The low value of a range cannot be greater than its high value." ) ) ;
+
+		if  ( $high  >  $this -> Length )
+			$high	=  ( $this -> Length ) ?  $this -> Length - 1 : 0 ;
+
+		$this -> RangeLow	=  $low ;
+		$this -> RangeHigh	=  $high ;
+		$this -> ChunkCount	=  ( integer ) ( ( ( $high - $low ) + $this -> BytesPerLine - 1 ) / $this -> BytesPerLine ) ;
+	    }
+
+	
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+		Interfaces implementations.
+		
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  Count ( )
+	   { return ( $this -> ChunkCount ) ; }
+	    
+	    
+	public function  offsetExists ( $offset )
+	   {
+		return  ( $offset  >=  0  &&  $offset  <  $this -> ChunkCount ) ;
+	    }
+	    
+	    
+	public function  offsetGet ( $offset )
+	   {
+		if  ( $this -> offsetExists ( $offset ) )
+			return ( $this -> GetChunk ( $offset ) ) ;
+		else
+			error ( new \Thrak\System\IndexOutOfRangeException ( "Invalid offset $offset" ) ) ;
+	    }
+	    
+	    
+	public function  offsetSet ( $offset, $value )
+	   { error ( new \Thrak\System\UnsupportedOperationException ( ) ) ; }
+	    
+	    
+	public function  offsetUnset ( $offset )
+	   { error ( new \Thrak\System\UnsupportedOperationException ( ) ) ; }
+	  
+	  
+	public function  rewind ( )
+	   { $this -> CurrentIndex = 0 ; }
+	   
+	   
+	public function  current ( )
+	   { return ( $this [ $this -> CurrentIndex ] ) ; }
+	   
+	   
+	public function  key ( )
+	   { return ( $this -> CurrentIndex ) ; }
+	   
+	   
+	public function  next ( )
+	   { $this -> CurrentIndex ++ ; }
+	   
+	   
+	public function  valid ( )
+	   { return ( $this -> offsetExists ( $this -> CurrentIndex ) ) ; }
+    }
+
+    
+/*==============================================================================================================
+
+    StringDumper -
+        Dumps a string contents.
+
+  ==============================================================================================================*/    
+class  StringDumper			extends  AsciiDumper
+   {
+	protected	$Contents ;
+	
+	
+	public function  __construct ( $contents, $flags = self::DUMP_FLAG_FORMAT_HEXADECIMAL, $bytes_per_line = 16, $format = "%o:  %b  %c" )
+	   {
+		$this -> Contents	=  $contents ;
+		$this -> Length		=  strlen ( $contents ) ;
+		parent::__construct ( $flags, $bytes_per_line, $format ) ; 
+	    }
+	    
+	    
+	protected function  GetChunkData ( $offset, $length )
+	   {
+		return ( substr ( $this -> Contents, $offset, $length ) ) ;
+	    }
+    }
+
+    
+/*==============================================================================================================
+
+    FileDumper class -
+        Dumps a file contents.
+
+  ==============================================================================================================*/    
+class  FileDumper			extends  AsciiDumper
+   {
+	// Specific flags :
+	// DUMP_FLAG_LOAD_IN_MEMORY :
+	//	When set, file contents are loaded into memory before dumping ; otherwise they are read from disk when needed.
+	const   DUMP_FLAG_LOAD_IN_MEMORY		=  0x10000000 ;
+	
+	public		$Filename ;
+	public		$Contents	=  null ;
+	protected	$fp		=  null ;
+	
+	
+	// Constructor -
+	//	Adds the DUMP_FLAG_LOAD_IN_MEMORY flag to the existing flags.
+	//	When set, file contents will be loaded into memory before processing.
+	public function  __construct ( $file, $flags = self::DUMP_FLAG_NONE, $bytes_per_line = 16, $format = "%o:  %b  %c" )
+	   {
+		if  ( ! file_exists ( $file ) )
+			error ( new \Thrak\System\FileNotFoundException ( "File \"$file\" does not exist." ) ) ;
+			
+		$this -> Filename 	=  $file ;
+		$this -> Length		=  filesize ( $file ) ;
+		
+		if  ( $flags  &  self::DUMP_FLAG_LOAD_IN_MEMORY )
+			$this -> Contents	=  file_get_contents ( $file ) ;
+		else
+			$this -> fp		=  fopen ( $file, 'r' ) ;
+			
+		parent::__construct ( $flags, $bytes_per_line, $format ) ; 
+	    }
+	    
+	    
+	// Destructor -
+	//	Closes the underlying file descriptor, if any.
+	public function  __destruct ( )
+	   {
+		if  ( is_resource ( $this -> fp ) )
+			fclose ( $this -> fp ) ;
+	    }
+	    
+	    
+	// GetChunkData -
+	//	Returns either the contents of the underlying file for the specified offset and length.
+	//	Actually reads data from file if the DUMP_FLAG_LOAD_IN_MEMORY is not set.
+	protected function  GetChunkData ( $offset, $length )
+	   {
+		if  ( $this -> Flags  &  self::DUMP_FLAG_LOAD_IN_MEMORY )
+			$data	=  substr ( $this -> Contents, $offset, $length ) ;
+		else
+		   {
+			fseek ( $this -> fp, $offset, SEEK_SET ) ;
+			$data	=  fread ( $this -> fp, $length ) ;
+		    }
+		    
+		return ( $data ) ;
+	    }
+    }
+    
+    

@@ -1,0 +1,102 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        WhoisFantomTWNICInformation.phpclass
+
+    DESCRIPTION
+        A parser for whois data coming from Taiwan servers but not recognized by TWNIC.
+
+    AUTHOR
+        Christian Vigh, 07/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/07/31]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace  Thrak\Processors\Whois ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces and classes
+use  	Thrak\System\Object ;
+use	Thrak\IO\Path ;
+use	Thrak\Types\String ;
+use	Thrak\Processors\Whois\WhoisProviderInformation ;
+
+
+/*==============================================================================================================
+
+    WhoisFantomTWNICInformation -
+        A parser for whois data coming from Taiwan servers but not recognized by TWNIC.
+	Example input :
+		Netname: HINET-NET
+		Netblock: 211.72.198.0/24
+
+		Administrator contact:
+		network-adm@hinet.net
+
+		Technical contact:
+		network-adm@hinet.net
+
+  ==============================================================================================================*/
+class  WhoisFantomTWNICInformation		extends  WhoisProviderInformation
+   {
+	protected static		$Definitions		=
+	   [
+		'comments'			=>  [ '\#', '%' ],
+		'keyword-match'			=>  '/^(Network:)? (?P<keyword> [^:]+) \s* : \s* (?P<value> .*) \s*$/imsx',
+		'data-blocks'			=>
+		   [
+			self::BLOCK_PROVIDER  =>
+			   [
+				'start-keywords'		=>  [ 'Netname' ],
+				'required'			=>  true,
+				'multiple'			=>  false,
+				'keywords'			=>
+				   [
+					self::TYPE_PROVIDER_NETRANGE		=>
+					[ 
+						'name'			=>  [ 'NetRange', 'Netblock' ],
+						'type'			=>  self::TYPE_PROVIDER_NETRANGE,
+						'value-type'		=>  self::VALUE_TYPE_NETRANGE,
+						'required'		=>  true
+					 ],
+					self::TYPE_PROVIDER_NETNAME		=>
+					[ 
+						'name'			=>  [ 'NetName' ],
+						'type'			=>  self::TYPE_PROVIDER_NETNAME,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'required'		=>  true
+					 ],
+					self::TYPE_PROVIDER_ADMINISTRATIVE_CONTACT	=>
+					[ 
+						'name'			=>  [ 'Administrator contact' ],
+						'type'			=>  self::TYPE_PROVIDER_ADMINISTRATIVE_CONTACT,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'required'		=>  true
+					 ],
+					self::TYPE_PROVIDER_TECHNICAL_CONTACT	=>
+					[ 
+						'name'			=>  [ 'Technical contact' ],
+						'type'			=>  self::TYPE_PROVIDER_TECHNICAL_CONTACT,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'required'		=>  true
+					 ]
+				    ]
+			    ]
+		    ]
+
+	    ] ;
+
+	// Default country, when no country information can be extracted from whois data
+	public		$DefaultCountry			=  "TW" ;
+
+
+	public function  __construct ( $queried_ip, $contents )
+	   {
+		parent::__construct ( $queried_ip, $contents ) ;
+	    }
+    }

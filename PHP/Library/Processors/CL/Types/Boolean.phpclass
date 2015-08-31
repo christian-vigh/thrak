@@ -1,0 +1,97 @@
+<?php
+/***************************************************************************************************
+
+    NAME
+	Boolean.phpclass
+
+    DESCRIPTION
+	Boolean parameter, that can be specified either as -pname (false) or +pname (true).
+
+    AUTHOR
+     	Christian Vigh, 07/2011.
+
+    HISTORY
+    [Version : 1.0]	[Date : 2011/07/02]	[Author : CV]
+     	Initial version.
+
+   [Version : 2.0]	[Date : 2012/10/06]		[Author : CV]
+	Migrated to the Thrak library version 2.
+
+   [Version : 2.0.1]	[Date : 2015/03/07]		[Author : CV]
+ 	. Changed the constructor to allow 0..1 arguments for a boolean parameter. The new syntax can
+ 	  now be :
+ 		-boolparam		( => false )
+ 		+boolparam		( => true )
+ 		-boolparam boolean	( => boolean value )
+ 		+boolparam boolean	( => ! boolean value )
+
+ ***************************************************************************************************/
+namespace  	Thrak\Processors\CL ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use	Thrak\Types\String ;
+
+
+/*==================================================================================================
+
+    CLBooleanParameter -
+    	Implements a boolean parameter, which can be specified either as -pname (boolean false) or
+    	+parameter (boolean true).
+
+  ==================================================================================================*/
+class  CLBooleanParameter  extends  \Thrak\Processors\CL\CLAbstractParameter
+   {
+	/*-------------------------------------------------------------------------------------------
+
+		Class constructor.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __construct ( $parent, $tags, $valuetext = "boolean" )
+	   {
+	   	$this -> Help 			=  "Defines a boolean parameter, which can be specified as either -pname (boolean false) or +pname (boolean true)." ;
+	   	$this -> ReturnValueHelp	=  "Returns true if the parameter has been specified using the '+' switch character, or false if it has been specified using the '-' switch character." ;
+	   	$this -> SwitchCharacters 	=  "+-" ;
+	   	$remove 			=  array ( 'multiple', 'value-text', 'min-arguments', 'max-arguments', 'arguments', 'validation-regex', 'validation-code' ) ;
+	   	$this -> MinArguments		=  0 ;
+	   	$this -> MaxArguments		=  1 ;
+		$this -> ReturnValueType	=  self::RETURN_VALUE_BOOLEAN ;
+
+		parent::__construct ( $parent, $tags, $valuetext, null, null, $remove ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Preprocess value.
+
+	 --------------------------------------------------------------------------------------------*/
+  	protected function  ProcessValue ( $name, $value )
+  	   {
+  	   	if  ( $this -> Specified )
+  	   	   {
+	 		if  ( $name [0]  ==  '+' )
+	 			$result = true ;
+			else 	// $name [0]  ==  '-'
+				$result = false ;
+
+			 if  ( $value  !==  null )
+			    {
+				 if  ( String::IsTrue ( $value ) )
+					 $boolean	=  true ;
+				 else if  ( String::IsFalse ( $value ) )
+					 $boolean	=  false ;
+				 else
+					 error ( new CLException ( "Invalid boolean value \"$value\" for parameter \"$name\"." ) ) ;
+				 
+				 $result	=  ( $result ) ?  ! $boolean : $boolean ;
+			     }
+			 
+			$this -> SpecifiedValue = $value ;
+
+			return ( $result ) ;
+		    }
+   		else
+   			return ( $this -> DefaultValue ) ;
+  	    }
+    }

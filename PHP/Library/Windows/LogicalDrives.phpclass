@@ -1,0 +1,653 @@
+<?php
+/************************************************************************************************************
+
+    NAME
+	LogicalDrives.phpclass
+	
+    DESCRIPTION
+	A class for retrieving information about system logical drives.
+	
+    AUTHOR
+	Christian Vigh, 11/2014.
+	
+    HISTORY
+    [Version : 1.0]	[Date : 2014/11/03]	[Author : CV]
+     	Initial version.
+
+    [Version : 1.0.1]	[Date : 2015/02/09]	[Author : CV]
+	. Corrected the LogicalDrives::__get_offset method, which did not check for drive existence when a
+ 	  non-numeric index was specified.
+
+ ************************************************************************************************************/
+namespace 	Thrak\Windows ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use 	Thrak\Windows\AbstractWindowsBase ;
+
+
+/*===========================================================================================================
+
+     LogicalDrive class -
+ 	Implements a logical drive description.
+ 	Note that the constructor must be called by the LogicalDrives class, which supplies a WMI object.
+  
+  ===========================================================================================================*/
+class  LogicalDrive 		extends  	AbstractWindowsBase 
+				implements	\ArrayAccess, \Countable, \Iterator
+   {
+	// Drive access types (Access property)
+	const 	DRIVE_ACCESS_UNKNOWN				=  0 ;
+	const 	DRIVE_ACCESS_READ				=  1 ;
+	const 	DRIVE_ACCESS_WRITE				=  2 ;
+	const 	DRIVE_ACCESS_READ_WRITE				=  3 ;
+	const 	DRIVE_ACCESS_WRITE_ONCE 			=  4 ;
+
+	// Drive availability values (Availability property)
+	const 	DRIVE_AVAILABILITY_OTHER 			=  0x01 ;
+	const 	DRIVE_AVAILABILITY_UNKNOWN 			=  0x02 ;
+	const  	DRIVE_AVAILABILITY_RUNNING			=  0x03 ;
+	const 	DRIVE_AVAILABILITY_WARNING 			=  0x04 ;
+	const 	DRIVE_AVAILABILITY_TESTING			=  0x05 ;
+	const 	DRIVE_AVAILABILITY_NOT_APPLICABLE		=  0x06 ;
+	const 	DRIVE_AVAILABILITY_POWER_OFF			=  0x07 ;
+	const 	DRIVE_AVAILABILITY_OFFLINE			=  0x08 ;
+	const 	DRIVE_AVAILABILITY_OFF_DUTY 			=  0x09 ;
+	const 	DRIVE_AVAILABILITY_DEGRADED			=  0x10 ;
+	const 	DRIVE_AVAILABILITY_NOT_INSTALLED		=  0x11 ;
+	const 	DRIVE_AVAILABILITY_INSTALL_ERROR 		=  0x12 ;
+	const 	DRIVE_AVAILABILITY_POWER_SAVE_UNKNOWN_STATE	=  0x13 ;
+	const 	DRIVE_AVAILABILITY_POWER_SAVE_LOW_POWER		=  0x14 ;
+	const 	DRIVE_AVAILABILITY_POWER_SAVE_STANDBY		=  0x15 ;
+	const 	DRIVE_AVAILABILITY_POWER_CYCLE 			=  0x16 ;
+	const 	DRIVE_AVAILABILITY_POWER_SAVE_WARNING		=  0x17 ;
+ 
+	// Config manager error codes
+	const 	CFGMGR_ERRCODE_OK				=  0x00 ;
+	const 	CFGMGR_ERRCODE_BAD_CONFIGURATION		=  0x01 ;
+	const 	CFGMGR_ERRCODE_DRIVER_LOAD_ERROR		=  0x02 ;
+	const 	CFGMGR_ERRCODE_CORRUPTED_DRIVER			=  0x03 ;
+	const 	CFGMGR_ERRCODE_NOT_WORKING_PROPERLY		=  0x04 ;
+	const 	CFGMGR_ERRCODE_UNMANAGEABLE_RESOURCE		=  0x05 ;
+	const 	CFGMGR_ERRCODE_BOOT_CONFLICT			=  0x06 ;
+	const 	CFGMGR_ERRCODE_CANNOT_FILTER 			=  0x07 ;
+	const 	CFGMGR_ERRCODE_MISSING_DRIVER			=  0x08 ;
+	const 	CFGMGR_ERRCODE_FIRMWARE_REPORTING_ERROR		=  0x09 ;
+	const 	CFGMGR_ERRCODE_CANNOT_START			=  0x0A ;
+	const 	CFGMGR_ERRCODE_DEVICE_FAILED 			=  0x0B ;
+	const 	CFGMGR_ERRCODE_NOT_ENOUGH_RESOURCES		=  0x0C ;
+	const 	CFGMGR_ERRCODE_CANNOt_VERIFY_RESOURCES		=  0x0D ;
+	const 	CFGMGR_ERRCODE_NEED_COMPUTER_RESTART		=  0x0E ;
+	const 	CFGMGR_ERRCODE_REENUMERATION_PROBLEM		=  0x0F ;
+	const 	CFGMGR_ERRCODE_UNIDENTIFIED_RESOURCES		=  0x10 ;
+	const 	CFGMGR_ERRCODE_UNKNOWN_RESOURCE_TYPE_REQUESTED	=  0x11 ;
+	const 	CFGMGR_ERRCODE_DRIVER_NEEDS_REINSTALL		=  0x12 ;
+	const 	CFGMGR_ERRCODE_VXD_LOADER_FAILURE 		=  0x13 ;
+	const 	CFGMGR_ERRCODE_REGISTRY_CORRUPTED		=  0x14 ;
+	const 	CFGMGR_ERRCODE_SYSTEM_FAILURE_REMOVING		=  0x15 ;
+	const 	CFGMGR_ERRCODE_DEVICE_DISABLED			=  0x16 ;
+	const 	CFGMGR_ERRCODE_SYSTEM_FAILURE 			=  0x17 ;
+	const 	CFGMGR_ERRCODE_DEVICE_MISSING 			=  0x18 ;
+	const 	CFGMGR_ERRCODE_SETUP_RUNNING			=  0x19 ;
+	const 	CFGMGR_ERRCODE_SETUP_RUNNING_2			=  0x1A ;
+	const 	CFGMGR_ERRCODE_INVALID_LOG_CONFIGURATION	=  0x1B ;
+	const 	CFGMGR_ERRCODE_DEVICE_DRIVERS_NOT_INSTALLED	=  0x1C ;
+	const 	CFGMGR_ERRCODE_DISABLED_DEVICE			=  0x1D ;
+	const 	CFGMGR_ERRCODE_CONFLICTING_IRQ			=  0x1E ;
+	const 	CFGMGR_ERRCODE_NOT_WORKING 			=  0x1F ;
+
+	// Drive type values (DriveType property)
+	const	DRIVE_TYPE_UNKNOWN				=  0 ;
+	const	DRIVE_TYPE_NO_ROOT_DIRECTORY			=  1 ;
+	const	DRIVE_TYPE_REMOVABLE_DISK 			=  2 ;
+	const	DRIVE_TYPE_LOCAL_DISK 				=  3 ;
+	const	DRIVE_TYPE_NETWORK_DRIVE 			=  4 ;
+	const	DRIVE_TYPE_COMPACT_DISK 			=  5 ;
+	const	DRIVE_TYPE_RAM_DISK 				=  6 ;
+
+	// Media types (MediaType property)
+	const 	MEDIA_TYPE_UNKNOWN 				=  0 ;
+	const 	MEDIA_TYPE_FLOPPY_5_1x2_512bs			=  1 ;
+	const 	MEDIA_TYPE_FLOPPY_5_1x44_512bs			=  2 ;
+	const 	MEDIA_TYPE_FLOPPY_2x88_512bs			=  3 ;
+	const 	MEDIA_TYPE_FLOPPY_3_20x8_512bs			=  4 ;
+	const 	MEDIA_TYPE_FLOPPY_3_720_512bs			=  5 ;
+	const 	MEDIA_TYPE_FLOPPY_5_360_512bs			=  6 ;
+	const 	MEDIA_TYPE_FLOPPY_5_320_512bs			=  7 ;
+	const 	MEDIA_TYPE_FLOPPY_5_320_1024bs			=  8 ;
+	const 	MEDIA_TYPE_FLOPPY_5_180_512bs			=  9 ;
+	const 	MEDIA_TYPE_FLOPPY_5_160_512bs			=  10 ;
+	const 	MEDIA_TYPE_REMOVABLE_MEDIA 			=  11 ;
+	const 	MEDIA_TYPE_FIXED_HARD_DISK 			=  12 ;
+	const 	MEDIA_TYPE_FLOPPY_3_120M_512bs			=  13 ;
+	const 	MEDIA_TYPE_FLOPPY_3_640_512bs			=  14 ;
+	const 	MEDIA_TYPE_FLOPPY_5_640_512bs			=  15 ;
+	const 	MEDIA_TYPE_FLOPPY_5_7230_512bs			=  16 ;
+	const 	MEDIA_TYPE_FLOPPY_3_1x2_512bs			=  17 ;
+	const 	MEDIA_TYPE_FLOPPY_3_1x23_1024bs			=  18 ;
+	const 	MEDIA_TYPE_FLOPPY_5_1x23_1024bs			=  19 ;
+	const 	MEDIA_TYPE_FLOPPY_3_128M_512bs			=  20 ;
+	const 	MEDIA_TYPE_FLOPPY_3_230M_512bs			=  21 ;
+	const 	MEDIA_TYPE_FLOPPY_8_256_128bs			=  22 ;
+ 
+	// Power management capabilities (PowerManagementCapabilities property)
+	const 	PMC_UNKNOWN 					=  0x00 ;
+	const 	PMC_NOT_SUPPORTED 				=  0x01 ;
+	const 	PMC_DISABLED 					=  0x02 ;
+	const 	PMC_ENABLED 					=  0x03 ;
+	const 	PMC_AUTO_POWER_SAVING				=  0x04 ;
+	const 	PMC_POWER_STATE_SETTABLE			=  0x05 ;
+	const 	PMC_POWER_CYCLING_SUPPORTED			=  0x06 ;
+	const 	PMC_TIMED_POWER_ON_SUPPORTED			=  0x07 ;
+ 
+	// State of the logical device (StatusInfo property)
+	const 	STATUS_OTHER 					=  1 ;
+	const 	STATUS_UNKNOWN 					=  2 ;
+	const 	STATUS_ENABLED 					=  3 ;
+	const 	STATUS_DISABLED					=  4 ;
+	const 	STATUS_NOT_APPLICABLE 				=  5 ;
+ 
+	// Array keys to help for iterations - Correspond to dynamically created properties
+	private $PropertyNames					=  [] ;
+	
+	
+	
+	/*===========================================================================================================
+
+	    Constructor -
+		Initializes a logical drive instance and retrieve its properties.
+		Supplied parameter must be a Win32_LogicalDisk instance ; this is why this constructor is only
+		intended to be called from within the LogicalDrives class.
+		
+	  ===========================================================================================================*/
+	public function  __construct ( $wmi_record )
+	   {
+		parent::__construct ( ) ;
+		
+		// This loop extracts each Win32_LogicalDrive property to create an equivalent one in the LogicalDrive
+		// class, that will be PHP-friendly
+		foreach  ( $wmi_record -> Properties_  as  $property )
+		   {
+			$property_name 			=  $property -> Name ;
+			
+			// Property is an array : we have to extract each item from the underlying variant
+			if  ( $property -> IsArray )
+			   {
+				$property_value	=  array ( ) ;
+
+				// ... but be careful to null or empty arrays
+				if (  $property -> Value  !==  null  &&  variant_get_type ( $property -> Value )  !=  VT_NULL )
+				   {
+					foreach (  $property -> Value  as  $item )
+						$property_value []	=  $item ;
+				    }
+			    }
+			// Property should be a "standard" value, that can be mapped to one of the PHP base scalar types.
+			else
+				$property_value 	=  $property -> Value ;
+				
+			// Assign the property to this instance (either a scalar type or an array)
+			$this -> $property_name 	=  $property_value ;
+			
+			// Add it to the list of dynamically defined properties
+			$this -> PropertyNames []	=  $property_name ;
+		    }
+	    }
+	    
+
+	/*==============================================================================================================
+	
+	    NAME
+	        GetDriveType - Returns the drive type as a string.
+	
+	    PROTOTYPE
+	        $value	=  $drive -> GetDriveType ( ) ;
+	
+	    DESCRIPTION
+	        Returns the drive type as a string.
+	
+	  ==============================================================================================================*/
+	public function  GetDriveType ( )
+	   {
+		switch  ( $this -> DriveType )
+		   {
+			case	self::DRIVE_TYPE_UNKNOWN		:  return ( "Unknown" ) ;
+			case	self::DRIVE_TYPE_NO_ROOT_DIRECTORY	:  return ( "No root directory" ) ;
+			case	self::DRIVE_TYPE_REMOVABLE_DISK		:  return ( "Removable disk" ) ;
+			case	self::DRIVE_TYPE_LOCAL_DISK		:  return ( "Local disk" ) ;
+			case	self::DRIVE_TYPE_NETWORK_DRIVE		:  return ( "Network drive" ) ;
+			case	self::DRIVE_TYPE_COMPACT_DISK		:  return ( "Compact disk" ) ;
+			case	self::DRIVE_TYPE_RAM_DISK		:  return ( "Ram disk" ) ;
+			default						:  return ( "Unknown drive type 0x" . sprintf ( "%02d", $this -> DriveType ) ) ;
+		    }
+	    }
+	
+	
+	/*===========================================================================================================
+
+	    NAME
+		GetNetworkName - Retrieves the network name of a drive instance.
+		
+	    PROTOTYPE 
+		$name 	=  $drive -> GetNetworkName ( ) ;
+		
+	    DESCRIPTION
+		Retrieves the network name of a mapped drive, separating hostname and resource name.
+		
+	    RETURN VALUE
+		Returns an associative array with the following entries :
+		- fullname :
+			Full network name (eg, "\\myhost\myresource").
+		- host :
+			Hostname part (eg, "myhost").
+		- resource :
+			Resource name part (eg, "myresource").
+	    
+	  ===========================================================================================================*/
+	public function  GetNetworkName ( )
+	   {
+		$result 	=  array ( 'fullname'  =>  $this -> ProviderName, 'host' => '', 'resource' => '' ) ;
+		
+		if  ( preg_match ( '#^\\(?P<host>[^\]+)\(?P<resource).*$#', $this -> ProviderName, $matches ) )
+		   {
+			$result [ 'host' ]	=  $matches [ 'host' ] ;
+			$result [ 'resource' ]	=  $matches [ 'resource' ] ;
+		    }
+		    
+		return ( $result ) ;
+	    }
+	    
+	    
+	/*===========================================================================================================
+
+	    NAME
+		Isxxx - Drive type querying functions.
+		
+	    PROTOTYPE 
+		$status 	=  $drive -> IsCompactDisk ( ) ;
+		$status 	=  $drive -> IsLocalDisk ( ) ;
+		$status 	=  $drive -> IsNetworkDrive ( ) ;
+		$status 	=  $drive -> IsRamDisk ( ) ;
+		$status 	=  $drive -> IsRemovableDisk ( ) ;
+		
+	    DESCRIPTION
+		These functions check whether the logical drive has the corresponding type.
+		
+	    RETURN VALUE
+		True if the logical drive is of the specified type, false otherwise.
+	    
+	  ===========================================================================================================*/
+	public function  IsCompactDisk ( )
+	   { return ( $this -> DriveType  ===  self::DRIVE_TYPE_COMPACT_DISK ) ; }
+	   
+	public function  IsLocalDisk ( )
+	   { return ( $this -> DriveType  ===  self::DRIVE_TYPE_LOCAL_DISK ) ; }
+
+	public function  IsNetworkDrive ( )
+	   { return ( $this -> DriveType  ===  self::DRIVE_TYPE_NETWORK_DRIVE ) ; }
+	   
+	public function  IsRamDisk ( )
+	   { return ( $this -> DriveType  ===  self::DRIVE_TYPE_RAM_DISK ) ; }
+	   
+	public function  IsRemovableDisk ( )
+	   { return ( $this -> DriveType  ===  self::DRIVE_TYPE_REMOVABLE_DISK ) ; }
+	
+
+	/*==============================================================================================================
+	
+	    NAME
+	        NormalizeLetter - Normalizes a drive letter.
+	
+	    PROTOTYPE
+	        $letter		=  LogicalDrive::NormalizeLetter ( $letter ) ;
+	
+	    DESCRIPTION
+	        Normalizes a drive letter specification, ensuring that is has the form : [uppercase_letter]:
+	
+	    PARAMETERS
+	        $letter (string) -
+	                Drive letter to be normalized.
+	
+	    RETURN VALUE
+	        A normalized drive letter.
+	
+	  ==============================================================================================================*/
+	public static function  NormalizeDriveLetter ( $letter )
+	   {
+		$letter		=  trim ( $letter ) ;
+		
+		if  ( preg_match ( '/^[a-zA-Z]:?$/', $letter ) )
+			return ( strtoupper ( $letter [0] ) . ":" ) ;
+		else
+			return ( false ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	        Countable interface implementation.
+	
+	  ==============================================================================================================*/
+	public function  count ( )
+	   { return ( count ( $this -> PropertyNames ) ) ; }
+	
+	
+	/*==============================================================================================================
+	
+	        ArrayAccess interface implementation.
+	
+	  ==============================================================================================================*/
+	private function  __offset_get ( $offset )
+	   {
+		if  ( is_integer ( $offset )  &&  $offset  >  0  &&  $offset  <  count ( $this -> PropertyNames ) )
+			return ( $this -> PropertyNames [ $offset ] ) ;
+		else if  ( is_string  ( $offset )  &&  is_string  ( $offset ) )
+			return  ( $offset ) ;
+		else
+			return ( false ) ;
+	    }
+	
+	
+	public function  offsetExists ( $offset )
+	   { return ( $this -> __offset_get ( $offset )  !==  false ) ; }
+		
+	
+	public function  offsetGet ( $offset )
+	   {
+		$real_offset	=  $this -> __offset_get ( $offset ) ;
+		
+		if  ( $real_offset  !==  false )
+			return ( $this -> $real_offset ) ;
+		else
+			error ( new \Thrak\System\OutOfRangeException ( "Invalid offset $offset." ) ) ;
+	    }
+
+	
+	public function  OffsetSet ( $offset, $value ) 
+	   { error ( new \Thrak\System\UnsupportedOperationException ( ) ) ; }
+
+	
+	public function  Offsetunset ( $offset ) 
+	   { error ( new \Thrak\System\UnsupportedOperationException ( ) ) ; }
+	
+	
+	/*==============================================================================================================
+	
+	        Iterator interface implementation.
+	
+	  ==============================================================================================================*/
+	private	$__iterator_index	=  null ;
+	
+	
+	public function  rewind ( )
+	   { $this -> __iterator_index = 0 ; }
+	
+	public function  valid ( )
+	   { return ( $this -> __iterator_index  >=  0  &&  $this -> __iterator_index  <  count ( $this -> PropertyNames ) ) ; }
+	
+	public function  next ( )
+	   { $this -> __iterator_index ++ ; }
+	
+	public function  key ( )
+	   { return ( $this -> PropertyNames [ $this -> __iterator_index ] ) ; }
+	
+	public function  current ( )
+	   {
+		$property	=  $this -> PropertyNames [ $this -> __iterator_index ] ;
+		
+		return  ( $this -> $property ) ;
+	    }
+	
+	
+    }
+    
+    
+/*===========================================================================================================
+    
+    LogicalDrives class -
+	A class that holds the list of currently defined Windows logical drives.
+	The class can be manipulated as an array (indexes are either integers or drive names) and iterated
+	through.
+	
+  ===========================================================================================================*/
+class  LogicalDrives  		extends  	AbstractWindowsBase
+				implements 	\ArrayAccess, \Countable, \IteratorAggregate
+   {
+	// WMI instance for retrieving logical drive information
+	private static 	$WmiInstance 		=  null ;
+	// Array of LogicalDrive instances, one for each defined logical drive
+	private 	$Drives ;
+	private 	$DriveKeys ;
+	// A 32-bit bitset ; each position corresponds to a drive letter, with bit 0 = A, bit 1 = B, ..., bit 25 = Z.
+	// A bit set means that the corresponding drive letter is assigned.
+	private 	$Assignments ;
+	
+	
+	/*===========================================================================================================
+
+	    NAME
+		Constructor - Builds a LogicalDrives instance.
+		
+	    PROTOTYPE 
+		$drives 	=  new LogicalDrives ( ) ;
+		
+	    DESCRIPTION
+		Instanciates a LogicalDrives class and retrieves the list of currently defined logical drives.
+	    
+	  ===========================================================================================================*/
+	public function  __construct (  )
+	   {
+		parent::__construct ( ) ;
+
+		// Well, one WMI instance for this class should be enough...
+		if  ( self::$WmiInstance  ===  null )
+			self::$WmiInstance 	=  new \COM ( 'winmgmts:{impersonationLevel=Impersonate}!//./root/CIMV2' ) ;
+		
+		// Retrieve logical drive list.
+		$this -> Refresh ( ) ;
+	    }
+	
+	
+	/*===========================================================================================================
+
+	    __get_drive_list -
+		Retrieves the list of assigned or unassigned drive letters.
+		
+	  ===========================================================================================================*/
+	private function  __get_drive_list ( $assigned = true )
+	   {
+		$result 	=  [] ;
+		
+		for  ( $i = ord ( 'A' ) - ord ( 'A' ) ; $i  <=  ord ( 'Z' ) - ord ( 'A' ) ; $i ++ )
+		   {
+			$bit 		=  $this -> Assignments  &  ( 1 <<  $i ) ;
+			
+			if  ( ( $bit  &&  $assigned )   ||  ( ! $bit  &&  ! $assigned ) )
+				$result []	=  chr ( $i + ord ( 'A' ) ) ;
+		    }
+		    
+		return ( $result ) ;
+	    }
+
+	    
+	/*===========================================================================================================
+
+	    NAME
+		GetAssignedDrives - Retrieves the list of assigned drives.
+		
+	    PROTOTYPE 
+		$array 	=  $drives -> GetAssignedDrives ( ) ;
+		
+	    DESCRIPTION
+		Retrieves the list of assigned drives, as an array of drive letters (without the trailing colon, ':').
+		
+	    RETURN VALUE
+		An array of assigned drive letters.
+	    
+	  ===========================================================================================================*/
+	public function  GetAssignedDrives ( )
+	   { return ( $this -> __get_drive_list ( true ) ) ; }
+
+	   
+	
+	/*===========================================================================================================
+
+	    NAME
+		GetNextAvailableDrive - Retrieves the letter of the next available drive.
+		
+	    PROTOTYPE 
+		$next_drive 	=  $drives -> GetNextAvailableDrive ( ) ;
+		
+	    DESCRIPTION
+		Returns the letter of the next available (unassigned) logical drive.
+		
+	    RETURN VALUE
+		A drive letter, without the trailing colon, ":", or false if all drive letters are in use (not tested...)
+	    
+	  ===========================================================================================================*/
+	public function  GetNextAVailableDrive ( )
+	   {
+		$assignments 	=  $this -> Assignments ;
+		$i 		=  0 ;
+		
+		while  ( $i  <  26  &&  ( $assignments & 1 ) )
+		   {
+			$assignments	>>=  1 ;
+			$i ++ ;
+		    }
+		    
+		return  ( ( $i  <  26 ) ?  chr ( $i + ord ( 'A' ) ) : false ) ;
+	    }
+
+	    
+	/*===========================================================================================================
+
+	    NAME
+		GetUnassignedDrives - Retrieves the list of unassigned drives.
+		
+	    PROTOTYPE 
+		$array 	=  $drives -> GetUnassignedDrives ( ) ;
+		
+	    DESCRIPTION
+		Retrieves the list of unassigned drives, as an array of drive letters (without the trailing colon, ':').
+		
+	    RETURN VALUE
+		An array of unassigned drive letters.
+	    
+	  ===========================================================================================================*/
+	public function  GetUnassignedDrives ( )
+	   { return ( $this -> __get_drive_list ( false ) ) ; }
+	
+
+	/*===========================================================================================================
+
+	    NAME
+		Refresh - Refreshes the list of logical drives.
+		
+	    PROTOTYPE 
+		$drives -> Refresh ( ) ;
+		
+	    DESCRIPTION
+		Refreshes the list of logical drives. This function can be called when Windows view of logical drives
+		has changed.
+	    
+	  ===========================================================================================================*/
+	public function  Refresh ( )
+	   {
+		$this -> Drives 	=  array ( ) ;			// Reset drives array
+		$this -> Assignments 	=  0x0 ;			// Drive letter assignment bitmask
+
+		// Query WMI
+		$rs 			=  self::$WmiInstance -> ExecQuery ( "SELECT * FROM Win32_LogicalDisk" ) ;
+		
+		// Loop through results
+		foreach  ( $rs  as  $row )
+		   {
+			// Add this entry ; the device id (= drive name) is also used as a key in the Drives associative array
+			$drive 					=  new LogicalDrive ( $row ) ;
+			$this -> Drives [ $drive -> DeviceID ]	=  $drive ;
+			
+			// Mark this drive letter as assigned
+			$letter_bitpos 				=  ord ( strtoupper ( $drive -> DeviceID [0] ) ) - ord ( 'A' ) ;
+			$this -> Assignments                   |=  ( 1 << $letter_bitpos ) ;
+		    }
+		    
+		// not really necessary, since the WMI query seems to return the results sorted by device id
+		ksort ( $this -> Drives ) ;
+		
+		// For helping array access use both drive letters and integers as offsets
+		$this -> DriveKeys 	=  array_keys ( $this -> Drives ) ;
+	    }
+	    
+	    
+	/*===========================================================================================================
+
+		Countable interface implementation.
+		
+	  ===========================================================================================================*/
+	public function  count ( )
+	   { return ( count ( $this -> Drives ) ) ; }
+
+	   
+	/*===========================================================================================================
+
+		IteratorAggregate interface implementation.
+		
+	  ===========================================================================================================*/
+	public function  getIterator ( )
+	   { return ( new \ArrayIterator ( $this -> Drives ) ) ; }
+	   
+	   
+	/*===========================================================================================================
+
+		ArrayAccess interface implementation.
+		
+	  ===========================================================================================================*/
+	  
+	// __get_offset -
+	//	Allows array access either through an integer index or a drive name (drive letter or drive letter + colon).
+	//	Returns false if :
+	//	- The supplied offset is an integer outside the range of 0..number of drives - 1
+	//	- The supplied offset is a string that does not specify a valid drive letter.
+	private function  __get_offset ( $offset )
+	   {
+		if  ( is_numeric ( $offset ) )
+			return ( ( $offset  >=  0  &&  $offset  <=  count ( $this -> DriveKeys ) ) ?  $this -> DriveKeys [ $offset ] : false ) ;
+		else
+		   {
+			if  ( preg_match ( '/^[a-zA-Z]:?$/', $offset ) )
+			   {
+				$drive	=  strtoupper ( $offset [0] ) . ":" ;
+				
+				if  ( in_array ( $drive, $this -> DriveKeys ) )
+					return ( $drive ) ;
+				else
+					return ( false ) ;
+			    }
+			else
+				return ( false ) ;
+		    }
+	    }	
+	   
+	public function  offsetExists ( $offset )
+	   { return ( $this -> __get_offset ( $offset )  !==  false ) ; }
+	   
+	   
+	public function  offsetGet ( $offset )
+	   {
+		$real_offset 	=  $this -> __get_offset ( $offset ) ;
+		
+		if  ( $real_offset  !==  false )
+			return ( $this -> Drives [ $real_offset ] ) ;
+		else
+			error ( new \Thrak\System\InvalidArgumentException ( "Invalid offset $offset." ) ) ;
+	    }
+	    
+	public function  offsetSet ( $offset, $value )
+	   { error ( new \Thrak\System\UnsupportedOperationException ( ) ) ; }
+	   
+	public function  offsetUnset ( $offset )
+	   { error ( new \Thrak\System\UnsupportedOperationException ( ) ) ; }
+	   
+	  
+    }			

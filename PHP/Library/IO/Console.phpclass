@@ -1,0 +1,424 @@
+<?php
+/***************************************************************************************************
+
+    NAME
+	Console.phpclass
+
+    DESCRIPTION
+	Classe for console access when PHP is run into command-line mode.
+
+    AUTHOR
+	Christian Vigh, 10/2012.
+
+    HISTORY
+    [Version : 1.0]		[Date : 2012/10/04]		[Author : CV]
+	Initial release.
+
+    [Version : 1.0.1]		[Date : 2015/02/05]		[Author : CV]
+ 	. Use STDIN instead of opening each time the file php://stdin.
+ 	. Use file pointers for output function (STDOUT, STDERR or else).
+ 	. Added the ErrorOutput() and FileOutput() methods.
+
+    [Version : 1.0.2]		[Date : 2015/02/09]		[Author : CV]
+ 	. Added the RestrictedInput and Prompt methods.
+
+    [Version : 1.0.3]		[Date : 2015/05/24]		[Author : CV]
+	. Added the YesNo() method.
+
+    [Version : 1.0.4]		[Date : 2015/05/24]		[Author : CV]
+ 	. Added a static constructor to define the constants STDIN, STDOUT and STDERR, which are
+ 	  missing when used in non-cli mode. Note that STDIN maps to null and STDOUT/STDERR map to
+ 	  "php://stdout".
+
+ ***************************************************************************************************/
+namespace 	Thrak\IO ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces & objects
+use 		Thrak\System\Object 		as  Object ;
+use 		Thrak\Types\String		as  String ;
+
+
+/*==================================================================================================
+
+    Console class -
+	A class that provides miscellaneous methods for reading from and writing to the console
+	(standard input and output).
+
+  ==================================================================================================*/
+class  Console 		extends  Object
+   {
+	/*==============================================================================================================
+	
+	    Static constructor -
+	        Defines the STDIN, STDOUT and STDERR constants when used in non-cli mode.
+	
+	  ==============================================================================================================*/
+	public static function  __static_construct ( )
+	   {
+		if  ( ! THRAK_STANDALONE )
+		   {
+			$fp	=  fopen ( "php://stdout", "w" ) ;
+			define ( 'STDOUT', $fp ) ;
+			define ( 'STDERR', $fp ) ;
+			define ( 'STDIN' , null ) ;
+		    }
+	    }
+	
+	
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	  	InputChar, Input, RestrictedInput, Prompt - Reads a character or a string.
+
+	    PROTOTYPE
+                $c = self::InputChar		( ) ;
+                $s = self::Input		( ) ;
+	 	$s = self::RestrictedInput	( $answers, $default = null ) ;
+	 	$s = self::Prompt		( $message, $answers, $default = null, $prompt_help = false ) ; 
+
+	    DESCRIPTION
+		Reads a character or a string from the standard input.
+                These functions only work in standalone mode ; they throw an exception when used in
+                Web mode.
+
+	   PARAMETERS 
+	 	$answers (array of strings) -
+	 		List of allowed answers. Each item can be itself an array of strings which
+	 		specifies one authorized answer, together with its aliases.
+	  
+	 	$default (string) -
+	 		Default answer. Can be any string specified in the $answers array.
+	  
+	 	$message (string) -
+	 		Message to be prompted. The string " :" is automatically appended if not
+	 		specified.
+	  
+	 	$prompt_help (boolean) -
+	 		If true, displays authorized input together with the prompt message.
+	 
+	    NOTES
+	    	The returned value does not include any EOL character.
+
+	 --------------------------------------------------------------------------------------------*/
+	
+	// __normalize_answers :
+	//	Ensures two things :
+	//	- That each element of $answers is itself an array (which can contain an answer and its
+	//	  aliases)
+	//	- That the default answer, if any, belongs to the list of authorized answers
+	private static function  __normalize_answers ( $answers, $default, $caller )
+	   {
+		$result		=  [] ;
+		$found_default	=  false ;
+		
+		// Loop through answer items
+		foreach  ( $answers  as  $answer )
+		   {
+			$normalized_result	=  [] ;
+			
+			// If this answer has multiple aliases, convert them to lowercase, checking that one of them
+			// could be the default
+			if  ( is_array ( $answer ) )
+			   {
+				foreach  ( $answer  as  $subanswer )
+			 	   {
+					if  ( $default  &&  ! strcasecmp ( $subanswer, $default ) )
+						$found_default	=  true ;
+					
+					$normalized_result []	=  strtolower ( $subanswer ) ;
+				    }
+				
+				$result []	=  $normalized_result ;
+			    }
+			// Otherwise, simply lowercase the answer (but keep checking if this is the default answer)
+			else
+			   {
+				if  ( $default  &&  ! strcasecmp ( $answer, $default ) )
+					$found_default	=  true ;
+					
+				$result []	=  [ strtolower ( $answer ) ] ;
+			    }
+		    }
+		
+		// Default answer supplied, but does not match any of the possible answers and their aliases
+		if  ( $default  &&  ! $found_default )
+			error ( new \Thrak\Exception\InvalidArgumentException ( "$caller : The specified default value \"$default\" " .
+										"does not belong to the list of authorized answers." ) ) ;
+		
+		// All done, return
+		return ( $result ) ;
+	    }
+	
+	
+        public static function  InputChar ( )
+           {
+                self::__OnlyForStandalone ( ) ;
+                $c  = fgetc ( STDIN ) ;
+                return ( trim ( $c ) ) ;
+            }
+
+
+        public static function  Input ( )
+           {
+                self::__OnlyForStandalone ( ) ;
+                $s = fgets ( STDIN ) ;
+                return ( trim ( $s ) ) ;
+            }
+
+	
+	public static function  RestrictedInput ( $answers, $default = null )
+	   {
+		$answers	=  self::__normalize_answers ( $answers, $default, "Console::RestrictedInput()" ) ;
+		
+		return ( self::__RestrictedInput ( $answers, $default ) ) ;
+	    }
+	
+	
+	private static function  __RestrictedInput ( $answers, $default ) 
+	   {
+		$answer		=  trim ( self::Input ( ) ) ;
+		
+		// Empty answer : if no default value supplied, return failure
+		if  ( ! $answer )
+		   {
+			if  ( $default )
+				$answer		=  $default ;
+			else
+				return ( false ) ;
+		    }
+			
+		// Find the first alias matching this answer. When multiple aliases have been supplied for one answer,
+		// return the first alias.
+		foreach  ( $answers  as  $group )
+		   {
+			foreach  ( $group  as  $group_answer )
+			   {
+				if  ( ! strcasecmp ( $answer, $group_answer ) )
+					return ( $group [0] ) ;
+			    }
+		    }
+		
+		return ( false ) ;
+	    }
+
+	
+	public static function  Prompt ( $message, $answers, $default = null, $prompt_help = false )
+	   {
+		$answers	=  self::__normalize_answers ( $answers, $default, "Console::Prompt()" ) ;
+		
+		// Prompt help : modify the prompt message by including the possible answers (if aliases are specified,
+		// only the first one will be included in the help).
+		// For example :
+		//	Prompt ( "Message :", [ 'y', 'n' ] ))
+		// will yield to :
+		//	Message [yn] :
+		// Alternatively :
+		//	Prompt ( "Message :", [ 'y', 'n' ], 'y' ))
+		// will yield to :
+		//	Message [Yn] :
+		// The prompt can finish with either the '?' or ':' characters ; if none present, prompt help and the
+		// ':' character will be appended
+		if  ( $prompt_help )
+		   {
+			$one_character_answers	=  true ;
+			
+			foreach  ( $answers  as  $group )
+			   {
+				if  ( strlen ( $group [0] )  >  1 )
+				   {
+					$one_character_answers	=  false ;
+					break ;
+				    }
+			    }
+			
+			// If all answers are one-character long, they will be concatenated and the default answer (if any)
+			// will be uppercased
+			// If default answer is non-alphabetic, a '*' sign will be appended after it
+			if  ( $one_character_answers )
+			   {
+				$choices	=  "" ;
+				
+				foreach  ( $answers  as  $answer )
+				   {
+					if  ( ! strcasecmp ( $answer [0], $default ) )
+					   {
+						if  ( strtolower ( $answer [0] )  ==  strtoupper ( $answer [0] ) )
+							$choices	.=  $answer [0] . '*' ;
+						else
+							$choices	.=  strtoupper ( $answer [0] ) ;
+					    }	
+					else
+						$choices	.=  strtolower ( $answer [0] ) ;
+				    }
+			    }
+			// Answers are more than one character long : they will be separated by a comma, but the same rules
+			// as above still apply.
+			else 
+			   {
+				$answer_count	=  count ( $answers ) ;
+				$choice_array	=  [] ;
+				
+				for ( $i = 0 ; $i  <  $answer_count ; $i ++ )
+				   {
+					$group_count	=  count ( $answers [$i] ) ;
+					$answer_group	=  $answers [$i] ;
+					$is_default	=  false ;
+					
+					foreach  ( $answer_group  as  $answer )
+					   {
+						if  ( ! strcasecmp ( $answer, $default ) )
+						   {
+							$is_default	=  true ;
+							break ;
+						    }
+					    }
+					
+					$new_choice	=  $answer_group [0] ;
+					
+					if  ( $is_default )
+					   {
+						if  ( strtoupper ( $new_choice )  ==  strtolower ( $new_choice ) )
+							$new_choice	.=  '*' ;
+						else
+							$new_choice	 =  strtoupper ( $new_choice ) ;
+					    }
+
+					$choice_array []	=  $new_choice ;
+				    }
+				
+				$choices	=  implode ( ',', $choice_array ) ;
+			    }
+			
+			// Rebuild the prompt message, including the prompt choices
+			$replacement	=  preg_replace ( '/\s*[?:]\s*/', " [$choices] : ", $message ) ;
+
+			if  ( $replacement  !=  $message )
+				$message	 =  $replacement ;
+			else
+				$message	.= " [$choices] : " ;
+		    }
+		// No prompt help : append a default semicolon if none provided
+		else if  ( ! preg_match ( '/[:?]\s*/', $message ) )
+			$message	.=  ' : ' ;
+		
+		// Prompt loop
+		while  ( true )
+		   {
+			echo ( "$message" ) ;
+			$result		=  self::__RestrictedInput ( $answers, $default ) ;
+			
+			if  ( $result  ===  false )
+				output ( "Invalid answer, please try again..." ) ;
+			else
+				return ( strtolower ( $result ) ) ;
+		    }
+	    }
+	
+
+   	/*-------------------------------------------------------------------------------------------
+	
+	        Prompt shortcuts.
+	
+	 --------------------------------------------------------------------------------------------*/
+	public static function  YesNo ( $message, $default )
+	   {
+		return ( self::Prompt ( $message, [ 'y', 'n' ], $default, true ) ) ;
+	    }
+	   
+	   
+   	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	  	Output - Outputs a string.
+
+	    PROTOTYPE
+	  	self::Output ( $message ) ;
+
+	    DESCRIPTION
+		Displays the specified message.
+
+	    PARAMETERS
+	    	$message (string) -
+			Message to be displayed. A newline is added at the end of the message if none
+			was provided.
+
+	    NOTES
+	    	This function works both for tetx and html output.
+
+	 --------------------------------------------------------------------------------------------*/
+        private static function  __Output ( $fp, $value )
+           {
+	   	if  ( IS_STANDALONE )
+	   	   {
+	   		$replace_from		=  "\n" ;
+	   		$replace_with 		=  "\r\n" ;
+	   		$newline 		=  "\r\n" ;
+	   	    }
+		else
+	   	   {
+	   		$replace_from		=  array ( "\r", "\n" ) ;
+	   		$replace_with 		=  array ( "", "<br/>" ) ;
+	   		$newline 		=  "<br/>" ;
+
+	   	    }
+
+        	foreach  ( $value  as  $message )
+        	   {
+        		if  ( is_array ( $message ) )
+        			self::__Output ( $fp, $message, $replace_from, $replace_from, $newline ) ;
+        		else
+        		   {
+        		   	$message 	=  str_replace ( $replace_from, $replace_with, $message ) ;
+
+        		   	if  ( substr ( $message, -1, 1 )  !=  "\n" )
+        		   		$message .= $newline ;
+
+				if  ( IS_STANDALONE )
+        		   		fputs ( $fp, $message ) ;
+				else 
+					echo ( $message ) ;
+        		   }
+        	    }
+            }
+
+
+	public static function  Output ( )
+	   {
+		self::__Output ( STDOUT, func_get_args ( ) ) ;
+	    }
+
+	
+	public static function  ErrorOutput ( )
+	   {
+		self::__Output ( STDERR, func_get_args ( ) ) ;
+	    }
+
+	
+	public static function  FileOutput ( )
+	   {
+		$args	=  func_get_args ( ) ;
+		$fp	=  array_shift ( $args ) ;
+		
+		self::__Output ( $fp, $args ) ;
+	    }
+
+	
+	/*-------------------------------------------------------------------------------------------
+
+	    __OnlyForStandalone -
+	    	Used by methods that work only in CLI mode : throws an exception if not in CLI mode.
+
+	 --------------------------------------------------------------------------------------------*/
+        private static function __OnlyForStandalone ( )
+           {
+                if  ( ! IS_STANDALONE )
+                   {
+                        $trace   = debug_backtrace ( ) ;
+                        $caller  = $backtrace [1] [ 'function' ] ;
+
+                        error ( new \Thrak\System\RuntimeException ( "The $caller() function can only be used in PHP CLI mode." ) ) ;
+                    }
+            }
+   }

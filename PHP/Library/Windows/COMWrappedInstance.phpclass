@@ -1,0 +1,557 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        COMWrappedInstance.phpclass
+
+    DESCRIPTION
+        This is the base class for all wrapped COM objects. The COMWrapper class always creates a class
+        definition that inherits from COMWrappedInstance, which provides basic services to set/retrieve/call
+        members from COM objects.
+                
+        Since it's impossible to inherit from a COM object, the COMWrappedInstance class stores a reference
+        to the object passed to its constructor. 
+        It then use the magic functions __get, __set and __call to provide access to the underlying COM
+        object methods & properties.
+                
+        To make the print_r() function work, the derived class must implements private properties
+        corresponding to the COM object properties. Theses properties are never accessed, they just serve 
+        as a list of real property names defined in the underlying COM object. These properties are simply
+        fake properties.
+
+    AUTHOR
+        Christian Vigh, 10/2014.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2014/10/22]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Windows\COM ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use  	Thrak\System\Object ;
+use	Thrak\Windows\AbstractWindowsBase ;
+use	Thrak\Internals\ReflectionClass ;
+
+
+/*===========================================================================================================
+
+    COMWrappedInstance -
+	Base class for all wrapping classes created by the COMWrapper class.
+                               
+*===========================================================================================================*/ 
+abstract class  COMWrappedInstance  extends  Object
+   {
+	// Global store for all COM class reflection objects and private/protected properties.
+	// Note that identifiers in this template are surrounded by 4 underlines, to prevent polluting
+	// the name space of the calling class.
+	private static		$____properties____		=  array ( ) ;
+	private static		$____methods____		=  array ( ) ;
+
+	// All these properties are related to the optional helper object supplied to the constructor
+	private static		$____helper_object____		=  null ;
+	private static		$____helper_properties____	=  array ( ) ;
+	private static		$____helper_methods____		=  array ( ) ;
+	
+	// Special method/property names that conflict with PHP
+	// (keys are the original name, values are the substituted one).
+	private static  $____conflicting_names____     =  array
+	   (
+	        'Clone'			=>  '__clone',
+	        'Goto'			=>  '__goto',
+	        'Next'                  =>  '__next'
+	    ) ;
+	// The same array, but flipped
+	private static		$____resolved_names____		=  null ;
+	
+	// This one is used to track print_r calls to __debuginfo
+	private static		$____printr_seen_objects____	=  array ( ) ;
+	// And this one to track the number of created instances
+	private static		$____created_instances____	=  0 ;
+	
+	// Wrapped COM object
+	protected		$____com_object____ ;
+	// And its class
+	private			$____com_class____ ;
+	
+	
+	/*===================================================================================================
+	
+	    NAME
+	        Constructor - Initializes the wrapper class.
+	               
+	    PROTOTYPE
+	        $object = new COMWrappedInstance ( $com_object, $helper = null ) ;
+	               
+	    DESCRIPTION
+	        Initialize the wrapper class and gets the list of private properties defined in the derived
+	        class.
+	               
+	    PARAMETERS
+		$com_object (object) -
+	                An instance of a COM object.
+	 
+	 	$helper (string or object) -
+	 		Helper object or class that can provide additional methods and properties to the 
+	 		wrapped COM object. These members must have the [COMWrapperProperty] or 
+	 		[COMWrapperMethod] attributes.
+	 		If a class name is specified, only static properties and methods can be called.
+	 		The help class or object is considered to be a friend of the COMWrappedInstance
+	 		class : all its members will be accessible.
+	    
+	  ===================================================================================================*/
+	public function  __construct ( $com_object, $helper = null )
+	   {
+	        parent::__construct ( ) ;
+		
+		// Save com object and derived class name
+	        $this -> ____com_object____	=  $com_object ;
+	        $this -> ____com_class____	=  get_called_class ( ) ;
+		
+		// Count one more instance
+	        self::$____created_instances____ ++ ;
+		
+	        // Make sure we can access conflicting names either by the conflicting name or by its substitution
+	        if  ( self::$____resolved_names____  ===  null )
+			self::$____resolved_names____           =  array_flip ( self::$____conflicting_names____ ) ;
+	         
+		// Get the derived class fake properties and methods
+	        $this -> ____get_class_data____ ( ) ;
+		
+		// If a helper object or class has been specified, collect available properties and methods from it
+		if  ( $helper )
+		   {
+			$this -> ____get_helper_object_data____ ( $helper ) ;
+			self::$____helper_object____	=  $helper ;
+		    }
+	     }
+
+	
+	/*===================================================================================================
+	
+	    NAME
+	        Destructor - Performs some housekeeping.
+	               
+	    DESCRIPTION
+		The __debuginfo() function creates wrapper objects for each property which is itself a COM
+		object. To avoid circular references, it stores a reference to each object created in the
+		____printr_seen_objects____ static array.
+		Several calls to print_r on the same object will make this array grow without never shrinking.
+		The purpose of this destructor is thus to remove unnecessary object references.
+		Note however that it does not succeed to remove all the references : the static array will
+		always grow, but this remain a tool for debugging purposes.
+	  
+	 	Entries not unset correspond to properties that are for example present in the 
+	 	Word.Application object : Documents, System, etc. Sounds like each time such a property is
+	 	referenced, a different COM object is returned (a reference to the real one ?).
+	 	This does not seem to happen with WMI objects for example.
+	 
+	  ===================================================================================================*/
+	public function  __destruct ( )
+	   {
+		// Count one instance less
+		self::$____created_instances____ -- ;
+		
+		//echo ( "Destruct {$this -> ____com_class____}\n" ) ;
+
+		$index		=  0 ;
+		$com_object	=  &$this -> ____com_object____ ;
+		
+		foreach  ( self::$____printr_seen_objects____  as  &$object )
+		   {
+			if  ( $object  ==  $com_object )
+			   {
+				unset ( self::$____printr_seen_objects____ [ $index ] ) ;
+				//$count = count ( self::$____printr_seen_objects____ ) ;
+				//echo ( "***************** UNSET at $index !!!! COUNT = $count\n" ) ;
+			    }
+			
+			$index ++ ;
+		    }
+	    }
+	
+	
+	/*===================================================================================================
+	
+	    NAME
+	        GetResolvedName - Gets the resolved PHP name for a COM property or method.
+	               
+	    PROTOTYPE
+	        $name =  COMWrappedInstance::GetResolvedName ( $name ) ;
+	               
+	    DESCRIPTION
+	        Some COM property or method names are in conflict with PHP names. This is the case for example
+	        of the Clone() method, which is a reserved PHP keyword.
+	        The purpose of name resolution is to substitute a reserved name by an acceptable name for
+	        PHP.
+	               
+	    PARAMETERS
+	        $name (string) -
+	                Name to be substituted.
+	                               
+	    RETURN VALUE
+	        The function returns the supplied name as is if it does not conflicts with an existing PHP
+	        keyword ; otherwise it returns its substituted name.
+	    
+	    NOTES
+	        Name substitutions are defined in the private static array ____conflicting_names____.
+	               
+	  ===================================================================================================*/
+	public static function  GetResolvedName ( $name )
+	   {
+	        foreach  ( self::$____conflicting_names____  as  $com_name => $php_name )
+	           {
+	                if  ( ! strcasecmp ( $com_name, $name ) )
+	                        return  ( $php_name ) ;
+	            }
+	                   
+	        return ( $name ) ;
+	    }
+
+	
+	/*===================================================================================================
+	
+	    NAME
+	        GetUnderlyingCOMObject - Returns the underlying COM object.
+	               
+	    PROTOTYPE
+	        $name =  $wrapped_object -> GetUnderlyingCOMObject ( ) ;
+	               
+	    DESCRIPTION
+	        Returns the underlying COM object.
+	               
+	    RETURN VALUE
+	        Returns the COM object whose type information has been used during instanciation.
+	               
+	  ===================================================================================================*/
+	public function  GetUnderlyingCOMObject ( )
+	   {
+		return ( $this -> ____com_object____ ) ;
+	    }
+	
+	
+	/*===================================================================================================
+	
+	    NAME
+	        ____get_class_data____ - Retrieves the faked properties and derived class methods.
+	               
+	    PROTOTYPE
+	        $this -> ____get_class_data____ ( ) ;
+	               
+	    DESCRIPTION
+	        Retrieves the faked properties and all the methods that the derived class has implemented and 
+		that must match the ones defined in the underlying COM object.
+	               
+	    NOTES
+	        The faked properties must be either static or private. Properties of the form '____name____'
+	        (a property name surrounded by four underlines) will be ignored.
+	    
+	  ===================================================================================================*/
+	private function  ____get_class_data____ ( )
+	   {
+	        // We have nothing to do if this class is already in the global store
+	        if  ( isset ( self::$____properties____ [ $this -> ____com_class____ ] ) )
+	                return ;
+	               
+	        // Get a reflection class object for this COM class and retrieve its properties
+	        $reflector	=  new  ReflectionClass ( $this ) ;
+	        $properties     =  $reflector -> getProperties ( ) ;
+	        $methods        =  $reflector -> getMethods ( ) ;
+	               
+	        // We will add these properties to the global store (this operation will be made
+	        // only once, whatever the number of instances created for this class)
+	        self::$____properties____ [ $this -> ____com_class____ ]	=  array ( ) ;
+	               
+	        // Loop through the properties
+	        foreach  ( $properties  as  $property )
+	           {
+	                $name =  $property -> getName ( ) ;
+	                               
+	                // Only non-static protected and private properties are retained
+	                if  ( $property -> getModifiers ( )  &  ( \ReflectionProperty::IS_STATIC | \ReflectionProperty::IS_PUBLIC ) )
+	                        continue ;
+	                                               
+	                // Don't include our own properties
+	                if (  preg_match ( '/____\w+____/', $name ) )
+	                        continue ;
+	                               
+	                // Property ok, add it
+	                self::$____properties____ [ $this -> ____com_class____ ] [ $name ] =  $property ;
+	            }
+	               
+	        // Methods are put in the global store
+	        self::$____methods____ [ $this -> ____com_class____ ]         =  array ( ) ;
+	               
+	        // Loop through the properties
+	        foreach  ( $methods  as  $method )
+	           {
+	                $name =  $method -> getName ( ) ;
+	                               
+	                // Only non-static protected and private properties are retained
+	                if  ( ! $method -> isPublic ( )  ||  $method -> isStatic ( ) )
+	                        continue ;
+	                                               
+	                // Ignore the methods not defined in the derived class
+	                if  ( $method -> getDeclaringClass ( ) -> getName ( )  !=  $this -> ____com_class____ )
+	                        continue ;
+	                               
+	                // Don't include our own methods
+	                if (  preg_match ( '/____\w+____/', $name ) )
+	                        continue ;
+	                               
+	                // Method ok, add it. 
+	                self::$____methods____ [ $this -> ____com_class____ ] [ $name ]    =  $method ;
+	            }
+	    }
+	
+	
+	/*===================================================================================================
+	
+	    NAME
+	        ____get_helper_object_data____ - Retrieves helper class or object methods.
+	               
+	    PROTOTYPE
+	        $this -> ____get_helper_object_data____ ( $helper_object ) ;
+	               
+	    DESCRIPTION
+	        Retrieves methods and properties implemented by the optional helper object or class supplied
+		to the constructor.
+	               
+	    
+	  ===================================================================================================*/
+	private static function  ____get_helper_object_data____ ( $helper )
+	   {
+		$reflector	=  new ReflectionClass ( $helper ) ;
+		$methods	=  $reflector -> getMethods ( ) ;
+		$properties	=  $reflector -> getProperties ( ) ;
+		$class		=  $reflector -> getName ( ) ;
+		
+	
+		self::$____helper_methods____ [ $class ]	=  array ( ) ;
+		
+		/*
+		foreach  ( $methods  as  $method )
+		   {
+			$attributes	=  $method -> getAttributes ( "COMWrapperMethod" ) ;
+			
+			if  ( count ( $attribute ) )
+				self::$____helper_methods____ [ $class ] [ $method -> getName ( ) ]	=  $method ;
+		    }
+		
+		print_r ( self::$____helper_methods____ ) ;
+		 */
+	    }
+
+	
+	/*===================================================================================================
+	
+	    NAME
+	        __call - Calls a method of the underlying COM object.
+	               
+	    RETURN VALUE
+	        If the method returns itself a COM object, the returned value will be a COMWrapper object ;
+	        otherwise the value is returned as is.
+	               
+	  ===================================================================================================*/
+	public function  __call ( $member, $args )
+	   {
+	        $properties        =  &self::$____properties____ [ $this -> ____com_class____ ] ;
+	        $methods           =  &self::$____methods____    [ $this -> ____com_class____ ] ;
+	               
+	        // Allow to omit a trailing underline
+	        $real_member                 =  null ;
+		
+	        if  ( isset ( $properties [ $member ] )  ||  isset ( $methods [ $member ] ) )
+	                $real_member                 =  $member ;
+	        else if  ( isset ( $properties [ "{$member}_" ] ) ||  isset ( $methods    [ "{$member}_" ] ) )
+	                $real_member                 =  "{$member}_" ;
+	                               
+	        // Called member can be either a method or a property (COM properties can also be called as a function)
+	        if  ( $real_member )
+	           {
+	                if  ( isset ( self::$____resolved_names____ [ $real_member ] ) )
+	                        $real_member                 =  self::$____resolved_names____ [ $real_member ] ;
+	                                               
+	                if  ( ! $args )
+	                        $args     =  array ( ) ;
+	                                               
+	                $result =  call_user_func_array ( array ( $this -> ____com_object____, $real_member ), $args ) ;
+	                $result =  COMWrapper::Wrap ( $result ) ;
+	                               
+	                return ( $result ) ;
+	            }
+	        // Unknown properties or methods generate an error here ; this prevents the uncatachable com_exception to be thrown
+	        else
+	                error ( new \Thrak\System\BadPropertyException ( "Unknown property or method {$this -> ____com_class____}::$member." ) ) ;
+	    }
+
+	    
+	/*===================================================================================================
+	
+	    NAME
+	        __get - Retrieves a property value.
+	               
+	    PROTOTYPE
+	        $value =  $wrapped_com -> property ;
+	               
+	    DESCRIPTION
+	        Retrieves a property value from the underlying COM object.
+	        If the result is itself a COM object, then it will be wrapped using COMWrapper.
+	               
+	  ===================================================================================================*/
+	public function  __get ( $member )
+	   {
+	        $properties        =  &self::$____properties____ [ $this -> ____com_class____ ] ;
+	               
+	        // Allow to omit a trailing underline
+	        $real_member	=  null ;
+		
+	        if  ( isset ( $properties [ $member ] ) )
+	                $real_member	=  $member ;
+	        else if  ( isset ( $properties [ "{$member}_" ] ) )
+	                $real_member	=  "{$member}_" ;
+	                               
+	        if  ( $real_member )
+	           {
+	                if  ( isset ( self::$____resolved_names____ [ $real_member ] ) )
+	                        $real_member                 =  self::$____resolved_names____ [ $real_member ] ;
+	                                               
+	                $result =  $this -> ____com_object____ -> $real_member ;
+	                $result =  COMWrapper::Wrap ( $result ) ; 
+	                               
+	                return ( $result ) ;
+	            }
+	        // Unknown properties or methods generate an error 
+	        else
+	                error ( new \Thrak\System\BadPropertyException ( "Unknow property {$this -> ____com_class____}::$member." ) ) ;
+	    }
+	    
+	    
+	/*===================================================================================================
+	
+	    NAME
+	        __set - Sets a property value.
+	               
+	    PROTOTYPE
+	        $wrapped_object -> property = $value ;
+	               
+	    DESCRIPTION
+	        Sets a property value in the underlying COM object.
+	               
+	  ===================================================================================================*/
+	public function  __set ( $member, $value )
+	   {
+	        $properties        =  &self::$____properties____ [ $this -> ____com_class____ ] ;
+	               
+	        // Allow to omit a trailing underline
+	        $real_member	=  null ;
+		
+	        if  ( isset ( $properties [ $member ] ) )
+	                $real_member                 =  $member ;
+	        else if  ( isset ( $properties [ "{$member}_" ] ) )
+	                $real_member                 =  "{$member}_" ;
+	                               
+	        if  ( $real_member )
+	           {
+	                if  ( isset ( self::$____resolved_names____ [ $real_member ] ) )
+	                        $real_member	=  self::$____resolved_names____ [ $real_member ] ;
+	                                               
+	                $this -> ____com_object____ -> $real_member	=  $value ;
+	                               
+	                return ( $result ) ;
+	            }
+	        // Unknown properties or methods generate an error ; this prevents the uncatchable com_exception to be thrown
+	        else
+	                error ( new \Thrak\System\BadPropertyException ( "Unknow property {$this -> ____com_class____}::$member." ) ) ;
+	    }
+	    
+	    
+	/*===================================================================================================
+	
+	    NAME
+	        __isset - Checks if a property is set.
+	               
+	  ===================================================================================================*/
+	public function  __isset ( $member )
+	   {
+	        return ( isset ( self::$____properties____ [ $this -> ____com_class____ ] [ $member ] )  || 
+	                isset ( self::$____properties____ [ $this -> ____com_class____ ] [ $member . "_" ] ) ) ;
+	    }
+	    
+	
+	/*===================================================================================================
+	
+	    NAME
+	               __unset - Prevents unsetting properties.
+	    
+	  ===================================================================================================*/
+	public function  __unset ( $member )
+	   {
+	        error ( new \Thrak\System\BadPropertyException ( "Cannot unset properties of a COM object." ) ) ;
+	    }
+	    
+	    
+	/*===================================================================================================
+	
+	    NAME
+	               __debuginfo - authorize the use of print_r() on COM objects.
+	    
+	  ===================================================================================================*/
+	public function  __debuginfo ( )
+	   {
+	        $properties				=  &self::$____properties____ [ $this -> ____com_class____ ] ;
+	        $result					=  array ( ) ;
+		self::$____printr_seen_objects____ []	=  &$this -> ____com_object____ ;
+		
+	        foreach  ( $properties  as  $name => $junk )
+	           {
+	                if  ( isset ( self::$____resolved_names____ [ $name ] ) )
+	                        $name =  self::$____resolved_names____ [ $name ] ;
+			
+	                try
+	                   {
+				$value			=  &$this -> ____com_object____ -> $name ;
+				$found			=  false ;
+				$wrappable		=  COMWrapper::IsWrappable ( $value ) ;
+				
+				if  ( $wrappable )
+				   {
+					foreach  ( self::$____printr_seen_objects____  as  &$object )
+					   {
+						if  ( $object  ==  $value )
+						   {
+							$found	=  true ;
+							break ;
+						    }
+					    }
+				     }
+				
+				if  ( $found ) 
+					$result [ $name ]	=  "*** Recursion ***" ;
+				else
+				   {
+					if  ( $wrappable )
+					   {
+						$wrapped		=  COMWrapper::Wrap ( $value ) ;
+						$result [ $name ]	=  &$wrapped ;
+					    }
+					else
+						$result [ $name ]	=  $value ;
+				    }
+	                    }
+	                catch ( \com_exception  $e )
+	                   {
+				$code		=  sprintf ( "0x%08X", $e -> getCode ( ) ) ;
+				$message	=  str_replace ( [ "\r", "\n" ], '', $e -> getMessage ( ) ) ;
+				$extra		=  ": [$code] $message " ; 
+					
+			
+	                        $result [ $name ]	=  "*** Property not available $extra***" ;
+	                    }
+	            }
+	        
+	        return ( $result ) ;
+	    }
+    }

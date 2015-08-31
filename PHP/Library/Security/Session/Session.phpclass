@@ -1,0 +1,177 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        Session.php
+
+    DESCRIPTION
+        A class to enforce session security.
+
+    AUTHOR
+        Christian Vigh, 10/2013.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2013/10/29]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Security ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ; 
+
+
+// Used namespaces & objects
+use 	Thrak\System\Object ;
+use	Thrak\IO\Path ;
+use	Thrak\Types\String ;
+
+class  SessionException			extends  \Thrak\System\RuntimeException		{} ;
+
+
+/*==============================================================================================================
+
+    Session class -
+        Provides security enforcements to session management.
+
+  ==============================================================================================================*/
+class	Session		extends		Object
+			//implements	\ArrayAccess, \Countable, \Iterator
+   {
+	const		SESSION_INITIAL_START	=  '__________SIS' ;
+	const		SESSION_TIME_START	=  '__________STS' ;
+	
+	// Session started ?
+	protected	$Started		=  false ;
+	// Session ID
+	protected	$SessionId		=  null ;
+	// Session data
+	protected	$SessionData		=  [] ;
+	// Session start/stop time
+	protected	$StartTime		=  0 ;
+	protected	$EndTime		=  0 ;
+	
+	
+	public function  __construct ( $start = null )
+	   {
+		global		$Configuration ;
+		
+		
+		parent::__construct ( ) ;
+		
+		$start_value	=  $Configuration -> Get ( 'Session/autostart' ) ;
+		
+		if  ( $start_value  !==  null )
+			$start	=  $start_value ;
+		
+		if  ( $start )
+			$this -> Open ( ) ;
+	    }
+	
+	
+	public function  Open ( )
+	   {
+		if  ( $this -> Started )
+		   {
+			warning ( new SessionException ( "Session already started" ) ) ;
+			return ;
+		    }
+		
+		session_start ( ) ;
+		$this -> SessionData	=  &$_SESSION ;
+		
+		if  ( isset ( $this -> SessionData [ self::SESSION_INITIAL_START ] ) )
+		   {
+			$this -> SessionData [ self::SESSION_INITIAL_START ]	=  false ;
+			$this -> StartTime					=  $this -> SessionData [ self::SESSION_TIME_START ] ;
+		    }
+		else
+		   {
+			$this -> SessionData [ self::SESSION_INITIAL_START ]	=  true ;
+			$this -> SessionData [ self::SESSION_TIME_START    ]	=
+			$this -> StartTime					=  microtime ( true ) ;
+		     }
+			
+		$this -> Started	=  true ;
+		$this -> SessionId	=  session_id ( ) ;
+	    }
+	
+	
+	public function  Close ( $redirect_to = null )
+	   {
+		// Safety checks : a session must be started in order to close it...
+		if  ( ! $this -> Started )
+		   {
+			warning ( new SessionException ( "No session started" ) ) ;
+			return ;
+		    }
+		
+		// Reset superglobals
+		$_GET  		=  [] ;
+		$_POST 		=  [] ;
+		$_REQUEST 	=  [] ;
+		$_FILES		=  [] ;
+		$_COOKIE	=  [] ;
+		
+		// Destroy the session
+		session_destroy ( ) ;
+		$this -> EndTime	=  microtime ( true ) ;
+		
+		// Keep internal data consistent with current session state
+		$this -> Started	=  false ;		// No session started
+		$this -> SessionId	=  null ;		// And thus, no associated session id
+		$this -> SessionData	=  [] ;			// Reset the $_SESSION superglobal ($SessionData is only a reference to this array)
+
+		// Clean output buffer
+		@ob_end_clean ( ) ;
+		@ob_start ( ) ;
+
+		// Redirect to the specified page, if any was specified
+		if  ( $redirect_to )
+		   {
+			header ( "Location: $redirect_to" ) ;
+			exit ;
+		    }
+	    }
+	
+	
+	public function  GetDuration ( $as_float = false )
+	   {
+		if  ( $this -> StartTime )
+		   {
+			$delta	 =  ( $this -> EndTime ) ?  $this -> EndTime : time ( ) ;
+			$delta  -=  $this -> StartTime ;
+			
+			if  ( $as_float )
+				return ( Convert::ToTimeString ( $delta ) ) ;
+			else
+				return ( $delta ) ;
+		    }
+		else
+			return ( ( $as_float ) ?  0 : '' ) ;
+	    }
+	
+	
+	public function  GetEndTime ( )
+	   { return ( $this -> EndTime ) ; }
+	
+	
+	public function  GetSessionId ( )
+	   { return ( $this -> SessionId ) ; }
+	
+	
+	public function  GetStartTime ( )
+	   { return ( $this -> StartTime ) ; }
+	
+	
+	public function  IsNew ( )
+	   { 
+		return ( isset ( $this -> SessionData )  &&  
+			 isset ( $this -> SessionData [ self::SESSION_INITIAL_START ] )  &&  
+			 $this -> SessionData [ self::SESSION_INITIAL_START ] ) ; 
+	    }
+		
+		
+	public function  IsStarted ( )
+	   { return ( $this -> Started ) ; }
+		
+    }

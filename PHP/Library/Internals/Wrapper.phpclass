@@ -1,0 +1,934 @@
+<?php
+/************************************************************************************************************
+
+    FILE
+	Wrapper.phpclass
+	
+    DESCRIPTION 
+	A wrapper is an object that wraps another object, an array or a scalar variable.
+	The original idea was to be able to wrap superglobals arrays, such as $_POST, $_GET and so on, to be
+	able to apply common operations on their values, such as trimming them, deleting nul bytes, etc.
+	This basic idea was never implemented ; instead, a more general approach has been chosen.
+	
+	Wrappers can wrap 3 types of things :
+	- Scalars (eg, a string)
+	- Arrays
+	- Objects
+	
+	Note that there is also a NullWrapper class, which is instanciated when a null value is supplied.
+	
+	Wrapping is recursive and wraps arrays contained in objects referenced by array items...
+	
+	Wrapping a variable is simple :
+	
+		$objvalue 	=  Wrapper::Wrap ( new SomeClass ( ) ) ;
+		$arrayvalue	=  Wrapper::Wrap ( array ( "item 1", "item 2", array ( "subitem 3.1", "subitem 3.2" ) ) ) ;
+		$scalarvalue	=  Wrapper::Wrap ( "this is a string" ) ;
+		
+	Note that the Wrap() method will instanciate the correct Wrapper class, depending on supplied
+	input value.
+	
+	Then, properties can be called :
+	
+	echo $objvalue ;	// Cast as a string, will output "object(SomeClass)"
+	echo $arrayvalue ; 	// Will output "array(x)", where "x" is the number of array items
+	echo $scalarvalue ;	// Will output "this is a string"
+	
+	The peculiarity is that inexisting methods can be called on a hierarchy, for example :
+	
+	$objvalue -> tolower ( ) ;
+	$arrayvalue -> tolower ( ) ;
+	$stringvalue -> tolower ( ) ;
+	
+	When applied on array or objects, the wrapper will search through the object/array hierarchy and
+	calls the tolower() method when implemented in one of the descendants.
+	The exception is for scalar types : the function will only return the underlying value, converted
+	to lower case.
+	
+	Note that the method calls can be chained :
+	
+	$arrayvalue -> tolower ( ) -> substr ( 2 ) ;
+	
+	Of course, functions/methods like tolower() are already implemented because they were dynamically
+	added using the Wrapper::Extend method.
+	Extend() takes two parameters :
+	- The first one is the class to be extended (StringWrapper for example)
+	- The second is either a class name or an object instance containing the functions to be added.
+	
+	A function is considered as a wrapper utility function when its docComment contains the following
+	attribute :
+	
+		[WrapperFunction name="funcname" enabled="true" property="true" readonly="false" method="true"]
+		
+	Attribute parameters are the following :
+	- name :
+		External name of the function, that can be called through the wrapped object
+	- enabled :
+		A boolean value indicating whether it is enabled or not. You can set it to false during the
+		debugging phase, for example.
+	- property :
+		Specify "true" if the wrapper function can be called as a property.
+	- readonly :
+		Whether the property is readonly or not.
+	- method :
+		Specify true if the wrapper function can be called as a method.
+		
+	So the same wrapper function must handle 3 cases :
+	1) When called as a property to get a value
+	2) When called as a property to set a value
+	3) When called as a method with optional parameters
+	
+	In case 1), your wrapper function will be called without argument. It should return the requested value,
+	which is later transformed into a Wrapper object. So the signature would be something like that :
+	
+		mixed mywrapper ( ) ;
+	
+	In case 2), your wrapper function is called with the new property value. You then have to do what 
+	you have to do on the supplied value, then return the result of the Map() method to which you gave
+	the worked value. The signature would be :
+	
+		mixed mywrapper ( mixed  $newvalue ) ;
+	
+	In case 3), your wrapper function acts as if it were a property, but you may have, in addition to the 
+	property value, the arguments that the caller may have specified. The signature is now :
+	
+		mixed mywrapper ( mixed  $newvalue, ... ) ;
+		
+	Of course this is not possible to handle those different cases with just one function ; this is why
+	you can use the func_get_args() function and co to handle the variadic nature of the wrapper function.
+		
+    AUTHOR
+	Christian Vigh, 10/2014.
+	
+    HISTORY
+	tbc
+
+ ************************************************************************************************************/
+namespace 	Thrak\Internals ;
+
+use 	Thrak\System\Object ;
+
+ 
+/*===========================================================================================================
+
+    Class Wrapper -
+	A generic variable wrapper class.
+	
+ *===========================================================================================================*/ 
+abstract class  Wrapper		extends  Object
+   {
+	// All wrapper methods are described in this classwide associative array. Each element has the following
+	// entries :
+	// - 'internal-name' (string) :
+	//	Internal method name, as defined in the class.
+	// - 'external-name' (string) :
+	//	"Public" name, as seen from the outside.
+	// - 'callback' (callback) :
+	//	Callback function, defined in this instance, or in another class instance, or even in a static
+	//	class.
+	// - 'property' (boolean) :
+	//	True if this entry can be used as a property, from the outside.
+	// - 'readonly' (boolean) :
+	//	True if this entry is a readonly property.
+	// - 'method' (boolean) :
+	//	True if this entry can be called as a method.
+	// - 'enabled' (boolean) :
+	//	True if this entry is enabled (you can temporarily disable some entries if you want, during the
+	//	debugging phase for example).
+	protected static	$__wrapper_methods 	=  array ( ) ;
+	
+	// This is THE value wrapped by this object.
+	protected 		$__value ;
+	
+	
+	
+	/*===================================================================================================
+	
+	    NAME
+		Constructor - builds the wrapper.
+		
+	    PROTOTYPE
+		$var 	 =  Wrapper::Wrap ( $value ) ;
+
+	    DESCRIPTION
+		Puts a wrapper object around the specified value, which can be anything but a callback or a
+		resource.
+		It also adds all class-supplied wrapper functions to the list of supported functions.
+		
+	    PARAMETERS
+	 	$value (mixed) -
+	 		Value to be wrapped.
+	    
+	  ===================================================================================================*/
+	public function  __construct ( $value )
+	   {
+		// Save the supplied value. Note that this is the result of the Map() function, which has an
+		// extra job to perform for objects and arrays
+		$this -> __value 	=  $this -> Map ( $value ) ;
+		
+		// Extend the list of wrapper function with those defined in this class
+		$class 			=  get_called_class ( ) ;
+		self::Extend ( $class, $this ) ;
+	    }
+	
+
+	/*===================================================================================================
+	
+	    NAME
+		Extend - Extends the wrapper class.
+
+	    PROTOTYPE
+		Wrapper::Extend ( $class, $object_or_class ) ;
+	  
+	    DESCRIPTION
+		Extends a Wrapper class with methods 	
+	    PARAMETERS
+	    
+	    RETURN VALUE
+	
+	    NOTES
+	    
+	  ===================================================================================================*/
+	public static function  Extend ( $class, $object_or_class )
+	   {
+		if  ( isset  ( self::$__wrapper_methods [ $class ] ) )
+			return ;
+			
+		self::$__wrapper_methods [ $class ]	=  array ( ) ;
+		$second_class			=  ( $is_object ) ?  get_class ( $object_or_class ) : $object_or_class ;
+		$reflector 			=  new  ReflectionClass ( $second_class ) ;
+		$methods 			=  $this -> getMethods ( ) ;
+		$is_object 			=  is_object ( $object_or_class ) ;
+		
+		foreach  ( $methods  as  $method )
+		   {
+			$attr 	=  $method -> getAttribute ( 'WrapperFunction' ) ;
+			
+			if  ( $attr  ===  false )
+				continue ;
+				
+			$entry 	=  array
+			   ( 
+				'internal-name' 	=>  null,
+				'external-name'		=>  null,
+				'callback' 		=>  null,
+				'enabled'		=>  false,
+				'property'		=>  false,
+				'readonly'		=>  false,
+				'method'		=>  false 
+			    ) ;
+			    
+			$name				=  $method -> getName ( ) ;
+			$entry [ 'internal-name' ]	=  $name ;
+			$entry [ 'external-name' ]	=  $attr -> getProperty ( "name", $name ) ;
+			$entry [ 'callback' ]		=  array ( $object_or_class, $name ) ;
+			$entry [ 'enabled' ]		=  String::IsTrue ( $attr -> getProperty ( "enabled" , "true"  ) ) ?  true : false ;
+			$entry [ 'property' ]		=  String::IsTrue ( $attr -> getProperty ( "property", "true"  ) ) ?  true : false ;
+			$entry [ 'readonly' ]		=  String::IsTrue ( $attr -> getProperty ( "readonly", "false" ) ) ?  true : false ;
+			$entry [ 'method' ]		=  String::IsTrue ( $attr -> getProperty ( "method"  , "true"  ) ) ?  true : false ;
+			$external_name 			=  strtolower ( $entry [ 'external-name' ] ) ;
+			
+			if  ( isset ( self::$__wrapper_methods [ $external_name ] ) )
+				error ( new \Thrak\System\RuntimeException ( "Method $second_class::$name has been added twice." ) ) ;
+			else
+				self::$__wrapper_methods [ $external_name ]	=  $entry ;
+		    }
+	    }
+	
+	
+	/*===================================================================================================
+	
+	    NAME
+		
+	    PROTOTYPE
+
+	    DESCRIPTION
+		
+	    PARAMETERS
+	    
+	    RETURN VALUE
+	
+	    NOTES
+	    
+	  ===================================================================================================*/
+	public function  __get ( $member )
+	   {
+		$name 	=  strtolower ( $member ) ;
+		$class	=  get_called_class ( ) ;
+		
+		if  ( isset ( self::$__wrapper_methods [ $class ] [ $name ] ) )
+		   {
+			$entry 		=  self::$__wrapper_methods [ $class ] [ $name ] ;
+			$result 	=  call_user_func_array ( $entry [ 'callback' ], array ( ) ) ;
+			
+			return ( Wrapper::Wrap ( $result ) ) ;
+		    }
+		else
+			error ( new \Thrak\System\BadMethodCallException ( "Property $class::$member does not exist." ) ) ;
+	    }
+	
+	
+	/*===================================================================================================
+	
+	    NAME
+		
+	    PROTOTYPE
+
+	    DESCRIPTION
+		
+	    PARAMETERS
+	    
+	    RETURN VALUE
+	
+	    NOTES
+	    
+	  ===================================================================================================*/
+	public function  __set ( $member, $value ) 
+	   {
+		$name 	=  strtolower ( $member ) ;
+		$class	=  get_called_class ( ) ;
+		
+		if  ( isset ( self::$__wrapper_methods [ $class ] [ $name ] ) ) 
+		   {
+			$entry 	=  self::$__wrapper_methods [ $class ] [ $name ] ;
+			
+			if  ( $entry [ 'readonly' ] )
+				error ( new \Thrak\System\RuntimeException ( "Property $class::$member is read-only." ) ) ;
+				
+			$result 		=  call_user_func_array ( $entry [ 'callback' ], array ( $value ) ;
+			$this -> __value	=  Wrapper::Wrap ( $result ) ;
+		    }
+		else
+			error ( new Thrak\System\RuntimeException ( "Property $class::$member does not exist." ) ) ;
+	    }
+
+	    
+	/*===================================================================================================
+	
+	    NAME
+		
+	    PROTOTYPE
+
+	    DESCRIPTION
+		
+	    PARAMETERS
+	    
+	    RETURN VALUE
+	
+	    NOTES
+	    
+	  ===================================================================================================*/
+	public function  __call ( $method, $args )
+	   {
+		$name 	=  strtolower ( $method ) ;
+		$class	=  get_called_class ( ) ;
+		
+		if  ( isset ( self::$__wrapper_methods [ $class ] [ $name ] ) )
+		   {
+			$entry 		=  self::$__wrapper_methods [ $class ] [ $name ] ;
+			
+			if  ( $entry [ 'readonly' ] )
+				$args 	=  array ( ) ;
+			else
+				$args 		=  array_merge ( array ( $this -> __value ), $args ) ;
+				
+			$result 	=  call_user_func_array ( $entry [ 'callback' ], $args ) ;
+			$this -> Map ( $result ) ;
+			
+			return ( $this ) ;
+		    }
+		else
+			error  ( new \Thrak\System\BadMethodCallException ( "Method $class::$method does not exist." ) ) ;
+	    }
+	    
+	    
+	/*===================================================================================================
+	
+	    NAME
+		
+	    PROTOTYPE
+
+	    DESCRIPTION
+		
+	    PARAMETERS
+	    
+	    RETURN VALUE
+	
+	    NOTES
+	    
+	  ===================================================================================================*/
+	public function  __isset ( $name ) 
+	   {
+		$name 	=  strtolower ( $name ) ;
+		
+		return ( isset ( self::$__wrapper_methods [ $name ] ) ) ;
+	    }
+
+	    
+	/*===================================================================================================
+	
+	    NAME
+		
+	    PROTOTYPE
+
+	    DESCRIPTION
+		
+	    PARAMETERS
+	    
+	    RETURN VALUE
+	
+	    NOTES
+	    
+	  ===================================================================================================*/
+	protected abstract function   Map ( $value ) ;
+	
+	
+	/*===================================================================================================
+	
+	    NAME
+		
+	    PROTOTYPE
+
+	    DESCRIPTION
+		
+	    PARAMETERS
+	    
+	    RETURN VALUE
+	
+	    NOTES
+	    
+	  ===================================================================================================*/
+	public static function  Wrap ( $thing )
+	   {
+		if (  is_scalar ( $thing ) )
+		   {
+			if  ( is_string ( $thing ) )
+				return  ( new  StringWrapper ( $thing ) ) ;
+			else
+				return  ( new  StringWrapper ( ( string ) $thing ) ) ;
+		    }
+		else if  ( is_array ( $thing ) )
+		   {
+			return ( new  ArrayWrapper ( $thing ) ) ;
+		    }
+		else if  ( is_object ( $thing ) )
+		   {
+			if  ( is_a ( $thing, 'Wrapper' ) )
+				return ( $thing ) ;
+			else
+				return ( new ObjectWrapper ( $thing ) ) ;
+		    }
+		else if ( is_null ( $thing ) )
+			return ( new NullWrapper ( $thing ) ) ;
+		else
+			error ( new \Thrak\System\InvalidArgumentException ( "Argument type must be scalar, object or array." ) ) ;
+	    }
+
+	    
+	/*===================================================================================================
+	
+	    NAME
+		
+	    PROTOTYPE
+
+	    DESCRIPTION
+		
+	    PARAMETERS
+	    
+	    RETURN VALUE
+	
+	    NOTES
+	    
+	  ===================================================================================================*/
+	public function  __tostring ( )
+	   { return ( $this -> __value ) ; }
+	   
+	   
+	/***
+	 * [WrapperFunction name="value" enabled="true" property="true" readonly="false" method="true"]
+	 ***/
+	public function  wrapfunc_value ( )
+	   {
+		$args 	=  func_get_args ( ) ;
+		
+		if (  count ( $args ) )
+			return ( $this -> Map ( $args [0] ) ) ;
+		else
+			return ( $this -> __value ) ;
+	    }
+    }
+ 
+
+/*===========================================================================================================
+
+    Class Wrapper -
+	A generic variable wrapper class.
+	
+ *===========================================================================================================*/ 
+class  NullWrapper 	extends  Wrapper 
+   {
+	protected function  Map ( $value )
+	   {
+		$this -> __value 	=  $value ;
+	    }
+	    
+	    
+	public function  __get ( $member )
+	   { return ( null ) ; }
+	    
+	public function  __set ( $member, $value )
+	   {}
+	   
+	public function  __call ( $method, $args )
+	   { return ( null ) ; }
+	   
+	public function  __isset  ( $member ) 
+	   { return ( false ) ; }
+    }    
+
+    
+/*===========================================================================================================
+
+    Class Wrapper -
+	A generic variable wrapper class.
+	
+ *===========================================================================================================*/ 
+abstract class  ScalarWrapper 		extends  Wrapper 
+   {
+	public function  __construct ( $value )
+	   {
+		if (  ! is_scalar ( $value ) )
+			error ( new \Thrak\System\InvalidArgumentException ( "Scalar value expected." ) ) ;
+		
+		parent::__construct ( $value ) ;
+	    }
+	    
+	protected function  Map ( $value )
+	   { return ( $value ) ; }
+    }
+    
+    
+/*===========================================================================================================
+
+    Class Wrapper -
+	A generic variable wrapper class.
+	
+ *===========================================================================================================*/ 
+class  StringWrapper 		extends  ScalarWrapper 
+   {
+	/*===================================================================================================
+	
+	    NAME
+		
+	    PROTOTYPE
+
+	    DESCRIPTION
+		
+	    PARAMETERS
+	    
+	    RETURN VALUE
+	
+	    NOTES
+	    
+	  ===================================================================================================*/
+	public function  __construct ( $value )
+	   {
+		if  ( ! $value )
+			$value = "" ;
+			
+		if (  ! is_string ( $value ) )
+			error ( new \Thrak\System\InvalidArgumentException ( "String value expected." ) ) ;
+			
+		parent::__construct ( $value ) ;
+	    }
+
+	    
+	/***
+	 * [WrapperFunction name="tolower" enabled="true" property="true" readonly="false" method="true"]
+	 ***/
+	protected function  __string_tolower ( $value )
+	   { return ( strtolower ( $value ) ) ; }
+	   
+	/***
+	 * [WrapperFunction name="toupper" enabled="true" property="true" readonly="false" method="true"]
+	 ***/
+	protected function  __string_toupper ( $value )
+	   { return ( strtoupper ( $value ) ) ; }
+	   
+	/***
+	 * [WrapperFunction name="trim" enabled="true" property="true" readonly="false" method="true"]
+	 ***/
+	protected function  __string_trim ( $value )
+	   { return ( trim ( $value ) ) ; }
+	   	   
+	/***
+	 * [WrapperFunction name="xss_safe" enabled="true" property="true" readonly="false" method="true"]
+	 ***/
+	protected function  __string_xss_safe ( $value )
+	   {
+		// Remove null characters from string.
+		$value 	=  preg_replace ( '/\0+/'     , '', $value ) ;
+		$value 	=  preg_replace ( '/(\\\\0)+/', '', $value ) ;
+
+		// Validates standard character entities, adding a semicolon if missing.
+		$value 	=  preg_replace ( '#(&\#*\w+)[\x00-\x20]+;#u', "\\1;", $value ) ;
+		
+		// Validates UTF16 encoding, adding a semicolon if missing.
+		$value 	=  preg_replace ( '#(&\#x*)([0-9A-F]+);*#iu', "\\1\\2;", $value ) ;
+
+		// Replace tabs with spaces
+		$value 	=  preg_replace ( "#\t+#", " ", $value ) ;
+		
+		return ( $value ) ;
+	    }
+	    
+	/***
+	 * [WrapperFunction name="sql_safe" enabled="true" property="true" readonly="false" method="true"]
+	 ***/
+	protected function  __string_sql_safe ( $value )
+	   {
+		global 		$Database ;
+		
+		if  ( isset ( $Database ) )
+			return ( $Database -> QuoteString ( $value ) ) ;
+		else
+			return ( addslashes ( $value ) ) ;
+	    }
+	    
+	/***
+	 * [WrapperFunction name="substr" enabled="true" property="false" method="true"]
+	 ***/
+	protected function  __string_substr ( $value, $from, $length = PHP_INT_MAX )
+	   {
+		$result = substr ( $value, $from, $length ) ;
+		return ( $result ) ;
+	    }
+    }
+
+
+/*===========================================================================================================
+
+    Class Wrapper -
+	A generic variable wrapper class.
+	
+ *===========================================================================================================*/ 
+class  ObjectWrapper 		extends  Wrapper 
+   {
+	/*===================================================================================================
+	
+	    NAME
+		
+	    PROTOTYPE
+
+	    DESCRIPTION
+		
+	    PARAMETERS
+	    
+	    RETURN VALUE
+	
+	    NOTES
+	    
+	  ===================================================================================================*/
+	public function  __construct ( $object )
+	   {
+		if (  ! is_object ( $object ) )
+			error ( new \Thrak\System\InvalidArgumentException ( "Object instance expected." ) ) ;
+		
+		parent::__construct ( $object ) ;
+		$this -> Map ( $object ) ;
+	    }
+
+
+	/*===================================================================================================
+	
+	    NAME
+		
+	    PROTOTYPE
+
+	    DESCRIPTION
+		
+	    PARAMETERS
+	    
+	    RETURN VALUE
+	
+	    NOTES
+	    
+	  ===================================================================================================*/
+	public function  __get ( $member )
+	   {
+		if  ( isset ( $this -> __value -> $member ) )
+			return ( $this -> __value -> $member ) ;
+		else
+			return ( parent::__get ( $member ) ) ;
+	    }
+
+	    
+	/*===================================================================================================
+	
+	    NAME
+		
+	    PROTOTYPE
+
+	    DESCRIPTION
+		
+	    PARAMETERS
+	    
+	    RETURN VALUE
+	
+	    NOTES
+	    
+	  ===================================================================================================*/
+	public function  __set ( $member, $value ) 
+	   {
+		$name 	=  strtolower ( $member ) ;
+		$class	=  get_called_class ( ) ;
+		
+		if  ( isset ( $this -> __value -> $member ) ) 
+			$this -> __value -> $member 	=  Wrapper::Wrap ( $value ) ;
+		else
+			parent::__set ( $member, $value ) ;
+	    }
+	
+
+	/*===================================================================================================
+	
+	    NAME
+		
+	    PROTOTYPE
+
+	    DESCRIPTION
+		
+	    PARAMETERS
+	    
+	    RETURN VALUE
+	
+	    NOTES
+	    
+	  ===================================================================================================*/
+	public function  __call ( $method, $args )
+	   {
+		foreach  ( $this -> __value  as  $property => $value )
+		   {
+			if  ( is_a ( $value, 'ArrayWrapper' ) )
+				Wrapper::Wrap ( $value -> __call ( $method, $args ) ) ;
+			else if  ( isset ( $this -> $property -> $method ) )
+				$this -> $property 	=  Wrapper::Wrap ( $value -> __call ( $method, $args ) ) ;
+			else
+				$this -> $property 	=  Wrapper::Wrap ( parent::__call ( $method, $args ) ) ;
+		    }
+		    
+		return ( $this ) ;
+	    }
+
+	    
+	/*===================================================================================================
+	
+	    NAME
+		
+	    PROTOTYPE
+
+	    DESCRIPTION
+		
+	    PARAMETERS
+	    
+	    RETURN VALUE
+	
+	    NOTES
+	    
+	  ===================================================================================================*/
+	protected function  Map ( $object )
+	   {
+		foreach  ( $object  as  $property => $junk )
+		   {
+			$wrapped 		=  Wrapper::Wrap ( $object -> $property ) ;
+			$object -> $property 	=  $wrapped ;
+		    }
+		    
+		return ( $object ) ;
+	    }
+	    
+	    
+	/*===================================================================================================
+	
+	    NAME
+		
+	    PROTOTYPE
+
+	    DESCRIPTION
+		
+	    PARAMETERS
+	    
+	    RETURN VALUE
+	
+	    NOTES
+	    
+	  ===================================================================================================*/
+	public function  __tostring ( )
+	   { return ( "object(" . get_class ( $this -> __value ) . ")" ) ; }
+    }   
+    
+    
+/*===========================================================================================================
+
+    Class Wrapper -
+	A generic variable wrapper class.
+	
+ *===========================================================================================================*/ 
+class  ArrayWrapper 		extends  	Wrapper 
+				implements 	ArrayAccess, Countable, IteratorAggregate
+   {
+	/*===================================================================================================
+	
+	    NAME
+		
+	    PROTOTYPE
+
+	    DESCRIPTION
+		
+	    PARAMETERS
+	    
+	    RETURN VALUE
+	
+	    NOTES
+	    
+	  ===================================================================================================*/
+	public function  __construct ( $array )
+	   {
+		if (  ! is_array ( $array ) )
+			error ( new \Thrak\System\InvalidArgumentException ( "Array expected." ) ) ;
+		
+		parent::__construct ( $array ) ;
+		$this -> Map ( $array ) ;
+	    }
+
+
+	/*===================================================================================================
+	
+	    NAME
+		
+	    PROTOTYPE
+
+	    DESCRIPTION
+		
+	    PARAMETERS
+	    
+	    RETURN VALUE
+	
+	    NOTES
+	    
+	  ===================================================================================================*/
+	public function  __get ( $member )
+	   {
+		if  ( isset ( $this -> __value [ $member ] ) )
+			return ( $this -> __value [ $member ] ) ;
+		else
+			return ( parent::__get ( $member ) ) ;
+	    }
+	
+	
+	/*===================================================================================================
+	
+	    NAME
+		
+	    PROTOTYPE
+
+	    DESCRIPTION
+		
+	    PARAMETERS
+	    
+	    RETURN VALUE
+	
+	    NOTES
+	    
+	  ===================================================================================================*/
+	public function  __set ( $member, $value ) 
+	   {
+		$name 	=  strtolower ( $member ) ;
+		$class	=  get_called_class ( ) ;
+		
+		if  ( isset ( $this -> __value [ $member ] ) ) 
+			$this -> __value [ $member ]	=  Wrapper::Wrap ( $value ) ;
+		else
+			parent::__set ( $member, $value ) ;
+	    }
+	
+
+	/*===================================================================================================
+	
+	    NAME
+		
+	    PROTOTYPE
+
+	    DESCRIPTION
+		
+	    PARAMETERS
+	    
+	    RETURN VALUE
+	
+	    NOTES
+	    
+	  ===================================================================================================*/
+	public function  __call ( $method, $args )
+	   {
+		foreach  ( $this -> __value  as  $key => &$value )
+		   {
+			if  ( is_a ( $value, 'ArrayWrapper' ) )
+				$value 	=  Wrapper::Wrap ( $value -> __call ( $method, $args ) ) ;
+			else if  ( isset ( $value -> $method ) )
+				$value 	=  Wrapper::Wrap ( $value -> __call ( $method, $args ) ) ;
+		    }
+		    
+		return ( $this ) ;
+	    }
+
+	    
+	/*===================================================================================================
+	
+	    NAME
+		
+	    PROTOTYPE
+
+	    DESCRIPTION
+		
+	    PARAMETERS
+	    
+	    RETURN VALUE
+	
+	    NOTES
+	    
+	  ===================================================================================================*/
+	protected function  Map ( $array )
+	   {
+		foreach  ( $array  as  $key => $value )
+		   {
+			$wrapped 		=  Wrapper::Wrap ( $array [ $key ] ) ;
+			$array [ $key ] 	=  $wrapped ;
+		    }
+		    
+		return ( $array ) ;
+	    }
+	
+
+	public function  __tostring ( )
+	   {  return ( "array(" . count ( $this -> __value ) . ")" ) ; }
+	
+	public function  Count ( )
+	   { return ( count ( $this -> __value ) ) ; }
+	    
+	public function  offsetExists ( $offset )
+	   { return ( isset ( $this -> __value [ $offset ] ) ) ; }
+	   
+	public function  offsetGet ( $offset ) 
+	   { return ( $this -> __value [ $offset ] ) ; }
+	   
+	public function  offsetSet ( $offset, $value )
+	   { $this -> __value [ $offset ] 	=  Wrapper::Wrap ( $value ) ; }
+	   
+	public function  offsetUnset ( $offset )
+	   { unset ( $this -> __value [ $offset ] ) ; }
+	   
+	public function  getIterator ( )
+	   { return ( new ArrayIterator ( $this -> __value ) ) ; }
+	
+    }   
+ 

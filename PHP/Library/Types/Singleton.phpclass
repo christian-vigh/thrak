@@ -1,0 +1,51 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        Singleton.phpclass
+
+    DESCRIPTION
+        An implementation of the singleton class. Not sure it will be that useful...
+
+    AUTHOR
+        Christian Vigh, 10/2014.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2014/10/11]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Types ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces & objects
+use 		Thrak\System\Object 			as  Object ;
+
+
+/*==============================================================================================================
+
+    Singleton class -
+        Singleton implementation.
+
+  ==============================================================================================================*/
+abstract class  Singleton
+   {
+	static private 	$SingletonInstance 	=  null ;
+	
+	
+	private function  __construct ( )
+	  {}
+	  
+	
+	public static function  Instance ( )
+	   {
+		if  ( self::SingletonInstance  ===  null )
+			self::$SingletonInstance 	=   new  self ( ) ;
+			
+		$reference 	=  & self::$SingletonInstance ;
+		
+		return $reference ;
+	    }
+    }
+    

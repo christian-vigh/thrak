@@ -1,0 +1,67 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        WMI.phpclass
+
+    DESCRIPTION
+        WMI interface for PHP.
+
+    AUTHOR
+        Christian Vigh, 10/2014.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2014/10/21]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Windows ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use  	Thrak\System\Object ;
+use	Thrak\Windows\AbstractWindowsBase ;
+use     Thrak\Windows\COM\COMWrapper ;
+
+
+/*==============================================================================================================
+
+    WMI class -
+        Wrapper around the WMI COM object.
+
+  ==============================================================================================================*/
+class  WMIAbstractBase               extends  AbstractWindowsBase
+   {
+    }
+
+
+/*==============================================================================================================
+
+    WMI class -
+        Wrapper around the WMI COM object.
+
+  ==============================================================================================================*/
+class      WMI      extends  WMIAbstractBase
+   {
+	
+	
+	public static function  LocalWMI ( $namespace = 'winmgmts://localhost/root/CIMV2' )
+	   {
+	        $wmi_object     =  COMWrapper::Wrap ( new \COM ( $namespace ), null, get_called_class ( ) ) ;
+		
+	        return ( $wmi_object ) ;
+	    }
+	
+
+	
+	
+	public static function  RemoteWMI ( $computer, $namespace = 'root\CIMV2', $user, $password, $locale = null, $domain = null )
+	   {
+	        $locator	=  new \COM ( "WbemScripting.SWbemLocator" ) ;
+	        $wmi_object     =  $locator -> ConnectServer ( $computer, $namespace, $user, $password, $locale, $domain ) ;
+	        $wmi_object     =  COMWrapper::Wrap ( $wmi_object ) ;
+		
+	        return ( $wmi_object ) ;
+	    }
+	      
+    }

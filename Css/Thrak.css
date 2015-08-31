@@ -1,0 +1,76 @@
+﻿/**************************************************************************************************
+
+	Debug tools : browser information
+
+ **************************************************************************************************/
+#browser-information
+   {
+    }
+    
+#browser-information tr:hover td
+   {
+   	cursor				:  pointer ;
+   	background-color		:  #FFFFAA ;
+    }
+    
+#browser-information th, #browser-information td
+   {
+   	text-align			:  left ;
+    }
+    
+#browser-information th
+   {
+   	font-weight			:  bold ;
+   	cursor				:  pointer ;
+    }
+    
+#browser-information td
+   {
+   	padding-right			:  16px ;
+   	vertical-align			:  top ;
+    }
+   
+#browser-information td:last-of-type
+   {
+   	padding-right			:  0px ;
+   	max-width			:  480px;
+    }
+    
+.tooltip
+   {
+	/* font				:  13px "Palatino Linotype", "Book Antiqua", Palatino, serif; */
+    }
+    
+    
+/**************************************************************************************************
+
+	Message boxes
+
+ **************************************************************************************************/
+.ui-msgbox-dialog-button
+   {
+   	width				:  80px !important; 
+    }
+
+.ui-error-dialog-title
+   {
+   	color				:  #FFFFFF ;
+   	font-weight			:  bold ;
+    }
+    
+.ui-error-dialog-titlebar
+   {
+   	background			:  #DD0909 ;
+    }
+    
+.ui-error-dialog-button-text
+   {
+   	color				:  #000000 ;
+   	font-weight			:  bold !important ;
+    }
+    
+.ui-error-dialog-message
+   {
+   	color				:  #DD0909 ;
+   	font-weight			:  bold ;
+    }

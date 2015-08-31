@@ -1,0 +1,273 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        ReflectionClass.php
+
+    DESCRIPTION
+        An enhanced reflection class.
+
+    AUTHOR
+        Christian Vigh, 10/2014.
+
+    NOTES
+ 	Trait support is crazy, as of PHP 5.6. If some tricks can help retrieving which trait members have been
+ 	aliased, as well as which traits have been used by a class, there is absolutely no way to determine if
+ 	a property or method coming from a trait has been redefined by the using class. Information is lost at
+ 	compile time.
+ 	For that reason, this class sourcer will show properties and methods inherited from traits as if they
+ 	where coming from the base class itself.
+  
+    HISTORY
+    [Version : 1.0]	[Date : 2014/10/23]     [Author : CV]
+        Initial version.
+
+    [Version : 1.0.1]   [Date : 2015/07/24]     [Author : CV]
+	. Add the enhanced getConstants() method.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Reflection ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use  	Thrak\System\Object ;
+use     Thrak\System\IsNonObject ;
+use     Thrak\Reflection\DocCommentExtender ;
+use     Thrak\Reflection\Sourcers\ReflectionSourcerInterface ;
+use	Thrak\Types\String ;
+
+
+/*==============================================================================================================
+
+    ReflectionClass -
+        Enhancements to the existing ReflectionClass class.
+
+  ==============================================================================================================*/
+class  ReflectionClass 		extends 	\ReflectionClass
+				implements 	\Reflector, ReflectionSourcerInterface
+   {
+	use IsNonObject, DocCommentExtender ;
+	
+	// In addition to the filter option of getProperties...
+	const		IS_DEFAULT			=  0x00800000 ;			// Property is a default property, ie not added at runtime
+	const		IS_LOCAL			=  0x00400000 ;			// Property/method is not inherited from parent class
+
+	// But also declare the ones coming from properties ans methods, since there is no base class defining them in the reflection classes
+	// At least the authors have assigned different values for constants specific to methods and constants specific to properties...
+	const		IS_STATIC			=  0x00000001 ;
+	const		IS_ABSTRACT			=  0x00000002 ;
+	const		IS_FINAL			=  0x00000004 ;
+	const		IS_INTERFACE_IMPLEMENTATION	=  0x00000008 ;
+	const		IS_PUBLIC			=  0x00000100 ;
+	const		IS_PROTECTED			=  0x00000200 ;
+	const		IS_PRIVATE			=  0x00000400 ;
+	const		IS_DEPRECATED			=  0x00040000 ;
+	const		IS_CLASS_EXPLICIT_ABSTRACT	=  0x00000010 ;
+	const		IS_CLASS_IMPLICIT_ABSTRACT	=  0x00000020 ;
+	const		IS_CLASS_FINAL			=  0x00000040 ;
+	
+	// Default properties
+	private		$__default_properties ;
+	
+	
+	/*==============================================================================================================
+	
+	    Constructor -
+	        Initializes the instance.
+	
+	  ==============================================================================================================*/
+	public function  __construct ( $class )
+	   {
+		parent::__construct ( $class ) ;
+		$this -> __default_properties	=  $this -> getDefaultProperties ( ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    getConstants -
+		Returns an array of constant name/value pairs.
+		$filter allows to specify a pattern for selecting only constants matching that pattern (which can use
+		wildcard characters, such as in msdos filenames).
+		When $flip is false, the array returned is an array of constant name/value pairs.
+		When true, the array returned is an array of value/name pairs.
+	
+	  ==============================================================================================================*/
+	public function  getConstants ( $filter = null, $flip = false )
+	   {
+		$constants	=  parent::getConstants ( ) ;
+		
+		if  ( $filter )
+		   {
+			$result		=  [] ;
+
+			foreach  ( $constants  as  $name => $value )
+			   {
+				if  ( String::Matches ( $name, $filter ) )
+				   {
+					if  ( $flip )
+						$result [ $value ]	=  $name ;
+					else
+						$result [ $name ]	=  $value ;
+				    }
+			    }
+
+			return ( $result ) ;
+		    }
+		else
+		   {
+			if  ( $flip )
+				$result		=  array_flip ( $constants ) ;
+			else
+				$result		=  $constants ;
+
+			return ( $result ) ;
+		    }
+	    }
+
+
+	/*==============================================================================================================
+	
+	    getDocComment -
+	        Retrieves the doc comment contents.
+	
+	  ==============================================================================================================*/
+	public function  getDocComment ( )
+	   {
+		$comment	=  $this -> formatDocComment ( parent::getDocComment ( ) ) ;
+		
+		return ( $comment ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    getMethods -
+	        Returns an array of methods of type Thrak\Reflection\ReflectionMethod class.
+		$filter has the same meaning as the \ReflectionClass $filter parameter, plus the addition of the
+	 	following flags :
+	 	- IS_DEFAULT :
+	 		Retrieve only default properties.
+	 	- IS_LOCAL :
+	 		Retrieve only non-inherited properties.
+	 
+	 	When only the IS_DEFAULT and/or IS_LOCAL_FLAGS are specified, the filter is adapted to include static,
+	 	public, protected and private methods.
+	
+	  ==============================================================================================================*/
+	public function  getMethods ( $filter = null )
+	   {
+		// If no argument specified, only get ALL properties
+		if  ( $filter  ==  null )
+			$filter		=  self::IS_STATIC | self::IS_PUBLIC | self::IS_PROTECTED | self::IS_PRIVATE ;
+		
+		// Check if the caller wants local methods only
+		$retrieve_local		=  $filter & self::IS_LOCAL ;
+		$this_class		=  $this -> name ;
+		
+		// If only IS_DEFAULT and/or IS_LOCAL have been specified, assume that the caller want all methods
+		// that are local/default (ie, static, public, private & protected)
+		if  ( ! ( $filter & ( ~( self::IS_DEFAULT | self::IS_LOCAL ) ) ) )
+			$filter		=  self::IS_STATIC | self::IS_PUBLIC | self::IS_PROTECTED | self::IS_PRIVATE ;
+		
+		// Get method list
+		$php_methods		=  parent::getMethods ( $filter ) ;
+		$methods		=  array ( ) ;
+
+		// Filter the retrieved methods for non-default or non-local ones
+		foreach  ( $php_methods  as  $php_method )
+		   {
+			$method_class		=  $php_method -> getDeclaringClass ( ) -> name ;
+			
+			// If local only members are requested, remove them declared in parent classes
+			if  ( $retrieve_local  &&  $method_class !=  $this -> name ) 
+				continue ;
+			
+			$methods []	=  new ReflectionMethod ( $this -> name, $php_method -> name ) ;
+		    }
+		
+		// All done, return
+		return ( $methods ) ;
+	    }
+	
+
+	/*==============================================================================================================
+	
+	    getProperties -
+	        Returns an array of properties of type Thrak\Reflection\ReflectionProperty class.
+		$filter has the same meaning as the \ReflectionClass $filter parameter, plus the addition of the
+	 	following flags :
+	 	- IS_DEFAULT :
+	 		Retrieve only default properties.
+	 	- IS_LOCAL :
+	 		Retrieve only non-inherited properties.
+	 
+	 	When only the IS_DEFAULT and/or IS_LOCAL_FLAGS are specified, the filter is adapted to include static,
+	 	public, protected and private properties.
+	
+	  ==============================================================================================================*/
+	public function  getProperties ( $filter = null )
+	   {
+		// If no argument specified, only get ALL properties
+		if  ( $filter  ==  null )
+			$filter		=  self::IS_STATIC | self::IS_PUBLIC | self::IS_PROTECTED | self::IS_PRIVATE | self::IS_LOCAL ;
+		
+		// Check if the caller wants default or local properties
+		$retrieve_default	=  $filter & self::IS_DEFAULT ;
+		$retrieve_local		=  $filter & self::IS_LOCAL ;
+		$this_class		=  $this -> name ;
+		
+		// If only IS_DEFAULT and/or IS_LOCAL have been specified, assume that the caller want all methods
+		// that are local/default (ie, static, public, private & protected)
+		if  ( ! ( $filter & ( ~( self::IS_DEFAULT | self::IS_LOCAL ) ) ) )
+			$filter		=  self::IS_STATIC | self::IS_PUBLIC | self::IS_PROTECTED | self::IS_PRIVATE ;
+		
+		// Get property list
+		$php_properties		=  parent::getProperties ( $filter ) ;
+		$properties		=  array ( ) ;
+
+		// Filter the retrieved properties for non-default or non-local ones
+		foreach  ( $php_properties  as  $php_property )
+		   {
+			$property_class		=  $php_property -> getDeclaringClass ( ) -> name ;
+			
+			if  ( $retrieve_local  &&  $property_class !=  $this -> name ) 
+				continue ;
+
+			// Use array_key_exists() here instead of isset(), because isset() will return false if a property exists but
+			// has a null value
+			if  ( ( $retrieve_default  &&  array_key_exists ( $php_property -> name, $this -> __default_properties ) )  ||
+				! $retrieve_default )
+				$properties []	=  new ReflectionProperty ( $this -> name, $php_property -> name ) ;
+		    }
+		
+		// All done, return
+		return ( $properties ) ;
+	    }
+	
+
+	/*==============================================================================================================
+	
+		Implementation of the Reflector interface.
+	
+	  ==============================================================================================================*/
+	public static function  export ( $arg, $return = false )
+	   { return ( parent::export ( $arg, $return ) ) ; }
+	   
+	public function  __tostring ( )
+	   { return ( parent::__tostring ( ) ) ; }
+
+	
+	/*==============================================================================================================
+	
+	        Implementation of the RefelectionSourcerInterface interface.
+	
+	  ==============================================================================================================*/
+	public function  getText ( $include_source = false )
+	   {
+		$sourcer 	=  new  Sourcers\ReflectionClassSourcer ( $this ) ;
+		
+		return  ( $sourcer -> getText ( $include_source ) ) ;
+	    }
+    }
+

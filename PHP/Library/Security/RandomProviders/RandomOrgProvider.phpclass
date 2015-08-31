@@ -1,0 +1,78 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        RandomOrgProvider.phpclass
+
+    DESCRIPTION
+        A random number provider that uses www.random.org services.
+
+    AUTHOR
+        Christian Vigh, 03/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/03/24]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Security\Random ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use  	Thrak\System\Object ;
+use	Thrak\IO\Path ;
+use     Thrak\Security\Random\RandomProvider ;
+use     Thrak\Security\Random\IPseudoRandomProvider ;
+use     Thrak\Internet\RandomOrg ;
+
+
+/*==============================================================================================================
+
+    RandomOrgProvider -
+        A random number provider that uses the services of the www.random.org site.
+
+  ==============================================================================================================*/
+class	RandomOrgProvider		extends		RandomProvider
+					implements	IPseudoRandomProvider, ITrueRandomProvider, IQuotaLimitedRandomProvider
+   {
+	protected	$RandomOrg ;
+	
+	// Constructor -
+	//	Defines the min and max values.
+	public function  __construct ( )
+	   {
+		$this -> MinValue	=  RandomOrg::MIN_INTEGER_VALUE ;
+		$this -> MaxValue	=  RandomOrg::MAX_INTEGER_VALUE ;
+		$this -> RandomOrg	=  new RandomOrg ( ) ;
+
+		$this -> UpdateRemainingQuota ( ) ;
+		parent::__construct ( 'www.random.org' ) ;
+	    }
+	
+	
+	// Randomize -
+	//	Randomizes the seed for this random number generator. Needless for this provider.
+	public function  Randomize ( $seed = null )
+	   { }
+	
+	
+	// Next -
+	//	Retrieves next '$count' values in the range $low..$high
+	public function  Next ( $count = 1, $low = null, $high = null )
+	   {
+		$result		=  $this -> RandomOrg -> GetIntegers ( $count ) ;
+		
+		foreach  ( $result  as  &$value )
+			$value	=  $this -> Normalize ( $value, $low, $high ) ;
+		
+		return ( $result ) ;
+	    }
+	
+	
+	// UpdateRemainingQuota -
+	//	Updates the remaining quota. Nothing special, since the RandomOrg class updates the quota after each request.
+	public function UpdateRemainingQuota ( )
+	   { 
+		$this -> RemainingQuota	=  ( integer ) ( $this -> RandomOrg -> GetQuota ( ) / 32 ) ;
+	    }
+    }

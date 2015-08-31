@@ -1,0 +1,405 @@
+<?php
+/***************************************************************************************************
+
+    NAME
+	FileWrapper.phpclass
+
+    DESCRIPTION
+	File stream wrapper.
+
+    AUTHOR
+	Christian Vigh, 10/2012.
+
+    HISTORY
+    [Version : 1.0]		[Date : 2012/10/08]		[Author : CV]
+	Initial release.
+
+ ***************************************************************************************************/
+namespace 	Thrak\IO\Wrappers ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces & objects
+use 		Thrak\System\Object 			as  Object ;
+use 		Thrak\System\Exception 			as  Exception ;
+use 		Thrak\Types\String			as  String ;
+use		Thrak\IO\Path				as  Path ;
+use 		Thrak\IO\Wrappers\GenericWrapper	as  GenericWrapper ;
+
+
+/*==================================================================================================
+
+    FileWrapper class -
+	Implements a generic file wrapper.
+
+  ==================================================================================================*/
+class  FileWrapper	extends  GenericWrapper
+   {
+   	public 		$Handle ;
+   	public 		$Path ;
+   	public  	$RealPath ;
+   	public 		$Position ;
+
+
+   	// Class constructor
+   	public function  __construct ( )
+   	   {
+   	   	$this -> Features 	=  SW_SUPPORT_MASK_ALL ;
+   	    }
+
+
+   	// Register -
+   	//	Adds the following parameters (if not present) before registering the class :
+   	//	- 'read-buffer-size' :
+   	//		Size of the read buffer in bytes.
+   	//	- 'write-buffer-size' :
+   	//		Size of the write buffer in bytes.
+   	public static function  Register ( $wrapper_name, $parameters = null, $flags = 0 )
+   	   {
+   		if  ( $parameters  ==  null )
+   			$parameters = array ( ) ;
+
+   		$parameters = array_merge ( $parameters, array ( 'read-buffer-size' => 16384, 'write-buffer-size' => 16384 ) ) ;
+   		parent::Register ( $wrapper_name, $parameters, $flags ) ;
+   	    }
+
+   	// DirectoryClose -
+   	//	Closes the currently opened directory.
+   	public function  DirectoryClose  ( )
+   	   {
+   		closedir ( $this -> Handle ) ;
+   		$this -> Handle = null ;
+   		return ( true ) ;
+   	    }
+
+
+   	// DirectoryOpen -
+   	//  	Opens a directory for reading.
+   	public function  DirectoryOpen 	( $path, $options )
+   	   {
+   		$url 			=  $this -> ParseUrl ( $path ) ;
+		$this -> Path 		=  $this -> GetPath ( $url ) ;
+		$this -> RealPath 	=  $this -> GetRealPath ( $url ) ;
+		$this -> Handle 	=  opendir ( $this -> RealPath ) ;
+
+		if  ( $this -> Handle  ==  NULL )
+			return ( false ) ;
+		else
+			return ( $this -> Handle ) ;
+   	    }
+
+
+   	// DirectoryRead -
+   	//	Reads the next directory name.
+   	public function  DirectoryRead  ( )
+   	   {
+   		return ( readdir ( $this -> Handle ) ) ;
+   	    }
+
+
+   	// DirectoryRewind -
+   	//	Rewinds the currently opened directory.
+   	public function  DirectoryRewind  ( )
+   	   {
+		return ( rewinddir ( $this -> Handle ) ) ;
+   	    }
+
+
+   	// DirectoryCreate -
+   	//	Creates a directory.
+   	public function  DirectoryCreate  ( $path, $mode, $options )
+   	   {
+   		$url 		=  $this -> ParseUrl ( $path ) ;
+   		$filename 	=  $this -> GetRealPath ( $url ) ;
+
+   		return ( mkdir ( $filename, $mode, ( ( $options  &  STREAM_MKDIR_RECURSIVE )  !=  0 ) ) ) ;
+   	    }
+
+
+   	// DirectoryRemove -
+   	//	Removes a directory.
+   	public function  DirectoryRemove  ( $path, $options )
+   	   {
+   		$url 		=  $this -> ParseUrl ( $path ) ;
+   		$filename 	=  $this -> GetRealPath ( $url ) ;
+
+   		return ( rmdir ( $filename, ( ( $options  &  STREAM_MKDIR_RECURSIVE )  !=  0 ) ) ) ;
+   	    }
+
+
+   	// FileRename -
+   	//	Renames a file.
+   	public function  FileRename  ( $from_path, $to_path )
+   	   {
+   		$from_url 		=  $this -> ParseUrl ( $from_path ) ;
+   		$to_url			=  $this -> ParseUrl ( $to_path ) ;
+   		$from_filename		=  $this -> GetRealPath ( $from_url ) ;
+   		$to_url 		=  $this -> GetRealPath ( $to_url ) ;
+
+   		return ( rename ( $filename1, $filename2 ) ) ;
+   	    }
+
+
+   	// FileUnlink -
+   	//	Deletes a file.
+   	public function  FileUnlink  ( $path )
+   	   {
+   		$url 		=  $this -> ParseUrl ( $path ) ;
+   		$filename 	=  $this -> GetRealPath ( $url ) ;
+
+   		return ( unlink ( $filename ) ) ;
+   	    }
+
+
+   	// FileStat -
+   	//	Performs a stat on the specified file.
+   	public function  FileStat ( $path, $flags )
+   	   {
+   	   	$url 		=  $this -> ParseUrl ( $path ) ;
+   		$filename 	=  $this -> GetRealPath ( $url ) ;
+
+   		if  ( ( $flags  &  STREAM_URL_STAT_QUIET ) )
+   		   {
+   			if  ( file_exists ( $filename ) )
+   				return ( @stat ( $filename ) ) ;
+			else
+				return ( false ) ;
+  		    }
+   		else
+   		   {
+   			if  ( file_exists ( $filename ) )
+   				return ( @stat ( $filename ) ) ;
+			else
+				return ( false ) ;
+  		    }
+   	    }
+
+
+   	// StreamCast -
+   	//	Casts a stream to the specified type.
+   	public function  StreamCast  ( $cast_as )
+   	   {
+		return ( $this -> Handle ) ;
+   	    }
+
+
+   	// StreamClose -
+   	//	Closes the opened stream.
+   	public function  StreamClose ( )
+   	   {
+   		$status 		=  fclose ( $this -> Handle ) ;
+   		$this -> Handle 	=  null ;
+   		$this -> Position 	=  0 ;
+
+   		return ( $status ) ;
+   	    }
+
+
+   	// StreamEof -
+   	//	Checks if we reached the end of file on the currently opened stream.
+   	public function  StreamEof  ( )
+   	   {
+   	   	return ( feof ( $this -> Handle ) ) ;
+   	    }
+
+
+   	// StreamFlush -
+   	//	Flushes the current stream.
+   	public function  StreamFlush  ( )
+   	   {
+   	   	return ( fflush ( $this -> Handle ) ) ;
+   	    }
+
+
+   	// StreamLock -
+   	//	Locks a stream.
+   	public function  StreamLock  ( $mode )
+   	   {
+   		return ( flock ( $this -> Handle, $mode ) ) ;
+   	    }
+
+
+   	// StreamMetaData -
+   	//	Changes stream metadata. Invoked when calling one of the following functions : touch(),
+	//  	chmod(), chown() or chgrp().
+   	public function  StreamMetaData  ( $path, $option, $arg )
+   	   {
+   	   	$url 		=  $this -> ParseUrl ( $path ) ;
+	   	$filename 	=  $this -> GetRealPath ( $url ) ;
+		$status 	=  false ;
+
+		switch ( $option )
+		   {
+		   	case 	STREAM_META_TOUCH :
+		   		$status = touch ( $filename, $arg [0], $arg [1] ) ;
+		   		break ;
+
+		   	case    STREAM_META_OWNER_NAME :
+		   	case    STREAM_META_OWNER :
+		   		$status = chown ( $filename, $arg ) ;
+		   		break ;
+
+		   	case    STREAM_META_GROUP_NAME :
+		   	case    STREAM_META_GROUP :
+		   		$status = chgrp ( $filename, $arg ) ;
+		   		break ;
+
+		   	case    STREAM_META_ACCESS :
+		   		$status = chmod ( $filename, $arg ) ;
+		   		break ;
+		    }
+
+		return ( $status ) ;
+   	    }
+
+
+   	// StreamOpen -
+   	//	Opens a stream.
+   	public function  StreamOpen  ( $path, $mode, $options, &$opened_path )
+   	   {
+   	   	$url 			=  $this -> ParseUrl ( $path ) ;
+   	   	$this -> Path 		=  $this -> GetPath ( $url ) ;
+   	   	$this -> OpenedPath	=  $this -> GetRealPath ( $url ) ;
+   	   	$this -> Position 	=  0 ;
+   	   	$this -> Handle 	=  fopen ( $this -> OpenedPath, $mode ) ;
+
+   	   	$opened_path 		=  $this -> OpenedPath ;
+
+   	   	if  ( $this -> Handle  ==  null )
+   	   	 	return ( false ) ;
+   	   	else
+   	   	   {
+   	   	   	// Set the read and write buffer sizes
+
+   	   	   	$size 	=  FileWrapper::GetStreamOption ( $url [ 'scheme-name' ], 'read-buffer-size' ) ;
+
+   	   	   	if  ( $size  !==  null )
+   	   	   		stream_set_read_buffer ( $this -> Handle, $size ) ;
+
+   	   	   	$size 	=  FileWrapper::GetStreamOption ( $url [ 'scheme-name' ], 'write-buffer-size' ) ;
+
+   	   	   	if  ( $size  !==  null )
+   	   	   		stream_set_write_buffer ( $this -> Handle, $size ) ;
+
+   	   	   	return ( true ) ;
+   	   	    }
+   	    }
+
+
+   	// StreamRead -
+   	//	Reads from the currently opened stream.
+   	public function  StreamRead  ( $count )
+   	   {
+   	   	$this -> Position += $count ;
+
+	        $data = fread ( $this -> Handle, $count )  ;
+
+	        return ( $data ) ;
+   	   }
+
+
+   	// StreamSeek -
+   	//	Seeks the currently opened stream.
+   	public function  StreamSeek  ( $offset, $whence )
+   	   {
+   	   	return ( fseek ( $this -> Handle, $offset, $whence ) ) ;
+   	    }
+
+
+   	// StreamSetOption -
+   	//	Sets a stream option. Invoked when one of the following functions is called :
+	//    	stream_set_blocking(), stream_set_timeout() or stream_set_write_buffer().
+   	public function  StreamSetOption  ( $option, $arg1, $arg2 )
+   	   {
+	   	$status 	=  false ;
+
+		switch ( $option )
+		   {
+		   	case 	STREAM_OPTION_BLOCKING :
+		   		$status = stream_set_blocking ( $this -> Handle, $arg1 ) ;
+		   		break ;
+
+		   	case	STREAM_OPTION_READ_TIMEOUT :
+		   		$status = stream_set_timeout ( $this -> Handle, $arg1, $arg2 ) ;
+		   		break ;
+
+		   	case 	STREAM_OPTION_WRITE_BUFFER :
+		   		$status = stream_set_write_buffer ( $this -> Handle, $arg1, $arg2 ) ;
+		   		break ;
+		    }
+
+		return ( $status ) ;
+   	    }
+
+
+   	// StreamStat -
+   	//	Performs a stat on the currently opened stream.
+   	public function  StreamStat  ( )
+   	   {
+   	   	return ( @fstat ( $this -> Handle ) ) ;
+   	    }
+
+
+   	// StreamTell -
+   	//	Returns the current position within a stream.
+   	public function  StreamTell  ( )
+   	   {
+   	   	return ( $this -> Position ) ;
+   	    }
+
+
+   	// StreamTruncate -
+   	//	Truncates the currently opened stream.
+   	public function  StreamTruncate  ( $new_size )
+   	   {
+   		return ( ftruncate ( $this -> Handle, $new_size ) ) ;
+   	    }
+
+
+   	// StreamWrite -
+   	//	Writes data to the currently opened stream.
+   	public function  StreamWrite  ( $data )
+   	   {
+   	   	$count 		   =  strlen ( $data ) ;
+   		$this -> Position +=  $count ;
+
+   		return ( fwrite ( $this -> Handle, $data, $count ) ) ;
+   	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    Overridden GetPath/GetRealPath functions to get into account the 'root' parameter that
+	    may have been specified during the call to the Register function.
+
+	 --------------------------------------------------------------------------------------------*/
+	// GetPath -
+	//	Returns the path component from a URL
+	protected function  GetPath ( $url )
+	   {
+	   	$path 		=  parent::GetPath ( $url ) ;
+	   	$root 		=  FileWrapper::GetStreamOption ( $url [ 'scheme-name' ], 'root' ) ;
+
+	   	if  ( $root  !==  NULL )
+	   		$path 	=  $root . '/' . $path ;
+
+	   	return ( Path::Realpath ( $path ) ) ;
+	    }
+
+
+	// GetRealPath -
+	//	Returns the real path of an url.
+	protected function  GetRealPath ( $url )
+	   {
+	   	$path 		=  parent::GetRealPath ( $url ) ;
+	   	$root 		=  FileWrapper::GetStreamOption ( $url [ 'scheme-name' ], 'root' ) ;
+
+	   	if  ( $root  !==  NULL )
+	   		$path 	=  $root . '/' . $path ;
+
+	   	$result		=  Path::ToUnix ( Path::Realpath ( $path ) ) ;
+		 
+		return ( $result ) ; 
+	    }
+
+   }

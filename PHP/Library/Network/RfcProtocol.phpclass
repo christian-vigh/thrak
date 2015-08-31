@@ -1,0 +1,322 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        RfcProtocol.phpclass
+
+    DESCRIPTION
+        Abstract base class for RFC protocols handlers.
+
+    AUTHOR
+        Christian Vigh, 11/2014.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2014/11/29]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace	Thrak\Network ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces & objects
+use		Thrak\System\Object			as  Object ;
+
+
+/*==============================================================================================================
+
+    RfcProtocol -
+        Implements a generic RFC protocol handler.
+
+  ==============================================================================================================*/
+abstract class  RfcProtocol		extends  Object
+   {
+	// Default end of line
+	const		RFC_EOL			=  "\r\n" ;
+	
+	// Protocol name
+	protected	$ProtocolName	;
+	// Open and read timeouts, in microseconds (well, to tell the truth, open timeout cannot be smaller than 1 second)
+	protected	$OpenTimeout		=  1000000,
+			$ReadTimeout		=  1000000 ;
+	// Read and write buffer sizes
+	protected	$ReadBufferSize		=  1024 ;
+	protected	$WriteBufferSize	=  false ;
+	
+	// Socket descriptor, when opened
+	protected	$SocketFp		=  false ;
+	
+	// Opened address and port
+	protected	$OpenedAddress		=  false ;
+	protected	$OpenedPort		=  false ;
+	
+	// False for asynchronous IO
+	protected	$BlockingIO		=  true ;
+	
+	
+	/*==============================================================================================================
+	
+	    Constructor -
+	        Builds an RfcProtocol object.
+	
+	  ==============================================================================================================*/
+	public function  __construct ( $protocol_name )
+	   {
+		parent::__construct ( ) ;
+		
+		$this -> ProtocolName	=  $protocol_name ;
+	    }
+	
+
+	/*==============================================================================================================
+	
+	    Destructor -
+	        Closes any opened resource.
+	
+	  ==============================================================================================================*/
+	public function  __destruct ( )
+	   {
+		if  ( $this -> IsOpened ( ) )
+			$this -> Close ( ) ;
+	    }
+	
+
+	/*==============================================================================================================
+	
+	    NAME
+	        Close - Closes an opened connection.
+	
+	    PROTOTYPE
+	        $rfc -> Close ( ) ;
+	
+	    DESCRIPTION
+	        Closes an opened connection.
+	
+	  ==============================================================================================================*/
+	public function  Close ( )
+	   {
+		if  ( ! $this -> IsOpened ( ) )
+			error ( new \Thrak\System\NetworkException ( "Connection already closed." ) ) ;
+		    
+		fclose ( $this -> SocketFp ) ;
+		
+		$this -> SocketFp	=  false ;
+		$this -> OpenedAddress	=  false ;
+		$this -> OpenedPort	=  false ;
+	    }
+	
+
+	/*==============================================================================================================
+	
+		Property get functions.
+
+	  ==============================================================================================================*/
+
+	// GetAddress -
+	//	Returns the opened address, or false if no connection is opened.
+	public function  GetAddress ( )
+	   { return ( $this -> OpenedAddress ) ; }
+	
+	
+	// GetOpenTimeout -
+	//	Returns the open timeout, in microseconds.
+	public function  GetOpenTimeout ( )
+	   { return ( $this -> OpenTimeout ) ; }
+		
+	
+	// GetPort -
+	//	Returns the opened port, or false if no connection is opened.
+	public function  GetPort ( )
+	   { return ( $this -> OpenedPort ) ; }
+	
+	
+	// GetProtocol -
+	//	Returns the name of the derived class protocol.
+	public function  GetProtocol ( )
+	   { return ( $this -> ProtocolName ) ; }
+	
+	
+	// GetReadTimeout -
+	//	Returns the read timeout, in microseconds.
+	public function  GetReadTimeout ( )
+	   { return ( $this -> ReadTimeout ) ; }
+
+	
+	// GetSocket -
+	//	Returns the file descriptor of the opened socket, or false if no socket is opened.
+	public function  GetSocket ( )
+	   { return ( $this -> SocketFp ) ; }
+
+	
+	// IsOpened -
+	//	Returns true if a link has been established.
+	public function  IsOpened ( )
+	   {
+		return  ( $this -> SocketFp  !==  false ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        Open - Opens a connection.
+	
+	    PROTOTYPE
+	        $rfc -> Open ( $address, $port ) ;
+	
+	    DESCRIPTION
+	        Opens a connection to the specified address and port.
+		IO will be asynchronous if the $BlockingIO property is set to true.
+	
+	    PARAMETERS
+	        $address (string) -
+	                Url or IP address of the connection to be opened.
+	  
+	 	$port (integer) -
+	 		Destination port.
+	
+	  ==============================================================================================================*/
+	public function  Open ( $address, $port )
+	   {
+		if  ( $this -> IsOpened ( ) )
+			error ( new \Thrak\System\NetworkException ( "Connection already opened." ) ) ;
+		    
+		$status		=  fsockopen ( $address, $port, $errno, $errstr, ( $this -> OpenTimeout + 999999 ) / 1000000 ) ;
+		
+		if  ( $status  ===  false )
+			error ( new \Thrak\System\NetworkException ( "$errstr", $errno ) ) ;
+		
+		$this -> SocketFp	=  $status ;
+		$this -> OpenedAddress	=  $address ;
+		$this -> OpenedPort	=  $port ;
+		
+		if  ( ! $this -> BlockingIO )
+			stream_set_blocking ( $status, 0 ) ;
+	    }
+	
+
+	/*==============================================================================================================
+	
+	    NAME
+	        Read, ReadLine - Reads data from an opened connection.
+	
+	    PROTOTYPE
+	        $data	=  $rfc -> Read ( ) ;
+		$data	=  $rfc -> ReadLine ( ) ;
+	
+	    DESCRIPTION
+	        Reads data from an opened connection. The ReadLine() function reads a whole line.
+	
+	    RETURN VALUE
+	        The data that was available on the opened connection.
+	
+	  ==============================================================================================================*/
+	public function  Read ( )
+	   {
+		if  ( ! $this -> IsOpened ( ) )
+			error ( new \Thrak\System\NetworkException ( "Read: no connection available." ) ) ;
+
+		return  ( $this -> RawRead ( false ) ) ;
+	    }
+	
+	
+	public function  ReadLine ( )
+	   {
+		if  ( ! $this -> IsOpened ( ) )
+			error ( new \Thrak\System\NetworkException ( "Read: no connection available." ) ) ;
+
+		return  ( $this -> RawRead ( true ) ) ;
+	    }
+	
+
+	/*==============================================================================================================
+	
+		Sets the read and open timeouts, in microseconds.
+	
+	  ==============================================================================================================*/
+	public function  SetOpenTimeout ( $timeout )
+	   { $this -> OpenTimeout = $timeout ; }
+
+	
+	public function  SetReadTimeout ( $timeout )
+	   { $this -> ReadTimeout = $timeout ; }
+	
+
+	/*==============================================================================================================
+	
+	    NAME
+	        Write, WriteLine - Writes data to an opened connection.
+	
+	    PROTOTYPE
+	        $rfc -> Write		( $data, $length = false ) ;
+		$rfc -> WriteLine	( $data ) ;
+	
+	    DESCRIPTION
+	        Writes data to an opened connection.
+		The WriteLine() function always appends an RFC_EOL string to the value to be written.
+	
+	    PARAMETERS
+	        $data (string) -
+	                Data to be written.
+	  
+	 	$length (integer) -
+	 		Number of bytes to be written. If not specified, the whole $data string is written.
+	
+	    RETURN VALUE
+	        Number of bytes written.
+	
+	  ==============================================================================================================*/
+	public function  Write ( $data, $length = false )
+	   {
+		if  ( ! $this -> IsOpened ( ) )
+			error ( new \Thrak\System\NetworkException ( "Write: no connection available." ) ) ;
+
+		if  ( $length )
+			$length		=  fwrite ( $this -> SocketFp, $data, $length ) ;
+		else
+			$length		=  fwrite ( $this -> SocketFp, $data ) ;
+	    }
+	
+	
+	public function  WriteLine ( $data )
+	   {
+		if  ( ! $this -> IsOpened ( ) )
+			error ( new \Thrak\System\NetworkException ( "Write: no connection available." ) ) ;
+
+		fwrite ( $this -> SocketFp, $data . self::RFC_EOL ) ;
+	    }
+	
+
+	/*==============================================================================================================
+	
+	    RawRead -
+	        Reads available data ($readline = false) or a whole line ($readline = true) from an opened stream.
+	
+	  ==============================================================================================================*/
+	protected function  RawRead ( $readline = false )
+	   {
+		if  ( $this -> BlockingIO )
+			$data	=  stream_get_contents ( $this -> SocketFp ) ;
+		else
+		   {
+			$function	=  ( $readline ) ?  'fgets' : 'fread' ;
+			$read_sockets	=  [ $this -> SocketFp ] ;
+			$write_sockets	=  null ;
+			$except_sockets	=  null ;
+			$data		=  "" ;
+			
+			do 
+			   {
+				if  ( stream_select ( $read_sockets, $write_sockets, $except_sockets, 0, $this -> ReadTimeout ) )
+				   {
+					$data	.=  $function ( $this -> SocketFp, $this -> ReadBufferSize ) ;
+				    }
+				else
+					break ;
+			    }  while ( true ) ;
+		    }
+	
+		return ( $data ) ;
+	    }
+    }

@@ -1,0 +1,238 @@
+<?php
+
+/***************************************************************************************************
+
+    NAME
+	mysql.phpclass
+
+    DESCRIPTION
+	MySQL database access driver.
+
+    AUTHOR
+	Christian Vigh, 02/2010.
+
+    HISTORY
+    [Version : 1.0]		[Date : 2010/02/23]		[Author : CV]
+	Initial release.
+
+   [Version : 2.0]	[Date : 2012/10/13]		[Author : CV]
+	Migrated to the Thrak library version 2.
+
+ ***************************************************************************************************/
+namespace  	Thrak\Database\Drivers ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces and classes
+use 	Thrak\System\Object ;
+use 	Thrak\System\Exception ;
+use     Thrak\Database\Database ;
+use     Thrak\Database\DatabaseDriver ;
+
+
+/*===========================================================================================
+
+	mysql class -
+		MySQL-specific database access.
+
+  ===========================================================================================*/
+class	mysql  extends  DatabaseDriver
+   {
+	/********************************************************************************************
+	 ********************************************************************************************
+	 ********************************************************************************************
+	 ******                                                                                ******
+	 ******                                MAGIC FUNCTIONS                                 ******
+	 ******                                                                                ******
+	 ********************************************************************************************
+	 ********************************************************************************************
+	 ********************************************************************************************/
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	  	Class constructor - Initializes the database driver.
+
+	    PROTOTYPE
+		$Database = new mysqli ( $parent ) ;
+
+	    DESCRIPTION
+		Initializes a database driver.
+
+	    PARAMETERS
+	    	$parent (Database object) -
+	    		Parent database object.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __construct ( $app, $conf, $parameters )
+	   {
+		parent::__construct ( ) ;
+		
+		error ( new \Thrak\System\ErrorException ( "The mysql driver is no longer supported." ) ) ;
+		
+		// MySQL specific settings
+		$this -> DatabaseDriver = "MySQL" ;
+
+		parent::__construct ( $app, $conf, $parameters ) ;
+	    }
+
+
+	/********************************************************************************************
+	 ********************************************************************************************
+	 ********************************************************************************************
+	 ******                                                                                ******
+	 ******                 IMPLEMENTATION OF PARENT'S ABSTRACT FUNCTIONS                  ******
+	 ******                                                                                ******
+	 ********************************************************************************************
+	 ********************************************************************************************
+	 ********************************************************************************************/
+
+	// Shortcut to assign the error fields in the parent class
+	public function  db_set_error ( )
+	   {
+		if  ( $this -> Parent -> Connection )
+		   {
+			$this -> LastErrorNumber 	=  mysql_errno ( $this -> Parent -> Connection ) ;
+			$this -> LastErrorMessage	=  mysql_error ( $this -> Parent -> Connection ) ;
+		   }
+		else
+		   {
+			$this -> LastErrorNumber	=  mysql_errno ( ) ;
+			$this -> LastErrorMessage	=  mysql_error ( ) ;
+		    }
+	    }
+
+
+	// Checks if the database driver is installed
+	public function  db_is_driver_installed ( )
+	   {
+		if  ( function_exists ( "mysql_connect" ) )
+			return ( true ) ;
+		else
+			return ( false ) ;
+	    }
+
+	// Connects to the database
+	public function  db_connect ( $user, $password, $hostname, $port )
+	   {
+		$status = @mysql_connect ( "$hostname:port", $user, $password ) ;
+		$this -> db_set_error ( ) ;
+
+		return ( $status ) ;
+	    }
+
+
+	// Disconnects from the database
+	public function  db_disconnect ( $resource )
+	   {
+		$status = mysql_close ( $resource ) ;
+		$this -> db_set_error ( ) ;
+
+		return ( $status ) ;
+	    }
+
+
+	// Selects the specified database
+	public function  db_select_database ( $resource, $name )
+	   {
+		$status = mysql_select_db ( $name, $resource ) ;
+		$this -> db_set_error ( ) ;
+
+		return ( $status ) ;
+	    }
+
+
+	// Used for adding the LIMIT (or equivalent) clause to a SQL statement
+	public function  db_preprocess_statement ( $resource, $statement )
+	   {
+		if  ( $this -> Parent -> QueryLimit  >  0 )
+		   {
+			if  ( $this -> Parent -> QueryOffset  >  0 )
+				$extra = " LIMIT {$this -> Parent -> QueryOffset}, {$this -> Parent -> QueryLimit}" ;
+			else
+				$extra = " LIMIT {$this -> Parent -> QueryLimit}" ;
+		    }
+		else
+			$extra = "" ;
+
+		return ( $statement . $extra ) ;
+	    }
+
+ 	// Runs an SQL query
+	public function  db_run_query ( $resource, $statement )
+	   {
+		$result = mysql_query ( $statement, $resource ) ;
+		$this -> db_set_error ( ) ;
+
+		return ( $result ) ;
+	    }
+
+	// Free a result returned by an SQL query
+	public function  db_free_query ( $resource, $recordset )
+	   {
+		$result = mysql_free_result ( $recordset ) ;
+		$this -> db_set_error ( ) ;
+
+		return ( $result ) ;
+	    }
+
+
+	// Fetches the next result from a recordset
+	public function  db_fetch_next ( $resource, $recordset )
+	   {
+		$row = mysql_fetch_assoc ( $recordset ) ;
+		$this -> db_set_error ( ) ;
+
+		return ( $row ) ;
+	    }
+
+	// Get rows affected by last update
+	public function  db_get_affected_rows  ( $resource )
+	   {
+		$result = mysql_affected_rows ( $resource ) ;
+		$this -> db_set_error ( ) ;
+
+		if  ( $result  ==  -1 )
+			return ( false ) ;
+		else
+			return ( $result ) ;
+	    }
+
+	// Get number of rows returned by the last query
+	public function  db_get_num_rows ( $resource )
+	   {
+		$result = mysql_num_rows ( $resource ) ;
+		$this -> db_set_error ( ) ;
+
+		if  ( $result  ==  -1 )
+			return ( false ) ;
+		else
+			return ( $result ) ;
+	    }
+
+
+	// Returns the ID of an auto-increment field from the last insert
+	public function  db_get_last_insert_id ( $resource )
+	   {
+		$result = mysql_insert_id ( $resource ) ;
+		$this -> db_set_error ( ) ;
+
+		return ( $result ) ;
+	    }
+
+
+	// Get version
+	public function  db_get_version ( $resource )
+	   {
+		return ( mysql_get_server_info ( $resource ) ) ;
+	    }
+
+	// Returns a quoted string
+	public function  db_quote_value ( $resource, $value )
+	    {
+	    	return ( mysql_real_escape_string ( $value, $resource ) ) ;
+	     }
+    }
+
+ 

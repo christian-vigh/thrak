@@ -1,0 +1,360 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        PackedArray.phpclass
+
+    DESCRIPTION
+        Packed arrays are a compact implementation of an array of integers or shorts. They consume much less
+	memory than normal arrays, because they are implemented as a simple string, where the integral values
+	are stored as a series of characters.
+ 	Packed arrays are really efficient from a memory point of view : while an standard array of 10000 ints
+ 	eats up to 1.4Mb of memory, the same quantity of values consume just a little bit more than 20000 bytes
+ 	when stored in a packed array.
+ 	Of course there is still a trade-off between memory and performance : packed arrays, since they are 
+ 	implemented in PHP, and not as a native extension, will behave slower than their non-packed counterpart.
+
+    AUTHOR
+        Christian Vigh, 10/2014.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2014/10/09]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Types ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces & objects
+use 		Thrak\System\Object 			as  Object ;
+
+
+
+/*==============================================================================================================
+
+    PackedArray class -
+       The base abstract class for packed arrays containing integral data types.
+
+  ==============================================================================================================*/
+abstract class  PackedArray  	extends  Object
+				implements  ArrayAccess, Countable, Iterator
+   {
+	// Iterator position
+	private 	$IteratorPosition	=  0 ;
+	// All those members are to be set by derived classes
+	protected 	$Data 			=  "" ;			// Array data
+	protected 	$DataLength 		=  0 ;			// Array data length, in number of items
+	
+	
+	/*==============================================================================================================
+	
+	    NAME
+	       Constructor.
+	
+	    DESCRIPTION
+	        Does not much...
+	
+	  ==============================================================================================================*/
+	public function  __construct ( )
+	   {
+		parent::__construct ( ) ;
+	    }
+
+
+	/*==============================================================================================================
+	
+	    UndefinedOffset -
+	        Can be called by derived classes from the ArrayAccess implementations to generate an "index out of 
+		bounds" error.
+	
+	  ==============================================================================================================*/
+	protected function  UndefinedOffset ( $index )
+	   {
+		$trace 	=  debug_backtrace ( 0, 2 ) ;
+		
+		trigger_error ( "Undefined offset $index in " . $trace [1] [ 'file' ] . " line " . $trace [1] [ 'line' ] . " --> triggered", E_USER_NOTICE ) ;
+	    }
+	    
+	    
+	/*==============================================================================================================
+	
+	    ArrayAccess and Countable implementations -
+	        Note that the offsetGet/Set/Unset methods are abstract and must be implemented by derived classes.
+	
+	  ==============================================================================================================*/
+	public function  count ( )
+	   {
+		return ( $this -> DataLength ) ;
+	    }
+	    
+	    
+	public function  offsetExists ( $offset )
+	   {
+		if  ( is_int ( $offset )  &&  $offset  >=  0  &&  $offset  <  $this -> DataLength )
+			return ( true ) ;
+		else
+		   {
+			$this -> UndefinedOffset ( $offset ) ;
+			return ( false ) ;
+		    }
+	    }
+	    
+	    
+	public abstract function  offsetGet ( $offset ) ;
+	   
+	public abstract function  offsetSet ( $offset, $value ) ;
+	    
+	public abstract function  offsetUnset ( $offset ) ;
+	    
+	
+	/*==============================================================================================================
+	
+	    Iterator implementation -
+	        Provides a basic behavior for iterating through packed array items.
+	
+	  ==============================================================================================================*/
+	public function  rewind ( )
+	   { $this -> IteratorPosition 	=  0 ; }
+	   
+	public function  current ( )
+	   { return ( $this [ $this -> IteratorPosition ] ) ; }
+	   
+	public function  key ( )
+	   { return ( $this -> IteratorPosition ) ; }
+	   
+	public function  next ( )
+	   {  $this -> IteratorPosition ++ ; }
+	   
+	public function  valid ( )
+	   { return ( $this -> IteratorPosition <  $this -> DataLength ) ; }
+    }
+
+
+/*==============================================================================================================
+
+    PackedIntegralArray -
+        A more specialized abstract class for handling integral values of fixed size.
+
+  ==============================================================================================================*/
+abstract class  PackedIntegralArray  	extends  PackedArray
+					implements  ArrayAccess, Countable, Iterator
+   {
+	// All those members are to be set by derived classes
+	protected 	$ItemLength 		=  null ;		// Array item length, in bytes
+	protected 	$PackFormat 		=  null ;		// Format used for the pack/unpack functions
+	
+
+	/*==============================================================================================================
+	
+	    NAME
+	        Constructor - Initializes a packed array for storing integral values.
+	
+	    PROTOTYPE
+	        The prototype is called by derived, non-abstract classes.
+	
+	    DESCRIPTION
+	        Initializes a packed array.
+	
+	    PARAMETERS
+	        $from (string or PackedArray or integer) -
+	                Can be either :
+			- A string : in this case, it will be taken as the packed array initialization value
+			- A PackedArray : all the properties from the specified packed array will be copied to this
+			  new instance.
+			- An integer : the packed array will hold the specified number of items.
+	
+		$item_length (integer) -
+			Length of an array item, in bytes.
+	 
+		$pack_format (string) -
+			Packed items are stored/retrieved using the pack() and unpack() builtin functions. This string
+			parameter is the packing/unpacking format parameter passed to those functions.
+	 
+	    NOTES
+	        Packed arrays are automatically expanded : if an item is assigned whose index is beyond the current limit
+		of the array, the array will automatically be expanded.
+	 
+	  ==============================================================================================================*/
+	public function  __construct ( $from, $item_length, $pack_format )
+	   {
+		parent::__construct ( ) ;
+		
+		$this -> ItemLength 	=  $item_length ;
+		$this -> PackFormat 	=  $pack_format ;
+		
+		if  (  $from  !==  null )
+		   {
+			// Initialize a packed array from a binary string
+			if  ( is_string ( $from ) )
+			   {
+				$this -> Data 		=  $from ;
+				$this -> DataLength	=  ( integer ) ( strlen ( $from ) / $item_length ) ;
+			    }
+			// Initialize a packed array sufficient to hold $from items
+			else if  ( is_int ( $from ) )
+			   {
+				$this -> Data 		=  str_repeat ( "\0", $from * $item_length ) ;
+				$this -> DataLength 	=  $from ;
+			    }
+			// Initialize a packed array from another packed array
+			else if  ( $from instanceof PackedArray )
+			   {
+				$this -> Data 		=  $from -> Data ;
+				$this -> DataLength 	=  $from -> DataLength ;
+				$this -> ItemLength 	=  $from -> ItemLength ;
+				$this -> PackFormat 	=  $from -> PackFormat ;
+			    }
+		    }
+
+	    }
+	    
+
+	/*==============================================================================================================
+	
+	    offsetGet -
+	        Returns a packed array item at the specified offset.
+	
+	  ==============================================================================================================*/
+	public function  offsetGet ( $offset )
+	   {
+		// Check that the specified offset is within 0..max item count
+		if  ( is_int ( $offset )  &&  $offset  >=  0  &&  $offset  <  $this -> DataLength )
+		   {
+			// Special case, both for PHP for Windows (which uses 32-bits integers, even in its 64-bits package) and for the 
+			// pack()/unpack() functions, which ignores the "Q" format specifier for 64-bits values, on both platforms (Unix & Windows).
+			if  ( $this -> ItemLength  ==  8 )
+			   {
+				$low	=  current ( unpack ( $this -> PackFormat, substr ( $this -> Data, $offset * $this -> ItemLength, 4 ) ) ) ;
+				$high 	=  current ( unpack ( $this -> PackFormat, substr ( $this -> Data, ( $offset * $this -> ItemLength ) + 4, 4 ) ) ) ;
+				$value 	=  ( $high  <<  32 ) | $low ;
+			    }
+			else
+				$value 	=  current ( unpack ( $this -> PackFormat, substr ( $this -> Data, $offset * $this -> ItemLength, $this -> ItemLength ) ) ) ;
+		
+			return ( $value ) ;
+		    }
+		else
+		   {
+			$this -> UndefinedOffset ( $offset ) ;
+			return ( null ) ;
+		    }
+	    }
+	    
+	
+	/*==============================================================================================================
+	
+	    offsetSet -
+	        Sets the value at the specified offset. The array will automatically be expanded if the specified offset
+		is greater than the current maximum number of items.
+	
+	  ==============================================================================================================*/
+	public function  offsetSet ( $offset, $value )
+	   {
+		if  ( is_int ( $offset )  &&  $offset  >=  0 )
+		   {
+			// Offset larger than current number of items : expand the array
+			if  ( $offset  >=  $this -> DataLength )
+			   {
+				$count 			 =  $offset - $this -> DataLength + 1 ;
+				$this -> Data 		.=  str_repeat ( "\0", $count * $this -> ItemLength ) ;
+				$this -> DataLength 	 =  $offset + 1 ;
+			    }
+			    
+			// For 64-bit values, add an extra hardcoded step for the most significant DWORD
+			$binary 	=  pack ( $this -> PackFormat, $value  &  0xFFFFFFFF ) ;
+			
+			if  ( $this -> ItemLength  ==  8 )
+				$binary 	.=  pack ( $this -> PackFormat, ( $value  >>  32 )  &  0xFFFFFFFF ) ;
+			
+			for  ( $i = 0 ;  $i  <  $this -> ItemLength ; $i ++ )
+				$this -> Data [ ( $offset * $this -> ItemLength ) + $i ]	=  $binary [$i] ;
+		    }
+		else if  ( $offset  ===  null ) 	// To handle the form : $array[] =  value ;
+		   {
+			$binary 	=  pack ( $this -> PackFormat, $value  &  0xFFFFFFFF ) ;
+			
+			if  ( $this -> ItemLength  ==  8 )
+				$binary 	.=  pack ( $this -> PackFormat, ( $value  >>  32 )  &  0xFFFFFFFF ) ;
+
+			for  ( $i = 0 ; $i  <  $this -> ItemLength ; $i ++ )
+				$this -> Data 	.=  $binary [$i] ;
+				
+			$this -> DataLength ++ ;
+		    }
+		else
+			$this -> UndefinedOffset ( $offset ) ;
+	    }
+	    
+	
+	/*==============================================================================================================
+	
+	    offsetUnset -
+	        Unsets a value at the specified offset. Note that a memory copy is required to adjust the underlying
+		binary string length, so use with care...
+	
+	  ==============================================================================================================*/
+	public function  offsetUnset ( $offset )
+	   {
+		if  ( is_int ( $offset )  &&  $offset  >=  0  &&  $offset  <  $this -> DataLength )
+		   {
+			$new_data 	=  substr ( $this -> Data, 0, $offset * $this -> ItemLength ) ;
+				
+			if  ( $offset + 1  <  $this -> DataLength )
+				$new_data 	.=  substr ( $this -> Data, ( $offset + 1 ) * $this -> ItemLength ) ;
+				
+			$this -> Data	=  $new_data ;
+			$this -> DataLength -- ;
+		    }
+		else
+			$this -> UndefinedOffset ( $offset ) ;
+	    }
+    }
+    
+ 
+/*==============================================================================================================
+
+    WordArray class -
+        Stores 16-bits integers.
+
+  ==============================================================================================================*/
+ class 	WordArray 	extends  PackedIntegralArray
+    {
+	public function  __construct ( $from  =  null )
+	   {
+		parent::__construct ( $from, 2, "v" ) ;
+	    }
+     }
+
+
+/*==============================================================================================================
+
+    DWordArray class -
+        Stores 32-bits integers.
+
+  ==============================================================================================================*/
+class   DWordArray 	extends  PackedIntegralArray
+   {
+	public function  __construct ( $from  =  null )
+	   {
+		parent::__construct ( $from, 4, "V" ) ;
+	    }
+    }
+     
+
+/*==============================================================================================================
+
+    QWordArray class -
+        Stores 64-bits integers. May not work very well on PHP implementation for Windows, since integer size
+	is still 4 bytes.
+
+  ==============================================================================================================*/
+class  	QWordArray 	extends  PackedIntegralArray 
+   {
+	public function  __construct ( $from  =  null )
+	   {
+		parent::__construct ( $from, 8, "V" ) ;	// "Q" specifier is not supported ; use a hack instead
+	    }
+    }
+ 
+

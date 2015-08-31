@@ -1,0 +1,2389 @@
+<?php
+/***************************************************************************************************
+
+    NAME
+	CLParser.phpclass
+
+    DESCRIPTION
+	Command-line parameters parser.
+
+    AUTHOR
+     	Christian Vigh, 05/2011.
+
+    HISTORY
+    [Version : 1.0]	[Date : 2011/05/25]	[Author : CV]
+     	Initial version.
+
+   [Version : 2.0]	[Date : 2012/10/06]		[Author : CV]
+	. Migrated to the Thrak library version 2.
+	. Added the 'value-help' attribute to the <command> tag to enable the caller to specify a
+	  help text different from the default one for implicit unnamed parameters.
+	. Added a "Files" array property, corresponding to the (postprocessed) unnamed parameter
+	  values. Accessing the Files property is similar to :
+
+	  	$CL -> UnnamedParameters [0] -> Values ;
+ 
+   [Version : 2.0.1]	[Date : 2014/11/06]		[Author : CV]
+	. Completely rewrote parameter inclusion/exclusion management (ProcessRelationships and
+	  CheckParameterGrouping functions), which now behave as expected.
+  
+   [Version : 2.0.2]	[Date : 2014/12/13]		[Author : CV]
+ 	. Changed the ProcessCommandLineParameters() method to collect unknown arguments, if the
+ 	  "allow-unknown-parameters" attribute (or "unknown-parameters" or "unknown") is true.
+ 	  Unknow arguments specified through the command-line will be accessible through the 
+ 	  $CL -> UnknownParameters property.
+  
+   [Version : 2.0.3]	[Date : 2015/01/09]		[Author : CV]
+ 	. Added the IsSpecified( 'pname' ) method as a shortcut for : $CL [ '#pname' ] -> Specified.
+  
+   [Version : 2.0.4]	[Date : 2015/01/09]		[Author : CV]
+ 	. Removed the call to the GetSpecialParameters() function, which was provided by the 
+ 	  CLNumericParameter class only, and caused unnecessary loading of all the parameter classes.
+  
+   [Version : 2.0.5]	[Date : 2015/03/09]		[Author : CV]
+	. Fixed inconsistencies in parameter help display, when called for usage only or full help.
+ 	  Now, parameter aliases are displayed in full help, but not in usage string.
+  
+   [Version : 2.0.6]	[Date : 2015/04/11]		[Author : CV]
+	. Replaced each exception throwing with "error ( new CLException (...) )".
+	. Changed the way the ProcessCommandLineParameters() method displays an error message when 
+	  one or more required unnamed arguments are missing.  
+ 	. Fixed a bug in ProcessCommandLineParameters() : when files where authorized on the
+ 	  command line, and file count exceeded the specified maximum number of arguments, no error
+ 	  message was displayed.
+ 
+   [Version : 2.0.7]	[Date : 2015/04/17]		[Author : CV]
+	. Corrected a regression introduced in version 2.0.6 that caused switches specified after
+ 	  the first file parameter to be considered as files, not switch (method 
+	  ProcessCommandLineParameters).
+ 
+   [Version : 2.0.8]	[Date : 2015/06/17]		[Author : CV]
+	. The argument of parameters with a default value and needing one argument is now optional.
+	  The resulting value will be the default value. Note tha the IsSpecified() method will need
+	  to be called to check if the parameter was specified (modification done in the
+	  ProcessCommandLineParameters() method).
+ 
+   [Version : 2.0.9]	[Date : 2015/06/18]		[Author : CV]
+	. Added the "allow-php-tags" attribute, which specifies whether PHP tags should be interpreted
+	  or not. Value can be a combination of "default(s)" (for default parameter values) or "help"
+	  (for parameter help). A boolean value can also be specified : true enables the "default"
+	  and "help" options, false disables everything. 
+	  The default is true.
+	. Added the EvaluatePhpTags() method to interpret php tags, according to the options defined
+	  for the "allow-php-tags" attribute.
+ 
+   [Version : 2.0.10]	[Date : 2015/06/28]		[Author : CV]
+	. Corrected a bug in the ProcessCommandLineParameters() method : a parameter with the
+	  "multiple" attribute set to true could not be specified multiple times because of the
+	  MinArguments and MaxArguments properties. The drawback is that the number of occurrences
+	  of the related parameter cannot be limited (minimum occurrences are 0 or 1, depending on
+	  the value of the "required" and "min-arguments" attributes ; maximum occurrence count is
+	  unlimited).
+	 
+ ***************************************************************************************************/
+namespace 	Thrak\Processors\CL ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces & objects
+use 	Thrak\System\Object ;
+use  	Thrak\Runtime\VersionableObject	;
+use 	Thrak\IO\Path ;
+use 	Thrak\Types\String ;
+use 	Thrak\Types\String\Formatting ;
+use 	Thrak\Processors\CL\CLException ;
+use 	Thrak\Internet\Xml\SimpleXML ;
+use	Thrak\Processors\PHP ;
+
+
+/*==================================================================================================
+
+    CLParser class -
+	Parses command-line arguments.
+
+  ==================================================================================================*/
+class  CLParser  	extends  VersionableObject
+			implements  \ArrayAccess, \Countable, \Iterator
+   {
+   	// Grouping options
+   	const		GROUPING_NONE			=  0 ;
+   	const		GROUPING_EXCLUDE		=  1 ;
+   	const		GROUPING_INCLUDE		=  2 ;
+	   
+	// Grouping directions
+	const		GROUPING_DIRECTION_LEFT		=  0x01 ;
+	const		GROUPING_DIRECTION_RIGHT	=  0x02 ;
+	const		GROUPING_DIRECTION_BOTH		=  0x03 ;
+
+   	// Switch characters
+   	public		$SwitchCharacters	=  "-+" ;
+   	// Command-line parameters
+   	public		$CommandLineObject ;
+   	// Registered parameter types
+   	public		$RegisteredClasses 	=  array ( ) ;
+   	// Command-line parameter definitions
+   	public 		$Definitions ;
+	// <command> type attributes
+	public		$CommandName ;
+	// Whole command line
+	public 		$CommandLine ;
+	// <help>, <usage> and <help-topic> text
+	public		$CommandHelp ;
+	public		$CommandUsage ;
+	public		$CommandHelpTopics	=  array ( ) ;
+	// Names and unnamed parameters
+	public		$Parameters		=  array ( ) ;	// Parameters, as encountered on the command line
+	public		$NamedParameters	=  array ( ) ;	// Named parameters
+	public 		$UnnamedParameters	=  array ( ) ;	// Unnamed parameters
+	public 		$Files 			=  array ( ) ; 	// Post-processed and unstructured unnamed parameters
+	// Unknown parameters
+	public		$AllowUnknownParameters	=  false ;
+	public		$UnknownParameters	=  array ( ) ;
+	// Associative array that indicates whether PHP tags are allowed in default values and help text
+	public		$AllowPhpTags		=  [ 'defaults' => true, 'help' => true ] ;
+	// Inclusions and exclusions
+	private		$Grouping 		=  array ( ) ;
+	private		$InclusionTag ;
+	private 	$ExclusionTag ;
+	// Max help or usage string width
+	public		$MaxWidth		=  110 ;
+
+   	// CL parameter types directory
+   	private 	$CLTypesDirectory ;
+
+   	// CL attributes
+   	public		$CommandTagHelp		=<<<END
+The <command> root tag gives information about the command and has the following attributes :
+
+name (string) -
+	Command name. This parameter is mandatory.
+
+allow-files (boolean) -
+	Specifies whether additional parameters (unnamed paramaters) are authorized on the command line.
+
+allow-php-tags (boolean or list of flags) -
+	When true (the default), php tags are allowed in the command-line definition, in both "default" attribute
+	values and in help texts.
+	The following flags can be specified instead of a boolean value :
+	"default" :
+		Default values specified with the "default" attribute can contain PHP tags.
+	"help" :
+		The whole command-line help can contain PHP tags.
+
+min-files (integer) -
+	Minimum number of unnamed parameters allowed on the command line. The special value '*' means zero.
+
+max-files (integer) -
+	Maximum number of unnamed parameters allowed on the command line. The special value '*' means 'unlimited'.
+
+value-text or text (string) -
+	String to be used when displaying usage for unnamed parameters declared on the <command> tag.
+	The default is : 'file(s)'.
+
+value-help or help (string) -
+	String to be used when displaying help for unnamed parameters declared on the <command> tag.
+	The default is : 'List of free-form arguments.'.
+
+max-width (integer) -
+	Default width to be used when displaying command help. If not specified, the 'DisplayWidth' property of the Configuration object will be used.
+	If none specified, the default value is 80 characters.
+
+version (string) -
+	Since the CL library evolves and simultaneous versions can be run concurrently using the same code base, this parameter tells which version should be used.
+END;
+
+   	// Reserved tag names
+	public	 	$ReservedTags 	=  array
+	   (
+	   	array
+	   	   (
+	   	   	'names'		=>  array ( 'help', 'description' ),
+	   	   	'brief'		=>  'Overrides command-line help',
+	   	   	'help'		=>  'Defines the command-line help (overrides the one that is automatically built).'
+		    ),
+	    	array
+	    	   (
+	    	   	'names'		=>  array ( 'usage' ),
+	    	   	'brief'		=>  'Defines the usage text',
+	    	   	'help'		=>  'Defines the command-line usage text.'
+		    ),
+	    	array
+	    	  (
+	    	  	'names'		=>  array ( 'help-topic', 'help-group' ),
+	    	  	'brief'		=>  'Defines help topics',
+	    	  	'help'		=>  array
+			   (
+			      	"Defines a help topic, which can be used for grouping parameters when displaying help ",
+	    	  		"(each parameter has an optional 'help-topic' attribute that can associate it to one or more help topics).\n",
+	    	  		"The topic name is given by the 'name' attribute."
+ 	  		    )
+		   ),
+		array
+		   (
+		   	'names'		=>  array ( 'exclusions', 'exclusion', 'exclude' ),
+		   	'brief'		=>  'Defines exclusions between parameters',
+		   	'help'		=>  array
+		   	   (
+		   	   	"Defines an exclusion relation between parameters. The following attributes are needed :\n",
+		   	   	"'name' (string) -\n",
+		   	   	"\tParameter name.\n",
+		   	   	"'with' (list of names) -\n",
+		   	   	"\tList of parameter names that are incompatible with the one specified in the 'name' attribute."
+			    )
+		    ),
+		array
+		   (
+		   	'names'		=>  array ( 'inclusions', 'inclusion', 'include' ),
+		   	'brief'		=>  'Defines parameter grouping constraints',
+		   	'help'		=>  array
+		   	   (
+		   	   	"Defines a grouping relation between parameters. The following attributes are needed :\n",
+		   	   	"'name' (string) -\n",
+		   	   	"\tParameter name.\n",
+		   	   	"'with' (list of names) -\n",
+		   	   	"\tList of parameter names that must be specified if the parameter specified by the 'name' attribute is also specified."
+			    )
+		    ),
+	    	array
+	    	  (
+	    	  	'names'		=>  array ( 'named-parameters', 'named', 'parameters' ),
+	    	  	'brief'		=>  'Specifies named parameters',
+	    	  	'help'		=>  array
+		           (
+			   	"Allows for specifying named parameters, using the standard parameter tags. This is the same as specifying ",
+			   	"the parameters directly under the <command> tag."
+		   	    )
+		   ),
+	    	array
+	    	  (
+	    	  	'names'		=>  array ( 'unnamed-parameters', 'unnamed' ),
+	    	  	'brief'		=>  'Specifies unnamed parameters',
+	    	  	'help'		=>  array
+		           (
+			   	"Allows for specifying unnamed parameters, using the standard parameter tags, as a replacement ",
+			   	"to the 'min-files', 'max-files' and 'allow-files' attributes of the <command> tag."
+	   		    )
+		   )
+	    ) ;
+	// Version information
+	private 	$VersionInformation	=  array
+	   (
+	   	array
+	   	   (
+	   	   	'name'		=>  '1.0',
+	   	   	'date'		=>  '2012/10/06',
+	   	   	'description'	=>  'Initial version'
+		    )
+	    ) ;
+
+
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/******                                                                               ******/
+	/******                             MAGIC FUNCTIONS                                   ******/
+	/******                                                                               ******/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Constructor
+
+	    PROTOTYPE
+		$CL = new CLParser ( $xml_specifications,
+						$argv_or_string = null, $command = true,
+						$options = CL::CL_ALL_OPTIONS,
+						$max_width = null ) ;
+
+	    DESCRIPTION
+		Parses command-line options according to the supplied XML specifications.
+		The parsing process runs through the following steps :
+		1) Create a CL object that processes special options
+		2) Register all parameter classes defined in the CL/Types/*.phpclass files.
+		   The convention is that a file named 'XX.phpclass' must define a class named
+		   'CLXXClass'
+
+	    PARAMETERS
+		$argv_or_string (type) -
+			Either an array of argument, a string to be parsed, or null. If null, the global
+			$argv and $argc variables will be used.
+
+		$command (boolean or name) -
+			Either a boolean value indicating if the command name is included in the
+			$argv_or_string parameter, or the command name itself.
+			If this parameter is null, it will default to the boolean value 'true'.
+
+		$options (bitmask) -
+			Set of command-line analysis options ; can be any combination of :
+
+			CL_ALLOW_AT_NOTATION -
+				Allows the '@file' notation to be used. This means that the contents
+				of the specified file are read and included into the command-line
+				parameters.
+				If only the '@' character is specified, then further options are read
+				from the standard input. You can terminate input reading by typing a
+				dot character ('.') followed by a newline, or simply the EOF character
+				(^Z in Windows, ^D on Unix).
+				This flag is enabled by default.
+
+			CL_EMBEDDED_AT -
+				When enabled, the '@file' notation can be recursively used within
+				files specified on the command-line through the '@file' notation.
+				An exception is thrown when a circular inclusion is detected.
+
+			CL_ALL_OPTIONS -
+				Enables all the above options. This is the default value.
+
+			If this parameter is null, it will default to CL_ALL_OPTIONS.
+
+	   	$max_width (integer) -
+	   		Max width to be used when displaying command-line usage or help.
+	   		If not specified, the DisplayWidth parameter of the Configuration object will
+	   		be used.
+	   		If the DisplayWidth element is not defined in the configuration, the default
+	   		width will be 80 characters.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __construct ( $xml_specifications,
+						$argv_or_string = null, $command = true, $options = CL::CL_ALL_OPTIONS,
+						$max_width = null  )
+	   {
+	   	// Add version information
+	   	parent::__construct ( $this -> VersionInformation ) ;
+
+		// Get the real path of the CL parameter types directory
+		$this -> CLTypesDirectory = Path::RealPath ( "thrak://PHP/Library/Processors/CL/Types" ) ;
+
+		// Find all processed parameter types and validators
+		$this -> RegisterClasses ( ) ;
+
+	   	// Create the command-line object
+		$this -> CommandLineObject =  new CL ( $this, $argv_or_string, true, $options = CL::CL_ALL_OPTIONS, false ) ;
+		$this -> CommandName	   =  $this -> CommandLineObject -> ExecutableName ;
+		$this -> CommandLine 	   =  $this -> CommandLineObject -> CommandLine ;
+		$this -> SetMaxWidth ( $max_width ) ;
+
+	   	// Interpret definitions
+		// Replace every '<' or '>' in PHP with chr(1) to avoid Xml interpretation
+		$xml_specifications	=  str_replace 
+		   ( 
+			[ '<?php', '<? ', "<?\t", '<?=', '?>' ], 
+			[ '[PHP-TAG-START]?php', '[PHP-TAG-START]? ', "[PHP-TAG-START]?\t", '[PHP-TAG-START]?=', '?[PHP-TAG-END]' ], 
+			$xml_specifications ) ;
+		$xml_array      	=  SimpleXML::LoadFromStringAsArray ( $xml_specifications ) ;
+
+		// Restore back php tags
+		$this -> __restore_php_tags ( $xml_array ) ;
+
+		$this -> Definitions    =  $xml_array ;
+
+		// Process command line definitions
+		$command_tag  		=  strtolower ( $xml_array [ 'tag' ] ) ;
+
+		if  ( $command_tag  !=  'command'  &&  $command_tag  !=  'command-line'  &&  $command_tag  !=  'options'  &&
+		      $command_tag  !=  'parameters'  &&  $command_tag  !=  'switches' )
+  			error ( new CLException ( "Invalid tag '$command_tag' to start a command-line definition." ) ) ;
+
+		// Process top-level tag attributes
+		$this -> ProcessCommandSpecifications ( $xml_array ) ;
+
+		// Process parameter specifications
+		$this -> ProcessParameterSpecifications ( $xml_array ) ;
+
+		// Process special command line options
+		$this -> CommandLineObject -> ProcessSpecialParameters ( ) ;
+
+		// Process command line parameters
+		$this -> ProcessCommandLineParameters ( $this -> CommandLineObject ) ;
+
+		// Check that the inclusions and exclusions reference existing command-line parameters
+		$this -> CheckParameterGrouping ( ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		__restore_php_tags
+
+	    DESCRIPTION
+	        The '<' and '>' belonging to php tags characters are replaced in the supplied definition 
+		string with chr(1) and chr(2), respectively.
+		This method performs the reverse replacement, once the xml definition has been parsed.
+
+	 --------------------------------------------------------------------------------------------*/
+	private function  __restore_php_tags ( &$xml_array )
+	   {
+		$searches	=  [ '[PHP-TAG-START]', '[PHP-TAG-END]' ] ; 
+		$replaces	=  [ '<', '>' ] ;
+
+		$xml_array [ 'contents' ]	=  str_replace ( $searches, $replaces, $xml_array [ 'contents' ] ) ;
+
+		foreach  ( $xml_array [ 'attributes' ]  as  &$attribute )
+			$attribute [ 'value' ]	=  str_replace ( $searches, $replaces, $attribute [ 'value' ] ) ;
+
+		foreach  ( $xml_array [ 'children' ]  as  &$child ) 
+		$this -> __restore_php_tags ( $child ) ;
+	    }
+  
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		__tostring - Returns the whole command line/
+
+	    PROTOTYPE
+	        $value = ( string ) $cl ;
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __tostring ( )
+	   {
+		return ( $this -> CommandLine ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		__get - Gets a parameter value.
+
+	    PROTOTYPE
+	        $value = $cl -> member ;
+
+	    DESCRIPTION
+		Retrieves the value of a command-line parameter.
+
+	    PARAMETERS
+		$member (string) -
+			Parameter whose value is to be retrieved.
+
+	    RETURN VALUE
+		Returns the parameter value.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __get ( $member )
+	   {
+		$object 	=  $this -> offsetGetObject ( $member ) ;
+
+		return ( $object -> GetValue ( ) ) ;
+	    }
+
+
+       	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		__set - Sets a parameter value.
+
+	    PROTOTYPE
+	        $cl -> member = $value ;
+
+	    DESCRIPTION
+		Sets the value of a command-line parameter.
+
+	    PARAMETERS
+		$member (string) -
+			Parameter whose value is to be retrieved.
+
+		$value (string) -
+			New parameter value.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __set ( $member, $value )
+	   {
+		$object 	=  $this -> offsetGetObject ( $member ) ;
+
+		$object -> SetValue ( $value ) ;
+		$object -> Specified = true ;
+	    }
+
+
+
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/******                                                                               ******/
+	/******                            VERSION FUNCTIONS                                  ******/
+	/******                                                                               ******/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		SetVersion - Sets the current version.
+
+	    PROTOTYPE
+		$this -> SetVersion ( $version ) ;
+
+	    DESCRIPTION
+		Sets the current operating version for the CLParser components.
+		If the version does not exist, an exception will be issued.
+
+	    PARAMETERS
+		$version (string) -
+			Version number to be used.
+			A version string has the form :
+
+				a[.b[.c[.d]]]
+
+	 --------------------------------------------------------------------------------------------*/
+	protected function  SetVersion  ( $version )
+	   {
+		$value 	=  $this -> GetVersionValue ( $version ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		GetVersionValue - Returns the input version string as a 32-bit integer.
+
+	    PROTOTYPE
+		$value = $this -> GetVersionValue ( $version ) ;
+
+	    DESCRIPTION
+		Returns the version string as a 32-bit integer.
+
+	    PARAMETERS
+		$version (string) -
+			Version number to be used.
+
+	    RETURN VALUE
+		A 32-bit integer value specifying the version.
+
+	 --------------------------------------------------------------------------------------------*/
+	protected function  GetVersionValue ( $version )
+	   {
+		$result = explode ( '.', $version ) ;
+	    }
+
+
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/******                                                                               ******/
+	/******                               SUPPORT FUNCTIONS                               ******/
+	/******                                                                               ******/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		ProcessRelationships - Process parameter associations.
+
+	    PROTOTYPE
+		$this -> ProcessRelationships ( $tag, $attributes, $kind ) ;
+
+	    DESCRIPTION
+		Parameter grouping handling.
+		When $kind is GROUPING_INCLUDE, The ProcessRelationships() function is used to say that 
+		when the parameter referenced by the "name" attribute is specified, the command-line 
+		must also include all the parameters referenced by the "with" attribute.
+		When $kind is GROUPING_INCLUDE, The ProcessRelationships() function is used to say that 
+		when the parameter referenced by the "name" attribute is specified, the parameter names 
+		listed in the "with" attribute must NOT be specified on the command line.
+
+	    PARAMETERS
+	    	$tag (string) -
+	    		Specified tag name.
+
+		$attributes (array) -
+			<inclusions> and <exclusions> tag attributes. Currently, only two attributes
+			can be specified :
+
+			"name" (string)-
+				Parameter name subject to inclusions/exclusions with other parameters.
+
+			"with" (command-separated string list) -
+				Parameter names that must be included with/excluded from the parameter
+				whose name is specified in the "name" attribute.
+
+		$kind (constant) -
+			Either GROUPING_INCLUDE or GROUPING_EXCLUDE.
+
+	    NOTES
+		- Parameter names must not include the leading parameter name character ('-' or '+')
+
+	 --------------------------------------------------------------------------------------------*/
+	
+	// __get_relationship -
+	//	Gets the relationship between two parameters (either none, include or exclude).
+	private function  __get_relationship ( $a_name, $b_name )
+	   {
+		if  ( isset ( $this -> Grouping [ $a_name ] ) )
+		   {
+			if  ( isset ( $this ->  Grouping [ $a_name ] [ $b_name ] ) )
+				return  ( $this -> Grouping [ $a_name ] [ $b_name ] ) ;
+		    }
+		
+		return  ( self::GROUPING_NONE ) ;
+	    }
+	
+	
+	// __set_relationship -
+	//	Establishes a new relationship between two parameters.
+	//	If  a bidirectional relationship is established (parameter a needs/excludes parameter b,
+	//	and parameter b needs/excludes parameter a), then two entries will be added into the 
+	//	Grouping table.
+	private function  __set_relationship ( $a_name, $b_name, $kind )
+	   {
+		$this -> Grouping [ $a_name ] [ $b_name ]	=  $kind ;
+	    }
+	
+	
+	private function  ProcessRelationships ( $tag, $attributes, $kind )
+	   {
+		$parameter	=  null ;
+		$with 		=  null ;
+		$direction	=  self::GROUPING_DIRECTION_LEFT ;
+
+		// Loop through attribute names
+		foreach  ( $attributes  as  $attribute )
+		   {
+		   	$name	=  trim ( $attribute [ 'name' ] ) ;
+		   	$value 	=  trim ( $attribute [ 'value' ] ) ;
+
+			switch  ( strtolower ( $name ) )
+			   {
+				// Parameter name attribute
+				case	'parameter' :
+				case	'name' :
+					$parameter	=  strtolower ( $value ) ;
+					break ;
+
+				// Inclusions	: the parameter must be included with this list
+				// Exclusions	: the parameter must be excluded from this list
+				case	'with' :
+				case	'value' :
+					$with   =  strtolower ( $value ) ;
+					break ;
+
+				// Direction  : either "left" (inclusion/exclusion applies from left, "parameter" attribute,
+				//		to right ("with" attribute), or
+				//		"right (inclusion/exlucsion applies from right, "with" attribute, to left
+				//		("parameter" attribute), or
+				//		"both" 
+				case	'direction' :
+				case	'dir' :
+					$direction	=  strtolower ( $value ) ;
+					
+					switch  ( $value )
+					   {
+						case	'left'  :  case  'l' :
+							$direction	=  self::GROUPING_DIRECTION_LEFT ; 
+							break ;
+							
+						case	'right' :  case  'r' :
+							$direction	=  self::GROUPING_DIRECTION_RIGHT ; 
+							break ;
+							
+						case	'both'	:  case  'b' :
+							$direction	=  self::GROUPING_DIRECTION_BOTH ; 
+							break ;
+							
+						default :
+							error ( new CLException ( "Invalid inclusion/exclusion direction '$value'." ) ) ;
+					    }
+				
+				// Complain if an incorrect attribute name has been found
+				default :
+					error ( new CLException ( "The '$name' attribute is incorrect for the <$tag> tag." ) ) ;
+			    }
+		    }
+
+		// Check that the mandatory 'name' and 'with' attributes have been specified
+		if  ( ! $parameter )
+			error ( new CLException ( "The 'parameter' attribute is required for the '<$tag>' tag." ) ) ;
+
+		if  ( ! $with )
+			error ( new CLException ( "The 'with' attribute is required for the '<$tag>' tag." ) ) ;
+
+		// Normalize the values specified by the 'with' and 'parameter' attributes
+		$parameter_names 	=  String::ExplodeAndTrim ( ',', $parameter ) ;
+		$with_values 		=  String::ExplodeAndTrim ( ',', $with ) ;
+
+		// Checks that parameter names are not referenced by "with" values, and vice-versa
+		// If no collision, add this pair to the parameter grouping table
+		foreach  ( $parameter_names  as  $a_name )
+		   {
+			$pa	=  $this -> GetParameterByName ( $a_name ) ;
+			
+			if  ( $pa  ===  false )
+				error ( new CLException ( "Invalid parameter grouping for <$tag> : the '$a_name' parameter specified in the 'parameter' attribute does not exist." ) ) ;
+			
+			$a_name		=  $pa -> GetName ( ) ;
+			
+			foreach  ( $with_values  as  $b_name )
+			   {
+				$pb	=  $this -> GetParameterByName ( $b_name ) ;
+			
+				if  ( $pb  ===  false )
+					error ( new CLException ( "Invalid parameter grouping for <$tag> : the '$b_name' parameter specified in the 'with' attribute does not exist." ) ) ;
+				
+				$b_name		=  $pb -> GetName ( ) ;
+				
+				if  ( $a_name  ==  $b_name )
+					error ( new CLException ( "Invalid parameter grouping for <$tag> : the same parameter '$a_name' is referenced in both the " .
+								"'parameter' and 'with' attributes" ) ) ;
+
+				if  ( $direction  &  self::GROUPING_DIRECTION_LEFT )
+				   {
+					$existing_kind	=  $this -> __get_relationship ( $a_name, $b_name ) ;
+					
+					if  ( $existing_kind  ==  self::GROUPING_NONE )
+						$this -> __set_relationship ( $a_name, $b_name, $kind ) ;
+					else if  ( $existing_kind  !=  $kind )
+					   {
+						error ( new CLException ( "Invalid grouping for <$tag> : parameters '$a_name' and '$b_name' are referenced in both " .
+										"exclusions and inclusions" ) ) ;
+					    }
+				     }
+
+				if  ( $direction  &  self::GROUPING_DIRECTION_RIGHT )
+				   {
+					$existing_kind	=  $this -> __get_relationship ( $b_name, $a_name ) ;
+					
+					if  ( $existing_kind  ==  self::GROUPING_NONE )
+						$this -> __set_relationship ( $b_name, $a_name, $kind ) ;
+					else if  ( $existing_kind  !=  $kind )
+					   {
+						error ( new CLException ( "Invalid grouping for <$tag> : parameters '$a_name' and '$b_name' are referenced in both " .
+										"exclusions and inclusions" ) ) ;
+					    }
+				     }
+			    }
+		    }
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		AddParameter - Adds a parameter specification.
+
+	    PROTOTYPE
+		$this -> AddParameter ( $specifications, $named = true ) ;
+
+	    DESCRIPTION
+		Adds a parameter based on the supplied specifications.
+
+	    PARAMETERS
+		$specifications (array) -
+			XML specifications converted to array.
+
+		$named (boolean) -
+			When true, the parameter is considered as a named parameter (to be specified
+			with a -pname string).
+			When false, the parameter is unnamed, ie to be specified at the end of the
+			command line.
+
+	 --------------------------------------------------------------------------------------------*/
+	private function  AddParameter ( $specifications, $named = true )
+	   {
+		// Instanciate the parameter class
+	   	$tagname 		=  $specifications [ 'tag' ] ;
+		$parameter 		=  $this -> InstanciateParameter ( $tagname ) ;
+	   	$parameter -> Named 	=  $named ;
+
+		// Set the caller-supplied parameter specification
+		$parameter -> SetSpecifications ( $specifications, $named ) ;
+
+		// Check that the parameter does not already exists in the reserved parameter list
+		foreach  ( $parameter -> Names  as  $name )
+		   {
+		   	$name = $parameter -> SwitchCharacter . $name ;
+
+		   	$tagname = $parameter -> TagNames [0] ;
+
+			if  ( $this -> CommandLineObject -> IsSpecialParameter ( $name ) )
+				error ( new CLException ( "Parameter '$name' is a reserved parameter name and cannot be defined in the <$tagname> tag." ) ) ;
+		    }
+
+		// Same for existing parameters
+		foreach  ( $this -> Parameters  as  $DefinedParameter )
+		   {
+			foreach  ( $DefinedParameter -> Names  as  $DefinedParameterName )
+			   {
+			   	$tagname = $DefinedParameter -> TagNames [0] ;
+
+				foreach  ( $parameter -> Names  as  $name )
+				   {
+					if   ( ! strcasecmp ( $DefinedParameterName, $name ) )
+						error ( new CLException ( "Parameter '$name' has already been defined, as a <$tagname> parameter." ) ) ;
+				    }
+			    }
+		    }
+
+		// Adds this parameter to the inner list of declared parameters
+		$this -> Parameters [] 		=  $parameter ;
+
+		if  ( $named )
+			$this -> NamedParameters []	=  $parameter ;
+		else
+		   {
+		   	$count 				=  count ( $this -> UnnamedParameters ) ;
+			$this -> UnnamedParameters []	=  $parameter ;
+
+			// Check for parameter types that cannot be specified unnamed
+			if  ( ! $parameter -> CanBeUnnamed )
+				error ( new CLException ( "A parameter of type '{$parameter -> ValueLabel}' cannot be specified as an unnamed parameter." ) ) ;
+
+			// Checkings on unnamed parameters consistency
+			if  ( $count )
+			   {
+			   	$previous 	=  $this -> UnnamedParameters [ $count - 1 ] ;
+			   	$previous_name 	=  $previous -> ValueLabel ;
+
+				// Required unnamed parameters must be at the start of the list ; other must be optional
+				if  ( $parameter -> Required )
+				   {
+				   	if  ( ! $previous -> Required )
+				   	   {
+					   	$current_name 	=  $parameter -> ValueLabel ;
+
+						error ( new CLException ( "Required parameters must be specified first, then optional parameters. The required parameter " .
+								"'$current_name' has been found after the optional parameter '$previous_name'." ) ) ;
+					    }
+				     }
+
+			    	// Only the last unnamed parameter can have the 'max-arguments' attribute set to '*'
+			    	if  ( $previous -> MaxArguments  ==  PHP_INT_MAX )
+			    		error ( new CLException ( "Unnamed parameter of type '$previous_name' : Only the last unnamed parameter can have the 'max-arguments' attribute set to '*'." ) ) ;
+			    }
+   		    }
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		EvaluatePhpTags - Conditionnally evaluates php tags in a string.
+
+	    PROTOTYPE
+		$value	=  $this -> EvaluatePhpTags ( $value, $key ) ;
+
+	    DESCRIPTION
+		Evaluates the PHP tags within the supplied value, if the $key index of the
+		AllowPhpTags array is set to true.		
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  EvaluatePhpTags ( $value, $key, $prepend = null )
+	   {
+		if  ( isset ( $this -> AllowPhpTags [ $key ] )  &&  $this -> AllowPhpTags [ $key ] )
+			$value  =  PHP::EvaluateTags ( $value, $prepend ) ;
+
+		return ( $value ) ;
+	    }
+
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		CheckParameterGrouping - Checks parameter inclusion/exclusion validity.
+
+	    PROTOTYPE
+		$this -> CheckParameterGrouping ( ) ;
+
+	    DESCRIPTION
+		Checks the validity of parameter inclusion/exclusion. Throws an exception in case
+		of error.
+
+	 --------------------------------------------------------------------------------------------*/
+	private function  CheckParameterGrouping ( )
+	   {
+		// Loop through specified parameters to check for potential inclusion/exclusion clashes
+		foreach ( $this -> NamedParameters  as  $pa )
+		   {
+			$pa_name 	=  $pa -> Names [0] ;
+
+			foreach  ( $this -> NamedParameters  as  $pb )
+			   {
+				$pb_name 	=  $pb -> Names [0] ;
+				
+				// Get relationship between two parameters
+				$kind		=  $this -> __get_relationship ( $pa_name, $pb_name ) ;
+
+				// Possible exclusion ?
+				if  ( $pa -> Specified  &&  $pb -> Specified  &&
+						$kind  ==  self::GROUPING_EXCLUDE )
+					error ( new CLException ( "The '$pb_name' parameter cannot be specified together with the '$pa_name' parameter." ) ) ;
+
+				// Possible inclusion ?
+				if  ( $pa -> Specified  &&  ! $pb -> Specified  &&  
+						$kind  ==  self::GROUPING_INCLUDE )
+				    	error ( new CLException ( "The '$pa_name' parameter cannot be specified without the '$pb_name' parameter." ) ) ;
+			    }
+		    }
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		ProcessCommandLineParameters - Processes the command-line parameters.
+
+	    PROTOTYPE
+		$this -> ProcessCommandLineParameters ( $cl ) ;
+
+	    PARAMETERS
+	    	$cl (CL) -
+	    		Command-line object.
+
+	    DESCRIPTION
+		Processes the command line parameters retrieved in the $this -> CommandLineObject
+		property.
+
+	 --------------------------------------------------------------------------------------------*/
+	private function  ProcessCommandLineParameters ( $cl )
+	   {
+	   	$argc 			=  $cl -> Argc ;
+	   	$argv 			=  $cl -> Argv ;
+	   	$named_parameters	=  array ( ) ;
+	   	$unnamed_parameters 	=  array ( ) ;
+
+
+	   	// Loop through command-line arguments
+   	 	$current_unnamed_index	=  0 ;
+   	 	$current_unnamed_value	=  0 ;
+   	 	$unnamed_count 		=  count ( $this -> UnnamedParameters ) ;
+
+	   	for  ( $i = 1 ; $i  <  $argc ; $i ++ )
+		   {
+			$arg	=  $argv [$i] ;
+
+			if  ( $i + 1  <  $argc )
+				$next_arg 	=  $argv [$i + 1] ;
+			else
+				$next_arg 	=  null ;
+
+
+			switch ( strtolower ( $arg ) )
+			   {
+				// -usage parameter :
+				//	Displays command-line usage.
+				case	'-usage' :
+					$this -> DisplayUsage ( ) ;
+					exit ( ) ;
+
+				// -help parameter :
+				//	Displays command-line help
+				case	'-help' :
+					$this -> DisplayHelp ( $next_arg ) ;
+					exit ( ) ;
+
+				// -topics parameter :
+				//	Displays full topic help.
+				case	'-helptopics' :
+					echo ltrim ( $this -> GetHelpTopicsHelp ( false ) ) ;
+					exit ( ) ;
+
+				// Default :
+				//	Process parameter
+				default :
+					// Isolate prefix and parameter name
+					$prefix 	=  substr ( $arg, 0, 1 ) ;
+					$pname 		=  substr ( $arg, 1 ) ;
+					$unnamed 	=  false ;
+
+					// The $SwitchCharacters property defines all the possible switch characters that we can handle.
+					// Parameter classes can define their own switch characters, but it is recommended to use one of
+					// the global characters.
+					// When no switch character is detected, then we put the current argument to the list of the unnamed parameters
+					if  ( strpos ( $this -> SwitchCharacters, $prefix )  ===  false )
+					   {
+						$array			=  &$unnamed_parameters ;
+
+						if  ( ! $unnamed_count )
+							error ( new CLException ( "Unnamed parameters are not allowed on the command-line." ) ) ;
+
+						$current_unnamed_parameter 	=  $this -> UnnamedParameters [ $current_unnamed_index ] ;
+
+						if  ( $current_unnamed_value + 1  <  ( $current_unnamed_parameter -> MaxArguments - $current_unnamed_parameter -> MinArguments + 1 ) )
+							$current_unnamed_value ++ ;
+						else if  ( $current_unnamed_index  + 1  <  $unnamed_count )
+						   {
+							$current_unnamed_index ++ ;
+							$current_unnamed_parameter 	=  $this -> UnnamedParameters [ $current_unnamed_index ] ;
+						    }
+
+						$current_parameter 		=  $current_unnamed_parameter ;
+						$args 				=  array ( ) ;
+						$start 				=  $i ;
+						$unnamed 			=  true ;
+					    }
+					// Otherwise, this is a named parameter
+					else
+					   {
+					   	$array 			=  &$named_parameters ;
+					   	$current_parameter	=  $this -> GetParameterByName ( $pname ) ;
+
+						if  ( $current_parameter  ===  false )
+						   {
+							if(  $this -> AllowUnknownParameters )
+							   {
+								$this -> UnknownParameters [ strtolower ( $pname ) ]	=  $pname ;
+								continue 2 ;
+							    }
+							else
+								error ( new CLException ( "The '$arg' parameter does not exist for this command." ) ) ;
+						    }
+						
+					   	// Yes ! it belongs
+				   		// Check that the supplied switch character is allowed for this parameter class
+				   		else if  ( strpos ( $current_parameter -> SwitchCharacters, $prefix )  ===  false )
+				   			error ( new CLException ( "The '$prefix' prefix character is not allowed for the " .
+							   		"'$pname' parameter." ) ) ;
+						else
+						   {
+							// Save the switch character specified on the command line
+							$current_parameter -> SwitchCharacter	=  $prefix ;
+
+							// Save the specified parameter name
+							$current_parameter -> SpecifiedName	=  $arg ;
+							$start 					=  $i + 1 ;
+
+					   		// Process optional arguments after the parameter
+					   		$args   =  array ( ) ;
+						    }
+					   }
+
+					// If a min/max argument count has been given, check if the necessary number of arguments
+					// remain on the command line
+				   	if  ( $current_parameter -> MinArguments  ||  $current_parameter -> MaxArguments )
+				   	   {
+					   	$min 	=  $current_parameter -> MinArguments ;
+					   	$max 	=  $current_parameter -> MaxArguments  ;
+						   
+				   	   	// Loop through subsequent arguments
+						for  ( $j = $start ; $j  <  min ( $start + $max, $argc ) ; $j ++ )
+						   {
+						   	// The $SwitchCharacters property of this object lists all the authorized
+						   	// parameter prefixes
+							$current_prefix = $argv [$j] [0] ;
+
+							// Check that the current argument is not a switch
+							if  ( $current_parameter -> Named )
+							   {
+								if  ( strpos ( $this -> SwitchCharacters, $current_prefix )  !==  false )
+			    					   {
+									if  ( $current_parameter -> AllowSwitchCharacter )
+										$args [] =  $argv [$j] ;
+									else
+										break ;
+			    					    }
+								else
+				    					$args []  =  $argv [$j] ;
+							    }
+							else if  ( strpos ( $this -> SwitchCharacters, $current_prefix )  !==  false )
+								break ;
+							else
+								$args []	=  $argv [$j] ;
+						    }
+
+						// Update current line index accordingly
+						 $i = $j - 1 ;
+
+						// $args now contains the arguments subsequent to the current parameter
+						$argcount = count ( $args ) ;
+
+						// Check that the number of arguments fall into the limits
+						// Note that if more than $max arguments, extraneous arguments will be considered as potential parameters
+						// on the next loop
+						if  ( $unnamed )
+							$msg 	=  "unnamed arguments are needed" ;
+						else
+							$msg  	=  "arguments are needed for the '$arg' parameter" ;
+
+						if  ( $argcount  <  $current_parameter -> MinArguments )
+						   {
+							// When the parameter accepts one argument AND a default value is specified, artificially add
+							// the parameter default value to the list of arguments (which should be empty in this case)
+							if  ( $current_parameter -> MinArguments  ==  1  &&  $current_parameter -> DefaultValue  !==  null )
+								$args []	=  $current_parameter -> GetDefaultValue ( ) ;
+							// Otherwise complain
+							else
+								error ( new CLException ( "At least {$current_parameter -> MinArguments} $msg, $argcount were supplied." ) ) ;
+						    }
+
+			     			if  ( $argcount  >  $current_parameter -> MaxArguments )
+				   			error ( new CLException ( "At most {$current_parameter -> MaxArguments} $msg, $argcount were supplied." ) ) ;
+				   	    }
+
+					// We have collected the parameter name and its arguments ; save them, together with the
+					// corresponding parameter object
+					$array [] =  array
+					   (
+					   	'object'	=>  $current_parameter,
+					   	'parameter'	=>  $arg,
+					   	'arguments'	=>  $args
+					    ) ;
+			    }
+		    }
+
+		// Set parameter values
+		foreach  ( $named_parameters  as  &$named_parameter )
+		   {
+			// Say that the parameter has been specified on the command line
+			$named_parameter [ 'object' ] -> Specified		=  true ;
+			$named_parameter [ 'object' ] -> SetValue ( $named_parameter [ 'arguments' ], false ) ;
+		    }
+
+		foreach  ( $unnamed_parameters  as  &$unnamed_parameter )
+		   {
+			// Say that the parameter has been specified on the command line
+			$unnamed_parameter [ 'object' ] -> Specified		=  true ;
+			$unnamed_parameter [ 'object' ] -> SetValue ( $unnamed_parameter [ 'arguments' ], false ) ;
+		    }
+
+		// Parameter consistency check
+		$UnnamedCount 	=  0 ;
+
+		foreach  ( $this -> Parameters  as  $Parameter )
+		   {
+			// Track unnamed parameter count
+		   	if  ( ! $Parameter -> Named )
+		   		$UnnamedCount ++ ;
+
+			   
+			// Check that the number of arguments provided for this parameter is correct
+			if  ( $Parameter -> Specified )
+			   {
+				$argcount	=  count ( $Parameter -> Values ) ;
+
+				if  ( $Parameter -> MinArguments  ||  $Parameter -> MaxArguments )
+				   {
+					if  ( $argcount  <  $Parameter -> MinArguments  ||  $argcount  >  $Parameter -> MaxArguments ) 
+					   {
+						if  ( $Parameter -> Named )
+							$msg  	=  "arguments are needed for the '" . $Parameter -> GetName ( ) . "' parameter" ;
+						else
+							$msg 	=  "unnamed arguments are needed" ;
+
+						if  ( $argcount  <  $Parameter -> MinArguments )
+							error ( new CLException ( "At least {$Parameter -> MinArguments} $msg, $argcount were supplied." ) ) ;
+
+						if  ( ! $Parameter -> MultipleAllowed )
+						   {
+							if  (  $argcount  >  $Parameter -> MaxArguments )
+							   {
+								error ( new CLException ( "At most {$Parameter -> MaxArguments} $msg, $argcount were supplied. " .
+										"Exceeding values are :" .
+										Formatting::IndentList ( 
+											array_slice ( $Parameter -> Values, $Parameter -> MaxArguments ) ) ) ) ;
+							    }
+						    }
+					    }
+				    }
+			    }
+   			// Unspecified parameters...
+		   	else
+		   	   {
+		   	   	// ... may be required
+				if  ( $Parameter -> Required )
+				   {
+				   	if  ( $Parameter -> Named )
+						error ( new CLException ( "Parameter '{$Parameter -> Names [0]}' is required." ) ) ;
+					// Pretty-print error message for unnamed arguments
+					else
+					   {
+						$type	=  $Parameter -> TagNames [0] ;
+						
+						if  ( $Parameter -> MinArguments  ==  1 )
+						   {
+							if  ( $Parameter -> MaxArguments  ==  1 )
+								$message	=  "An unnamed command-line parameter of type $type is required." ;
+							else if  ( $Parameter -> MaxArguments  ==  PHP_INT_MAX )
+								$message	=  "At least 1 unnamed command-line parameter of type $type is required." ;
+							else
+								$message	=  "From {$Parameter -> MinArguments} to {$Parameter -> MaxArguments} " .
+										   "unnamed command-line parameters of type $type are required." ;
+						    }
+						else
+						   {
+							if  ( $Parameter -> MaxArguments  ==  $Parameter -> MinArguments )
+								$message	=  "{$Parameter -> MinArguments} unnamed command-line parameters of type $type are required." ;
+							else if  ( $Parameter -> MaxArguments  ==  PHP_INT_MAX )
+								$message	=  "At least {$Parameter -> MinArguments} additional unnamed " .
+										   "command-line parameters of type $type are required." ;
+							else
+								$message	=  "From {$Parameter -> MinArguments} to {$Parameter -> MaxArguments} " .
+										   "unnamed command-line parameters of type $type are required." ;
+						    }
+						
+						error ( $message ) ;
+					    }
+				    }
+
+				// Otherwise, use the default value
+				if  ( $Parameter -> DefaultValue  !==  null )
+					$Parameter -> SetValue ( $Parameter -> GetDefaultValue ( ) ) ;
+			    }
+
+			// Required parameters must not have a default value
+	    		if  ( $Parameter -> Required  &&  $Parameter -> DefaultValue  !==  null )
+	    			error ( new CLException ( "Required parameter '{$Parameter -> Names [0]}' cannot have a default value." ) ) ;
+		    }
+
+		// Fill the Files array, if any unnamed parameters were present
+		foreach  ( $this -> UnnamedParameters  as  $unnamed )
+		   {
+			foreach  ( $unnamed -> Values  as  $value )
+				$this -> Files []  =  $value ;
+		    }
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		ProcessCommandSpecifications - Processes command specifications.
+
+	    PROTOTYPE
+		$this -> ProcessCommandSpecifications ( $xml_array ) ;
+
+	    DESCRIPTION
+		Processes the <command> tag attributes.
+
+	    PARAMETERS
+		$xml_array (array) -
+			XML specification converted to an associative array. The specifications are
+			the ones enclosed within the <command> tag.
+
+
+	 --------------------------------------------------------------------------------------------*/
+	private function  ProcessCommandSpecifications ( $xml_array )
+	   {
+	   	$tag 		=  $xml_array [ 'tag' ] ;
+		$allow_files 	=  false ;
+		$allow_php_tags =  true ;
+		$min_files 	=  null ;
+		$max_files 	=  null ;
+		$value_text 	=  "arguments" ;
+		$value_help 	=  'List of free-form parameters.' ;
+
+	   	// Loop through top-level <command> attributes
+		foreach  ( $xml_array [ 'attributes' ]  as  $attribute )
+		   {
+			$name		=  $attribute [ 'name' ] ;
+			$value		=  $attribute [ 'value' ] ;
+
+			switch ( strtolower ( $name ) )
+			   {
+				// 'allow-unknown-parameters' attribute -
+				//	Allow unknown parameters on the command line.
+				case	'allow-unknown-parameters' :
+				case	'unknown-parameters' :
+				case	'unknown' :
+					if  ( String::IsTrue ( $value ) )
+						$this -> AllowUnknownParameters = true ;
+					else if  ( String::IsFalse ( $value ) )
+						$this -> AllowUnknownParameters = false ;
+					else
+						error ( new CLException ( "The value specified for the '$name' attribute of the <$tag> tag must be boolean." ) ) ;
+					break ;
+				
+			   	// 'name' attribute -
+			   	//	Overrides the default command name displayed in help.
+				case	'name' :
+					$this -> CommandName  =  $value ;
+					break ;
+
+				// 'max-width' -
+				// 	Sets the max command-line help width in characters.
+				case	'max-width' :
+					$this -> SetMaxWidth ( $value ) ;
+					break ;
+
+				// 'allow-files' -
+				//	Checks whether files are allowed on the command line or not.
+				case	'allow-files' :
+					if  ( String::IsTrue ( $value ) )
+						$allow_files = true ;
+					else if  ( String::IsFalse ( $value ) )
+						$allow_files = false ;
+					else
+						error ( new CLException ( "The value specified for the 'allow-files' attribute of the <$tag> tag must be boolean." ) ) ;
+					break ;
+
+				// 'allow-php-tags' -
+				//	Allows (or not) PHP tags in default values and/or help.
+				case	'allow-php-tags' :
+					if  ( String::IsTrue ( $value ) )
+						$allow_php_tags = [ 'defaults' => true, 'help' => true ] ;
+					else if  ( String::IsFalse ( $value ) )
+						$allow_php_tags = [ 'defaults' => false, 'help' => false ] ;
+					else
+					   {
+						$keywords	=  explode ( ',', $value ) ;
+						
+						foreach  ( $keywords  as  $keyword )
+						   {
+							$defaults	=  false ;
+							$help_text	=  false ;
+
+							switch ( strtolower ( $keyword ) )
+							   {
+								case  'default' :
+								case  'defaults' :
+									$defaults	=  true ;
+									break ;
+
+								case  'help' :
+									$help_text	=  true ;
+									break ;
+
+								default :
+									error ( new CLException ( "The value specified for the 'allow-php-tags' attribute " .
+											" of the <$tag> tag must be either a boolean value or a 1..* " .
+											" combination of the following keywords : defaults (or default), " .
+											" help" ) ) ;
+							    }
+
+							$allow_php_tags		=  [ 'defaults' => $defaults, 'help' => $help_text ] ;
+						    }
+					    }
+
+					$this -> AllowPhpTags	=  $allow_php_tags ;
+					break ;
+
+				// Min/max files
+				case	'min-files' :
+				case	'min-values' :
+				case	'min-arguments' :
+				case	'min-args' :
+					$min_files = $value ;
+					break ;
+
+				case	'max-files' :
+				case	'max-values' :
+				case	'max-arguments' :
+				case	'max-args' :
+					if  ( $value  ==  '*' )
+						$value = PHP_INT_MAX ;
+					$max_files = $value ;
+					break ;
+
+				// Value text
+				case	'value-text' :
+				case	'text' :
+					$value_text = $value ;
+					break ;
+
+				// Value help
+				case    'value-help' :
+				case    'help' :
+					$value_help = $value ;
+					break ;
+
+				// Selected CL version number
+				case	'version' :
+					$this -> VersionSet ( $value ) ;
+					break ;
+
+				// Unknown attribute : complain
+				default :
+					error ( new CLException ( "The '$name' attribute is incorrect for the <$tag> tag." ) ) ;
+			    }
+		    }
+
+
+		// For the allow-files, min-files and max-files attributes, create an unnamed string parameter
+		if  ( $allow_files )
+		   {
+			$specifications =  array
+			   (
+			   	'tag'		=>  'string',
+			   	'attributes'	=>  array
+			   	   (
+	      			    )
+			    ) ;
+
+		    	if  ( $min_files  ===  null )
+		    		$min_files = 1 ;
+
+	    		if  ( $max_files  ===  null )
+	    			$max_files = 1 ;
+
+	    		$specifications [ 'attributes' ] [] =  array ( 'name' => 'min-arguments', 'value' => $min_files ) ;
+			$specifications [ 'attributes' ] [] = array ( 'name' => 'max-arguments', 'value' => $max_files ) ;
+
+			if  ( $min_files )
+			   {
+		    		$specifications [ 'attributes' ] [] =  array ( 'name' => 'required', 'value' => 'true' ) ;
+		    		$specifications [ 'attributes' ] [] =  array ( 'name' => 'multiple', 'value' => 'true' ) ;
+    		 	    }
+
+    		 	if  ( ! String::EndsWith ( $value_help, "." ) )
+    		 		$value_help .= "." ;
+
+			$specifications [ 'attributes' ] [] = array ( 'name' => 'value-text', 'value' => $value_text ) ;
+			$specifications [ 'contents' ] = $value_help ;
+			$specifications [ 'children' ] = array ( ) ;
+
+			$this -> AddParameter ( $specifications, false ) ;
+		    }
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		ProcessParameterSpecifications - Processes parameter specifications.
+
+	    PROTOTYPE
+		$this -> ProcessParameterSpecifications ( $xml_array ) ;
+
+	    DESCRIPTION
+		Processes the parameter specifications.
+
+	    PARAMETERS
+		$xml_array (array) -
+			XML specification converted to an associative array. The specifications are
+			the ones enclosed within the <command> tag.
+
+	 --------------------------------------------------------------------------------------------*/
+	private function  ProcessParameterSpecifications ( $xml_array )
+	   {
+		foreach  ( $xml_array [ 'children' ]  as  $child )
+		   {
+			$child_tag 	=  strtolower ( $child [ 'tag' ] ) ;
+			$contents 	=  rtrim ( $child [ 'contents' ] ) ;
+
+			// Process special tag
+			switch  ( $child_tag )
+			   {
+			   	// <help> or <description> -
+			   	//	Provides the help text displayed after the usage string and before parameter details.
+				case	'help' :
+				case	'description' :
+					$this -> CommandHelp 	=  $contents ;
+					break ;
+
+				// <usage> -
+				//	Provides usage string.
+				case	'usage' :
+					$this -> CommandUsage	=  $contents ;
+					break ;
+
+				// <help-topic name="keyword"> or <help-group name="keyword"> -
+				//  	Defines a help group, whose help text will be displayed when using the -help group option.
+				case	'help-topic' :
+				case	'help-group' :
+				case 	'help-keyword' :
+					$topic 		=  null ;
+
+					foreach  ( $child [ 'attributes' ]  as  $child_attribute )
+					   {
+					   	$name 		=  $child_attribute [ 'name' ] ;
+					   	$value 		=  $child_attribute [ 'value' ] ;
+
+						if  ( ! strcasecmp ( $name, "name" ) )
+							$topic = $value ;
+						else
+							error ( new CLException ( "<help-topic> tag : Invalid attribute '$name'." ) ) ;
+					    }
+
+					if  ( $topic  ===  null )
+						error ( new CLException ( "<help-topic> tag : the 'name' attribute is mandatory." ) ) ;
+
+					$this -> CommandHelpTopics [ $value ] = trim ( $child [ 'contents' ] ) ;
+					break ;
+
+				// <exclusions parameter="param list 1" with="param list 2">
+				//	Handles the fact that each parameter from "param list 1" must not be specified with any of
+				//	the parameter names specified in "param list 2".
+				// The <exclusion> and <exclude> tags are also allowed.
+				// The 'parameter' attribute can also be specified as 'name'/
+				// The 'with' attribute can also be specified as 'value'.
+				case	'exclusions' :
+				case  	'exclusion' :
+				case	'exclude' :
+					$this -> ProcessRelationships ( $child_tag, $child [ 'attributes' ], self::GROUPING_EXCLUDE ) ;
+					$this -> ExclusionTag = $child_tag ;
+					break ;
+
+				// <inclusions parameter="param list 1" with="param list 2">
+				//	Handles the fact that each parameter from "param list 1" must be specified when the "param list 2"
+				//	parameter is specified.
+				// The <inclusion> and <include> tags are also allowed.
+				// The 'parameter' attribute can also be specified as 'name'/
+				// The 'with' attribute can also be specified as 'value'.
+				case	'inclusions' :
+				case	'inclusion' :
+				case	'include' :
+					$this -> ProcessRelationships ( $child_tag, $child [ 'attributes' ], self::GROUPING_INCLUDE ) ;
+					$this -> InclusionTag = $child_tag ;
+					break ;
+
+				// <unnamed-parameters> or <unnamed>
+				//	Declare unnamed parameters.
+				case	'unnamed-parameters' :
+				case	'unnamed' :
+					foreach  ( $child [ 'children' ]  as  $parameter )
+						$this -> AddParameter ( $parameter, false ) ;
+					break ;
+
+				// <named-parameters> or <parameters>
+				//	Declare named parameters.
+				case	'named-parameters' :
+				case	'parameters' :
+				case	'named' :
+					foreach  ( $child [ 'children' ]  as  $parameter )
+						$this -> AddParameter ( $parameter, true ) ;
+					break ;
+
+				// Default value -
+				//	Handle it as a named parameter
+				default :
+					$this -> AddParameter ( $child, true ) ;
+			    }
+		    }
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		RegisterClasses - Register parameter handling classes.
+
+	    PROTOTYPE
+		$this -> RegisterClasses ( ) ;
+
+	    DESCRIPTION
+		Looks at the file 'Types.ini' located in the CL/Types directory and loads each include
+		file/class declared in this file.
+
+	 --------------------------------------------------------------------------------------------*/
+	private function  RegisterClasses ( )
+	   {
+	   	// Load the 'Types.ini' file
+	   	$ini_filename	=  $this -> CLTypesDirectory . '/Types.ini' ;
+
+	   	if  ( ! file_exists ( $ini_filename ) )
+	   		error ( new CLException ( "Parameter types definition file '$ini_filename' does not exist" ) ) ;
+
+   		$ini_contents 	=  parse_ini_file ( $ini_filename, true ) ;
+
+   		// Loop through ini file contents
+   		foreach  ( $ini_contents  as  $section => $contents )
+   		   {
+			$contents 	=  array_change_key_case ( $contents ) ;
+			$tags 		=  null ;
+			$classname	=  null ;
+			$filename 	=  $section ;
+			$basename	=  null ;
+			$extension 	=  null ;
+			$type 		=  null ;
+
+			// Try to deduce a filename from the section name
+			if  ( isset ( $contents [ 'file' ] ) )
+				$filename = $contents [ 'file' ] ;
+			else if  ( isset ( $contents [ 'filename' ] ) )
+				$filename = $contents [ 'filename' ] ;
+
+			$basename 	=  Path::Filename ( $filename ) ;
+			$extension 	=  Path::Extension ( $filename ) ;
+
+			if  ( ! $extension )
+				$extension = ".phpclass" ;
+
+			$filename 	=  $basename . $extension ;
+			$filename 	=  $this -> CLTypesDirectory . '/' . $filename ;
+
+			if  ( ! file_exists ( $filename ) )
+				error ( new CLException ( "The command-line parameter definition file '$filename' reference in the 'Type.ini' file does not exist." ) ) ;
+
+			// The 'Tags' entry is mandatory
+			if  ( isset ( $contents [ 'tags'] ) )
+				$tags = $contents [ 'tags' ] ;
+			else if  ( isset ( $contents [ 'tag' ] ) )
+				$tags = $contents [ 'tag' ] ;
+			else
+				error ( new CLException ( "The 'Tags' entry is mandatory in each section of the 'Types.ini' file." ) ) ;
+
+			// Extract tag names
+			$tagnames 	=  array ( ) ;
+			$tags 		=  explode ( ',', $tags ) ;
+
+			foreach  ( $tags  as  $tag )
+			   {
+				$tag 	=  strtolower ( trim ( $tag ) ) ;
+
+				// Silently ignore duplicate declarations
+				if   ( ! in_array  ( $tag, $tagnames ) )
+					$tagnames [ ] = $tag ;
+			    }
+
+			// Same for class name, otherwise build a class name of the form : 'CL' . classname . 'Parameter'
+			if  ( isset ( $contents [ 'name' ] ) )
+				$classname = $contents [ 'name' ] ;
+			else if  ( isset ( $contents [ 'class' ] ) )
+				$classname = $contents [ 'class' ] ;
+			else if  ( isset ( $contents [ 'classname' ] ) )
+				$classname = $contents [ 'classname' ] ;
+			else
+				$classname = 'CL' . $section . 'Parameter' ;
+
+			$classname  =  "\\" . __NAMESPACE__ . "\\$classname" ;
+
+			// Determine official parameter type name
+			if  ( isset ( $contents [ 'type' ] ) )
+				$type = $contents [ 'type' ] ;
+			else
+				$type = $tagnames [ 0 ] ;
+
+			// Check that the classname and handled tag names do not already exist
+			foreach  ( $this -> RegisteredClasses  as  $RegisteredClass )
+			   {
+				if  ( ! strcasecmp ( $RegisteredClass [ 'class' ], $classname ) )
+					error ( new CLException ( "File 'Types.ini' : the '$classname' class has already been registered in section '{$RegisteredClass [ 'section' ]}'." ) ) ;
+
+				if  ( ! strcasecmp ( $RegisteredClass [ 'type' ], $classname ) )
+					error ( new CLException ( "File 'Types.ini' : the '$type' type name has already been registered in section '{$RegisteredClass [ 'section' ]}'." ) ) ;
+
+			   	// Check that one of the supplied tagnames has not already been specified
+				foreach  ( $RegisteredClass [ 'tags']  as  $registered_tag )
+				   {
+					foreach  ( $tagnames  as  $tag )
+					   {
+						if  ( ! strcasecmp ( $registered_tag, $tag ) )
+							error ( new CLException ( "File 'Types.ini' : the '<$tag>' tag defined in section '{$section}' is already defined in section '{$RegisteredClass [ 'section' ]}'." ) ) ;
+					    }
+				    }
+			    }
+
+			// Check that the registering tagnames do not belong to the list of reserved tags
+			foreach  ( $this -> ReservedTags  as  $reserved )
+			    {
+			    	foreach  ( $reserved [ 'names' ]  as  $reserved_name )
+			    	   {
+					foreach  ( $tagnames  as  $tag )
+					   {
+						if  ( ! strcasecmp ( $reserved_name, $tag ) )
+							error ( new CLException ( "File 'Types.ini' : the '<$tag>' tag defined in section '{$section}' is a reserved tag name." ) ) ;
+					    }
+			    	    }
+			     }
+
+			// Add this new entry to the registered classes
+			$this -> RegisteredClasses [] = array ( 'section' => $section, 'class' => $classname, 'file' => $filename, 'tags' => $tagnames, 'type' => $type ) ;
+   		    }
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		SetMaxWidth - Sets the max width displayed for help and usage.
+
+	    PROTOTYPE
+	        $this -> SetMaxWidth ( $width ) ;
+
+	    DESCRIPTION
+		Sets the max width in characters for help and usage text. The minimum allowed value
+		is 50.
+
+	    PARAMETERS
+		$width (integer) -
+			Width to be defined. The minimum width is fixed to 30 characters, while the
+			default one is 80.
+
+	 --------------------------------------------------------------------------------------------*/
+	private function  SetMaxWidth ( $width )
+	   {
+	   	$DefaultWidth 		=  80 ;
+
+	   	if  ( ! $width )
+	    	   {
+			global		$Configuration ;
+
+			$width = $Configuration -> Get ( 'Console/line-width', $DefaultWidth ) ;
+	    	    }
+		else if  ( ! is_numeric ( $width )  ||  ( integer ) $width  <  30 )
+			$width = $DefaultWidth ;
+
+		$this -> MaxWidth = $width ;
+	    }
+
+
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/******                                                                               ******/
+	/******                           PUBLIC FUNCTIONS                                    ******/
+	/******                                                                               ******/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		AsArray - Return parameter values as array.
+
+	    PROTOTYPE
+		$array = $clparser -> AsArray ( ) ;
+
+	    DESCRIPTION
+		Returns the parameter values as an associative array.
+
+	    RETURN VALUE
+		Associative array, whose keys are the full parameter name (the first one defined in the
+		specification), and values are the parameter values.
+		Unnamed parameters are returned at offset 0.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  AsArray ( )
+	   {
+		$result 	=  array ( ) ;
+
+		foreach  ( $this -> NamedParameters  as  $NamedParameter )
+			$result [ $NamedParameter -> GetName ( ) ]  =  $NamedParameter -> GetValue ( ) ;
+
+		$result [0]	=  array ( ) ;
+
+		foreach  ( $this -> UnnamedParameters  as  $UnnamedParameter )
+			$result [0] [] = $UnnamedParameter -> GetValue ( ) ;
+
+		return  ( $result ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		GetHelpString 	- Get help string
+		DisplayHelp	- Display command-line help.
+
+	    PROTOTYPE
+		$string = $clparser -> GetHelpString ( $topic = null ) ;
+		$clparser -> DisplayHelp ( $topic = null ) ;
+
+	    DESCRIPTION
+		Displays help parameters.
+
+	    PARAMETER
+	    	$topic (string) -
+	    		If specified, displays only the parameters related to this help topic.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  GetHelpString ( $topic = null )
+	   {
+		$result  =  $this -> GetUsageString ( false ) . "\n" ;
+		$count   =  0 ;
+
+		// If a topic has been specified, check that it exists
+		if  ( $topic )
+		   {
+			$found 	 =  false ;
+
+			foreach  ( array_keys ( $this -> CommandHelpTopics )  as  $defined_topic )
+			   {
+				if  ( ! strcasecmp ( $defined_topic, $topic ) )
+				   {
+					$found = true ;
+					break ;
+				    }
+			    }
+
+			if  ( ! $found )
+				error ( new CLException ( "The '$topic' topic name is not defined for this command." ) ) ;
+		    }
+
+		// Get the help string for each named parameter
+		foreach  ( $this -> NamedParameters  as  $parameter )
+		   {
+		   	// Forget hidden parameters
+		   	if  ( $parameter -> Hidden  &&  ! $this -> CommandLineObject -> DisplayHiddenParameters )
+		   		continue ;
+
+			// Get help text
+			$help_text = $parameter -> GetHelp ( ) ;
+
+		   	if  ( $help_text )
+		   		$paragraph =  Formatting::FormatParagraph ( $help_text, null, $this -> MaxWidth, 16 ) ;
+			else
+				$paragraph =  Formatting::FormatParagraph ( "*** no help text defined for this parameter ***", null, $this -> MaxWidth, 16 ) ;
+
+			$paragraph	=  rtrim ( $paragraph ) ;
+			$phelp		= "\n\t" . $parameter -> UsageString . " :\n" . $paragraph . "\n" ;
+
+			// If a topic has been specified, only include the parameters related to this topic
+			// (the command has been run with the -help "topic" option)
+		   	if  ( $topic )
+		   	   {
+		   	   	foreach  ( $parameter -> HelpTopics  as  $ptopic )
+				   {
+					if  ( ! strcasecmp ( $topic, $ptopic ) )
+					   {
+						$result .= $phelp ;
+						$count ++ ;
+						break ;
+					    }
+				    }
+		   	    }
+ 	    		// -help option with no additional parameter
+		   	else
+		   	   {
+		   		$result .= $phelp ;
+		   		$count ++ ;
+	   		    }
+		    }
+
+		// Then for each unnamed parameter
+		foreach  ( $this -> UnnamedParameters  as  $parameter )
+		   {
+			// Get help text
+			$help_text = $parameter -> GetHelp ( ) ;
+
+		   	if  ( $help_text )
+		   		$paragraph =  Formatting::FormatParagraph ( $help_text, null, $this -> MaxWidth, 16 ) ;
+			else
+				$paragraph =  Formatting::FormatParagraph ( "*** no help text defined for this parameter ***", null, $this -> MaxWidth, 16 ) ;
+
+			$phelp = "\n\t" . $parameter -> GetUsageString ( false ) . " :\n" . $paragraph . "\n" ;
+
+			// If a topic has been specified, only include the parameters related to this topic
+			// (the command has been run with the -help "topic" option)
+		   	if  ( $topic )
+		   	   {
+		   	   	foreach  ( $parameter -> HelpTopics  as  $ptopic )
+				   {
+					if  ( ! strcasecmp ( $topic, $ptopic ) )
+					   {
+						$result .= $phelp ;
+						$count ++ ;
+						break ;
+					    }
+				    }
+		   	    }
+ 	    		// -help option with no additional parameter
+		   	else
+		   	   {
+		   		$result .= $phelp ;
+		   		$count ++ ;
+	   		    }
+		    }
+
+		if  ( $count )
+			$result .= "\n" ;
+
+		$result .=  "\n" . $this -> GetHelpTopicsHelp ( true ) ;
+		$result  =  rtrim ( $result ) ;
+
+		return ( $result ) ;
+	    }
+
+
+	public function  DisplayHelp ( $topic = null )
+	   {
+	   	// Standard help can be overridden using the <help> tag
+	   	if  ( $this -> CommandHelp )
+	   		$help	=  $this -> CommandHelp ;
+		else
+			$help	=  $this -> GetHelpString ( $topic ) ;
+
+		$help	=  $this -> EvaluatePhpTags ( $help, 'help' ) ;
+		echo ( $help ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		GetHelpTopicsHelp     - Returns help string about help topics.
+		DisplayHelpTopicsHelp - Displays help about help topics.
+
+	    PROTOTYPE
+		$string = $this -> GetHelpTopicsHelp ( $short = true ) ;
+		$this -> DisplayHelpTopicsHelp ( $short = true ) ;
+
+	    PARAMETERS
+	    	$short (boolean) -
+			When true, only a short help is displayed (ie, list of help topics).
+			When false, the full list of help topics together with their description is
+			returned.
+
+	    DESCRIPTION
+	    	Builds and display a text string about the available help topics.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  GetHelpTopicsHelp ( $short = true )
+	   {
+	   	if  ( count ( $this -> CommandHelpTopics ) )
+		   {
+	   		if  ( $short )
+	   			$result = "\tAvailable help topics : " . implode ( ', ', array_keys ( $this -> CommandHelpTopics ) ) ;
+   			else
+   			   {
+				$result = "Available help topics :" ;
+				$length = -1 ;
+
+				foreach  ( array_keys ( $this -> CommandHelpTopics )  as  $topic )
+				   {
+					$htl = strlen ( $topic ) ;
+
+					if  ( $htl  >  $length )
+						$length = $htl ;
+				    }
+
+				foreach  ( $this -> CommandHelpTopics  as  $topic => $help )
+				 	$result .= sprintf ( "\n    * %-{$length}s - %s", $topic, $help ) ;
+   			    }
+
+		    	return ( $result ) ;
+		    }
+	    	else
+	    		return ( null ) ;
+	    }
+
+
+ 	public function  DisplayHelpTopicsHelp ( $short = true )
+ 	   {
+		$help = $this -> GetHelpTopicsHelp ( $short ) ;
+
+		if  ( $help  !==  null )
+			output ( "\n$help" ) ;
+ 	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		GetParameterByName - Gets a parameter object by its name.
+
+	    PROTOTYPE
+		$result = $this -> GetParameterByName ( $name ) ;
+
+	    DESCRIPTION
+		Returns a reference to the specified parameter object.
+
+	    PARAMETERS
+		$name (string) -
+			Parameter name to be searched for.
+
+	    RETURN VALUE
+		Either the parameter object, or false if the parameter is not defined.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  GetParameterByName ( $name )
+	   {
+		foreach  ( $this -> NamedParameters  as  $NamedParameter )
+		   {
+			if  ( $NamedParameter -> IsNamedAs ( $name ) )
+				return ( $NamedParameter ) ;
+		    }
+
+    		return ( false ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		GetRegisteredClass - Returns information about a parameter class.
+
+	    PROTOTYPE
+	        $info = $this -> GetRegisteredClass ( $tagname ) ;
+
+	    DESCRIPTION
+		Retrieves parameter class information based on the supplied tag name, by looking at
+		the $RegisteredClasses property.
+
+	    PARAMETERS
+		$tagname (string) -
+			Parameter whose class information is to be retrieved.
+
+	    RETURN VALUE
+		The corresponding class information, or false if no such tag is handled by the various
+		parameter classes.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  GetRegisteredClass ( $tagname )
+	   {
+		foreach  ( $this -> RegisteredClasses  as  $RegisteredClass )
+		   {
+			foreach  ( $RegisteredClass [ 'tags']  as  $tag )
+			   {
+				if  ( ! strcasecmp ( $tag, $tagname ) )
+					return ( $RegisteredClass ) ;
+			    }
+		    }
+
+		return ( false ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		DisplayUsage    - Displays the usage string.
+		GetUsageString	- Returns the formatted usage string.
+
+	    PROTOTYPE
+		$this -> DisplayUsage ( ) ;
+		$string = $this -> GetUsageString ( ) ;
+
+	    DESCRIPTION
+		Builds and display a command-line usage string.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  GetUsageString ( )
+	   {
+	   	// Usage string starts with the word "usage" then the command name and optional parameters
+	   	$usage 		=  "Usage : " . $this -> CommandName ;
+		$length 	=  strlen ( $usage ) + 1 ;
+		$current_length =  $length ;
+		$spaces 	=  str_repeat ( ' ', $length ) ;
+
+		// Build short parameter specifications
+		foreach  ( $this -> NamedParameters  as  $NamedParameter )
+		   {
+		   	if  ( $NamedParameter -> Hidden  &&  ! $this -> CommandLineObject -> DisplayHiddenParameters )
+		   		continue ;
+
+			$text 		=  $NamedParameter -> GetUsageString ( true ) ;
+			$textlength   	=  strlen ( $text ) ;
+
+			if  ( $current_length + $textlength  >  $this -> MaxWidth )
+			   {
+				$usage .= "\n$spaces" ;
+				$current_length	= 0 ;
+			    }
+
+			$usage 		.=  " " . $text ;
+			$current_length +=  $textlength ;
+		    }
+
+
+		// Same for unnamed parameters
+		foreach  ( $this -> UnnamedParameters  as  $UnnamedParameter )
+		   {
+			$text 		=  $UnnamedParameter -> GetUsageString ( true ) ;
+			$textlength   	=  strlen ( $text ) ;
+
+			if  ( $current_length + $textlength  >  $this -> MaxWidth )
+			   {
+				$usage .= "\n$spaces" ;
+				$current_length	= 0 ;
+			    }
+
+			$usage 		.=  " "  . $text ;
+			$current_length += $textlength ;
+		    }
+
+   		// End with a newline before adding the usage string
+   		$usage 	=  rtrim ( $usage ) . "\n" ;
+
+   		// Add the usage string
+   		$usage  .=  Formatting::FormatParagraph ( $this -> CommandUsage, null, $this -> MaxWidth, 8 ) ;
+
+   		// All done, return
+   		return ( $usage ) ;
+	    }
+
+
+	public function  DisplayUsage ( )
+	   {
+		output ( $this -> GetUsageString ( true ) ) ;
+		$this -> DisplayHelpTopicsHelp ( true ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		InstanciateParameter - Instanciates a parameter of the given type.
+
+	    PROTOTYPE
+		$parameter = $CL -> InstanciateParameter ( $tagname ) ;
+
+	    DESCRIPTION
+		Instanciates a parameter of the approriate class using the specified tag name.
+
+	    PARAMETERS
+		$tagname (string) -
+			One of the authorized parameter tag names.
+
+	    RETURN VALUE
+		Returns the parameter object.
+
+	    NOTES
+		An exception is issued if the specified tagname is not defined.
+
+	 --------------------------------------------------------------------------------------------*/
+	function  InstanciateParameter ( $tagname )
+	   {
+		$class_info 	=  $this -> GetRegisteredClass ( $tagname ) ;
+
+		// If not, throw an exception
+		if  ( ! $class_info )
+			error ( new CLException ( "The <$tagname> parameter type does not exist." ) ) ;
+
+
+		// Instanciate the parameter class
+		$class_name 		=  $class_info [ 'class' ] ;
+		$parameter 		=  new  $class_name ( $this, $class_info [ 'tags' ] ) ;
+
+		// All done, return
+		return ( $parameter ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		IsParameter - Checks if a parameter exists.
+
+	    PROTOTYPE
+		$status = $this -> IsParameter ( $name ) ;
+
+	    DESCRIPTION
+		Checks if the specified named parameter exists.
+
+	    PARAMETERS
+		$name (string) -
+			Parameter name (or alias) to be checked.
+
+	    RETURN VALUE
+		True if the parameter exists, false otherwise.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  IsParameter ( $name )
+	   {
+		foreach  ( $this -> NamedParameters  as  $Parameter )
+		   {
+			if  ( $Parameter -> IsNamedAs ( $name ) )
+				return ( true ) ;
+		    }
+
+		return ( false ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		IsSpecified - Checks if a parameter has been specified on the command line.
+
+	    PROTOTYPE
+		$status = $this -> IsSpecified ( $name ) ;
+
+	    DESCRIPTION
+		Checks if the specified named parameter has been specified on the command line.
+
+	    PARAMETERS
+		$name (string) -
+			Parameter name (or alias) to be checked.
+
+	    RETURN VALUE
+		True if the parameter has been specified on the command line, false otherwise.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  IsSpecified ( $name )
+	   {
+		if  ( $name [0]  !=  '#' )
+			$pname	= "#$name" ;
+		else 
+			$pname	=  $name ;
+			
+		$parameter	=  $this [ $pname ] ;
+
+		if  ( ! $parameter )
+			error ( new CLException ( "Parameter $name does not exist." ) ) ;
+		
+		return ( $parameter -> Specified ) ;
+	    }
+	
+	
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/******                                                                               ******/
+	/******                         INTERFACE IMPLEMENTATION                              ******/
+	/******                                                                               ******/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+
+	/*-------------------------------------------------------------------------------------------
+
+		ArrayAccess interface implementation.
+			Used for accessing individual parameters.
+			If the array index is numeric, then the parameter will be searched through
+			the unnamed parameter list.
+			If it is non-numeric or starts with one of the allowed switch characters, it
+			will be searched through the named parameter list.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  offsetSet ( $offset, $value )
+	   {
+   		$object 	=  $this -> offsetGetObject ( $offset ) ;
+   		$object -> SetValue ( $value, true ) ;
+	    }
+
+    	public function  offsetExists ( $offset )
+    	   {
+    	   	if  ( $offset  ==  '*' )
+    	   		return ( true ) ;
+
+    	   	$object 	=  $this ->  __offsetGetObject ( $offset ) ;
+
+    	   	return ( ( $object  !==  null ) ) ;
+	    }
+
+    	public function offsetUnset ( $offset )
+	   {
+	   	error ( new CLException ( "Defined parameters cannot be unset." ) ) ;
+	    }
+
+        public function offsetGet ( $offset )
+           {
+           	// The special notation "$CL ['*']" returns all unnamed parameters as an array of values
+           	if  ( $offset  ===  '*' )
+           	   {
+			$result 	=  array ( ) ;
+
+			foreach  ( $this -> UnnamedParameters  as  $param )
+				$result = array_merge ( $result, $param -> Values ) ;
+
+			return ( $result ) ;
+           	    }
+
+		// The parameter object will be returned only if the special notation "$CL ['#x']" is used
+		// Otherwise the unnamed parameter value is returned
+		if ( $offset [0]  ==  '#' )
+		   {
+			$return_object	=  true ;
+			$offset		=  substr ( $offset, 1 ) ;
+		    }
+		else
+			$return_object	=  false ;
+
+		// Get the parameter object
+           	$object 	=  $this -> __offsetGetObject ( $offset ) ;
+
+		if  ( ! $return_object )
+		   {
+		   	// Handle unspecified parameters
+   			if  ( ! count ( $object -> Values ) )
+			   	$object = null ;
+		   	// Handle the case that an unnamed parameter can have multiple values
+		   	else if  ( $object -> MinArguments  <=  1  &&  $object -> MaxArguments  ==  1 )
+				$object = $object -> Values [0] ;
+			else
+				$object = $object -> Values ;
+		    }
+
+		// All done, return
+           	return ( $object ) ;
+	    }
+
+	// offsetGetObject -
+	//	Returns the object associated to the specified index, which can be one of the following :
+	//	- A positive integer :
+	//		Specifies the unnamed parameter #index.
+	//	- A name :
+	//		Specifies the parameter name.
+	//	- A name prefixed by any of the switch characters authorized for this parameter class :
+	//		Specifies the parameter name.
+	//
+	// The optional $tophp parameter specifies whether the comparisons should be made after converting
+	// parameter names to a valid PHP name. During conversion, any character not in the set [a-zA-Z0-9_]
+	// is converted to the underline character ('_'). Duplicate underlines are replaced by a single
+	// underline.
+	private function  __offsetGetObject ( $index, $tophp = false )
+	   {
+		if  ( is_numeric ( $index )  &&  $index  >=  0 )
+		   {
+			if  ( $index  <  count ( $this -> UnnamedParameters ) )
+				return ( $this -> UnnamedParameters [ $index ] ) ;
+		    }
+		else
+		   {
+			foreach  ( $this -> NamedParameters  as  $NamedParameter )
+			   {
+			   	if  ( $NamedParameter -> IsNamedAs ( $index, $tophp ) )
+					return ( $NamedParameter ) ;
+			    }
+		    }
+
+		return ( false ) ;
+	    }
+
+
+	private function  offsetGetObject ( $index, $tophp = false )
+	   {
+	   	$object = $this -> __offsetGetObject ( $index, $tophp ) ;
+
+	   	if  ( ! $object )
+			error ( new CLException ( "Invalid parameter index '$index'." ) ) ;
+
+		return ( $object ) ;
+	    }
+
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Countable interface implementation.
+			Counts the number of parameters, either named or unnamed.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  count ( )
+	   { return ( count ( $this -> Parameters ) ) ; }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Iterator interface implementation.
+			Allows for looping through each named parameter.
+
+	 --------------------------------------------------------------------------------------------*/
+	private 	$ParameterIndex 	=  0 ;
+
+	function  current ( )
+	   {
+		$key		=  $this -> key ( ) ;
+
+		return ( $this -> Parameters [ $key ] ) ;
+	    }
+
+	function  key ( )
+	   {
+		return ( $this -> Parameters [ $this -> ParameterIndex ] ) ;
+	    }
+
+	function  next ( )
+	   {
+		$key		=  $this -> key ( ) ;
+		$this -> ParameterIndex ++ ;
+
+		return ( $this -> Parameters [ $key ] ) ;
+	    }
+
+	function  rewind ( )
+	   {
+	   	$this -> ParameterIndex = 0 ;
+	    }
+
+	function  valid ( )
+	   {
+	   	return ( $this -> ParameterIndex  <  count ( $this -> Parameters ) ) ;
+	    }
+
+	function  length ( )
+	   { return ( count ( $this -> Parameters ) ) ; }
+
+	function  getIterator ( )
+	   { return ( $this ) ; }
+    }

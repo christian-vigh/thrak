@@ -1,0 +1,164 @@
+<?php
+
+/***************************************************************************************************
+
+    NAME
+	Utilities.phpclass
+
+    DESCRIPTION
+	Xml utility functions.
+
+    AUTHOR
+     	Christian Vigh, 05/2011.
+
+    HISTORY
+    [Version : 1.0]	[Date : 2012/10/10]	[Author : CV]
+     	Initial version.
+
+    [Version : 1.0.1]	[Date : 2015/05/11]	[Author : CV]
+ 	. Added the $return_as_xml parameter to the ParseAttributeValuePairs() method.
+ 	. Use DOM functions instead of simplexml in the ParseAttributeValuePairs() method.
+ 	. Added the $EntityAmpersandEscape and $EntitySemicolonEscape global variables
+ 	. Added the EscapeEntities() and UnescapeEntities() methods
+
+ ***************************************************************************************************/
+namespace	Thrak\Internet\Xml ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces and classes
+use 	Thrak\System\Object		as  Object ;
+use 	Thrak\System\Exception 		as  Exception ;
+use     Thrak\IO\Path 			as  Path ;
+
+
+/*==================================================================================================
+
+    Utilities class -
+	Utility functions related to XML..
+
+  ==================================================================================================*/
+class  Utilities  extends Object
+   {
+	// Escape sequences for entities
+	public static		$EntityAmpersandEscape		=  '{{{' ;
+	public static		$EntitySemicolonEscape		=  '}}}' ;
+	
+	
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		EscapeEntities, UnescapeEntities - Escapes/unescapes html entities.
+
+	    PROTOTYPE
+		$value	=  Utilities::EscapeEntities   ( $value, $ampersand_escape = null,
+	 							$semicolon_escape ) ;
+		$value	=  Utilities::UnescapeEntities ( $value, $ampersand_escape = null,
+	 							$semicolon_escape ) ;
+
+	    DESCRIPTION
+	 	EscapeEntities escapes html entities. It can be called for example before a call to
+	 	the DOMDocument::LoadXML() method, so that html entities won't generate errors.
+	 	UnescapeEntities is the reverse method : it converts back escaped html entities to
+	 	their original form.
+
+	    PARAMETERS
+	    	$value (string) -
+			String to be escaped/unescaped.
+	 
+	 	$ampersand_escape (string) -
+	 		When specified, supplies the string which will replace the starting ampersand 
+	 		in an html entity.
+	 		The default value is the global Utilities::$EntityAmpersandEscape variable.
+
+	 	$semicolon_escape (string) -
+	 		When specified, supplies the string which will replace the ending semicolon
+	 		in an html entity.
+	 		The default value is the global Utilities::$EntitySemicolonEscape variable.
+
+	    RETURNS
+	 	The unescaped/escaped input string $value.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  EscapeEntities ( $value, $ampersand_escape = null, $semicolon_escape = null )
+	   {
+		if  ( ! $ampersand_escape )
+			$ampersand_escape	=  self::$EntityAmpersandEscape ;
+		
+		if  ( ! $semicolon_escape )
+			$semicolon_escape	=  self::$EntitySemicolonEscape ;
+		
+		$replacement	=  $ampersand_escape . '\1' . $semicolon_escape ;
+		$value		=  preg_replace ( '/&([^;]+);/', $replacement, $value ) ;
+		
+		return ( $value ) ;
+	    }
+	
+	
+	public static function  UnescapeEntities ( $value, $ampersand_escape = null, $semicolon_escape = null )
+	   {
+		if  ( ! $ampersand_escape )
+			$ampersand_escape	=  self::$EntityAmpersandEscape ;
+		
+		if  ( ! $semicolon_escape )
+			$semicolon_escape	=  self::$EntitySemicolonEscape ;
+		
+		$value		=  str_replace ( [ $ampersand_escape, $semicolon_escape ], [ '&', ';' ], $value ) ;
+		
+		return ( $value ) ;
+	    }
+
+	
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		ParseAttributeValuePairs - Parse a series of 'attribute="value"' pairs.
+
+	    PROTOTYPE
+		$results = Utilities::ParseAttributeValuePairs ( $str, $return_as_xml = false ) ;
+
+	    DESCRIPTION
+	    	Takes a string containing a list of 'name="attribute"' pairs and returns an array
+		whoses keys are the attribute names and whose values are the attribute values.
+
+	    PARAMETERS
+	    	$str (string) -
+			String containing the list of attribute name/value pairs to be scanned.
+			The string must be conform to the XML specification for attributes.
+	  
+	 	$return_as_xml (boolean) -
+	 		When false, results as returned as an associative array of attribute name/
+	 		value pairs.
+	 		When true, an array of DOMAttr objects is returned.
+
+	    RETURNS
+	    	An array of names an values ; for example :
+			CrimsonString::ParseAttributeValuePairs ( 'name="xxx" name2="yyy"' ) ;
+		will return :
+			array ( 'name' => 'xxx', 'name2' => 'yyy' ) ;
+
+		If the input string is incorrect, an empty array will be returned.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  ParseAttributeValuePairs ( $str, $return_as_xml = false )
+	   {
+		$results	=  array ( ) ;
+		$xml		=  new \DOMDocument ( ) ;
+		
+		$xml -> loadXML ( '<junk ' . $str . ' />' ) ;
+
+		if  ( $return_as_xml )
+			return ( $xml -> documentElement -> attributes ) ;
+		
+		if  ( $xml )
+		   {
+			foreach  ( $xml -> documentElement -> attributes  as  $attribute_name => $attribute_value )
+			   {
+				$results [ $attribute_name ] =  $attribute_value -> value ;
+			    }
+		    }
+
+		return ( $results ) ;
+	    }
+    }

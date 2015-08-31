@@ -1,0 +1,457 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        Session.php
+
+    DESCRIPTION
+        Implements an SSH2 session.
+
+    AUTHOR
+        Christian Vigh, 05/2015.
+
+    HISTORY
+    [Version : 1.0]	[Date : 2015/05/17]     [Author : CV]
+        Initial version.
+
+    [Version : 1.0.1]	[Date : 2015/08/16]     [Author : CV]
+	. Changed the Execute() method so that commands longer than SSH_MAX_COMMAND_LENGTH bytes are first put 
+	  in a remote temporary shell script before execution.
+
+ **************************************************************************************************************/
+namespace	Thrak\Network\Ssh ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Set to false if this fucking libssh2 bug which issues the "unable to request a channel from remote host" message
+// when executing a second command is resolved
+define ( 'LIBSSH2_EXEC_BUG'			,  true ) ;
+
+// Used namespaces & objects
+use	Thrak\System\Object ;
+use	Thrak\Types\String ;
+use	Thrak\Network\Ssh\SshConnection ;
+use	Thrak\Network\Ssh\SshAuthentication ;
+use	Thrak\Network\Ssh\SshFileSystem ;
+
+// Ssh-related exceptions
+class  SshConnectionException		extends  \Thrak\System\NetworkException {}
+class  SshSessionException		extends  \Thrak\System\NetworkException {}
+class  SftpException			extends  \Thrak\System\RuntimeException {} ;
+
+
+/*==============================================================================================================
+
+    SshSession -
+        Implements an Ssh session, which includes an SshConnection object, along with SshExec and SshFtp objects.
+
+  ==============================================================================================================*/
+class  SshSession		extends  Object
+   {
+	// Max SSH command length ; commands larger than this size will be written in a remote script before execution
+	const		SSH_MAX_COMMAND_LENGTH		=  32768 ;
+
+	// Prefix of the remote shell script when the command to execute is larger than SSH_MAX_COMMAND_LENGTH bytes
+	const		SSH_SHELL_SCRIPT_PREFIX		=  '/tmp/.s.' ;
+
+	// Ssh connection object
+	public		$Connection			=  null ;
+	// Sftp connection
+	protected	$FileSystem			=  null ;
+	
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        Constructor - Builds an Ssh session.
+	
+	    PROTOTYPE
+	        $session	=  new SshSession ( $host_or_resource = null, $port = 22, $methods = null, 
+							$callbacks = null ) ;
+	
+	    DESCRIPTION
+	        Builds an Ssh session, including access to shell and sftp.
+	
+	    PARAMETERS
+	        $host_or_resource (string, resource or SshConnection object) -
+	                Host to connect to. It can have one of the following types :
+	 		- string :
+	 			Host name that will be supplied to the ssh2_connect() function.
+	 		- resource :
+	 			An already existing ssh connection. Note that in this case, the Host, Port, Methods
+	 			and Callbacks properties of the $this -> Connection SshConnection object will be
+	 			undefined.
+	 		- SshConnection object :
+	 			Duplicates the parameters of an existing SshConnection object.
+	  
+	 	$port (integer) -
+	 		Ssh port to be used for the connection. Default is 22.
+	  
+	 	$methods (array) -
+	 		Associative array. See the ssh2_connect() function help for for a description of its entries.
+	  
+	 	$callbacks (array) -
+	 		An associative array providing the names of callback functions (see the ssh2_connect()
+	 		function).
+	 		Note that all the callbacks are implemented in the SshConnection class . This parameter can 
+	 		be used to override existing callbacks in derived classes.
+	 
+	    NOTES
+	 	No connection is established.
+	
+	  ==============================================================================================================*/
+	public function  __construct ( $host_or_resource = null, $port = 22, $methods = null, $callbacks = null )
+	   {
+		if  ( $host_or_resource )
+			$this -> __create_connection ( $host_or_resource, $port, $methods, $callbacks ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	        Private methods.
+	
+	  ==============================================================================================================*/
+	
+	// __create_connection -
+	//	Creates the Connection object.
+	private function  __create_connection ( $host_or_resource, $port, $methods, $callbacks ) 
+	   {
+		$this -> Connection		=  new  SshConnection ( $host_or_resource, $port, $methods, $callbacks ) ;
+		$this -> Connection -> Session	=  $this ;
+	    }
+
+
+	// __check_connection -
+	//	Checks that a connection has been established and that an authentication took place.
+	private function  __check_connection ( $check_auth = true, $message = null )
+	   {
+		if  ( ! $this -> Connection )
+		   {
+			if  ( ! $this -> Connection -> IsConnected ( ) )
+				error ( new SshConnectionException ( "No connection has been established yet : $message" ) ) ;
+		
+			if  ( $check_auth  &&  ! $this -> Connection -> IsAuthenticated ( ) ) 
+				error ( new SshConnectionException ( "No authentication has been established yet : $message" ) ) ;
+		    }
+	    }
+		
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        Authenticate - Performs session authentication.
+	
+	    PROTOTYPE
+	        $session -> Authenticate ( $auth_object ) ;
+	
+	    DESCRIPTION
+	        Authenticates on an already connected session using the specified SshAuthentication class-derived 
+		object.
+	
+	    PARAMETERS
+	        $auth_object (Ssh) -
+	                SshAuthentication object.
+	
+	  ==============================================================================================================*/
+	public function  Authenticate ( $auth_object )
+	   {
+		$this -> Connection -> SetAuthentication ( $auth_object ) ;
+		$this -> Connection -> Authenticate ( ) ;
+		$this -> FileSystem	=  null ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        Connect - Establishes an Ssh connection.
+	
+	    PROTOTYPE
+	        $connection	=  $session -> Connect ( $host_or_resource = null, $port = 22, $methods = null, 
+								$callbacks = null ) ;
+	
+	    DESCRIPTION
+	        Establishes an ssh connection.
+	
+	    PARAMETERS
+	        $host_or_resource (string, resource or SshConnection object) -
+	                Host to connect to. It can have one of the following types :
+	 		- string :
+	 			Host name that will be supplied to the ssh2_connect() function.
+	 		- resource :
+	 			An already existing ssh connection. Note that in this case, the Host, Port, Methods
+	 			and Callbacks properties of the $this -> Connection SshConnection object will be
+	 			undefined.
+	 		- SshConnection object :
+	 			Duplicates the parameters of an existing SshConnection object.
+	  
+	 	$port (integer) -
+	 		Ssh port to be used for the connection. Default is 22.
+	  
+	 	$methods (array) -
+	 		Associative array. See the ssh2_connect() function help for for a description of its entries.
+	  
+	 	$callbacks (array) -
+	 		An associative array providing the names of callback functions (see the ssh2_connect()
+	 		function).
+	 		Note that all the callbacks are implemented in the SshConnection class . This parameter can 
+	 		be used to override existing callbacks in derived classes.
+	
+	    RETURN VALUE
+	        An SshConnection object.
+
+	  ==============================================================================================================*/
+	public function  Connect ( $host_or_resource = null, $port = null, $methods = null, $callbacks = null )
+	   {
+		if  ( $host_or_resource ) 
+			$this -> __create_connection ( $host_or_resource, $port, $methods, $callbacks ) ;
+
+		$this -> Connection -> Connect ( ) ;
+		$this -> FileSystem	=  null ;
+		
+		return ( $this -> Connection ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        Disconnect - Disconnects from an ssh session.
+	
+	    PROTOTYPE
+	        $session -> Disconnect ( ) ;
+	
+	    DESCRIPTION
+	        Disconnects from an existing ssh session.
+	
+	    RETURN VALUE
+	        true if disconnection was successful, false otherwise (for example, when no connection was established).
+	
+	  ==============================================================================================================*/
+	public function  Disconnect ( )
+	   {
+		$status		=  false ;
+		
+		if  ( $this -> Connection )
+		   {
+			$this -> Connection -> Disconnect ( ) ;
+			$this -> FileSystem	=  null ;
+			$status		=  true ;
+		    }
+			
+		return ( $status ) ;
+	    }
+
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        Execute - Executes a command on the remote server.
+	
+	    PROTOTYPE
+	        $status		=  $session -> Execute ( $command, &$output = null, $env = null ) ;
+	
+	    DESCRIPTION
+	        Executes a command on a remote server.
+	
+	    PARAMETERS
+	        $command (string) -
+	                Command(s) to be executed.
+	  
+	 	$output (array or callback) -
+	 		If specified as an array, will receive the output lines generated by the executed command(s).
+	 		If null, results will be output (almost) in real time.
+	  
+	 	$env (array) -
+	 		Optional associative array that defines environment variable names/values.
+	
+	    RETURN VALUE
+	        Returns the status of the last executed command ($?).
+	
+	    NOTES
+	        . At least on Windows systems, getting the output and error output of a remote command execution is a
+	 	  real nightmare ; standard error is not included by default in the stream returned by ssh2_exec(), and
+	 	  calling ssh2_fetch_stream() to obtain a standard error stream does not solve the problem, either : 
+	 	  Even if both stderr and stdout contain data, reading the first will succeed, but reading the second
+	 	  will result in a never ending call, whatever the order of data reads (stdout then stderr, or stderr
+	 	  then stdout).
+	 	  For those reasons, the Execute() method transforms the supplied input commands to the following script :
+	 	
+			bash 2>&1  <<END
+	 			$commands
+	 		END
+	 	  The drawback is that stderr is interspersed with stdout, but in the order it has been output.
+	 	. If commands are to be interpreted by a shell different from bash, then use the ExecuteFile() method
+	 	  instead.
+	 	. Status of the last executed command is returned by appending "echo $?" after the last command.
+	
+	  ==============================================================================================================*/
+	private function  __execute ( $command, &$output, $env, $callback )
+	   {
+		// A line of the form : "echo [status=$?]" is added at the end of the command(s) to be executed
+		// It is later extracted after command(s) execution to retrieve the status of the last command executed
+		static $status_re		=  '/ \[ status = (?P<status>\d+) \] \n /imsx' ;
+		
+		// A workaround to the libssh2 bug when issuing two consecutive commands on the same session
+		// A little bit expensive, but not other way so far until this bug discovered in 2009 gets fixed
+		static $execution_count		=  0 ;			// Execution count > 0 means we need to disconnect then reconnect
+		
+		if  ( LIBSSH2_EXEC_BUG  &&  $execution_count )
+		   {
+			$this -> Disconnect ( ) ;
+			$this -> Connect ( ) ;
+			$this -> Connection -> Authenticate ( ) ;
+		    }
+		
+		// Execute the command
+		if  ( strlen ( $command )  >  self::SSH_MAX_COMMAND_LENGTH ) 
+		   {
+			$fs		=  $this -> GetFileSystem ( ) ;
+			$remote_file	=  self::SSH_SHELL_SCRIPT_PREFIX . microtime ( true ) ;
+
+			$fp		=  $fs -> fopen ( $remote_file, 'w' ) ;
+			$fs -> fwrite ( $fp, $command ) ;
+			$fs -> fclose ( $fp ) ;
+
+			$sh_command	=  "sh $remote_file" ;
+			$stdout		=  ssh2_exec ( $this -> Connection -> GetResource ( ), $sh_command, null, $env ) ;
+			$fs -> unlink ( $remote_file ) ;
+		    }
+		else
+			$stdout		=  ssh2_exec ( $this -> Connection -> GetResource ( ), $command, null, $env ) ;
+
+		$status			=  false ;
+
+		if  ( ! $stdout ) 
+			error ( new SshSessionException ( "Failed to execute command" ) ) ;
+		
+		// No output array specified : display results as they come
+		if  ( $output  ===  null  ||  $callback )
+		   {
+			// Perform asynchronous IO
+			stream_set_blocking ( $stdout, false ) ;
+			
+			while  ( ! feof ( $stdout ) )
+			   {
+				// Read next data chunk
+				$data	=  fread ( $stdout, 8192 ) ;
+				
+				// Check if our [status=] message is present ; if yes, keep the status code and remove the message
+				if  ( preg_match ( $status_re, $data, $match ) )
+				   {
+					$status		=  $match [ 'status' ] ;
+					$data		=  preg_replace ( $status_re, '', $data ) ;
+				    }
+				
+				// Echo the data received
+				if  ( $callback )
+					$callback ( $data ) ;
+				else
+					echo ( $data ) ;
+				
+				// Pause a little bit not to overwhelm the client workstation with CPU-intensive and useless network operations
+				usleep ( 100 * 1000 ) ;
+			    }
+		    }
+		// Otherwise, store them in the output array once all the command output has been processed
+		else
+		   {
+			stream_set_blocking ( $stdout, true ) ;
+			$data	=  stream_get_contents ( $stdout ) ;
+
+			if  ( preg_match ( $status_re, $data, $match ) )
+			   {
+				$status		=  $match [ 'status' ] ;
+				$data		=  preg_replace ( $status_re, '', $data ) ;
+			    }
+			
+			$output		=  explode ( "\n", $data ) ;
+		    }
+		
+		// Close the standard output of the command
+		fclose ( $stdout ) ;
+		
+		// Count one more command execution
+		$execution_count ++ ;
+		
+		// All done, return
+		return ( $status ) ;
+	    }
+	
+	
+	public function  Execute ( $command, &$output = null, $env = null, $callback = null )
+	   {
+		// Check that a connection is available and that we are authenticated
+		$this -> __check_connection ( true, "Cannot execute command" ) ;
+
+		// Make sure the command is terminated by a newline and append the "echo [status=]" command to be able to
+		// retrieve last-executed command status
+		$command	 =  String::SetEOS ( $command, "\n" ) ;
+		$command	.=  "echo \"[status=\\\$?]\"\n" ;
+		
+		// Enclose the whole command(s) into a "bash <<END" construct
+		$end_string	 =  "__END__" . rand ( 1, PHP_INT_MAX ) . '__' ;
+		$command	 =  "bash 2>&1 <<$end_string\n$command\n$end_string\nexit" ;
+		
+		// Execute
+		$status		 =  $this -> __execute ( $command, $output, $env, $callback ) ;
+
+		return ( $status ) ;
+	    }
+	
+
+	/*==============================================================================================================
+	
+	    NAME
+	        GetFileSystem - Returns an access to the remote server filesystem.
+	
+	    PROTOTYPE
+	        $fs	=  $server -> GetFileSystem ( ) ;
+	
+	    DESCRIPTION
+	        Creates an SshFileSystem object (if not already created) to allow remote access to the server files.
+	
+	  ==============================================================================================================*/
+	public function  GetFileSystem ( )
+	   {
+		if  ( $this -> FileSystem  ===  null )
+			$this -> FileSystem	=  new  SshFileSystem ( $this ) ;
+			
+		return ( $this -> FileSystem ) ;
+	    }
+	
+	
+	
+	/*==============================================================================================================
+	
+	    GetNegociatedMethods -
+	        Returns information about negociated methods.
+	
+	  ==============================================================================================================*/
+	public function  GetNegociatedMethods ( )
+	   {
+		$this -> __check_connection ( false, "Cannot retrieve negociated methods information." ) ;
+		
+		$result		=  $this -> Connection -> GetNegociatedMethods ( ) ;
+		
+		return ( $result ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	        Various properties.
+	
+	  ==============================================================================================================*/
+	public function  IsConnected ( )
+	   {
+		return ( $this -> Connection  &&  $this -> Connection -> IsConnected ( ) ) ;
+	    }
+
+	public function  IsAuthenticated ( )
+	   {
+		return ( $this -> Connection  &&  $this -> Connection -> IsAuthenticated ( ) ) ;
+	    }
+   }

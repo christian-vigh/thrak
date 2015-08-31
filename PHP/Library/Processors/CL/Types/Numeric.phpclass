@@ -1,0 +1,1136 @@
+<?php
+/***************************************************************************************************
+
+    NAME
+	Numeric.phpclass
+
+    DESCRIPTION
+	Numeric-type parameter.
+
+    AUTHOR
+     	Christian Vigh, 06/2011.
+
+    HISTORY
+    [Version : 1.0]	[Date : 2011/06/12]	[Author : CV]
+     	Initial version.
+
+   [Version : 2.0]	[Date : 2012/10/06]		[Author : CV]
+	Migrated to the Thrak library version 2.
+
+   [Version : 2.0.1]	[Date : 2015/02/11]		[Author : CV]
+ 	. Removed the useless GetSpecialParameters() method. It was originally intended to provide
+ 	  for a list of authorized functions in a mathematical expression. This function was called
+ 	  by CLParser::RegisterClasses(), did nothing else than adding a "--expr" extra parameter.
+ 	  Since the old class Runtime::Evaluate() function was called by RegisterClasses() to
+ 	  evaluate a parameter value as a PHP expression, the function was really useless. Moreover,
+ 	  referencing it from CLParser::RegisterClasses() caused all the parameter classes to be
+ 	  loaded even if not used. Used the new Debug::EvaluateExpression() method instead.
+	  The --expression parameter has been declared at the CL class level.
+ 	. Implemented a ProcessValue() method to all classes derived from CLNumericParameter, so that
+ 	  the returned value has the correct type.
+
+   [Version : 2.0.2]	[Date : 2015/03/07]		[Author : CV]
+	. Changed the InterpretArrayFunction() that issued a warning when the supplied value was
+	  empty.
+
+   [Version : 2.0.3]	[Date : 2015/04/11]		[Author : CV]
+	. Replaced each exception throwing with "error ( new CLException (...) )".
+
+ ***************************************************************************************************/
+namespace  	Thrak\Processors\CL ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces and classes
+use 	Thrak\Processors\CL\CLException ;
+use     Thrak\IO\AsciiReport ;
+use     Thrak\Processors\IniFile ;
+use     Thrak\Types\String ;
+use     Thrak\Types\String\Regex ;
+use	Thrak\System\Debug ;
+
+
+define ( 'NUMERIC_FUNCTIONS_FILE'	, 'thrak://PHP/Library/Processors/CL/Types/Numeric.ini' ) ;
+
+
+/*==================================================================================================
+
+    CLNumericParameter class -
+	Implements a numeric value.
+	The following attributes are available :
+
+	min-value (integer) -
+		Minimum input value.
+
+	max-value (integer) -
+		Maximum input value.
+
+	value-range (integer range) -
+		Range of min/max values.
+
+	normalize (boolean) -
+		When true, the value is normalized if it falls outside the min/max values.
+
+  ==================================================================================================*/
+abstract class  CLNumericParameter  extends  \Thrak\Processors\CL\CLAbstractParameter
+   {
+	// String-specific definitions
+   	private		$NumericDefinitions = array
+   	   (
+	    	array
+	    	   (
+	    	   	'names'		=>  array ( 'min-value', 'minvalue', 'min' ),
+	    	   	'type'		=>  self::ATTRIBUTE_TYPE_FLOAT,
+	    	   	'default'	=>  null,
+	    	   	'member'	=>  'MinValue',
+	    	   	'preprocessor'	=>  'MinMaxValidator',
+	    	   	'limit'		=>  'min',
+	    	   	'help'		=>  'Specifies the minimum value.'
+      		    ),
+	    	array
+	    	   (
+	    	   	'names'		=>  array ( 'max-value', 'maxvalue', 'max' ),
+	    	   	'type'		=>  self::ATTRIBUTE_TYPE_FLOAT,
+	    	   	'default'	=>  null,
+	    	   	'member'	=>  'MaxValue',
+	    	   	'preprocessor'	=>  'MinMaxValidator',
+	    	   	'limit'		=>  'max',
+	    	   	'help'		=>  'Specifies the maximum value'
+      		    ),
+	    	array
+	    	   (
+	    	   	'names'		=>  array ( 'value-range', 'range' ),
+	    	   	'type'		=>  self::ATTRIBUTE_TYPE_RANGE,
+	    	   	'attributes'	=>  array ( 'min-value', 'max-value' ),
+	    	   	'preprocessor'	=>  'MinMaxValidator',
+	    	   	'limit'		=>  'minmax',
+	    	   	'help'		=>  'Specifies the minimum and maximum value'
+      		    ),
+    		array
+    		   (
+    		   	'names'		=>  'normalize',
+    		   	'type'		=>  self::ATTRIBUTE_TYPE_BOOLEAN,
+    		   	'default'	=>  "false",
+    		   	'member'	=>  'Normalize',
+    		   	'help'		=>  'When true, the supplied value is normalized within the min-value..max-value range.'
+        	    ),
+    		array
+    		   (
+    		   	'names'		=>  'round',
+    		   	'type'		=>  self::ATTRIBUTE_TYPE_INTEGER,
+    		   	'default'	=>  -1,
+    		   	'member'	=>  'RoundPrecision',
+    		   	'help'		=>  'Rounding precision. For integer values, a precision of 0 allows for accepting rounded floating-point values. The special value -1 means no rounding.'
+        	    )
+    	    ) ;
+
+	// Authorized numeric functions
+	private static	$AuthorizedFunctions	=  array ( ) ;
+
+   	// Min and max type values, defined by derived classes. When null, no limit is enforced
+   	public		$TypeMinValue		=  null ;
+   	public		$TypeMaxValue		=  null ;
+   	// Min and max values (defined by the 'min-value' and 'max-value' attributes)
+   	public		$MinValue 		=  null ;
+   	public		$MaxValue 		=  null ;
+   	// When true and the value is out of the MinValue..MaxValue range, it will be adjusted to fit the minimum (if below)
+   	// or maximum (if above) value
+   	public 		$Normalize		=  false ;
+   	// Tells if this numeric value is signed
+   	public 		$Signed			=  true ;
+   	// Tells if the numeric value is integral
+   	public		$Integral		=  true ;
+   	// Round recision
+   	public		$RoundPrecision		=  -1 ;
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Class constructor -
+			The CLNumericParameter is an abstract class that provides services to
+			handle all possible kind of arithmetic values.
+
+			It adds the following parameters to the standard CLAbstractParameter
+			class constructor :
+
+			$typemin, $typemax (numeric) -
+				Min and max values for the underlying type.
+
+			$signed (boolean) -
+				Tells whether this particular type implementation is signed or not.
+	 --------------------------------------------------------------------------------------------*/
+	public function  __construct ( $parent, $tags, $valuetext = "numeric", $typemin  = null, $typemax = null, $signed = true )
+	   {
+	   	$this -> TypeMinValue		=  $typemin ;
+	   	$this -> TypeMaxValue		=  $typemax ;
+	   	$this -> MinValue		=  $typemin ;
+	   	$this -> MaxValue 		=  $typemax ;
+	   	$this -> AllowSwitchCharacter 	=  true ;
+	   	$this -> Signed			=  true ;
+
+	   	if  ( ! $this -> Help )
+	   		$this -> Help		=  "Defines a numeric parameter." ;
+
+	   	$this -> ReturnValueHelp	=  "Returns the specified value, after checking that it is conform to its type constraints, and after processing any needed adjustments." ;
+
+		parent::__construct ( $parent, $tags, $valuetext, $this -> NumericDefinitions ) ;
+		self::LoadAuthorizedFunctions ( NUMERIC_FUNCTIONS_FILE ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		LoadAuthorizedFunctions - Loads the functions authorized in an expression.
+
+	    PROTOTYPE
+		$this -> LoadAuthorizedFunctions ( $file ) ;
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  LoadAuthorizedFunctions ( $file = NUMERIC_FUNCTIONS_FILE )
+	   {
+	   	if  ( count ( self::$AuthorizedFunctions ) )
+	   		return ;
+
+	   	$result 		=  array ( ) ;
+
+	   	// Check if the file exists ; if not, silently ignore : function calls will not be handled
+		if  ( ! file_exists ( $file ) )
+			return ;
+
+		// Load file contents
+		$contents  =  IniFile::LoadFromFile ( $file ) ;
+		$functions =  $contents -> GetAllKeys ( ) ;
+		
+		// Loop through function definitions
+		foreach  ( $functions  as  $section => $definition )
+		   {
+		   	if  ( ! $section )
+		   		continue ;
+
+		   	$definition = array_change_key_case ( $definition, CASE_LOWER ) ;
+
+		   	// Build the function entry
+			$entry = array ( ) ;
+
+			// Determine the function name and aliases
+			if  ( array_key_exists ( 'name', $definition ) )
+				$entry [ 'names' ] 	=  String::ExplodeAndTrim ( ',', $definition [ 'name' ] ) ;
+			else
+				$entry [ 'names' ]	=  array ( $section ) ;
+
+			// Check if a class name and/or a function name are specified
+			if  ( array_key_exists ( 'class', $definition ) )
+				$entry [ 'class' ]	=  $definition [ 'class' ] ;
+			else
+				$entry [ 'class' ]	=  null ;
+
+			if  ( array_key_exists ( 'function', $definition ) )
+				$entry [ 'function' ]	=  $definition [ 'function' ] ;
+			else
+				$entry [ 'function' ] 	=  $section ;
+
+			// Internal flag
+			if  ( array_key_exists ( 'internal', $definition ) )
+				$entry [ 'internal' ]	=  false ;
+			else
+				$entry [ 'internal' ]	=  true ;
+
+			// Type flag
+			if  (  array_key_exists ( 'type', $definition ) )
+			   {
+				$type 	=  strtolower ( $definition [ 'type' ] ) ;
+
+				switch  ( $type )
+				   {
+					case	'function' :
+					case	'constant' :
+						$entry [ 'type' ] = $type ;
+						break ;
+
+					default :
+						error ( new CLException ( "The type of any entry defined in the '$file' file should be either 'function' or 'constant'." ) ) ;
+				    }
+			    }
+			 else
+				$entry [ 'type' ]	=  'function' ;
+
+			// Constant value
+			if  ( array_key_exists ( 'constant', $definition ) )
+				$entry [ 'constant' ] 	=  $definition [ 'constant' ] ;
+			else
+				$entry [ 'constant' ] 	=  null ;
+
+			// Help text
+			if  ( array_key_exists ( 'help', $definition ) )
+				$entry [ 'help' ] = $definition [ 'help' ] ;
+			else
+				$entry [ 'help' ] = "" ;
+
+			// Add the new entry
+			$result [] = $entry ;
+		    }
+
+   		// All done, save the function descriptions
+   		self::$AuthorizedFunctions = $result ;
+	    }
+
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		MinMaxValidator - Validates the specified value.
+
+	    PROTOTYPE
+		$value = $this -> MinMaxValidator ( $object, $definition, $tag, $name, $value ) ;
+
+	    DESCRIPTION
+		Validates a value to be within the given range.
+
+	    PARAMETERS
+		$object (CLAbstractParameter objecr) -
+			Calling object.
+
+		$definition (associative array) -
+			Array containing the limit type to be checked (ie, parameter description).
+
+		$tag (string) -
+			Parameter tag name.
+
+		$name (string) -
+			Attribute name.
+
+		$value (string) -
+			Specified attribute value.
+
+	    RETURN VALUE
+		The $definition array contains an entry, 'limit', which gives the type of the return
+		value ; it can be one of the following :
+
+		'min' or 'max' -
+			The returned value is of the numeric type of the derived class.
+
+		'minmax' -
+			The returned value is an array containing the lower and upper elements of the
+			specified limits.
+
+	    NOTES
+		An exception is thrown if the supplied command-line value does not fall within the
+		range specified by the numeric type.
+
+	 --------------------------------------------------------------------------------------------*/
+	private function  __minmax  ( $min, $pname, $tag, $name, $value )
+	   {
+	   	if  ( $min )
+	   		$member 	=  'TypeMinValue' ;
+   		else
+   			$member 	=  'TypeMaxValue' ;
+
+		if  ( ! strcmp ( $value, '*' ) )
+			$value  	=  $this -> $member ;
+
+		if  ( $min )
+		   {
+			if  ( ( float ) $value  <  ( float ) $this -> $member )
+				error ( new CLException ( "'$name' attribute of the '$pname' parameter : the specified value ($value) is below the authorized minimum value ({$this -> $member})." ) ) ;
+		    }
+    		else
+		   {
+			if  ( ( float ) $value  >  ( float ) $this -> $member )
+				error ( new CLException ( "'$name' attribute of the '$pname' parameter : the specified value ($value) is above the authorized maximum value ({$this -> $member})." ) ) ;
+		    }
+
+    		return ( $value ) ;
+	    }
+
+
+	public function  MinMaxValidator ( $object, $definition, $tag, $name, $value )
+	   {
+	   	$limit		=  strtolower ( $definition [ 'limit' ] ) ;
+		$pname 		=  $object -> Names [0] ;
+
+	   	switch ( $limit )
+	   	   {
+			case	'min' :
+				$result = $this -> __minmax ( true, $pname, $tag, $name, $value ) ;
+				break ;
+
+			case	'max' :
+				$result = $this -> __minmax ( false, $pname, $tag, $name, $value ) ;
+				break ;
+
+			case	'minmax' :
+				$array 	=  explode ( '..', $value ) ;
+
+				if  ( ! $array )
+					$array 	=  array ( '*', '*' ) ;
+				else if  ( count ( $array )  ==  1 )
+					$array []  =  '*' ;
+				else if  ( $array [0]  ===  "" )
+					$array [0] =  '*' ;
+				else if  ( $array [1]  ===  "" )
+					$array [1] =  '*' ;
+
+				$min 	=  $this -> __minmax ( true , $pname, $tag, $name, $value ) ;
+				$max 	=  $this -> __minmax ( false, $pname, $tag, $name, $value ) ;
+
+				$result =  array ( $min, $max ) ;
+				break ;
+	   	    }
+
+		return ( $result ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		NormalizeValue - Normalizes the parameter value.
+
+	    PROTOTYPE
+	        $value = $this -> NormalizeValue ( $pname, $value ) ;
+
+	    DESCRIPTION
+		This function is called when the 'normalize' attribute is set to true. If the supplied
+		value is out of bounds, it will ensure that :
+		- The final value is equal to the minimum value, if the final value is inferior
+		- The final value is equal to the maximum value, if the final value is superior
+
+	    PARAMETERS
+		$pname (string) -
+			Parameter name.
+
+		$value (string) -
+			Parameter value.
+
+	    RETURN VALUE
+		Returns the normalized value.
+
+	 --------------------------------------------------------------------------------------------*/
+ 	protected function  NormalizeValue ( $pname, $value )
+ 	   {
+		if  ( $this -> MinValue  !==  null  &&  $value  <  $this -> MinValue )
+		  	$value = $this -> MinValue ;
+		else if  ( $this -> MaxValue  !==  null  &&  $value  >  $this -> MaxValue )
+			$value = $this -> MaxValue ;
+		else if  ( $this -> TypeMinValue  !==  null  &&  $value  <  $this -> TypeMinValue )
+		  	$value = $this -> TypeMinValue ;
+		else if  ( $this -> TypeMaxValue  !==  null  &&  $value  >  $this -> TypeMaxValue )
+			$value = $this -> TypeMaxValue ;
+
+		return ( $value ) ;
+ 	    }
+
+
+ 	/*-------------------------------------------------------------------------------------------
+
+ 	    NAME
+ 		IsValidValue - Checks the correctness of the supplied value.
+
+ 	    PROTOTYPE
+		$status = $this -> IsValidValue ( $value ) ;
+
+ 	    DESCRIPTION
+		Checks if the value is a valid numeric value.
+		The integer version checks that no floating-point value has been supplied.
+
+ 	    PARAMETERS
+ 		$value (string) -
+ 			Value to be checked.
+
+ 	    RETURN VALUE
+		True if the value is correct, false otherwise.
+
+ 	 --------------------------------------------------------------------------------------------*/
+    	protected function  IsValidValue ( $value )
+   	   {
+		if ( is_numeric ( $value ) )
+		   {
+		   	if  ( $this -> Integral )
+			   {
+				if  ( $value  !=  round ( $value, 0 ) )
+					return ( false ) ;
+			    }
+
+			return ( true ) ;
+		    }
+		else
+			return ( false ) ;
+
+   	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		IsOutOfBounds - Checks that the value is within its type limits.
+
+	    PROTOTYPE
+		$status = $this -> IsOutOfBounds ( $pname, $value ) ;
+
+	    DESCRIPTION
+		Checks that the specified value is within its type limits.
+
+	    PARAMETERS
+		$pname (string) -
+			Parameter name.
+
+		$value (string) -
+			Parameter value.
+
+	    RETURN VALUE
+		False if the parameter value falls within its type limits, true otherwise.
+
+	 --------------------------------------------------------------------------------------------*/
+	protected function  IsOutOfBounds ( $pname, $value )
+	   {
+ 	   	if  ( ( $this -> TypeMinValue  !==  null  &&  $value  <  $this -> TypeMinValue )  ||
+		      ( $this -> TypeMaxValue  !==  null  &&  $value  >  $this -> TypeMaxValue ) )
+ 	   	   	return ( true ) ;
+
+		if  ( $this -> MinValue  !==  null  &&  $value  <  $this -> MinValue )
+			return ( true ) ;
+
+		if  ( $this -> MaxValue  !==  null  &&  $value  >  $this -> MaxValue )
+			return ( true ) ;
+
+		return ( false ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Interprets array or list values. Silently ignores non-mathematical expressions.
+		Adds the for (x;y;s) construct.
+
+	 --------------------------------------------------------------------------------------------*/
+	private static function  __add_item ( &$output, $key, $delta, $value )
+	   {
+	   	if  ( is_numeric ( $key ) )
+		   	$output [ $key + $delta ] = $value ;
+		else
+			$output [ $key ] = $value ;
+	    }
+
+
+	public static function  InterpretArrayFunctions ( $pname, $array, &$output )
+	   {
+	   	// Regex to match the for (x ; y ; z ) construct
+		$re	=  '/^' .
+				'(?P<function> \w+)' .
+				'\s* \(' .
+				'(?P<argv> .* )' .
+				'\)' .
+			   '$/ix' ;
+
+		// When the for() construct is used, the delta is updated by the number of elements added
+		$delta 	=  0 ;
+
+		// Loop through each array value
+		foreach  ( $array  as  $key => $value )
+		   {
+		   	// Recursively process sub-arrays
+			if  ( is_array ( $value ) )
+			   {
+			   	$output [] = array ( ) ;
+				self::InterpretArrayFunctions ( $pname, $value, $output [ count ( $output ) - 1 ]) ;
+			    }
+			// Normal case : process item
+			else
+			   {
+			   	$length 	=  strlen ( $value ) ;
+
+				// Check that the value is non-empty
+		   		if  ( $length )
+		   		   {
+		   		   	$first_ch	=  $value [0] ;
+		   		   	$last_ch 	=  $value [ $length - 1 ] ;
+
+					// If the string is quoted, leave it as is
+		   		   	if  ( ( $first_ch  ==  $last_ch  &&  ( $first_ch  ==  '"'  ||  $first_ch  ==  "'" ) ) )
+		   		   		CLNumericParameter::__add_item ( $output, $key, $delta,  substr ( $value, 1, $length - 2 ) ) ;
+		   		   	else if  ( is_numeric ( $value ) )
+		   		   		CLNumericParameter::__add_item ( $output, $key, $delta,  $value ) ;
+		   		   	// Otherwise check that it matches the for() construct
+					else if  ( preg_match ( $re, $value, $matches ) )
+					   {
+					   	$argv 		=  explode ( ';', $matches [ 'argv' ] ) ;
+		    				$argstring 	=  implode ( ",", $argv ) ;
+		    				$call 		=  $matches [ 'function' ] . '(' . $argstring . ')' ;
+
+						// Well, leave room to implement other constructs
+						switch ( strtolower ( $matches [ 'function' ] ) )
+						   {
+						   	// for() construct
+							case	'for' :
+								// Check that supplied arguments are correct
+								if  ( count ( $argv )  !=  3  ||
+									! is_numeric ( $argv [0] )  	||
+									! is_numeric ( $argv [1] )  	||
+									! is_numeric ( $argv [2] )  	||
+									! $argv [2]  			||
+									( $argv [2] < 0  &&  $argv [0] < $argv [1] )  	||
+									( $argv [2] > 0  &&  $argv [0] > $argv [1] ) )
+									error ( new CLException ( "Invalid for() construct for parameter '$pname'" ) ) ;
+
+								// Forward loop
+								if  ( $argv [2]  >  0 )
+								   {
+									for  ( $i = 0 + $argv [0] ; $i  <=  $argv [1] ; $i += $argv [2] )
+									   {
+									   	if  ( is_float ( $i ) )
+									   		$output [] = ( float ) $i ;
+									   	else if ( is_integer ( $i ) )
+											$output [] = ( integer ) $i ;
+										else
+											$output [] = $i ;
+
+										$delta ++ ;
+									    }
+								    }
+						    		// Reverse loop
+					    			else
+								   {
+									for  ( $i = 0 + $argv [0] ; $i  >=  $argv [1] ; $i += $argv [2] )
+									   {
+									   	if  ( is_float ( $i ) )
+									   		$output [] = ( float ) $i ;
+									   	else if ( is_integer ( $i ) )
+											$output [] = ( integer ) $i ;
+										else
+											$output [] = $i ;
+
+										$delta ++ ;
+									    }
+								    }
+						    		break ;
+
+						    	// Repetition construct
+							case  	'repeat' :
+							case	'rep' :
+								// Check that supplied arguments are correct
+								if  ( count ( $argv )  !=  2  ||
+									! is_numeric ( $argv [0] )  	||
+									! is_numeric ( $argv [1] )  	||
+									$argv [0]  <  0 )
+									error ( new CLException ( "Invalid for() construct for parameter '$pname'" ) ) ;
+
+								for  ( $i = 0 ; $i  <  $argv [0] ; $i ++ )
+								   {
+								   	if  ( is_float ( $i ) )
+								   		$output [] = ( float ) $argv [1] ;
+								   	else if ( is_integer ( $i ) )
+										$output [] = ( integer ) $argv [1] ;
+									else
+										$output [] = $argv [1] ;
+
+									$delta ++ ;
+								    }
+
+								break ;
+
+		    					// Other functions
+		    					default :
+							   	try
+							   	   {
+									$code 			=  CLnumericParameter::CallFunction ( $pname, $call ) ;
+									$result 		=  null ;
+									@eval ( "try { \$result = $code ; } catch ( \\Exception \$e ) {}" ) ;
+
+									if  ( $result  ===  null )
+										$result = $value ;
+								     }
+				     				catch ( \Exception  $e )
+				     				   {
+									$result 		=  $value ;
+				     				    }
+
+								CLNumericParameter::__add_item ( $output, $key, $delta, $result ) ;
+						    }
+					    }
+				    	// Or try to interpret the value as an arithmetic expression
+					else
+					   {
+					   	try
+					   	   {
+					   	   	$code 			=  CLnumericParameter::CallFunction ( $pname, $value ) ;
+					   	   	$result 		=  null ;
+							@eval ( "try { \$result = $code ; } catch ( \\Exception \$e ) {}" ) ;
+
+							if  ( $result  ===  null )
+								$result = $value ;
+						     }
+		     				catch ( \Exception  $e )
+		     				   {
+							$result 		=  $value ;
+		     				    }
+
+						CLNumericParameter::__add_item ( $output, $key, $delta, $result ) ;
+					    }
+				    }
+		    		// Empty value
+		    		else
+		    				CLNumericParameter::__add_item ( $output, $key, $delta, "" ) ;
+			    }
+		    }
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Handle Math-specific function calls.
+
+	 --------------------------------------------------------------------------------------------*/
+ 	public static function  CallFunction ( $pname, $value )
+ 	   {
+ 	   	// Load authorized functions
+ 	   	if  ( ! self::$AuthorizedFunctions )
+ 	   		self::LoadAuthorizedFunctions ( ) ;
+
+ 	   	// Search for function or constant names (ie, valid php names)
+		$re = '/[a-z_][a-z0-9_]*/i' ;
+
+		// If found...
+		if  ( preg_match_all ( $re, $value, $matches ) )
+		   {
+			$expression_names	=  $matches [0] ;
+
+			// ... then loop through the found results
+			foreach  ( $expression_names  as  $expression_name )
+			   {
+				$found = false ;
+
+				// If a name has been found, then verify that it belongs to the list of authorized functions or constants
+				foreach  ( CLNumericParameter::$AuthorizedFunctions  as  $definition )
+				   {
+					foreach  ( $definition [ 'names' ]  as  $name )
+					   {
+					   	if  ( ! strcasecmp ( $name, $expression_name ) )
+						   {
+							$found 		=  true ;
+							$current 	=  $definition ;
+							break ;
+						    }
+					    }
+				    }
+
+				// Found : process substitutions
+				if  ( $found )
+				   {
+				   	// If constant name, the real name is given by the 'constant' entry in the .INI file
+				   	if  ( $current [ 'type' ]  ==  'constant' )
+				   		$new_name 	=  $current [ 'constant' ] ;
+			   		// Otherwise, it may be a static function defined within a class
+					else if  ( $current [ 'class' ] )
+						$new_name 	=  $current [ 'class' ] . '::' . $current [ 'function' ] ;
+					// Or a PHP-internal or user-defined function
+					else
+						$new_name 	=  $current [ 'function' ] ;
+
+					// Whatever the result, replace the user-specified name with the real name
+					// Note that we put a space before and after applying the preg_replace function, otherwise the RE will not work
+					$nre 	=  '/([^a-z_])(' . $expression_name . ')([^a-z0-9_])/i' ;
+					$value = " $value ";
+					$value  =  trim ( preg_replace ( $nre, '\1' . $new_name . '\3', $value ) ) ;	// and we remove it here
+				    }
+				else
+					error ( new CLException ( "Invalid function or constant '$expression_name' called in the argument part of the '$pname' parameter." ) ) ;
+			    }
+		    }
+
+		// All done, return
+		return ( $value ) ;
+ 	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Process command-line value.
+
+	 --------------------------------------------------------------------------------------------*/
+  	protected function  ProcessValue ( $pname, $value )
+	   {
+		// Allow the 'number!' notation to express factorials
+		$value 	= preg_replace ( '/(' . REGEX_UNSIGNED_INTEGER . ')[!]/', 'fact(\1)', $value ) ;
+
+		// Allow the 'number**exp' notation to express power ( number, exp )
+		// A callback is needed because named backward references are not allowed in the replacement expression
+		$callback = function ( $matches )
+		   {
+			return ( 'power(' . $matches [ 'one' ] . ',' . $matches [ 'two' ] . ')' ) ;
+		    } ;
+
+		$value  = preg_replace_callback ( '/(?P<one>' . REGEX_FLOAT . ')(\s*\*\*\s*)(?P<two>' . REGEX_FLOAT . ')/', $callback, $value ) ;
+
+	   	// Allow arithmetic expressions to be specified.
+	   	if  ( ! is_numeric ( $value ) )
+	   	   {
+		   	$code 		=  CLNumericParameter::CallFunction ( $pname, $value ) ;
+		   	$result 	=  Debug::Evaluate ( $code, true ) ;
+		   	$errors 	=  $result [ 'errors' ] ;
+		   	$error_count 	=  count ( $errors ) ;
+
+		   	// Check if syntax errors have been encountered
+		   	if  ( $error_count )
+		   	   {
+				if  ( $error_count  ==  1 )
+					$message = "An error has been found while interpreting the value of the '$pname' parameter :\n" . $errors [0] ;
+				else
+				   {
+					$message .= "Errors have been found while interpreting the value of the '$pname' parameter :\n" ;
+
+					foreach  ( $errors  as  $error )
+						$message .= '- ' . $error . "\n" ;
+				    }
+
+				error ( new CLException ( $message ) ) ;
+		   	    }
+
+		   	// Expression was correct, save its result
+			$value = $result [ 'value' ] ;
+	   	    }
+		else
+			$value	=  ( double ) $value ;
+
+		// Normalize the value, if needed
+		if  ( $this -> Normalize )
+			$value =  $this -> NormalizeValue ( $pname, $value ) ;
+
+		// Round if necessary
+		if  ( $this -> RoundPrecision  !=  -1 )
+			$value = round ( $value, $this -> RoundPrecision ) ;
+
+		// If integral type, automatically convert the value
+		if  ( $this -> Integral )
+			$value = ( integer ) round ( $value, 0 ) ;
+
+	   	// Check that the value falls within the authorized range
+		if  ( ! $this -> IsValidValue ( $value ) )
+			error ( new CLException ( "The '$value' value for the '$pname' parameter is not a valid {$this -> ValueLabel} value or expression." ) ) ;
+
+		// Check that the value falls within its type boundaries
+		if  ( $this -> IsOutOfBounds ( $pname, $value ) )
+		   {
+		   	$min = ( $this -> MinValue  ===  null ) ?  $this -> TypeMinValue : $this -> MinValue ;
+		   	$max = ( $this -> MaxValue  ===  null ) ?  $this -> TypeMaxValue : $this -> MaxValue ;
+
+			if  ( $max  >  0 )
+				$max = '+' . $max ;
+
+			if  ( $min  >  0 )
+				$min = '+' . $min ;
+
+			error ( new CLException ( "The value '$value' for the '$pname' parameter is out of bounds. Valid range is [$min .. $max]." ) ) ;
+		    }
+
+		// All done, return
+		return ( $value ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		ShowAuthorizedFunctions - Shows the authorized functions.
+
+	    PROTOTYPE
+		$parameter -> ShowAuthorizedFunctions ( ) ;
+
+	    DESCRIPTION
+		Displays the list of authorized functions within an expression.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  ShowAuthorizedFunctions ( )
+	   {
+	   	if  ( ! self::$AuthorizedFunctions )
+			self::LoadAuthorizedFunctions ( NUMERIC_FUNCTIONS_FILE ) ;
+
+		$functions 		=  self::$AuthorizedFunctions ;
+		$function_data 		=  array ( ) ;
+		$constant_data 		=  array ( ) ;
+
+		// Collect the list of functions and constants
+		foreach  ( $functions  as  $function )
+		   {
+			$names = implode ( ', ', $function [ 'names' ] ) ;
+			$type = $function [ 'type' ] ;
+
+			if  ( $function [ 'class' ] )
+				$origin = $function [ 'class' ] ;
+			else
+			   {
+			   	if  ( $function [ 'internal' ] )
+					$origin = '(php)' ;
+				else
+					$origin = '(user)' ;
+			    }
+
+			$func =  $function [ 'function' ] ;
+			$help =  $function [ 'help' ] ;
+
+			$data = array ( 'Name' => $names, 'Type' => $type, 'Origin' => $origin . '::' . $func, 'Description' => $help ) ;
+
+			if  ( $function [ 'type' ]  ==  'function' )
+				$function_data [] = $data ;
+			else
+			   {
+			   	eval ( '$x = ' . $function [ 'constant' ] . ';' ) ;
+			   	$data [ 'Value' ] = $x ;
+				$constant_data [] = $data ;
+			    }
+		    }
+
+		// Generate a report for constants
+   		$report = new AsciiReport
+		    (
+		    	array ( 'member' => 'Name' ),
+		    	array ( 'member' => 'Value' ),
+		    	array ( 'member' => 'Description' )
+		     ) ;
+
+		output ( "List of constants authorized in expressions :" ) ;
+		echo $report -> Generate ( $constant_data ) ;
+		echo $report -> Summary ( 'constant' ) ;
+
+		output ( "" ) ;
+
+		// Generate a report for functions
+   		$report = new AsciiReport
+		    (
+		    	array ( 'member' => 'Name' ),
+		    	array ( 'member' => 'Origin' ),
+		    	array ( 'member' => 'Description' )
+		     ) ;
+
+		output ( "List of functions authorized in expressions :" ) ;
+		echo $report -> Generate ( $function_data ) ;
+		echo $report -> Summary ( 'function' ) ;
+	    }
+    }
+
+
+/*==================================================================================================
+
+    CLByteParameter class -
+	Implements an unsigned byte value.
+
+  ==================================================================================================*/
+class  CLByteParameter  extends  CLNumericParameter
+   {
+	public function  __construct ( $parent, $tags, $valuetext = "byte" )
+	   {
+	   	$this -> Help 			=  "Defines an unsigned byte parameter." ;
+		parent::__construct ( $parent, $tags, $valuetext, 0, 255, false ) ;
+	    }
+
+	
+	protected function  ProcessValue  ( $pname, $pvalue )
+	   {
+		$value	=  parent::ProcessValue ( $pname, $pvalue ) ;
+		
+		return ( ( integer ) $value ) ;
+	    }
+    }
+
+
+/*==================================================================================================
+
+    CLSByteParameter class -
+	Implements a signed byte value.
+
+  ==================================================================================================*/
+class  CLSByteParameter  extends  CLNumericParameter
+   {
+	public function  __construct ( $parent, $tags, $valuetext = "sbyte" )
+	   {
+	   	$this -> Help = "Defines a signed byte parameter." ;
+		parent::__construct ( $parent, $tags, $valuetext, -128, +127, true ) ;
+	    }
+
+	
+	protected function  ProcessValue  ( $pname, $pvalue )
+	   {
+		$value	=  parent::ProcessValue ( $pname, $pvalue ) ;
+		
+		return ( ( integer ) $value ) ;
+	    }
+    }
+
+
+/*==================================================================================================
+
+    CLShortParameter class -
+	Implements a short integer value.
+
+  ==================================================================================================*/
+class  CLShortParameter  extends  CLNumericParameter
+   {
+	public function  __construct ( $parent, $tags, $valuetext = "short" )
+	   {
+	   	$this -> Help = "Defines a signed short integer parameter." ;
+		parent::__construct ( $parent, $tags, $valuetext, -32768, +32767, true ) ;
+	    }
+
+	
+	protected function  ProcessValue  ( $pname, $pvalue )
+	   {
+		$value	=  parent::ProcessValue ( $pname, $pvalue ) ;
+		
+		return ( ( integer ) $value ) ;
+	    }
+    }
+
+
+/*==================================================================================================
+
+    CLUShortParameter class -
+	Implements an unsigned short integer value.
+
+  ==================================================================================================*/
+class  CLUShortParameter  extends  CLNumericParameter
+   {
+	public function  __construct ( $parent, $tags, $valuetext = "ushort" )
+	   {
+	   	$this -> Help = "Defines an unsigned short integer parameter." ;
+		parent::__construct ( $parent, $tags, $valuetext, 0, +65535, false ) ;
+	    }
+
+	
+	protected function  ProcessValue  ( $pname, $pvalue )
+	   {
+		$value	=  parent::ProcessValue ( $pname, $pvalue ) ;
+		
+		return ( ( integer ) $value ) ;
+	    }
+    }
+
+
+/*==================================================================================================
+
+   CLIntegerParameter class -
+	Implements an integer value.
+
+  ==================================================================================================*/
+class  CLIntegerParameter  extends  CLNumericParameter
+   {
+	public function  __construct ( $parent, $tags, $valuetext = "integer" )
+	   {
+	   	$this -> Help = "Defines a signed integer parameter." ;
+		parent::__construct ( $parent, $tags, $valuetext, -2147483648, +2147483647, true ) ;
+	    }
+
+	
+	protected function  ProcessValue  ( $pname, $pvalue )
+	   {
+		$value	=  parent::ProcessValue ( $pname, $pvalue ) ;
+		
+		return ( ( integer ) $value ) ;
+	    }
+    }
+
+
+/*==================================================================================================
+
+    CLUnsignedParameter class -
+	Implements an unsigned integer value.
+
+  ==================================================================================================*/
+class  CLUnsignedParameter  extends  CLNumericParameter
+   {
+	public function  __construct ( $parent, $tags, $valuetext = "unsigned" )
+	   {
+	   	$this -> Help = "Defines an unsigned integer parameter." ;
+		parent::__construct ( $parent, $tags, $valuetext, 0, 0xFFFFFFFF, false ) ;
+	    }
+
+	
+	protected function  ProcessValue  ( $pname, $pvalue )
+	   {
+		$value	=  parent::ProcessValue ( $pname, $pvalue ) ;
+		
+		return ( ( integer ) $value ) ;
+	    }
+    }
+
+
+/*==================================================================================================
+
+    CLLongParameter class -
+	Implements a long integer value (same as integer values on 32-bits implementations).
+
+  ==================================================================================================*/
+class  CLLongParameter  extends  CLNumericParameter
+   {
+	public function  __construct ( $parent, $tags, $valuetext = "long" )
+	   {
+	   	$this -> Help = "Defines a signed long integer parameter. If your PHP version is a 32-bit version, the value will be promoted to a float." ;
+		parent::__construct ( $parent, $tags, $valuetext, -9223372036854775808, +9223372036854775807, true ) ;
+	    }
+
+	
+	protected function  ProcessValue  ( $pname, $pvalue )
+	   {
+		$value	=  parent::ProcessValue ( $pname, $pvalue ) ;
+		
+		return ( ( integer ) $value ) ;
+	    }
+    }
+
+
+/*==================================================================================================
+
+    CLULongParameter class -
+	Implements an unsigned long integer value (same as integer values on 32-bits
+	implementations).
+
+  ==================================================================================================*/
+class  CLULongParameter  extends  CLNumericParameter
+   {
+	public function  __construct ( $parent, $tags, $valuetext = "ulong" )
+	   {
+	   	$this -> Help = "Defines an unsigned long integer parameter. If your PHP version is a 32-bit version, the value will be promoted to a float." ;
+		parent::__construct ( $parent, $tags, $valuetext, 0, 0xFFFFFFFFFFFFFFFF, false ) ;
+	    }
+
+	
+	protected function  ProcessValue  ( $pname, $pvalue )
+	   {
+		$value	=  parent::ProcessValue ( $pname, $pvalue ) ;
+		
+		return ( ( integer ) $value ) ;
+	    }
+    }
+
+
+/*==================================================================================================
+
+    CLFloatParameter class -
+	Implements a float value.
+
+  ==================================================================================================*/
+class  CLFloatParameter  extends  CLNumericParameter
+   {
+	public function  __construct ( $parent, $tags, $valuetext = "float" )
+	   {
+	   	$this -> Help = "Defines a floating-point parameter." ;
+	   	$this -> Integral = false ;
+		parent::__construct ( $parent, $tags, $valuetext ) ;
+	    }
+
+
+   	// Override the IsValid() member, since we don't have to check if the value is an integer
+   	protected function  IsValid ( $value )
+   	   {
+		return ( is_numeric ( $value ) ) ;
+   	    }
+
+	
+	protected function  ProcessValue  ( $pname, $pvalue )
+	   {
+		$value	=  parent::ProcessValue ( $pname, $pvalue ) ;
+		
+		return ( ( double ) $value ) ;
+	    }
+    }

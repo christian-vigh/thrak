@@ -1,0 +1,65 @@
+<?php
+/***************************************************************************************************
+
+    NAME
+	Flag.phpclass
+
+    DESCRIPTION
+	Flag parameter..
+
+    AUTHOR
+     	Christian Vigh, 06/2011.
+
+    HISTORY
+    [Version : 1.0]	[Date : 2011/06/12]	[Author : CV]
+     	Initial version.
+
+   [Version : 2.0]	[Date : 2012/10/06]		[Author : CV]
+	Migrated to the Thrak library version 2.
+
+ ***************************************************************************************************/
+namespace  	Thrak\Processors\CL ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+/*==================================================================================================
+
+    CLFlagParameter class -
+	Implements a flag, which has the value 'true' when specified, and 'false' when not specified.
+
+  ==================================================================================================*/
+class  CLFlagParameter  extends  \Thrak\Processors\CL\CLAbstractParameter
+   {
+	public function  __construct ( $parent, $tags, $valuetext = "flag" )
+	   {
+	   	$removed_attributes = array
+	   	   (
+	   	   	"default", "required", "multiple", "min-arguments", "max-arguments", "arguments",
+	   	   	"validation-regex", "validation-code", "value-text"
+		    ) ;
+
+		$this -> MinArguments		=  0 ;
+		$this -> MaxArguments		=  0 ;
+		$this -> MultipleAllowed	=  false ;
+		$this -> CanBeUnnamed		=  false ;
+		$this -> Help			=  "Defines a boolean flag parameter, which will be true when specified and false when not specified." ;
+		$this -> ReturnValueHelp	=  "Returns true if the parameter has been specified, false otherwise." ;
+
+		parent::__construct ( $parent, $tags, $valuetext, null, null, $removed_attributes ) ;
+
+		$this -> DefaultValue		=  false ;
+	    }
+
+  	// ProcessValue will always return true because specifying a flag means 'true'
+	protected function  ProcessValue ( $pname, $value )
+	   {
+	   	if  ( $this -> Specified )
+	   	   {
+	   	   	$this -> SpecifiedValue = true ;
+			return ( true ) ;
+	  	    }
+		else
+			return ( false ) ;
+	    }
+    }

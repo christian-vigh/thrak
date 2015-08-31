@@ -1,0 +1,2207 @@
+<?php
+/***************************************************************************************************
+
+    NAME
+	PPP.phpclass
+
+    DESCRIPTION
+     	Implements a C-style PHP preprocessor.
+
+    AUTHOR
+     	Christian Vigh, 10/2011.
+
+    HISTORY
+    [Version : 1.0]	[Date : 2011/10/26]	[Author : CV]
+     	Initial version.
+
+   [Version : 2.0]	[Date : 2012/10/06]		[Author : CV]
+	Migrated to the Thrak library version 2.
+
+ ***************************************************************************************************/
+namespace 	Thrak\Processors ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces & objects
+use 		Thrak\System\Object 		as  Object ;
+use 		Thrak\System\Exception 		as  Exception ;
+use 		Thrak\IO\Path 			as  Path ;
+use  		Thrak\Types\String  		as  String ;
+use 		Thrak\Processors\PHP		as  PHP ;
+
+
+/*==================================================================================================
+
+	PPP class -
+		Implements a c-style PHP preprocessor.
+		The available directives are :
+
+		- # include	<file>
+			Includes the specified file. The file is searched through the standard
+			include directories defined by the the 'IncludePaths' member of the
+			$Configuration object, then the PHP_INCLUDES environment variable, then the
+			'include_path' configuration setting.
+
+		- # include	"file"
+			Same as '#include <file>', except that the specified file is first searched
+			in the current directory, then in the calling file directory.
+
+		- # include-once  <file>, # include-once "file"
+			Same as #include, but does not process the file if it was alread included.
+		
+
+		- # define  macro(args)  value
+			Defines the specified macro.
+			The '(args)' and 'value' parts are optional. If not specified, the macro will
+			be evaluated to the integer value 1.
+
+		- # undefine name
+			Undefines the specified macro.
+
+		- # ifdef name, # ifdefined name
+			Includes the following code if 'name' is defined.
+
+		- # ifndef name, # ifnotdefined name
+			Includes the following code if 'name' is not defined.
+
+		- # elseifdef name, #elifdef name, # elseifdefined name
+			Includes the following code if 'name' is defined.
+
+		- # elseifndef name, #elifndef name, # elseifnotdefined name
+			Includes the following code if 'name' is not defined.
+
+		- # else
+			Alternative to #ifdef, #elseifdef, #elseif directives.
+
+		- # endif
+			Marks the end of a if/elseif/else sequence.
+
+		- # if expression
+			Includes the following code if 'expression' evaluates to true.
+			'expression' can be any valid PHP expression.
+
+		- # elseif expression, elif expression
+			Includes the following code if 'expression' evaluates to true.
+			'expression' can be any valid PHP expression.
+
+		- # message msg
+			Outputs the specified message to stderr.
+
+		- # warning msg
+			Outputs the specified warning to stderr.
+
+		- # error msg
+			Outputs the specified error message to stderr and stops the preprocessing by
+			throwing an exception.
+
+		Additional directives can be added by the AddDirective() method.
+
+		A '#' sign before calling a macro converts the macro result into a string.
+
+		The '##' construct catenate words together.
+
+  ==================================================================================================*/
+class	PPP  extends  Object
+   {
+   	// Directives handled by this preprocessor
+   	const	DIRECTIVE_INCLUDE		=  0 ;
+   	const	DIRECTIVE_DEFINE		=  1 ;
+   	const	DIRECTIVE_UNDEFINE		=  2 ;
+   	const	DIRECTIVE_IF_DEFINED		=  3 ;
+   	const	DIRECTIVE_IF_NOT_DEFINED	=  4 ;
+   	const	DIRECTIVE_IF			=  5 ;
+   	const	DIRECTIVE_ELSEIF_DEFINED	=  6 ;
+   	const	DIRECTIVE_ELSEIF_NOT_DEFINED	=  7 ;
+   	const  	DIRECTIVE_ELSEIF		=  8 ;
+   	const  	DIRECTIVE_ELSE			=  9 ;
+   	const 	DIRECTIVE_ENDIF			=  10 ;
+   	const 	DIRECTIVE_MESSAGE		=  11 ;
+   	const   DIRECTIVE_WARNING		=  12 ;
+   	const	DIRECTIVE_ERROR			=  13 ;
+	const	DIRECTIVE_INCLUDE_ONCE		=  14 ;
+
+   	// Preprocessor options
+   	const 	OPT_NONE			=  0 ;				// No particular preprocessing option
+   	const 	OPT_LINE			=  0x00000001 ;			// Generate #line directives
+
+
+   	// The user-defined directives must have an id greater than or equal to USER_DEFINED
+   	const	DIRECTIVE_USER_DEFINED		=  0x8000 ;
+
+	// Directive table :
+	//	Each element has the following entries :
+	//
+	//	'names' -
+	//		List of directive name and aliases. If only one name is defined, the entry can
+	//		be specified as a string instead of an array.
+	//
+	//	'constant' -
+	//		Associated DIRECTIVE_xxx constant.
+	//
+	//	'regex' -
+	//		Regex or array of regex that allow for recognizing the directive.
+	private	$DirectiveTable			=  array
+	   (
+	   	array
+	   	   (
+	   	   	'names'		=>  array ( 'include' ),
+	   	   	'constant'	=>  self::DIRECTIVE_INCLUDE,
+	   	   	'regex'		=>  array
+		           (
+			   	'( (?P<delimiter> ["]) (?P<file> [^"]*) ["] )',
+			   	'( (?P<delimiter> [\']) (?P<file> [^\']*) [\'] )',
+			   	'( (?P<delimiter> [<]) (?P<file> [^>]*) [>] )'
+		     	    )
+		    ),
+	   	array
+	   	   (
+	   	   	'names'		=>  array ( 'include-once' ),
+	   	   	'constant'	=>  self::DIRECTIVE_INCLUDE_ONCE,
+	   	   	'regex'		=>  array
+		           (
+			   	'( (?P<delimiter> ["]) (?P<file> [^"]*) ["] )',
+			   	'( (?P<delimiter> [\']) (?P<file> [^\']*) [\'] )',
+			   	'( (?P<delimiter> [<]) (?P<file> [^>]*) [>] )'
+		     	    )
+		    ),
+	    	array
+	    	   (
+	    	   	'names'		=>  array ( 'define', 'def', 'macro' ),
+	    	   	'constant'	=>  self::DIRECTIVE_DEFINE,
+	    	   	'regex'		=>  array
+	    	   	   (
+	    	   	   	'(?P<name> \w+) ( \s* [(] ( (?P<parameters> [^)]*) [)]) )? (\s+ (?P<value> .*) )?'
+			    )
+		    ),
+	    	array
+	    	   (
+	    	   	'names'		=>  array ( 'ifdef', 'ifdefined' ),
+	    	   	'constant'	=>  self::DIRECTIVE_IF_DEFINED,
+	    	   	'regex'		=>  array
+	    	   	   (
+	    	   	   	'(?P<name> \w+)'
+			    )
+		    ),
+	    	array
+	    	   (
+	    	   	'names'		=>  array ( 'elseifdef', 'elifdef', 'elseifdefined' ),
+	    	   	'constant'	=>  self::DIRECTIVE_ELSEIF_DEFINED,
+	    	   	'regex'		=>  array
+	    	   	   (
+	    	   	   	'(?P<name> \w+)'
+			    )
+		    ),
+	    	array
+	    	   (
+	    	   	'names'		=>  array ( 'ifndef', 'ifnotdefined' ),
+	    	   	'constant'	=>  self::DIRECTIVE_IF_NOT_DEFINED,
+	    	   	'regex'		=>  array
+	    	   	   (
+	    	   	   	'(?P<name> \w+)'
+			    )
+		    ),
+	    	array
+	    	   (
+	    	   	'names'		=>  array ( 'elseifndef', 'elifndef', 'elseifnotdefined' ),
+	    	   	'constant'	=>  self::DIRECTIVE_ELSEIF_NOT_DEFINED,
+	    	   	'regex'		=>  array
+	    	   	   (
+	    	   	   	'(?P<name> \w+)'
+			    )
+		    ),
+	    	array
+	    	   (
+	    	   	'names'		=>  array ( 'else' ),
+	    	   	'constant'	=>  self::DIRECTIVE_ELSE,
+	    	   	'regex'		=>  ''
+		    ),
+	    	array
+	    	   (
+	    	   	'names'		=>  array ( 'endif' ),
+	    	   	'constant'	=>  self::DIRECTIVE_ENDIF,
+	    	   	'regex'		=>  ''
+		    ),
+	    	array
+	    	   (
+	    	   	'names'		=>  array ( 'if' ),
+	    	   	'constant'	=>  self::DIRECTIVE_IF,
+	    	   	'regex'		=>  '(?P<expression> .*)'
+		    ),
+	    	array
+	    	   (
+	    	   	'names'		=>  array ( 'elseif', 'elif' ),
+	    	   	'constant'	=>  self::DIRECTIVE_ELSEIF,
+	    	   	'regex'		=>  '(?P<expression> .*)'
+		    ),
+	    	array
+	    	   (
+	    	   	'names'		=>  array ( 'undefine', 'undef' ),
+	    	   	'constant'	=>  self::DIRECTIVE_UNDEFINE,
+	    	   	'regex'		=>  '(?P<name> .*)'
+		    ),
+	    	array
+	    	   (
+	    	   	'names'		=>  array ( 'message' ),
+	    	   	'constant'	=>  self::DIRECTIVE_MESSAGE,
+	    	   	'regex'		=>  '(?P<expression> .*)'
+		    ),
+	    	array
+	    	   (
+	    	   	'names'		=>  array ( 'warning' ),
+	    	   	'constant'	=>  self::DIRECTIVE_WARNING,
+	    	   	'regex'		=>  '(?P<expression> .*)'
+		    ),
+	    	array
+	    	   (
+	    	   	'names'		=>  array ( 'error' ),
+	    	   	'constant'	=>  self::DIRECTIVE_ERROR,
+	    	   	'regex'		=>  '(?P<expression> .*)'
+		    )
+	    ) ;
+
+	// Preprocessor version
+	const		PreprocessorVersion		=  "1.0" ;
+	// Filename to preprocess
+	public		$Filename ;
+	public 		$AbsoluteFilename ;
+	// Preprocessed data
+	public  	$Text ;
+	public  	$Lines ;
+	// True if #line directives are to be generated
+	public  	$Options ;
+	// Predefined and user-defined macros
+	public 		$Macros				=  array ( ) ;
+	// Include files stack
+	private		$IncludeStack			=  array ( ) ;
+	// Include directories
+	private		$IncludeDirectories		=  array ( ) ;
+	// Current file and line
+	private		$CurrentInclude ;
+	private		$CurrentFile ;
+	private		$CurrentLine ;
+
+
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/******                                                                               ******/
+	/******                              MAGIC FUNCTIONS                                  ******/
+	/******                                                                               ******/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Constructor
+
+	    PROTOTYPE
+		$ppp = new PPP ( $filename, $options = OPT_NONE, $preprocess = true ) ;
+
+	    DESCRIPTION
+		Preprocesses the specified filename.
+
+	    PARAMETERS
+		$filename (file) -
+			File to be preprocessed.
+
+		$options (integer) -
+			Preprocessing options. Can be any combination of the following OPT_xxx constants :
+			- OPT_LINE :
+				Generates #line directives.
+
+			A value of OPT_NONE means no specific option.
+
+		$preprocess (boolean) -
+			When true, the specified file is automatically preprocessed.
+			When false, the Preprocess() method has to be called manually. This allows for
+			specifying additional directives before processing using the AddDirective()
+			method.
+
+	    NOTES
+		An exception is issued if any error occurs.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __construct ( $filename, $options = self::OPT_NONE, $preprocess = true )
+	   {
+	   	// Check supplied filename
+	   	if  ( ! file_exists ( $filename ) )
+	   	   	throw new Exception ( "PPP : The file to preprocess ($filename) does not exist." ) ;
+
+		// Member initializations
+		$this -> Filename		=  $filename ;
+		$this -> AbsoluteFilename	=  Path::ToUnix ( Path::RealPath ( $filename ) ) ;
+		$this -> Options 		=  $options ;
+
+		// Foreach item in the directive table, make sure that the 'names' and 'regex' entries are arrays
+		foreach  ( $this -> DirectiveTable  as  &$directive )
+		   {
+		   	if  ( ! is_array ( $directive [ 'names' ] ) )
+		   		$directive [ 'names' ] = array ( $directive [ 'names' ] ) ;
+
+		   	if  ( ! is_array ( $directive [ 'regex' ] ) )
+			   	$directive [ 'regex' ] = array ( $directive [ 'regex' ] ) ;
+		    }
+
+		// Load predefined macros
+		$this -> __load_predefined_macros ( ) ;
+
+		// Get the list of include directories
+		$this -> IncludeDirectories = $this -> __get_include_directories ( ) ;
+
+		// Run the preprocessing process if needed
+		if  ( $preprocess )
+			$this -> Preprocess ( ) ;
+	    }
+
+
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/******                                                                               ******/
+	/******                           PRIVATE FUNCTIONS                                   ******/
+	/******                                                                               ******/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+
+	// __evaluate_expression -
+	//	Evaluates an expression found in a #if / # elseif directive.
+	private function  __evaluate_expression ( $file, $line, $directive, $expression )
+	   {
+	   	// Check that an expression has been supplied
+	   	if  ( trim ( $expression )  ==  "" )
+	   		$this -> __throw_exception ( $file, $line, "The $directive directive must be followed by a valid expression." ) ;
+
+		// Get expression tokens
+  		$tokens 	=  PHP::GetPHPTokens ( $expression, PHP_TOKENS_ADD_PHP_TAGS | PHP_TOKENS_REMOVE_SPACES ) ;
+  		$token_count 	=  count ( $tokens ) ;
+  		$new_expression	=  "" ;
+
+		// Loop through token list
+  		for ( $i = 0 ; $i < $token_count ; $i ++ )
+  		   {
+			$token 		=  $tokens [$i] ;
+			$defined 	=  false ;
+
+			// Take care of the defined() and undefined() pseudo-functions
+			switch  ( $token [ 'value' ] )
+			   {
+			   	// defined() and undefined() pseudo-functions
+				case	'defined' :
+					$defined 	=  true ;
+
+				case	'undefined' :
+					// The pseudo-function must be followed by a macro name enclosed with parentheses.
+					if  ( $i + 3  >=  $token_count )
+						$this -> __throw_exception ( $file, $line, "The '{$token [ 'value' ]}' pseudo-function must have a macro name as argument." ) ;
+
+					if  ( $tokens [$i + 1] [ 'id' ]  !=  XT_LEFT_PARENT  ||
+					      $tokens [$i + 2] [ 'id' ]  !=  T_STRING        ||
+					      $tokens [$i + 3] [ 'id' ]  !=  XT_RIGHT_PARENT )
+						$this -> __throw_exception ( $file, $line, "Syntax error when using the '{$token [ 'value' ]}' pseudo-function." ) ;
+
+					// Check that the specified macro name exists
+					$status 	=  array_key_exists ( $tokens [$i + 2] [ 'value' ], $this -> Macros ) ;
+
+					// Invert the result if the pseudo-function is : undefined()
+					if  ( ! $defined )
+						$status 	=  ! $status ;
+
+					// Add the macro existence status to the output expression, converted to an integer
+					$status 	 =   ( $status ) ?  "1" : "0" ;
+					$new_expression .=   $status ;
+					$i  		+=   3 ;		// Skip the macro name and enclosing parentheses
+					break ;
+
+				// Other cases :
+				//	Add the token value to the output expression (for safety, catenate a whitespace)
+				default :
+					$new_expression  .=  $token [ 'value' ] . ' ' ;
+			    }
+  		    }
+
+		// Preprocess the output expression
+		$new_expression 	=  rtrim ( $new_expression ) ;
+		$output 		=  $this -> __preprocess2 ( $file, $line, array ( $new_expression ) ) ;
+
+		// Build a string of the form : '$result = expression' then evaluate it
+		$new_expression 	=  '$result = ( ' . $output [0] . ' ) ;' ;
+		$status 		=  @eval ( "$new_expression" ) ;
+
+		// If eval() returns false, then there was a syntax error : complain
+		if  ( $status  ===  false )
+			$this -> __throw_exception ( $file, $line, "$directive directive : syntax error in expression : $expression" ) ;
+
+		// All done, return the expression result as a boolean value
+		return ( ( $result ) ? true : false ) ;
+	    }
+
+	// __find_directive -
+	//	Searches for the specified directive. Returns false if the directive does not exist.
+	private function  __find_directive ( $name )
+	   {
+		// Loop through directive definitions
+		foreach  ( $this -> DirectiveTable  as  $directive )
+		   {
+		   	// Then through directive name and aliases
+			foreach  ( $directive [ 'names' ]  as  $dirname )
+			   {
+			   	// The directive has been found ; this means that its syntax is incorrect
+				if  ( ! strcasecmp ( $name, $dirname ) )
+					return ( $directive ) ;
+			    }
+		    }
+
+	    	// Directive not found
+	    	return ( false ) ;
+	    }
+
+
+	// __load_predefined_macros -
+	//	Loads the predefined macros.
+	private function  __load_predefined_macros ( )
+	   {
+		// Version
+		$this -> __AddMacro ( true, "__PPP_VERSION__", self::PreprocessorVersion ) ;
+
+		$subversions 	=  explode ( ".", self::PreprocessorVersion ) ;
+		$count 		=  count ( $subversions ) ;
+
+		switch ( $count )
+		   {
+		   	case	1 :
+				$subversions = array_merge ( $subversions, array ( 0, 0, 0 ) ) ;
+				break ;
+
+		   	case	2 :
+				$subversions = array_merge ( $subversions, array ( 0, 0 ) ) ;
+				break ;
+
+		   	case	3 :
+				$subversions [] = 0 ;
+				break ;
+		    }
+
+		$this -> __AddMacro ( true, "__PPP_VERSION_MAJOR__"  , $subversions [0] ) ;
+		$this -> __AddMacro ( true, "__PPP_VERSION_MINOR__"  , $subversions [1] ) ;
+		$this -> __AddMacro ( true, "__PPP_VERSION_RELEASE__", $subversions [2] ) ;
+		$this -> __AddMacro ( true, "__PPP_VERSION_BUILD__"  , $subversions [3] ) ;
+
+		// __FILE__ style macros
+		$this -> __AddMacro ( true, "__FILE__"	, null, null, array ( $this, "__GetDynamicMacroValue" ), "__FILE__" 	) ;
+		$this -> __AddMacro ( true, "__LINE__"	, null, null, array ( $this, "__GetDynamicMacroValue" ), "__LINE__" 	) ;
+		$this -> __AddMacro ( true, "__DATE__"	, null, null, array ( $this, "__GetDynamicMacroValue" ), "__DATE__" 	) ;
+		$this -> __AddMacro ( true, "__TIME__"	, null, null, array ( $this, "__GetDynamicMacroValue" ), "__TIME__" 	) ;
+		$this -> __AddMacro ( true, "__YEAR__"	, null, null, array ( $this, "__GetDynamicMacroValue" ), "__YEAR__" 	) ;
+		$this -> __AddMacro ( true, "__MONTH__"	, null, null, array ( $this, "__GetDynamicMacroValue" ), "__MONTH__"	) ;
+		$this -> __AddMacro ( true, "__DAY__"	, null, null, array ( $this, "__GetDynamicMacroValue" ), "__DAY__" 	) ;
+		$this -> __AddMacro ( true, "__HOUR__"	, null, null, array ( $this, "__GetDynamicMacroValue" ), "__HOUR__" 	) ;
+		$this -> __AddMacro ( true, "__MINUTE__", null, null, array ( $this, "__GetDynamicMacroValue" ), "__MINUTE__" 	) ;
+		$this -> __AddMacro ( true, "__SECOND__", null, null, array ( $this, "__GetDynamicMacroValue" ), "__SECOND__" 	) ;
+
+		// OS version
+		$this -> __AddMacro ( true, "__OS__", PHP_OS ) ;
+
+		$os 		=  strtoupper ( PHP_OS ) ;
+		$iswin		=  "0" ;
+		$islinux 	=  "0" ;
+		$isunix 	=  "0" ;
+
+		if  ( substr ( $os, 0, 3 )  ==  'WIN' )
+		   {
+			$iswin 		=  "1" ;
+			$islinux	=  "0" ;
+			$isunix 	=  "0" ;
+		    }
+   		else if  ( substr ( $os, 0, 5 )  ==  'LINUX' )
+   		   {
+			$iswin 		=  "0" ;
+			$islinux 	=  "1" ;
+
+			if  ( strpos ( $os, "BSD" )  ===  false )
+				$isunix 	=  "0" ;
+			else
+				$isunix 	=  "1" ;
+   		    }
+
+    		$this -> __AddMacro ( true, "__WINDOWS__", $iswin   ) ;
+    		$this -> __AddMacro ( true, "__LINUX__"  , $islinux ) ;
+    		$this -> __AddMacro ( true, "__UNIX__"   , $isunix  ) ;
+
+    		ksort ( $this -> Macros ) ;
+	    }
+
+
+	// __preprocess ( $file ) -
+	//	Preprocesses the specified file and all its included files.
+	const	STATE_IF_START		=  0 ;
+	const	STATE_IF_IF		=  1 ;
+	const	STATE_IF_ELSEIF		=  2 ;
+	const 	STATE_IF_ELSE 		=  3 ;
+
+	private function  __preprocess ( $file, $line_index, $calling_file = null, $calling_line = null, $local = false )
+	   {
+	   	// Another nesting level
+   		$absolute_file = self::__get_absolute_path ( $calling_file, $file, $local ) ;
+
+	   	// Get file contents and replace every carriage return and '\<eol>' construct with an empty string.
+	   	// Multiline macros will be replaced with single-line ones.
+	   	$contents 	=  str_replace ( array ( "\r", "\\\n" ), '', file_get_contents ( $absolute_file ) ) ;
+
+	   	// Split file contents into string.
+	   	$lines 		=  explode ( "\n", $contents ) ;
+
+	   	// Call the real preprocessing function
+	   	$output = $this -> __preprocess2 ( $file, $line_index, $lines, $calling_file, $calling_line, $local ) ;
+
+	   	// All done, return
+	   	return ( $output ) ;
+     	    }
+
+
+	private function  __preprocess2 ( $file, $line_index, $lines, $calling_file = null, $calling_line = null, $local = false )
+	  {
+	   	// Initializations
+		$output 	=  array ( ) ;				// Output result
+		$if_conditions 	=  array ( array ( 'satisfied' => true, 'state' => self::STATE_IF_START, 'current' => true, 'line' => 0 ) ) ;
+		$if_last 	=  0 ;
+
+		// Save current file/line
+		$old_file 			=  $this -> CurrentFile ;
+		$old_line 			=  $this -> CurrentLine ;
+		$this -> CurrentFile 		=  Path::RealPath ( $file ) ;
+		$this -> CurrentLine		=  1 ;
+
+		// Should we generate #line directives ?
+		if  ( $this -> Options  &  self::OPT_LINE )
+			$output [] 	=  "#line " . $this -> CurrentLine . " " . String::QuotedString ( $this -> CurrentFile, '"', true ) ;
+
+		// Loop through each input line
+		foreach  ( $lines  as  $line )
+		   {
+		   	// Get line length
+		   	$length 	=  strlen ( $line ) ;
+			$output_line 	=  null ;
+
+			// Line starts with '#' : maybe a directive
+			if  ( $length  &&  $line [0]  ==  '#' )
+			   {
+			   	// Empty directive : throw an exception
+			   	if  ( trim ( $line  ==  '#' ) )
+			   		$this -> __throw_exception ( $file, $line_index, "Empty directives are not allowed." ) ;
+
+				// Get parsed directive
+			   	$result 	=  $this -> __process_directive ( $file, $line, $line_index ) ;
+			   	$directive 	=  '#' . $result [ 'directive' ] ;
+
+	    			// Process the directive
+	    			switch ( $result [ 'constant' ] )
+	    			   {
+					// # include-once "file" or # include-once <file> :
+					//	Include the specified file if not already included.
+					case	self::DIRECTIVE_INCLUDE_ONCE :
+   			   			if  ( ! $if_conditions [ $if_last ] [ 'current' ] )
+   			   				break ;
+
+   			   			$local 		=  ( $result [ 'delimiter' ]  ==  '"'  ||  $result [ 'delimiter' ]  ==  "'" ) ;
+
+  			   			if  ( $this -> __push_include ( $result [ 'file'], $file, $line_index, $local, true )  !==  false )
+						   {
+   			   				$contents 	=  $this -> __preprocess ( $result [ 'file' ], 1, $file, $line_index, $local ) ;
+   			   				$output 	=  array_merge ( $output, $contents ) ;
+   			   				$path 		=  Path::ToUnix ( $this -> CurrentFile ) ;
+
+   			   				if  ( $this -> Options  &  self::OPT_LINE )
+   			   					$output [] 	=  "#line " . ( $this -> CurrentLine + 1 ) . " \"" . $path . "\"";
+						    }
+   			   			break ;
+
+	    			   	// # include "file" or  # include <file> :
+	    			   	//	Includes the specified file.
+   			   		case	self::DIRECTIVE_INCLUDE :
+   			   			if  ( ! $if_conditions [ $if_last ] [ 'current' ] )
+   			   				break ;
+
+   			   			$local 		=  ( $result [ 'delimiter' ]  ==  '"'  ||  $result [ 'delimiter' ]  ==  "'" ) ;
+
+  			   			$this -> __push_include ( $result [ 'file'], $file, $line_index, $local, false ) ;
+
+   			   			$contents 	=  $this -> __preprocess ( $result [ 'file' ], 1, $file, $line_index, $local ) ;
+   			   			$output 	=  array_merge ( $output, $contents ) ;
+   			   			$path 		=  Path::ToUnix ( $this -> CurrentFile ) ;
+
+   			   			if  ( $this -> Options  &  self::OPT_LINE )
+   			   				$output [] 	=  "#line " . ( $this -> CurrentLine + 1 ) . " \"" . $path . "\"";
+
+   			   			break ;
+
+					// # define macro value			or
+					// # define macro(parameters)  value
+					//	Defines a macro.
+					case	self::DIRECTIVE_DEFINE :
+   			   			if  ( ! $if_conditions [ $if_last ] [ 'current' ] )
+   			   				break ;
+
+						$macro_name 		=  $result [ 'name' ] ;
+						$macro_value 		=  ( array_key_exists ( 'value', $result ) )      ?  $result [ 'value' ]      : "" ;
+						$macro_parameters 	=  ( array_key_exists ( 'parameters', $result ) ) ?  $result [ 'parameters' ] : null ;
+						$this -> Define ( $macro_name, $macro_value, $macro_parameters ) ;
+						break ;
+
+					// # undefine  macro
+					//	Undefines the specified macro.
+					case	self::DIRECTIVE_UNDEFINE :
+   			   			if  ( ! $if_conditions [ $if_last ] [ 'current' ] )
+   			   				break ;
+
+						$macro_name 		=  $result [ 'name' ] ;
+						$this -> Undefine ( $macro_name ) ;
+						break ;
+
+					// # ifdef directive
+					//	Push a new nested if into the if conditions stack.
+					//	$if_conditions [ $if_last ] [ 'current' ] will tell if subsequent lines will be included or not.
+					case	self::DIRECTIVE_IF_DEFINED :
+						$status 		=  array_key_exists ( $result [ 'name' ], $this -> Macros ) ;
+						$array 			=  array ( 'satisfied' => $status, 'state' => self::STATE_IF_IF, 'current' => $status, 'line' => $line_index ) ;
+						$if_conditions []	=  $array ;
+						$if_last ++ ;
+						break ;
+
+					// # ifndef directive
+					//	Same as for #ifdef, except that the macro test result is inverted.
+					case	self::DIRECTIVE_IF_NOT_DEFINED :
+						$status 		=  ! array_key_exists ( $result [ 'name' ], $this -> Macros ) ;
+						$array 			=  array ( 'satisfied' => $status, 'state' => self::STATE_IF_IF, 'current' => $status, 'line' => $line_index ) ;
+						$if_conditions []	=  $array ;
+						$if_last ++ ;
+						break ;
+
+					// # if directive
+					//	#if with complex expression.
+					case	self::DIRECTIVE_IF :
+						$status 		=  $this -> __evaluate_expression ( $file, $line_index, $directive, $result [ 'expression' ] ) ;
+						$array 			=  array ( 'satisfied' => $status, 'state' => self::STATE_IF_IF, 'current' => $status, 'line' => $line_index ) ;
+						$if_conditions []	=  $array ;
+						$if_last ++ ;
+						break ;
+
+					case	self::DIRECTIVE_ELSEIF_DEFINED :
+						// A #elseifdef directive can only happen #ifxxx or #elseifxxx directives.
+						switch ( $if_conditions [ $if_last ] [ 'state' ] )
+						   {
+						   	case	self::STATE_IF_IF :
+							case	self::STATE_IF_ELSEIF :
+								break ;
+
+							default :
+								$this ->__throw_exception ( $file, $line_index, "Unexpected $directive directive." ) ;
+						    }
+
+						// If the condition of the opening #if directive was true, then the lines after the #else
+						// must not be included
+						if  ( $if_conditions [ $if_last ] [ 'satisfied' ] )
+							$if_conditions [ $if_last ] [ 'current' ] = false ;
+						// Otherwise include them, and tell that one condition of the if/elseif/else construct has
+						// been satisfied.
+						else
+						   {
+							$status 				    =  array_key_exists ( $result [ 'name' ], $this -> Macros ) ;
+							$if_conditions [ $if_last ] [ 'satisfied' ] =  $status ;
+							$if_conditions [ $if_last ] [ 'current'   ] =  $status ;
+						    }
+						break ;
+
+					case	self::DIRECTIVE_ELSEIF_NOT_DEFINED :
+						// A #elseifdef directive can only happen #ifxxx or #elseifxxx directives.
+						switch ( $if_conditions [ $if_last ] [ 'state' ] )
+						   {
+						   	case	self::STATE_IF_IF :
+							case	self::STATE_IF_ELSEIF :
+								break ;
+
+							default :
+								$this ->__throw_exception ( $file, $line_index, "Unexpected $directive directive." ) ;
+						    }
+
+						// If the condition of the opening #if directive was true, then the lines after the #else
+						// must not be included
+						if  ( $if_conditions [ $if_last ] [ 'satisfied' ] )
+							$if_conditions [ $if_last ] [ 'current' ] = false ;
+						// Otherwise include them, and tell that one condition of the if/elseif/else construct has
+						// been satisfied.
+						else
+						   {
+							$status 				    =  ! array_key_exists ( $result [ 'name' ], $this -> Macros ) ;
+							$if_conditions [ $if_last ] [ 'satisfied' ] =  $status ;
+							$if_conditions [ $if_last ] [ 'current'   ] =  $status ;
+						    }
+						break ;
+
+					case	self::DIRECTIVE_ELSEIF :
+						// A #elseifdef directive can only happen #ifxxx or #elseifxxx directives.
+						switch ( $if_conditions [ $if_last ] [ 'state' ] )
+						   {
+						   	case	self::STATE_IF_IF :
+							case	self::STATE_IF_ELSEIF :
+								break ;
+
+							default :
+								$this ->__throw_exception ( $file, $line_index, "Unexpected $directive directive." ) ;
+						    }
+
+						// If the condition of the opening #if directive was true, then the lines after the #else
+						// must not be included
+						if  ( $if_conditions [ $if_last ] [ 'satisfied' ] )
+							$if_conditions [ $if_last ] [ 'current' ] = false ;
+						// Otherwise include them, and tell that one condition of the if/elseif/else construct has
+						// been satisfied.
+						else
+						   {
+							$status 				    =  $this -> __evaluate_expression ( $file, $line_index, $directive, $result [ 'expression' ] ) ;
+							$if_conditions [ $if_last ] [ 'satisfied' ] =  $status ;
+							$if_conditions [ $if_last ] [ 'current'   ] =  $status ;
+						    }
+						break ;
+
+					// # else directive
+					//	$if_conditions [ $if_last ] [ 'current' ] will be inverted to tell if subsequent lines will be
+					//	included or not.
+					case	self::DIRECTIVE_ELSE :
+						// A #else directive can only happen #ifxxx or #elseifxxx directives.
+						switch ( $if_conditions [ $if_last ] [ 'state' ] )
+						   {
+						   	case	self::STATE_IF_IF :
+							case	self::STATE_IF_ELSEIF :
+								break ;
+
+							default :
+								$this ->__throw_exception ( $file, $line_index, "Unexpected $directive directive." ) ;
+						    }
+
+						// If the condition of the opening #if directive was true, then the lines after the #else
+						// must not be included
+						if  ( $if_conditions [ $if_last ] [ 'satisfied' ] )
+							$if_conditions [ $if_last ] [ 'current' ] = false ;
+						// Otherwise include them, and tell that one condition of the if/elseif/else construct has
+						// been satisfied.
+						else
+						   {
+							$if_conditions [ $if_last ] [ 'satisfied' ] =  true ;
+							$if_conditions [ $if_last ] [ 'current'   ] =  true ;
+						    }
+						break ;
+
+					// # endif directive
+					//	Remove the last nested #if that was pushed onto $if_conditions stack.
+					case	self::DIRECTIVE_ENDIF :
+						// A # endif directive can only happen after a #ifxxx/#elseifxxx or #else directive.
+						switch ( $if_conditions [ $if_last ] [ 'state' ] )
+						   {
+						   	case	self::STATE_IF_IF :
+							case	self::STATE_IF_ELSEIF :
+							case	self::STATE_IF_ELSE :
+								break ;
+
+							default :
+								$this ->__throw_exception ( $file, $line_index, "Unexpected $directive directive." ) ;
+						    }
+
+						// Pop the last pushed #if from the conditions stack
+						array_pop ( $if_conditions ) ;
+						$if_last -- ;
+						break ;
+
+					// # message directive -
+					//	Outputs the specified message.
+					case	self::DIRECTIVE_MESSAGE :
+   			   			if  ( ! $if_conditions [ $if_last ] [ 'current' ] )
+   			   				break ;
+
+						$message 	=  $result [ 'expression' ] ;
+						fwrite ( STDERR, "*** Message *** File $file, line $line_index : $message\n" ) ;
+						break ;
+
+					// # warning directive -
+					//	Writes the specified warning message to stderr.
+					case	self::DIRECTIVE_WARNING :
+   			   			if  ( ! $if_conditions [ $if_last ] [ 'current' ] )
+   			   				break ;
+
+						$message 	=  $result [ 'expression' ] ;
+						fwrite ( STDERR, "*** Warning *** File $file, line $line_index : $message \n" ) ;
+						break ;
+
+					// # error directive -
+					//	Throws an exception using the specified error message.
+					case	self::DIRECTIVE_ERROR :
+   			   			if  ( ! $if_conditions [ $if_last ] [ 'current' ] )
+   			   				break ;
+
+						$message 	=  $result [ 'expression' ] ;
+						$this -> __throw_exception ( $file, $line_index, $message ) ;
+						break ;
+
+					// Default case : user-defined directive. Call the supplied callback function
+					default :
+						if  ( ! $if_conditions [ $if_last ] [ 'current' ] )
+							break ;
+
+						if ( $result [ 'constant' ]  <  self::DIRECTIVE_USER_DEFINED )	// Paranoia
+							$this -> __throw_exception ( $file, $line_index, "Invalid directive id '{$result [ 'constant' ]}'." ) ;
+
+						$callback 	=  $result [ 'callback' ] ;
+						$line 		=  $callback ( $result ) ;
+
+						// Allow the callback function to return an array of lines.
+						if  ( is_array ( $line ) )
+						   {
+							foreach  ( $line  as  $item )
+								$output_line	=  $this -> __ExpandMacros ( $file, $line_index, $item ) ;
+						    }
+				    		else
+							$output_line	=  $this -> __ExpandMacros ( $file, $line_index, $line ) ;
+	    			    }
+			    }
+			// Normal line : expand it if we have to include it
+			else if  ( $if_conditions [ $if_last ] [ 'current' ] )
+			   {
+				$output_line = $this -> __ExpandMacros ( $file, $line_index, $line ) ;
+			    }
+
+			// Add the output line if needed
+			if  ( $output_line  !==  null )
+				$output []	=  $output_line ;
+
+			// Count one more line
+			$line_index ++ ;
+			$this -> CurrentLine ++ ;
+			$this -> IncludeStack [ count ( $this -> IncludeStack ) - 1 ] [ 'line' ] 	=  $line_index ;
+		    }
+
+		// Check that if/endifs are balanced
+		if  ( $if_last )
+			$this -> __throw_exception ( $file, $line_index, "Missing #endif directive for the if condition started on line " .
+					$if_conditions [ $if_last ] [ 'line'] . "." ) ;
+
+		// Pops this file from the include stack
+		//$this -> __pop_include ( ) ;
+		$this -> CurrentFile 	=  $old_file ;
+		$this -> CurrentLine	=  $old_line ;
+
+		// All done, return
+   		return ( $output ) ;
+	    }
+
+
+	// __process_directive ( $file, $line, $line_index ) -
+	//	Processes a directive. Throws an exception if the directive is incorrect.
+    	private function  __process_directive ( $file, $line, $line_index )
+    	   {
+    	   	// Regex used to isolate the directive name
+		static $directive_re 		=  '/[#] \s* (?P<directive> \w+)/imsx' ;
+
+		// Loop through existing directives to check if the current line matches
+		foreach  ( $this -> DirectiveTable  as  $directive )
+		   {
+		   	// Scan each regex associated to the current directive
+			foreach ( $directive [ 'regex' ]  as  $regex )
+			   {
+	   			// Build the regex part that matches all the directive aliases
+			   	$dirs 	=  '(' . implode ( '|', $directive [ 'names' ] ) . ')' ;
+			   	// Build the final regex
+				$re 	= '/^[#] \s* (?P<directive> ' . $dirs . ') ( \s+' . $regex . ')? \s*$/imsx' ;
+
+				// Check if the regex matches
+				if  ( preg_match ( $re, $line, $matches ) )
+				   {
+				   	// Match found
+				   	$result = array ( ) ;
+
+					// Only keep the named matches
+				   	foreach  ( $matches  as  $key => $item )
+				   	   {
+				   	   	// Make sure the directive name is in lowercase
+				   	   	if  ( $key  ==  'directive' )
+				   	   		$item = strtolower ( $item ) ;
+
+						// Ignore numeric entries
+						if  ( ! is_numeric ( $key ) )
+							$result [ $key ] = $item ;
+				   	    }
+
+					// Add the associated directive constant and also potential callback function
+					$result [ 'constant' ] 	=  $directive [ 'constant' ] ;
+					$result [ 'callback' ] 	=  isset ( $directive [ 'callback' ] ) ? $directive [ 'callback' ] : null ;
+
+					// Return the result
+  	    				return ( $result ) ;
+				    }
+			    }
+		    }
+
+		// If we arrive here, then the directive is undefined or its syntax incorrect.
+		// First, isolate the directive name.
+		preg_match ( $directive_re, $line, $matches ) ;
+
+		// If we arrive here, then there have been an error. Try to find the directive definition
+		$directive 	=  $this -> __find_directive ( $matches [ 'directive' ] ) ;
+
+		// If the directive does not exists, throw an exception
+		if  ( $directive  ===  false )
+			$this -> __throw_exception ( $file, $line_index, "Invalid directive '{$matches ['directive']}'." ) ;
+		// Otherwise, the directive specified in the input file contains a syntax error.
+		else
+			$this -> __throw_exception ( $file, $line_index, "Invalid directive syntax '$line'." ) ;
+    	     }
+
+
+	// __throw_exception ( $file, $line, $message ) -
+	//	Throws an exception using the specified message, for the specified line of the specified file.
+  	private function  __throw_exception ( $file, $line, $message )
+  	   {
+  	   	if  ( $file  ===  null )
+  	   	   {
+			$count 	=  count ( $this -> IncludeStack ) ;
+
+			if  ( $count )
+			   {
+			   	$count -- ;
+				$header 	=  "File {$this -> IncludeStack [$count] ['file']}, line #{$this -> IncludeStack [$count] ['line']} : " ;
+			    }
+			else
+				$header 	=  "" ;
+  	   	    }
+    		else
+    			$header 	=  "File $file, line #$line : " ;
+
+		throw new Exception ( "$header$message" ) ;
+  	    }
+
+
+	/********************************************************************************************
+	 ********************************************************************************************
+	 ********************************************************************************************
+	 ******                                                                                ******
+	 ******                           INCLUDE STACK MANAGEMENT                             ******
+	 ******                                                                                ******
+	 ********************************************************************************************
+	 ********************************************************************************************
+	 ********************************************************************************************/
+
+	// __get_include_directories -
+	//	Gets the include directories defined in the 'IncludePaths' member of the $Configuration object,
+	//	in the PHP_INCLUDES environment variable, and in the 'include_path' PHP setting.
+	private function  __get_include_directories ( )
+	   {
+	   	global 		$Configuration, $Runtime ;
+
+		// Get path list separator
+		if  ( IS_WINDOWS )
+		   {
+		   	$compare_function	=  'strcasecmp' ;
+			$separator 		=  ';' ;
+		    }
+		else
+		   {
+   			$compare_function 	=  'strcmp' ;
+			$separator 		=  ':' ;
+		    }
+
+		// Resulting array
+		$result 	=  array ( ) ;
+
+		// Directory list
+		$list 		=  $Configuration -> Get ( "Environment/include-path" ) ;
+
+		$php_includes 	=  getenv ( 'PHP_INCLUDES' ) ;
+
+		if  ( $php_includes )
+		   {
+			$table 	=  String::ExplodeAndTrim ( $separator, $php_includes ) ;
+			$list	=  array_merge ( $list, $table ) ;
+		    }
+
+		$php_include_path	=  ini_get ( 'include_path' ) ;
+
+		if  ( $php_include_path )
+		   {
+			$table 	=  String::ExplodeAndTrim ( $separator, $php_include_path ) ;
+			$list 	=  array_merge ( $list, $table ) ;
+		    }
+
+		// Remove duplicate directories
+		$count 	=  count ( $list ) ;
+
+		for  ( $i = 0 ; $i  < $count ; $i ++ )
+		   {
+			$result_count 	=  count ( $result ) ;
+			$item_a 	=  $list [$i] ;
+			$found 		=  false ;
+
+			// Ignore the directories that are already present in the $result array
+			for  ( $j = 0 ; $j < $result_count ; $j ++ )
+			   {
+				$item_b 	=  $result [$j] ;
+
+				if  ( $item_a  ==  '.'  ||  ! $compare_function  ( $item_a, $item_b ) )
+				   {
+					$found = true ;
+					break ;
+				    }
+			    }
+
+			// Directory not found in $result : add it
+			if  ( ! $found )
+				$result []	=  $item_a ;
+		    }
+
+		return ( $result ) ;
+	    }
+
+
+	// __get_absolute_path -
+	//	Gets the absolute path for the specified include.
+	private function  __get_absolute_path ( $caller, $file, $local )
+	   {
+		// Relative pathnames start from the caller file's directory
+		if  ( $caller  &&  $file [0]  ==  '.' )
+			$file = dirname ( $caller ) . "/" . $file ;
+
+	   	if  ( $local )
+	   		$directories  	=  array_merge ( array ( '.', dirname ( $this -> Filename ) ), $this -> IncludeDirectories ) ;
+   		else
+   			$directories 	=  $this -> IncludeDirectories ;
+
+		$real_file	=  Path::ToUnix ( Path::RealPath ( $file ) ) ;
+
+		if  ( Path::IsAbsolute ( $real_file ) )
+			return ( $real_file ) ;
+		else
+		   {
+		   	foreach  ( $directories  as  $directory )
+		   	   {
+				$path 	=  Path::RealPath (  $directory . '/' . $real_file ) ;
+				$path 	=  Path::ToUnix ( $path ) ;
+
+				if  ( file_exists ( $path ) )
+					return ( $path ) ;
+		   	    }
+		    }
+
+   		return ( false ) ;
+	    }
+
+
+	// __push_include -
+	//	Adds the specified include file.
+	private function  __push_include ( $file, $calling_file = null, $calling_line = null, $local = false, $include_once = false )
+	   {
+	   	// Include directive delimiters
+	   	if (  $local )
+	   	   {
+			$delimiter_a 	=  '"' ;
+			$delimiter_b 	=  '"' ;
+	   	    }
+   		else
+   		   {
+   		   	$delimiter_a	=  '<' ;
+			$delimiter_b 	=  '>' ;
+   		    }
+
+	   	// Check for file existence
+	   	$absolute_file 			=  $this -> __get_absolute_path ( $calling_file, $file, $local ) ;
+
+
+	   	if  ( $absolute_file  ===  false  ||  ! file_exists ( $absolute_file ) )
+   			$this -> __throw_exception ( $calling_file, $calling_line, "The include file '$delimiter_a$file$delimiter_b' does not exist." ) ;
+
+		// Check that the file has not already been included
+		foreach  ( $this -> IncludeStack  as  $included_file )
+		   {
+			if  ( ! strcmp ( $included_file [ 'absolute-file' ], $absolute_file ) )
+			   { 
+				if  ( $include_once )
+					return ( false ) ;
+				else
+					$this -> __throw_exception ( $calling_file, $calling_line, "File '$file' has already been included." ) ;
+			    }
+		    }
+
+		// Create the entry
+		$entry = array
+		   (
+		   	'absolute-file'	=>  $absolute_file,
+		   	'file'		=>  $file,
+		   	'line'		=>  1,
+		   	'calling-file'	=>  $calling_file,
+			'calling-line'  =>  $calling_line
+		    ) ;
+
+   		$this -> IncludeStack [] 	=  $entry ;
+
+   		// Return the absolute file name
+   		return ( $absolute_file ) ;
+	    }
+
+
+	// __pop_include -
+	//	Pops the last included file from the include stack.
+	private function  __pop_include ( )
+	   {
+	   	array_pop ( $this -> IncludeStack ) ;
+	    }
+
+
+	/********************************************************************************************
+	 ********************************************************************************************
+	 ********************************************************************************************
+	 ******                                                                                ******
+	 ******                  MACRO-RELATED FUNCTIONS (PUBLIC & PRIVATE)                    ******
+	 ******                                                                                ******
+	 ********************************************************************************************
+	 ********************************************************************************************
+	 ********************************************************************************************/
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Define - Defines a macro.
+
+	    PROTOTYPE
+		$preprocessor -> Define ( $name, $value ) ;
+
+	    DESCRIPTION
+		Defines the specified macro.
+
+	    PARAMETERS
+	    	$name (string) -
+	    		Macro name.
+
+    		$value (string) -
+    			Macro value.
+
+		$parameters (string) -
+			Comma-separated list of macro arguments.
+
+	    NOTES
+	    	An error is generated if the macro to be defined is a predefined macro. For user-
+	    	defined macros, the existing definition will be replaced.
+
+	    	Parameterized macros are not yet supported.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  Define ( $name, $value, $parameters = null )
+	   {
+	   	if  ( $parameters )
+	   		$parameters  =  String::ExplodeAndTrim ( ',', $parameters ) ;
+
+		$this -> __AddMacro ( false, $name, $value, $parameters ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Undefine - Undefines a macro.
+
+	    PROTOTYPE
+	    	$processor -> Undefine ( $name ) ;
+
+	    DESCRIPTION
+		Undefines the specified macro.
+
+	    PARAMETERS
+	    	$name (string) -
+	    		Macro to undefine.
+
+	    NOTES
+	    	An error is generated if $name refers to a predefined macro.
+
+	 --------------------------------------------------------------------------------------------*/
+  	public function  Undefine ( $name )
+	   {
+		$this -> __RemoveMacro ( $name ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		IsDefined, IsUndefined - Checks if a macro is defined/undefined.
+
+	    PROTOTYPE
+		$status = $processor -> IsDefined ( $name ) ;
+		$status = $processor -> IsUndefined ( $name ) ;
+
+	    DESCRIPTION
+		Checks if the specified macro is defined.
+
+	    PARAMETERS
+	    	$name (string) -
+	    		Macro whose existence is to be checked.
+
+	    RETURN VALUE
+	    	true if the macro exists, false otherwise (IsDefined) or true if the macro does not
+	        exist, false otherwise (IsUndefined).
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  IsDefined ( $name )
+	   {
+	   	return  ( array_key_exists ( $name, $this -> Macros ) ) ;
+   	    }
+
+
+ 	public function  IsUndefined ( $name )
+ 	   {
+	   	return  ( ! array_key_exists ( $name, $this -> Macros ) ) ;
+ 	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		DefinitionOf - Gets the complete macro definition.
+
+	    PROTOTYPE
+		$status = $processor -> DefinitionOf ( $name ) ;
+
+	    DESCRIPTION
+		Gets the whole definition of a macro.
+
+	    PARAMETERS
+	    	$name (string) -
+	    		Macro whose definition is to be returned.
+
+	    RETURN VALUE
+	    	Macro definition, or the boolean value false.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  DefinitionOf ( $name )
+	   {
+		foreach  ( $this -> Macros  as  $macro )
+		   {
+			if  ( ! strcmp ( $name, $macro [ 'name' ] ) )
+				return ( $macro ) ;
+		    }
+
+   		return ( false ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		ValueOf - Gets a macro value.
+
+	    PROTOTYPE
+		$value = preprocessor -> ValueOf ( $name, $argv = false ) ;
+
+	    DESCRIPTION
+		Gets the value of the specified macro.
+
+	    PARAMETERS
+	    	$name (string) -
+	    		Macro whose value is to be retrieved.
+
+		$argv (array of string) -
+			Array of macro parameters.
+
+	    RETURN VALUE
+	    	Returns the macro value, or false if the macro does not exist.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  ValueOf ( $name, $argv = false )
+	   {
+	   	if  ( array_key_exists ( $name, $this -> Macros ) )
+ 	   		return ( $this -> __ExpandMacro ( null, null, $name, argv, false ) ) ;
+   		else
+   			return ( false ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		GetDefinedMacros     - Gets the names of defined macros.
+		GetMacroDefinitions  - Gets the macro definitions
+
+	    PROTOTYPE
+		$list = $processor -> GetDefinedMacros ( $option = SimpleProcessor::INCLUDE_ALL_MACROS ) ;
+		$list = $processor -> GetMacroDefinitions ( $option = SimpleProcessor::INCLUDE_ALL_MACROS,
+							    $include_actual_value = true ) ;
+
+	    DESCRIPTION
+            	GetDefinedMacros() returns the names of defined macros.
+            	GetMacroDefinitions() returns the complete definitions of defined macros.
+
+	    PARAMETERS
+	    	$option (constant) -
+	    		Specifies the kind of macro names to be returned ; it can be any of the
+	    		following :
+	    		SimpleProcessor::INCLUDE_PREDEFINED_MACROS -
+	    			Returns only the predefined macros.
+			SimpleProcessor::INCLUDE_USER_DEFINED_MACROS -
+				Returns only the user-defined macros.
+			SimpleProcessor::INCLUDE_ALL_MACROS -
+				Returns all macro names, either predefined or user-defined.
+
+		$include_actual_value -
+			If true, the real expanded macro value will be included in the results.
+
+	    RETURN VALUE
+	    	An array containing the names of defined macros.
+
+	 --------------------------------------------------------------------------------------------*/
+	const	INCLUDE_ALL_MACROS			=  0 ;
+	const	INCLUDE_PREDEFINED_MACROS               =  1 ;
+	const   INCLUDE_USER_DEFINED_MACROS		=  2 ;
+
+	public function  GetDefinedMacros ( $option = self::INCLUDE_ALL_MACROS )
+ 	   {
+ 	   	$result = array ( ) ;
+
+		foreach  ( $this -> Macros  as  $macro )
+		   {
+			switch   ( $option )
+			   {
+				case	self::INCLUDE_ALL_MACROS :
+					$result [] = $macro [ 'name' ] ;
+					break ;
+
+				case	self::INCLUDE_PREDEFINED_MACROS :
+					if  ( $macro [ 'predefined' ] )
+						$result [] = $macro [ 'name' ] ;
+					break ;
+
+				case	self::INCLUDE_USER_DEFINED_MACROS :
+					if  ( ! $macro [ 'predefined' ] )
+						$result [] = $macro [ 'name' ] ;
+					break ;
+			    }
+		    }
+
+		return ( $result ) ;
+ 	    }
+
+
+	public function  GetMacroDefinitions ( $option = self::INCLUDE_ALL_MACROS )
+ 	   {
+ 	   	$result = array ( ) ;
+
+		foreach  ( $this -> Macros  as  $macro )
+		   {
+		   	$include = false ;
+
+			switch   ( $option )
+			   {
+				case	self::INCLUDE_ALL_MACROS :
+					$include = true ;
+					break ;
+
+				case	self::INCLUDE_PREDEFINED_MACROS :
+					if  ( $macro [ 'predefined' ] )
+						$include = true ;
+					break ;
+
+				case	self::INCLUDE_USER_DEFINED_MACROS :
+					if  ( ! $macro [ 'predefined' ] )
+						$include = true ;
+					break ;
+			    }
+
+	    		if  ( $include )
+	    		   {
+				$macro [ 'value' ] = $this -> ValueOf ( $macro [ 'name' ] ) ;
+				$result [] = $macro ;
+	    		    }
+		    }
+
+		return ( $result ) ;
+ 	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		__AddMacro - Adds a macro.
+
+	    PROTOTYPE
+		$processor -> __AddMacro ( $predefined, $name, $value, $args = null,
+						$evaluator = null, $evalargs = null ) ;
+
+	    DESCRIPTION
+	    	Adds a macro to the set of defined macros.
+
+	    PARAMETERS
+	    	$predefined (boolean) -
+	    		Specifies if the macro is a predefined one. Predefined macros can be dynamic
+	    		macros or macros defined at startup time, and cannot be changed nor removed.
+
+		$name (string) -
+			Macro name.
+
+		$value (string) -
+			Macro value. This value will be expanded when the macro value will be retrieved.
+
+		$args (array of strings) -
+			Macro arguments.
+
+		$evaluator (function name) -
+			Name of a function, in the SimplePreprocessorClass, that will return the
+			value of a macro. An evaluator is used for example for retrieving the values
+			of the __FILE__, __LINE__, __DATE__ and __TIME__ macros.
+
+		$evalargs (array of strings) -
+			Evaluator function arguments.
+
+	 --------------------------------------------------------------------------------------------*/
+	private function  __AddMacro ( $predefined, $name, $value, $argv = null, $evaluator = null, $evalargs = null )
+	   {
+		$macros = &$this -> Macros ;
+
+		if  ( isset ( $macros [ $name ] ) )
+		   {
+			if  ( $macros [ $name ] [ 'predefined' ]  &&  ! $predefined )
+				$this -> PreprocessorError ( "Trying to change a predefined macro ($name)." ) ;
+		    }
+
+		if  ( $evalargs  ==  null )
+			$evalargs = array ( ) ;
+		else if  ( ! is_array ( $evalargs ) )
+			$evalargs = array ( $evalargs ) ;
+
+		if  ( $value  ==  null )
+			$value = "" ;
+
+		$argc 	=  count ( $argv ) ;
+
+		for  ( $i = 0 ; $i  <  $argc ; $i ++ )
+		   {
+			for  ( $j = $i + 1 ; $j  <  $argc ; $j ++ )
+			   {
+				if  ( ! strcmp ( $argv [$i], $argv [$j] ) )
+					$this -> __throw_exception ( null, null, "Duplicate parameter '{$argv [$i]}' for macro '$name'." ) ;
+			    }
+		    }
+		$entry  =  array
+		   (
+		   	'name'			=>  $name,
+		   	'value'			=>  $value,
+		   	'predefined'		=>  $predefined,
+		   	'argv'			=>  $argv,
+		   	'argc'			=>  ( $argv ) ? count ( $argv ) : 0,
+		   	'evaluator'		=>  $evaluator,
+			'evaluator-args'        =>  $evalargs
+		    ) ;
+
+		$macros [ $name ] = $entry ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		__RemoveMacro - Removes a macro.
+
+	    PROTOTYPE
+		$processor -> __RemoveMacro ( $name ) ;
+
+	    DESCRIPTION
+		Removes the specified macro.
+
+	    PARAMETERS
+	    	$name (string) -
+		    Name of the macro to be removed.
+
+	    NOTES
+	    	An error is generated if a predefined macro name is specified.
+
+	 --------------------------------------------------------------------------------------------*/
+	private function  __RemoveMacro ( $name )
+	   {
+		$macros = &$this -> Macros ;
+
+		if  ( isset ( $macros [ $name ] ) )
+		   {
+			if  ( $macros [ $name ] [ 'predefined' ]  &&  ! $predefined )
+				$this -> PreprocessorError ( "Trying to undefine a predefined macro ($name)." ) ;
+
+	    		unset ( $macros [ $name ] ) ;
+		    }
+	    }
+
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		__GetDynamicMacroValue - Returns the value of special macros.
+
+	    PROTOTYPE
+		$value = $processor -> __GetDynamicMacroValue ( $name ) ;
+
+	    DESCRIPTION
+		Retrieves the value of a dynamic macro such as __FILE__, __LINE__, __DATE__ and
+		__TIME__.
+
+	    PARAMETERS
+	    	$name (string) -
+	    		Name of the dynamic macro whose value is to be retrieved.
+
+	    RETURN VALUE
+		Macro value.
+
+	 --------------------------------------------------------------------------------------------*/
+	private function  __GetDynamicMacroValue ( $name )
+	   {
+		switch ( strtoupper ( $name ) )
+		   {
+			case	"__FILE__" :
+				return ( $this -> CurrentFile ) ;
+
+			case	"__LINE__" :
+				return ( $this -> CurrentLine ) ;
+
+			case	"__DATE__" :
+				return ( date ( 'Y/m/d' ) ) ;
+
+			case	"__TIME__" :
+				return ( date ( 'h:I:s' ) ) ;
+
+			case	"__YEAR__" :
+				return ( date ( 'Y' ) ) ;
+
+			case 	"__MONTH__" :
+				return ( date ( 'm' ) ) ;
+
+			case	"__DAY__" :
+				return ( date ( 'd' ) ) ;
+
+			case	"__HOUR__" :
+				return ( date ( 'h' ) ) ;
+
+			case 	"__MINUTE__" :
+				return ( date ( 'I' ) ) ;
+
+			case	"__SECOND__" :
+				return ( date ( 's' ) ) ;
+
+			default :
+				$this -> __throw_exception ( $this -> CurrentFile, $this -> CurrentLine, "Invalid dynamic macro name '$name'." ) ;
+		    }
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		__ExpandMacro - Expands a macro.
+
+	    PROTOTYPE
+		$result = $processor -> __ExpandMacro ( $file, $line, $name, $macro_stack = array ( ) ) ;
+
+	    DESCRIPTION
+		Expands a macro and returns the result.
+
+	    PARAMETERS
+	    	$file (string) -
+	    		Calling file name.
+
+    		$line (integer) -
+    			Current calling file line index.
+
+	    	$name (string) -
+		    Macro to be expanded.
+
+		$macro_stack (aray of string) -
+			List of nested macro calls.
+
+	    RETURN VALUE
+		Expanded macro value.
+
+	 --------------------------------------------------------------------------------------------*/
+
+	//  __check_macro_argc -
+	//	Checks the consistency of expected/supplied parameter count
+	private function  __check_macro_argc ( $file, $line, $name, $expected_argv, $expected_argc, $supplied )
+	   {
+	   	$msg 	=  null ;
+
+	   	switch  ( $supplied )
+		   {
+			case	-1 :
+				switch ( $expected_argc )
+				   {
+					case	0 :
+						if  ( $expected_argv )
+							$msg = "must be called using opening and closing parentheses and no parameter" ;
+						break ;
+
+					case	1 :
+						$msg = "expects 1 parameter, none was supplied" ;
+						break ;
+
+					default :
+						$msg = "expects $expected_argc parameters, none were supplied" ;
+				    }
+				break ;
+
+			case	0 :
+				switch ( $expected_argc )
+				   {
+					case	0 :
+						if  ( $expected_argv )
+							$msg = "must be called using opening and closing parentheses and no parameter" ;
+						break ;
+
+					case	1 :
+						$msg = "expects 1 parameter, none was supplied" ;
+						break ;
+
+					default :
+						$msg = "expects $expected_argc parameters, none were supplied" ;
+				    }
+		    		break ;
+
+		    	case	1 :
+		    		switch ( $expected_argc )
+		    		   {
+					case	0 :
+						$msg = "expects no parameter, 1 was supplied" ;
+						break ;
+
+					case	1 :
+						break ;
+
+					default :
+						$msg = "expects $expected_argc parameters, 1 was supplied" ;
+
+		    		    }
+	    			break ;
+
+   			default :
+   				switch ( $expected_argc )
+   				   {
+					case	0 :
+						$msg = "expects no parameter, $supplied were supplied" ;
+						break ;
+
+					case	1 :
+						$msg = "expects 1 parameter, $supplied were supplied" ;
+
+					default :
+						if  ( $supplied  !=  $expected_argc )
+							$msg = "expects $expected_argc parameters, $supplied were supplied" ;
+   				    }
+		    }
+
+	    	if  ( $msg )
+	    		$this -> __throw_exception ( $file, $line, "Macro '$name' $msg." ) ;
+	    }
+
+	// __check_circular_reference -
+	// 	Checks for circular reference
+	private function  __check_circular_reference ( $file, $line, $name, $macro_stack )
+	   {
+	   	$count 		=  count ( $macro_stack ) ;
+
+		for  ( $i = $count - 1 ; $i  >=  0 ; $i -- )
+		   {
+			$macro 	=  $macro_stack [$i] ;
+
+			if  ( ! strcmp ( $macro [ 'name' ], $name ) )
+			   {
+				if  ( $count  >  1 )
+				   {
+				   	$i 		=  $count - 1 ;
+				   	$caller 	=  $macro_stack [$i] [ 'name' ] ;
+				   	$file 		=  $macro_stack [$i] [ 'file' ] ;
+				   	$line 		=  $macro_stack [$i] [ 'line' ] ;
+					$this -> __throw_exception ( $file, $line, "Circular reference in macro '$name', called by macro '$caller'." ) ;
+				    }
+				else
+					$this -> __throw_exception ( $file, $line, "Circular reference in macro '$name'." ) ;
+			    }
+		    }
+	    }
+
+	// __ExpandMacro -
+	// 	Performs macro expansion
+	private function  __ExpandMacro ( $file, $line, $name, $argv, $macro_stack = array ( ), $isdef = true )
+	   {
+	   	// If the macro name exists, process it
+		if  ( array_key_exists ( $name, $this -> Macros ) )
+		   {
+		   	// Check for circular macro references
+		   	if  ( $isdef )
+				$this -> __check_circular_reference ( $file, $line, $name, $macro_stack ) ;
+
+			$macro_definition 	=  $this -> Macros [ $name ] ;
+
+			// If the macro is a dynamic macro and has an evaluator function, call it
+			if  ( $macro_definition [ 'evaluator' ] )
+			   {
+			   	$evaluator 	=  $macro_definition [ 'evaluator' ] ;
+				$evaluator_args =  array ( $name, $macro_definition [ 'evaluator-args' ] ) ;
+				$result 	=  call_user_func_array ( $evaluator, $evaluator_args ) ;
+			    }
+			// Otherwise, process the macro call
+			else
+			   {
+			   	// Get potential macro arguments
+			   	$expected_argc 	=  $macro_definition [ 'argc' ] ;
+			   	$expected_argv 	=  $macro_definition [ 'argv' ] ;
+				$argc 		=  ( $argv  ==  null ) ?  -1 : count ( $argv ) ;
+
+				// Check declared/suuplied macro argument count
+				$this -> __check_macro_argc ( $file, $line, $name, $expected_argv, $expected_argc, $argc ) ;
+
+				// Get macro value
+				$result 	=  $macro_definition [ 'value' ] ;
+
+				// If macro has arguments, replace them with their input definition
+				if  ( $argc  >  0 )
+				   {
+					$macro_argv 	=  $macro_definition [ 'argv' ] ;
+
+					// Loop through macro call parameters
+					for  ( $i = 0 ; $i < $argc ; $i ++ )
+					   {
+						$parameter_value 	=  $argv [$i] ;
+						$parameter_name 	=  $macro_argv [$i] ;
+						$tokens 		=  PHP::GetPHPTokens ( $result, PHP_TOKENS_ADD_PHP_TAGS ) ;
+						$result 		=  "" ;
+
+						// Then through each token from the macro definition
+						foreach  ( $tokens  as  $token )
+						   {
+						   	// If a parameter name has been recognized, add its corresponding value to the output result
+							if  ( $token [ 'id' ]  ==  T_STRING  &&  $token [ 'value' ]  ==  $parameter_name )
+								$result .=  $parameter_value ;
+							// Otherwise add the token value
+							else
+								$result .=  $token [ 'value' ] ;
+						    }
+					    }
+				    }
+
+				// Add current macro to the macro stack, which allows for detecting circular references
+		   		$macro_stack [] =  array ( 'name' => $name, 'file' => $file, 'line' => $line ) ;
+
+		   		// All done, process additional macro expansions before returning a result
+				$result 	=  $this -> __ExpandMacros ( $file, $line, $result, $macro_stack, false ) ;
+			    }
+		    }
+    		// Otherwise, this is a normal token
+		else
+			$result = $name ;
+
+		// All done, return
+		return ( $result ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		__ExpandMacros - Expands macros.
+
+	    PROTOTYPE
+		$text = $processor -> __ExpandMacros ( $file, $line, $text, $macro_stack = array ( ), $isdef = true ) ;
+
+	    DESCRIPTION
+		Expands any macros referencend in the given text.
+
+	    PARAMETERS
+	    	$file (string) -
+	    		Calling file name.
+
+    		$line (integer) -
+    			Current calling file line index.
+
+	    	$text (string) -
+		    Text whose macro references are to be expanded.
+
+		$macro_stack (array) -
+			Array of nested macro calls.
+
+		$isdef (boolean) -
+			When true, the macro text is within a macro definition. When false, it is a
+			macro call. This is used to detect circular macro references.
+
+	    RETURN VALUE
+	    	The expanded text.
+
+	 --------------------------------------------------------------------------------------------*/
+
+	// Macro parsing state
+	const		STATE_START		=  0 ;		// Starting state
+	const		STATE_STRINGIFY		=  1 ;		// A stringifying operator (#) has been specified before the macro
+	const		STATE_MACRO_NAME	=  2 ;		// A potential macro name has been found
+
+	private function  __ExpandMacros ( $file, $line, $text, $macro_stack = array ( ), $isdef = true )
+	   {
+		// Current recursion level
+		static	$level			=  0 ;
+		// Indicates at which recursion level a string should be stringified
+		static	$stringify		=  -1 ;
+		static  $stringify_started	=  false ;
+
+		$level ++ ;
+
+	   	// When parsing parameterized macro calls, the characters specified in $macro_replacements are replaced by those
+	   	// specified in $macro_searches, before calling explode() to get the list of comma-separated parameters
+	   	static 		$macro_replacements 	=  array (  '(',  ')',  ',',  ',' ) ;
+	   	static 		$macro_searches 	=  array ( "\\1", "\\2", "\\3", "\\4" ) ;
+
+		// Initializations
+		$token_list		=  PHP::GetPHPTokens ( $text ) ;		// Get token list
+		$token_index 		=  0 ;						// Current token index
+		$token_count 		=  count ( $token_list ) ;			// Token count
+		$result 		=  "" ;						// Resulting string
+		$current_extra		=  "" ;						// Holds extra characters that may not be in the syntax of a macro call
+		$current_state 		=  self::STATE_START ;				// Current input state
+		$current_macro  	=  null ;					// Holds the name of a potential macro
+		$current_macro_argv 	=  null ;					// If parameterized macro, holds its parameters
+
+		// Loop through token list
+		for  ( $token_index = 0 ; $token_index  <  $token_count ; $token_index ++ )
+		   {
+		   	// Get current token and token value
+		   	$token 		=  $token_list [ $token_index ] ;
+		   	$value 		=  $token [ 'value' ] ;
+
+			// Check current token
+			switch  ( $token [ 'id' ] )
+			   {
+			   	// Concatenation operator (##)
+			   	case	XT_CATENATE :
+					continue 2 ;
+
+				// Stringifying operator
+				case	XT_SHARP :
+					$stringify	=  $level ;
+					continue 2 ;
+
+				// Whitespaces :
+				//	Just check that they are not between a stringifying operator and a macro name
+				case	T_WHITESPACE :
+			 		break ;
+
+				// String token :
+				//	This may be a macro call or reference.
+			   	case	T_STRING :
+			   		$extra_value 	=  "" ;
+
+					// If a macro has been seen before, expand it
+			   		if  ( $current_state  ==  self::STATE_MACRO_NAME )
+			   		   {
+				   		$extra_value 	=  $this -> __ExpandMacro ( $file, $line, $current_macro, $current_macro_argv, $macro_stack, $isdef ) . $current_extra ;
+						$current_macro 	=  null ;
+						$current_extra  =  "" ;
+			   		    }
+
+					// If the current name is a macro, remember it
+					if  ( array_key_exists ( $value, $this -> Macros ) )
+					   {
+				   		$current_state 	=  self::STATE_MACRO_NAME ;
+				   		$current_macro 	=  $value ;
+				   		$current_extra 	=  "" ;
+				   		$value 		=  "" ;
+			   		    }
+   		    			// Otherwise, simply add the value
+   		    			else
+   		    			   {
+   		    				$value 		=  $current_extra . $value ;
+   		    				$current_extra	=  "" ;
+	    				    }
+
+					// If a previous macro has been expanded, add its value
+					if  ( $extra_value  !==  "" )
+    				    		$value 		=  $extra_value . $value ;
+	    				break ;
+
+				// Left parent :
+				//	This may be a parameterized macro call.
+				case	XT_LEFT_PARENT :
+					// Not a parameterized macro call : leave input as is
+					if  ( ! $current_macro )
+						break ;
+
+					// Initializations
+					// We will build a final string ($new_string) using the tokens between the opening and closing macro call
+					// parentheses.
+					// During the processing, the following replacements will occur :
+					// - '(' (when nested) will be replaced by chr(1)
+					// - ')' by chr(2)
+					// - ',', when enclosed in nesting parentheses, by chr(3)
+					// - ... and by chr(4) when present in a string
+					// This trick allows to keep only the opening and closing macro call parentheses, and the comma separating
+					// each macro call parameter. Individual parameters are later retrieved using the explode() function with
+					// the ',' separator.
+					$current_level  =  1 ;			// Current parenthesis nesting level
+					$new_string	=  "" ;			// Output string
+					$value 		=  "" ;			// No output value will be added to ^result
+					$balanced 	=  false ;		// Flag telling if macro call parentheses are balanced
+
+					// Loop through tokens, starting from the one after the opening parenthesis
+					for  ( $i = $token_index + 1 ; $i  < $token_count ; $i ++ )
+					   {
+					   	// Get token entry
+						$next_token 	=  $token_list [$i] ;
+						$next_value 	=  $next_token [ 'value' ] ;
+						$next_id 	=  $next_token [ 'id' ] ;
+
+						// Process token type
+						switch  ( $next_id )
+						   {
+				   			// Left parenthesis -
+				   			//	This is a nested parenthesis ; replace it with an improbable character (chr(1))
+						   	case	XT_LEFT_PARENT :
+						   		$current_level ++ ;
+						   		$new_string 	.=  "\1" ;
+						   		break ;
+
+							// Right parenthesis -
+							//	Same as left but keep an eye on current nesting level.
+					   		case	XT_RIGHT_PARENT :
+					   			$current_level -- ;
+
+					   			if  ( $current_level  <  1 )
+					   			   {
+					   			   	$balanced =  true ;
+					   			   	$value 	  =  "" ;
+					   				break 2 ;
+				   				    }
+
+				   				$new_string 	.=  "\2" ;
+				   				$token_index ++ ;
+				   				break ;
+
+							// Comma -
+							//	For top nesting level, keep it as is ; otherwise replace it with chr(3)
+							//	This is useful for constructs like :
+							//		MACRO(a,b, (2, 3, 4))
+	   						case	XT_COMMA :
+	   							if  ( $current_level  ==  1 )
+	   								$new_string 	.=  ',' ;
+   								else
+   									$new_string 	.=  "\3" ;
+								break ;
+
+							// Quoted string -
+							//	Since the comma is the character used for separating parameters in macro calls,
+							//	make sure that commas within a string are replaced by another improbable character (chr(4))
+							case	T_CONSTANT_ENCAPSED_STRING :
+								$new_string 	.=  str_replace ( ',', "\4", $next_value ) ;
+								break ;
+
+							// Default -
+							//	Simply add the input token to the output string.
+							default :
+								$new_string 	.=  $next_value ;
+						    }
+					    }
+
+					// Complain if an unbalanced macro call has been found
+					if  ( ! $balanced )
+						$this -> __throw_exception ( $file, $line, "Unbalanced parentheses in macro call '$current_macro'." ) ;
+
+					// If a string has been found between the macro call opening and closing parentheses, process it
+					if  ( $new_string )
+					   {
+					   	// Convert the string to an array of macro parameters
+						$current_macro_argv 	=  String::ExplodeAndTrim ( ',', $new_string ) ;
+
+						// Then replace the characters that were replaced by improbable characters with their original version
+						foreach  ( $current_macro_argv  as  &$arg )
+							$arg = str_replace ( $macro_searches, $macro_replacements, $arg ) ;
+					    }
+
+					// Jump to the token corresponding to the closing parenthesis of the macro call
+					$token_index 	=  $i ;
+					break ;
+
+				// EOF or default cases :
+				//	Process the value.
+				case	XT_EOF :
+				default :
+					// If a macro reference has been encountered, expand it
+					if  ( $current_state  ==  self::STATE_MACRO_NAME )
+					   {
+				   		$xvalue 	=  $this -> __ExpandMacro ( $file, $line, $current_macro, $current_macro_argv, $macro_stack, $isdef ) ;
+						$current_macro 	=  null ;
+					    }
+		    			// Not a macro reference
+		    			else
+		    				$xvalue 	=  "" ;
+
+					// Build a resulting value from macro reference, additional characters found ($current_extra) and found value
+					$value 	=  $xvalue . $current_extra . $value ;
+					$current_extra 	=  "" ;
+		    			$current_state 	=  self::STATE_START ;
+					break ;
+			    }
+
+			// Stringifying operator : surround every T_STRING token following
+			if  ( $stringify  ==  $level )
+			   {
+				if  ( ! $stringify_started )
+				   {
+					$value			=  '"' . str_replace ( '"', "\\\"", $value ) ;
+					$stringify_started	=  true ;
+				    }
+				else if  ( $token [ 'id' ]  !=  T_STRING  &&  $token [ 'id' ]  !=  XT_EOF )
+				   {
+					$value			=  '"' . str_replace ( '"', "\\\"", $value )  ;
+					$stringify_started	=  false ;
+					$stringify		=  -1 ;
+				    }
+				
+			    }
+				
+			// If a value has been found, add it to the resulting string
+			if  ( $value  !==  "" )
+	    			$result .= $value ;
+		    }
+
+		// All done, return
+		$level -- ;
+	    	return ( $result ) ;
+	    }
+
+
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/******                                                                               ******/
+	/******                            PUBLIC FUNCTIONS                                   ******/
+	/******                                                                               ******/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		AddDirective - Adds a directive to the preprocessor.
+
+	    PROTOTYPE
+		$ppp -> AddDirective ( $names, $id, $callback, $regex = null ) ;
+
+	    DESCRIPTION
+		Adds a directive to be handled by the preprocessor.
+
+	    PARAMETERS
+	    	$names (string or array of strings) -
+	    		Directive name and possible aliases.
+
+    		$id (integer) -
+			Directive id. It must be greater than or equal to DIRECTIVE_USER_DEFINED.
+
+		$callback (callback) -
+			Callback function to be used for processing directive parameters. The function
+			has the following signature :
+
+				string  callback ( $parameters ) ;
+
+			Where 'parameters' is the result of the preg_match() function applied on the
+			input string. Note that only named parameters are included in this result.
+			It is the responsibility of the callback function to properly analyze the
+			supplied result.
+			The function must return the value to be substituted into the output stream,
+			or false if no substitution has to take place. Note that the returned value
+			can be either a string or an array of strings.
+
+		$regex (string or array of strings) -
+			Regular expression(s) to match and isolate the parameters after the directive
+			name.
+			This parameter can be empty for directives that have no parameters (such as
+			#else or #endif).
+
+	    NOTES
+		Throws an exception if the directive name or its id has already been defined.
+		This function is suited for simple constructs, but not for complex constructs such as
+		#if/#else/#endif.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  AddDirective ( $names, $id, $callback, $regex = null )
+	   {
+	   	// Directive id must be above DIRECTIVE_USER_DEFINED
+	   	if  ( $id  <  self::DIRECTIVE_USER_DEFINED )
+	   		throw new Exception ( "PPP::AddDirective : the specified id ($id) must be greater than or equal to PPP::DIRECTIVE_USER_DEFINED." ) ;
+
+		// Make sure $names is an array
+		if  ( ! is_array ( $names ) )
+			$names 	=  array ( $names ) ;
+
+		// Search through existing directives
+		foreach  ( $this -> DirectiveTable  as  $directive )
+		   {
+			if  ( $directive [ 'constant']  ==  $id )
+				throw new Exception ( "PPP::AddDirective : The directive id '$id' specified for '{$names [0]}' is already used by directive '{$directive [ 'names' ] [0]}'." ) ;
+
+			foreach  ( $directive [ 'names' ]  as  $dirname )
+			   {
+				foreach  ( $names  as  &$name )
+				   {
+					if  ( ! strcasecmp ( $dirname, $name ) )
+						throw new Exception ( "PPP::AddDirective : The specified directive '$name' already exists." ) ;
+				    }
+			    }
+		    }
+
+		// Make sure the regex entry is an array, even empty
+		if  ( $regex  ==  null )
+			$regex = array ( '' ) ;
+		else if  ( ! is_array ( $regex ) )
+			$regex = array ( $regex ) ;
+
+		// All checkings done, add the directive to the existing table
+		$this -> DirectiveTable [] = array
+		   (
+		   	'names'		=>  $names,
+		   	'constant'	=>  $id,
+		   	'callback'	=>  $callback,
+		   	'regex'		=>  $regex
+		    ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Preprocess - Preprocesses the file that has been specified to the constructor.
+
+	    PROTOTYPE
+		$ppp -> Preprocess ( ) ;
+
+	    DESCRIPTION
+		Preprocesses the file that has been specified to the object's constructor.
+
+	    NOTES
+		Throws an exception if any error occurs.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  Preprocess ( )
+	   {
+		$entry = array
+		   (
+		   	'absolute-file'	=>  $this -> AbsoluteFilename,
+		   	'file'		=>  $this -> Filename,
+		   	'line'		=>  1,
+		   	'calling-file'	=>  $this -> AbsoluteFilename,
+			'calling-line'  =>  $this -> Filename
+		    ) ;
+
+   		$this -> IncludeStack [] 	=  $entry ;
+
+		$output = $this -> __preprocess ( $this -> Filename, 1 ) ;
+		$this -> Lines 	=  $output ;
+		$this -> Text 	=  implode ( "\n", $output ) ;
+	    }
+    }

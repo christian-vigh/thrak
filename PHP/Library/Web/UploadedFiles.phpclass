@@ -1,0 +1,383 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        UploadedFiles.phpclass
+
+    DESCRIPTION
+        Encapsulates uploaded files management.
+
+    AUTHOR
+        Christian Vigh, 06/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/06/04]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Web ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces & objects
+use	Thrak\System\Object ;
+use	Thrak\Types\AssociativeArray ;
+use	Thrak\IO\Path ;
+
+
+/*==============================================================================================================
+
+    UploadedFiles -
+        A class that is intended to map the contents of the $_FILES array.
+
+  ==============================================================================================================*/
+class  UploadedFiles		extends		Object
+				implements	\ArrayAccess, \Countable, \IteratorAggregate
+   {
+	public			$Files	=  [] ;
+	
+	
+	/*==============================================================================================================
+	
+	    Constructor -
+	        Builds an UploadedFiles object, whose Files property remaps the $_FILES superglobal, as a recursive array
+	 	of UploadedFile objects.
+		The object can be accessed as an array.
+	 	The trick is to reorganize the $_FILES array so that the 'name', 'type', 'tmp_name', 'error' and 'size' 
+	 	elements can be accessed through the name declared in the input form.
+	 	For example, assuming that $files is an instance of the UploadedFiles object :
+	  
+	 		<input type="file" name="upload[]"/>
+	 		<input type="file" name="upload[]"/>
+	  
+	 	Then both files will be accessible through the $file[0] and $files[1] constructs. Similarly :
+	  
+	 		<input type="file" name="upload[uploads][]"/>
+	 		<input type="file" name="upload[uploads][]"/>
+	  
+	 	will be accessible through the $files['uploads'][0] and $files ['uploads'][1] constructs.
+	
+	  ==============================================================================================================*/
+	public function  __construct ( $files )
+	   {
+		parent::__construct ( ) ;
+	
+		// Loop through $_FILES array
+		foreach  ( $files  as  $name => $data )
+		   {
+			// Top level entries are form field names ; when array, recursively process their contents
+			if  ( is_array ( $data [ 'name' ] ) )
+			   {
+				$this -> Files [ $name ]	=  [] ;
+				$this -> __process_subarray ( $this -> Files [ $name ], $data ) ;
+			    }
+			// Otherwise, simply create an UploadedFile object
+			else
+				$this -> Files [ $name ]	=  new UploadedFile ( $data [ 'name' ], $data [ 'type' ], $data [ 'tmp_name' ],
+											$data [ 'error' ], $data [ 'size' ] ) ;
+		    }
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    __process_subarray -
+	        Recursively process file entries that are beneath the first level of indirection.
+	
+	  ==============================================================================================================*/
+	public function  __process_subarray ( &$output_array, $input_array )
+	   {
+		// One of the $_FILES entries (name, type, tmp_name, error or size) is an array ; this means that the corresponding form
+		// <input> name references an array
+		if  ( is_array ( $input_array [ 'name' ] ) )
+		   {
+			// Loop through the array entries that have been collected by php
+			foreach  ( $input_array [ 'name' ]  as  $index => $data )
+			   {
+				// Numeric index : this means than no further nested entry exists
+				if  ( is_numeric ( $index ) )
+					$output_array []	=  new UploadedFile ( $input_array [ 'name' ] [ $index ], $input_array [ 'type' ] [ $index ],
+										$input_array [ 'tmp_name' ] [ $index ], $input_array [ 'error' ] [ $index ],
+										$input_array [ 'size' ] [ $index ] ) ;
+				// Otherwise reorganize sub-entries so that they represent an array with the usual file entries (name, type, ...)
+				else
+				   {
+					$output_array [ $index ]	=  [] ;
+					
+					$this -> __process_subarray 
+					   ( 
+						$output_array [ $index ],
+						[
+							'name'		=>  $input_array [ 'name'     ] [ $index ],
+							'type'		=>  $input_array [ 'type'     ] [ $index ],
+							'tmp_name'	=>  $input_array [ 'tmp_name' ] [ $index ],
+							'error'		=>  $input_array [ 'error'    ] [ $index ],
+							'size'		=>  $input_array [ 'size'     ] [ $index ]
+						 ]
+					    ) ;
+				    }
+			    }
+		    }
+		// Not an array, but rather a simple <input> entry with a non-array name
+		else
+		   {
+			$output_array []	=  new UploadedFile ( $input_array [ 'name' ], $input_array [ 'type' ], $input_array [ 'tmp_name' ],
+									$input_array [ 'error' ], $input_array [ 'size' ] ) ;
+		    }
+	    }
+		
+		
+	/*==============================================================================================================
+	
+		Interfaces implementations.
+	
+	  ==============================================================================================================*/
+	public function  Count ( )
+	   { return ( count ( $this -> Files ) ) ; }
+		
+	
+	public function  getIterator ( )
+	   { return ( $this -> Files -> getIterator ( ) ) ; }
+	
+	
+	public function  offsetExists ( $offset )
+	   { return ( isset ( $this -> Files [ $offset ] ) ) ; }
+	
+	
+	public function  offsetGet ( $offset )
+	   { return ( $this -> Files [ $offset ] ) ; }
+	
+	
+	public function  offsetSet ( $offset, $value )
+	   { error ( new \Thrak\System\UnsupportedOperationException ( ) ) ; }
+	
+	
+	public function  offsetUnset ( $offset )
+	   { error ( new \Thrak\System\UnsupportedOperationException ( ) ) ; }
+    }
+
+
+/*==============================================================================================================
+
+    UploadedFile -
+        Maps an uploaded file entry.
+
+  ==============================================================================================================*/
+class  UploadedFile		extends		Object
+   {
+	// List of upload errors :
+	// There is no error, the file uploaded with success. 
+	const		ERROR_OK			=  UPLOAD_ERR_OK ;
+	// The uploaded file exceeds the upload_max_filesize directive in php.ini. 
+	const		ERROR_MAX_INI_FILESIZE		=  UPLOAD_ERR_INI_SIZE ;
+	// The uploaded file exceeds the MAX_FILE_SIZE directive that was specified in the HTML form. 
+	const		ERROR_MAX_FORM_FILESIZE		=  UPLOAD_ERR_FORM_SIZE ;
+	// The uploaded file was only partially uploaded. 
+	const		ERROR_PARTIAL_UPLOAD		=  UPLOAD_ERR_PARTIAL ;
+	// No file was specified for uploading.
+	const		ERROR_NO_FILE			=  UPLOAD_ERR_NO_FILE ;
+	// Missing a temporary folder.
+	const		ERROR_NO_TMPDIR			=  UPLOAD_ERR_NO_TMP_DIR ;
+	// Failed to write file to disk.
+	const		ERROR_WRITE_FAILED		=  UPLOAD_ERR_CANT_WRITE ;
+	// A PHP extension stopped the file upload. PHP does not provide a way to ascertain which extension caused the file upload to stop; 
+	// examining the list of loaded extensions with phpinfo() may help.
+	const		ERROR_DENIED_BY_EXTENSION	=  UPLOAD_ERR_EXTENSION ;
+
+	// Uploaded file properties
+	public		$SourceName	=  false ;		// Original name on the client desktop
+	public		$Extension	=  false ;		// File extension, without the leading dot
+	public		$Type		=  false ;		// Mime file type
+	public		$TempFile	=  false ;		// Uploaded temp file name
+	public		$Error		=  false ;		// Error code
+	public		$Size		=  false ;		// Uploaded file size
+	public		$MovedTo	=  false ;		// Name of the destination filename, when the MoveTo() method has been called
+	
+	
+	/*==============================================================================================================
+	
+	    Constructor -
+	        Builds an UploadedFile object.
+	
+	  ==============================================================================================================*/
+	public function  __construct ( $name, $type, $temp_name, $error, $size )
+	   {
+		parent::__construct ( ) ;
+		
+		if  ( $name )
+		   {
+			$this -> SourceName	=  $name ;
+			$this -> Extension	=  pathinfo ( $name, PATHINFO_EXTENSION ) ;
+		    }
+		
+		if  ( $type )
+			$this -> Type		=  $type ;
+		
+		if  ( $temp_name )
+			$this -> TempFile	=  $temp_name ;
+		
+		$this -> Error		=  $error ;
+		$this -> Size		=  $size ;
+	    }
+
+	
+	/*==============================================================================================================
+	
+	    Destructor -
+	        Removes the uploaded file, if any.
+	
+	  ==============================================================================================================*/
+	public function  __destruct ( )
+	   {
+		if  ( $this -> Error  ==  self::ERROR_OK  &&  ! $this -> MovedTo  &&  file_exists ( $this -> TempFile ) )
+			unlink ( $this -> TempFile ) ;
+	    }
+	
+	
+	
+	/*==============================================================================================================
+	
+	    IsImage -
+	        Returns true if the uploaded file is an image file (jpg, png, etc.).
+	
+	  ==============================================================================================================*/
+	public function  IsImage ( )
+	   {
+		$path	=  ( $this -> MovedTo ) ?  $this -> MovedTo : $this -> TempFile ;
+		
+		return  ( Path::IsMimeType ( $path, 'image/*' ) ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    IsOfficeDocument -
+	        Returns true if the uploaded file is an office document.
+	
+	  ==============================================================================================================*/
+	public function  IsOfficeDocument ( )
+	   {
+		$path		=  ( $this -> MovedTo ) ?  $this -> MovedTo : $this -> TempFile ;
+		$mime_types	=  
+		   [
+			'application/msword', 
+			'application/msaccess',
+			'application/pdf',
+			'application/vnd.openxmlformats-officedocument*',
+			'application/vnd.ms-*',
+			'application/cdf*'
+		    ] ;
+		return  ( Path::IsMimeType ( $path, $mime_types ) ) ;
+	    }
+
+	
+	/*==============================================================================================================
+	
+	    IsPdf -
+	        Returns true if the uploaded file is a pdf document.
+	
+	  ==============================================================================================================*/
+	public function  IsPdf ( )
+	   {
+		$path		=  ( $this -> MovedTo ) ?  $this -> MovedTo : $this -> TempFile ;
+		
+		return ( Path::IsMimeType ( $path, [ 'application/pdf' ] ) ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    IsText -
+	        Returns true if the uploaded file is text.
+	
+	  ==============================================================================================================*/
+	public function  IsText ( )
+	   {
+		$path		=  ( $this -> MovedTo ) ?  $this -> MovedTo : $this -> TempFile ;
+		
+		return ( Path::IsMimeType ( $path, [ 'text/*' ] ) ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    IsMissing -
+	        Returns true if no source file name was specified for this uploaded file entry.
+	
+	  ==============================================================================================================*/
+	public function  IsMissing ( )
+	   { return ( $this -> Error  ==  self::ERROR_NO_FILE ) ; }
+	
+	
+	/*==============================================================================================================
+	
+	    IsMoved -
+	        Returns true if the source file has been moved.
+	
+	  ==============================================================================================================*/
+	public function  IsMoved ( )
+	   { return ( $this -> MovedTo  !=  false ) ; }
+	
+	
+	/*==============================================================================================================
+	
+	    IsOk -
+	        Returns true if the source file has been successfully uploaded.
+	
+	  ==============================================================================================================*/
+	public function  IsOk ( )
+	   { return ( $this -> Error  ==  self::ERROR_OK ) ; }
+	
+	
+	/*==============================================================================================================
+	
+	    IsUploaded -
+	        Returns true if the current file represents a file that has been really uploaded.
+	
+	  ==============================================================================================================*/
+	public function  IsUploaded ( )
+	   { return ( is_uploaded_file ( $this -> TempFile ) ) ; } 
+	
+	
+	/*==============================================================================================================
+	
+	    MoveTo -
+	        Moves an uploaded file to the specified destination, and changes the permissions accordingly.
+	
+	  ==============================================================================================================*/
+	public function  MoveTo ( $destination, $mode = 0640 )
+	   {
+		if  ( ! $this -> MovedTo )
+		   {
+			if  ( $this -> IsUploaded ( ) )
+			   {
+				$status		=  @move_uploaded_file ( $this -> TempFile, $destination ) ;
+			
+				if  ( $status  ===  false )
+					error ( new \Thrak\System\FileWriteException ( "Cannot move file \"{$this -> TempFile}\" to \"$destination\"" ) ) ;
+				else
+				   {
+					chmod ( $destination, $mode ) ;
+					$this -> MovedTo	=  Path::RealPath ( $destination ) ;
+				    }
+			    }
+			else
+				error ( new \Thrak\System\RuntimeException ( "File \"{$this -> TempFile}\" is not an uploaded file." ) ) ;
+		    }
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    Unlink -
+	        Unlinks either the original file or its destination, if the MoveTo() method has been called.
+	
+	  ==============================================================================================================*/
+	public function  Unlink ( )
+	   {
+		$path	=  ( $this -> MovedTo ) ?  $this -> MovedTo : $this -> TempFile ;
+		
+		if  ( file_exists ( $path ) )
+			unlink ( $path ) ;
+	    }
+    }

@@ -1,0 +1,372 @@
+<?php
+/***************************************************************************************************
+
+    NAME
+	TLD.phpclass
+
+    DESCRIPTION
+	Manages the list of top-level domain names.
+
+    AUTHOR
+     	Christian Vigh, 10/2011.
+
+    HISTORY
+    [Version : 1.0]	[Date : 2011/10/07]	[Author : CV]
+     	Initial version.
+
+   [Version : 2.0]	[Date : 2012/10/06]		[Author : CV]
+	Migrated to the Thrak library version 2.
+
+ ***************************************************************************************************/
+namespace  	Thrak\Internet ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces and classes
+use     Thrak\System\Object 		as  Object ;
+use 	Thrak\System\Exception 		as  Exception ;
+use  	Thrak\Types\String  		as  String ;
+use	Thrak\IO\Path 			as  Path ;
+use  	Thrak\Internet\Xml\SimpleXML 	as  SimpleXML ;
+
+
+/*==================================================================================================
+
+	TLD types.
+
+   ==================================================================================================*/
+define ( 'TLD_TYPE_GENERIC'		, 0x01 ) ;		// General TLDs
+define ( 'TLD_TYPE_COUNTRY'		, 0x02 ) ;		// TLDs related to countries
+define ( 'TLD_TYPE_INFRASTRUCTURE'	, 0x04 ) ;		// TLDs related to network infrastructure
+define ( 'TLD_TYPE_ALL'	 		, 0x07 ) ;		// Filter for all TLDs
+
+
+/*==================================================================================================
+
+ 	TLD class -
+	Holds information about a particular top-level domain.
+
+   ==================================================================================================*/
+class  TLD  extends  Object
+   {
+	// TLD name
+	public 		$Name ;
+	// TLD type (TLD_TYPE_xxx constant)
+	public 		$Type ;
+	// Entity type (short description of TLD purpose)
+	public		$Entity ;
+	// Specifies if there is a support for internationalized domain names for this TLD.
+	public		$IDN ;
+	// Indicates the presence of DS records for Domain Name System Security Extensions.
+	public		$DNSSEC ;
+	// Specifies if second-level domain registrations are authorized.
+	public		$SLD ;
+	// Optional notes
+	public 		$Notes ;
+
+
+	// Constructor
+	public function  __construct ( $name, $type, $entity, $idn, $dnssec, $sld, $notes )
+	   {
+	   	// Add a leading dot to the TLD name if none specified
+	   	if  ( $name [0]  !=  '.' )
+	   		$name = '.' . $name ;
+
+   		// Convert the TLD type string to a type constant ($type can also be a TLD_TYPE_xxx constant)
+   		if  ( is_numeric ( $type )  &&  ! ( $type &  TLD_TYPE_ALL ) )
+   			throw new Exception ( "The TLD type '$type' specified for the '$name' TLD is incorrect." ) ;
+		else
+		   {
+			switch ( strtolower ( $type ) )
+			   {
+				case	'generic' :
+					$type = TLD_TYPE_GENERIC ;
+					break ;
+
+				case	'country' :
+					$type = TLD_TYPE_COUNTRY ;
+					break ;
+
+				case	'infrastructure' :
+					$type = TLD_TYPE_INFRASTRUCTURE ;
+					break ;
+
+				default :
+		   			throw new Exception ( "The TLD type '$type' specified for the '$name' TLD is incorrect." ) ;
+			    }
+		     }
+
+	   	// Save the values
+		$this -> Name		=  $name ;
+		$this -> Type 		=  $type ;
+		$this -> Entity 	=  $entity ;
+		$this -> IDN 		=  $idn ;
+		$this -> DNSSEC		=  $dnssec ;
+		$this -> SLD 		=  $sld ;
+		$this -> Notes		=  trim ( $notes ) ;
+	    }
+    }
+
+
+ /*==================================================================================================
+
+     TLDList class -
+	Handles a list of available TLDs, defined in the Data/TopLevelDomainNames.xml file of
+	the Thrak library root.
+
+   ==================================================================================================*/
+class  TLDList  extends  Object
+			    implements  \ArrayAccess, \Countable, \Iterator
+   {
+   	public		$TLDS ;
+   	public	 	$TLDNames 	=  array ( ) ;
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Class constructor.
+
+	 --------------------------------------------------------------------------------------------*/
+   	public function  __construct  ( $file = "thrak://Data/TLDNames.xml" )
+   	   {
+   	   	$file 	=  Path::RealPath ( $file ) ;
+
+		if  ( ! file_exists ( $file ) )
+			throw new Exception ( "TLDList : Top-level domain names definition file '$file' does not exist." ) ;
+
+		$contents 	=  file_get_contents ( $file ) ;
+		$xml 		=  SimpleXML::LoadFromString ( $contents ) ;
+		$xml_array 	=  $xml -> AsArray ( ) ;
+
+		$this -> __process_xml_array ( $xml_array, $file ) ;
+   	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Processes XML data converted to an array.
+
+	 --------------------------------------------------------------------------------------------*/
+	private function  __process_boolean ( $file, $name, $attr, $value )
+	   {
+		if  ( String::IsTrue ( $value ) )
+			return ( true ) ;
+		else if ( String::IsFalse ( $value ) )
+			return ( false ) ;
+
+		throw new CLException ( "Invalid boolean value '$value' specified for the '$attr' attribute of the '$name' TLD, in TLD definitions file '$file'." ) ;
+	    }
+
+	private function  __process_xml_array ( $data, $file )
+	   {
+	   	// Check that the root tag is '<schemes>' and that no attribute has been specified.
+	   	$root 		=  $data [ 'tag' ] ;
+	   	$children       =  $data [ 'children' ] ;
+
+		if  ( strcasecmp ( $root, 'tlds' ) )
+			throw new Exception ( "TLDList class : The root tag defined in the definition file '$file' must be '<tlds>'. '<$root>' was found instead." ) ;
+
+		if  ( count ( $data [ 'attributes' ] ) )
+			throw new Exception ( "TLDList class : The root tag defined in the TLD definitions file '$file' cannot have attributes." ) ;
+
+		if  ( ! count ( $children ) )
+			throw new Exception ( "TLDList class : The root tag in the TLD definitions file '$file' has no entries." ) ;
+
+
+		// Process children
+		$tld_index = 0 ;
+
+		foreach  ( $children  as  $child )
+		   {
+		   	$tld_index ++ ;
+
+		   	// Only '<scheme>' tags are allowed inside the root tag.
+		   	$tag 		=  $child [ 'tag' ] ;
+
+		   	if  ( strcasecmp ( $tag, "tld" ) )
+				throw new Exception ( "TLDList class : The <tlds> tag defined in the TLD definitions file '$file' can only contain <tld> tags." ) ;
+
+			// Attributes and other information
+			$name  		=  null ;
+			$type 		=  null ;
+			$entity		=  "" ;
+			$IDN 		=  false ;
+			$DNSSEC 	=  false ;
+			$SLD 		=  false ;
+			$notes 		=  trim ( $child [ 'contents' ] ) ;
+
+			// Get attribute name
+			foreach  ( $child [ 'attributes']  as  $attribute )
+			   {
+				if  ( ! strcasecmp ( $attribute [ 'name' ], 'name' ) )
+				   {
+					$name 	=  trim ( $attribute [ 'value' ] ) ;
+					break ;
+				    }
+			    }
+
+			// Check that required attributes has been specified
+			if  ( ! $name )
+				throw new Exception ( "TLDList class : The 'name' attribute of the <tld> tag entry #$tld_index defined in the TLD definitions file '$file' is mandatory." ) ;
+
+			// Get attribute definitions
+			foreach  ( $child [ 'attributes' ]  as  $attribute )
+			   {
+				$attr_name 	=  strtolower ( $attribute [ 'name' ] ) ;
+				$attr_value 	=  trim ( $attribute [ 'value' ] ) ;
+
+				switch  ( $attr_name )
+				   {
+				   	// TLD name : already processed above
+					case	'name' :
+						break ;
+
+					// TLD type
+					case	'type' :
+						$type   =  strtolower ( $attr_value ) ;
+						break ;
+
+					// Entity
+					case	'entity' :
+						$entity =  trim ( $attr_value ) ;
+						break ;
+
+					// IDN
+					case	'idn' :
+						$IDN  	=  $this -> __process_boolean ( $file, $name, $attr_name, $attr_value ) ;
+						break ;
+
+					// DNSSEC
+					case	'dnssec' :
+						$DNSSEC	=  $this -> __process_boolean ( $file, $name, $attr_name, $attr_value ) ;
+						break ;
+
+					// SLD
+					case	'sld' :
+						$SLD  	=  $this -> __process_boolean ( $file, $name, $attr_name, $attr_value ) ;
+						break ;
+
+					// Other attributes are banished
+					default :
+						throw new Exception ( "TLDList class : Invalid attribute '$attr_name' in the <tld> tag defined in the TLD definitions file '$file'." ) ;
+				    }
+			    }
+
+			// Create the new TLD entry object
+			$tld = new TLD ( $name, $type, $entity, $IDN, $DNSSEC, $SLD, $notes ) ;
+			$this -> TLDS [ strtolower ( $name ) ]	=  $tld ;
+			$this -> TLDNames []			=  $name ;
+		    }
+
+		// Sort protocols by name
+		uksort ( $this -> TLDS, "strcmp" ) ;
+		sort ( $this -> TLDNames ) ;
+	    }
+
+
+
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/******                                                                               ******/
+	/******                         INTERFACES IMPLEMENTATION                             ******/
+	/******                                                                               ******/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+
+	/*-------------------------------------------------------------------------------------------
+
+		ArrayAccess interface implementation.
+			Used for accessing TLD entries.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  offsetSet ( $offset, $value )
+	   {
+		throw new CLException ( "TLD entries are read-only and cannot be set." ) ;
+	    }
+
+    	public function  offsetExists ( $offset )
+    	   {
+    	   	if  ( is_numeric ( $offset ) )
+    	   		$offset = $this -> TLDNames [ $offset ] ;
+		else if  ( $offset [0]  !=  '.' )
+			$offset = '.' . $offset ;
+
+		$offset		=  strtolower ( $offset ) ;
+
+	   	return ( isset ( $this -> TLDS [ $offset ] ) ) ;
+	    }
+
+    	public function offsetUnset ( $offset )
+	   {
+		throw new CLException ( "TLD entries are read-only and cannot be unset." ) ;
+	    }
+
+        public function offsetGet ( $offset )
+           {
+    	   	if  ( is_numeric ( $offset ) )
+    	   		$offset = $this -> TLDNames [ $offset ] ;
+		else if  ( $offset [0]  !=  '.' )
+			$offset = '.' . $offset ;
+
+	   	return ( $this -> TLDS [ strtolower ( $offset ) ] ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Countable interface implementation.
+			Counts the number of TLD definitions.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  count ( )
+	   { return ( count ( $this -> TLDS ) ) ; }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Iterator interface implementation.
+			Allows for looping through each TLD entry using a foreach() construct.
+
+	 --------------------------------------------------------------------------------------------*/
+	private  	$TLDIndex		=  0 ;
+
+	function  current ( )
+	   {
+		$key		=  $this -> key ( ) ;
+
+		return ( $this -> TLDS [ $key ] ) ;
+	    }
+
+	function  key ( )
+	   {
+		return ( $this -> TLDNames [ $this -> TLDIndex ] ) ;
+	    }
+
+	function  next ( )
+	   {
+		$key		=  $this -> key ( ) ;
+		$this -> TLDIndex ++ ;
+
+		return ( $this -> TLDS [ $key ] ) ;
+	    }
+
+	function  rewind ( )
+	   {
+	   	$this -> TLDIndex = 0 ;
+	    }
+
+	function  valid ( )
+	   {
+	   	return ( $this -> TLDIndex  <  count ( $this -> TLDS ) ) ;
+	    }
+
+	function  length ( )
+	   { return ( count ( $this -> TLDS ) ) ; }
+
+	function  getIterator ( )
+	   { return ( $this ) ; }
+    }
+
+ 

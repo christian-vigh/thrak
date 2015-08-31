@@ -1,0 +1,522 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        Sanitizer.phpclass
+
+    DESCRIPTION
+        Wraps an array or something else to provide sanitized input.
+ 	A wrapped object can be created like this :
+  
+ 		$array	=  Sanitizer::Wrap ( $variable ) ;
+  
+ 	This can be used for example on superglobal variables :
+  
+ 		$_POST	=  Sanitizer::Wrap ( $_POST ) ;
+  
+ 	When an object or array has been wrapped, its keys or properties can be accessed either through an
+ 	array index or through its property name. Accessing a key or a property may return a ScalarSanitizer
+ 	object, or an array of ScalarSanitizer objects.
+  
+ 	A function can be called to apply constraints, transformations and conversions on the returned 
+ 	result(s) ; when applied on a single value, the returned value will be a single string ; when applied
+ 	on array or object, the returned value will be an array of strings.
+  
+ 	Note that errors due to constraint/transformation/conversion errors will only be accessible through
+ 	the $LastError property.
+  
+ 	
+   EXAMPLES
+ 	The following will return a single string if $_POST [ 'input' ] is a single form field, and an array
+ 	of values if it is a set of form fields whose names are "input[]" ; result are converted to lowercase :
+ 
+ 		$value	=  $_POST [ 'input' ] -> string ( [ 'case' => CASE_LOWER ] ) ;
+  
+   REFERENCE
+ 	The following functions are available on single, array or object values ; they return either a single
+ 	value, or an array when the referenced variable is either an array or an object. All options are 
+ 	specified as an associative array, the sole argument of the function call :
+  
+ 	- string :
+ 		Applies transformations/constraint on a string argument ; the following options can be
+ 		specified :
+  
+ 		- case (integer) :
+ 			Input string case may be affected : CASE_ASIS (no conversion), CASE_LOWER (converted
+ 			to lowercase), CASE_UPPER (converted to uppercase).
+  
+ 		- default (string) :
+ 			Provides a default value if the input string is not specified or does not satisfies
+ 			the constraints.
+
+		- escape :
+ 			If a database connection is available, use it for escaping the string value ; 
+ 			otherwise use the addslashes() function.
+  
+ 		- filler (string) :
+ 			Filler string to be used if the input string length is less than 'min-length'.
+  
+ 		- html-cleanup (integer) :
+ 			A combination of HtmlCleaner::CLEAN_* flags, or a boolean indicating whether to
+ 			perform html cleanup or not.
+  
+		- ltrim (boolean) :
+ 			Left-trims the input string.
+  
+ 		- max-length (integer) :
+ 			Maximum length. If the input string exceeds this length, it will be truncated.
+  
+		- min-length (integer) :
+ 			Minimum length of the input string. If input string length is less than the specified
+ 			value, it will be padded using the 'filler' option (if any). In this case, $LastError 
+ 			will be set to ERROR_STRING_TOO_SHORT for each of the concerned values.
+  
+ 		- rtrim (boolean) :
+ 			Right-trims the input string.
+  
+ 		- trim (boolean) :
+ 			Left- and right-trims the input string.
+  
+ 	- integer (or int),
+ 	  double (or float or real) -
+ 		Applies to numeric value. Options can be :
+  
+ 		- min, max (numeric) :
+ 			Min and max values for the input numeric value. If not specified, no range constraint 
+ 			applies.
+  
+ 		- default (any) :
+ 			Default value to be used if none supplied, or if the input value does not fall in the
+ 			range min..max. In this latter case, the $LastError property is set to either
+ 			ERROR_VALUE_TOO_SHORT or ERROR_VALUE_TOO_HIGH.
+  
+ 		For decimal values, comma (decimal separator) is converted to a dot.
+  
+ 	- date (or datetime) :
+ 		Applies to date or date/time values. Options can be :
+  
+ 		- language (string) :
+ 			Either 'fr' or 'en', for french or english date formats respectively.
+  
+ 		- default (integer) :
+ 			Unix timestamp of default date/time. Default is now().
+  
+ 		- format (string) :
+ 			A format recognized by the date() function. If not specified, the returned value is a
+ 			Unix timestamp.
+
+    AUTHOR
+        Christian Vigh, 06/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/06/02]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Web ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use 	Thrak\System\Object ;
+use     Thrak\Types\String ;
+use	Thrak\Types\Wrapper ;
+use	Thrak\Types\ScalarWrapper ;
+use	Thrak\Types\ArrayWrapper ;
+use	Thrak\Types\ResourceWrapper ;
+use	Thrak\Types\ObjectWrapper ;
+use	Thrak\Internet\Xml\Utilities ;
+use	Thrak\Html\HtmlCleaner ;
+use	Thrak\Database ;
+
+
+/*==============================================================================================================
+
+    Sanitizer class -
+        Extends the Wrapper classes to provide for sanitizing methods to be used on html form input.
+
+  ==============================================================================================================*/
+class  Sanitizer		extends  Wrapper
+   {
+	public static function  Wrap ( $variable )
+	   {
+		self::$WrapperClasses	=
+		   [
+			'scalar'	=>  '\Thrak\Web\ScalarSanitizer',
+			'array'		=>  '\Thrak\Web\ArraySanitizer',
+			'object'	=>  '\Thrak\Web\ObjectSanitizer',
+			'resource'	=>  '\Thrak\Types\ResourceWrapper'
+		    ] ;
+
+	
+		return ( parent::Wrap ( $variable ) ) ;
+	    }
+    }
+
+
+/*==============================================================================================================
+
+    ScalarSanitizer class -
+        Description.
+
+  ==============================================================================================================*/
+class  ScalarSanitizer	extends  ScalarWrapper
+   {
+	// Error codes that may be set by calling pseudo-functions
+	const	ERROR_OK			=  0 ;				// No error
+	const	ERROR_STRING_TOO_SHORT		=  1 ;				// String argument : wrapped string was too short
+	const	ERROR_STRING_TOO_LONG		=  2 ;				// String argument : wrapped string was too long
+	const	ERROR_VALUE_TOO_LOW		=  3 ;				// Numeric value too low (below the allowed minimum)
+	const   ERROR_VALUE_TOO_HIGH		=  4 ;				// Numeric value too high
+	
+	// Last error code
+	public static  $LastError		=  self::ERROR_OK ;
+	
+	
+	/*==============================================================================================================
+	
+	    __call -
+	        Formats a wrapped value, depending on the type of function called. Each function accepts parameters as
+		an associative array with the options described below :
+	
+	  ==============================================================================================================*/
+	public function  __call ( $method, $args )
+	   {
+		// Global default values may be specified here - not sure it is useful
+		$global_defaults	=  
+		   [
+		    ] ;
+
+		// Wrapped value, as a string
+		$value			=  $this -> WrappedValue ;
+		
+		// Reset error code
+		self::$LastError	=  self::ERROR_OK ;
+		
+		// Handle function call 
+		switch  ( strtolower ( $method ) )
+		   {
+			// string -
+			//	Manipulations on the input string value
+			case	'string' :
+				$value	=  $this ->  __get_string ( $value, $args, $global_defaults ) ;
+				break ;
+				
+			// integer, int -
+			//	Converts input value to an integer.
+			case	'integer' :
+			case	'int' :
+				$value	=  $this -> __get_integer ( $value, $args, $global_defaults ) ;
+				break ;
+				
+			// float, double, real :
+			//	Converts input value to a double.
+			case	'float' :
+			case	'double' :
+			case	'real' :
+				$value	=  $this -> __get_float ( $value, $args, $global_defaults ) ;
+				break ;
+				
+			// date -
+			//	Converts a date value.
+			case	'date' :
+				$value	=  $this -> __get_date ( $value, $args, $global_defaults, false ) ;
+				break ;
+				
+			// datetime -
+			//	Converts a date/time value.
+			case	'datetime' :
+				$value	=  $this -> __get_date ( $value, $args, $global_defaults, true ) ;
+				break ;
+		    }
+		
+		return ( $value ) ;
+	    }
+	
+	
+	// __get_args :
+	//	Called by the __call() magic method. Merges the optionally supplied arguments, together with the
+	//	default options of the called target and the global defaults.
+	private function  __get_args ( $args, $defaults, $global_defaults )
+	   {
+		if  ( isset ( $args [0] ) )
+			$result		=  array_merge ( $global_defaults, $defaults, $args [0] ) ;
+		else
+			$result		=  array_merge ( $global_defaults, $defaults ) ;
+		
+		return ( $result ) ;
+	    }
+	
+	
+	// __get_string :
+	//	Processes a string value.
+	private function  __get_string ( $value, $args, $global_defaults )	
+	   {
+		global		$Database ;
+		
+		
+		$parameters	=  $this -> __get_args 
+		   ( 
+			$args, 
+			[
+				'min-length'	=>  0,
+				'max-length'	=>  PHP_INT_MAX,
+				'case'		=>  CASE_ASIS,
+				'trim'		=>  false,
+				'ltrim'		=>  false,
+				'rtrim'		=>  false,
+				'default'	=>  '',
+				'filler'	=>  '',
+				'html-cleanup'	=>  HtmlCleaner::CLEAN_NONE,
+				'escape'	=>  false 
+			 ],
+			$global_defaults
+		    ) ;
+				
+		if  ( $value  ===  null )
+			$value	=  $parameters [ 'default' ] ;
+		
+		if  ( $parameters [ 'trim' ] )
+			$value	=  trim ( $value ) ;
+				
+		if  ( $parameters [ 'ltrim' ] )
+			$value	=  ltrim ( $value ) ;
+				
+		if  ( $parameters [ 'rtrim' ] )
+			$value	=  rtrim ( $value ) ;
+				
+		if  ( $parameters [ 'case' ]  ==  CASE_LOWER )
+			$value	=  strtolower ( $value ) ;
+		else if  ( $parameters [ 'case' ]  ==  CASE_UPPER )
+			$value	=  strtoupper ( $value ) ;
+				
+		$length		=  strlen ( $value ) ;
+			
+		if  ( $length  >  $parameters [ 'max-length' ] )
+		   {
+			self::$LastError	=  self::ERROR_STRING_TOO_LONG ;
+			$value			=  substr ( $value, 0, $parameters [ 'max-length' ] ) ;
+		    }
+		else if  ( $length  <  $parameters [ 'min-length' ] ) 
+		   {
+			self::$LastError	=  self::ERROR_STRING_TOO_SHORT ;
+			$filler_length		=  strlen ( $parameters [ 'filler' ] ) ;
+					
+			if  ( $filler_length  >  0 )
+			   {
+				while  ( $length  <  $parameters [ 'min-length' ] )
+				   {
+					if  ( $length + $filler_length  >  $parameters [ 'min-length' ] )
+					   {
+						$residual_length	 =  $parameters [ 'min-length' ] - $length ;
+						$value			.=  substr ( $parameters [ 'filler' ], 0, $residual_length ) ;
+					    }
+					else
+					    {
+						$residual_length	 =  $filler_length ;
+						$value			.=  $parameters [ 'filler' ] ;
+					     }
+							
+					$length	+=  $residual_length ;
+				    }
+			    }
+		    }
+					
+		if  ( is_bool ( $parameters [ 'html-cleanup' ] )  &&  $parameters [ 'html-cleanup' ] ) 
+			$value	=  HtmlCleaner::Clean ( $value, HtmlCleaner::CLEAN_DEFAULT ) ;
+		else
+			$value	=  HtmlCleaner::Clean ( $value, $parameters [ 'html-cleanup' ] ) ;
+		
+		if  ( $parameters [ 'escape' ] )
+		   {
+			if  ( $Database )
+				$value	=  $Database -> QuotedValue ( $value ) ;
+			else
+				$value	=  addslashes ( $value ) ;
+		    }
+		
+		return ( $value ) ;
+	    }
+	
+	
+	// __get_integer :
+	//	Processes an integer value.
+	private function  __get_integer ( $value, $args, $global_defaults ) 
+	   {
+		$parameters	=  $this -> __get_args 
+		   ( 
+			$args, 
+			[
+				'min'		=>  null,
+				'max'		=>  null,
+				'default'	=>  0
+			 ],
+			$global_defaults
+		    ) ;
+				
+		if  ( $value  ===  null )
+			$value	=  ( integer ) $parameters [ 'default' ] ;
+		else
+		   {
+			$value	=  ( integer ) str_replace ( ' ', '', $value ) ;
+
+			if  ( $parameters [ 'min' ]  !==  null  &&  $value  <  $parameters [ 'min' ] )
+			   {
+				$value			=  ( integer ) $parameters [ 'default' ] ;
+				self::$LastError	=  self::ERROR_VALUE_TOO_LOW ;
+			    }
+
+			if  ( $parameters [ 'max' ]  !==  null  &&  $value  >  $parameters [ 'max' ] )
+			   {
+				$value			=  ( integer ) $parameters [ 'default' ] ;
+				self::$LastError	=  self::ERROR_VALUE_TOO_HIGH ;
+			    }
+		    }
+		
+		return ( $value ) ;
+	    }
+	
+	
+	// __get_float :
+	//	Processes a float value.
+	private function  __get_float ( $value, $args, $global_defaults ) 
+	   {
+		$parameters	=  $this -> __get_args 
+		   ( 
+			$args, 
+			[
+				'min'		=>  null,
+				'max'		=>  null,
+				'default'	=>  0.0
+			 ],
+			$global_defaults
+		    ) ;
+				
+		if  ( $value  ===  null )
+			$value	=  ( double ) $parameters [ 'default' ] ;
+		else
+		   {
+			$value	=  ( double ) str_replace ( [ ' ', ',' ], [ '', '.' ], $value ) ;
+
+			if  ( $parameters [ 'min' ]  !==  null  &&  $value  <  $parameters [ 'min' ] )
+			   {
+				$value			=  ( double ) $parameters [ 'default' ] ;
+				self::$LastError	=  self::ERROR_VALUE_TOO_LOW ;
+			    }
+
+			if  ( $parameters [ 'max' ]  !==  null  &&  $value  >  $parameters [ 'max' ] )
+			   {
+				$value			=  ( double ) $parameters [ 'default' ] ;
+				self::$LastError	=  self::ERROR_VALUE_TOO_HIGH ;
+			    }
+		    }
+		
+		return ( $value ) ;
+	    }
+	
+	
+	// __get_date :
+	//	Interprets a date or date/time value.
+	public function  __get_date ( $value, $args, $global_defaults, $include_time )
+	   {
+		global		$WebSite ;
+		
+		$parameters	=  $this -> __get_args 
+		   ( 
+			$args, 
+			[
+				'language'	=>  ( $WebSite ) ?  $WebSite -> ClientLanguage : 'fr',
+				'format'	=>  null,
+				'default'	=>  time ( )
+			 ],
+			$global_defaults
+		    ) ;
+		
+		switch ( $parameters [ 'language' ] )
+		   {
+			case	'fr'	: $re	=  '(?P<day> \d+) [/-] (?P<month> \d+) [/-] (?P<year> \d+)' ; break ;
+			default		: $re	=  '(?P<year> \d+) [/-] (?P<month> \d+) [/-] (?P<day> \d+)' ;
+		    }
+		
+		if  ( $include_time )
+			$re	.=  '\s+ (?P<hour> \d+) : (?P<minute> \d+) ( : (?P<second> \d+) )?' ;
+		
+		if  ( preg_match ( "#$re#imsx", $value, $match ) )
+		   {
+			$year	=  ( isset ( $match [ 'year'   ] ) ) ?  $match [ 'year'   ] : date ( 'Y' ) ;
+			$month	=  ( isset ( $match [ 'month'  ] ) ) ?  $match [ 'month'  ] : date ( 'm' ) ;
+			$day	=  ( isset ( $match [ 'day'    ] ) ) ?  $match [ 'day'    ] : date ( 'd' ) ;
+			$hour	=  ( isset ( $match [ 'hour'   ] ) ) ?  $match [ 'hour'   ] : date ( 'H' ) ;
+			$minute	=  ( isset ( $match [ 'minute' ] ) ) ?  $match [ 'minute' ] : date ( 'i' ) ;
+			$second	=  ( isset ( $match [ 'second' ] ) ) ?  $match [ 'second' ] : date ( 's' ) ;
+			
+			if  ( $year  <  100 )
+				$year	+=  1900 ;
+			
+			$date_value	=  mktime ( $hour, $minute, $second, $month, $day, $year ) ;
+		    }
+		else
+			$date_value	=  $parameters [ 'default' ] ;
+		
+		if  ( $parameters [ 'format' ] )
+			$date_value	=  date ( $parameters [ 'format' ], $date_value ) ;
+		
+		return ( $date_value ) ;
+	    }
+    }
+
+
+/*==============================================================================================================
+
+    ArraySanitizer class -
+        A wrapper for arrays ; useful for form arrays.
+
+  ==============================================================================================================*/
+class  ArraySanitizer	extends  ArrayWrapper
+   {
+	/*==============================================================================================================
+	
+	    __call -
+	        Returns an array of wrapped value strings.
+	
+	  ==============================================================================================================*/
+	public function  __call ( $member, $args )
+	   {
+		$items	=  [] ;
+		
+		foreach  (  $this -> WrappedValue  as  $key => $value )
+		   {
+			$items []	=  call_user_func_array ( [ $value, $member ], $args ) ;
+		    }
+		
+		return ( $items ) ;
+	    }
+    }
+
+
+/*==============================================================================================================
+
+    ObjectSanitizer -
+        Wraps an object.
+
+  ==============================================================================================================*/
+class  ObjectSanitizer	extends  ObjectWrapper
+   {
+	/*==============================================================================================================
+	
+	    __call -
+	        Returns an array of wrapped strings, corresponding to the object's properties.
+	
+	  ==============================================================================================================*/
+	public function  __call ( $member, $args )
+	   {
+		$items		=  [] ;
+		$properties 	=  get_object_vars ( $this -> WrappedValue ) ;
+		
+		foreach  (  $properties as  $value )
+		   {
+			$items []	=  call_user_func_array ( [ $value, $member ], $args ) ;
+		    }
+		
+		return ( $items ) ;
+	    }
+    }

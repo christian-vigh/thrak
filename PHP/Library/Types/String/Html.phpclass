@@ -1,0 +1,103 @@
+<?php
+/***************************************************************************************************
+
+    NAME
+	Html.phpclass
+
+    DESCRIPTION
+	Manipulations for Html text.
+
+    AUTHOR
+	Christian Vigh, 10/2012.
+
+    HISTORY
+    [Version : 1.0]		[Date : 2012/10/02]		[Author : CV]
+	Initial release for Thrak library version 2. Most of the code comes from the original
+	String.phpclass file.
+
+ ***************************************************************************************************/
+namespace 	Thrak\Types\String ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces & objects
+use 		Thrak\System\Object 		as  Object ;
+use 		Thrak\Types\String		as  String ;
+
+
+/*===========================================================================================
+
+    Html class -
+	Manipulations for Html text.
+
+ ===========================================================================================*/
+class  	Html 	extends  Object
+   {
+ 	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		br2nl - Converts <BR/> constructs into newlines.
+
+	    PROTOTYPE
+		$result = Html::br2nl ( $value, $crlf = false ) ;
+
+	    DESCRIPTION
+		br2nl() converts <BR/> constructs into
+		a newline (or into a crlf sequence if the $crlf parameter is set to true).
+
+	    PARAMETERS
+	    	$value (string) -
+	    		String to be converted.
+
+    		$crlf (boolean) -
+    			When true, a <br/> sequence is converted into a cr/lf sequence instead of a
+    			single newline.
+
+	    RETURN VALUE
+	    	This function returns the converted value.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  br2nl ( $value, $crlf = false )
+	   {
+	   	$replacement = ( $crlf ) ?  "\r\n" : "\n" ;
+		$result      = preg_replace ( '/\<br\s*\/\>/i', $replacement, $value ) ;
+
+		return ( $result ) ;
+	    }
+
+
+ 	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		nl2br - Converts newlines into <BR/> constructs.
+
+	    PROTOTYPE
+		$result = Html::nl2br ( $value, $crlf = true ) ;
+
+	    DESCRIPTION
+		Converts any newline or cr/lf sequence into a <br/> HTML construct.
+
+	    PARAMETERS
+	    	$value (string) -
+	    		String to be converted.
+
+    		$crlf (boolean) -
+    			When true, cr/lf sequences are converted to a <BR/> construct. When false,
+			only newlines are replaced.
+
+	    RETURN VALUE
+	    	This function returns the converted value.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  nl2br ( $value, $crlf = true )
+	   {
+		if (  $crlf )
+			$search = "\r?\n" ;
+		else
+			$search = "\n" ;
+
+		$result = preg_replace ( "/$search/", "<br />", $value ) ;
+
+		return ( $result ) ;
+	    }
+    }

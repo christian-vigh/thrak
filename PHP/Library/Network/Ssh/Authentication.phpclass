@@ -1,0 +1,310 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        Ssh.phpclass
+
+    DESCRIPTION
+        Ssh protocol encapsulation classes.
+
+    AUTHOR
+        Christian Vigh, 01/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/05/17]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace	Thrak\Network\Ssh ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces & objects
+use	Thrak\System\Object ;
+use     Thrak\IO\Path ;
+
+
+/*==============================================================================================================
+
+    SshAuthentication class -
+        Base class for all other authentication classes.
+
+  ==============================================================================================================*/
+abstract class  SshAuthentication		extends  Object
+   {
+	// Constants for the GetInstance() method
+	const		SSH_AUTHENTICATION_AGENT		=  1 ;
+	const		SSH_AUTHENTICATION_HOSTBASED_FILE	=  2 ;
+	const		SSH_AUTHENTICATION_NONE			=  3 ;
+	const		SSH_AUTHENTICATION_PASSWORD		=  4 ;
+	const		SSH_AUTHENTICATION_PUBKEY_FILE		=  5 ;
+	
+	// Parent session
+	public		$Session ;
+	// All derived classes have a username in common
+	public		$Username ;
+	// Indicates if an authentication has been established
+	public		$Authenticated				=  false ;
+	
+	
+	/*==============================================================================================================
+	
+	    Constructor -
+	        Builds an SshAuthentication object. A Session object must be provided so that session data remains
+		accessible from authentication classes.
+	
+	  ==============================================================================================================*/
+	public function  __construct ( $session, $username )
+	   {
+		parent::__construct ( ) ;
+		
+		$this -> Username	=  $username ;
+		$this -> Session	=  $session ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    Authenticate -
+	        Performs the authentication. To be implemented by derived classes.
+	
+	  ==============================================================================================================*/
+	public abstract function  Authenticate ( ) ;
+	
+	
+	/*==============================================================================================================
+	
+	    GetInstance -
+	        Returns an authentication object of the specified type. For the purists only ; those who prefer 
+	 	performance will directly call the constructor of the class they want.
+	 	Note that specific authentication class constructor arguments MUST be specified after the $session
+	 	parameter.
+	
+	  ==============================================================================================================*/
+	public static function  GetInstance ( $auth_type, $session )
+	   {
+		$argv	=  func_get_args ( ) ;
+		array_shift ( $argv ) ;
+		
+		switch ( $auth_type )
+		   {
+			case	self::SSH_AUTHENTICATION_AGENT :
+				$class	=  'SshAgentAuthentication' ;
+				break ;
+				
+			case	self::SSH_AUTHENTICATION_HOSTBASED_FILE :
+				$class	=  'SshHostBasedAuthentication' ;
+				break ;
+				
+			case	self::SSH_AUTHENTICATION_NONE :
+				$class	=  'SshAuthenticationNone' ;
+				break ;
+				
+			case	self::SSH_AUTHENTICATION_PASSWORD :
+				$class	=  'SshPasswordAuthentication' ;
+				break ;
+				
+			case	self::SSH_AUTHENTICATION_PUBKEY_FILE :
+				$class	=  'SshPublicKeyAuthentication' ;
+				break ;
+				
+			default :
+				error ( \Thrak\System\InvalidArgumentException ( "Invalid value $auth_type for the \$auth_type parameter" ) ) ;
+		    }
+		
+		$object		=  call_user_func_array ( [ $class, '__construct' ], $argv ) ;
+		
+		return ( $object ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    GetSession -
+	        Ensures that the Session object is connected.
+	
+	  ==============================================================================================================*/
+	protected function  GetSession ( )
+	   {
+		if  ( $this -> Session )
+		   {
+			$connection	=  $this -> Session -> Connection ;
+				
+			if  ( $connection -> IsConnected ( ) )
+				return  ( $connection -> GetResource ( ) ) ;
+		    }
+		
+		error ( new \Thrak\Network\Ssh\SshSessionException ( get_class ( ) . ' : Cannot authenticate, no connection established.' ) ) ;
+	    }
+    }
+
+
+/*==============================================================================================================
+
+    SshAgentAuthentication -
+        Authentication using ssh agent.
+
+  ==============================================================================================================*/
+
+class  SshAgentAuthentication		extends  SshAuthentication
+   {
+	public function  __construct ( $session, $username )
+	   {
+		parent::__construct ( $session, $username ) ;
+	    }
+	
+	
+	public function  Authenticate ( )
+	   {
+		$status			=  ssh2_auth_agent ( $this -> GetSession ( ), $this -> Username ) ;
+		$this -> Authenticated	=  ( $status  ===  true ) ;
+
+		return ( $status ) ;
+	    }
+    }
+
+
+/*==============================================================================================================
+
+    SshAuthenticationNone -
+        Tries a "none" authentication. Returns true if the "none" method is supported, or an array of supported
+	methods otherwise.
+
+  ==============================================================================================================*/
+class  SshAuthenticationNone		extends  SshAuthentication
+   {
+	public function  __construct ( $session, $username )
+	   {
+		parent::__construct ( $session, $username ) ;
+	    }
+	
+	
+	public function  Authenticate ( )
+	   {
+		$status			=  ssh2_auth_none ( $this -> GetSession ( ), $this -> Username ) ;
+		$this -> Authenticated	=  false ;
+
+		return ( $status ) ;
+	    }
+    }
+
+
+/*==============================================================================================================
+
+    SshPasswordAuthentication -
+        Authentication with username/password.
+
+  ==============================================================================================================*/
+class  SshPasswordAuthentication		extends  SshAuthentication
+   {
+	public	$Password ;
+	
+	
+	public function  __construct ( $session, $username, $password )
+	   {
+		parent::__construct ( $session, $username ) ;
+		
+		$this -> Password	=  $password ;
+	    }
+	
+	
+	public function  Authenticate ( )
+	   {
+		$status			=  ssh2_auth_password ( $this -> GetSession ( ), $this -> Username, $this -> Password ) ;
+		$this -> Authenticated	=  ( $status  ===  true ) ;
+
+		return ( $status ) ;
+	    }
+    }
+
+
+/*==============================================================================================================
+
+    SshKeyBasedAuthentication class -
+        Base class for the SshHostBasedAuthentication and SshPublicKeyAuthentication classes.
+
+  ==============================================================================================================*/
+abstract class  SshKeyBasedAuthentication		extends  SshAuthentication
+   {
+	public		$PublicKeyFile ;
+	public		$PrivateKeyFile ;
+	public		$PassPhrase ;
+	
+	
+	public function  __construct ( $session, $username, $public_key_file, $private_key_file, $passphrase = null )
+	   {
+		parent::__construct ( $session, $username ) ;
+
+		if  ( ! file_exists ( $public_key_file ) )
+			error ( new \Thrak\System\FileNotFoundException ( "Public key file \"$public_key_file\" not found" ) ) ;
+		
+		if  ( ! file_exists ( $private_key_file ) )
+			error ( new \Thrak\System\FileNotFoundException ( "Private key file \"$private_key_file\" not found" ) ) ;
+				
+		$this -> PublicKeyFile	=  Path::ToHost ( Path::RealPath ( $public_key_file ) ) ;
+		$this -> PrivateKeyFile	=  Path::ToHost ( Path::RealPath ( $private_key_file ) ) ;
+		$this -> PassPhrase	=  $passphrase ;
+	    }
+    }
+
+
+/*==============================================================================================================
+
+    SshPublicKeyAuthentication -
+        Authentication using a public key.
+
+  ==============================================================================================================*/
+class  SshPublicKeyAuthentication		extends  SshKeyBasedAuthentication
+   {
+	public function  __construct ( $session, $username, $public_key_file, $private_key_file, $passphrase = null )
+	   {
+		parent::__construct ( $session, $username, $public_key_file, $private_key_file, $passphrase ) ;
+	    }
+	
+	
+	// FIX: ssh2_auth_pubkey_file() always return the following error :
+	//	ssh2_auth_pubkey_file(): Authentication failed for root using public key: Callback returned error.
+	public function  Authenticate ( )
+	   {
+		$status			=  ssh2_auth_pubkey_file ( $this -> GetSession ( ), $this -> Username, 
+							$this -> PublicKeyFile, $this -> PrivateKeyFile, $this -> PassPhrase ) ;
+		$this -> Authenticated	=  ( $status  ===  true ) ;
+
+		return ( $status ) ;
+	    }
+    }
+
+
+/*==============================================================================================================
+
+    SshHostBasedAuthentication -
+        Authentication through an external host.
+
+  ==============================================================================================================*/
+class  SshHostBasedAuthentication		extends  SshKeyBasedAuthentication
+   {
+	public		$Host ;
+	
+	
+	public function  __construct ( $session, $username, $host, $public_key_file, $private_key_file, $passphrase = null )
+	   {
+		parent::__construct ( $session, $username, $public_key_file, $private_key_file, $passphrase ) ;
+		
+		$this -> Host	=  $host ;
+	    }
+	
+	
+	public function  Authenticate ( )
+	   {
+		$status			=  ssh2_auth_hostbased_file ( $this -> GetSession ( ), $this -> Username, $this -> Host,
+							$this -> PublicKeyFile, $this -> PrivateKeyFile, $this -> PassPhrase ) ;
+		$this -> Authenticated	=  ( $status  ===  true ) ;
+
+		
+		return ( $status ) ;
+	    }
+    }
+
+
+

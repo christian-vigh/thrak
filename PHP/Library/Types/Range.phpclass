@@ -1,0 +1,800 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        Range.php
+
+    DESCRIPTION
+       Implements ranges and array of ranges.
+
+    NOTES
+	The range classes are not designed for pure mathematical operations but rather for, say, operations on
+	database results holding range columns.
+
+	Thus, ranges have the following restrictions :
+	- Range boundaries are all inclusive
+	- Infinite ranges are not handled.
+	- All ranges are discrete, and must be delimited by boundaries.
+
+	However :
+	- Range classes are provided for basic types (integer, real, date/time) 
+	- Ranges objects can be instanciated in three ways :
+		- by providing a low and high boundary
+		- by supplying an array and providing the indexes of the low and high boundaries
+		- by supplying an object and providing the member names of the low and high boundaries
+	  
+    AUTHOR
+        Christian Vigh, 07/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/07/13]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Types ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces & objects
+use 		Thrak\System\Object ;
+
+
+class  RangeException		extends  \Thrak\System\Exception	{} ;
+class  InvalidRangeException	extends  RangeException			{} ;
+
+
+/*==============================================================================================================
+
+    AbstractRange -
+        Base class for range classes.
+
+  ==============================================================================================================*/
+abstract class  AbstractRange		extends		Object 
+					implements	\ArrayAccess, \Countable, \Iterator
+   {
+	// Low and high range boundaries
+	protected	$Low, 
+			$High ;
+	// Minimum and maximum possible range values
+	protected	$MinValue		=  null,
+			$MaxValue		=  null ;
+	// Parent object (only used when the range object is instanciated by a Ranges object)
+	protected	$Parent			=  null ;
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        Constructor
+	 
+	    PROTOTYPE
+	        $range	=  new AbstractRange ( $low, $high, $min_value, $max_value, $parent ) ;
+	 
+	    DESCRIPTION
+	        Builds a range object that has the specified low and high boundaries.
+	 
+	    PARAMETERS
+	        $low, $high (mixed) -
+	                Low and high boundaries.
+
+		$min_value, $max_value (mixed) -
+			Minimum and maximum values authorized for this range.
+
+		$parent (AbstractRanges object) -
+			The parent array of this range, if any. Only used internally by the Ranges classes.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( $low, $high, $min_value, $max_value, $parent )
+	   {
+		parent::__construct ( ) ;
+
+		$this -> Low		=  $low ;
+		$this -> High		=  $high ;
+		$this -> MinValue	=  $min_value ;
+		$this -> MaxValue	=  $max_value ;
+
+		$this -> CheckBoundaries ( ) ;
+	    }
+
+
+	/**************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 ******                                        MAGIC FUNCTIONS                                           ******
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************/
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        __get, __set - Define custom properties
+	 
+	    DESCRIPTION
+	        Gives access to the following properties :
+		- Low (read/write) :
+			Low range boundary.
+		- High (read/write) :
+			High range boundary.
+		- MinValue (read/write) :
+			Minimum authorized value for this range.
+		- MaxValue (read/write) :
+			Maximum authorized value for this range.
+		- Parent (readonly) :
+			(for internal use only) parent AbstractRanges object.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __get ( $member )
+	   {
+		if  ( ! strcasecmp ( $member, 'Low' ) )
+			return ( $this -> Low ) ;
+		else if  ( ! strcasecmp ( $member, 'High' ) ) 
+			return ( $this -> High ) ;
+		else if  ( ! strcasecmp ( $member, 'MinValue' ) )
+			return ( $this -> MinValue ) ;
+		else if  ( ! strcasecmp ( $member, 'MaxValue' ) ) 
+			return ( $this -> MaxValue ) ;
+		else if  ( ! strcasecmp ( $member, 'Parent' ) )
+			return ( $this -> Parent ) ;
+		else
+			error ( new \Thrak\System\UndefinedPropertyException ( $member ) ) ;
+	    }
+	
+
+	public function  __set ( $member, $value )
+	   {
+		if  ( ! strcasecmp ( $member, 'Low' ) )
+		   {
+			$this -> Low		=  $value ;
+			$this -> CheckBoundaries ( ) ;
+		    }
+		else if  ( ! strcasecmp ( $member, 'High' ) )
+		   {
+			$this -> High		=  $value ;
+			$this -> CheckBoundaries ( ) ;
+		    }
+		else if  ( ! strcasecmp ( $member, 'MinValue' ) )
+		   {
+			$this -> MinValue	=  $value ;
+			$this -> CheckBoundaries ( ) ;
+		    }
+		else if  ( ! strcasecmp ( $member, 'MaxValue' ) )
+		   {
+			$this -> MaxValue	=  $value ;
+			$this -> CheckBoundaries ( ) ;
+		    }
+		else if  ( ! strcasecmp ( $member, 'Parent' ) )
+			error ( new \Thrak\System\ReadOnlyPropertyException ( $member ) ) ;
+		else
+			error ( new \Thrak\System\UndefinedPropertyException ( $member ) ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        __tostring - Provides a string representation of a range.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __tostring ( )
+	   {
+		if  ( $this -> Low  ===  null  &&  $this -> High  ===  null )	
+			return ( '' ) ;
+		else
+			return ( '[' . ( ( string ) $this -> Low ) . '..' . ( ( string ) $this -> High ) . ']' ) ;
+	    }
+
+
+	/**************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 ******                                        PUBLIC METHODS                                            ******
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************/
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        IsEmpty - Checks if a range is empty.
+	 
+	    PROTOTYPE
+	        $status		=  $range -> IsEmpty ( ) ;
+	 
+	    DESCRIPTION
+	        Checks if a range is empty.
+	 
+	    RETURN VALUE
+	        true if the range is empty, false otherwise.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  IsEmpty ( )
+	   {
+		return  ( $this -> Low  ===  null  &&  $this -> High  ===  null ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        IsEnclosed - Checks if a range is enclosing another one.
+	 
+	    PROTOTYPE
+	        $status		=  $range -> IsEnclosed ( $value ) ;
+	 
+	    DESCRIPTION
+	        Checks if the specified value is enclosed by this range.
+	 
+	    PARAMETERS
+	        $value (mixed) -
+	                If specified as a scalar value, the function will check if the value is enclosed by the range.
+			If specified as a 2-elements array or as an object derived from the AbstractRange class, the
+			function will check that the specified range is enclosed by the range defined by the current
+			object.
+	 
+	    RETURN VALUE
+	        True if the specified value is enclosed by this range, false otherwise.
+	 
+	    NOTES
+	        Range boundaries are always inclusive.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  IsEnclosed ( $value )
+	   {
+		$boundaries	=  $this -> GetBoundaries ( $value ) ;
+
+		return
+		   (
+			$this -> Compare ( $boundaries [0], $this -> Low )  >=  0  &&
+			$this -> Compare ( $boundaries [1], $this -> High )  <=  0
+		    ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        IsOutside - Checks if a range is outside another one.
+	 
+	    PROTOTYPE
+	        $status		=  $range -> IsOutside ( $value ) ;
+	 
+	    DESCRIPTION
+	        Checks if the specified value is outside this range.
+	 
+	    PARAMETERS
+	        $value (mixed) -
+	                If specified as a scalar value, the function will check if the value is outside this range.
+			If specified as a 2-elements array or as an object derived from the AbstractRange class, the
+			function will check that the specified range is outside of the range defined by the current
+			object.
+	 
+	    RETURN VALUE
+	        True if the specified value is outside of this range, false otherwise.
+	 
+	    NOTES
+	        Range boundaries are always inclusive.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  IsOutside ( $value )
+	   {
+		$boundaries	=  $this -> GetBoundaries ( $value ) ;
+
+		return
+		   (
+			$this -> Compare ( $boundaries [1], $this -> Low  )  <  0  ||
+			$this -> Compare ( $boundaries [0], $this -> High )  >  0
+		    ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        IsOverlapping - Checks if a range is overlapping another one.
+	 
+	    PROTOTYPE
+	        $status		=  $range -> IsOverlapping	( $value ) ;
+	        $status		=  $range -> IsOverlappingLow	( $value ) ;
+	        $status		=  $range -> IsOverlappingHigh	( $value ) ;
+	 
+	    DESCRIPTION
+	        Checks if the specified value is overlapping this range.
+		The IsOverlappingLow() method only checks if the specified value overlaps the lower boundary of the
+		range.
+		The IsOverlappingHigh() method only checks if the specified value overlaps the higher boundary of the
+		range.
+	 
+	    PARAMETERS
+	        $value (mixed) -
+	                If specified as a scalar value, the function will check if the value is contained within this
+			range.
+			If specified as a 2-elements array or as an object derived from the AbstractRange class, the
+			function will check that the specified range is overlapping the range defined by the current
+			object, in any direction.
+	 
+	    RETURN VALUE
+	        True if the specified value is overlapping this range, false otherwise.
+	 
+	    NOTES
+	        Range boundaries are always inclusive.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  IsOverlapping ( $value )
+	   {
+		$boundaries	=  $this -> GetBoundaries ( $value ) ;
+
+		return
+		   (
+			! 
+			   (
+				$this -> Compare ( $boundaries [1], $this -> Low  )  <  0  ||
+				$this -> Compare ( $boundaries [0], $this -> High )  >  0
+			    )  
+		    ) ;
+	    }
+
+
+	public function  IsOverlappingLow ( $value )
+	   {
+		$boundaries	=  $this -> GetBoundaries ( $value ) ;
+
+		return
+		   (
+			   (
+				$this -> Compare ( $boundaries [0], $this -> Low )  <=  0  &&
+				$this -> Compare ( $boundaries [1], $this -> Low )  >=  0
+			    )
+		    ) ;
+	    }
+
+
+	public function  IsOverlappingHigh ( $value )
+	   {
+		$boundaries	=  $this -> GetBoundaries ( $value ) ;
+
+		return
+		   (
+			   (
+				$this -> Compare ( $boundaries [0], $this -> High )  <=  0  &&
+				$this -> Compare ( $boundaries [1], $this -> High )  >=  0
+			    )
+		    ) ;
+	    }
+
+	
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        Isxxx - relational comparisons between ranges.
+	 
+	    PROTOTYPE
+	        $status		=  $range -> IsLT ( $value ) ;
+	        $status		=  $range -> IsLE ( $value ) ;
+	        $status		=  $range -> IsGT ( $value ) ;
+	        $status		=  $range -> IsGE ( $value ) ;
+	 
+	    DESCRIPTION
+	        Performs a relational comparison between a range and a supplied value.
+		The IsLT() method returns true if the high boundary of $value is less than the low boundary of $range.
+		Similarly, IsLE() returns true if the high boundary of $value is less than or equal to the low boundary 
+		of $range.
+		IsGT() returns true if the low boundary of $value is greater than the high boundary of $range.
+		IsGE() returns true if the low boundary of $value is greater than or equal to the high boundary of $range.
+	 
+	    PARAMETERS
+	        $value (mixed) -
+	                If specified as a scalar value, the function will check if the value is contained within this
+			range.
+			If specified as a 2-elements array or as an object derived from the AbstractRange class, the
+			function will check that the specified range is overlapping the range defined by the current
+			object, in any direction.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  IsLT ( $value )
+	   {
+		$boundaries	=  $this -> GetBoundaries ( $value ) ;
+
+		return ( $this -> Compare ( $boundaries [1], $this -> Low )  <  0 ) ;
+	    }
+
+
+	public function  IsLE ( $value )
+	   {
+		$boundaries	=  $this -> GetBoundaries ( $value ) ;
+
+		return ( $this -> Compare ( $boundaries [1], $this -> Low )  <=  0 ) ;
+	    }
+
+
+	public function  IsGT ( $value )
+	   {
+		$boundaries	=  $this -> GetBoundaries ( $value ) ;
+
+		return ( $this -> Compare ( $boundaries [0], $this -> High )  >  0 ) ;
+	    }
+
+
+	public function  IsGE ( $value )
+	   {
+		$boundaries	=  $this -> GetBoundaries ( $value ) ;
+
+		return ( $this -> Compare ( $boundaries [0], $this -> High )  >=  0 ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        Intersection - Computes the intersection of two ranges.
+	 
+	    PROTOTYPE
+	        $range2		=  $range -> Intersection ( $value ) ;
+	 
+	    DESCRIPTION
+	        Performs the intersection of $range with $value.
+	 
+	    PARAMETERS
+	        $value (mixed) -
+	                If specified as a scalar value, the function will check if the value is contained within this
+			range.
+			If specified as a 2-elements array or as an object derived from the AbstractRange class, the
+			function will check that the specified range is overlapping the range defined by the current
+			object, in any direction.
+	 
+	    RETURN VALUE
+	        A range object containing the intersection of $range with $value, or false if ranges do not intersect.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  Intersection ( $value )
+	   {
+		$boundaries	=  $this -> GetBoundaries ( $value ) ;
+
+		// Intersection of a range with a null range is always a null range
+		if  ( ! $boundaries )
+			return ( false ) ;
+
+		// Supplied range is completely outside this one
+		if  ( $this -> Compare ( $boundaries [1], $this -> Low  )  <  0  ||
+		      $this -> Compare ( $boundaries [0], $this -> High )  >  0 )
+			return ( false ) ;
+
+		// Get maximum low boundary
+		if  ( $this -> Compare ( $boundaries [0], $this -> Low )  <=  0 )
+			$low	=  $this -> Low ;
+		else
+			$low	=  $boundaries [0] ;
+
+		// Get minimum high boundary
+		if  ( $this -> Compare ( $boundaries [1], $this -> High )  >=  0 )
+			$high	=  $this -> High ;
+		else
+			$high	=  $boundaries [1] ;
+
+		return ( $this -> CreateRange ( $low, $high, $this -> MinValue, $this -> MaxValue ) ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        Union - Performs the union between two ranges.
+	 
+	    PROTOTYPE
+	        $range2		=  $range -> Union ( $value ) ;
+	 
+	    DESCRIPTION
+	        Performs the union of $range with $value.
+	 
+	    PARAMETERS
+	        $value (mixed) -
+	                If specified as a scalar value, the function will check if the value is contained within this
+			range.
+			If specified as a 2-elements array or as an object derived from the AbstractRange class, the
+			function will check that the specified range is overlapping the range defined by the current
+			object, in any direction.
+	 
+	    RETURN VALUE
+	        A range object containing the union of $range with $value, or false if ranges are disjoint.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  Union ( $value )
+	   {
+		$boundaries	=  $this -> GetBoundaries ( $value ) ;
+
+		// Union of a range with a null range is always the range itself
+		if  ( ! $boundaries )
+			return ( $this ) ;
+
+		// Supplied range is completely outside $this
+		if  ( $this -> Compare ( $boundaries [1], $this -> Low  )  <  0  ||
+		      $this -> Compare ( $boundaries [0], $this -> High )  >  0 )
+			return ( false ) ;
+
+		// Get minimum low boundary 
+		if  ( $this -> Compare ( $boundaries [0], $this -> Low )  <=  0 )
+			$low	=  $boundaries [0] ;
+		else
+			$low	=  $this -> Low ;
+
+		// Get maximum high boundary
+		if  ( $this -> Compare ( $boundaries [1], $this -> High )  >=  0 )
+			$high	=  $boundaries [1] ;
+		else
+			$high	=  $this -> High ;
+
+		return ( $this -> CreateRange ( $low, $high, $this -> MinValue, $this -> MaxValue ) ) ;
+	    }
+
+
+	/**************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 ******                                      PROTECTED METHODS                                           ******
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************/
+
+	/*--------------------------------------------------------------------------------------------------------------
+
+	    CheckBoundaries -
+		Checks that the low and high range values fall between the authorized min and max values.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  CheckBoundaries ( ) 
+	   {
+		if  ( $this -> Low  !==  null  &&  $this -> Compare ( $this -> Low, $this -> MinValue )  <  0 )
+			error ( new InvalidRangeException ( "Lower range boundary ({$this -> Low}) is less than the minimum " .
+					"authorized value ({$this -> MinValue})." ) ) ;
+
+		if  ( $this -> High  !==  null  &&  $this -> Compare ( $this -> High, $this -> MinValue )  <  0 )
+			error ( new InvalidRangeException ( "Higher range boundary ({$this -> High}) is greater than the maximum " .
+					"authorized value ({$this -> MaxValue})." ) ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+
+	    CreateRange -
+		Creates a range of the type of the current class.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  CreateRange ( $low, $high, $min_value, $max_value )
+	   {
+		$this_class	=  get_called_class ( ) ;
+
+		return ( new $this_class ( $low, $high, $min_value, $max_value ) ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+
+	    GetBoundaries -
+		Returns a two-elements array from the supplied value which can be a scalar, one or two-elements array or
+		range.
+		This function is meant to unify different forms of parameter values, and return a single two-elements
+		array representing a range.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  GetBoundaries ( $value ) 
+	   {
+		if  ( is_scalar ( $value ) )
+			$result		=  [ $value, $value ] ;
+		else if  ( is_a ( $value, 'Thrak\Types\AbstractRange' ) )
+			$result		=  [ $value -> Low, $value -> High ] ;
+		else if  ( is_array ( $value ) )
+		   {
+			$count		=  count ( $value ) ;
+
+			if  ( $count  ==  1 )
+				$result		=  [ $value [0], $value [0] ] ;
+			else if  ( $count  ==  2 )
+				$result		=  [ $value [0], $value [1] ] ;
+			else
+				error ( new \Thrak\System\InvalidArgumentException ( "Supplied argument should be either a scalar value, " .
+						"an object deriving from class AbstractRange, or a 1- or 2-elements array." ) ) ;
+		    }
+		else
+			error ( new \Thrak\System\InvalidArgumentException ( "Supplied argument should be either a scalar value, " .
+					"an object deriving from class AbstractRange, or a 1- or 2-elements array." ) ) ;
+
+		if  ( $result [0]  ===  null  &&  $result [1]  ===  null )
+			return ( false ) ;
+		else
+			return ( $result ) ;
+	    }
+
+
+	/**************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 ******                        ABSTRACT METHODS (to be implemented by derived classes)	                 ******
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************/
+
+	// Compares two values - derived classes implement this function to compare any kind of value
+	protected abstract function  Compare		( $value1, $value2 ) ;
+
+	// Get the next/previous value following/preceding $value
+	protected abstract function  NextValueOf	( $value ) ;
+	protected abstract function  PreviousValueOf	( $value ) ;
+
+	// Get range size
+	protected abstract function  Length		( ) ;
+
+	// When considering a range as an array, returns the nth element
+	protected abstract function  ValueAt		( $index ) ;
+
+
+	/**************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 ******                                  INTERFACES IMPLEMENTATIONS                                      ******
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************/
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    Countable interface -
+		Returns the range width.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  Count ( )
+	   { return ( $this -> Length ( ) ) ; }
+	   
+
+	/*--------------------------------------------------------------------------------------------------------------
+
+	    ArrayAccess interface -
+		Provides access to a range as an array. Note that individual elements cannot be redefined or unset !
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  offsetExists ( $offset )
+	   { return ( $this -> offsetGet ( $offset )  !==  null ) ; }
+
+
+	public function  offsetGet ( $offset )
+	   {
+		$value	=  $this -> ValueAt ( $offset ) ;
+
+		if  ( $value  ===  null )
+			error ( new \Thrak\System\IndexOutOfRangeException ( $offset ) ) ;
+
+		return ( $value ) ;
+	    }
+
+
+	public function  offsetSet ( $offset, $value )
+	   { error ( new \Thrak\System\UnsupportedOperationException ( ) ) ; }
+
+
+	public function  offsetUnset ( $offset )
+	   { error ( new \Thrak\System\UnsupportedOperationException ( ) ) ; }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+
+	    Iterator interface -
+		Allows for cycling through each value of a range.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	private		$current_iterator_value	;
+
+	public function  rewind ( )
+	   { $this -> current_iterator_value = $this -> Low ; }
+
+
+	public function  key ( )
+	   { return ( $this -> current_iterator_value ) ; }
+
+	
+	public function  valid ( )
+	   { return ( $this -> Compare ( $this -> current_iterator_value, $this -> High )  <=  0 ) ; }
+
+
+	public function  next ( )
+	   { 
+		$this -> current_iterator_value		=  $this -> NextValueOf ( $this -> current_iterator_value ) ;
+
+		return ( $this -> current_iterator_value ) ;
+	    }
+
+
+	public function  current ( )
+	   { return ( $this -> current_iterator_value ) ; }
+    }
+
+
+/*==============================================================================================================
+
+    EmptyRange class -
+        Implements an empty range.
+
+  ==============================================================================================================*/
+class  EmptyRange	extends  AbstractRange 
+   {
+	public function  __construct ( )
+	   {
+		parent::__construct ( null, null, null, null ) ;
+	    }
+
+
+	protected function  Compare ( $value1, $value2 ) 
+	   { return ( null ) ; }
+
+
+	protected function  NextValueOf ( $value )
+	   { return ( null ) ; }
+
+
+	protected function  PreviousValueOf ( $value ) 
+	   { return ( null ) ; }
+
+
+	protected function  Length ( )
+	   { return ( 0 ) ; }
+
+
+	protected function  ValueAt ( $offset ) 
+	   { return ( null ) ; }
+    }
+
+
+
+/*==============================================================================================================
+
+    Range class -
+        Implements a generic integer range.
+
+  ==============================================================================================================*/
+class  Range		extends  AbstractRange 
+   {
+	public function  __construct ( $low, $high, $min_value = PHP_INT_MIN, $max_value = PHP_INT_MAX )
+	   {
+		parent::__construct ( $low, $high, $min_value, $max_value ) ;
+	    }
+
+
+	protected function  Compare ( $value1, $value2 ) 
+	   { return ( $value1 - $value2 ) ; }
+
+
+	protected function  NextValueOf ( $value )
+	   { return ( $value + 1 ) ; }
+
+
+	protected function  PreviousValueOf ( $value ) 
+	   { return ( $value - 1 ) ; }
+
+
+	protected function  Length ( )
+	   { return ( $this -> High - $this -> Low + 1 ) ; }
+
+	  
+	protected function  ValueAt ( $offset ) 
+	   { return ( $this -> Low + $offset ) ; }
+    }
+
+

@@ -1,0 +1,196 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        SystemRestore.phpclass
+
+    DESCRIPTION
+        A class that encapsulates the System Restore API.
+
+    AUTHOR
+        Christian Vigh, 06/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/06/10]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Windows ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use 	Thrak\Windows\AbstractWindowsBase ;
+use	Thrak\Runtime\BackgroundCommand ;
+
+
+/*==============================================================================================================
+
+    SystemRestorePoint class -
+        Encapsulates a system restore point. Objects of this class may only be instanciated by the
+	SystemRestorePoints class.
+
+  ==============================================================================================================*/
+class SystemRestorePoint	extends		AbstractWindowsBase 
+   {
+	// Restore point sequence number
+	public		$SequenceNumber ;
+	// Restore point creation time (Unix time)
+	public		$CreationTime ;
+	// Restore point description
+	public		$Description ;
+	// Restore point event type
+	public		$EventType ;
+	// Restore point type
+	public		$RestorePointType ;
+	
+	
+	public function  __construct ( )
+	   {
+		parent::__construct ( ) ;
+	    }
+    }
+
+
+/*==============================================================================================================
+
+    SystemRestorePoints class -
+        Encapsulates the System Restore WMI API.
+
+  ==============================================================================================================*/
+class  SystemRestorePoints 	extends  	AbstractWindowsBase 
+				implements	\ArrayAccess, \Countable, \IteratorAggregate
+   {
+	// Event types
+	const	EVENT_BEGIN_NESTED_SYSTEM_CHANGE	=  102 ;	// A system change has begun. 
+									// A subsequent nested call does not create a new restore point. 
+	const   EVENT_BEGIN_SYSTEM_CHANGE		=  100 ;	// A system change has begun.
+	const	EVENT_END_NESTED_SYSTEM_CHANGE		=  103 ;	// A nested system change has ended.
+	const	EVENT_END_SYSTEM_CHANGE			=  101 ;	// A system change has ended.
+ 
+	// Restore point types 
+	const	RESTORE_POINT_APPLICATION_INSTALL	=  0 ;		// An application has been installed
+	const	RESTORE_POINT_APPLICATION_UNINSTALL	=  1 ;		// An application has been uninstalled.
+	const	RESTORE_POINT_RESTORED			=  6 ;		// A previous restore point has been restored
+	const	RESTORE_POINT_PLANNED			=  7 ;		// Planned restore point
+	const	RESTORE_POINT_DEVICE_DRIVER_INSTALL	=  10 ;		// A device driver has been installed
+	const	RESTORE_POINT_MODIFY_SETTINGS		=  12 ;		// An application has had features added or removed
+	const	RESTORE_POINT_CANCELLED_OPERATION	=  13 ;		// An application needs to delete the restore point it created. 
+									// For example, an application would use this flag when a user cancels an installation. 
+	const	RESTORE_POINT_WINDOWS_UPDATE		=  18 ;		// Restore point has been created by Windows Update
+ 
+	
+	// Array of known restore points
+	protected	$RestorePoints ;
+	
+	
+	/*--------------------------------------------------------------------------------------------------------------
+	 *
+	 *  CONSTRUCTOR
+	 *	Builds a SystemRestorePoints object and collects the available system restore points.
+	 *
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( )
+	   {
+		parent::__construct ( ) ;
+		$this -> Refresh ( ) ;
+	    }
+	
+	
+	/*--------------------------------------------------------------------------------------------------------------
+	 *
+	 *  NAME
+	 *	Create - Creates a restore point with the specified title, event type and restore point type.
+	 *
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  Create ( $name, $restore_point_type = self::RESTORE_POINT_PLANNED, $event_type = self::EVENT_BEGIN_SYSTEM_CHANGE )
+	   {
+		$wmi	=  new \COM ( 'winmgmts://./root/default:Systemrestore' ) ;
+		$wmi -> CreateRestorePoint ( $name, $restore_point_type, $event_type ) ;
+		$this -> Refresh ( ) ;
+	    }
+	
+	
+	/*--------------------------------------------------------------------------------------------------------------
+	 *
+	 *  NAME
+	 *	Refresh - Refreshes the list of available system restore points.
+	 *
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  Refresh ( )
+	   {
+		$wmi			=  new \COM ( 'winmgmts://./root/default' ) ;
+		$rp			=  $wmi -> InstancesOf ( "SystemRestore" ) ;
+		$this -> RestorePoints	=  [] ;
+		
+		foreach  ( $rp  as  $restore_point )
+		   {
+			$entry	=  new SystemRestorePoint ( ) ;
+			$entry -> SequenceNumber	=  $restore_point -> SequenceNumber ;
+			$entry -> EventType		=  $restore_point -> EventType ;
+			$entry -> RestorePointType	=  $restore_point -> RestorePointType ;
+			$entry -> Description		=  $restore_point -> Description ;
+			$entry -> CreationTime		=  mktime
+			   (
+				( integer ) substr ( $restore_point -> CreationTime,  8, 2 ),
+				( integer ) substr ( $restore_point -> CreationTime, 10, 2 ),
+				( integer ) substr ( $restore_point -> CreationTime, 12, 2 ),
+				( integer ) substr ( $restore_point -> CreationTime,  4, 2 ),
+				( integer ) substr ( $restore_point -> CreationTime,  6, 2 ),
+				( integer ) substr ( $restore_point -> CreationTime,  0, 4 )
+			    ) ;
+			
+			$this -> RestorePoints []	=  $entry ;
+		    }
+		
+		usort 
+		   ( 
+			$this -> RestorePoints, 
+			function  ( $a, $b )
+			   {
+				return ( $b -> CreationTime - $a -> CreationTime ) ;
+			    }
+		    ) ;
+	    }
+	
+	
+	
+	/*--------------------------------------------------------------------------------------------------------------
+	 *
+	 *  NAME
+	 *	ShowUI - Launches the System Restore Points user interface.
+	 *
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  ShowUI ( )
+	   {
+		BackgroundCommand::Run ( "rstrui" ) ;
+	    }
+	
+	
+	/*--------------------------------------------------------------------------------------------------------------
+	 *
+	 *	Interface implementations.
+	 * 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  Count ( )
+	   { return ( count ( $this -> RestorePoints ) ) ; }
+	
+	
+	public function  getIterator ( )
+	   { return ( new \ArrayIterator ( $this -> RestorePoints ) ) ; }
+	
+	
+	public function  offsetExists ( $offset )
+	   { return ( isset ( $this -> RestorePoints [ $offset ] ) ) ; }
+	
+	
+	public function  offsetGet ( $offset )
+	   { return ( $this -> RestorePoints [ $offset ] ) ; }
+	
+	
+	public function  offsetSet ( $offset, $value )
+	   { error ( \Thrak\System\UnsupportedOperationException ( ) ) ; }
+	
+	
+	public function  offsetUnset ( $offset )
+	   { error ( \Thrak\System\UnsupportedOperationException ( ) ) ; }
+    }

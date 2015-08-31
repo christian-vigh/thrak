@@ -1,0 +1,5117 @@
+<?php
+/***************************************************************************************************
+
+    NAME
+	Vector.phpclass
+
+    DESCRIPTION
+	Extended operations on arrays.
+
+    AUTHOR
+     	Christian Vigh, 07/2011.
+
+    NOTES
+    	This class is not designed for high-performance, but rather for providing facilities for command
+    	line programs written in PHP and ran once upon a while.
+
+    HISTORY
+    [Version : 1.0]	[Date : 2011/07/07]	[Author : CV]
+     	Initial version.
+
+   [Version : 2.0]	[Date : 2012/10/06]		[Author : CV]
+	. Migrated to the Thrak library version 2.
+	. Renamed class to Vector since Array is a reserved keyword.
+
+ ***************************************************************************************************/
+namespace  	Thrak\Types ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces and classes
+use 	Thrak\System\Object 		as  Object ;
+use 	Thrak\System\Exception 		as  Exception ;
+use  	Thrak\Math 			as  Math ;
+
+
+/*==================================================================================================
+
+	Sort options.
+
+  ==================================================================================================*/
+// Sort value type
+define ( 'ARRAY_SORT_REGULAR'			, 0x000000000 ) ;	// Compare elements without modifying types
+define ( 'ARRAY_SORT_NUMERIC'			, 0x000000001 ) ;	// Compare elements as numeric
+define ( 'ARRAY_SORT_STRING'			, 0x000000002 ) ;	// Compare elements as strings
+define ( 'ARRAY_SORT_LOCALE_STRING'		, 0x000000003 ) ;	// Compare elements as localized strings
+define ( 'ARRAY_SORT_NATURAL'			, 0x000000004 ) ;	// Sort in natural order
+define ( '__ARRAY_SORT_TYPE_MASK'		, 0x00000000F ) ;	// Mask to isolate sort type
+// Sort order
+define ( 'ARRAY_SORT_ASC'			, 0x000000000 ) ;	// Sort in ascending order
+define ( 'ARRAY_SORT_DESC'			, 0x000000010 ) ;	// Sort in descending order
+// Sort keys or values ?
+define ( 'ARRAY_SORT_VALUES'			, 0x000000000 ) ;	// Sort by values
+define ( 'ARRAY_SORT_KEYS'			, 0x000000020 ) ;	// Sort by keys
+// Case sensitivity
+define ( 'ARRAY_SORT_CASE_SENSITIVE'		, 0x000000000 ) ;	// Consider key/values as case-sensitive
+define ( 'ARRAY_SORT_CASE_INSENSITIVE'		, 0x000000040 ) ;	// ... or case-insensitive
+// What to do with objects, resources and arrays ?
+define ( 'ARRAY_SORT_OBJECTS_FAIL'		, 0x000000000 ) ;	// No objects are allowed (arrays are allowed, however, if nested arrays are authorized)
+define ( 'ARRAY_SORT_OBJECTS_PRESERVE'		, 0x000000100 ) ;	// The original position of objects is preserved. This option is implicit when recursive sorting is used
+define ( 'ARRAY_SORT_OBJECTS_REMOVE'		, 0x000000200 ) ;	// Objects are removed (even arrays, if nested arrays are not authorized)
+define ( '__ARRAY_SORT_OBJECTS_MASK'		, 0x000000F00 ) ;	// Mask to isolate sort option
+// Default sort option
+define ( 'ARRAY_SORT_DEFAULT'			, ARRAY_SORT_ASC | ARRAY_SORT_VALUES | ARRAY_SORT_REGULAR | ARRAY_SORT_OBJECTS_FAIL ) ;
+
+
+/*==================================================================================================
+
+	Array intersection options.
+
+  ==================================================================================================*/
+define ( 'ARRAY_INTERSECT_ON_VALUES'		, 0x00000001 ) ;	// Compare values for intersection
+define ( 'ARRAY_INTERSECT_ON_KEYS'		, 0x00000002 ) ; 	// Compare keys for intersection
+define ( 'ARRAY_INTERSECT_ON_KEYS_AND_VALUES'	, 0x00000003 ) ; 	// Compare both keys and values for intersection
+define ( 'ARRAY_INTERSECT_CASE_SENSITIVE'	, 0x00000000 ) ;        // Case-sensitivity option
+define ( 'ARRAY_INTERSECT_CASE_INSENSITIVE'	, 0x00000010 ) ;
+define ( 'ARRAY_INTERSECT_PRESERVE_KEYS' 	, 0x00000020 ) ;	// Do we need to preserve array keys ? available only with the ARRAY_INTERSECT_ON_VALUES flag
+// Default intersection option
+define ( 'ARRAY_INTERSECT_DEFAULT'		, ARRAY_INTERSECT_ON_VALUES ) ;
+
+
+
+/*==================================================================================================
+
+	Array difference options.
+
+  ==================================================================================================*/
+define ( 'ARRAY_DIFFERENCE_ON_VALUES'		, 0x00000001 ) ;	// Compare values for difference
+define ( 'ARRAY_DIFFERENCE_ON_KEYS'		, 0x00000002 ) ; 	// Compare keys for difference
+define ( 'ARRAY_DIFFERENCE_ON_KEYS_AND_VALUES'	, 0x00000003 ) ; 	// Compare both keys and values for difference
+define ( 'ARRAY_DIFFERENCE_CASE_SENSITIVE'	, 0x00000000 ) ;        // Case-sensitivity option
+define ( 'ARRAY_DIFFERENCE_CASE_INSENSITIVE'	, 0x00000010 ) ;
+define ( 'ARRAY_DIFFERENCE_PRESERVE_KEYS' 	, 0x00000020 ) ;	// Do we need to preserve array keys ? available only with the ARRAY_DIFFERENCE_ON_VALUES flag
+// Default intersection option
+define ( 'ARRAY_DIFFERENCE_DEFAULT'		, ARRAY_DIFFERENCE_ON_VALUES ) ;
+
+
+
+/*==================================================================================================
+
+	Array filtering options.
+
+  ==================================================================================================*/
+define ( 'ARRAY_EXTRACT_NUMERICS'		, 0x01 ) ;		// EXTRACT on numeric values
+define ( 'ARRAY_EXTRACT_INTEGERS'		, 0x02 ) ;		// EXTRACT on integer values
+define ( 'ARRAY_EXTRACT_FLOATS'			, 0x03 ) ; 		// EXTRACT on float values
+define ( 'ARRAY_EXTRACT_STRINGS'		, 0x04 ) ;		// EXTRACT on string values
+define ( 'ARRAY_EXTRACT_RESOURCES'		, 0x05 ) ; 		// EXTRACT on resources
+define ( 'ARRAY_EXTRACT_OBJECTS'		, 0x06 ) ; 		// EXTRACT on objects
+define ( '__ARRAY_EXTRACT_TYPE_MASK'		, 0x0F ) ;		// Type extraction mask
+define ( 'ARRAY_EXTRACT_FLATTEN'		, 0x10 ) ;		// Flatten the results
+define ( 'ARRAY_EXTRACT_PRESERVE_KEYS'		, 0x20 ) ;		// Preserve initial array keys
+
+
+/*==================================================================================================
+
+    VectorException class -
+	Base class for all Array exceptions.
+
+  ==================================================================================================*/
+class  VectorException  extends Exception
+   {
+	public function  __construct  ( $message, $full = false, $code = 0 )
+	   {
+		parent::__construct ( $message, $code ) ;
+	    }
+    }
+
+
+
+/*==================================================================================================
+
+     Vector class -
+	Static class that implements extended array operations.
+
+  ==================================================================================================*/
+class  Vector  extends     \ArrayObject
+		     implements  \ArrayAccess, \Countable, \IteratorAggregate
+   {
+   	// Array data
+   	private 		$ArrayData 		=  array ( ) ;
+   	// Array data, in a format suitable for the Sort() function :
+   	// 	$IndexedArrayData [$i] = array ( $key, $value )
+   	private 		$IndexedArrayData	=  null ;	// Will only be assigned once if the Sort() function is called
+   	// Array flags
+   	private  		$ArrayFlags 		=  array
+   	   (
+		'CaseSensitiveKeys' 	=>  true, 			// When false, array keys are case-insensitive
+		'CaseSensitiveValues'	=>  true,			// When false, array values are case-insensitive
+		'SortFlags' 		=>  ARRAY_SORT_DEFAULT,		// Order for sort operations (ARRAY_SORT_xxx constants)
+		'Recurse' 		=>  false,			// When true, all operations on arrays apply also to nested arrays
+		'BoundsChecking'	=>  false			// When true, indexes out of bound generate an exception ; otherwise, indexes are normalized
+	    ) ;
+
+
+ 	/*******************************************************************************************/
+ 	/*******************************************************************************************/
+ 	/*******************************************************************************************/
+ 	/******                                                                               ******/
+ 	/******                           MAGIC FUNCTIONS                                     ******/
+ 	/******                                                                               ******/
+ 	/*******************************************************************************************/
+ 	/*******************************************************************************************/
+ 	/*******************************************************************************************/
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Constructor - Builds a Array object.
+
+	    PROTOTYPE
+		$object = new Array ( $array, $array_flags = null ) ;
+
+	    DESCRIPTION
+		Builds a Array object.
+
+
+	    PARAMETERS
+		$array (array) -
+			Classic array object to be mapped as a Array.
+
+		$array_flags (associative array) -
+			Array that can contain the following entries :
+
+			'CaseSensitiveKeys' -
+				A boolean value indicating if item access through array keys should be
+				case sensitive or not.
+				The default value is true.
+
+			'SortFlags' -
+				For sort operations, specifies the sort order, a combination of
+				ARRAY_SORT_xxx flags. The default sort order contains the following
+				options :
+				- ARRAY_SORT_ASC
+				- ARRAY_SORT_VALUES
+				- ARRAY_SORT_REGULAR
+
+			'Recurse' -
+				A boolean value indicating if the array operations should also process
+				nested arrays, or only the first level.
+				The default value is false (process only the first level).
+
+			'BoundsChecking' -
+				When true, an exception is thrown if an index is out of range, otherwise
+				the index is normalized : negative values are converted to zero, and
+				values that exceed the array size are set to be the last element of the
+				array.
+
+	 --------------------------------------------------------------------------------------------*/
+   	public function  __construct ( $array = null, $array_flags = null )
+   	   {
+   	   	// If the supplied array is null, convert it to an empty array
+   	   	if  ( $array  ===  null )
+   	   		$new_array =  array ( ) ;
+  		// If this is a Array object, handle it
+  		else if  ( $this -> __is_array ( $array ) )
+			$new_array 		=  $array -> ArrayData ;
+  		// Otherwise, this is a standard array
+  		else
+  		   {
+			// Ensure that an array has been supplied
+			if  ( is_array ( $array ) )
+				$new_array 	=  $array ;
+			else
+				$new_array 	=  array ( $array ) ;
+  		    }
+
+   	   	// Build the array
+	   	$this -> ArrayFlags 	=  $this -> __merge_flags ( $this -> ArrayFlags, $array_flags ) ;
+   		$this -> __build_array ( $this -> ArrayData, $new_array ) ;
+
+   		parent::__construct ( $this -> ArrayData ) ;
+
+   		// Set the BoundsChecking property to true if PHP error reporting has the E_STRICT flag
+   		if  ( error_reporting ( )  &  E_STRICT )
+   			$this -> BoundsChecking = true ;
+   	    }
+
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    __get -
+	    	Gets the value of an array flag.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __get ( $name )
+	   {
+	   	return ( $this -> __getflag ( $this -> ArrayFlags, $name ) ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    __set -
+	    	Gets the value of an array flag.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __set ( $name, $value )
+	   {
+	   	$this -> __setflag ( $this -> ArrayFlags, $name, $value ) ;
+   	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    __tostring -
+	    	Converts the array to a string.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __tostring ( )
+	   {
+		return ( $this -> ToString ( true ) ) ;
+	    }
+
+
+
+ 	/*******************************************************************************************/
+ 	/*******************************************************************************************/
+ 	/*******************************************************************************************/
+ 	/******                                                                               ******/
+ 	/******                           SUPPORT FUNCTIONS                                   ******/
+ 	/******                                                                               ******/
+ 	/*******************************************************************************************/
+ 	/*******************************************************************************************/
+ 	/*******************************************************************************************/
+
+ 	// __build_array -
+ 	//	Builds a Array object according to the specified value.
+ 	private function  __build_array ( &$output, $array )
+ 	   {
+		foreach  ( $array  as  $key => $value )
+		   {
+		   	if  ( $this -> __is_array ( $value )  ||  is_array ( $value ) )
+				$output [ $key ] = table ( $value ) ;
+			else
+				$output [ $key ] = $value ;
+		    }
+ 	    }
+
+
+	// __build_merged_flags -
+	//	Builds an array to be merged with the current ArrayFlags array, given the fact that
+	//	the supplied associative array can contain null values that will not be included in
+	//	the final result.
+	private function  __build_merged_flags ( $array, $base_array = null )
+	   {
+		$extra 		=  array ( ) ;
+
+		if  ( $base_array  ==  null )
+			$base_array 	=  $this -> ArrayFlags ;
+
+		foreach  ( $array  as  $key => $value )
+		   {
+			if  ( $value  !==  null )
+				$extra [ $key ] = $value ;
+		    }
+
+		return ( $this -> __merge_flags ( $base_array, $extra ) ) ;
+	    }
+
+
+	// __check_index -
+	//	Checks the specified index. Throws an exception if the 'CheckBounds' attribute is set
+	//	to true and the index is out of range, or normalizes the index if not.
+	private function  __check_index ( &$index )
+	   {
+		if   ( $this-> __getflag ( $this -> ArrayFlags, 'BoundsChecking' ) )
+			$normalize 	=  false ;
+		else
+			$normalize 	=  true ;
+
+		if  ( $index  < 0 )
+		   {
+			if  ( $normalize )
+				$index = 0 ;
+			else
+				throw new VectorException ( "Invalid negative index '$index'" ) ;
+
+			return ;
+		    }
+
+		$size 		=  count ( $this -> ArrayData ) ;
+
+		if  ( $index  + 1  >  $size )
+		   {
+			if  ( $normalize )
+				$index = $size - 1 ;
+			else
+				throw new VectorException ( "Index '$index' exceeds array size ($size)" ) ;
+		    }
+	    }
+
+
+	// __check_key -
+	//	Checks if a value can be used as a key. This excludes objects, arrays and resources.
+	//	Issues an exception if the '$issue_exception' parameter is true, otherwise returns a
+	//	boolean value indicating if the specified value can be used as an array key.
+	private function  __check_key ( $value, $issue_exception = true, $allow_arrays = false )
+	   {
+		if  ( is_object ( $value ) ||  is_array ( $value )  ||  is_resource ( $value ) )
+		   {
+   			if  ( $this -> __is_array ( $value )  &&  $allow_arrays )
+   				return ( true ) ;
+
+			if  ( $issue_exception )
+			   {
+				$trace 	=  debug_backtrace ( ) ;
+				$trace  =  $trace [1] ;
+				throw new VectorException ( "Function {$trace ['class']}::{$trace [ 'function' ]}, line {$trace [ 'line' ]} : trying to use a non-scalar value as a key." ) ;
+			    }
+			else
+				return ( false ) ;
+		    }
+
+		return ( true ) ;
+	    }
+
+
+	// __getflag -
+	// 	Returns an array flag value.
+	private function  __getflag ( $array, $name )
+	   {
+		switch  ( strtolower ( $name ) )
+		   {
+		   	// CaseSensitiveKeys flag
+			case	'casesensitivekeys' :
+				return ( $array [ 'CaseSensitiveKeys' ] ) ;
+
+		   	// CaseSensitiveValues flag
+			case	'casesensitivevalues' :
+				return ( $array [ 'CaseSensitiveValues' ] ) ;
+
+			// SortFlags flag
+			case	'sortflags' :
+				return ( $array [ 'SortFlags' ] ) ;
+
+			// Recurse flag
+			case	'recurse' :
+				return ( $array [ 'Recurse' ] ) ;
+
+			// BoundsChecking flag
+			case	'boundschecking' :
+				return ( $array [ 'BoundsChecking' ] ) ;
+
+			// Other flag : throw an exception
+			default :
+				throw new VectorException ( "Array : Invalid flag name '$name' specified." ) ;
+		    }
+	    }
+
+
+	// __get_arrays_options_and_callback -
+	//	For the Difference and Intersect functions, extracts the array list, option and callback parameters from the
+	//	supplied arguments.
+	private function  __get_arrays_options_and_callback ( $argv, $default )
+	   {
+		$trace 		=  debug_backtrace ( ) ;
+		$caller 	=  $trace [1] [ 'function' ] ;
+		$argc 		=  count ( $argv ) ;
+		$arrays 	=  array ( ) ;
+		$options 	=  $default ;
+		$callback 	=  null ;
+
+		foreach  ( $argv  as  $arg )
+		   {
+			if  ( is_callable ( $arg ) )
+				$callback = $arg ;
+			else if  ( is_integer ( $arg ) )
+				$options = $arg ;
+			else if  ( is_array ( $arg )  ||  $this -> __is_array ( $arg ) )
+				$arrays [] = table ( $arg ) -> ToArray ( ) ;
+			else
+				throw new VectorException ( "Vector::$caller : Invalid parameter '$arg'." ) ;
+		    }
+
+    		return ( array ( $arrays, $options, $callback ) ) ;
+	    }
+
+
+
+	// __map_data -
+	//	Maps the ArrayData member to the IndexArrayData.
+	static 		$__map_init_value 	=  array
+	   (
+	   	'arrays'	=>  array ( ),
+	   	'objects'	=>  array ( ),
+	   	'resources'	=>  array ( ),
+	   	'values'	=>  array ( ),
+	   	'max'		=>  0
+	    ) ;
+
+
+	private function  __map_data ( $flags, $recursive, $forced = false )
+	   {
+		if  ( $this -> IndexedArrayData  ==  null  ||  $forced )
+		   {
+		   	$this -> IndexedArrayData	=  Vector::$__map_init_value ;
+			$this -> __map_data_2 ( $flags, $recursive, $this -> ArrayData, $this -> IndexedArrayData ) ;
+		    }
+	    }
+
+
+	private function  __map_data_2 ( $flags, $recursive, $input, &$output )
+	   {
+	   	$index 			=  0 ;
+	   	$actual_index 		=  0 ;
+	   	$object_behavior        =  $flags & __ARRAY_SORT_OBJECTS_MASK ;
+
+	   	// Loop through array items
+		foreach  ( $input  as  $key => &$value )
+		   {
+		   	$structured 		=  true ;
+
+		   	// Handle Array objects
+	   		if  ( $this -> __is_array ( $value ) )
+	   			$value = $value -> ArrayData ;
+
+			// Nested array : they are authorized only if a recursive sort has been requested or if the
+			// ARRAY_SORT_OBJECTS_FAIL flag is not set
+			// If accepted, a sub-item whose key is 'arrays' will be created to hold the objects
+   			if  ( is_array ( $value ) )
+			   {
+				if  ( ! $recursive )
+				   {
+			   	   	if   ( $object_behavior  ==  ARRAY_SORT_OBJECTS_REMOVE )
+			   	   		continue ;
+		   	   		else if  ( $object_behavior  ==  ARRAY_SORT_OBJECTS_FAIL )
+			   	   		throw new VectorException ( "Nested arrays are not allowed for this sort operation." ) ;
+				    }
+
+			    	$where = 'arrays' ;
+			    }
+    			// Object item ; if objects are accepted, a sub-item whose key is 'objects' will be created
+		   	else if  ( is_object ( $value ) )
+		   	   {
+		   	   	if  ( ! ( $value instanceof IComparableObject ) )
+		   	   	   {
+			   	   	if   ( $object_behavior  ==  ARRAY_SORT_OBJECTS_REMOVE )
+			   	   		continue ;
+		   	   		else if  ( $object_behavior  ==  ARRAY_SORT_OBJECTS_FAIL )
+		   	   		   {
+		   	   		   	if  ( ! ( $value instanceof IComparableObject ) )
+			   	   			throw new VectorException ( "Non-comparable objects are not allowed for this sort operation." ) ;
+		   		            }
+				     }
+
+		   		$where 	=  'objects' ;
+		     	    }
+    			// Resource item ; if objects are accepted, a sub-item whose key is 'resources' will be created
+	   		else if  ( is_resource ( $value ) )
+			    {
+		   	   	if   ( $object_behavior  ==  ARRAY_SORT_OBJECTS_REMOVE )
+		   	   		continue ;
+	   	   		else if  ( $object_behavior  ==  ARRAY_SORT_OBJECTS_FAIL )
+		   	   		throw new VectorException ( "Resources are not allowed for this sort operation." ) ;
+
+	   			$where  =  'resources' ;
+   			     }
+		     	// Otherwise, we have a normal item value
+			else
+			   {
+				$where  	=  'values' ;
+				$structured 	=  false ;
+			    }
+
+			// If the sub-item key does not already exists, create it
+			if  ( ! array_key_exists ( $where, $output ) )
+				$output [ $where ] = array ( ) ;
+
+			// If current item is a nested array, recursively process it
+			if  ( is_array ( $value ) )
+			   {
+			   	$output [ $where ] [ $actual_index ] = Vector::$__map_init_value ;
+				$this -> __map_data_2 ( $flags, $recursive, $value, $output [ $where ] [ $actual_index ] ) ;
+			    }
+			// Otherwise, simply add the current value
+			else if  ( $structured )
+				$output [ $where ] [ $actual_index ]	=  array ( $key, $value ) ;
+			else
+				$output [ $where ] []	=  array ( $key, $value ) ;
+
+			// Ensure that the 'values' array indexes are sequential
+			if  ( ! $structured )
+				$index ++ ;
+
+			$actual_index ++ ;
+		    }
+
+		// Save the maximum index
+		$output [ 'max' ] 	=  $actual_index ;
+	    }
+
+
+	// __map_index -
+	//	Maps the IndexedArrayData back to ArrayData.
+	private function  __map_index ( )
+	   {
+	   	$this -> ArrayData 	=  array ( ) ;
+		$this -> __map_index_2 ( $this -> ArrayData, $this -> IndexedArrayData ) ;
+	    }
+
+
+
+	private function  __map_index_2 ( &$output, $input )
+	   {
+	   	// Loop through array values
+	   	for  ( $topkey = 0 ; $topkey < $input [ 'max' ] ; $topkey ++ )
+	   	   {
+			// If the same $topkey item exists in objects or resources items, then we have to insert it before this
+			// particular item, to preserve its original sequential position
+			if  ( array_key_exists ( $topkey, $input [ 'objects' ] ) )
+   			   {
+   			   	$key 		=  $input [ 'objects' ] [ $topkey ] [0] ;
+				$value 		=  $input [ 'objects' ] [ $topkey ] [1] ;
+
+   			   	if  ( is_integer ( $key ) )
+   			   		$output [] 		=  $value ;
+ 				else
+			      		$output [ $key ] 	=  $value ;
+			    }
+			// Same for resources
+			else if  ( array_key_exists ( $topkey, $input [ 'resources' ] ) )
+   			   {
+   			   	$key 		=  $input [ 'resources' ] [ $topkey ] [0] ;
+				$value 		=  $input [ 'resources' ] [ $topkey ] [1] ;
+
+   			   	if  ( is_integer ( $key ) )
+   			   		$output [] 		=  $value ;
+ 				else
+			      		$output [ $key ] 	=  $value ;
+			    }
+			// Same for nested arrays, but we have to recursively process them
+			else if ( array_key_exists ( $topkey, $input [ 'arrays' ] ) )
+			    {
+				$result 		=  array ( ) ;
+				$copy 			=  $input [ 'arrays' ] [ $topkey ] ;
+				$this -> __map_index_2 ( $result, $copy ) ;
+				$result			=  table ( $result ) ;
+
+				if  ( is_integer ( $topkey ) )
+					$output []		=  $result ;
+				else
+					$output [ $topkey ] 	=  $result ;
+			     }
+
+			// Process the current item
+			if  ( array_key_exists ( $topkey, $input [ 'values' ] ) )
+			   {
+   			   	$key 		=  $input [ 'values' ] [ $topkey ] [0] ;
+				$value 		=  $input [ 'values' ] [ $topkey ] [1] ;
+
+				if  ( is_integer ( $key ) )
+					$output []		=  $value ;
+				else
+					$output [ $key ]	=  $value ;
+			    }
+	   	    }
+	    }
+
+
+	// __is_array -
+	//	Returns true if the specified item is a Array object.
+	private function  __is_array ( $item )
+	   {
+		return ( is_a ( $item, __CLASS__ ) ) ;
+	    }
+
+
+  	// __merge_flags -
+  	//	Merges the existing flags with the specified ones and return the result.
+  	private function  __merge_flags ( $new_flags, $array_flags )
+  	   {
+		// Process array flags
+		if  ( ! $array_flags )
+			return ( $new_flags ) ;
+
+		if  ( ! is_array ( $array_flags ) )
+                	throw new VectorException ( "Array constructor : the array flags parameter should either be null or an associative array of flag values." ) ;
+
+		if  ( is_array ( $array_flags ) )
+		   {
+		   	// Loop through each flags
+			foreach  ( $array_flags  as  $name => $value )
+			    $this -> __setflag ( $new_flags, $name, $value ) ;
+		    }
+
+    		// All done, return result
+    		return ( $new_flags ) ;
+	    }
+
+
+	// __setflag -
+	//	Sets the specified flag.
+	private function  __setflag ( &$array, $name, $value )
+	   {
+	   	$bad_flag_value = false ;
+
+		switch  ( strtolower ( $name ) )
+		   {
+		   	// CaseSensitiveKeys flag
+			case	'casesensitivekeys' :
+				if  ( String::IsTrue ( $value ) )
+					$array [ 'CaseSensitiveKeys' ] = true ;
+				else if  ( String::IsFalse ( $value ) )
+					$array [ 'CaseSensitiveKeys' ] = false ;
+				else
+					$bad_flag_value = true ;
+				break ;
+
+		   	// CaseSensitiveValues flag
+			case	'casesensitivevalues' :
+				if  ( String::IsTrue ( $value ) )
+					$array [ 'CaseSensitiveValues' ] = true ;
+				else if  ( String::IsFalse ( $value ) )
+					$array [ 'CaseSensitiveValues' ] = false ;
+				else
+					$bad_flag_value = true ;
+				break ;
+
+			// SortFlags flag
+			case	'sortflags' :
+				$array [ 'SortFlags' ] = $value ;
+				break ;
+
+			// Recurse flag
+			case	'recurse' :
+				if  ( String::IsTrue ( $value ) )
+					$array [ 'Recurse' ] = true ;
+				else if  ( String::IsFalse ( $value ) )
+					$array [ 'Recurse' ] = false ;
+				else
+					$bad_flag_value = true ;
+				break ;
+
+			// BoundsChecking flag
+			case	'boundschecking' :
+				if  ( String::IsTrue ( $value ) )
+					$array [ 'BoundsChecking' ] = true ;
+				else if  ( String::IsFalse ( $value ) )
+					$array [ 'BoundsChecking' ] = false ;
+				else
+					$bad_flag_value = true ;
+				break ;
+
+			// Other flag : throw an exception
+			default :
+				throw new VectorException ( "Array : Invalid flag name '$name' specified." ) ;
+		    }
+
+		if  ( $bad_flag_value )
+			throw new VectorException ( "Array : Invalid value '$value' specified for flag '$name'." ) ;
+	    }
+
+
+	// __totable -
+	//	Converts whatever value into an array object.
+	private function  __totable ( $item )
+	   {
+		if  ( Vector::__is_array ( $item ) )
+			return ( $item -> ToArray ( ) ) ;
+		else if  ( ! $item  )
+			return ( array ( ) ) ;
+		else if  ( is_array ( $item ) )
+			return ( $item ) ;
+
+		$trace = debug_backtrace ( ) ;
+		$trace = $trace [1] ;
+		throw new VectorException ( "Method {$trace [ 'class' ]}::{$trace [ 'function' ]}, line {$trace [ 'line']} : Invalid array object specified." ) ;
+	    }
+
+
+	// __value_exists -
+	//	Checks if a value exists in the array.?
+ 	private function  __value_exists ( $array, $value, $case_sensitive, $recursive )
+ 	   {
+		foreach  ( $array  as  $key => $item )
+		   {
+		   	if  ( $this -> __is_array ( $item )  &&  $this -> __is_array ( $value ) )
+ 	    		   {
+				if  ( $recursive )
+					$status = $item -> __value_exists ( $value, $case_sensitive, $recursive ) ;
+				else
+					$status = ( $item  ==  $value ) ;
+
+				return ( $status ) ;
+ 	    		    }
+
+			if  ( $case_sensitive )
+				$status = ! strcmp ( $item, $value ) ;
+			else
+				$status = ! strcasecmp ( $item, $value ) ;
+
+			if  ( $status )
+				return ( true ) ;
+		    }
+
+		return ( false ) ;
+	    }
+
+
+
+ 	/*******************************************************************************************/
+ 	/*******************************************************************************************/
+ 	/*******************************************************************************************/
+ 	/******                                                                               ******/
+ 	/******                              ARRAY FUNCTIONS 	                              ******/
+ 	/******                                                                               ******/
+ 	/*******************************************************************************************/
+ 	/*******************************************************************************************/
+ 	/*******************************************************************************************/
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		ArrayToVariables - Implements the extract() function.
+
+	    PROTOTYPE
+		$count = $array -> ArrayToVariables ( $extract_type = EXTR_OVERWRITE, $prefix = null ) ;
+
+	    DESCRIPTION
+		Implements the built-in extract() function.
+
+	    PARAMETERS
+		$extract_type (integer) -
+			Can have one of the following values :
+
+			- EXTR_OVERWRITE
+				In case of a collision with an existing variable, the variable is overwritten.
+			- EXTR_SKIP
+				In case of a collision with an existing variable, the variable will be preserved.
+			- EXTR_PREFIX_SAME
+				In case of a collision with an existing variable, create a new variable
+				using $prefix as a prefix.
+			- EXTR_PREFIX_ALL
+				Add $prefix to all variables.
+			- EXTR_PREFIX_INVALID
+				Add a prefix only to variables that have invalid names.
+			- EXTR_IF_EXISTS
+				Overwrite the variable only if it already exists.
+			- EXTR_PREFIX_IF_EXISTS
+				Add a prefix if the variable exists.
+			- EXTR_REFS
+				Extracts the variable values as references to the original values.
+
+		$prefix (string) -
+			Prefix to be used for the EXTR_PREFIX_SAME, EXTR_PREFIX_ALL or EXTR_PREFIX_INVALID
+			options.
+
+	    RETURN VALUE
+		Returns the number of variables actually extracted.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  ArrayToVariables ( $extract_type = EXTR_OVERWRITE, $prefix = null )
+	   {
+		$new_array = clone $this ;
+		$new_array -> Flatten ( true ) ;
+
+		foreach  ( $new_array -> ArrayData  as  $name => $value )
+			global $$name ;
+
+		$count = extract ( $new_array -> ArrayData, $extract_type, $prefix ) ;
+
+		return ( $count ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		ChangeKeyCase - Changes an array key case.
+
+	    PROTOTYPE
+		$array -> ChangeKeyCase ( $case = CASE_LOWER, $recursive = null ) ;
+
+	    DESCRIPTION
+		Implements the array_change_key_case() function, adding the $recursive parameter to
+		process sub-arrays.
+
+	    PARAMETERS
+		$case (integer) -
+			Either the CASE_LOWER or CASE_UPPER constant.
+
+		$recursive (boolean) -
+			Overrides the Recurse flag for the given operation.
+			If this parameter is null, the current value of this flag is taken from
+			the array flags.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  ChangeKeyCase ( $case =  CASE_LOWER, $recursive  =  null )
+	   {
+	   	$array_flags 		=  $this -> __build_merged_flags ( array ( 'Recurse' => $recursive ) ) ;
+	   	$this -> __ChangeKeyCase ( $case, $array_flags ) ;
+	    }
+
+
+	private function  __ChangeKeyCase ( $case, $array_flags )
+	   {
+		$this -> ArrayData  =  array_change_key_case ( $this -> ArrayData, $case ) ;
+
+		if  ( $this -> __getflag ( $array_flags, 'Recurse' ) )
+		   {
+			foreach  ( $this -> ArrayData  as  $item )
+			   {
+				if  ( $this -> __is_array ( $item ) )
+					$item -> __ChangeKeyCase ( $case, $array_flags ) ;
+			    }
+		    }
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Chunk - Implements the array_chunk() function
+
+	    PROTOTYPE
+		$array -> Chunk ( $chunk_size, $preserve_keys = false, $recursive = null ) ;
+
+	    DESCRIPTION
+		Implements the array_chunk() built-in function, which splits an array into smaller
+		sub-arrays.
+
+	    PARAMETERS
+		$chunk_size (integer) -
+			Chunk size. The array will be converted into sub-arrays whose element count
+			will not exceed $chunk_size. Depending on the initial element count, the last
+			sub-array may contain a number of items less than $chunk_size.
+
+		$preserve_keys (boolean) -
+			When true, array keys are preserved. When false, array elements are
+			renumbered.
+
+		$recursive (boolean) -
+			Overrides the Recurse flag for the given operation.
+			If this parameter is null, the current value of this flag is taken from
+			the ArrayFlags property.
+
+	     NOTES
+	     	The function reproduces the behavior of the array_chunk() function, which does not
+	     	enforce the $size count maximum count for the first dimension of the array.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  Chunk ( $chunk_size, $preserve_keys = false, $recursive = null )
+	   {
+		// Basic checkings
+		if  ( $chunk_size  <  1 )
+			throw new VectorException ( "Chunk size must be greater or equal to 1, '$chunk_size' was specified." ) ;
+
+		// Get the recurse flag to be used
+	   	$array_flags 		=  $this -> __build_merged_flags ( array ( 'Recurse' => $recursive ) ) ;
+	   	$recursive 		=  $this -> __getflag ( $array_flags, 'Recurse' ) ;
+
+	   	// Call the real function
+		$result 		=  array ( ) ;
+		$this -> __Chunk ( $result, $this -> ArrayData, $chunk_size, $preserve_keys, $recursive ) ;
+
+		// All done, save the results
+		$this -> ArrayData 	=  $result ;
+	    }
+
+
+	private function  __Chunk ( &$result, $array, $chunk_size, $preserve_keys, $recursive )
+	   {
+		// Loop through items
+		$current 	=  array ( ) ;
+		$count 		=  0 ;
+
+		foreach  ( $array  as  $key => $item )
+		   {
+		   	// If recursive processing required, process sub-arrays
+		   	if  ( $recursive  &&  $this -> __is_array ( $item ) )
+		   		$item = $item -> __Chunk ( $result, $item, $chunk_size, $preserve_keys, $recursive ) ;
+
+			// If we reached the specified chunk size, save current array
+			if  ( $count  ==  $chunk_size )
+			   {
+	   			$result []		=  table ( $current, $this -> ArrayFlags ) ;
+	   			$current 		=  array ( ) ;
+	   			$count 			=  0 ;
+			    }
+
+			// Add current item to the new chunk and count one more chunk
+			if  ( $preserve_keys )
+				$current [ $key ] =  $item ;
+			else
+				$current [] 	  =  $item ;
+
+			$count ++ ;
+		    }
+
+		// If last chunk was incomplete, add it the the result
+		if  ( count ( $current ) )
+			$result []	=  table ( $current, $this -> ArrayFlags ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Combine - Implements the array_combine() function.
+
+	    PROTOTYPE
+		$array -> Combine ( $keys, $values, $case_sensitive_keys = null ) ;
+
+	    DESCRIPTION
+		Builds a new Array whose keys will be given by $keys, with their associated
+		values taken from $values.
+
+	    PARAMETERS
+		$keys (array or Array object) -
+			Array containing the keys of the new array.
+
+		$values (array or Array object) -
+			Array containing the values to be associated with the keys.
+
+		$case_sensitive_keys (boolean) -
+			Overrides the CaseSensitiveKeys flag for the current operation.
+			If this parameter is null, the current value of this flag is taken from
+			the ArrayFlags propertys.
+
+	    NOTES
+	    	If the ARRAY_CASE_INSENSITIVE_KEYS flag is set, and two keys exist but in different
+		letter cases, only the first key will be retained but it will contain the last value.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  Combine ( $keys, $values, $case_sensitive_keys = null )
+	   {
+	   	// Get specified parameters as standard PHP arrays
+		$keys 		=  $this -> __totable ( $keys ) ;
+		$values		=  $this -> __totable ( $values ) ;
+		$count 		=  count ( $keys ) ;
+
+		// Get the actual array flags
+	   	$array_flags 		=  $this -> __build_merged_flags ( array ( 'CaseSensitiveKeys' => $case_sensitive_keys ) ) ;
+	   	$case_sensitive_keys 	=  $this -> __getflag ( $array_flags, 'CaseSensitiveKeys' ) ;
+
+		// $keys and $values must have exactly the same size
+		if  ( $count  !=  count ( $values ) )
+			throw new VectorException ( "Vector::Combine() method : the sizes of the keys and values arrays must have the same number of elements." ) ;
+
+		// Loop through each item to build the resulting array
+		$result  	=  array ( ) ;
+
+		for  ( $i = 0 ; $i < $count ; $i ++ )
+		   {
+   			$value			=  $values [$i] ;
+   			$key 			=  $keys   [$i] ;
+
+			// Check that the key value can effectively be used as a standard array key
+   			$this -> __check_key ( $key ) ;
+
+			// If the resulting array has case-insensitive keys, then we have a little bit more of extra work
+   			if  ( ! $case_sensitive_keys )
+   			   {
+				$current_keys 	=  array_keys ( $result ) ;
+
+				// Loop through existing keys if the current one already exists, whatever its case
+				foreach ( $current_keys  as  $current_key )
+				   {
+				   	// Yes it does exist : replace current key with the one that has been found
+					if  ( ! strcasecmp ( $current_key, $key ) )
+					   {
+						$key	=  $current_key ;
+						break ;
+					    }
+				    }
+   			    }
+
+			// Add the current value with its associated key
+			$result [ $key ] 	=  $value ;
+		    }
+
+		// Replace array data with the result
+		$this -> ArrayData = $result ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		CountValues - Implements the array_count_values() function.
+
+	    PROTOTYPE
+		$array2 = $array1 -> CountValues ( $case_sensitive = null, $recursive = null ) ;
+
+	    DESCRIPTION
+		Implements the array_count_values() built-in function.
+
+	    PARAMETERS
+		$case_sensitive_keys (boolean) -
+			Overrides the CaseSensitiveKeys flag for the current operation.
+			If this parameter is null, the current value of this flag is taken from
+			the ArrayFlags property.
+
+ 		$recursive (boolean) -
+			Overrides the Recurse flag for the given operation.
+			If this parameter is null, the current value of this flag is taken from
+			the ArrayFlags property
+			If this parameter is true, the values found in nested arrays are merged to
+			the results. Otherwise, nested arrays are ignored.
+
+	    RETURN VALUE
+		Returns an Array object with only one dimension, whatever the nesting level
+		was in the original object.
+
+	    NOTES
+	    	Objects (other than Array objects) and resources are silently ignored.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  CountValues ( $case_sensitive_keys = null, $recursive = null )
+	   {
+		// Get the actual array flags
+	   	$array_flags 		=  $this -> __build_merged_flags ( array ( 'CaseSensitiveKeys' => $case_sensitive_keys, 'Recurse' => $recursive ) ) ;
+	   	$case_sensitive_keys 	=  $this -> __getflag ( $array_flags, 'CaseSensitiveKeys' ) ;
+	   	$recursive 		=  $this -> __getflag ( $array_flags, 'Recurse' ) ;
+
+		// Perform value counting
+	   	$array  =  array ( ) ;
+		$this -> __CountValues ( $array, $this -> ArrayData, $case_sensitive_keys, $recursive ) ;
+
+		return ( table ( $array, $array_flags ) ) ;
+	    }
+
+
+  	private function  __CountValues ( &$result, $array, $case_sensitive, $recursive )
+  	   {
+  	   	// Loop through each array item
+		foreach  ( $array  as  $value )
+		   {
+		   	// Check if this is a sub-array
+		   	$is_array = $this -> __is_array ( $value ) ;
+
+			// We eliminate objects and resource identifiers, unless we have a Array sub-array
+		   	if  ( ! $is_array  &&  ( is_object ( $value )  ||  is_resource ( $value ) ) )
+		   		continue ;
+
+			// If we have a sub-array and a recursive sarch is required, recursively process the value, otherwise ignore it
+		   	if  ( $is_array )
+			   {
+			   	if  ( $recursive )
+		   			$this -> __CountValues ( $result, $value, $case_sensitive, $recursive ) ;
+	   			else
+	   				continue ;
+	   		    }
+  		    	// If case-insensitive search is required, loop through the already existing results array and perform a
+  		    	// case-insensitive string comparison with the current value
+ 		    	else if  ( ! $case_sensitive )
+ 		    	   {
+ 		    	   	$found 		=  false ;
+
+				foreach  ( $result  as  $key => $keyvalue )
+				   {
+					if  ( ! strcasecmp ( $key, $value ) )
+					    {
+						$result [ $key ] ++ ;
+						$found = true ;
+						break ;
+					     }
+				    }
+
+				if  ( ! $found )
+					$result [ $value ] = 1 ;
+ 		    	    }
+	    		// Otherwise (case-sensitive search), use the built-in array_key_exists() function which will be faster
+			else if  ( array_key_exists ( $value, $result ) )
+				$result [ $value ] ++ ;
+			// Last case : this is the first occurrence of the value
+			else
+				$result [ $value ] = 1 ;
+		    }
+  	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		DeleteArrayFromStart,
+		DeleteArrayFromEnd,
+		DeleteArrayRange,
+		DeleteArrayFrom		- Implements the array_splice() builtin function.
+
+	    PROTOTYPE
+		$result =  $array -> DeleteArrayFromStart ( $length, $replacement = null ) ;
+		$result	=  $array -> DeleteArrayFromEnd ( $length, $replacement = null ) ;
+		$result =  $array -> DeleteArrayRange ( $start, $end, $replacement = null ) ;
+		$result =  $array -> DeleteArrayFrom ( $start, $length, $replacement = null ) ;
+
+	    DESCRIPTION
+		DeleteArrayFromStart() deletes $length elements from the start of the array.
+		DeleteArrayFromEnd() deletes $length elements from the end of the array.
+		DeleteArrayRange() deletes elements from $start to $end.
+		DeleteArrayFrom() deletes $length elements from $start.
+
+	    PARAMETERS
+		$start (integer) -
+			Start index.
+
+		$end (integer) -
+			End index.
+
+		$length (integer) -
+			Number of elements to be extracted.
+
+		$replacement (array) -
+			When specified, the deleted elements are replaced with the specified ones.
+
+	    RETURN VALUE
+		A Array object containing the required sub-array.
+
+	    NOTES
+		Negative indexes throw an exception.
+
+	 --------------------------------------------------------------------------------------------*/
+	private function  __get_replacement ( $replacement )
+	   {
+		if  ( $replacement )
+		   {
+			$array  =  table ( $replacement ) ;
+
+			return ( $array -> ToArray ( ) ) ;
+		    }
+		else
+			return ( null ) ;
+	    }
+
+
+	public function  DeleteArrayFromStart ( $length, $replacement = null )
+	   {
+	   	$this -> __check_index ( $length ) ;
+	   	$replacement = $this -> __get_replacement ( $replacement ) ;
+
+		$result =  $this -> ArrayData ;
+		array_splice ( $result, 0, $length, $replacement ) ;
+
+		return ( table ( $result ) ) ;
+	    }
+
+
+	public function  DeleteArrayFromEnd ( $length, $replacement = null )
+	   {
+	   	$start 		=  count ( $this -> ArrayData ) - $length ;
+	   	$this -> __check_index ( $start ) ;
+	   	$replacement = $this -> __get_replacement ( $replacement ) ;
+
+		$result =  $this -> ArrayData ;
+		array_splice ( $result, $start, $length, $replacement ) ;
+
+		return ( table ( $result ) ) ;
+	    }
+
+
+	public function  DeleteArrayRange  ( $start, $end, $replacement = null )
+	   {
+		$this -> __check_index ( $start ) ;
+		$this -> __check_index ( $end ) ;
+	   	$replacement = $this -> __get_replacement ( $replacement ) ;
+
+		if  ( $start  >  $end )
+			throw new VectorException ( "SubArrayRange() : starting index cannot be greater than ending index." ) ;
+
+		$length =  $end - $start + 1 ;
+		$result =  $this -> ArrayData ;
+		array_splice ( $result, $start, $length, $replacement ) ;
+
+		return ( table ( $result ) ) ;
+	    }
+
+
+	public function  DeleteArrayFrom  ( $start, $length, $replacement = null )
+	   {
+	   	$end 	=  $start + $length - 1 ;
+		$this -> __check_index ( $start ) ;
+		$this -> __check_index ( $end ) ;
+		$length =  $end - $start + 1 ;
+	   	$replacement = $this -> __get_replacement ( $replacement ) ;
+
+		$result = $this -> ArrayData ;
+		array_splice ( $result, $start, $length, $replacement ) ;
+
+		return ( table ( $result ) ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Difference - Performs the difference between multiple arrays.
+
+	    PROTOTYPE
+		$result = $array -> Difference ( $array(s) [, $options, [$callback] ] ) ;
+
+	    DESCRIPTION
+		Performs the difference between multiple arrays.
+
+	    PARAMETERS
+		arrays (list of arrays) -
+			List of arrays whose difference is to be computed with the current one.
+
+		$options (integer) -
+			Flags for computing the intersection :
+
+			ARRAY_DIFFERENCE_ON_VALUES -
+				Difference is computed on array values.
+
+			ARRAY_DIFFERENCE_ON_KEYS -
+				Difference is computed on array keys.
+
+			ARRAY_DIFFERENCE_ON_KEYS_AND_VALUES -
+				Difference is computed on both array keys and values.
+
+			ARRAY_DIFFERENCE_CASE_SENSITIVE -
+				Comparisons are case-sensitive for strings.
+
+			ARRAY_DIFFERENCE_CASE_INSENSITIVE -
+				Comparisons are case-insensitive for strings.
+
+			ARRAY_DIFFERENCE_PRESERVE_KEYS -
+				Preserve array keys.
+
+			If this parameter is not specified, the default value is ARRAY_DIFFERENCE_ON_VALUES.
+
+		$callback (callback) -
+			Optional callback function called for each comparison. The function has the
+			following signature :
+
+				boolean  callback ( $value1, $value2, $key1, $key2 ) ;
+
+	    RETURN VALUE
+		Returns a Array object containing the difference of the specified arrays.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  Difference ( )
+	   {
+	   	// Get structured parameters
+	   	$args 					=  array_merge ( array ( $this -> ArrayData ), func_get_args ( ) ) ;
+		list ( $arrays, $options, $callback ) 	=  $this -> __get_arrays_options_and_callback ( $args, ARRAY_DIFFERENCE_DEFAULT ) ;
+		$array_count				=  count ( $arrays ) ;
+
+		// Check that array count is correct
+		if  ( $array_count  <  2 )
+			throw new VectorException ( "The Difference() function expects at least two arrays." ) ;
+
+		// Get the actual array flags
+		$case_sensitive 	=  ( $options  &  ARRAY_DIFFERENCE_CASE_INSENSITIVE ) ?  false : true ;
+		$preserve_keys 		=  ( $options  &  ARRAY_DIFFERENCE_PRESERVE_KEYS    ) ?  true  : false ;
+	   	$array_flags 		=  $this -> __build_merged_flags ( array ( 'CaseSensitiveKeys' => $case_sensitive, 'CaseSensitiveValues' => $case_sensitive ) ) ;
+	   	$case_sensitive 	=  $this -> __getflag ( $array_flags, 'CaseSensitiveKeys' ) ;
+		$compare_function 	=  ( $case_sensitive ) ?  "strcmp" : "strcasecmp" ;
+		$difference_on_keys 	=  false ;
+		$difference_on_values 	=  true ;
+
+
+		// Check upon which criterias the intersection must be performed (values, keys, or keys and values)
+		if  ( ( $options  &  ARRAY_DIFFERENCE_ON_KEYS_AND_VALUES )  ==  ARRAY_DIFFERENCE_ON_KEYS_AND_VALUES )
+		   {
+			$difference_on_keys 	=  true ;
+			$difference_on_values 	=  true ;
+		    }
+   		else if  ( ( $options  &  ARRAY_DIFFERENCE_ON_VALUES )  ==  ARRAY_DIFFERENCE_ON_VALUES )
+   		   {
+			$difference_on_keys 	=  false ;
+			$difference_on_values 	=  true ;
+			$preserve_keys 		=  false ;
+   		    }
+   		else if  ( ( $options  &  ARRAY_DIFFERENCE_ON_KEYS )  ==  ARRAY_DIFFERENCE_ON_KEYS )
+   		   {
+			$difference_on_keys 	=  true ;
+			$difference_on_values 	=  false ;
+			$preserve_keys 		=  false ;
+   		    }
+
+		// Callback function
+		$standard_callback = function ( $value_a, $value_b, $key_a, $key_b, $compare_function, $difference_on_keys, $difference_on_values )
+		   {
+		   	if  ( $difference_on_keys )
+		   	   {
+		   	   	if  ( is_numeric ( $key_a )  ||  is_numeric ( $key_b ) )
+		   	   		return ( 1 ) ;
+
+				$status1 	=  $compare_function ( $key_a, $key_b ) ;
+
+				if  ( $difference_on_values )
+				   {
+					$status2	=  $compare_function ( $value_a, $value_b ) ;
+
+					if  ( $status1  ||  $status2 )
+						return ( 1 ) ;
+					else
+						return ( 0 ) ;
+				    }
+
+				return ( $status1 ) ;
+		   	    }
+
+    			if  ( $difference_on_values )
+    			   {
+				$status 	=  $compare_function ( $value_a, $value_b ) ;
+
+				return ( $status ) ;
+    			    }
+
+			return ( 1 ) ;
+		    } ;
+
+
+		if  ( ! $callback )
+			$callback 	=  $standard_callback ;
+
+
+		// Convert array list to a flat array with associated key/value pairs
+		$list 		=  array ( ) ;
+
+		foreach  ( $arrays  as  $array )
+		   {
+			foreach  ( $array  as  $key => $value )
+				$list []  	=  array ( $key, $value ) ;
+		    }
+
+		// Loop through arrays
+		$result 	=  array ( ) ;
+		$list_count 	=  count ( $list ) ;
+
+		for  ( $i = 0 ; $i  <  $list_count ; $i ++ )
+		   {
+			$value_a 	=  $list [$i] [1] ;
+			$key_a 		=  $list [$i] [0] ;
+
+			for   ( $j = 0 ; $j  <  $list_count ; $j ++ )
+			   {
+			   	if  ( $i  ==  $j )
+			   		continue ;
+
+				$value_b 	=  $list [$j] [1] ;
+				$key_b 		=  $list [$j] [0] ;
+
+				$status = $callback ( $value_a, $value_b, $key_a, $key_b, $compare_function, $difference_on_keys, $difference_on_values ) ;
+
+				if  ( ! $status )
+					continue 2 ;
+			    }
+
+			if  ( $preserve_keys )
+				$result [ $key_a ] 	=  $value_a ;
+			else
+				$result []	   	=  $value_a ;
+		    }
+
+
+		// All done, return
+		return ( table ( $result ) ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Fill - Implements the array_fill() function.
+
+	    PROTOTYPE
+		$array -> Fill ( $count, $value, $start_index = null, $recursive = null )
+
+	    DESCRIPTION
+		Implements the built-in array_fill() function, which fills an array with the
+		specified number of values.
+
+	    PARAMETERS
+            	$count (integer) -
+            		Number of elements to insert.
+
+   		$value (any) -
+   			Value to be inserted.
+
+		$start_index (integer) -
+			Starting index for the insertion. If this parameter is null, the elements
+			are appended to the array.
+
+
+ 		$recursive (boolean) -
+			Overrides the Recurse flag for the given operation.
+			If this parameter is null, the current value of this flag is taken from
+			the ArrayFlags property
+			If this parameter is true, nested arrays are processed.
+
+	    NOTES
+		Unlike the array_fill() function, a null value for the start_index parameter will
+		append the array items.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  Fill ( $count, $value, $start_index = null, $recursive = null )
+	   {
+		// Check that the supplied count is correct
+		if  ( $count  <  1 )
+			throw new VectorException ( "Fill() function : the 'count' parameter must be greater than 0." ) ;
+
+		// Get the actual array flags
+	   	$array_flags 		=  $this -> __build_merged_flags ( array ( 'Recurse' => $recursive ) ) ;
+	   	$recursive 		=  $this -> __getflag ( $array_flags, 'Recurse' ) ;
+
+		// Fill the array
+		$this -> __Fill ( $this -> ArrayData, $count, $value, $start_index, $recursive ) ;
+	    }
+
+
+  	private function  __Fill ( &$output, $count, $value, $start_index, $recursive )
+  	   {
+		foreach  ( $output  as  &$item )
+		   {
+			if  ( $recursive  &&  $this -> __is_array ( $item ) )
+				$this -> __Fill ( $item, $count, $value, $start_index, $recursive ) ;
+		    }
+
+    		for  ( $i = 0 ; $i < $count ; $i ++ )
+    		   {
+			if  ( $start_index  ===  null )
+				$output [] 			=  $value ;
+			else
+				$output [ $start_index + $i ]  	=  $value ;
+    		    }
+  	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		FillKeys - Implements the array_fill_keys() function.
+
+	    PROTOTYPE
+		$array -> FillKeys ( $keys, $value, $recursive = null ) ;
+
+	    DESCRIPTION
+		Implements the built-in array_fill_keys() function.
+
+	    PARAMETERS
+		$keys (array or Array or single value) -
+			Keys to be set into the array. If the key is an object or a resource, an
+			exception will be thrown.
+
+		$value (any) -
+			Value to be assigned to each key specified in the $keys array.
+
+ 		$recursive (boolean) -
+			Overrides the Recurse flag for the given operation.
+			If this parameter is null, the current value of this flag is taken from
+			the ArrayFlags property
+			If this parameter is true, nested arrays are processed.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  FillKeys ( $keys, $value, $recursive = null )
+	   {
+		// Get the actual array flags
+	   	$array_flags 		=  $this -> __build_merged_flags ( array ( 'Recurse' => $recursive ) ) ;
+	   	$recursive 		=  $this -> __getflag ( $array_flags, 'Recurse' ) ;
+
+		// Normalize the $keys parameter to an array
+		if  ( $this -> __is_array ( $keys ) )
+			$keys = $keys -> ArrayData ;
+		else if  ( ! is_array ( $keys ) )
+			$keys = array ( $keys ) ;
+
+		// Fill the keys
+		$this -> __FillKeys ( $this -> ArrayData, $keys, $value, $recursive ) ;
+	    }
+
+
+  	private function  __FillKeys ( &$output, $keys, $value, $recursive )
+  	   {
+		foreach  ( $output  as  &$item )
+		   {
+			if  ( $this -> __is_array ( $item )  )
+			   {
+			   	if  ( $recursive )
+					$this -> __FillKeys ( $item, $keys, $value, $recursive ) ;
+			    }
+		    }
+
+		foreach  ( $keys  as  $key )
+		   {
+			$this -> __check_key ( $key, true, false ) ;
+			$output [ $key ] = $value ;
+		    }
+  	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Filter - Implements the array_filter() function.
+
+	    PROTOTYPE
+		$array -> Filter ( $callback, $recursive = null ) ;
+
+	    DESCRIPTION
+		Implements the array_filter() built-in function.
+
+	    PARAMETERS
+		$callback (callback) -
+			Name of the callback function. The function must have the following signature :
+
+				function  callback ( &$value, [ $key [, $nesting_level ] ] ) ;
+
+			Where :
+				- $value is the current value. You can specify a reference to the actual
+				  value if you simply want to modify it.
+				- $key is the associated array key. This parameter is optional
+				- $nesting_level is the current nesting level. This parameter reflects
+				  the ensting level when the $recursive parameter is set to true.
+				  Nesting level starts at 0.
+
+			If this parameter is null, array itemshaving a false value will be removed.
+			Array items are kept only if this function returns true.
+
+ 		$recursive (boolean) -
+			Overrides the Recurse flag for the given operation.
+			If this parameter is null, the current value of this flag is taken from
+			the ArrayFlags property
+			If this parameter is true, nested arrays are processed.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  Filter ( $callback, $recursive = null )
+	   {
+		// Get the actual array flags
+	   	$array_flags 		=  $this -> __build_merged_flags ( array ( 'Recurse' => $recursive ) ) ;
+	   	$recursive 		=  $this -> __getflag ( $array_flags, 'Recurse' ) ;
+
+		// Apply the filter
+		$output = array ( ) ;
+		$this -> __Filter ( 0, $output, $this -> ArrayData, $callback, $recursive ) ;
+		$this -> ArrayData = $output ;
+	    }
+
+
+	private function  __Filter ( $nesting_level, &$output, $input, $callback, $recursive )
+	   {
+		foreach  ( $input  as  $key => &$value )
+		   {
+		   	if  ( $recursive  &&  $this -> __is_array ( $value ) )
+		   	   {
+		   	   	$output [ $key ] = table ( ) ;
+				$this -> __Filter ( $nesting_level + 1, $output [ $key ], $value, $callback, $recursive ) ;
+		   	    }
+	   	    	else
+	   	    	   {
+			   	$status 	=  call_user_func_array ( $callback, array ( &$value, $key, $nesting_level ) ) ;
+
+			   	if  ( $status )
+			   		$output [ $key ] = $value ;
+   			    }
+		    }
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Flip - Implements the array_flip() function.
+
+	    PROTOTYPE
+		$array -> Flip ( $recursive = null ) ;
+
+	    DESCRIPTION
+		Implements the array_flip() functions, which permutes the array keys with their
+		corresponding values.
+		If the array contains objects or resources, an exception will be thrown.
+
+	    PARAMETERS
+ 		$recursive (boolean) -
+			Overrides the Recurse flag for the given operation.
+			If this parameter is null, the current value of this flag is taken from
+			the ArrayFlags property
+			If this parameter is true, nested arrays are processed.
+
+	    NOTES
+	    	When the $recursive parameter is true and a Array object is encountered, there
+	    	will be no flip ; however, the nested array elements will be flipped, and the outer
+	    	element key will not be preserved : the item will be appended to the array.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  Flip  ( $recursive = null )
+	   {
+		// Get the actual array flags
+	   	$array_flags 		=  $this -> __build_merged_flags ( array ( 'Recurse' => $recursive ) ) ;
+	   	$recursive 		=  $this -> __getflag ( $array_flags, 'Recurse' ) ;
+
+		// Flip array
+		$array 			=  array ( ) ;
+		$this -> __Flip ( $array, $this -> ArrayData, $recursive ) ;
+		$this -> ArrayData 	=  $array ;
+	    }
+
+
+	private function  __Flip ( &$output, $array, $recursive )
+	   {
+		foreach  ( $array  as  $key => $value )
+		   {
+			$this -> __check_key ( $value, true, $recursive ) ;
+
+			if  ( $this -> __is_array ( $value ) )
+			   {
+				$temp 	=  array ( ) ;
+				$this -> __Flip ( $temp, $value, $recursive ) ;
+				$output [] = $temp ;
+			    }
+			else
+				$output [ $value ] = $key ;
+		    }
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Intersect - Performs an intersection between multiple arrays.
+
+	    PROTOTYPE
+		$result = $array -> Intersect ( $array(s) [, $options, [$callback] ] ) ;
+
+	    DESCRIPTION
+		Performs an intersection between multiple arrays.
+
+	    PARAMETERS
+		arrays (list of arrays) -
+			List of arrays to be intersected with the current one.
+
+		$options (integer) -
+			Flags for computing the intersection :
+
+			ARRAY_INTERSECT_ON_VALUES -
+				Intersection is computed on array values.
+
+			ARRAY_INTERSECT_ON_KEYS -
+				Intersection is computed on array keys.
+
+			ARRAY_INTERSECT_ON_KEYS_AND_VALUES -
+				Intersection is computed on both array keys and values.
+
+			ARRAY_INTERSECT_CASE_SENSITIVE -
+				Comparisons are case-sensitive for strings.
+
+			ARRAY_INTERSECT_CASE_INSENSITIVE -
+				Comparisons are case-insensitive for strings.
+
+			ARRAY_INTERSECT_PRESERVE_KEYS -
+				Preserve array keys (only available when the ARRAY_INTERSECT_ON_VALUES
+				flag is specified).
+
+			If this parameter is not specified, the default value is ARRAY_INTERSECT_ON_VALUES.
+
+		$callback (callback) -
+			Optional callback function called for each comparison. The function has the
+			following signature :
+
+				boolean  callback ( $value1, $value2, $key1, $key2 ) ;
+
+	    RETURN VALUE
+		Returns a Array object containing the intersection of the specified arrays.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  Intersect ( )
+	   {
+	   	// Get structured parameters
+	   	$args 					=  array_merge ( array ( $this -> ArrayData ), func_get_args ( ) ) ;
+		list ( $arrays, $options, $callback ) 	=  $this -> __get_arrays_options_and_callback ( $args, ARRAY_INTERSECT_DEFAULT ) ;
+		$array_count				=  count ( $arrays ) ;
+
+		// Check that array count is correct
+		if  ( $array_count  <  2 )
+			throw new VectorException ( "The Intersect() function expects at least two arrays." ) ;
+
+		// Get the actual array flags
+		$case_sensitive 	=  ( $options  &  ARRAY_INTERSECT_CASE_INSENSITIVE ) ?  false : true ;
+		$preserve_keys 		=  ( $options  &  ARRAY_INTERSECT_PRESERVE_KEYS    ) ?  true  : false ;
+	   	$array_flags 		=  $this -> __build_merged_flags ( array ( 'CaseSensitiveKeys' => $case_sensitive, 'CaseSensitiveValues' => $case_sensitive ) ) ;
+	   	$case_sensitive 	=  $this -> __getflag ( $array_flags, 'CaseSensitiveKeys' ) ;
+		$compare_function 	=  ( $case_sensitive ) ?  "strcmp" : "strcasecmp" ;
+		$intersect_on_keys 	=  false ;
+		$intersect_on_values 	=  true ;
+
+
+		// Check upon which criterias the intersection must be performed (values, keys, or keys and values)
+		if  ( ( $options  &  ARRAY_INTERSECT_ON_KEYS_AND_VALUES )  ==  ARRAY_INTERSECT_ON_KEYS_AND_VALUES )
+		   {
+			$intersect_on_keys 	=  true ;
+			$intersect_on_values 	=  true ;
+		    }
+   		else if  ( ( $options  &  ARRAY_INTERSECT_ON_VALUES )  ==  ARRAY_INTERSECT_ON_VALUES )
+   		   {
+			$intersect_on_keys 	=  false ;
+			$intersect_on_values 	=  true ;
+			$preserve_keys 		=  false ;
+   		    }
+   		else if  ( ( $options  &  ARRAY_INTERSECT_ON_KEYS )  ==  ARRAY_INTERSECT_ON_KEYS )
+   		   {
+			$intersect_on_keys 	=  true ;
+			$intersect_on_values 	=  false ;
+			$preserve_keys 		=  false ;
+   		    }
+
+		// Callback function
+		$standard_callback = function ( $value_a, $value_b, $key_a, $key_b, $compare_function, $intersect_on_keys, $intersect_on_values )
+		   {
+		   	if  ( $intersect_on_keys )
+		   	   {
+		   	   	if  ( is_numeric ( $key_a )  ||  is_numeric ( $key_b ) )
+		   	   		return ( 1 ) ;
+
+				$status1 	=  $compare_function ( $key_a, $key_b ) ;
+
+				if  ( $intersect_on_values )
+				   {
+					$status2	=  $compare_function ( $value_a, $value_b ) ;
+
+					if  ( $status1  ||  $status2 )
+						return ( 1 ) ;
+					else
+						return ( 0 ) ;
+				    }
+
+				return ( $status1 ) ;
+		   	    }
+
+    			if  ( $intersect_on_values )
+    			   {
+				$status 	=  $compare_function ( $value_a, $value_b ) ;
+
+				return ( $status ) ;
+    			    }
+
+			return ( 1 ) ;
+		    } ;
+
+
+		if  ( ! $callback )
+			$callback 	=  $standard_callback ;
+
+		// Loop through arrays
+		$result 	=  array ( ) ;
+
+		foreach  ( $arrays [0]  as  $key_a => $value_a )
+		   {
+			$match_count 	=  0 ;
+			$matches 	=  array ( array ( $key_a, $value_a ) ) ;
+
+			// For each element in array 0, check if it has a correspondance within eahc other array
+			for  ( $i = 1 ; $i  <  $array_count ; $i ++ )
+			   {
+				foreach  ( $arrays [$i]  as  $key_b => $value_b )
+				   {
+					$status = $callback ( $value_a, $value_b, $key_a, $key_b, $compare_function, $intersect_on_keys, $intersect_on_values ) ;
+
+					if  ( ! $status )
+					   {
+						$match_count ++ ;
+						$matches []	=  array ( $key_b, $value_b ) ;
+						break ;
+					    }
+				    }
+			    }
+
+			// If we have the sufficient number of matches, then we can add this item to the final result
+			if  ( $match_count + 1  ==  $array_count )
+			   {
+				if  ( $intersect_on_keys )
+				   {
+				   	if  ( $intersect_on_values )
+				   	   {
+						$result [] = $matches [0] [1] ;
+				   	    }
+			   	    	else
+			   	    	   {
+			   	    	   	foreach  ( $matches  as  $value )
+							$result []  =  $value [1] ;
+					    }
+				    }
+				else
+				   {
+				   	if  ( $preserve_keys )
+				   	   {
+						foreach  ( $matches  as  $value )
+							$result [ $value [0] ]  =  $value [1] ;
+				   	    }
+			   	    	else
+						$result [] = $matches [0] [1] ;
+				    }
+			    }
+		    }
+
+		// All done, return
+		return ( table ( $result ) ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		KeyExists - Implements the array_key_exists() function.
+
+	    PROTOTYPE
+	        $status = $array -> KeyExists ( $name, $case_sensitive = null, $recursive = false ) ;
+
+	    DESCRIPTION
+		Checks if an array key exists.
+
+	    PARAMETERS
+		$name (any) -
+			Key name, either numeric or string.
+
+		$case_sensitive_keys (boolean) -
+			Overrides the CaseSensitiveKeys flag for the current operation.
+			If this parameter is null, the current value of this flag is taken from
+			the ArrayFlags property.
+
+ 		$recursive (boolean) -
+			Overrides the Recurse flag for the given operation.
+			If this parameter is null, the current value of this flag is taken from
+			the ArrayFlags property
+
+	    RETURN VALUE
+		Returns	true if the key exists, false otherwise.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  KeyExists ( $name, $case_sensitive_keys = null, $recursive = null )
+	   {
+		// Get the actual array flags
+	   	$array_flags 		=  $this -> __build_merged_flags ( array ( 'CaseSensitiveKeys' => $case_sensitive_keys, 'Recurse' => $recursive ) ) ;
+	   	$case_sensitive_keys 	=  $this -> __getflag ( $array_flags, 'CaseSensitiveKeys' ) ;
+	   	$recursive 		=  $this -> __getflag ( $array_flags, 'Recurse' ) ;
+		$cmpfunc 		=  ( $case_sensitive_keys ) ?  'strcmp' : 'strcasecmp' ;
+
+		return ( $this -> __KeyExists ( $name, $cmpfunc, $recursive ) ) ;
+	    }
+
+
+	private function  __KeyExists ( $name, $cmpfunc, $recursive )
+	   {
+		foreach  ( $this -> ArrayData  as  $key => $item )
+		   {
+			$status = $cmpfunc ( $key, $name ) ;
+
+			if  ( ! $status )
+				return ( true ) ;
+
+			if  ( $recursive  &&  $this -> __is_array ( $item ) )
+			   {
+				$status = $item -> __KeyExists ( $name, $cmpfunc, $recursive ) ;
+
+				if  ( $status )
+					return ( true ) ;
+			    }
+		    }
+
+		return ( false ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Keys - Implements the array_keys() function.
+
+	    PROTOTYPE
+		$array2 = $array1 -> Keys ( $recursive = null ) ;
+
+	    DESCRIPTION
+		Implements the built-in array_keys() function.
+
+	    PARAMETERS
+ 		$recursive (boolean) -
+			Overrides the Recurse flag for the given operation.
+			If this parameter is null, the current value of this flag is taken from
+			the ArrayFlags property.
+			When true, the resulting array contains as many nesting levels as the supplied
+			input array.
+
+	    RETURN VALUE
+		A Array containing the array keys.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  Keys ( $recursive = null )
+	   {
+		// Get the recurse flag to be used
+	   	$array_flags 		=  $this -> __build_merged_flags ( array ( 'Recurse' => $recursive ) ) ;
+	   	$recursive 		=  $this -> __getflag ( $array_flags, 'Recurse' ) ;
+		$result 		=  array ( ) ;
+
+		$this -> __Keys ( $result, $recursive ) ;
+
+		return ( table ( $result, $array_flags ) ) ;
+  	    }
+
+
+	private function  __Keys ( &$result, $recursive )
+	   {
+		foreach  ( $this -> ArrayData  as  $key => $item )
+		   {
+			if  ( $recursive  &&  $this ->  __is_array ( $item ) )
+			   {
+			   	$subarray 	=  array ( ) ;
+				$item -> __Keys ( $subarray, $recursive ) ;
+				$result []	=  $subarray ;
+			    }
+			else
+				$result [] = $key ;
+		    }
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Pad - Implements the array_pad() function.
+
+	    PROTOTYPE
+		$array -> Pad ( $count, $value, $recursive = null ) ;
+
+	    DESCRIPTION
+		Implements the array_pad() built-in function.
+
+	    PARAMETERS
+		$count (integer) -
+			Number of values to be added.
+
+		$value (any) -
+			Value to be added. If the value is an array, it will be converted to a
+			Array object before padding.
+
+ 		$recursive (boolean) -
+			Overrides the Recurse flag for the given operation.
+			If this parameter is null, the current value of this flag is taken from
+			the ArrayFlags property.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  Pad ( $count, $value, $recursive = null )
+	   {
+		// Check the $count value
+		if  ( $count  <  1 )
+			throw new VectorException ( "Pad() function : the 'count' parameter must be greater than zero." ) ;
+
+		// Get the recurse flag to be used
+	   	$array_flags 		=  $this -> __build_merged_flags ( array ( 'Recurse' => $recursive ) ) ;
+	   	$recursive 		=  $this -> __getflag ( $array_flags, 'Recurse' ) ;
+
+		// If supplied value is an array, convert it to a Array object
+		if  ( is_array ( $value ) )
+			$value = table ( $value ) ;
+
+		// Perform the padding operation
+		$this -> __Pad ( $this -> ArrayData, $count, $value, $recursive ) ;
+	    }
+
+
+	private function  __Pad ( &$output, $count, $value, $recursive )
+	   {
+	   	if  ( $recursive )
+	   	   {
+			foreach  ( $output  as  $key => &$item )
+			   {
+				if  ( $this -> __is_array ( $item ) )
+					$this -> __Pad ( $item, $count, $value, $recursive ) ;
+			    }
+		    }
+
+		while  ( $count -- )
+			$output []  =  $value ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Pop - Implements the array_pop() function.
+
+	    PROTOTYPE
+		$array2 = $array1 -> Pop ( $count = 1 ) ;
+
+	    DESCRIPTION
+		Pops the last elements of an array. Returns a resulting Array object containing
+		the popped elements. The initial array is updated accordingly.
+
+	    PARAMETERS
+		$count (integer) -
+			Number of elements to be popped. If the number of elements to be popped is
+			greater than the actual number of elements, no warning is issued : the input
+			array will be set to empty, and the return value will contain its whole
+			contents.
+
+	    RETURN VALUE
+		An Array object containing the popped elements.
+
+	    NOTES
+		The invoked array is updated accordingly.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  Pop ( $count =  1 )
+	   {
+	   	if  ( $count  >  0  )
+	   	   {
+			$result =  array ( ) ;
+			$count  =  min ( $count, count ( $this -> ArrayData ) ) ;
+
+   	   		while  ( $count -- )
+   	   			$result [] = array_pop ( $this -> ArrayData ) ;
+
+			$result = array_reverse ( $result, true ) ;
+			return ( table ( $result, $this -> ArrayFlags ) ) ;
+	   	    }
+		else
+			return ( table ( array ( ) ) ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Product - Implements the array_product() function.
+
+	    PROTOTYPE
+		$result = $array -> Product ( $recursive = null ) ;
+
+	    DESCRIPTION
+		Computes the product of all the numeric values in the specified array.
+
+	    PARAMETERS
+ 		$recursive (boolean) -
+			Overrides the Recurse flag for the given operation.
+			If this parameter is null, the current value of this flag is taken from
+			the ArrayFlags property.
+
+
+	    RETURN VALUE
+		Product of all the numeric values in the invoked array.
+
+	    NOTES
+	    	Values other than numeric values or Array objects are silently ignored.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  Product ( $recursive = false )
+	   {
+		// Get the recurse flag to be used
+	   	$array_flags 		=  $this -> __build_merged_flags ( array ( 'Recurse' => $recursive ) ) ;
+	   	$recursive 		=  $this -> __getflag ( $array_flags, 'Recurse' ) ;
+
+	   	$result = 1 ;
+		$this -> __Product ( $result, $this -> ArrayData, $recursive ) ;
+
+		return ( $result ) ;
+	    }
+
+	public function  __Product ( &$result, $array, $recursive )
+	   {
+		foreach  ( $array  as  $value )
+		   {
+			if  ( $this -> __is_array ( $value ) )
+			   {
+		   		if  ( $recursive )
+		   			$this -> __Product ( $result, $value, $recursive ) ;
+		   	    }
+   	    		else if  ( is_numeric ( $value ) )
+   	    			$result *= $value ;
+		    }
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Push - Implements the array_push() function.
+
+	    PROTOTYPE
+		$array -> Push ( arguments... ) ;
+
+	    DESCRIPTION
+		Implements the array_push() function. The function arguments are values to be pushed
+		at the end of the array.
+
+	    PARAMETERS
+            	arguments (any) -
+            		List of arguments to be pushed at the end of the array.
+
+	    RETURN VALUE
+	    	Returns the new number of array elements.
+
+	    NOTES
+		PHP array arguments are converted to Array objects before being pushed.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  Push ( )
+	   {
+	   	$args 	=  func_get_args ( ) ;
+	   	$count 	=  count ( $args ) ;
+
+	   	for  ( $i = 0; $i < $count ; $i ++ )
+	   	   {
+	   	   	if  ( is_array ( $args [$i] ) )
+	   	   		$item 	=  table ( $args [$i] ) ;
+   	   		else
+   	   			$item 	=  $args [$i] ;
+
+	   		$this -> ArrayData [] = $item ;
+   		    }
+
+   		return ( count ( $this ) ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Random - Implements the array_rand() function.
+
+	    PROTOTYPE
+		$result = array_rand ( $count = 1 ) ;
+
+	    DESCRIPTION
+		Implements the array_rand() built-in function.
+
+	    PARAMETERS
+		$count (integer) -
+			Number of items to be returned. If this parameter is set to 1 (the default),
+			the item index will be returned. Otherwise, a Array object will be
+			returned.
+
+	    RETURN VALUE
+		Either the index of a randomly chosen array item (when $count == 1) or a Array
+		object containing the appropriate number of randomly chosen values.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  Random  ( $count = 1 )
+	   {
+		// Check the $count parameter
+		if  ( $count  <  1 )
+			throw new VectorException ( "Random() function : the 'count' parameter must be greater than zero." ) ;
+
+		if  ( $count  > count ( $this -> ArrayData ) )
+			throw new VectorException ( "Random() function : the requested number of random values ($count) " .
+							  "cannot exceed the total number of elements in the array (" . count ( $this -> ArrayData ) .")." ) ;
+
+		// Get the random values
+		$result = array_rand ( $this -> ArrayData, $count ) ;
+
+		// Return the appropriate result
+		if  ( $count  ==  1 )
+			return ( $result ) ;
+		else
+			return ( table ( $result ) ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Range - Implements the range() function.
+
+	    PROTOTYPE
+		$array -> Range ( $low, $high, $step = 1 ) ;
+
+	    DESCRIPTION
+		Implements the built-in range() function.
+
+	    PARAMETERS
+		$low (integer or char) -
+			Lower value.
+
+		$high (integer or char) -
+			Upper value.
+
+		$step (integer) -
+			Range step.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  Range ( $low, $high, $step = 1 )
+	   {
+		// Check input values
+		if  ( ! $step )
+			throw new VectorException ( "Range() function : the 'step' parameter cannot be null." ) ;
+
+		if  ( $low  >  $high  &&  $step  >  0 )
+			throw new VectorException ( "Range() function : Lower value ($low) cannot be greater than higher value ($high), because step ($step) is positive." ) ;
+
+		if  ( $low  <  $high  &&  $step  <  0 )
+			throw new VectorException ( "Range() function : Lower value ($low) cannot be less than higher value ($high), because step ($step) is negative." ) ;
+
+		$this -> ArrayData = range ( $low, $high, $step ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Reduce - Implements the array_reduce() function.
+
+	    PROTOTYPE
+		$array -> Reduce ( $callback, $initial_value = null, $recursive = null ) ;
+
+	    DESCRIPTION
+		Implements the built-in array_reduce() function.
+
+	    PARAMETERS
+		$callback (callback) -
+			Function to be called for each array value. The callback function must have
+			the following signature :
+
+				function  callback ( $result, $value, $key, $nesting_level )
+
+			Where :
+
+			- $result is the resulting value for the Reduce() operation
+			- $value is the current array value found
+			- $key is the associated value key.
+			- $nesting_level is the current nesting level. The first array dimension
+			  has a nesting level of 0.
+
+			The function must return the new $result.
+
+		$initial_value (any) -
+			Initial value for the returned result. When the $recursive flag is set to
+			true, the initial value is used for any nested array.
+
+ 		$recursive (boolean) -
+			Overrides the Recurse flag for the given operation.
+			If this parameter is null, the current value of this flag is taken from
+			the ArrayFlags property.
+
+	    RETURN VALUE
+		Returns the value computed by the callback function on each array item.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  Reduce  ( $callback, $initial_value = null, $recursive = null )
+	   {
+		// Get the actual array flags
+	   	$array_flags 		=  $this -> __build_merged_flags ( array ( 'Recurse' => $recursive ) ) ;
+	   	$recursive 		=  $this -> __getflag ( $array_flags, 'Recurse' ) ;
+
+		// Perform the actual reduce operation
+		return ( $this -> __Reduce ( 0, $this -> ArrayData, $callback, $initial_value, $recursive ) ) ;
+	    }
+
+
+  	public function  __Reduce ( $nesting_level, $input, $callback, $initial_value, $recursive )
+  	   {
+		$output 	=  $initial_value ;
+
+		foreach  ( $input  as  $key => $item )
+		   {
+			if  ( $recursive )
+			   {
+				if  ( $this -> __is_array ( $item ) )
+					$item = $this -> __Reduce ( $nesting_level + 1, $item, $callback, $initial_value, $recursive ) ;
+			    }
+
+			$output = call_user_func ( $callback, $output, $item, $key, $nesting_level ) ;
+		    }
+
+		return ( $output ) ;
+  	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Reverse - Implements the array_reverse() function.
+
+	    PROTOTYPE
+		$array -> Reverse ( $preserve_keys = false, $recursive = null ) ;
+
+	    DESCRIPTION
+		Implements the array_reverse() function.
+
+	    PARAMETERS
+		$preserve_keys (boolean) -
+			Specifies if the keys are to be preserved.
+
+ 		$recursive (boolean) -
+			Overrides the Recurse flag for the given operation.
+			If this parameter is null, the current value of this flag is taken from
+			the ArrayFlags property.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  Reverse ( $preserve_keys = false, $recursive = null )
+	   {
+		// Get the actual array flags
+	   	$array_flags 		=  $this -> __build_merged_flags ( array ( 'Recurse' => $recursive ) ) ;
+	   	$recursive 		=  $this -> __getflag ( $array_flags, 'Recurse' ) ;
+
+		// Reverse the array
+		$this -> ArrayData = $this -> __Reverse ( $this -> ArrayData, $preserve_keys, $recursive ) ;
+	    }
+
+
+  	private function  __Reverse ( $array, $preserve_keys, $recursive )
+  	   {
+		$max 	=  count ( $array ) - 1 ;
+		$output =  array ( ) ;
+		$keys 	=  array_keys ( $array ) ;
+
+		for ( $i = $max ; $i >= 0 ; $i -- )
+		   {
+			$key   =  $keys  [$i] ;
+			$item  =  $array [$key] ;
+
+			if  ( $recursive )
+			   {
+				if  ( $this -> __is_array ( $item ) )
+					$item = $this -> __Reverse ( $item -> ArrayData, $preserve_keys, $recursive ) ;
+			    }
+
+	    		if  ( $preserve_keys )
+	    			$output [$key] 	=  $item ;
+    			else
+    				$output []	=  $item ;
+		    }
+
+	    	return ( $output ) ;
+  	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		SearchKey - Implements the array_search() function.
+
+	    PROTOTYPE
+		$key = $array -> SearchKey ( $value, $case_sensitive_values = null, $recursive = null ) ;
+
+	    DESCRIPTION
+		Searches for a value and returns its associated key.
+
+	    PARAMETERS
+	    	$value (any) -
+	    		Value to be searched.
+
+		$case_sensitive_values (boolean) -
+			Overrides the CaseSensitiveValues flag for the current operation.
+			If this parameter is null, the current value of this flag is taken from
+			the ArrayFlags property.
+
+ 		$recursive (boolean) -
+			Overrides the Recurse flag for the given operation.
+			If this parameter is null, the current value of this flag is taken from
+			the ArrayFlags property.
+
+	    RETURN VALUE
+		The key associated with the searched value, or false if the value does not exist.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  SearchKey ( $value, $case_sensitive_values = null, $recursive = null )
+	   {
+		// Get the actual array flags
+	   	$array_flags 		=  $this -> __build_merged_flags ( array ( 'CaseSensitiveValues' => $case_sensitive_values, 'Recurse' => $recursive ) ) ;
+	   	$case_sensitive_values 	=  $this -> __getflag ( $array_flags, 'CaseSensitiveValues' ) ;
+	   	$recursive 		=  $this -> __getflag ( $array_flags, 'Recurse' ) ;
+		$cmpfunc 		=  ( $case_sensitive_values ) ?  'strcmp' : 'strcasecmp' ;
+
+		// Check input value
+		$this -> __check_key ( $value ) ;
+
+		// Perform the actual search
+		$result = $this -> __SearchKey ( $value, $this -> ArrayData, $cmpfunc, $recursive ) ;
+
+		// All done, return
+		return ( $result ) ;
+	    }
+
+
+  	private function  __SearchKey ( $value, $array, $cmpfunc, $recursive )
+  	   {
+		foreach  ( $array  as  $key => $item )
+		   {
+			if  ( $this -> __is_array ( $item ) )
+			   {
+				if  ( $recursive )
+				   {
+				   	$result = $this -> __SearchKey ( $value, $item, $cmpfunc, $recursive ) ;
+
+					if  ( $result  !==  false )
+						return ( $result ) ;
+				    }
+			    }
+			else
+			   {
+				$status = $cmpfunc ( $value, $item ) ;
+
+				if  ( ! $status )
+					return ( $key ) ;
+			    }
+		    }
+
+		return ( false ) ;
+  	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		SearchValues, SearchValuesEx - Searches for a value.
+
+	    PROTOTYPE
+		$result = $array -> SearchValues ( $value, $search_limit = 1, $case_sensitive_values = null, $recursive = null ) ;
+		$result = $array -> SearchValuesEx ( $value, $search_limit = 1, $recursive = null ) ;
+
+	    DESCRIPTION
+		Searches for a value and returns a reference to it.
+		The SearchValuesEx version allows for specifying a regex.
+
+	    PARAMETERS
+	    	$value (any) -
+	    		Value to be searched. This value is a regex in the case of the SearchValueEx()
+	    		function.
+
+		$search_limit (integer) -
+			Maximum number of values to be returned.
+			When zero, all the values are searched.
+
+		$case_sensitive_values (boolean) -
+			Overrides the CaseSensitiveValues flag for the current operation.
+			If this parameter is null, the current value of this flag is taken from
+			the ArrayFlags property.
+
+ 		$recursive (boolean) -
+			Overrides the Recurse flag for the given operation.
+			If this parameter is null, the current value of this flag is taken from
+			the ArrayFlags property
+
+
+	    RETURN VALUE
+		Returns an array of references to the found values, or an empty array if not found.
+
+	    NOTES
+	    	Returning found values in an array is the only way to return references to those
+		values, allowing the caller to change them.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  SearchValues ( $value, $search_limit = 1, $case_sensitive_values = null, $recursive = null )
+	   {
+		// Get the actual array flags
+	   	$array_flags 		=  $this -> __build_merged_flags ( array ( 'CaseSensitiveValues' => $case_sensitive_values, 'Recurse' => $recursive ) ) ;
+	   	$case_sensitive_values 	=  $this -> __getflag ( $array_flags, 'CaseSensitiveValues' ) ;
+	   	$recursive 		=  $this -> __getflag ( $array_flags, 'Recurse' ) ;
+		$cmpfunc 		=  ( $case_sensitive_values ) ?  'strcmp' : 'strcasecmp' ;
+
+		// Check input value
+		$this -> __check_key ( $value ) ;
+
+		// Perform the actual search
+		$output = array ( ) ;
+		$this -> __SearchValues ( $output, $value, $this -> ArrayData, $cmpfunc, $search_limit, $recursive ) ;
+
+		// All done, return
+		return  ( $output ) ;
+	    }
+
+
+	public function  SearchValuesEx ( $value, $search_limit = 1, $recursive = null )
+	   {
+		// Get the actual array flags
+	   	$array_flags 		=  $this -> __build_merged_flags ( array ( 'Recurse' => $recursive ) ) ;
+	   	$recursive 		=  $this -> __getflag ( $array_flags, 'Recurse' ) ;
+		$cmpfunc 		=  function ( $a, $b )
+		    {
+			if  ( preg_match ( $a, $b ) )
+				return ( false ) ;
+			else
+				return ( true ) ;
+		     } ;
+
+		// Check input value
+		$this -> __check_key ( $value ) ;
+
+		// Perform the actual search
+		$output = array ( ) ;
+		$this -> __SearchValues ( $output, $value, $this -> ArrayData, $cmpfunc, $search_limit, $recursive ) ;
+
+		// All done, return
+		return  ( $output ) ;
+	    }
+
+
+  	private function  __SearchValues ( &$output, $value, &$array, $cmpfunc, $search_limit, $recursive )
+  	   {
+		foreach  ( $array  as  $key => &$item )
+		   {
+			if  ( $this -> __is_array ( $item ) )
+			   {
+				if  ( $recursive )
+				   	$this -> __SearchValues ( $output, $value, $item -> ArrayData, $cmpfunc, $search_limit, $recursive ) ;
+			    }
+			else
+			   {
+		  	   	if  ( $search_limit  >  0  &&  count ( $output )  ==  $search_limit )
+		  	   		return ;
+
+				$status = $cmpfunc ( $value, $item ) ;
+
+				if  ( ! $status )
+				{
+					output ( "CMP $value WITH $item");
+				   	$output [] = &$item ;
+				   	}
+			    }
+		    }
+  	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Shift - Implements the array_shift() function.
+
+	    PROTOTYPE
+		$array2 = $array1 -> Shift ( $count = 1 ) ;
+
+	    DESCRIPTION
+		Shifts the first elements of an array. Returns a resulting Array object containing
+		the shifted elements. The initial array is updated accordingly.
+
+	    PARAMETERS
+		$count (integer) -
+			Number of elements to be shifted. If the number of elements to be shifted is
+			greater than the actual number of elements, no warning is issued : the input
+			array will be set to empty, and the return value will contain its whole
+			contents.
+
+	    RETURN VALUE
+		An Array object containing the shifted elements.
+
+	    NOTES
+		The invoked array is updated accordingly.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  Shift ( $count =  1 )
+	   {
+	   	if  ( $count  >  0  )
+	   	   {
+			$result =  array ( ) ;
+			$count  =  min ( $count, count ( $this -> ArrayData ) ) ;
+
+   	   		while  ( $count -- )
+   	   			$result [] = array_shift ( $this -> ArrayData ) ;
+
+			return ( table ( $result, $this -> ArrayFlags ) ) ;
+	   	    }
+		else
+			return ( table ( array ( ) ) ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Shuffle - Implements the shuffle() function.
+
+	    PROTOTYPE
+		$array -> Shuffle ( $recursive = null ) ;
+
+	    DESCRIPTION
+		Implements the built-in shuffle() function.
+
+	    PARAMETERS
+ 		$recursive (boolean) -
+			Overrides the Recurse flag for the given operation.
+			If this parameter is null, the current value of this flag is taken from
+			the ArrayFlags property.
+
+	    NOTES
+	    	This version of Shuffle() preserves array keys.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  Shuffle  ( $recursive = null )
+	   {
+		// Get the recurse flag to be used
+	   	$array_flags 		=  $this -> __build_merged_flags ( array ( 'Recurse' => $recursive ) ) ;
+	   	$recursive 		=  $this -> __getflag ( $array_flags, 'Recurse' ) ;
+
+		// Shuffle array data
+		$this -> __Shuffle ( $this -> ArrayData, $recursive ) ;
+	    }
+
+
+	private function  __Shuffle ( &$output, $recursive )
+	   {
+	   	if  ( $recursive )
+	   	   {
+			foreach  ( $output  as  &$value )
+			   {
+				if  ( $this -> __is_array ( $value ) )
+					$this -> __Shuffle ( $value -> ArrayData, $recursive ) ;
+			    }
+     		    }
+
+		 srand ( time ( ) ) ;
+		 $result 		=  array ( ) ;
+		 $keys 			=  array_keys ( $output ) ;
+
+		 shuffle ( $keys ) ;
+
+		 foreach  ( $keys  as  $key )
+			$result [$key] = $output [$key] ;
+
+   		$output = $result ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		SubArrayFromStart,
+		SubArrayFromEnd,
+		SubArrayRange,
+		SubArrayFrom		- Implements the array_slice() builtin function.
+
+	    PROTOTYPE
+		$result =  $array -> SubArrayFromStart ( $length ) ;
+		$result	=  $array -> SubArrayFromEnd ( $length ) ;
+		$result =  $array -> SubArrayRange ( $start, $end ) ;
+		$result =  $array -> SubArrayFrom ( $start, $length ) ;
+
+	    DESCRIPTION
+		SubArrayFromStart() extracts $length elements from the start of specified array.
+		SubArrayFromEnd() extracts $length elements from the end of the specified array.
+		SubArrayRange() extracts a range of the specified array, starting from element $start
+		to element $end.
+		SubArrayFrom() extract $length elements from $start.
+
+	    PARAMETERS
+		$start (integer) -
+			Start index.
+
+		$end (integer) -
+			End index.
+
+		$length (integer) -
+			Number of elements to be extracted.
+
+	    RETURN VALUE
+		A Array object containing the required sub-array.
+
+	    NOTES
+		Negative indexes throw an exception.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  SubArrayFromStart ( $length )
+	   {
+	   	$this -> __check_index ( $length ) ;
+
+		$result =  array_slice ( $this -> ArrayData, 0, $length ) ;
+
+		return ( table ( $result ) ) ;
+	    }
+
+
+	public function  SubArrayFromEnd ( $length )
+	   {
+	   	$start 		=  count ( $this -> ArrayData ) - $length ;
+	   	$this -> __check_index ( $start ) ;
+
+		$result =  array_slice ( $this -> ArrayData, $start, $length ) ;
+
+		return ( table ( $result ) ) ;
+	    }
+
+
+	public function  SubArrayRange  ( $start, $end )
+	   {
+		$this -> __check_index ( $start ) ;
+		$this -> __check_index ( $end ) ;
+
+		if  ( $start  >  $end )
+			throw new VectorException ( "SubArrayRange() : starting index cannot be greater than ending index." ) ;
+
+		$length =  $end - $start + 1 ;
+		$result =  array_slice ( $this -> ArrayData, $start, $length ) ;
+
+		return ( table ( $result ) ) ;
+	    }
+
+
+	public function  SubArrayFrom  ( $start, $length )
+	   {
+	   	$end 	=  $start + $length - 1 ;
+		$this -> __check_index ( $start ) ;
+		$this -> __check_index ( $end ) ;
+		$length =  $end - $start + 1 ;
+
+		$result =  array_slice ( $this -> ArrayData, $start, $length ) ;
+
+		return ( table ( $result ) ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Sum - Implements the array_sum() function.
+
+	    PROTOTYPE
+		$result = $array -> Sum ( $recursive = null ) ;
+
+	    DESCRIPTION
+		Computes the sum of all the numeric values in the specified array.
+
+	    PARAMETERS
+ 		$recursive (boolean) -
+			Overrides the Recurse flag for the given operation.
+			If this parameter is null, the current value of this flag is taken from
+			the ArrayFlags property.
+
+
+	    RETURN VALUE
+		Sum of all the numeric values in the invoked array.
+
+	    NOTES
+	    	Values other than numeric values or Array objects are silently ignored.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  Sum ( $recursive = false )
+	   {
+		// Get the recurse flag to be used
+	   	$array_flags 		=  $this -> __build_merged_flags ( array ( 'Recurse' => $recursive ) ) ;
+	   	$recursive 		=  $this -> __getflag ( $array_flags, 'Recurse' ) ;
+	   	$result 		=  0 ;
+
+		$this -> __Sum ( $result, $this -> ArrayData, $recursive ) ;
+
+		return ( $result ) ;
+	    }
+
+	public function  __Sum ( &$result, $array, $recursive )
+	   {
+		foreach  ( $array  as  $value )
+		   {
+			if  ( $this -> __is_array ( $value ) )
+			   {
+		   		if  ( $recursive )
+		   			$this -> __Sum ( $result, $value, $recursive ) ;
+		   	    }
+   	    		else if  ( is_numeric ( $value ) )
+   	    			$result += $value ;
+		    }
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Unique - Implements the array_unique() function.
+
+	    PROTOTYPE
+		$count = $array -> Unique ( $case_sensitive = null, $recursive = null ) ;
+
+	    DESCRIPTION
+		Implements the array_unique() function. The difference is that it does not sort the
+		results, and can handle associative arrays correctly.
+
+	    PARAMETERS
+		$case_sensitive_keys (boolean) -
+			Overrides the CaseSensitiveKeys flag for the current operation.
+			If this parameter is null, the current value of this flag is taken from
+			the ArrayFlags property.
+
+ 		$recursive (boolean) -
+			Overrides the Recurse flag for the given operation.
+			If this parameter is null, the current value of this flag is taken from
+			the ArrayFlags property
+
+	    RETURN VALUE
+		Returns the new number of elements.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  Unique ( $case_sensitive_keys = null,  $recursive = null )
+	   {
+	   	// Check that array is not empty
+	   	if  ( ! count ( $this ) )
+	   		return ( 0 ) ;
+
+		// Get the actual array flags
+	   	$array_flags 		=  $this -> __build_merged_flags ( array ( 'CaseSensitiveKeys' => $case_sensitive_keys, 'Recurse' => $recursive ) ) ;
+	   	$case_sensitive_keys 	=  $this -> __getflag ( $array_flags, 'CaseSensitiveKeys' ) ;
+	   	$recursive 		=  $this -> __getflag ( $array_flags, 'Recurse' ) ;
+		$cmpfunc 		=  ( $case_sensitive_keys ) ?  'strcmp' : 'strcasecmp' ;
+
+		// Initializations
+		$result  	=  array ( ) ;
+		$keys 		=  array_keys ( $this -> ArrayData ) ;
+		$count 		=  count ( $keys ) ;
+
+		// Loop through existing array items
+		for  ( $i = 0 ; $i  <  $count ; $i ++ )
+		   {
+			$key 		=  $keys [$i] ;
+			$item		=  $this -> ArrayData [$key] ;
+
+			if  ( $this -> __is_array ( $item ) )
+			   {
+			   	if  ( $recursive )
+					$item -> Unique ( $case_sensitive_keys, true ) ;
+
+				$result [ $key ] = $item ;
+			    }
+			else
+			   {
+				if  ( ! $this -> __value_exists ( $result, $item, $case_sensitive_keys, $recursive ) )
+					$result [ $key ] = $item ;
+			    }
+		    }
+
+		$this -> ArrayData = $result ;
+		return ( count ( $this ) ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Unshift - Implements the array_unshift() function.
+
+	    PROTOTYPE
+		$array2 = $array1 -> Unshift ( $arguments ) ;
+
+	    DESCRIPTION
+		Implements the array_unshift() built-in function.
+		Function arguments are values that are preprended to the array.
+
+	    PARAMETERS
+            	arguments (any) -
+            		List of arguments to be pushed at the end of the array.
+
+	    RETURN VALUE
+	    	Returns the new number of array elements.
+
+	    NOTES
+		PHP array arguments are converted to Array objects before being pushed.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  Unshift ( )
+	   {
+	   	$args 	=  func_get_args ( ) ;
+	   	$count 	=  count ( $args ) ;
+
+	   	for  ( $i = $count - 1 ; $i >= 0  ; $i -- )
+	   	   {
+	   	   	if  ( is_array ( $args [$i] ) )
+	   	   		$item 	=  table ( $args [$i] ) ;
+   	   		else
+   	   			$item 	=  $args [$i] ;
+
+	   		array_unshift ( $this -> ArrayData, $item ) ;
+   		    }
+
+   		return ( count ( $this ) ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Values - Implements the array_values() function.
+
+	    PROTOTYPE
+		$array2 = $array1 -> Values ( $recursive = null ) ;
+
+	    DESCRIPTION
+		Implements the built-in array_values() function.
+
+	    PARAMETERS
+ 		$recursive (boolean) -
+			Overrides the Recurse flag for the given operation.
+			If this parameter is null, the current value of this flag is taken from
+			the ArrayFlags property.
+			When true, the resulting array contains as many nesting levels as the supplied
+			input array.
+
+	    RETURN VALUE
+		A Array containing the array values.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  Values ( $recursive = null )
+	   {
+		// Get the recurse flag to be used
+	   	$array_flags 		=  $this -> __build_merged_flags ( array ( 'Recurse' => $recursive ) ) ;
+	   	$recursive 		=  $this -> __getflag ( $array_flags, 'Recurse' ) ;
+		$result 		=  array ( ) ;
+
+		$this -> __Values ( $result, $recursive ) ;
+
+		return ( table ( $result, $array_flags ) ) ;
+  	    }
+
+
+	private function  __Values ( &$result, $recursive )
+	   {
+		foreach  ( $this -> ArrayData  as  $key => $item )
+		   {
+			if  ( $recursive  &&  $this ->  __is_array ( $item ) )
+			   {
+			   	$subarray 	=  array ( ) ;
+				$item -> __Values ( $subarray, $recursive ) ;
+				$result []	=  $subarray ;
+			    }
+			else
+				$result [] = $item ;
+		    }
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		ValueExists - Implements the in_array() function.
+
+	    PROTOTYPE
+	        $status = $array -> ValueExists ( $value, $case_sensitive = null, $recursive = false ) ;
+
+	    DESCRIPTION
+		Checks if an array value exists.
+
+	    PARAMETERS
+		$value (any) -
+			Value name, either numeric or string.
+
+		$case_sensitive_keys (boolean) -
+			Overrides the CaseSensitiveKeys flag for the current operation.
+			If this parameter is null, the current value of this flag is taken from
+			the ArrayFlags property.
+
+ 		$recursive (boolean) -
+			Overrides the Recurse flag for the given operation.
+			If this parameter is null, the current value of this flag is taken from
+			the ArrayFlags property
+
+	    RETURN VALUE
+		Returns	true if the value exists, false otherwise.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  ValueExists ( $value, $case_sensitive_keys = null, $recursive = null )
+	   {
+		// Get the actual array flags
+	   	$array_flags 		=  $this -> __build_merged_flags ( array ( 'CaseSensitiveKeys' => $case_sensitive_keys, 'Recurse' => $recursive ) ) ;
+	   	$case_sensitive_keys 	=  $this -> __getflag ( $array_flags, 'CaseSensitiveKeys' ) ;
+	   	$recursive 		=  $this -> __getflag ( $array_flags, 'Recurse' ) ;
+		$cmpfunc 		=  ( $case_sensitive_keys ) ?  'strcmp' : 'strcasecmp' ;
+
+		return ( $this -> __ValueExists ( $value, $cmpfunc, $recursive ) ) ;
+	    }
+
+
+	private function  __ValueExists ( $value, $cmpfunc, $recursive )
+	   {
+		foreach  ( $this -> ArrayData  as  $key => $item )
+		   {
+			if  ( $recursive  &&  $this -> __is_array ( $item ) )
+			   {
+				$status = $item -> __ValueExists ( $value, $cmpfunc, $recursive ) ;
+
+				if  ( $status )
+					return ( true ) ;
+			    }
+	    		else if  ( ( is_object   ( $value )  &&  is_object    ( $item ) )  ||
+	    			   ( is_resource ( $value )  &&  is_resource  ( $item ) ) )
+	    		   {
+	    		   	if  ( $value  ==  $item )
+	    		   		return ( true ) ;
+    		   	    }
+	    		else
+	    		   {
+				$status = $cmpfunc ( $item, $value ) ;
+
+				if  ( ! $status )
+					return ( true ) ;
+	    		    }
+		    }
+
+		return ( false ) ;
+	    }
+
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		VariablesToArray 		- Implements the compact() function.
+		VariablesToArrayByReference     - Variable values are stored as references.
+
+	    PROTOTYPE
+		$array -> VariablesToArray ( $vars... ) ;
+		$array -> VariablesToArrayByReference ( $vars ) ;
+
+	    DESCRIPTION
+		Implements the Compact() function, ie creates an array whose keys are the specified
+		environment variable names and whose values are the variable values themselves.
+		VariablesToArrayByReference() stores a reference to the variable values.
+
+	    PARAMETERS
+		$vars (type) -
+			Variable names or arrays of variable names.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  VariablesToArray ( )
+	   {
+		$this -> ArrayData = $this ->  __VariablesToArray ( array ( ), func_get_args ( ), false ) ;
+	    }
+
+
+ 	public function  VariablesToArrayByReference ( )
+ 	   {
+		$this -> ArrayData =  $this ->  __VariablesToArray ( array ( ), func_get_args ( ), true ) ;
+ 	    }
+
+
+	private function  __VariablesToArray ( $result, $args, $byref )
+	   {
+		foreach  ( $args  as  $arg )
+		   {
+			if  ( is_array ( $arg ) )
+			   	$result [] = table ( $this -> __VariablesToArray ( array ( ), $arg, $byref ) ) ;
+  			else if  ( $this -> __is_array ( $arg ) )
+				$result [] = table ( $this -> __VariablesToArray ( array ( ), $arg -> ArrayData, $byref ), $arg -> ArrayFlags ) ;
+			else
+				$this -> __VariableAdd ( $result, $arg, $byref ) ;
+		    }
+
+		return ( $result ) ;
+	    }
+
+
+	private function  __VariableAdd ( &$output, $name, $byref )
+	   {
+	   	$value 		=  $name ;
+		global		$$value ;
+
+
+		if  ( $byref )
+			$output [ $name ] =  &$$value ;
+		else
+			$output [ $name ] =  $$value ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Walk - Implements the array_walk() function.
+
+	    PROTOTYPE
+	         $status = $array -> Walk ( $callback, $recursive = null, ... ) ;
+
+	    DESCRIPTION
+		Implements the built-in walk_array() and walk_array_recursive() functions, with some
+		variations.
+
+	    PARAMETERS
+		$callback (callback) -
+			Callback function to be called for each array item. The callback function must
+			have the following prototype :
+
+			function  callback ( $key, &$value, $args, $nesting_level ) ;
+
+			The arguments of the function are the following :
+
+			$key (any) -
+				Key of the array item.
+
+			$value (any) -
+				Value of the array item. Note that the value can be changed by the
+				callback function.
+
+			$args (array of any) -
+				Additional arguments passed to the Walk() function after the
+				$recursive parameter.
+				The arguments will be passed to the callback function as an array of
+				values.
+
+			$nesting_level (integer) -
+				Current nesting level, for nested arrays. Nesting level starts at 0.
+
+			The callback function can stop any further processing by returning a boolean
+			'false' value.
+
+ 		$recursive (boolean) -
+			Overrides the Recurse flag for the given operation.
+			If this parameter is null, the current value of this flag is taken from
+			the ArrayFlags property.
+			When true, the array walk will also operate on nested arrays.
+
+		... (any) -
+			Additional arguments to be passed to the callback function.
+
+	    RETURN VALUE
+		Walk() returns the value returned by the callback function : either true (all elements
+		have been processed) or false (processing stopped on one particular element).
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  Walk  ( $function, $recursive = false )
+	   {
+		// Get recursive flag
+	   	$array_flags 		=  $this -> __build_merged_flags ( array ( 'Recurse' => $recursive ) ) ;
+	   	$recursive 		=  $this -> __getflag ( $array_flags, 'Recurse' ) ;
+
+	   	// Get function arguments and remove the first two ($function and $recursive)
+	   	$args	=  func_get_args ( ) ;
+	   	array_shift ( $args ) ;
+	   	array_shift ( $args ) ;
+
+		// Call the array'ed version of Walk
+		$status = $this -> __Walk ( $this -> ArrayData, 0, $function, $recursive, $args ) ;
+
+		// All done, return
+		return ( $status ) ;
+	     }
+
+
+  	private function  __Walk ( &$data, $nesting_level, $function, $recursive, $args )
+  	   {
+ 	   	if  ( ! $args )
+ 	   		$args = array ( ) ;
+
+		// Loop through items
+		foreach  ( $data  as  $key => &$item )
+		   {
+			if  ( $this -> __is_array ( $item ) )
+			   {
+				if  ( $recursive  &&  $item -> __is_array ( $item ) )
+				   {
+					$status = $this -> __Walk ( $item -> ArrayData, $nesting_level + 1, $function, $recursive, $args ) ;
+
+					if  ( $status )
+						continue ;
+				    }
+				else
+					$status = $function ( $key, $item, $args, $nesting_level ) ;
+			    }
+			else
+				$status = $function ( $key, $item, $args, $nesting_level ) ;
+
+			if  ( ! $status )
+				return ( false ) ;
+		    }
+
+		return ( $status ) ;
+	    }
+
+
+ 	/*******************************************************************************************/
+ 	/*******************************************************************************************/
+ 	/*******************************************************************************************/
+ 	/******                                                                               ******/
+ 	/******                         ENHANCED ARRAY FUNCTIONS                              ******/
+ 	/******                                                                               ******/
+ 	/*******************************************************************************************/
+ 	/*******************************************************************************************/
+ 	/*******************************************************************************************/
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Average - Computes an average value on an array.
+
+	    PROTOTYPE
+		$result = $array -> Average ( $recursive = null ) ;
+
+	    DESCRIPTION
+		Computes an average numeric value on an array.
+
+	    PARAMETERS
+ 		$recursive (boolean) -
+			Overrides the Recurse flag for the given operation.
+			If this parameter is null, the current value of this flag is taken from
+			the ArrayFlags property.
+
+	    RETURN VALUE
+		Returns the average value of all the numeric values found in the current array object.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  Average ( $recursive = null )
+	   {
+		// Get the recurse flag to be used
+	   	$array_flags 		=  $this -> __build_merged_flags ( array ( 'Recurse' => $recursive ) ) ;
+	   	$recursive 		=  $this -> __getflag ( $array_flags, 'Recurse' ) ;
+
+	   	// Compute the average value
+	   	$count 			=  0 ;
+		$result 		=  $this -> __Average ( $count, $this -> ArrayData, $recursive ) ;
+
+		// All done, return
+		return ( $result / $count ) ;
+	    }
+
+	public function  __Average ( &$count, $array, $recursive )
+	   {
+	   	$result = 0 ;
+
+		foreach  ( $array  as  $value )
+		   {
+			if  ( $this -> __is_array ( $value ) )
+			   {
+		   		if  ( $recursive )
+		   			$result += $this -> __Average ( $count, $value, $recursive ) ;
+		   	    }
+   	    		else if  ( is_numeric ( $value ) )
+   	    		   {
+   	    		   	$result += $value ;
+   	    		   	$count ++ ;
+    			    }
+		    }
+
+		return ( $result ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Depth - Returns the maximum nesting depth of an array.
+
+	    PROTOTYPE
+		$depth = $array -> Depth ( ) ;
+
+	    DESCRIPTION
+		Returns the maximum nesting depth of an array.
+
+	    RETURN VALUE
+		Maximum nesting depth of the supplied array.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  Depth ( )
+	   {
+	   	$depth 		=  0 ;
+	   	$level 		=  0 ;
+		$this -> __Depth ( $this -> ArrayData, $level, $depth ) ;
+	  	return ( $level ) ;
+	    }
+
+
+	private function  __Depth ( $data, &$level, &$depth )
+	   {
+	   	$depth ++ ;
+
+		foreach  ( $data  as  $item )
+		   {
+			if  ( $this -> __is_array ( $item ) )
+				$item -> __Depth ( $item -> ArrayData, $level, $depth ) ;
+
+			if  ( $depth  >  $level )
+				$level = $depth ;
+		    }
+	    }
+
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Extract - Extract values from an array.
+
+	    PROTOTYPE
+		$result = $array -> Extract ( $option, $callback = null )
+
+	    DESCRIPTION
+		Extracts objects of the given type from an input array.
+
+	    PARAMETERS
+		$option (type) -
+			Type of objects to be extracted. It can be one of the following constants :
+
+			ARRAY_EXTRACT_NUMERICS -
+				Extracts numeric values, both integers and floats.
+
+			ARRAY_EXTRACT_INTEGERS -
+				Extracts integer values.
+
+			ARRAY_EXTRACT_FLOATS -
+				Extracts float values.
+
+			ARRAY_EXTRACT_STRINGS -
+				Extracts string values.
+
+			ARRAY_EXTRACT_RESOURCES -
+				Extracts resources values.
+
+			ARRAY_EXTRACT_OBJECTS -
+				Extracts object instances.
+
+			ARRAY_EXTRACT_FLATTEN -
+				When this bit is specified and nested arrays are processed, the
+				resulting array will be flattened.
+
+			ARRAY_EXTRACT_PRESERVE_KEYS -
+				When specified, array keys are preserved.
+
+		$callback (callback) -
+			Specifies a callback function to be called when a value of the required type
+			(numeric, integer, float, string, resource or object) has been found.
+			The callback function must have the following signature :
+
+				boolean  callback ( $value, $key ) ;
+
+			It must return true if the value is to be retained, false otherwise.
+			The $key parameter is optional.
+
+	    RETURN VALUE
+		The function returns a Array object containing the extracted elements.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  Extract ( $option, $callback = null )
+	   {
+		$result 	=  array ( ) ;
+		$this -> __Extract ( $this -> ToArray ( ), $result, $option, $callback ) ;
+
+		return ( table ( $result ) ) ;
+	    }
+
+
+	private function  __Extract ( $array, &$output, $option, $callback )
+	   {
+	   	// Get the extraction type, flatten et preserve keys options
+	   	$type 		=  $option & __ARRAY_EXTRACT_TYPE_MASK ;
+	   	$flatten 	=  $option & ARRAY_EXTRACT_FLATTEN ;
+	   	$preserve_keys 	=  $option & ARRAY_EXTRACT_PRESERVE_KEYS ;
+
+		// Loop through each array element
+		foreach  ( $array  as  $key =>  $value )
+		   {
+		   	$keep 		=  false ;
+
+			// Recursively process nested arrays
+			if  ( is_array ( $value ) )
+			   {
+			   	$temp = array ( ) ;
+				$this -> __Extract ( $value, $temp, $option, $callback ) ;
+
+				// Handle the flatten and preserve keys options
+				if  ( $flatten )
+				   {
+					if  ( $preserve_keys )
+					   {
+						foreach  ( $temp  as  $vk => $vv )
+							$output [$vk] = $vv ;
+					    }
+					else
+					   {
+						foreach  ( $temp  as  $vv )
+							$output [] = $vv ;
+					    }
+				    }
+				else
+    				   {
+    				   	if  ( $preserve_keys )
+    				   		$output [$key] = $temp ;
+    				   	else
+						$output [] = $temp ;
+				    }
+
+				continue ;
+			    }
+
+			// Normal element : filter on its type
+			switch  ( $type )
+			   {
+				case	ARRAY_EXTRACT_RESOURCES :
+					if  ( is_resource ( $value ) )
+						$keep = true ;
+					break ;
+
+				case	ARRAY_EXTRACT_OBJECTS :
+					if  ( is_object ( $value ) )
+						$keep = true ;
+					break ;
+
+				case	ARRAY_EXTRACT_NUMERICS :
+					if  ( is_numeric ( $value ) )
+						$keep = true ;
+					break ;
+
+				case	ARRAY_EXTRACT_FLOATS :
+					if  ( is_float ( $value ) )
+						$keep = true ;
+					break ;
+
+				case	ARRAY_EXTRACT_INTEGERS :
+					if  ( is_integer ( $value ) )
+						$keep = true ;
+					break ;
+
+				case	ARRAY_EXTRACT_STRINGS :
+					if  ( is_string ( $value ) )
+						$keep = true ;
+					break ;
+			    }
+
+			// If a callback has been supplied, call it
+			if  ( $keep  &&  $callback  &&  ! is_array ( $callback ) )
+				$keep = $callback ( $key, $value ) ;
+
+			// If we have to keep this scalar element, do it according to the preserve keys options
+			if  ( $keep )
+			   {
+				if  ( $preserve_keys )
+					$output [$key] = $value ;
+				else
+					$output [] = $value ;
+			    }
+		    }
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		FillEx - Extended array initialization.
+
+	    PROTOTYPE
+		$array -> FillEx ( $params... ) ;
+
+	    DESCRIPTION
+		Fills an array with the specified parameters.
+
+	    PARAMETERS
+		$params (array [3]) -
+			Parameters to be used for initialization. Item #0 contains the start index,
+			item #1 the ending index, and item #2 the initialization value.
+			If $params contains only two items, then item #1 is the index, and item #2
+			is the initialization value.
+			If $params is an array with one element, or simply a value, then it will be
+			appended to the current array.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  FillEx  ( )
+	   {
+		$params		=  func_get_args ( ) ;
+		$array 		=  array ( ) ;
+
+		foreach  ( $params  as  $param )
+		   {
+		   	if  ( ! is_array ( $param ) )
+			   	$param 	=  array ( $param ) ;
+
+		   	switch ( count ( $param ) )
+			   {
+				case  3 :
+					for  ( $i = $param [0] ; $i <= $param [1] ; $i ++ )
+					   {
+					   	if  ( is_array ( $param [2] ) )
+							$array [$i] = table ( $param [2] ) ;
+						else
+							$array [$i] = $param [2] ;
+					    }
+					break ;
+
+				case  2 :
+					if  ( is_array ( $param [1] ) )
+						$array [ $param [0] ] = table ( $param [1] ) ;
+					else
+						$array [ $param [0] ] = $param [1] ;
+					break ;
+
+				case  1 :
+					if  ( is_array ( $param [0] ) )
+						$array [] = table ( $param [0] ) ;
+					else
+						$array [] = $param [0] ;
+
+				default :
+					throw new VectorException ( "Vector::FillEx : Incorrect initilization value." ) ;
+			    }
+		    }
+
+		$this -> ArrayData	=  $array ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Flatten - Flattens a nested array.
+
+	    PROTOTYPE
+		$array -> Flatten ( $preserve_keys = false ) ;
+
+	    DESCRIPTION
+		 Flattens a nested array.
+
+	    PARAMETERS
+	    	$preserve_keys (boolean) -
+	    		When true, original array keys will be preserved.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  Flatten ( $preserve_keys = false )
+	   {
+		$result = array ( ) ;
+		$this -> __Flatten ( $result, $this -> ArrayData, $preserve_keys ) ;
+		$this -> ArrayData = $result ;
+	    }
+
+
+	private function  __Flatten ( &$result, $array, $preserve_keys )
+	   {
+		foreach  ( $array  as  $key => $item )
+		   {
+			if  ( $this -> __is_array ( $item ) )
+				$this -> __Flatten ( $result, $item, $preserve_keys ) ;
+			else if  ( $preserve_keys )
+				$result [$key] = $item ;
+			else
+				$result [] = $item ;
+		    }
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Getxx - Gets the elements satisfying the specified relation.
+
+	    PROTOTYPE
+		$result = $array -> GetLT  ( $value, $case_sensitive = null, $recursive = null ) ;
+		$result = $array -> GetLE  ( $value, $case_sensitive = null,  $recursive = null ) ;
+		$result = $array -> GetGT  ( $value, $case_sensitive = null,  $recursive = null ) ;
+		$result = $array -> GetGE  ( $value, $case_sensitive = null,  $recursive = null ) ;
+		$result = $array -> GetEQ  ( $value, $case_sensitive = null,  $recursive = null ) ;
+		$result = $array -> GetNEQ ( $value, $case_sensitive = null,  $recursive = null ) ;
+		$result = $array -> GetBetween ( $low, $high, $case_sensitive = null,  $recursive = null ) ;
+
+	    DESCRIPTION
+		Gets the elements from the supplied array satisfying the specified relation :
+		- LT		: Less than
+		- LE		: Less than or equal
+		- GT		: Greater than
+		- GE		: Greater than or equal
+		- EQ		: Equal to
+		- NEQ		: Not equal to
+		- Between 	: Between $low and $high inclusive
+
+	    PARAMETERS
+		$value (numeric or string) -
+			Value to be used as a filter.
+
+		$low, $high (numeric or string) -
+			Low and high values to be used for filtering.
+
+		$recursive (boolean) -
+			When true, the array is recursively processed.
+
+	    RETURN VALUE
+		An array containing the filtered values.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  GetLT ( $value, $case_sensitive = null, $recursive = null )
+	   { return ( $this -> __GetFunction ( $value, '<', $case_sensitive, $recursive ) ) ; }
+
+
+	public function  GetLE ( $value, $case_sensitive = null, $recursive = null )
+	   { return ( $this -> __GetFunction ( $value, '<=', $case_sensitive, $recursive ) ) ; }
+
+
+	public function  GetGT ( $value, $case_sensitive = null, $recursive = null )
+	   { return ( $this -> __GetFunction ( $value, '>', $case_sensitive, $recursive ) ) ; }
+
+
+	public function  GetGE ( $value, $case_sensitive = null, $recursive = null )
+	   { return ( $this -> __GetFunction ( $value, '>=', $case_sensitive, $recursive ) ) ; }
+
+
+	public function  GetEQ ( $value, $case_sensitive = null, $recursive = null )
+	   { return ( $this -> __GetFunction ( $value, '=', $case_sensitive, $recursive ) ) ; }
+
+
+	public function  GetNEQ ( $value, $case_sensitive = null, $recursive = null )
+	   { return ( $this -> __GetFunction ( $value, '<>', $case_sensitive, $recursive ) ) ; }
+
+
+	// Called by all the Getxx functions
+	private function  __GetFunction ( $value, $operation, $case_sensitive, $recursive )
+	   {
+		// Get the recurse flag to be used
+	   	$array_flags 		=  $this -> __build_merged_flags ( array ( 'Recurse' => $recursive, 'CaseSensitiveValues' => $case_sensitive ) ) ;
+	   	$recursive 		=  $this -> __getflag ( $array_flags, 'Recurse' ) ;
+	   	$case_sensitive 	=  $this -> __getflag ( $array_flags, 'CaseSensitiveValues' ) ;
+
+		// Get the values
+		$result 	=  array ( ) ;
+		$function 	=  $this -> __get_comparison_function ( $value, $case_sensitive, $operation ) ;
+		$this -> __GetByComparison ( $result, $this -> ArrayData, $value, $function, $recursive ) ;
+
+		// All done, return
+		return ( table ( $result ) ) ;
+	    }
+
+
+	// Filters the searched elements
+	private function  __GetByComparison ( &$result, $array, $value, $function, $recursive )
+	   {
+		foreach  ( $array  as  $item )
+		   {
+			if  ( $this -> __is_array ( $item ) )
+			   {
+				$result []	=  array ( ) ;
+				$this -> __GetByComparison ( $result [ count ( $result ) - 1 ], $item -> ArrayData, $value, $function, $recursive ) ;
+			    }
+			else if  ( $this -> $function ( $item, $value ) )
+				$result [] = $item ;
+		    }
+	    }
+
+
+	// Returns the appropriate comparison function for the Getxx functions
+	private function  __get_comparison_function ( $value, $case_sensitive, $operation )
+	   {
+		if  ( is_numeric ( $value ) )
+		   {
+			switch ( $operation )
+			   {
+				case	'<' :
+					return ( "__compare_lt" ) ;
+
+				case	'<=' :
+					return ( "__compare_le" ) ;
+
+				case	'>' :
+					return ( "__compare_gt" ) ;
+
+				case	'>=' :
+					return ( '__compare_ge' ) ;
+
+				case	'=' :
+					return ( '__compare_eq' ) ;
+
+				case 	'<>' :
+					return ( '__compare_neq' ) ;
+			    }
+		    }
+		else
+			return ( ( $case_sensitive ) ?  'strcmp' : 'strcasecmp' ) ;
+	    }
+
+
+	// Comparison functions
+	private function  __compare_lt ( $a, $b )
+	   { return ( $a < $b ) ; }
+
+	private function  __compare_le ( $a, $b )
+	   { return ( $a <= $b ) ; }
+
+	private function  __compare_gt ( $a, $b )
+	   { return ( $a > $b ) ; }
+
+	private function  __compare_ge ( $a, $b )
+	   { return ( $a >= $b ) ; }
+
+	private function  __compare_eq ( $a, $b )
+	   { return ( $a == $b ) ; }
+
+	private function  __compare_neq ( $a, $b )
+	   { return ( $a != $b ) ; }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		GetStatistics - Gets statistics on the types of objects in an array.
+
+	    PROTOTYPE
+		$result = $array -> GetStatistics ( $recursive = null ) ;
+
+	    DESCRIPTION
+		Get statistics on the types of objects in an array.
+
+	    PARAMETERS
+ 		$recursive (boolean) -
+			Overrides the Recurse flag for the given operation.
+			If this parameter is null, the current value of this flag is taken from
+			the ArrayFlags property.
+
+	    RETURN VALUE
+		Returns an associative array containing the following pairs :
+		arrays -
+			Number of nested arrays.
+
+		booleans -
+			Number of boolean values.
+
+		dates -
+			Number of date/time values.
+
+		integers -
+			Number of integer values.
+
+		floats -
+			Number of float values.
+
+		objects -
+			Number of objects.
+
+		resources -
+			Number of resource identifiers.
+
+		strings -
+			Number of strings.
+
+		unknown -
+			Unknown object types.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  GetStatistics ( $recursive = null )
+	   {
+		// Get the recurse flag to be used
+	   	$array_flags 		=  $this -> __build_merged_flags ( array ( 'Recurse' => $recursive ) ) ;
+	   	$recursive 		=  $this -> __getflag ( $array_flags, 'Recurse' ) ;
+
+		// Build the result
+		$result = array
+		   (
+		   	'arrays'		=>  0,
+		   	'booleans'		=>  0,
+		   	'dates'			=>  0,
+		   	'integers'		=>  0,
+		   	'floats'		=>  0,
+		   	'objects'		=>  0,
+		   	'resources'		=>  0,
+		   	'strings'		=>  0
+		    ) ;
+
+		$this -> __GetStatistics ( $result, $this -> ArrayData, $recursive ) ;
+
+		// All done, return
+		return ( $result ) ;
+	    }
+
+	public function  __GetStatistics ( &$statistics, $array, $recursive )
+	   {
+	   	$result = 0 ;
+
+		foreach  ( $array  as  $value )
+		   {
+			if  ( $this -> __is_array ( $value ) )
+			   {
+		   		if  ( $recursive )
+		   		   {
+		   			$this -> __GetStatistics ( $statistics, $value, $recursive ) ;
+		   			continue ;
+	   			    }
+		   	    }
+
+			if  ( is_bool ( $value ) )
+				$statistics [ 'booleans' ] ++ ;
+			else if  ( is_integer ( $value ) )
+				$statistics [ 'integers' ] ++ ;
+			else if  ( is_float ( $value ) )
+				$statistics [ 'floats' ] ++ ;
+			else if  ( is_string ( $value ) )
+			   {
+				if  ( strtotime  ( $value )  ===  false )
+					$statistics [ 'strings' ] ++ ;
+				else
+					$statistics [ 'dates' ] ++ ;
+			    }
+			else if  ( $this -> __is_array ( $value ) )
+				$statistics [ 'arrays' ] ++ ;
+			else if  ( is_object ( $value ) )
+				$statistics [ 'objects' ] ++ ;
+			else if  ( is_resource ( $value ) )
+				$statistics [ 'resources' ] ++ ;
+			else
+				$statistics [ 'unknown' ] ++ ;
+		    }
+	    }
+
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		IsKeyed - Checks if an array contains only string indexes.
+
+	    PROTOTYPE
+		$status = $array -> IsKeyed ( $recursive = null ) ;
+
+	    DESCRIPTION
+		Checks if an array contains only string indexes.
+
+	    RETURN VALUE
+		True if the array contains only string indexes, false otherwise.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  IsKeyed ( $recursive = null )
+	   {
+		// Get recursive flag
+	   	$array_flags 		=  $this -> __build_merged_flags ( array ( 'Recurse' => $recursive ) ) ;
+	   	$recursive 		=  $this -> __getflag ( $array_flags, 'Recurse' ) ;
+
+		// Loop through array
+		return ( $this -> __IsKeyed ( $recursive ) ) ;
+	    }
+
+
+	private function  __IsKeyed ( $recursive )
+	   {
+	   	// Loop through array items
+	   	foreach  ( $this -> ArrayData  as  $key => $item )
+		   {
+		   	// If one item has a numeric key, then the array is not considered as "natural"
+		   	if  ( ! is_string ( $key ) )
+		   		return ( false ) ;
+
+			// If nested array and nested processing is needed...
+			if  ( $this -> __is_array ( $item )  &&  $recursive )
+			   {
+			   	// Recursively make the test
+				$status = $item -> __IsKeyed ( $recursive ) ;
+
+				// But stop processing if a numeric key has been found
+				if  ( ! $status )
+					return ( false ) ;
+			    }
+		    }
+
+		// All done, no non-numeric key encountered
+		return ( true ) ;
+	    }
+
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		IsMixed - Checks if an array contains both string and integer indexes.
+
+	    PROTOTYPE
+		$status = $array -> IsMixed ( $recursive = null ) ;
+
+	    DESCRIPTION
+		Checks if an array contains both mixed and string indexes.
+
+	    RETURN VALUE
+		True if the array contains both string and integer indexes, false otherwise.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  IsMixed ( $recursive = null )
+	   {
+		// Get recursive flag
+	   	$array_flags 		=  $this -> __build_merged_flags ( array ( 'Recurse' => $recursive ) ) ;
+	   	$recursive 		=  $this -> __getflag ( $array_flags, 'Recurse' ) ;
+
+		// Count the number of integer and string keys
+		$integers		=  0 ;
+		$strings 		=  0 ;
+		$this -> __IsMixed ( $integers, $strings, $recursive ) ;
+
+		// A mixed array contains both integer and string indexes
+		return ( $integers  &&  $strings ) ;
+	    }
+
+
+	private function  __IsMixed ( &$integers, &$strings, $recursive )
+	   {
+	   	// Loop through array items
+	   	foreach  ( $this -> ArrayData  as  $key => $item )
+		   {
+		   	// Count string and numeric keys
+		   	if  ( is_string ( $key ) )
+		   		$strings ++ ;
+	   		else if  ( is_numeric ( $key ) )
+	   			$integers ++ ;
+
+			// If nested array and nested processing is needed...
+			if  ( $this -> __is_array ( $item )  &&  $recursive )
+				$item -> __IsMixed ( $integers, $strings, $recursive ) ;
+		    }
+	    }
+
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		IsNatural - Checks if an array contains only numeric indexes.
+
+	    PROTOTYPE
+		$status = $array -> IsNatural ( $recursive = null ) ;
+
+	    DESCRIPTION
+		Checks if an array contains only numeric indexes.
+
+	    RETURN VALUE
+		True if the array contains only numeric indexes, false otherwise.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  IsNatural ( $recursive = null )
+	   {
+		// Get recursive flag
+	   	$array_flags 		=  $this -> __build_merged_flags ( array ( 'Recurse' => $recursive ) ) ;
+	   	$recursive 		=  $this -> __getflag ( $array_flags, 'Recurse' ) ;
+
+		// Loop through array
+		return ( $this -> __IsNatural ( $recursive ) ) ;
+	    }
+
+
+	private function  __IsNatural ( $recursive )
+	   {
+	   	// Loop through array items
+	   	foreach  ( $this -> ArrayData  as  $key => $item )
+		   {
+		   	// If one item has a non-numeric key, then the array is not considered as "natural"
+		   	if  ( ! is_numeric ( $key ) )
+		   		return ( false ) ;
+
+			// If nested array and nested processing is needed...
+			if  ( $this -> __is_array ( $item )  &&  $recursive )
+			   {
+			   	// Recursively make the test
+				$status = $item -> __IsNatural ( $recursive ) ;
+
+				// But stop processing if a non-numeric key has been found
+				if  ( ! $status )
+					return ( false ) ;
+			    }
+		    }
+
+		// All done, no non-numeric key encountered
+		return ( true ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		IsNested - Checks if an array has nested arrays.
+
+	    PROTOTYPE
+		$status = $array -> IsNested ( ) ;
+
+	    DESCRIPTION
+		Checks if an array contains nested arrays.
+
+	    RETURN VALUE
+		True if the array contains nested arrays, false otherwise.
+
+  	    NOTES
+  	    	If the only information needed is to verify that an array contains or not nested arrays,
+  	    	this function is more efficient than the Depth() function.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  IsNested ( )
+	   {
+		foreach  ( $this -> ArrayData  as  $item )
+		   {
+			if  ( is_a ( $item, __CLASS__ ) )
+				return ( true ) ;
+		    }
+
+	    	return ( false ) ;
+	    }
+
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		IsSubArray - Checks if an array is contained within another.
+
+	    PROTOTYPE
+	        $status = $array -> IsSubArray ( $search,
+						     $case_sensitive = null,
+						     $match_at_start = false,
+						     $loose_search   = false ) ;
+
+	    DESCRIPTION
+		Checks if the array '$search' is contained within the array '$reference'. The supplied
+		arrays can include any number of nested arrays, and can also have associative array
+		entries.
+
+	    PARAMETERS
+		$search (value or array) -
+			Value or array of values to be searched. The supplied value can be a nested
+			array.
+
+		$case_sensitive (boolean) -
+			When true (the default), comparisons are case-sensitive.
+
+		$match_at_start (boolean) -
+			When true, the $search array is searched at the very start of the $reference
+			array.
+			When false, the $search array is searched anywhere within the $reference
+			array.
+
+		$loose_search (boolean) -
+			When true, and a nested array is specified, the nested array needs not to
+			match completely the original array. Thus, given the array described in
+			the EXAMPLES section, the following search using the $loose_search parameter
+			set to true will return true :
+
+				array ( 3, array ( 8 ), 'value' => 4 )
+
+	    RETURN VALUE
+		True if the $reference array contains the $search array, false otherwise.
+
+	    EXAMPLES
+		Here are a few examples, given the following array :
+
+			$ref = table ( array ( 1, 2, 3, array ( 8, 9, 10 ), 'value' => 4, 5 ) ) ;
+
+		- IsSubArray ( $ref, array ( 1 ) ) :
+			Returns true.
+		- IsSubArray ( $ref, array ( 2 ) ) :
+			Returns true.
+		- IsSubArray ( $ref, array ( 1, 2 ) ) :
+			Returns true.
+		- IsSubArray ( $ref, array ( 1, 3 ) ) :
+			Returns false, because the values '1' and '3' are not adjacent in the $ref
+			array.
+
+	    NOTES
+		Loose search may return incorrect results if the search implies nested arrays.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  IsSubArray ( $search, $case_sensitive = true, $loose_search = false )
+	   {
+		// Get the actual array flags
+	   	$array_flags 		=  $this -> __build_merged_flags ( array ( 'CaseSensitiveKeys' => $case_sensitive ) ) ;
+	   	$case_sensitive 	=  $this -> __getflag ( $array_flags, 'CaseSensitiveKeys' ) ;
+	   	$case_flag 		=  ( $case_sensitive ) ? '' : 'i' ;
+
+		// Make sure we have an input Array object
+		$search 		=  table ( $search ) ;
+
+		// Get array data
+		$reference 		=  $this -> ToString ( false ) ;
+		$search 		=  $search -> ToString ( false ) ;
+		$search 		=  preg_replace ( array ( '/^\(\s*/', '/\s*\)\s*$/' ), '', $search ) ;
+		$search 		=  String::EscapeRegexCharacters ( $search ) ;
+
+		// If loose search is required, replace any closing parenthesis with an re that matches everything
+		if  ( $loose_search )
+			$search = str_replace ( "\\ \\)", ".*\\)", $search ) ;
+
+		// Build final regex
+		$re 			=  '/' . $search . '/x' . $case_flag ;
+
+		// Test
+		$status 		=  preg_match ( $re, $reference ) ;
+		return ( ( $status ) ? true : false ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Merge - Merges two or more arrays.
+
+	    PROTOTYPE
+		$result = $array -> Merge ( $array... ) ;
+
+	    DESCRIPTION
+		Merges two arrays, as described in the array_merge() PHP function.
+
+	    PARAMETERS
+		$array (list of arrays) -
+			Array(s) to be merged with the current object.
+
+	    RETURN VALUE
+		Returns a new Array object containing the resulting merged array.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  Merge ( )
+	   {
+		$array1 	=  $this -> ToArray ( ) ;
+		$array2 	=  array ( $array1 ) ;
+        	$count 		=  func_num_args ( ) ;
+
+		for  ( $i = 0 ; $i < $count ; $i ++ )
+		   {
+			$temp 		=  table ( func_get_arg ( $i ) ) ;
+			$array2	[]  	=  $temp -> ToArray ( ) ;
+		    }
+
+		$result 	=  call_user_func_array ( 'array_merge', $array2 ) ;
+
+		return ( table ( $result ) ) ;
+	    }
+
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		MergeRecursive - Merges two or more arrays.
+
+	    PROTOTYPE
+		$result = $array -> Merge ( $array... ) ;
+
+	    DESCRIPTION
+		Merges two arrays, as described in the array_merge_recursive() PHP function.
+
+	    PARAMETERS
+		$array (list of arrays) -
+			Array(s) to be merged with the current object.
+
+	    RETURN VALUE
+		Returns a new Array object containing the resulting merged array.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  MergeRecursive ( )
+	   {
+		$array1 	=  $this -> ToArray ( ) ;
+		$array2 	=  array ( $array1 ) ;
+        	$count 		=  func_num_args ( ) ;
+
+		for  ( $i = 0 ; $i < $count ; $i ++ )
+		   {
+			$temp 		=  table ( func_get_arg ( $i ) ) ;
+			$array2	[]  	=  $temp -> ToArray ( ) ;
+		    }
+
+		$result 	=  call_user_func_array ( 'array_merge_recursive', $array2 ) ;
+
+		return ( table ( $result ) ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Min, Max, MinMax - Min/Max functions.
+
+	    PROTOTYPE
+		$min 			=  $array -> Min ( $recursive = null ) ;
+		$max 			=  $array -> Max ( $recursive = null ) ;
+		list ( $min, $max )	=  $array -> MinMax ( $recursive  =  null ) ;
+
+	    DESCRIPTION
+		Finds the minimum and/or maximum values in an array.
+
+	    PARAMETERS
+ 		$recursive (boolean) -
+			Overrides the Recurse flag for the given operation.
+			If this parameter is null, the current value of this flag is taken from
+			the ArrayFlags property.
+
+	    RETURN VALUE
+		Minimum value in the array (Min() method), maximum value (Max() method) or both
+		(MinMax() method).
+
+	    NOTES
+	    	Values other than numeric values or Array objects are silently ignored.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  Min ( $recursive = null )
+	   {
+		list ( $min, $max )  =  $this -> MinMax ( $recursive ) ;
+
+		return ( $min ) ;
+	    }
+
+
+	public function  Max ( $recursive = null )
+	   {
+		list ( $min, $max )  =  $this -> MinMax ( $recursive ) ;
+
+		return ( $max ) ;
+	    }
+
+
+	public function  MinMax ( $recursive = null )
+	   {
+		// Get the recurse flag to be used
+	   	$array_flags 		=  $this -> __build_merged_flags ( array ( 'Recurse' => $recursive ) ) ;
+	   	$recursive 		=  $this -> __getflag ( $array_flags, 'Recurse' ) ;
+
+	   	$min 			=  null ;
+	   	$max 			=  null ;
+		$this -> __MinMax ( $min, $max, $this -> ArrayData, $recursive ) ;
+
+		return ( array ( $min, $max ) ) ;
+	    }
+
+	public function  __MinMax ( &$min, &$max, $array, $recursive )
+	   {
+		foreach  ( $array  as  $value )
+		   {
+			if  ( $this -> __is_array ( $value ) )
+			   {
+		   		if  ( $recursive )
+		   			$this -> __MinMax ( $min, $max, $value, $recursive ) ;
+		   	    }
+   	    		else if  ( is_numeric ( $value ) )
+   	    		   {
+   	    		   	if  ( $min  ===  null  ||  $value  <  $min )
+   	    		   		$min = $value ;
+
+   		   		if  ( $max  ===  null  ||  $value  >  $max )
+   		   			$max = $value ;
+    			    }
+		    }
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Permutations - Computes permutations on an array.
+
+	    PROTOTYPE
+		$result = $array -> Permutations ( ) ;
+
+	    DESCRIPTION
+		Returns an array of arrays containing all the possible permutations of the input
+		array.
+
+	    RETURN VALUE
+		An array containing the possible permutations.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  Permutations ( )
+	   {
+		$array 		=  $this -> ArrayData ;
+		$result 	=  $this -> __Permutations ( $array ) ;
+
+		return ( table ( $result ) ) ;
+	    }
+
+	private function  __Permutations ( $array, $permutations = array ( ) )
+	   {
+		static 		$permuted_array ;
+
+		if  ( empty ( $array ) )
+			$permuted_array [] 	=  $permutations ;
+		else
+		   {
+		   	 $count 	=  count ( $array ) ;
+
+		   	 for  ( $i = $count -1 ; $i  >=  0 ; $i -- )
+		   	    {
+				$new_array 		=  $array ;
+				$new_permutations	=  $permutations ;
+				list ( $temp )		=  array_splice ( $new_array, $i, 1 ) ;
+
+				array_unshift ( $new_permutations, $temp ) ;
+				$this -> __Permutations ( $new_array, $new_permutations ) ;
+		   	     }
+
+    			return ( $permuted_array ) ;
+		    }
+	    }
+	    /*
+function array_permutations($items, $perms = array()) {
+    static $permuted_array;
+    if (empty($items)) {
+        $permuted_array[] = $perms;
+    } else {
+        for ($i = count($items) - 1; $i >= 0; --$i) {
+            $newitems = $items;
+            $newperms = $perms;
+            list($foo) = array_splice($newitems, $i, 1);
+            array_unshift($newperms, $foo);
+            array_permutations($newitems, $newperms);
+        }
+        return $permuted_array;
+    }
+    */
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Renumber - Removes array keys.
+
+	    PROTOTYPE
+		$array -> Renumber ( $recursive = null ) ;
+
+	    DESCRIPTION
+		Removes array keys and replaces them with a sequential number instead.
+
+	    PARAMETERS
+ 		$recursive (boolean) -
+			Overrides the Recurse flag for the given operation.
+			If this parameter is null, the current value of this flag is taken from
+			the ArrayFlags property.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  Renumber ( $recursive  =  null )
+	   {
+		// Get the recurse flag to be used
+	   	$array_flags 		=  $this -> __build_merged_flags ( array ( 'Recurse' => $recursive ) ) ;
+	   	$recursive 		=  $this -> __getflag ( $array_flags, 'Recurse' ) ;
+
+		// Perform the renumbering
+		$this -> __Renumber ( $this -> ArrayData, $recursive ) ;
+	    }
+
+
+	private function  __Renumber ( &$output, $recursive )
+	   {
+		$result 	=  array ( ) ;
+
+		foreach  ( $output  as  $item )
+		   {
+			if  ( $recursive  &&  $this -> __is_array ( $item ) )
+				$this -> __Renumber ( $item, $recursive ) ;
+
+			$result [] = $item ;
+		    }
+
+		$output = $result ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Sort - Sorts an array.
+
+	    PROTOTYPE
+		$array -> Sort ( $flags, $recursive = null ) ;
+
+	    DESCRIPTION
+		Sorts an array.
+
+	    PARAMETERS
+		$flags (integer) -
+			Can be a combination of the following integer values :
+			- Sort type :
+				- ARRAY_SORT_REGULAR :
+					Compare elements without modifying types.
+				- ARRAY_SORT_NUMERIC :
+					Compare elements as numeric.
+				- ARRAY_SORT_STRING :
+					Compare elements as strings.
+				- ARRAY_SORT_LOCALE_STRING :
+					Compare elements as localized strings.
+				- ARRAY_SORT_NATURAL :
+					Sorts elements into their natural order.
+			- Order :
+				- ARRAY_SORT_ASC :
+					Sorts elements into ascending order.
+				- ARRAY_SORT_DESC :
+					Sorts elements into descending order.
+			- Sort target :
+				- ARRAY_SORT_VALUES :
+					Sorts elements upon their values.
+				- ARRAY_SORT_KEYS :
+					Sorts elements upon their keys.
+			- Object handling :
+				- ARRAY_SORT_OBJECTS_FAILS (default) :
+					Neither objects nor resources are allowed.
+					Nested arrays are authorized if the ARRAY_SORT_RECURSE
+					flag is set.
+					Objects are authorized if they implement the IComparableObject
+					interface.
+				- ARRAY_SORT_OBJECTS_REMOVE :
+					Objects and resources are removed from the input array.
+					Nested array are preserved if the ARRAY_SORT_RECURSE
+					flag is set.
+					Objects implementing the IComparableObject interface
+					are kept.
+				- ARRAY_SORT_OBJECTS_PRESERVE :
+					Objects are not compared but keep their initial position in
+					the array. Values not representing objects are sorted. Thus, a
+					sort on the following array :
+
+						( 1, 17, 2, $obj, 8 )
+
+					will yield to :
+
+						( 1, 2, 8, $obj, 17 )
+
+			- Case :
+				- ARRAY_SORT_CASE_SENSITIVE :
+					Consider elements to be case-sensitive.
+				- ARRAY_SORT_CASE_INSENSITIVE :
+					Consider elements to be case-insensitive.
+
+			If this parameter is null, the current value of this flag is taken from
+			the ArrayFlags property.
+
+ 		$recursive (boolean) -
+			Overrides the Recurse flag for the given operation.
+			If this parameter is null, the current value of this flag is taken from
+			the ArrayFlags property.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function Sort ( $flags = null, $recursive = null )
+	   {
+		// Get the recurse flag to be used
+	   	$array_flags 		=  $this -> __build_merged_flags ( array ( 'Recurse' => $recursive, 'SortFlags' => $flags ) ) ;
+	   	$recursive 		=  $this -> __getflag ( $array_flags, 'Recurse' ) ;
+		$flags 			=  $this -> __getflag ( $array_flags, 'SortFlags' ) ;
+
+
+		// Perform sorting
+		$this -> __map_data ( $flags, $recursive ) ;
+		$this -> __Sort ( $this -> IndexedArrayData, $recursive, $flags ) ;
+		$this -> __map_index ( ) ;
+	    }
+
+
+	// __process_callback_flags -
+	// 	Processes the callback flags.
+	private function  __process_callback_values ( $flags, $key_a, $value_a, $key_b, $value_b )
+	   {
+		// Should we sort on keys ?
+		if  ( ( $flags  &  ARRAY_SORT_KEYS )  ==  ARRAY_SORT_KEYS )
+		   {
+			$value_a	=  $key_a ;
+			$value_b 	=  $key_b ;
+		    }
+
+	   	// Sort order
+	   	if  ( ( $flags  &  ARRAY_SORT_DESC )  ==  ARRAY_SORT_DESC )
+	   	   {
+			$tmp 		=  $value_a ;
+			$value_a 	=  $value_b ;
+			$value_b 	=  $tmp ;
+	   	    }
+
+		// All done, return the value to be sorted
+   		return ( array ( $value_a, $value_b ) ) ;
+	    }
+
+	// __normalize_comparison_result -
+	// 	Normalizes a comparison result so that it is either -1, 0 or 1
+	private function  __normalize_comparison_result ( $result )
+	   {
+		if  ( $result  <  0 )
+			return ( -1 ) ;
+		else if  ( $result  >  0 )
+			return ( 1 ) ;
+		else
+			return ( 0 ) ;
+	    }
+
+	// Performs recursive sort operations if needed
+	private function  __Sort ( &$output, $recursive, $flags )
+	   {
+		// Callback function
+		$callback = function ( $value_a, $value_b, $key_a, $key_b, $flags )
+		   {
+			list ( $final_value_a, $final_value_b ) = $this -> __process_callback_values ( $flags, $key_a, $value_a, $key_b, $value_b ) ;
+
+			// Comparison
+			$result 	=  $this ->  __compare_values ( $final_value_a, $final_value_b, $flags ) ;
+
+			// All done, return
+			return ( $this -> __normalize_comparison_result ( $result ) ) ;
+		    } ;
+
+		// Object comparison callback function
+		$object_callback = function ( $value_a, $value_b, $key_a, $key_b, $flags )
+		   {
+			list ( $final_value_a, $final_value_b ) = $this -> __process_callback_values ( $flags, $key_a, $value_a, $key_b, $value_b ) ;
+
+			if  ( is_object ( $final_value_a )  &&  $final_value_a  instanceof  IComparableObject  &&
+			      is_object ( $final_value_b )  &&  $final_value_b  instanceof  IComparableObject )
+			      	$result = $this -> __normalize_comparison_result ( $final_value_a -> CompareObjectWith ( $final_value_b ) ) ;
+			else
+				$result = 0 ;
+
+			return ( $result ) ;
+		    } ;
+
+	   	// Sort nested arrays if needed
+	   	if  ( $recursive )
+	   	   {
+			foreach  ( $output [ 'arrays' ]  as  &$item )
+				$this -> __Sort ( $item, $recursive, $flags ) ;
+	   	    }
+
+		// Sort objects
+		if  ( count ( $output [ 'objects'] )  >  1 )
+			$this -> __QuickSort ( $output [ 'objects' ], $object_callback, $flags ) ;
+
+		// Launch the sort operation
+		if  ( count ( $output [ 'values'] )  >  1 )
+			$this -> __QuickSort ( $output [ 'values' ], $callback, $flags ) ;
+	    }
+
+
+	// Comparison function -
+	//	Comparison function called to compare individual values during sorting.
+	//	This function is called so that comparisons are always made into ascending order.
+	private function  __compare_values ( $a, $b, $flags )
+	   {
+		// Case handling
+		if  ( ( $flags  &  ARRAY_SORT_CASE_INSENSITIVE )  ==  ARRAY_SORT_CASE_INSENSITIVE )
+			$case_sensitive = false ;
+		else
+			$case_sensitive = true ;
+
+		// For resource object, make them non sortable
+		if  ( is_resource ( $a )  ||  is_resource ( $b ) )
+			return ( 0 ) ;
+
+		// Nested arrays are not comparable
+		if  ( is_array ( $a )  ||  is_array ( $b ) )
+			return ( 0 ) ;
+
+		// Handle type of comparison function
+		$sort_type 	=  $flags & __ARRAY_SORT_TYPE_MASK ;
+
+		if  ( $sort_type  ==  ARRAY_SORT_NUMERIC )
+			return ( $a - $b ) ;
+
+		// If regular sorting, take into account the value type
+		if  ( $sort_type  ==  ARRAY_SORT_REGULAR )
+		   {
+		   	// For numeric objects, result is simple...
+			if   ( is_numeric ( $a )  &&  is_numeric ( $b ) )
+				return ( $a - $b ) ;
+			// Other case are string comparisons
+		    }
+
+		// String comparison cases
+		if  ( $sort_type  ==  ARRAY_SORT_STRING )
+			$func 	=  ( $case_sensitive ) ? 'strcmp' : 'strcasecmp' ;
+		else if  ( $sort_type  ==  ARRAY_SORT_LOCALE_STRING )
+		   {
+			if  ( ! $case_sensitive )
+			   {
+				$a 	=  strtolower ( $a ) ;
+				$b 	=  strtolower ( $b ) ;
+			    }
+
+			$func 	=  'strcoll' ;
+		    }
+   		else if   ( ( $flags  &  ARRAY_SORT_NATURAL ) )
+   			$func 	=  ( $case_sensitive ) ? 'strnatcmp' : 'strnatcasecmp' ;
+		else
+			$func 	=   ( $case_sensitive ) ? 'strcmp' : 'strcasecmp' ;
+
+		// Apply the compare function
+		$result = $func ( $a, $b ) ;
+
+		// Return the result
+		return ( $result ) ;
+	    }
+
+
+	// Quick sort function (thanks to Wikipedia article)
+	private function  __QuickSort ( &$output, $callback, $flags, $left = 0, $right = null )
+	   {
+		static $array 		=  array ( ) ;
+		static $null_array 	=  null ;
+
+		// Upon initial call, the array to be sorted is the supplied array itself, not a partition
+		if  ( $right  ==  null )
+			$array = $output ;
+
+		// Upon initial call, get the last element of the array
+		if  ( $right  ==  null )
+			$right = count ( $array ) - 1 ;
+
+		// Save initial left and right values
+		$i = $left;
+		$j = $right;
+
+		// Partition the array into two parts ; left part contains the smallest elements, right part contains the biggest ones
+		$middle 	=  ( int ) ( ( $left + $right ) / 2 ) ;
+		$key_a 		=  $array [ $middle ] [0] ;
+		$value_a 	=  $array [ $middle ] [1] ;
+
+		do
+		   {
+		   	while  ( true )
+		   	   {
+				$key_b		=  $array [$i] [0] ;
+				$value_b 	=  $array [$i] [1] ;
+				$result 	=  $callback ( $value_b, $value_a, $key_b, $key_a, $flags ) ;
+
+				if  ( $result  <  0 )
+					$i ++ ;
+				else
+					break ;
+		   	    }
+
+		   	while  ( true )
+		   	   {
+				$key_b		=  $array [$j] [0] ;
+				$value_b 	=  $array [$j] [1] ;
+				$result 	=  $callback ( $value_a, $value_b, $key_a, $key_b, $flags ) ;
+
+				if  ( $result  <  0 )
+					$j -- ;
+				else
+					break ;
+		   	    }
+
+			// Swap elements from both sides if necessary
+			if  ( $i  <=  $j )
+			   {
+				$w 	    = $array [$i] ;
+				$array [$i] = $array [$j] ;
+				$array [$j] = $w ;
+
+				$i ++ ;
+				$j -- ;
+			    }
+		    } while( $i  <=  $j ) ;
+
+		// Divide the left side if it is longer the 1 element
+		if( $left  <  $j )
+			$this -> __QuickSort ( $null_array, $callback, $flags, $left, $j ) ;
+
+		// Same with right side
+		if  ( $i  <  $right )
+			$this -> __QuickSort ( $null_array, $callback, $flags, $i, $right ) ;
+
+		// When all partitions have one element, the array is sorted
+		$output = $array ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		ToArray - Converts an Array object into a regular array.
+
+	    PROTOTYPE
+		$array = $array -> ToArray ( ) ;
+
+	    DESCRIPTION
+		Converts an Array object to a regular array.
+
+	    RETURN VALUE
+		A standard array.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  ToArray ( )
+	   {
+		$result = array ( ) ;
+		$this ->  __ToArray ( $result, $this -> ArrayData ) ;
+
+		return ( $result ) ;
+	    }
+
+
+	private function  __ToArray ( &$result, $array, $ex = false )
+	   {
+		$keys 		=  array_keys ( $array ) ;
+		$values 	=  array_values ( $array ) ;
+		$count 		=  count ( $keys ) ;
+
+		for ( $i = 0 ; $i < $count ; $i ++ )
+		   {
+			$key 	=  $keys [$i] ;
+			$value  =  $values [$i] ;
+
+			if  ( is_a ( $value, __CLASS__ ) )
+			   {
+	   			if  ( $ex )
+					$result [$key]  = $this ->__GetReadableArrayFlags ( $ex ) ;
+
+				$result [$key]  =  array ( ) ;
+				$this -> __ToArray ( $result [$key], $value -> ArrayData, $ex ) ;
+			    }
+			else
+				$result [$key] = $value ;
+		    }
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		ToString - Converts an array to a string.
+
+	    PROTOTYPE
+		$result = Vector::ToString ( $include_array_def = true, $multiline = false,
+						   $one_element_per_line = false ) ;
+
+	    DESCRIPTION
+		Flattens an array and converts it to a string representing its definition. The
+		returned string will have the form :
+
+			"array ( array_elements )"
+
+		This function handles nested arrays as well as associative arrays and mixed arrays.
+
+	    PARAMETERS
+	    	$include_array_def (boolean) -
+			When true, array definitions are prefixed with the "array " string.
+
+		$multiline (boolean) -
+			When true, the array contents are returned as a multiline formatted string.
+
+		$one_element_per_line (boolean) -
+			When true, only one element is displayed per line.
+			When false, all elements are displayed on the same line, except when a subarray
+			is encountered.
+
+	    RETURN VALUE
+		The specified array, converted to a single-line PHP definition.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  ToString ( $include_array_def = true, $multiline = false, $one_element_per_line = false )
+	   {
+	   	return ( $this -> __ArrayToString ( 0, $this -> ArrayData, $include_array_def, $multiline, $one_element_per_line ) ) ;
+   	    }
+
+
+	private function  __ArrayToString ( $level, $array, $include_array_def, $multiline, $one_element_per_line )
+	   {
+	   	$nl 	=  ( $multiline ) ?  "\n" : " " ;
+  		$tabsl0 =  str_repeat ( ' ', $level * 8 ) ;
+   		$tabsl1 = str_repeat ( ' ', ( $level + 1 ) * 8 ) ;
+
+	   	if  ( $include_array_def )
+	   		$result = "array" ;
+
+		if  ( $multiline )
+			$result .= "\n$tabsl0   ($nl$tabsl1" ;
+		else
+			$result .= " ( " ;
+
+		$items  =  array ( ) ;
+
+		// Loop through array items
+		$last_is_array	=  false ;
+		$index 		=  0 ;
+
+		foreach  ( $array  as  $key => $value )
+		   {
+		   	// Handle array keys if any
+			if  ( is_numeric ( $key ) )
+				$prefix 	=  "" ;
+			else
+				$prefix 	=  "'$key' => " ;
+
+			// Recursively process sub-arrays
+			if  ( $this -> __is_array ( $value ) )
+			   {
+				$item = $value -> __ArrayToString ( $level + 1, $value, $include_array_def, $multiline, $one_element_per_line ) ;
+
+			   	if  ( $multiline )
+			   		$item = "$nl$tabsl1$item" ;
+
+		   		$last_is_array = true ;
+			    }
+			else
+			   {
+			   	if  ( is_string ( $value ) )
+			   	   {
+			   		$item = String::QuotedString ( $value, "'", true ) ;
+			   		$item = str_replace ( array ( '(', ')' ), array ( '\(', '\)' ), $item ) ;
+		   		    }
+		   		else
+					$item = $value ;
+
+				if  ( $multiline  &&  ( $last_is_array  ||  ( $one_element_per_line  &&  $index ) ) )
+				   {
+					$prefix = "$nl$tabsl1$prefix" ;
+					$last_is_array = false ;
+				    }
+			    }
+
+			// Add the new value to the array of values collected so far
+			$items [] = $prefix . $item ;
+
+			$index ++ ;
+		    }
+
+		// All done, assemble the collected items and return the results
+		$result .= implode ( ', ', $items ) ;
+
+		if  ( $multiline )
+			$result .= "$nl$tabsl0    )" ;
+		else
+			$result .= " )" ;
+
+		return ( $result ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		UserSort - Sorts an array with a callback function.
+
+	    PROTOTYPE
+		$array -> UserSort ( $callback, $flags = null, $recursive = null ) ;
+
+	    DESCRIPTION
+		Sorts an array using a callback function.
+
+	    PARAMETERS
+	    	$callback (callback) -
+	    		Callback function which must have the following signature :
+
+    				integer  callback ( $a, $b, $ka, $kb, $flags ) ;
+
+			Where :
+			- $a and $b are the value to be compared. Other parameters are optional.
+			- $ka and $kb are their associated keys, which can be numeric indexes.
+			- $flags are the flags associated with the array to be sorted
+
+			The function must return :
+			- A negative value if $a < $b (or $ka < $kb, or any other criteria)
+			- A positive value if $a > $b (same remark)
+			- A value of zero if both elements are equal
+
+		$flags (integer) -
+			Can be a combination of the following integer values :
+			- Object handling :
+				- ARRAY_SORT_OBJECTS_FAILS (default) :
+					Neither objects nor resources are allowed.
+					Nested arrays are authorized if the ARRAY_SORT_RECURSE
+					flag is set.
+					Objects are authorized if they implement the IComparableObject
+					interface.
+				- ARRAY_SORT_OBJECTS_REMOVE :
+					Objects and resources are removed from the input array.
+					Nested array are preserved if the ARRAY_SORT_RECURSE
+					flag is set.
+					Objects implementing the IComparableObject interface
+					are kept.
+				- ARRAY_SORT_OBJECTS_PRESERVE :
+					Objects are not compared but keep their initial position in
+					the array. Values not representing objects are sorted. Thus, a
+					sort on the following array :
+
+						( 1, 17, 2, $obj, 8 )
+
+					will yield to :
+
+						( 1, 2, 8, $obj, 17 )
+
+			If this parameter is null, the current value of this flag is taken from
+			the ArrayFlags property.
+
+ 		$recursive (boolean) -
+			Overrides the Recurse flag for the given operation.
+			If this parameter is null, the current value of this flag is taken from
+			the ArrayFlags property.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function UserSort ( $callback, $flags = null, $recursive = null )
+	   {
+		// Get the recurse flag to be used
+	   	$array_flags 		=  $this -> __build_merged_flags ( array ( 'Recurse' => $recursive, 'SortFlags' => $flags ) ) ;
+	   	$recursive 		=  $this -> __getflag ( $array_flags, 'Recurse' ) ;
+		$flags 			=  $this -> __getflag ( $array_flags, 'SortFlags' ) ;
+
+
+		// Perform sorting
+		$this -> __map_data ( $flags, $recursive ) ;
+		$this -> __UserSort ( $callback, $this -> IndexedArrayData, $recursive, $flags ) ;
+		$this -> __map_index ( ) ;
+	    }
+
+
+	// Performs recursive sort operations if needed
+	private function  __UserSort ( $callback, &$output, $recursive, $flags )
+	   {
+	   	// Sort nested arrays if needed
+	   	if  ( $recursive )
+	   	   {
+			foreach  ( $output [ 'arrays' ]  as  &$item )
+				$this -> __Sort ( $callback, $item, $recursive, $flags ) ;
+	   	    }
+
+		// Launch the sort operation
+		if  ( count ( $output [ 'values'] )  >  1 )
+			$this -> __QuickSort ( $output [ 'values' ], $callback, $flags ) ;
+	    }
+
+
+ 	/*******************************************************************************************/
+ 	/*******************************************************************************************/
+ 	/*******************************************************************************************/
+ 	/******                                                                               ******/
+ 	/******                         INTERFACE IMPLEMENTATIONS                             ******/
+ 	/******                                                                               ******/
+ 	/*******************************************************************************************/
+ 	/*******************************************************************************************/
+ 	/*******************************************************************************************/
+
+	/*-------------------------------------------------------------------------------------------
+
+		Countable interface.
+
+	 --------------------------------------------------------------------------------------------*/
+
+	// count -
+	//	Returns the number of array elements.
+	public function  count ( )
+	   {
+		return ( count ( $this -> ArrayData ) ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		ArrayAccess interface.
+
+	 --------------------------------------------------------------------------------------------*/
+
+ 	// __offsetGetKey -
+ 	//	For case-insensitive keyed arrays, returns the real key, or null if the key does not exist.
+	private function  __offsetGetKey ( $offset )
+	   {
+	   	// Small optimization : since the offsetExists function is called before functions such as offsetSet or offsetUnset,
+	   	// which in turn will need to have the real key if comparison is case-insensitive, we keep here the result of the
+	   	// very last search
+	   	static		$LastOffset 		=  null ;
+		static  	$LastKey		=  null ;
+
+		// Get the flags that we help us to chose between case sensitive and insensitive comparisons
+		$is_case_insensitive 	=  ! ( $this -> ArrayFlags [ 'CaseSensitiveKeys' ] ) ;
+		$cmpfunc 		=  ( $is_case_insensitive ) ?  'strcasecmp' : 'strcmp' ;
+
+		// If the specified offset is the same as the previous one, then return the previous actual key name
+		if  ( $LastOffset  &&  ! $cmpfunc ( $offset, $LastOffset ) )
+			return ( $LastKey ) ;
+
+		// If case insensitive keys are to be used, loop through array keys to find the desired offset
+		if  ( $is_case_insensitive )
+		   {
+			$found 		=  false ;
+			$keys 		=  array_keys ( $this -> ArrayData ) ;
+
+			foreach  ( $keys  as  $key )
+			   {
+				if  ( ! strcasecmp ( $key, $offset ) )
+				   {
+					$found 		=  true ;
+					$LastOffset 	=  $offset ;
+					$LastKey 	=  $key ;
+					break ;
+				    }
+			    }
+		    }
+	    	// Otherwise, use the PHP built-in array_key_exists() function
+		else
+		    {
+			$found 		=  array_key_exists ( $offset, $this -> ArrayData )  ||  isset ( $this -> ArrayData [ $offset ] ) ;
+			$LastOffset 	=  $offset ;
+			$LastKey 	=  $offset ;
+		     }
+
+		// Remember if the requested search gave no result
+		if  ( ! $found )
+			$LastKey = null ;
+
+		// All done, return the key corresponding to the searched offset
+		return ( $LastKey ) ;
+	    }
+
+
+	// __offsetUndefined -
+	//	Issues an error message when the specified offset does not exist.
+	private function  __offsetUndefined ( $offset )
+	   {
+		$trace 	=  debug_backtrace ( ) ;
+		throw new VectorException ( "Undefined offset: $offset in " . $trace [1] [ 'file' ] . " on line " . $trace [1] [ 'line' ] . "." ) ;
+	    }
+
+
+ 	// offsetExists -
+ 	//	Checks if the specified offset exists.
+	 public function  offsetExists ( $offset )
+	    {
+	    	$key 	=  $this ->  __offsetGetKey ( $offset ) ;
+
+		return (  ( $key  ==  null ) ?  false : true ) ;
+	     }
+
+   	// offsetGet -
+   	//	Gets the value at the specified offset.
+   	public function  offsetGet ( $offset )
+   	   {
+   	   	$key = $this -> __offsetGetKey ( $offset ) ;
+
+		if  ( $key  !==  null )
+			return ( $this -> ArrayData [ $key ] ) ;
+
+		$this -> __offsetUndefined ( $offset ) ;
+   	    }
+
+  	// offsetSet -
+  	//	Sets the specified array item to the specified value.
+  	public function  offsetSet ( $offset, $value )
+  	   {
+		if  ( is_array ( $value ) )
+			$value = table ( $value, $this -> ArrayFlags ) ;
+
+		if  ( is_null ( $offset ) )
+			$this -> ArrayData []		=  $value ;
+		else
+			$this -> ArrayData [ $offset ] 	=  $value ;
+  	    }
+
+
+  	// offsetUnset -
+  	//	Unsets the specified array entry.
+  	public function  offsetUnset ( $offset )
+  	   {
+  	   	$key 	=  $this -> __offsetGetKey ( $offset ) ;
+
+  	   	if  ( $key  ===  null )
+  	   		$this -> __offsetUndefined ( $offset ) ;
+ 		else
+			unset ( $this -> ArrayData [ $key ] ) ;
+  	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Iterator interface.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function getIterator ( )
+	   {
+		return ( new ArrayIterator ( $this -> ArrayData ) ) ;
+	    }
+    }
+
+
+
+/*******************************************************************************************/
+/*******************************************************************************************/
+/*******************************************************************************************/
+/******                                                                               ******/
+/******                           SHORTCUT FUNCTIONS                                  ******/
+/******                                                                               ******/
+/*******************************************************************************************/
+/*******************************************************************************************/
+/*******************************************************************************************/
+
+// table -
+//	    Tries to simulate the array() built-in function.
+function  table ( $array = null, $array_flags = null )
+   {
+	$object  =  new Vector ( $array, $array_flags ) ;
+
+	return ( $object ) ;
+    }
+
+
+// table_combine -
+//	Simulates the array_combine() built-in function and returns a Array object.
+function  table_combine ( $keys, $values, $flags =  null )
+   {
+	$result = new Vector ( null, $flags ) ;
+	$result -> Combine ( $keys, $values ) ;
+
+	return ( $result ) ;
+    }
+
+
+// table_range -
+//	Creates a range.
+function  table_range ( $low, $high, $step = 1, $flags = null )
+   {
+	$result = new Vector ( null, $flags ) ;
+	$result -> Range ( $low, $high, $step ) ;
+
+	return ( $result ) ;
+    }

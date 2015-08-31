@@ -1,0 +1,224 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        BufferedUpdate.php
+
+    DESCRIPTION
+        A class for buffering UPDATE statements.
+ 	Typical use is :
+  
+ 		$updater	=  new BufferedUpdate ( 'table_name', $id_field, 100 ) ;
+  
+ 		while  ( $condition )
+ 			$updater -> Add ( [ values ] ) ;
+  
+ 		$updater -> Flush ( ) ;
+
+    AUTHOR
+        Christian Vigh, 06/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/06/09]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace	Thrak\Database ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces & objects
+use	Thrak\System\Object ;
+use     Thrak\IO\Path ;
+use	Thrak\Types\String ;
+use     Thrak\Types\ArrayHelpers ;
+use	Thrak\Database\BufferedOperation ;
+
+
+/*==============================================================================================================
+
+    BufferedUpdate -
+        A class for buffering UPDATE statements.
+	This class is currently only designed to perform updates using an id field as the criteria.
+
+  ==============================================================================================================*/
+class  BufferedUpdate		extends  BufferedOperation
+   {
+	// Buffered update flags
+	const		UPDATE_FLAGS_BY_ID		=  1 ;			// No particular option
+	
+
+	// Id field name
+	public		$IdField ;
+	// Insert flags
+	public		$Flags ;
+	
+	
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        Constructor - Builds a BufferedInsert object
+	
+	    PROTOTYPE
+	        $inserter	=  new BufferedInsert ( $table_name, $id_field, $buffer_size = 100, 
+							$flags = self::UPDATE_FLAGS_BY_ID, $database = null ) ;
+	
+	    DESCRIPTION
+	        Builds a BufferedUpdate object.
+	
+	    PARAMETERS
+	        $table_name (string) -
+	                Name of the underlying table.
+	  
+	 	$id_field (string) -
+	 		Field names.
+	  
+	 	$buffer_size (integer) -
+	 		Number of rows to be buffered before an INSERT statement is issued.
+	  
+	 	$flags (integer) -
+	 		A combination of the following flags :
+	 		- UPDATE_FLAGS_BY_ID :
+	 			Default value. Specifies that updates are based on the id field specified to the
+				constructor.
+	  
+	 	$database (Database) -
+	 		Database object. If not specified, the global $Database object will be used.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( $table_name, $id_field, $buffer_size = 100, $flags = self::UPDATE_FLAGS_BY_ID, $database = null )
+	   {
+		parent::__construct ( $table_name, $buffer_size, $database ) ;
+		
+		$this -> IdField	=  $id_field ;
+		$this -> Flags		=  $flags ;
+	    }
+	
+	
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        CanAddToQuery - Checks if a row can be added to a query.
+	
+	    PROTOTYPE
+	        $status		=  $updater -> AddToQuery ( $values ) ;
+	
+	    DESCRIPTION
+	        Checks if a row can be added to a query.
+	
+	    PARAMETERS
+	        $values (array) -
+	                An array whose keys are the value of the id field specified when calling the constructor. 
+			Each array element is an association of field names/values.
+			For example :
+			[
+				1 =>
+				   [
+					[ 'field1' => 'value1' ],
+					...
+					[ 'fieldn' => 'valuen' ]
+				    ],
+				...
+				n =>
+				   [
+					...
+				    ]
+			 ]
+
+	    RETURN VALUE 
+		Returns true if the row can be added to the query, false otherwise.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  CanAddToQuery ( &$values ) 
+	   {
+		foreach  ( $values  as  $key => $fields )
+		   {
+			if  ( $this -> Flags  &  self::UPDATE_FLAGS_BY_ID )
+			   {
+				if  ( ! is_numeric ( $key ) )
+					error ( new \Thrak\System\RuntimeException ( "Expected a numeric key value, \"$key\" was supplied." ) ) ;
+
+				foreach ( $fields  as  $name => $value )
+				   {
+					if  ( ! is_string ( $name ) )
+						error ( new \Thrak\System\RuntimeException ( "Expected a database field name, \"$name\" was supplied." ) ) ;
+				    }
+			    }
+		    }
+
+		return ( true ) ;
+	    }
+	
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        BuildQuery - Builds the final query.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  BuildQuery ( )
+	   {
+		if  ( $this -> Flags  &  self::UPDATE_FLAGS_BY_ID )
+		   {
+			$query		=  "
+						UPDATE {$this -> TableName}
+						SET
+					   " ;
+			$ids		=  [] ;
+			$field_data	=  [] ;
+
+			// Loop through rows
+			foreach  ( $this -> Rows  as  $row )
+			   {
+				// Loop through field assignments : we will have to collect ids and values per field name
+				foreach  ( $row  as  $id => $fields )
+				   {
+					foreach  ( $fields  as  $name => $value )
+					   {
+						if  ( ! in_array ( $id, $ids ) )
+							$ids []		=  $id ;
+
+						$field_data [ $name ] [ 'ids' ] []	=  $id ;
+						$field_data [ $name ] [ 'values' ] []	=  $this -> Database -> Escape ( $value ) ;
+					    }
+				    }
+			    }
+
+			// Part of the WHERE clause that selects all the ids
+			$where_ids	=  $this -> IdField . ' IN (' . implode ( ',', $ids ) . ')' ;
+
+			// Loop through each id/value pair per field name and build an assignment clause using CASE..WHEN construct
+			$case_data	=  [] ;
+
+			foreach  ( $field_data  as  $field => $data )
+			   {
+				$when_data	=  [] ;
+				$assignment	=  "\n$field = CASE" ;
+				$count		=  count ( $data [ 'ids' ] ) ;
+			
+				for  ( $i = 0 ; $i < $count ; $i ++ )
+				   {
+					$id		=  $data [ 'ids' ] [$i] ;
+					$value		=  $data [ 'values' ] [$i] ;
+
+					$when_data []	=  "WHEN {$this -> IdField} = $id THEN '$value'" ;
+				    }
+
+				$assignment	.=  "\n\t" . implode ( "\n\t", $when_data ) ;
+				$case_data []	 =  $assignment . "\nEND" ;
+			    }
+
+			// Build the final query
+			$cases   =  implode ( ',', $case_data ) ;
+			$query	.=  "
+					$cases
+					WHERE 
+						$where_ids
+				    " ;
+
+			// All done, return 
+			return ( $query ) ;
+		   }
+	    }
+    }

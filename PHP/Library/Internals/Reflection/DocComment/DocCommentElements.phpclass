@@ -1,0 +1,242 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        DocCommentElements.phpclass
+
+    DESCRIPTION
+        An abstract class to implement a set of annotation or attributes.
+
+    AUTHOR
+        Christian Vigh, 11/2014.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2014/11/09]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Reflection ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use  	Thrak\System\Object ;
+use	Thrak\Types\AssociativeArray ;
+use	Thrak\Types\String ;
+
+
+/*==============================================================================================================
+
+    DocCommentElements -
+        Implements a set of annotations or attributes. Elements can be retrieved through their element name.
+	Access through element name is case insensitive.
+	Note that several instances of the same element can be defined at the docComment block level ; they will
+	be stored as an array.
+
+  ==============================================================================================================*/
+abstract class	DocCommentElements	extends		Object 
+					implements	\ArrayAccess, \Countable, \IteratorAggregate
+   {
+	// DocComment elements array : Annotations or Attributes
+	protected		$Elements ;
+	// Suffix appended to parameter name to form an annotation or attribute class
+	protected		$ClassSuffix ;
+	// Namespaces where to search for annotation/attrbute classes
+	protected		$SearchedNamespaces	=  
+	   [
+		'\Thrak\Reflection',
+		'\Thrak\Reflection\DocComments',
+		''					// Root namespace : '\' will be added automatically
+	    ] ;
+	
+	
+	/*==============================================================================================================
+	
+	    Constructor -
+	        Builds an case-insensitive associative array to store the docComment elements.
+	
+	  ==============================================================================================================*/
+	public function  __construct ( $suffix, &$docstr )
+	   {
+		parent::__construct ( ) ;
+		$this -> Elements	=  new AssociativeArray ( ) ;
+		$this -> ClassSuffix	=  $suffix ;
+		
+		$this -> GetElements ( $docstr ) ;
+	    }
+
+
+	/*==============================================================================================================
+	
+	    __get, __set -
+	        Allows to mimic AssociativeArray capacity of using array keys as property names.
+		Note that modification (setting a new member) is not allowed ; a docComment element list comes from a
+		read-only docComment text and is not supposed to change.
+	
+	  ==============================================================================================================*/
+	public function  __get ( $member ) 
+	   { 
+		if  ( isset ( $this -> Elements [ $member ] ) )
+			return ( $this -> Elements -> __get ( $member ) ) ; 
+		else
+			return ( [] ) ;
+	    }
+	
+	public function  __set ( $member, $value )
+	   { error ( new \Thrak\System\RuntimeException ( "Unsupported operation." ) ) ; }
+
+	
+	/*==============================================================================================================
+	
+	    __call -
+		Allows for presenting getter functions such as "getAuthor()" when an "author" docComment element is 
+		present for example.
+	 
+	  ==============================================================================================================*/
+	public function  __call  ( $member, $args )
+	   {
+		if  ( substr ( $member, 0, 3 )  ==  'get' )
+		   {
+			$key	=  substr ( $member, 3 ) ;
+			
+			return  ( $this -> $key ) ;
+		    }
+		else
+			error ( new \Thrak\System\BadMethodCallException ( "Undefined method " . get_called_class ( ) . "::$member()" ) ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    Add -
+	        Adds an element to this array.
+		The GetInstance() abstract method will be called to get an object instance (either an annotation or an
+		attribute).
+	
+	  ==============================================================================================================*/
+	protected function  Add ( $name, $params_array, $class = null )
+	   {
+		if  ( $class  ===  null )
+			$object		=  $this -> GetInstance ( $name, $params_array ) ;
+		else
+			$object		=  new  $class ( $name, $params_array ) ;
+		
+		if  ( isset  ( $this -> Elements [ $name ] ) )
+		   {
+			$elements			=  $this -> Elements [ $name ] ;
+			$elements []			=  $object ;
+			$this -> Elements [ $name ] 	=  $elements ;
+		    }
+		else
+			$this -> Elements [ $name ]	=  [ $object ] ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    AddNamespace -
+	        Adds a namespace to be searched for when trying to instanciate a DocCommentElement.
+	
+	  ==============================================================================================================*/
+	protected function  AddNamespace ( $name )
+	   {
+		if  ( ! in_array ( $name, $this -> SearchedNamespaces ) )
+			$this -> SearchedNamespaces []	=  $name ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    GetElements -
+	        Must be implemented by derived classes to retrieve the docComment elements (either annotations or
+		attributes) from the docComment block.
+		The function is also responsible for removing parsed elements from the supplied input string.
+	
+	  ==============================================================================================================*/
+	protected abstract function  GetElements ( &$docstr ) ; 
+
+	
+	/*==============================================================================================================
+	
+	    GetInstance -
+	        Gets an element instance, which can be an annotation or attribute (or anything else deriving from
+	 	the DocCommentElement class maybe in the future...).
+	 	It can be a specialized annotation or attribute class if a class exists whose name has the following
+	 	form :
+	 		DocCommentxxxyyy
+	  
+	 	where 'xxx' is the DocComment element name as found in the docComment text, and 'yyy' is the suffix denoting
+	 	the type of the docComment element ("Annotation" or "Attribute", for example).
+	  
+	 	Thus, when instanciating objects after parsing the following docComment entries :
+	  
+	 	/ **
+	 	  * [myAttr param="value"]
+	 	  * @author me
+	 	  * /
+	  
+	 	the following objects will be created :
+	 	- An instance of DocCommentMyAttrAttribute if the class exists and inherits from DocCommentAttribute ;
+	 	  otherwise it will be an instance of the standard DocCommentAttribute class
+	 	- Same for annotations : Either DocCommentAuthorAnnotation or DocCommentAnnotation
+	
+	  ==============================================================================================================*/
+	protected function  GetInstance ( $name, $params )
+	   {
+		$name_in_class	=  ucfirst ( $name ) ;
+		
+		if  ( String::EndsWith ( $name_in_class, $this -> ClassSuffix ) )
+			$class_suffix	=  "" ;
+		else
+			$class_suffix	=  $this -> ClassSuffix ;
+
+		// A first pass, to look in priority to a possible "DocComment$name$suffix" class
+		foreach  (  $this -> SearchedNamespaces  as  $namespace )
+		   {
+			$class_name	=  "$namespace\DocComment{$name_in_class}{$class_suffix}" ;
+
+			if  ( class_exists ( $class_name )  &&  is_subclass_of ( $class_name, '\Thrak\Reflection\DocCommentElement' ) )
+				return  ( new  $class_name ( $name, $params ) ) ;
+		     }
+		
+		// Then a second pass to look for 'DocComment$suffix"
+		foreach  (  $this -> SearchedNamespaces  as  $namespace )
+		   {
+			$class_name	=  "$namespace\DocComment{$class_suffix}" ;
+		
+			if  ( class_exists ( $class_name ) &&  is_subclass_of ( $class_name, '\Thrak\Reflection\DocCommentElement' ) )
+				return  ( new  $class_name ( $name, $params ) ) ;
+		     }
+		
+		error ( new \Thrak\System\RuntimeException ( "Unable to find any class for docComment element \"$name\"." ) ) ;
+	    }
+
+	
+	/*==============================================================================================================
+	
+	    ArrayAccess, Countable and IteratorAggregate interfaces implementation -
+		They all forward to the AssociativeArray implementation.
+	
+	  ==============================================================================================================*/
+	public function  Count ( )
+	   { return ( count ( $this -> Elements ) ) ; }
+	
+	public function  GetIterator ( )
+	   { return ( $this -> Elements -> getIterator ( ) ) ; }
+	
+	public function  offsetExists ( $offset )
+	   { return ( $this -> Elements -> offsetExists ( $offset ) ) ; }
+	
+	public function  offsetGet ( $offset )
+	   {
+		if  ( isset ( $this -> Elements [ $offset ] ) )
+			return ( $this -> Elements -> offsetGet ( $offset ) ) ; 
+		else
+			return ( "" ) ;
+	    }
+	
+	public function  offsetSet ( $offset, $value )
+	   { error ( new \Thrak\System\RuntimeException ( "Unsupported operation." ) ) ; }
+	
+	public function  offsetUnset ( $offset )
+	   { error ( new \Thrak\System\RuntimeException ( "Unsupported operation." ) ) ; }
+    }

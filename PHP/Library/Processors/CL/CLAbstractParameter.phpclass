@@ -1,0 +1,2313 @@
+<?php
+/***************************************************************************************************
+
+    NAME
+	CLAbstractParameter.phpclass
+
+    DESCRIPTION
+	Abstract base parameter class.
+
+    AUTHOR
+     	Christian Vigh, 05/2011.
+
+    HISTORY
+    [Version : 1.0]	[Date : 2011/05/27]	[Author : CV]
+     	Initial version.
+
+    [Version : 2.0]	[Date : 2012/10/06]		[Author : CV]
+	Migrated to the Thrak library version 2.
+
+    [Version : 2.0.1]	[Date : 2014/11/15]		[Author : CV]
+	. __process_callback_specification() : changed the search order from class/function/method/
+ 	  namespace to : function/class/method/namespace, because it was causing autoader errors
+ 	  when the searched callback was a simple function.
+  
+    [Version : 2.0.2]	[Date : 2014/11/22]		[Author : CV]
+	. Changed the ProcessValues() method to allow ProcessValue() to return an array of values.
+	. Added the ReturnValueType property for classes whose ProcessValue() function may
+	  return an array of results.
+  
+    [Version : 2.0.3]	[Date : 2015/02/05]		[Author : CV]
+	. Accept "x" as a synonym of "x..x" for range type attributes.
+  
+    [Version : 2.0.4]	[Date : 2015/03/07]		[Author : CV]
+ 	. Since boolean parameters can now have an argument which specifies the boolean value 
+ 	  (such as : -boolparam on, or -boolparam false), the GetValue() and SetValue() methods 
+ 	  have been modified to handle the extra parameter return value type RETURN_VALUE_BOOLEAN.
+  
+    [Version : 2.0.5]	[Date : 2015/03/09]		[Author : CV]
+ 	. Changed the GetUsageString() method to include parameter aliases when full display is
+ 	  requested.
+
+    [Version : 2.0.6]	[Date : 2015/04/11]		[Author : CV]
+	. Replaced each exception throwing with "error ( new CLException (...) )".
+
+    [Version : 2.0.7]	[Date : 2015/06/18]		[Author : CV]
+	. Added the GetDefaultValue() method, which interprets PHP tags.
+ 
+***************************************************************************************************/
+namespace 	Thrak\Processors\CL ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces & objects
+use 		Thrak\System\Object ;
+use  		Thrak\Types\String ;
+use		Thrak\Types\String\Convert ;
+
+
+/*==================================================================================================
+
+    CLAbstractParameter class -
+	Root class for command-line parameters.
+	The following attributes can be given in the parameter specifications :
+
+	name, names, alias or aliases (string list) -
+		A comma-separated list parameter names and aliases. There is no distinction
+		between a parameter name and aliases. This is only syntactical sugar.
+
+	default or default-value (any) -
+		Default value for this parameter, if none has been specified on the command
+		line. This value is processed only when the GetValue() method is called.
+
+	required (boolean) -
+		Specifies whether this parameter is required or not. If the parameter is
+		required but not specified on the command line, an exception will be thrown.
+
+	hidden (boolean) -
+		When true, parameter help will not be listed when invoking the command using
+		the -help or -usage option.
+
+	multiple (boolean) -
+		When true, the parameter can be specified more than once on the command line.
+		This overrides the min-arguments and max-arguments settings.
+
+	help-group, help-groups, help-topic or help-topics (string list) -
+		A comma-separated list of string that associates the parameter with one or
+		more help topics defined by <help-topic> tags.
+
+	help or help-text (string) -
+		Help text for this parameter. If not specified, the parameter specification
+		inner contents are used.
+
+	usage or usage-string (string) -
+		Usage string. If not specified, the usage string is automatically built from
+		the parameter name, argument count and value text.
+
+	value-text or value-label (string) -
+		String to be used in the usage string for expressing the parameter value
+		type. The default value is "value".
+
+	min-arguments, min-argument, min-args or min-arg (integer) -
+		Minimum number of arguments that can follow the parameter name on the
+		command line. Note that unlike a list-type parameter whose argument is a list
+		of comma-separated values, arguments of parameters declared to have more than
+		one argument are separated by spaces.
+		The special notation "*" means that the minimum is zero.
+
+	max-arguments, max-argument, max-args or max-arg (integer) -
+		Maximum number of arguments that can follow the parameter name on the command
+		line.
+		The special notation "*" means unlimited number of arguments.
+
+	arguments, argument, args or arg (2-value list) -
+		A notational shortcut for specifying the min and max number of arguments as
+		a list of 2 values.
+
+	validation-regex, validation-expression or validation-expr (string) -
+		Validation string expressed as a regular expression. If not delimiter has
+		been specified, then the validation string will be enclosed with '/^' (on the
+		left) and '$/imsx' (on the right).
+
+	validation-code or validation-function (string) -
+		Validation code to be executed for validating the supplied argument.
+		In the supplied string, the special form '{}' is replaced by the argument
+		under the form of a quoted string.
+		The supplied expression must return the processed input argument.
+
+  ==================================================================================================*/
+
+class  CLAbstractParameter  extends Object
+   {
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/******                                                                               ******/
+	/******                       GLOBAL VARIABLES & CONSTANTS                            ******/
+	/******                                                                               ******/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+
+	// Attribute types
+	const		ATTRIBUTE_TYPE_ANY			=  0 ;
+   	const		ATTRIBUTE_TYPE_STRING			=  1 ;
+   	const		ATTRIBUTE_TYPE_INTEGER			=  2 ;
+   	const		ATTRIBUTE_TYPE_BOOLEAN			=  3 ;
+   	const		ATTRIBUTE_TYPE_LIST			=  4 ;
+   	const		ATTRIBUTE_TYPE_FLOAT			=  5 ;
+   	const		ATTRIBUTE_TYPE_UNSIGNED_INTEGER		=  6 ;
+   	const		ATTRIBUTE_TYPE_UNSIGNED_FLOAT		=  7 ;
+   	const		ATTRIBUTE_TYPE_CHARACTER		=  8 ;
+   	const		ATTRIBUTE_TYPE_KEYWORD			=  9 ;
+   	const		ATTRIBUTE_TYPE_KEYWORD_LIST		=  10 ;
+   	const		ATTRIBUTE_TYPE_RANGE			=  11 ;
+
+	// ProcessValue() function return value types
+	const		RETURN_VALUE_SINGLE			=  0 ;		// Returns a single item
+	const		RETURN_VALUE_MULTIPLE			=  1 ;		// Returns a single or multiple (array) item
+	const		RETURN_VALUE_BOOLEAN			=  2 ;		// A value specified either by "-flag", "+flag" or "-flag boolvalue"
+
+	// Default switch attributes
+	protected static	$DefaultAttributeDefinitions	=  array
+	   (
+	   	array
+	   	   (
+	   	   	'names'		=>  array ( 'name', 'names', 'alias', 'aliases' ),
+			'required'	=>  true,
+	   	   	'type'		=>  self::ATTRIBUTE_TYPE_LIST,
+	   	   	'member'	=>  'Names',
+	   	   	'help'		=>  'Command-line parameter name(s) and alias(es).'
+   	   	    ),
+    		array
+    		   (
+    		   	'names'		=>  array ( 'default', 'default-value' ),
+    		   	'type'		=>  self::ATTRIBUTE_TYPE_ANY,
+    		   	'member'	=>  'DefaultValue',
+    		   	'default'	=>  null,
+    		   	'help'		=>  'Default value to be used when the parameter is not specified on the command line'
+      		    ),
+	    	array
+	    	   (
+	    	   	'names'		=>  'required',
+	    	   	'type'		=>  self::ATTRIBUTE_TYPE_BOOLEAN,
+	    	   	'default'	=>  "false",
+	    	   	'member'	=>  'Required',
+	    	   	'help'		=>  'Specifies if the parameter is required or not'
+      		    ),
+	    	array
+	    	   (
+	    	   	'names'		=>  'hidden',
+	    	   	'type'		=>  self::ATTRIBUTE_TYPE_BOOLEAN,
+	    	   	'default'	=>  "false",
+	    	   	'member'	=>  'Hidden',
+	    	   	'help'		=>  'Specifies if the parameter will be listed when the command is invoked with the -help or -usage parameters'
+      		    ),
+	    	array
+	    	   (
+	    	   	'names'		=>  'multiple',
+	    	   	'type'		=>  self::ATTRIBUTE_TYPE_BOOLEAN,
+	    	   	'default'	=>  "false",
+	    	   	'member'	=>  'MultipleAllowed',
+	    	   	'help'		=>  array
+			       		       (
+						      'Specifies if the parameter can be specified more than once on the command line. ',
+						      'If this is the case, the return value will be an array of the multiple values supplied. ',
+						      'The "min-arguments" and "max-arguments" attributes are applicable in this case.'
+				      	        )
+      		    ),
+	    	array
+	    	   (
+	    	   	'names'		=>  array ( 'help-group', 'help-groups', 'help-topic', 'help-topics' ),
+	    	   	'type'		=>  self::ATTRIBUTE_TYPE_LIST,
+	    	   	'member'	=>  'HelpTopics',
+	    	   	'help'		=>  'List of help groups to which this parameter belongs'
+		    ),
+		array
+		   (
+		   	'names'		=>  array ( 'help', 'help-text' ),
+		   	'type'		=>  self::ATTRIBUTE_TYPE_STRING,
+		   	'member'	=>  'HelpText',
+		   	'help'		=>  'Help text. The help text can be specified through this attribute, or by the tag inner contents.'
+		    ),
+		array
+		   (
+		   	'names'		=>  array ( 'usage', 'usage-string' ),
+		   	'type'		=>  self::ATTRIBUTE_TYPE_STRING,
+		   	'member'	=>  'UsageString',
+		   	'help'		=>  'Usage string. If not specified, it will be built from the parameter name and value type'
+		    ),
+	    	array
+	    	   (
+	    	   	'names'		=>  array ( 'value-text', 'text' ),
+	    	   	'type'		=>  self::ATTRIBUTE_TYPE_STRING,
+	    	   	'member'	=>  'ValueLabel',
+	    	   	'help'		=>  array
+			       		      (
+				     			'This string is used to represent the parameter value type when no usage string has been defined. ',
+	    	   			          	'If not given, the parameter type name is used instead'
+				               )
+		    ),
+	    	array
+	    	   (
+	    	   	'names'		=>  array ( 'min-arguments', 'min-args' ),
+	    	   	'type'		=>  self::ATTRIBUTE_TYPE_UNSIGNED_INTEGER,
+	    	   	'member'	=>  'MinArguments',
+	   		'substitutions'	=>  array ( '*' => 0 ),
+	    	   	'help'		=>  "Minimum number of arguments for this parameter. The special value '*' means 0."
+      		    ),
+	    	array
+	    	   (
+	    	   	'names'		=>  array ( 'max-arguments', 'max-args' ),
+	    	   	'type'		=>  self::ATTRIBUTE_TYPE_UNSIGNED_INTEGER,
+	    	   	'member'	=>  'MaxArguments',
+	   		'substitutions'	=>  array ( '*' => PHP_INT_MAX ),
+			'help'		=>  "Maximum number of arguments for this parameter. The special value '*' means an unlimited number of arguments."
+      		    ),
+	    	array
+		   (
+	   		'names'		=>  array ( 'arguments', 'args', 'arg' ),
+	   		'type'		=>  self::ATTRIBUTE_TYPE_RANGE,
+	   		'attributes'	=>  array ( 'min-arguments', 'max-arguments' ),
+	   		'help'		=>  'Defines the value of both the "min-arguments" and "max-arguments" attributes as a range'
+		    ),
+		array
+		   (
+		   	'names'		=>  array ( 'validation-regex', 'validation-expression', 'validation-expr' ),
+		   	'type'		=>  self::ATTRIBUTE_TYPE_STRING,
+		   	'member'	=>  'ValidationRegex',
+		   	'preprocessor'	=>  '\Thrak\Processors\CL\CLRegexValidator',
+		   	'help'		=>  'Regular expression to be checked against the supplied value. Delimiters are optional and will be automatically added if not specified.'
+		    ),
+		array
+		   (
+		   	'names'		=>  array ( 'validation-code', 'validation-function' ),
+		   	'type'		=>  self::ATTRIBUTE_TYPE_STRING,
+		   	'member'	=>  'ValidationCode',
+		   	'help'		=>  array
+		   			       (
+		   			       		'Code to be executed for validating the supplied value, which is represented by the "{}" construct. ',
+		   			       		'The code must return the new input value, or null if the suplied value is incorrect'
+						)
+		    )
+	    ) ;
+
+
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/******                                                                               ******/
+	/******                           VARIABLES & CONSTANTS                               ******/
+	/******                                                                               ******/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+
+	// Parent Command line parser object
+	protected	$Parent ;
+	// Attribute definitions
+	public		$AttributeDefinitions ;
+	// Handled switch characters
+	public		$SwitchCharacters		=  "-" ;
+	// Specified switch character
+	public 		$SwitchCharacter		=  "-" ;
+	// Tag stuff
+	public		$TagNames ;					// Authorized tagnames
+	public 		$SpecifiedTagName ;				// Specified tag name
+	// Names and aliases
+	public  	$Names				=  array ( ) ;
+	// Can the parameter be unnamed ?
+	public 		$CanBeUnnamed			=  true ;
+	// Parameter value(s)
+	public		$Values				=  array ( ) ;
+	public		$SpecifiedName ;
+	public 		$SpecifiedValue ;				// Value, as it has been specified on the command line
+	// Default value
+	public		$DefaultValue			=  null ;
+	// Min and max arguments
+	public		$MinArguments			=  1 ;
+	public		$MaxArguments			=  1 ;
+	// Flags
+	public		$Specified			=  false ;   	// True if the parameter has been specified on the command-line
+	public  	$Required 			=  false ;	// True if the parameter is mandatory
+	public		$MultipleAllowed 		=  false ; 	// True if the parameter can be specified more than once
+	public		$Hidden				=  false ;	// True if the parameter is not to appear when the -help or -usage parameter is specified
+	public		$Named				=  true ;	// Tells if the parameter is named or not
+	public		$AllowSwitchCharacter		=  false ;	// Tells if the parameter can be prefixed by one of the authorized switch prefix characters
+	// Help data
+	public		$HelpText ;
+	public		$UsageString ;
+	public		$ValueLabel ;
+	public		$HelpTopics 			=  array ( ) ;
+	// Validation expression
+	public		$ValidationRegex		=  null ;
+	// Validation code
+	public		$ValidationCode			=  null ;
+	// Parameter type help
+	public		$Help				=  null ;
+	public		$ReturnValueHelp		=  null ;
+	// Return value type
+	public		$ReturnValueType		=  self::RETURN_VALUE_SINGLE ;
+
+
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/******                                                                               ******/
+	/******                       CONSTRUCTOR & MAGIC FUNCTIONS                           ******/
+	/******                                                                               ******/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Constructor
+
+	    PROTOTYPE
+		$parameter = new CLAbstractParameter ( $parent, $tagnames, $value_type = null,
+							      $new_attributes = null,
+							      $changed_attributes = null,
+							      $removed_attributes = null ) ;
+
+	    DESCRIPTION
+		Builds a generic parameter object.
+
+	    PARAMETERS
+	    	$parent (CLParser) -
+	    		Parent parser object.
+
+	    	$tagnames (array) -
+	    		Tag name and aliases.
+
+		$value_type (string) -
+			Parameter value type name.
+
+		$new_attributes (associative array) -
+			Array of parameter attribute definitions ; each entry can have the following
+			values :
+
+			'names' (array of string or string) -
+				List of parameter names and aliases. If only one name exists for the
+				parameter, you can specify it as a single string.
+	  
+	 		'default' (any) -
+	 			Default value for this parameter.
+
+			'required' (boolean) -
+				Tells if the attribute is required in the parameter specification.
+
+			'specific' (boolean) -
+				Indicates if the attribute is specific to a derived attribute class.
+
+			'type' (integer) -
+				Type of parameter attribute. It can be one of the following :
+
+				ATTRIBUTE_TYPE_ANY -
+					The attribute value is not checked and can contain anything.
+
+   				ATTRIBUTE_TYPE_STRING -
+					The attribute value is a string.
+
+   				ATTRIBUTE_TYPE_INTEGER -
+   					The attribute value is an integer.
+
+				ATTRIBUTE_TYPE_UNSIGNED_INTEGER -
+					The attribute value is an unsigned integer.
+
+				ATTRIBUTE_TYPE_FLOAT -
+					The attribute value is a float.
+
+   				ATTRIBUTE_TYPE_BOOLEAN -
+				   	The attribute value is a boolean value.
+
+   				ATTRIBUTE_TYPE_LIST -
+   					The attribute value is a list of strings.
+
+			'member' (name) -
+				If no further processing is required, you can specifying here the
+				name of a class member that will automatically be assigned the specified
+				attribute value.
+
+			'processor', 'post-processor', 'pre-processor' (callback) -
+				Callback function that has the following signature :
+
+					callback_function ( $object, $tag, $attribute_definition, $value ) ;
+
+				The callback function must return the actual or preprocessed value of
+				the value specified with the XML attribute in the command-line parameter
+				definition.
+				It can take one the following forms :
+				- A class member name.
+				- A callback or function name having the signature specified above.
+
+				'pre-processor' is called to preprocess as-is the value supplied on the
+				command-line. It must return a string. 'preprocessor' is a synonym.
+
+				'post-processor' is called to post-process the value, after being analyzed
+				by the GetAttribute() function. It must return a value of the same type as
+				the supplied processed value. For example, an attribute having the type
+				ATTRIBUTE_TYPE_LIST will call the callback function with an array of list
+				items. The callback function must in turn return an array of list items.
+				'postprocessor' is a synonym.
+
+				'processor' is a synonym for 'post-processor'.
+
+			'help' (string) -
+				Attribute help (for use with the opthelp command).
+
+			'value' (any) -
+				Attribute value (after the SetSpecifications() method has been called).
+
+		$changed_attributes (array) -
+			Associative array that contains the attribute names whose default values are
+			to be changed.
+
+		$removed_attributes (array) -
+			Names of the attributes to be removed. Either official parameter name or its
+			aliases can be specified here.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __construct  ( $parent, $tagnames, $value_type = null,
+						$new_attributes = null, $changed_attributes = null, $removed_attributes = null )
+	   {
+		parent::__construct ( ) ;
+		
+		// Get the real class name
+   	   	$class     =  get_called_class ( ) ;
+
+	   	// The $Help and $ReturnValueHelp members must be filled before calling the parent constructor.
+	   	if  ( $this -> Help  ==  null  ||  $this -> ReturnValueHelp  ==  null )
+	   		error ( new CLException ( "Internal error : The derived class $class must set the 'Help' and 'ReturnValueHelp' members before calling the constructor " .
+			   		"of the " . __CLASS__ . " class." ) ) ;
+
+	   	// Allow tagname to be supplied as a single string
+	   	if  ( ! is_array ( $tagnames ) )
+	   		$tagnames = array ( $tagnames ) ;
+
+	   	// Save parent CLParser object, associated tag names and value type string
+	   	$this -> Parent    	=  $parent ;
+	   	$this -> TagNames  	=  $tagnames ;
+	   	$this -> ValueLabel 	=  ( $value_type ) ?  $value_type : $tagnames [0] ;
+
+	   	// Normalize input parameters
+	   	if  ( ! $removed_attributes )
+	   		$removed_attributes  =  array ( ) ;
+		else if  ( ! is_array ( $removed_attributes ) )
+			$removed_attributes  =  array ( $removed_attributes ) ;
+
+		if  ( ! $new_attributes )
+			$new_attributes = array ( ) ;
+
+		if  ( ! $changed_attributes )
+			$changed_attributes = array ( ) ;
+
+		$variables 		=  get_object_vars ( $this ) ;
+
+		// Additional attributes are not 'default' attributes, but specific
+		for  ( $i = 0 ; $i  <  count ( $new_attributes ) ; $i ++ )
+		   	$new_attributes [ $i ] [ 'specific' ] = true ;
+
+		// Then add the new attribute definitions, if any
+		$new_definitions_temp  	=  array_merge ( CLAbstractParameter::$DefaultAttributeDefinitions, $new_attributes ) ;
+		$new_definitions 	=  array ( ) ;
+
+		foreach  ( $new_definitions_temp  as  $definition )
+		   {
+		   	// Normalize the 'names' entry
+		   	if  ( ! is_array ( $definition [ 'names' ] ) )
+		   		$definition [ 'names' ] = array ( $definition [ 'names' ] ) ;
+
+		   	// Loop through definition names
+		   	$found = false ;
+
+			foreach  ( $definition [ 'names']  as  $name )
+			   {
+			   	// Then through each attribute to remove
+			   	foreach  ( $removed_attributes  as  $removed_attribute )
+			   	   {
+			   	   	// If this is an attribute to be removed, set a flag
+					if  ( ! strcasecmp ( $name, $removed_attribute ) )
+					   {
+						$found = true ;
+						break  2 ;
+					    }
+				    }
+
+				// Or through attributes whose default value is to be changed
+				foreach  ( $changed_attributes  as  $attribute_name => $attribute_default )
+				   {
+					if  ( ! strcasecmp ( $name, $attribute_name ) )
+					   {
+						$definition [ 'default' ] = $attribute_default ;
+						break ;
+					    }
+				    }
+			    }
+
+			// And if the flag has not been set, the attribute must be kept
+			if  ( ! $found )
+				$new_definitions [] = $definition ;
+		    }
+
+		// 'Normalize' each definition, ie make sure that all possible definition entries are present
+		// (to avoid later testing with the isset() function)
+		$new_definition_index 	=  0 ;
+
+		foreach  ( $new_definitions  as  &$new_definition )
+		   {
+		   	$new_definition_index ++ ;
+
+		   	// Provide a default value for unnamed attributes
+			if  ( ! isset ( $new_definition [ 'names' ] ) )
+				$new_definition [ 'names' ] = array ( ) ;
+			else if  ( ! is_array ( $new_definition [ 'names' ] ) )
+				$new_definition [ 'names' ] = array ( $new_definition [ 'names' ] ) ;
+
+			// Default attribute name to be used in exceptions
+			if  ( count ( $new_definition [ 'names' ] ) )
+				$current_name 	=  "the attribute named '" . $new_definition [ 'names' ] [0] . "'" ;
+			else
+				$current_name	=  "the attribute entry #$new_definition" ;
+
+			// By default, the attributes is optional
+			if  ( ! isset ( $new_definition [ 'required' ] ) )
+				$new_definition [ 'required' ] = false ;
+
+			// Its type defaults to 'any' value
+			if  ( ! isset ( $new_definition [ 'type' ] ) )
+				$new_definitions [ 'type' ] = self::ATTRIBUTE_TYPE_ANY ;
+
+			// Make sure there is an associated member name, even if empty
+			// (note that range parameters are linked to 2 class members through the 'attributes' entry)
+			if  (  $new_definition [ 'type' ]  !=  self::ATTRIBUTE_TYPE_RANGE )
+			   {
+				if  ( ! isset ( $new_definition [ 'member' ] ) )
+			   		error ( new CLException ( "Internal error : The '$class' class must set the 'member' attribute for $current_name." ) ) ;
+
+				// The member must exist in the class definition (note that it can be an array of members)
+				$member 		=  $new_definition [ 'member' ] ;
+
+				if  ( ! is_array ( $member ) )
+					$member 	=  array ( $member ) ;
+
+				foreach  ( $member  as  $item )
+				   {
+					if  ( ! array_key_exists ( $item, $variables ) )
+						error ( new CLException ( "The '$item' member specified by the '$class' class in $current_name does not exist." ) ) ;
+				    }
+			     }
+
+			// Same for pre/post processors
+			if  ( isset ( $new_definition [ 'pre-processor' ] ) )
+			   {
+				$new_definition [ 'preprocessor' ] 	=  $new_definition [ 'pre-processor' ] ;
+				unset ( $new_definition [ 'pre-processor' ] ) ;
+			    }
+
+    			if  ( isset ( $new_definition [ 'post-processor' ] ) )
+    			   {
+    			   	$new_definition [ 'postprocessor' ]	=  $new_definition [ 'post-processor' ] ;
+				unset ( $new_definition [ 'post-processor' ] ) ;
+
+    			    }
+
+			if  ( ! isset ( $new_definition [ 'preprocessor' ] ) )
+				$new_definition [ 'preprocessor' ] = null ;
+
+			if  ( ! isset ( $new_definition [ 'processor' ] ) )
+				$new_definition [ 'postprocessor' ] = null ;
+			else
+			   {
+				$new_definition [ 'postprocessor' ] = $new_definition [ 'processor' ] ;
+				unset ( $new_definition [ 'processor' ] ) ;
+			    }
+
+			if  ( ! isset ( $new_definition [ 'postprocessor' ] ) )
+				$new_definition [ 'postprocessor' ] = null ;
+
+			$new_definition [ 'preprocessor' ]  = $this -> __process_callback_specification ( $class, $current_name, $new_definition [ 'preprocessor'  ], 'Preprocess' ) ;
+			$new_definition [ 'postprocessor' ] = $this -> __process_callback_specification ( $class, $current_name, $new_definition [ 'postprocessor' ], 'Postprocess' ) ;
+
+			// If no help supplied for this attribute, set it to the empty string
+			if  ( ! isset ( $new_definition [ 'help' ] ) )
+				$new_definition [ 'help' ] = "" ;
+			// Or if supplied as an array of string, join them
+			else if  ( is_array ( $new_definition [ 'help' ] ) )
+				$new_definition [ 'help' ] = implode ( '', $new_definition [ 'help' ] ) ;
+
+			// Always set an attribute value, even if null
+			if  ( ! isset  ( $new_definition [ 'value' ] ) )
+				$new_definition [ 'value' ] = null ;
+
+			// The default attributes are not considered as specific ; but attributes supplied to this
+			// constructor are considered as specific
+			if  ( ! isset ( $new_definition [ 'specific' ] ) )
+				$new_definition [ 'specific' ] = false ;
+
+			// Always set a default value, even if null
+			if  ( ! isset ( $new_definition [ 'default' ] ) )
+				$new_definition [ 'default' ] = null ;
+
+			// Attribute-specific flags will default to an empty array
+			if  ( ! isset ( $new_definition [ 'flags' ] ) )
+				$new_definition [ 'flags' ] = array ( ) ;
+
+			// Substitutions
+			if  ( ! isset ( $new_definition [ 'substitutions' ] ) )
+				$new_definition [ 'substitutions' ] = array ( ) ;
+		    }
+
+		// All done, save the stuff
+		$this -> AttributeDefinitions 	=  $new_definitions ;
+
+		// Second loop on attribute definitions, to process the special case of ranges
+		foreach  ( $this -> AttributeDefinitions  as  &$new_definition )
+		   {
+			// Default attribute name to be used in exceptions
+			if  ( count ( $new_definition [ 'names' ] ) )
+				$current_name 	=  "the attribute named '" . $new_definition [ 'names' ] [0] . "'" ;
+			else
+				$current_name	=  "the attribute entry #$new_definition" ;
+
+		   	if  ( $new_definition [ 'type' ]  ==  self::ATTRIBUTE_TYPE_RANGE )
+		   	   {
+				if  ( isset ( $new_definition [ 'attributes' ] ) )
+				   {
+				   	$attrs 	=  $new_definition [ 'attributes' ] ;
+
+					if  ( ! is_array ( $attrs )  ||  count ( $attrs )  !=  2 )
+						$error 	=  true ;
+					else
+					   {
+						$error  	=  false ;
+
+						$low 	=  $this -> GetAttributeIndex ( $attrs [0] ) ;
+
+						if  ( $low  ===  false )
+						  	error ( new CLException ( "Internal error : The first item of the 'attributes' entry for $current_name of the '$class' class must be the name or alias of an existing attribute." ) ) ;
+
+						$high 	=  $this -> GetAttributeIndex ( $attrs [1] ) ;
+
+						if  ( $high  ===  false )
+						  	error ( new CLException ( "Internal error : The second item of the 'attributes' entry for $current_name of the '$class' class must be the name or alias of an existing attribute." ) ) ;
+
+			  			$new_definition [ 'attribute-data' ] = array
+			  			   (
+			  			   	$this -> AttributeDefinitions [ $low ],
+			  			   	$this -> AttributeDefinitions [ $high]
+						    ) ;
+					    }
+				    }
+				else
+					$error = true ;
+
+				if  ( $error )
+					error ( new CLException ( "Internal error : $current_name of the '$class' class must have an array entry called 'attributes' and containing the name of the members aimed to receive the low and high values of the range." ) ) ;
+			    }
+		    }
+
+		// Post checking
+		foreach  ( $this -> AttributeDefinitions  as  &$definition )
+		   {
+		   	// Assign the default value, if needed
+		   	if  ( $definition [ 'default' ]  !==  null )
+		   		$definition [ 'value' ] = $this -> GetAttributeValue ( $definition, $tagnames [0],
+				   					$definition [ 'names' ] [0], $definition [ 'default' ] ) ;
+
+			// Add a trailing dot to help text if needed
+			if  ( is_array ( $definition [ 'help' ] ) )
+			   {
+				$last 	=  count ( $definition [ 'help' ] ) - 1 ;
+
+				$definition [ 'help' ] [ $last ] = rtrim ( $definition [ 'help' ] [ $last ] ) ;
+
+				if  ( ! String::EndsWith ( $definition [ 'help' ] [ $last ], '.' ) )
+					$definition [  'help' ] [ $last ] .= '.' ;
+			    }
+    			else
+			   {
+			   	$definition [ 'help' ] = rtrim ( $definition [ 'help' ] ) ;
+
+			   	if  ( ! String::EndsWith ( $definition [ 'help' ], '.' ) )
+    					$definition [ 'help' ] .=  '.' ;
+			    }
+	     	    }
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		__tostring - Returns the supplied value as a string.
+
+	    PROTOTYPE
+	        $result = ( string ) $parameter ;
+
+	    DESCRIPTION
+		Returns the whole parameter value as a string.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __tostring ( )
+	   {
+		$result		=  array ( ) ;
+
+
+		foreach  ( $this -> Values  as  $Value )
+			$result [] = String::QuotedString ( $Value ) ;
+
+		if  ( count ( $result ) )
+			return ( implode ( " ", $result ) ) ;
+		else
+			return ( "" ) ;
+	    }
+
+
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/******                                                                               ******/
+	/******                             SUPPORT FUNCTIONS                                 ******/
+	/******                                                                               ******/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+		__dump_debuginfo :	 
+			Hides the Parent property.
+			 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public static function  __dump_debuginfo ( )
+	   {
+		return ( [ 'hidden' => [ 'Parent', 'DefaultAttributeDefinitions', 'CompoundDefaultDefinitions' ] ] ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		__process_callback_specification - Tries to locate the specified callback.
+
+	    PROTOTYPE
+		$value = $this -> __process_callback_specification ( $classname, $message,
+								     $specification, $default_method ) ;
+
+	    DESCRIPTION
+		Tries to locate the specified callback. It can be specified either as :
+		- A class name derived from the CLAbstractParameter class. In that case, a
+  		  member method 'PreprocessValue' or 'PostprocessValue' will be searched, depending
+  		  on the value of the $preprocess parameter.
+		- An array of two values specifying a class or object reference as its first element,
+		  and a method name as its second element.
+  		- A function name
+
+	    PARAMETERS
+	    	$classname (string) -
+	    		Calling class name.
+
+    		$message (string) -
+    			Message specifying the implied attribute definition.
+
+		$specification (callback or string) -
+			Specification of the callback function.
+
+		$default_method (string) -
+			When a class is specified as a string callback, indicates which method is to
+			be called.
+
+	    RETURN VALUE
+		A callback or a string specifying a function name.
+
+	 --------------------------------------------------------------------------------------------*/
+	private function  __process_callback_specification ( $class, $message, $specification, $default_method )
+	   {
+	   	if  ( $specification  ==  null )
+	   		return ( null ) ;
+
+		if  ( is_string ( $specification ) )
+		   {
+			if  ( function_exists ( $specification ) )
+				$result  =  $specification ;
+			else if  ( method_exists ( $this, $specification ) )
+				$result  =  array ( $this, $specification ) ;
+		   	else if  ( class_exists ( $specification ) )
+		   	   {
+   	   			$object 	=  new  $specification ;
+
+   	   			if  ( method_exists ( $object, $default_method ) )
+			   		$result  =  array ( $object, $default_method ) ;
+	   			else
+					error ( new CLException ( "Internal error : the '$class' class in the $message specifies a method '$specification::$default_method' that does not exist." ) ) ;
+		   	    }
+			else
+			   {
+			   	$specification  =  "\\" . __NAMESPACE__ . "\\" . $specification ;
+
+			   	try				// Autoloader sensitive
+			   	   {
+	   	   			$object 	=  new  $specification ;
+
+	   	   			if  ( method_exists ( $object, $default_method ) )
+				   		$result  =  array ( $object, $default_method ) ;
+		   			else
+						error ( new CLException ( "Internal error : the '$class' class in the $message specifies a method '$specification::$default_method' that does not exist." ) ) ;
+			   	    }
+				catch ( Exception $e )
+				   {
+					error ( new CLException ( "Internal error : the '$class' class in the $message specifies a function name that is neither a class method, nor a user-function." ) ) ;
+				    }
+			    }
+		    }
+    		else
+    		   {
+			if  ( method_exists ( $specification [0], $specification [1] ) )
+				$result = $specification ;
+			else
+				error ( new CLException ( "Internal error : the '$class' class in $message specifies a class method name ({$specification [0]}::{$specification [1]}) that does not exist." ) ) ;
+    		    }
+
+    		return ( $result ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		__run_callback - Runs a callback.
+
+	    PROTOTYPE
+		$value = $this -> __run_callback ( $callback, $value ) ;
+
+	    DESCRIPTION
+		Runs a callback on the specified value. If the callback is null, the input value is
+		returned as is.
+
+	    PARAMETERS
+		$callback (callback or string) -
+			Callback or user function to be called.
+
+		$value (any) -
+			Value to be processed.
+
+	    RETURN VALUE
+		The processed input value.
+
+	 --------------------------------------------------------------------------------------------*/
+	private function  __run_callback ( $callback, $object, $definition, $tag, $name, $value )
+	   {
+		if  ( $callback  ===  null )
+			return ( $value ) ;
+		else if  ( is_string ( $callback ) )
+			$result = $callback ( $object, $definition, $tag, $name, $value ) ;
+		else
+			$result = call_user_func ( $callback, $object, $definition, $tag, $name, $value ) ;
+
+		return ( $result ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		GetAttributeValue - Returns a processed attribute value.
+
+	    PROTOTYPE
+		$value = $this -> GetAttributeValue ( $attribute_definition, $tag, $name, $value ) ;
+
+	    DESCRIPTION
+		Processes the attribute value.
+
+	    PARAMETERS
+		$attribute_definition (array) -
+			Attribute definition.
+
+		$tag (string) -
+			Specified tag name.
+
+		$name (string) -
+			Specified attribute name.
+
+		$value (string) -
+			Attribute value to be preprocessed.
+
+	    RETURN VALUE
+		The preprocessed attribute value.
+
+	 --------------------------------------------------------------------------------------------*/
+	private function  GetAttributeValue ( $attribute_definition, $tag, $name, $value )
+	   {
+		$this -> SpecifiedTagName       =  $tag ;
+
+		$variables 		=  get_object_vars ( $this ) ;
+		$member 		=  isset ( $attribute_definition [ 'member' ] ) ?  $attribute_definition [ 'member' ] : null ;
+		$type 			=  $attribute_definition [ 'type' ] ;
+		$preprocessor 		=  $attribute_definition [ 'preprocessor' ] ;
+		$postprocessor		=  $attribute_definition [ 'postprocessor' ] ;
+
+		// Preprocess the value
+		$value 			=  $this ->__run_callback ( $preprocessor, $this, $attribute_definition, $tag, $name, $value ) ;
+
+		// Process substitutions
+		foreach  ( $attribute_definition [ 'substitutions' ]  as  $key => $substitution )
+		   {
+			if  ( ! strcasecmp ( $value, $key ) )
+			   {
+				$value = $substitution ;
+				break ;
+			    }
+		    }
+
+    		// Process the attribute type
+		switch  ( $type )
+		   {
+		   	// Untyped attribute value
+		   	case	self::ATTRIBUTE_TYPE_ANY :
+   				$attribute_value = $value ;
+   				break ;
+
+			// String attribute value :
+			//	Simply coerce to the string type.
+			case	self::ATTRIBUTE_TYPE_STRING :
+				$attribute_value = ( string ) $value ;
+				break ;
+
+			// Character attribute value :
+			//	Simply coerce to the string type, and verify that the resulting length is 1.
+			case	self::ATTRIBUTE_TYPE_CHARACTER :
+				$attribute_value = ( string ) $value ;
+
+				if  ( strlen ( $attribute_value )  !=  1 )
+					error ( new CLException ( "The '$value' value for the '$name' attribute of the <$tag> parameter must be a single character." ) ) ;
+				break ;
+
+			// Integer type :
+			//	Check that the supplied value is an integer.
+			case	self::ATTRIBUTE_TYPE_INTEGER :
+			case	self::ATTRIBUTE_TYPE_UNSIGNED_INTEGER :
+				if  ( ! String::IsInteger ( $value )  )
+					error ( new CLException ( "The '$value' value for the '$name' attribute of the <$tag> parameter is not a valid integer value." ) ) ;
+
+				if  ( $type  ==  self::ATTRIBUTE_TYPE_UNSIGNED_INTEGER  &&  $value  <  0 )
+					error ( new CLException ( "The '$value' value for the '$name' attribute of the <$tag> parameter type should be a positive integer."  ) ) ;
+
+			   	$attribute_value = Convert::ToInteger ( $value ) ;
+
+				// Last resort check
+				if  ( $attribute_value  ===  false )
+					error ( new CLException ( "The '$value' value for the '$name' attribute of the <$tag> parameter is not a valid integer value." ) ) ;
+			   	break ;
+
+			// Float type :
+			//	Check that the supplied value is a float.
+			case	self::ATTRIBUTE_TYPE_FLOAT :
+				if  ( ! is_numeric ( $value ) )
+				   	error ( new CLException ( "The '$value' value for the '$name' attribute of the <$tag> parameter type should be a floating-point value." ) ) ;
+
+			   	$attribute_value = ( float ) $value ;
+			   	break ;
+
+			// Boolean type :
+			//	Check that the supplied value is a boolean.
+			case	self::ATTRIBUTE_TYPE_BOOLEAN :
+				if  ( String::IsTrue ( $value ) )
+					$attribute_value = true ;
+				else if  ( String::IsFalse ( $value ) )
+					$attribute_value = false ;
+				else
+				   	error ( new CLException ( "The '$value' value for the '$name' attribute of the <$tag> parameter type should be a boolean value." ) ) ;
+				break ;
+
+			// List type :
+			//	Convert a comma
+			case	self::ATTRIBUTE_TYPE_LIST :
+				$value =  String::ExplodeAndTrim ( ',', $value ) ;
+				$attribute_value = $value ;
+				break ;
+
+			// Keyword type :
+			//	The value is checked against the 'keyword' array entries.
+			case	self::ATTRIBUTE_TYPE_KEYWORD :
+				if  ( ! isset ( $attribute_definition [ 'keywords' ] ) )
+					error ( new CLException ( "The '$name' attribute definition of the <$tag> parameter type must be defined." ) ) ;
+
+				$keywords 	=  $attribute_definition [ 'keywords' ] ;
+				$found 		=  false ;
+
+				foreach  ( $keywords  as  $keyword => $keyword_value )
+				   {
+					if  ( $keyword  == $value )
+					   {
+						$attribute_value 	=  $keyword_value ;
+						$found 			=  true ;
+						break ;
+					    }
+				    }
+
+		    		if  ( ! $found )
+		    			error ( new CLException ( "The '$value' value specified for the '$name' attribute of the <$tag> parameter type is incorrect." ) ) ;
+
+				break ;
+
+
+			// Keyword list type :
+			//	The value list is checked against the 'keyword' array entries.
+			case	self::ATTRIBUTE_TYPE_KEYWORD_LIST :
+				if  ( ! isset ( $attribute_definition [ 'keywords' ] ) )
+					error ( new CLException ( "The '$name' attribute definition of the <$tag> parameter type must be defined." ) ) ;
+
+				$keywords 		=  $attribute_definition [ 'keywords' ] ;
+				$values			=  String::ExplodeAndTrim ( ',', $value ) ;
+				$attribute_value 	=  array ( ) ;
+
+				foreach  ( $values  as  $specified_value )
+				   {
+					$found 		=  false ;
+
+					foreach  ( $keywords  as  $keyword => $keyword_value )
+					   {
+						if  ( ! strcasecmp ( $keyword, $specified_value ) )
+						   {
+							$attribute_value [] 	=  $keyword_value ;
+							$found 			=  true ;
+							break ;
+						    }
+					    }
+
+			    		if  ( ! $found )
+			    			error ( new CLException ( "The '$specified_value' value specified for the '$name' attribute of the <$tag> parameter type is incorrect." ) ) ;
+				    }
+
+				break ;
+
+			// Undefined type : programmer specification error
+			default :
+				error ( new CLException ( "The 'type' entry for the '$name' attribute of the <$tag> parameter type is incorrect." ) ) ;
+		    }
+
+		// Postprocess the value
+		$attribute_value 		=  $this ->__run_callback ( $postprocessor, $this, $attribute_definition, $tag, $name, $attribute_value ) ;
+
+		// Save the attribute value to this class member
+		// In the case multiple class members are in the definition, check that the returned values is an array
+		// that matches the specified member count
+		if  ( is_array ( $member ) )
+		   {
+			$member_count 		=  count ( $member ) ;
+
+			if  ( is_array ( $attribute_value ) )
+			   {
+				$attribute_count 	=  count ( $attribute_value ) ;
+				$min 			=  min ( $member_count, $attribute_count ) ;
+
+				for  ( $i = 0 ; $i < $min ; $i ++ )
+				   {
+					$item 	=  $member [$i] ;
+					$this -> $item = $attribute_value [$i] ;
+				    }
+			    }
+			else
+			   {
+				$item 		=  $member [0] ;
+				$this -> $item 	=  $attribute_value ;
+			    }
+		    }
+  		else
+			$this -> $member = $attribute_value ;
+
+		// All done, return
+		return ( $attribute_value ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		GetDefaultValue - Returns the default value.
+
+	    PROTOTYPE
+		$value = $this -> GetDefaultValue ( ) ;
+
+	    DESCRIPTION
+		Returns the default value, with all preprocessed php tags interpreted, if the 
+		allow-php-tags command attribute has the "default" option or is set to true.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  GetDefaultValue ( )
+	   {
+		$result		=  $this -> Parent -> EvaluatePhpTags ( $this -> DefaultValue, 'defaults' ) ;
+
+		return ( $result ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		GetUsageParameterName - Gets the parameter name, with its switch character.
+
+	    PROTOTYPE
+		$value = $this -> GetUsageParameterName ( $name = null ) ;
+
+	    DESCRIPTION
+		Returns a standard form of a parameter name specification (such as -param).
+		Can be overridden by derived classes, such as the Boolean class, where the parameter
+		specification can be "-param" or "+param".
+
+	    PARAMETERS
+	    	$name (string) -
+		    Parameter name. If not specified, the first entry in the Names[] array is returned.
+
+	    RETURN VALUE
+		Returns the usage parameter name.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  GetUsageParameterName ( $name = null )
+	   {
+		$switch 	= $this -> SwitchCharacter ;
+
+		if  ( ! $name )
+		   {
+			if  ( $this -> Named )
+				$name 	=  $this -> Names [0] ;
+			else
+				$name  	=  $this -> ValueLabel . " (of <" . $this-> TagNames [0] . "> type)" ;
+		    }
+
+		if  ( $this -> Named  ) //&&  $name [0]  !=  $switch )
+			$name = "$switch$name" ;
+
+		return ( $name ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		GetAttributeEntry - Returns an attribute definition.
+
+	    PROTOTYPE
+		$result = $this -> GetAttributeEntry ( $name ) ;
+
+	    DESCRIPTION
+		Returns the searched attribute definition.
+
+	    PARAMETERS
+		$name (string) -
+			Attribute definition.
+
+	    RETURN VALUE
+		The searched attribute definition, or false if not found.
+
+	 --------------------------------------------------------------------------------------------*/
+	protected function  GetAttributeEntry ( $name )
+	   {
+	   	$index	 	=  $this -> GetAttributeIndex ( $name ) ;
+
+	   	if  ( $index  ===  false )
+	   		return ( false ) ;
+   		else
+   			return ( $this -> AttributeDefinitions [ $index ] ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		GetAttributeIndex - Returns an attribute definition.
+
+	    PROTOTYPE
+		$result = $this -> GetAttributeIndex ( $name ) ;
+
+	    DESCRIPTION
+		Returns the searched attribute definition.
+
+	    PARAMETERS
+		$name (string) -
+			Attribute definition.
+
+	    RETURN VALUE
+		The searched attribute definition index, or false if not found.
+
+	 --------------------------------------------------------------------------------------------*/
+	protected function  GetAttributeIndex ( $name )
+	   {
+	   	$attributes 	=  $this -> AttributeDefinitions ;
+		$count 		=  count ( $attributes ) ;
+
+		for  ( $i = 0 ; $i  <  $count ; $i ++ )
+		   {
+		   	$attribute = $attributes [$i] ;
+
+		   	foreach  ( $attribute [ 'names']   as  $attribute_name )
+		   	   {
+				if  ( ! strcasecmp ( $attribute_name, $name ) )
+					return ( $i ) ;
+		   	    }
+		    }
+
+		return ( false ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		ProcessChildTag - Processes a child tag.
+
+	    PROTOTYPE
+		$this -> ProcessChildTag ( $child ) ;
+
+	    DESCRIPTION
+		Processes a child tag. The default handler throws an exception for unhandled tag.
+
+	    PARAMETERS
+		$child (array) -
+			Child tag contents.
+
+	 --------------------------------------------------------------------------------------------*/
+	protected function  ProcessChildTag ( $child )
+	   {
+	   	$name = $this -> GetUsageParameterName ( ) ;
+		error ( new CLException ( "The '$name' parameter specification cannot have <{$child [ 'tag' ]}> nodes." ) ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		ProcessValues - Processes the specified values.
+
+	    PROTOTYPE
+		$result = $parameter -> ProcessValues ( $values ) ;
+
+	    DESCRIPTION
+		Processes the specified value, applying the default operations.
+
+	    PARAMETERS
+		$values (string) -
+			Values to be processed.
+
+	    RETURN VALUE
+		An array containing the processed values.
+
+	 --------------------------------------------------------------------------------------------*/
+	protected function  ProcessValues ( $values )
+	   {
+	   	$this -> SpecifiedValue	=  String::ImplodeWithQuotedStrings ( ' ', $values ) ;
+	   	$result 		=  array ( ) ;
+	   	$name 			=  $this -> GetUsageParameterName ( ) ;
+
+
+		// A small kludge for <flag> parameters
+		if  ( ! $values )
+		   {
+		   	$this -> SpecifiedValue = true ;
+			return ( array ( ) ) ;
+		    }
+
+		// Loop through values
+	   	foreach  ( $values  as  $value )
+	   	   {
+			// If a validation regex has been specified, check that the supplied parameter value matches it
+			if  ( $this -> ValidationRegex  !==  null )
+			   {
+			   	if  ( ! @preg_match ( $this -> ValidationRegex,  $value ) )
+			   	   {
+			   	   	$message    =  "The value '$value' specified for the '{$name}' parameter does not match the specified regular expression (validation-regex=\"{$this -> ValidationRegex}\")." ;
+
+					error ( new CLException ( $message ) ) ;
+				    }
+			    }
+
+			// If validation code has been specified, call it
+			if  ( $this -> ValidationCode  !==  null )
+			   {
+			   	$code 		=  str_replace ( '{}', String::QuotedString ( $value, '"', true ), $this -> ValidationCode ) ;
+			   	$code		=  "\$value = " . $code . ";" ;
+
+			   	eval ( $code ) ;
+			    }
+
+			// Give a chance to derived class to process the value
+			$value = $this -> ProcessValue ( $name, $value ) ;
+			
+	    		// Add the checked value to the result
+			if  ( $this -> ReturnValueType  ==  self::RETURN_VALUE_MULTIPLE  &&  is_array ( $value ) )
+				$result		=  array_merge ( $result, $value ) ;
+			else
+	    			$result []	=  $value ;
+		    }
+
+		// All done, return
+		return ( $result ) ;
+	    }
+
+
+	// ProcessValue -
+	//	This function can be implemented by derived classes to add more processing and formatting.
+	protected function  ProcessValue ( $pname, $value )
+	   {
+		return ( $value ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		ValidateDefinition - Validates a parameter definition.
+
+	    PROTOTYPE
+		$this -> ValidateDefinition ( $tag, $name ) ;
+
+	    DESCRIPTION
+		Make sure the supplied parameter definition is correct. Throw an exception if not.
+
+	    PARAMETERS
+	    	$tag (string) -
+	    		Tag name.
+
+    		$name (string) -
+    			Parameter name.
+
+	 --------------------------------------------------------------------------------------------*/
+	protected function  ValidateDefinition ( $tag, $name )
+	   {
+		if  ( $this -> MinArguments  >  $this -> MaxArguments )
+		   	error ( new CLException ( "<$tag> parameter $name : the min/max values specified in the 'min-arguments', 'max-arguments' or 'arguments' attributes are incorrect ({$this -> MinArguments}..{$this -> MaxArguments}) : min is above max." ) ) ;
+	    }
+
+
+
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/******                                                                               ******/
+	/******                             PUBLIC FUNCTIONS                                  ******/
+	/******                                                                               ******/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		GetSpecificationHelp			- Get parameter type help.
+		GetSpecificationAttributeHelp        	- Get parameter attribute help.
+		GetHelp 				- Get command-line help text.
+
+	    PROTOTYPE
+		$text = $parameter -> GetHelp ( ) ;
+		$text = $parameter -> GetAttributeHelp ( $name ) ;
+		$text = $parameter -> GetHelp ( ) ;
+
+	    DESCRIPTION
+		Returns the help text for the specified parameter or specified parameter attribute.
+
+	    PARAMETERS
+		$name (string) -
+			Attribute name whose help text is to be retrieved.
+
+	    RETURN VALUE
+		Help text for parameter (GetHelp() function) or for attribute (GetAttributeHelp()).
+
+	 --------------------------------------------------------------------------------------------*/
+	private function  __FormatHelp ( $text )
+	   {
+		if  ( is_array ( $text ) )
+			$text = implode ( '', $text ) ;
+
+		$text = trim ( $text ) ;
+
+		if  ( ! String::EndsWith ( $text, '.' ) )
+			$text .= '.' ;
+
+		return ( $text ) ;
+	    }
+
+
+	public function  GetSpecificationHelp ( )
+	   {
+		return ( $this -> __FormatHelp ( $this -> Help ) ) ;
+	    }
+
+
+ 	public function  GetSpecificationAttributeHelp ( $name )
+ 	   {
+		foreach ( $this -> AttributeDefinitions  as  $definition )
+		   {
+			foreach  ( $definition [ 'names' ]  as  $attr )
+			   {
+				if  ( ! strcasecmp ( $name, $attr ) )
+					return ( $this -> __FormatHelp ( $definition [ 'help' ] ) ) ;
+			    }
+		    }
+
+		return ( "" ) ;
+ 	    }
+
+
+	public function  GetHelp ( )
+	   {
+		$help = $this -> Parent -> EvaluatePhpTags ( $this -> HelpText, 'help', "\t\t" ) ;
+
+		if  ( $this -> DefaultValue )
+			$help .= "\n\t\tDefault value : \"" . $this -> GetDefaultValue ( ) . "\".\n" ;
+
+		return ( $help ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		GetAttributeTypeString - Returns the attribute type string.
+
+	    PROTOTYPE
+		$type	=  $clparameter -> GetAttributeTypeString ( $type ) ;
+
+	    DESCRIPTION
+		Returns the string corresponding to the specified attribute type.
+
+	    PARAMETERS
+		$type (integer) -
+			A constant of type ATTRIBUTE_TYPE_xxx.
+
+	    RETURN VALUE
+		The attribute type, as a string.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  GetAttributeTypeString ( $type )
+	   {
+		switch  ( $type )
+		   {
+		   	case	CLAbstractParameter::ATTRIBUTE_TYPE_ANY			:  $type = 'any'		; break ;
+		   	case	CLAbstractParameter::ATTRIBUTE_TYPE_STRING		:  $type = 'string'		; break ;
+		   	case	CLAbstractParameter::ATTRIBUTE_TYPE_INTEGER		:  $type = 'integer'		; break ;
+		   	case	CLAbstractParameter::ATTRIBUTE_TYPE_BOOLEAN		:  $type = 'boolean'		; break ;
+		   	case 	CLAbstractParameter::ATTRIBUTE_TYPE_LIST		:  $type = 'list'		; break ;
+		   	case	CLAbstractParameter::ATTRIBUTE_TYPE_FLOAT		:  $type = 'float'		; break ;
+		   	case	CLAbstractParameter::ATTRIBUTE_TYPE_UNSIGNED_INTEGER 	:  $type = 'unsigned'		; break ;
+		   	case	CLAbstractParameter::ATTRIBUTE_TYPE_UNSIGNED_FLOAT	:  $type = 'unsigned float'	; break ;
+		   	case	CLAbstractParameter::ATTRIBUTE_TYPE_CHARACTER		:  $type = 'character'		; break ;
+		   	case	CLAbstractParameter::ATTRIBUTE_TYPE_KEYWORD		:  $type = 'keyword'		; break ;
+		   	case	CLAbstractParameter::ATTRIBUTE_TYPE_KEYWORD_LIST	:  $type = 'keyword list'	; break ;
+		   	case	CLAbstractParameter::ATTRIBUTE_TYPE_RANGE		:  $type = 'range'		; break ;
+		   	default 							:  $type = 'unknown' ;
+		    }
+
+	    	return ( $type ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		GetName     - Returns the official parameter name.
+		GetAliases  - Returns parameter aliases.
+
+	    PROTOTYPE
+		$name 		= $clparameter -> GetName ( ) ;
+		$aliases	= $clparameter -> GetAliases ( ) ;
+
+	    DESCRIPTION
+		GetName() returns the official parameter name, ie the one specified in the "name="
+		attribute of the parameter specification, or the first one specified in the "names="
+		attribute.
+		GetAliases() returns the parameter aliases as an array. Aliases are either specified
+		with the "aliases=" attribute of the parameter specification, or as additional
+		names specified in the "names=" attribute.
+
+	    RETURN VALUE
+		GetName() returns the official parameter name as a string.
+		GetAliases() returns the parameter aliases as an array of string. If the parameter has
+		no alias, then an empty array is returned.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  GetName ( )
+	   {
+		return ( $this -> Names [0] ) ;
+	    }
+
+
+	public function  GetAliases ( )
+	   {
+		if  ( count ( $this -> Names )  ==  1 )
+			return ( array ( ) ) ;
+		else
+			return ( array_slice ( $this -> Names, 1 ) ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		GetUsageString - Gets the usage string.
+
+	    PROTOTYPE
+		$result = $parameter -> GetUsageString ( $short = true ) ;
+
+	    DESCRIPTION
+		Returns a string describing the parameter usage.
+
+	    PARAMETERS
+		$short (boolean) -
+			When true, the returned string is the one displayed with the -usage command
+			line option. If will be enclosed with square brackets if the parameter is
+			optional.
+			When false, the returned string is the one displayed at the top of each
+			parameter help. The string '(*)' will be appended if the parameter is
+			required.
+
+	    RETURN VALUE
+		Returns the usage string.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  GetUsageString ( $short = true )
+	   {
+		$result 	=  "" ;
+		$aliases 	=  array ( ) ;
+
+		if  ( $this -> Named )
+		   {
+			if  ( $short )
+				$aliases [] = $this -> GetUsageParameterName ( ) ;
+			else
+			   {
+				foreach  ( $this -> Names  as  $name )
+					$aliases []  =  $this -> GetUsageParameterName ( $name ) ;
+			    }
+
+			$result .= $aliases [0] ;
+
+			if  ( $this -> MinArguments  >  0  ||  $this -> MaxArguments  >  0 )
+			   {
+			   	if  ( $this -> MinArguments  ==  1  &&  $this -> MaxArguments  ==  1 )
+			   	   	$result .= " " . $this -> ValueLabel ;
+	 	   		else
+			   	   {
+					$result .= " " . $this -> ValueLabel . "(" . $this -> MinArguments . ".." ;
+
+					if  ( $this -> MaxArguments  ==  PHP_INT_MAX )
+						$result .= "*" ;
+					else
+						$result .= $this -> MaxArguments ;
+
+					$result .= ")" ;
+				    }
+			    }
+
+			// Add a visual clue for optional parameters
+		   	if  ( ! $this -> Required )
+				$result = '[' . $result . ']' ;
+
+			// Include parameter aliases when full version is requested
+			if  ( ! $short  &&  count ( $aliases )  >  1 )
+			   {
+				array_shift ( $aliases ) ;
+				
+				$result	.=  ' (' . implode ( ', ', $aliases ) . ')' ;
+			    }
+     		    }
+	    	else
+	    	   {
+			$result = $this -> ValueLabel ;
+
+			if  ( $this -> MinArguments  >  0  ||  $this -> MaxArguments  >  0 )
+			   {
+				if  ( $this -> MinArguments  !=  1  ||  $this -> MaxArguments  !=  1 )
+				   {
+					$result .= '(' . $this -> MinArguments . '..' ;
+
+					if  ( $this -> MaxArguments  ==  PHP_INT_MAX )
+						$result .= '*' ;
+					else
+						$result .= $this -> MaxArguments ;
+
+					$result .= ')' ;
+				    }
+			    }
+
+			if  ( ! $this -> Required )
+				$result = "[$result]" ;
+	    	    }
+
+		return ( $result ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		GetValue - Returns the parameter value.
+
+	    PROTOTYPE
+		$value = $clparameter -> GetValue ( ) ;
+
+	    DESCRIPTION
+		Returns the parameter value, as it was specified on the command-line.
+
+	    RETURN VALUE
+		Returns :
+		- The value specified on the command line if any, or
+		- The default value, or
+		- Null if neither specified on the command line nor in the default value.
+		If the parameter accepts only one argument, its value will be returned ; Otherwise,
+		the set of parameter arguments will be returned as an array.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  GetValue ( )
+	   {
+		if  ( ! count ( $this -> Values ) )
+		   {
+		   	if  ( $this -> DefaultValue  ===  null )
+			   {
+	   			if  ( $this -> MinArguments  !=  $this -> MaxArguments )
+	   				return ( $this -> Values ) ;
+   				else if  ( $this -> MultipleAllowed )
+   					return ( array ( ) ) ;
+   				else
+		   			return ( null ) ;
+   			     }
+
+			$this -> SetValue ( $this -> DefaultValue, true ) ;
+		    }
+
+		// When multiple values are allowed, return an array
+		if  ( $this -> MultipleAllowed )
+			return ( $this -> Values ) ;
+
+		// Return the value as is if min/max arguments are either both 0 or 1
+		if  ( ( $this -> MinArguments  ==  1  &&  $this -> MaxArguments  ==  1 )  ||
+		      ( $this -> MinArguments  ==  0  &&  $this -> MaxArguments  ==  0 )  || 
+		      $this -> ReturnValueType  ==  self::RETURN_VALUE_BOOLEAN )
+		   {
+			return ( $this -> Values [0] ) ;
+		    }
+		else
+   			return ( $this -> Values ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		IsNamedAs - Checks if the parameter has the specified name.
+
+	    PROTOTYPE
+		$status = $clparameter -> IsNamedAs ( $name, $tophp = false ) ;
+
+	    DESCRIPTION
+		Checks if this parameter has the specified name, either official or alias.
+		The search is not case-sensitive.
+
+	    PARAMETERS
+		$name (string) -
+			Name to be checked.
+
+		$tophp (boolean) -
+			If true, the parameter name is converted to a PHP name.
+
+	    RETURN VALUE
+		True if the parameter has the specified name or alias, false otherwise.
+
+	    NOTES
+	    	The specified parameter name can include the switch characters authorized for this
+		parameter class.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  IsNamedAs ( $name, $tophp = true )
+	   {
+	   	// Prefix character removal ( "-" or "+") have already been performed.
+	   	// This code has been commented out because it disallowed declaring parameters with the "--" prefix
+	   	//if  ( strpos ( $this -> SwitchCharacters, $name [0] )  !==  false )
+	   	//	$name = substr ( $name, 1 ) ;
+
+		if  ( $tophp )
+			$name = Convert::ToPHPName ( $name ) ;
+
+		foreach  ( $this -> Names  as  $parameter_name )
+		   {
+			if  ( $tophp )
+				$parameter_name = Convert::ToPHPName ( $parameter_name ) ;
+			
+			if  ( ! strcasecmp ( $parameter_name, $name ) )
+				return ( true ) ;
+		    }
+
+		return ( false ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		SetSpecifications - Sets the parameter specifications.
+
+	    PROTOTYPE
+	        $parameter -> SetSpecifications ( $array, $named = true ) ;
+
+	    DESCRIPTION
+		Takes the parameter specifications specified with the $array parameter, and updates
+		the $AttributeDefinitions array accordingly with the supplied attribute values.
+
+	    PARAMETERS
+		$array (array) -
+			Attribute definitions, as supplied to the CLParser object.
+
+		$named (boolean) -
+			When true the parameter is named.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function SetSpecifications  ( $array, $named = true )
+	   {
+		$tag 				=  $array [ 'tag' ] ;
+
+		// Analyze each attribute
+		foreach  ( $array [ 'attributes' ]  as  $attribute )
+		   {
+			$name 			=  strtolower ( $attribute [ 'name' ] ) ;
+			$value 			=  $attribute [ 'value' ] ;
+			$index	 		=  $this -> GetAttributeIndex ( $name ) ;
+
+			// If attribute has not been found, throw an exception
+			if  ( $index  ===  false )
+				error ( new CLException ( "Invalid attribute '$name' specified in the <$tag> tag." ) ) ;
+
+			// Get the attribute definition
+			$attribute_definition	=  $this -> AttributeDefinitions [ $index ] ;
+
+			// If the attribute is a range, then we need to make special processing
+			if  ( $attribute_definition [ 'type' ]  ==  self::ATTRIBUTE_TYPE_RANGE )
+			   {
+			   	// Get range data (low and high member names)
+			   	$attrdata 	=  $attribute_definition [ 'attribute-data' ] ;
+
+			   	// Process the range
+				$values 	=  explode ( '..', $value ) ;
+
+				// Allow for the following specifications : "x..y" or simply "x" but reject ".."
+				$value_count	=  count ( $values ) ;
+				
+				if ( $value_count  >  2  ||  $value  ==  '..' )
+					error ( new CLException ( "The value \"$value\" specified for the \"$name\" attribute of the <$tag> tag " .
+								"is not a valid range specification." ) ) ;
+				else if  ( $value_count  ==  1 )	// "x" is the same range specification as "x..x"
+					$values [1]	=  $values [0] ;
+				
+				if  ( $values [0]  ==  ''  ||  $values [1]  ==  '' )
+					error ( new CLException ( "The value \"$value\" specified for the \"$name\" attribute of the <$tag> tag " .
+								"is an incomplete range specification." ) ) ;
+				
+				// Get attribute definitions
+				$lowattr 	=  $attrdata [0] ;
+				$highattr 	=  $attrdata [1] ;
+
+				// Then the processed values
+				$low_value	=  $this -> GetAttributeValue ( $lowattr , $tag, $name, $values [0] ) ;
+				$high_value 	=  $this -> GetAttributeValue ( $highattr, $tag, $name, $values [1] ) ;
+
+				// And, finally, save the values
+				$lowattr	=  $low_value ;
+				$highattr	=  $high_value ;
+			    }
+			// Otherwise get the single attribute value
+			else
+			   {
+				$attribute_value 	=  $this -> GetAttributeValue ( $attribute_definition, $tag, $name, $value ) ;
+
+	   	   		// Save the value
+	   	   		$this -> AttributeDefinitions [ $index ] [ 'value' ] = $attribute_value ;
+			   }
+		    }
+
+		// Get basic parameter name
+		$pname 	=  ( count ( $this -> Names ) ) ?
+				"'" . $this -> Names [0] . "'" : "entry #" . ( count ( $this -> AttributeDefinitions ) + 1 ) ;
+
+		// Check for required attributes
+		foreach  ( $this -> AttributeDefinitions  as  $def )
+		   {
+		   	$def_name = $def [ 'names' ] [0] ;
+
+			// Provide a default name for unnamed parameters
+			if  ( ! $named  &&  $def_name  ==  'name'  &&  $def [ 'value' ]  ===  null )
+				$this -> Names [] = "#" . md5 ( rand ( ) ) ;
+
+		   	// Check that required attributes have been specified
+			if  ( $def [ 'required' ]  &&  $def [ 'value' ]  ===  null )
+			   {
+			   	if  ( ! ( $def_name  ==  'name'  &&  ! $named ) )
+					error ( new CLException ( "The '$def_name' attribute of the <$tag> parameter type is mandatory." ) ) ;
+			    }
+		    }
+
+   		// Process help text (the tag contents has the precedence over the tag's inner contents)
+   		if  ( ! $this -> HelpText )
+   			$this -> HelpText = rtrim ( $array [ 'contents' ] ) ; ;
+
+		// Check that the help topics are valid
+		foreach  ( $this -> HelpTopics  as  $MyTopic )
+		   {
+		   	$found = false ;
+
+			foreach  ( array_keys ( $this -> Parent -> CommandHelpTopics ) as  $ParentTopic )
+			   {
+				if  ( ! strcasecmp ( $MyTopic, $ParentTopic ) )
+				   {
+				   	$found = true ;
+					break ;
+				    }
+			    }
+
+			if  ( ! $found )
+				error ( new CLException ( "The '$MyTopic' help topic specified for the '$pname' parameter does not exist." ) ) ;
+		    }
+
+		// Validate the definition
+		$this -> ValidateDefinition ( $tag, $pname ) ;
+
+    		// Analyze child tags
+    		foreach  ( $array [ 'children' ]  as  $child )
+    			$this -> ProcessChildTag ( $child ) ;
+
+		// Build the usage string
+		if  ( ! $this -> UsageString )
+			$this -> UsageString = $this -> GetUsageString ( false ) ;
+
+	   }
+
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		SetValue - Sets the parameter value.
+
+	    PROTOTYPE
+		$parameter -> SetValue ( $values, $reset = true ) ;
+
+	    DESCRIPTION
+		Sets the parameter value. Throws an exception if the parameter value is incorrect.
+
+	    PARAMETERS
+		$value (string or array) -
+			Value to be set.
+
+		$reset (boolean) -
+			When true, the parameter value is simply reset.
+
+	    RETURNS
+	    	The processed value.
+
+    	    NOTES
+    	    	Derived classes can implement the SetValue() function this way :
+
+    	    	public function  SetValue ( $value )
+    	    	   {
+			$value = parent::SetValue ( $value ) ;
+
+			// Apply derived-class specific handling
+			...
+    	    	    }
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  SetValue ( $values, $reset = true )
+	   {
+	   	$name	=  $this -> GetUsageParameterName ( ) ;
+
+	   	if  ( ! is_array ( $values ) )
+	   		$values = array ( $values ) ;
+
+	   	// Check that the parameter is allowed to be specified more than once
+	   	if  ( ! $reset )
+	   	   {
+		   	if  ( ! $this -> MultipleAllowed  &&  count ( $this -> Values ) )
+		   		error ( new CLException ( "The '$name' parameter has been specified more than once on the command line." ) ) ;
+		     }
+
+		// Everything ok ; perform the basic parameter checkings
+		if  ( ( ! $this -> MinArguments  &&  ! $this -> MaxArguments )  ||
+		      $this -> ReturnValueType  ==  self::RETURN_VALUE_BOOLEAN )
+		   {
+		   	// A small kludge for <flag> and <boolean> tags
+			$value			=  ( count ( $values ) ) ?  $values [0] : null ;
+		   	$this -> Values 	=  array ( ( boolean ) $this -> ProcessValue ( $name, $value ) ) ;
+		    }
+		else if  ( ! $this -> MultipleAllowed  &&  count ( $this -> Values ) + 1  >  $this -> MaxArguments )
+		   {
+			error ( new CLException ( "Too many values specified for the '$name' parameter." ) ) ;
+		    }
+		else
+		   {
+		   	$result = $this -> ProcessValues ( $values ) ;
+   			$this -> Values	=  array_merge ( $this -> Values, $result ) ;
+   		    }
+
+		// All done, return the value
+		return ( $this -> Values ) ;
+	    }
+    }
+
+
+/*==================================================================================================
+
+    CLAbstractSimpleCompoundParameter class -
+	Defines an abstract compound parameter (range, set, list, etc.) whose values are of the same
+	type.
+
+  ==================================================================================================*/
+class	CLAbstractSimpleCompoundParameter  extends  CLAbstractParameter
+   {
+	// Compound parameter typing
+	const		COMPOUND_TYPE_ANY		=  0 ;
+   	const		COMPOUND_TYPE_STRING		=  1 ;
+   	const		COMPOUND_TYPE_INTEGER		=  2 ;
+   	const		COMPOUND_TYPE_BOOLEAN		=  3 ;
+   	const		COMPOUND_TYPE_FLOAT		=  4 ;
+   	const		COMPOUND_TYPE_UNSIGNED_INTEGER	=  5 ;
+   	const		COMPOUND_TYPE_UNSIGNED_FLOAT	=  6 ;
+   	const		COMPOUND_TYPE_CHARACTER		=  7 ;
+   	const 		COMPOUND_TYPE_DATETIME		=  8 ;
+   	const 		COMPOUND_TYPE_DATE		=  9 ;
+   	const		COMPOUND_TYPE_TIME		=  10 ;
+
+	// Compound parameter attributes
+	protected static	$CompoundDefaultDefinitions 	=  array
+	   (
+		array
+		   (
+		   	'names'		=>  array ( 'type', 'item-type' ),
+			'type'		=>  self::ATTRIBUTE_TYPE_KEYWORD,
+			'default'	=>  self::COMPOUND_TYPE_ANY,
+			'member'	=>  'ItemType',
+			'keywords'	=>  array
+			   (
+				'any'		=>  self::COMPOUND_TYPE_ANY,
+				'*'  		=>  self::COMPOUND_TYPE_ANY,
+				'string'	=>  self::COMPOUND_TYPE_STRING,
+				'integer'	=>  self::COMPOUND_TYPE_INTEGER,
+				'int'		=>  self::COMPOUND_TYPE_INTEGER,
+				'float'		=>  self::COMPOUND_TYPE_FLOAT,
+				'double'	=>  self::COMPOUND_TYPE_FLOAT,
+				'unsigned'	=>  self::COMPOUND_TYPE_UNSIGNED_INTEGER,
+				'uint'		=>  self::COMPOUND_TYPE_UNSIGNED_INTEGER,
+				'ufloat'	=>  self::COMPOUND_TYPE_UNSIGNED_FLOAT,
+				'udouble'	=>  self::COMPOUND_TYPE_UNSIGNED_FLOAT,
+				'datetime'	=>  self::COMPOUND_TYPE_DATETIME,
+				'date'		=>  self::COMPOUND_TYPE_DATE,
+				'time'		=>  self::COMPOUND_TYPE_TIME,
+				'character'	=>  self::COMPOUND_TYPE_CHARACTER,
+				'char'		=>  self::COMPOUND_TYPE_CHARACTER,
+			    ),
+			'help'		=>  array
+			   (
+			   	"Defines the item type for this compound parameter type :\n\n",
+			   	"'any' or '*' -\n",
+			   	"\tAny type is accepted. No checking is performed.\n",
+			   	"'string' -\n",
+			   	"\tItem type is string.\n",
+			   	"'integer' or 'int' -\n",
+			   	"\tItem type is an integer value.\n",
+			   	"'float' or 'double' -\n",
+			   	"\tItem type is a float value.\n",
+			   	"'unsigned' or 'uint' -\n",
+			   	"\tItem type is an unsigned integer value.\n",
+			   	"'ufloat' or 'udouble' -\n",
+			   	"\tItem type is an unsigned float value.\n",
+			   	"'datetime' -\n",
+			   	"\tItem type is a date/time value.\n",
+			   	"'date' -\n",
+			   	"\tItem type is a date value.\n",
+			   	"'time' -\n",
+			   	"\tItem type is a time value.\n",
+			   	"'character' or 'char' -\n",
+			   	"\tItem type is a single character value."
+			    )
+		    )
+	    ) ;
+
+	// Compound item type
+	public		$ItemType ;
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Constructor
+
+	    PROTOTYPE
+		$parameter = new CLAbstractSimpleCompoundParameter (
+							      $parent, $tagnames, $value_type = null,
+							      $new_attributes = null,
+							      $changed_attributes = null,
+							      $removed_attributes = null ) ;
+
+	    DESCRIPTION
+		Builds a generic compound parameter object.
+
+	    PARAMETERS
+	    	$parent (CLParser) -
+	    		Parent parser object.
+
+	    	$tagnames (array) -
+	    		Tag name and aliases.
+
+		$value_type (string) -
+			Parameter value type name.
+
+		$new_attributes (associative array) -
+			Array of parameter attribute definitions ; each entry can have the following
+			values :
+
+			'names' (array of string or string) -
+				List of parameter names and aliases. If only one name exists for the
+				parameter, you can specify it as a single string.
+
+			'required' (boolean) -
+				Tells if the attribute is required in the parameter specification.
+
+			'specific' (boolean) -
+				Indicates if the attribute is specific to a derived attribute class.
+
+			'type' (integer) -
+				Type of parameter attribute. It can be one of the following :
+
+				ATTRIBUTE_TYPE_ANY -
+					The attribute value is not checked and can contain anything.
+
+   				ATTRIBUTE_TYPE_STRING -
+					The attribute value is a string.
+
+   				ATTRIBUTE_TYPE_INTEGER -
+   					The attribute value is an integer.
+
+				ATTRIBUTE_TYPE_UNSIGNED_INTEGER -
+					The attribute value is an unsigned integer.
+
+				ATTRIBUTE_TYPE_FLOAT -
+					The attribute value is a float.
+
+   				ATTRIBUTE_TYPE_BOOLEAN -
+				   	The attribute value is a boolean value.
+
+   				ATTRIBUTE_TYPE_LIST -
+   					The attribute value is a list of strings.
+
+			'member' (name) -
+				If no further processing is required, you can specifying here the
+				name of a class member that will automatically be assigned the specified
+				attribute value.
+
+			'processor', 'post-processor', 'pre-processor' (callback) -
+				Callback function that has the following signature :
+
+					callback_function ( $object, $tag, $attribute_definition, $value ) ;
+
+				The callback function must return the actual or preprocessed value of
+				the value specified with the XML attribute in the command-line parameter
+				definition.
+				It can take one the following forms :
+				- A class member name.
+				- A callback or function name having the signature specified above.
+
+				'pre-processor' is called to preprocess as-is the value supplied on the
+				command-line. It must return a string. 'preprocessor' is a synonym.
+
+				'post-processor' is called to post-process the value, after being analyzed
+				by the GetAttribute() function. It must return a value of the same type as
+				the supplied processed value. For example, an attribute having the type
+				ATTRIBUTE_TYPE_LIST will call the callback function with an array of list
+				items. The callback function must in turn return an array of list items.
+				'postprocessor' is a synonym.
+
+				'processor' is a synonym for 'post-processor'.
+
+			'help' (string) -
+				Attribute help (for use with the opthelp command).
+
+			'value' (any) -
+				Attribute value (after the SetSpecifications() method has been called).
+
+		$changed_attributes (array) -
+			Associative array that contains the attribute names whose default values are
+			to be changed.
+
+		$removed_attributes (array) -
+			Names of the attributes to be removed. Either official parameter name or its
+			aliases can be specified here.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __construct ( $parent, $tagnames, $value_type = null,
+				       $new_attributes 		= null,
+				       $changed_attributes 	= null,
+				       $removed_attributes 	= null )
+	   {
+		if  ( $new_attributes )
+			$new_attributes = array_merge ( CLAbstractSimpleCompoundParameter::$CompoundDefaultDefinitions, $new_attributes ) ;
+		else
+			$new_attributes =  CLAbstractSimpleCompoundParameter::$CompoundDefaultDefinitions ;
+
+		parent::__construct ( $parent, $tagnames, $value_type, $new_attributes, $changed_attributes, $removed_attributes ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		VerifyValue   - Verifies each individual compound value.
+		VerifyValues  - Verifies the set of compound values.
+
+	    PROTOTYPE
+		$this -> VerifyValues ( $values ) ;
+		$this -> VerifyValue  ( $name, $value, $type ) ;
+
+	    DESCRIPTION
+		Verifies the specified value, according to the compound value type.
+
+	    PARAMETERS
+		$values (array) -
+			Values to be processed.
+
+		$name (string) -
+			Parameter name.
+
+		$value (any) -
+			Current value to be verified.
+
+		$type (integer) -
+			Value type.
+
+	    NOTES
+		An exception is issued if one of the compound values does not belong to the appropriate
+		type.
+
+	 --------------------------------------------------------------------------------------------*/
+	private function  VerifyValue ( $name, $value, $type )
+	   {
+	   	$error 		=  "(unknown type)" ;
+
+		switch  ( $type )
+		   {
+		   	case	self::COMPOUND_TYPE_ANY :
+		   	case	self::COMPOUND_TYPE_STRING :
+		   		return ( $value ) ;
+
+			case	self::COMPOUND_TYPE_INTEGER :
+				if  ( is_numeric ( $value )  &&  round ( $value, 0 )  ==  $value )
+					return  ( $value ) ;
+				$error = "integer" ;
+				break ;
+
+			case	self::COMPOUND_TYPE_BOOLEAN :
+				if  ( $value  ===  true  ||  $value  ===  false )
+					return ( $value ) ;
+				$error = "boolean" ;
+				break ;
+
+			case	self::COMPOUND_TYPE_FLOAT :
+				if  ( is_numeric ( $value ) )
+					return ( $value ) ;
+				$error = "float" ;
+				break ;
+
+			case	self::COMPOUND_TYPE_UNSIGNED_INTEGER :
+				if  ( is_numeric ( $value )  &&  round ( $value, 0 )  ==  $value  &&  $value  >=  0 )
+					return ( $value ) ;
+				$error = "unsigned integer" ;
+				break ;
+
+			case	self::COMPOUND_TYPE_UNSIGNED_FLOAT :
+				if  ( is_numeric ( $value )  &&  $value  >=  0 )
+					return ( $value ) ;
+				$error = "unsigned float" ;
+				break ;
+
+			case	self::COMPOUND_TYPE_CHARACTER :
+				if  ( is_numeric ( $value ) )
+				   {
+				   	if  ( $value  >=  0  &&  $value  <  256 )
+					   	return ( chr ( $value ) ) ;
+				    }
+				else if  ( strlen ( $value )  ==  1 )
+					return ( $value ) ;
+				$error = "character" ;
+				break ;
+
+			case	self::COMPOUND_TYPE_DATETIME :
+				$result 	=  strtotime ( $value ) ;
+
+				if  ( $result )
+				   {
+				   	$value 				=  array ( ) ;
+					$value [ 'date' ]  		=  date ( 'Y/m/d', $result ) ;
+					$value [ 'unixtime' ]  		=  $result ;
+					$value [ 'year' ]		=  date ( 'Y', $result ) ;
+					$value [ 'month' ]		=  date ( 'm', $result ) ;
+					$value [ 'day' ]		=  date ( 'd', $result ) ;
+					$value [ 'day-name' ]		=  date ( 'l', $result ) ;
+					$value [ 'day-of-week' ]	=  date ( 'w', $result ) ;
+					$value [ 'day-of-year' ]	=  date ( 'z', $result ) ;
+					$value [ 'leap-year' ]		=  date ( 'L', $result ) ;
+					$value [ 'timezone' ]	   	=  date ( 'T', $result ) ;
+					$value [ 'dst' ]		=  date ( 'I', $result ) ;
+					$value [ 'gmt' ]		=  date ( 'P', $result ) ;
+					$value [ 'time' ]  		=  date ( 'H:i:s', $result ) ;
+					$value [ 'hour' ]		=  date ( 'H', $result ) ;
+					$value [ 'minute' ]		=  date ( 'i', $result ) ;
+					$value [ 'second' ]		=  date ( 's', $result ) ;
+					$value [ 'day-seconds' ]	=  ( $value [ 'hour' ]  * 3600 ) + ( $value [ 'minute' ] * 60 ) + $value [ 'second' ] ;
+
+					return ( $value ) ;
+				    }
+	    			$error = "date/time" ;
+	    			break ;
+
+			case	self::COMPOUND_TYPE_DATE :
+				$result 	=  strtotime ( $value ) ;
+
+				if  ( $result )
+				   {
+				   	$value 				=  array ( ) ;
+					$value [ 'date' ]  		=  date ( 'Y/m/d', $result ) ;
+					$value [ 'unixtime' ]  		=  $result ;
+					$value [ 'year' ]		=  date ( 'Y', $result ) ;
+					$value [ 'month' ]		=  date ( 'm', $result ) ;
+					$value [ 'day' ]		=  date ( 'd', $result ) ;
+					$value [ 'day-name' ]		=  date ( 'l', $result ) ;
+					$value [ 'day-of-week' ]	=  date ( 'w', $result ) ;
+					$value [ 'day-of-year' ]	=  date ( 'z', $result ) ;
+					$value [ 'leap-year' ]		=  date ( 'L', $result ) ;
+					$value [ 'timezone' ]	   	=  date ( 'T', $result ) ;
+					$value [ 'dst' ]		=  date ( 'I', $result ) ;
+					$value [ 'gmt' ]		=  date ( 'P', $result ) ;
+
+					return ( $value ) ;
+				    }
+	    			$error = "date" ;
+	    			break ;
+
+			case	self::COMPOUND_TYPE_TIME :
+				$result 	=  strtotime ( $value ) ;
+
+				if  ( $result )
+				   {
+				   	$value 				=  array ( ) ;
+					$value [ 'time' ]  		=  date ( 'H:i:s', $result ) ;
+					$value [ 'hour' ]		=  date ( 'H', $result ) ;
+					$value [ 'minute' ]		=  date ( 'i', $result ) ;
+					$value [ 'second' ]		=  date ( 's', $result ) ;
+					$value [ 'day-seconds' ]	=  ( $value [ 'hour' ]  * 3600 ) + ( $value [ 'minute' ] * 60 ) + $value [ 'second' ] ;
+
+					return ( $value ) ;
+				    }
+	    			$error = "time" ;
+	    			break ;
+		    }
+
+   		error ( new CLException ( "The '$name' parameter requires values of type '$error'. An incorrect value '$value' has been specified." ) ) ;
+	    }
+
+
+	protected function  VerifyValues ( &$values )
+	   {
+		$name 		=  $this -> GetUsageParameterName ( ) ;
+		$type 		=  $this -> ItemType ;
+
+	   	foreach  ( $values  as  &$value )
+	   		$value = $this -> VerifyValue ( $name, $value, $type ) ;
+	    }
+    }

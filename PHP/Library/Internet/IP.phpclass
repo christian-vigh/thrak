@@ -1,0 +1,277 @@
+<?php
+/***************************************************************************************************
+
+    NAME
+	IP.phpclass
+
+    DESCRIPTION
+	Provides support for IP address encoding/decoding.
+
+    AUTHOR
+     	Christian Vigh, 10/2012.
+
+    HISTORY
+    [Version : 1.0]	[Date : 2012/10/07]	[Author : CV]
+     	Initial version, for the Thrak library version 2.
+
+ ***************************************************************************************************/
+namespace  	Thrak\Internet ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces and classes
+use     Thrak\System\Object 		as  Object ;
+use  	Thrak\Types\String  		as  String ;
+
+
+/*==================================================================================================
+
+     IP class -
+	IP-related utilities.
+
+   ==================================================================================================*/
+class  IP  extends  Object
+   {
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		IsIPAddress, IsIPV4Address, IsIPV6 address - IP address checker.
+
+	    PROTOTYPE
+		$status =  IP::IsIPAddress ( $string ) ;
+		$status =  IP::IsIPV4Address ( $string ) ;
+		$status =  IP::IsIPV6Address ( $string ) ;
+
+	    DESCRIPTION
+	    	Checks if the supplied string is an IP address. IsIPAddress recognizes both V4 and
+	    	V6 addresses.
+
+    	    PARAMETERS
+    	    	$string (string) -
+			IP address to be checked.
+
+	    RETURN VALUE
+	    	true if the supplied input string is a valid IP address, false otherwise.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  IsIPAddress ( $string )
+	   {
+		return ( IP::IsIPV4Address ( $string )  ||  IP::IsIPV6Address ( $string ) ) ;
+	    }
+
+
+	public static function  IsIPV4Address ( $string )
+	   {
+	   	if  ( IP::StringToIPV4Address ( $string ) )
+		   	return ( true ) ;
+	   	else
+	   		return ( false ) ;
+	    }
+
+
+	public static function  IsIPV6Address ( $string )
+	   {
+	   	if  ( IP::StringToIPV6Address ( $string ) )
+		   	return ( true ) ;
+	   	else
+	   		return ( false ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		StringToIPAddress, StringToIPV4Address, StringToIPV6Address - IP address conversion
+
+	    PROTOTYPE
+		$result = IP::StringToIPAddress ( $string ) ;
+		$result = IP::StringToIPV4Address ( $string, $allow_mask = false ) ;
+		$result = IP::StringToIPV6Address ( $string ) ;
+
+	    DESCRIPTION
+		Converts an IP address to individual bytes.
+
+	    PARAMETERS
+	    	$string (string) -
+			String specifying the IP address.
+
+		$allow_mask (boolean) -
+			When true, for IP V4 addresses, the '*' character is considered as a network
+			mask and will be replaced by 255.
+
+	    RETURN VALUE
+		Either false if the supplied input string does not contain a valid IP address, or
+		an array of individual address bytes.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  StringToIPAddress ( $string )
+	   {
+		$result = IP::StringToIPV4Address ( $string ) ;
+
+		if  ( $result  ===  false )
+			return ( IP::StringToIPV6Address ( $string ) ) ;
+		else
+			return ( $result ) ;
+	    }
+
+
+	public static function  StringToIPV4Address ( $string, $allow_mask = false )
+	   {
+		$length = strlen ( $string ) ;
+
+		if  ( ! $length )
+			return ( false ) ;
+
+		if  ( $string [ $length - 1 ]  ==  '.' )
+			$string .=  ( $allow_mask ) ?  '*' : '0' ;
+
+		$result = explode ( '.', $string ) ;
+
+		if  ( ! $result )
+			return ( false ) ;
+
+		if  ( count ( $result )  !=  4 )
+			return ( false ) ;
+
+		foreach  ( $result  as  &$item )
+		   {
+			if  ( ! is_numeric ( $item )  &&  ! is_integer ( $item ) )
+		 	   {
+		 	   	if  ( $item  ==  '*' )
+					$item = 255 ;
+				else
+					return ( false ) ;
+			    }
+			else
+				$item 	=  ( integer ) $item ;
+
+			if  ( $item  <  0  ||  $item  >  255 )
+				return ( false ) ;
+		    }
+
+		return ( $result ) ;
+	    }
+
+
+	public static function  StringToIPV6Address ( $string )
+	   {
+		$result 	=  array ( 0, 0, 0, 0, 0, 0, 0, 0 ) ;
+
+		// Most simple case : the '::' notation
+		if  ( $string  ==  '::' )
+			return ( $result ) ;
+
+		// Get individual elements
+		$words 		=  explode ( ':', $string ) ;
+		$count 		=  count ( $words ) ;
+		$actual_count   =  $count ;
+
+		// If number of elements is zero or greater than 8, then the address is invalid
+		if  ( ! $words  ||  $count  <  2  ||  $count  >  8 )
+			return ( false ) ;
+
+		// The '::' notation can be used only once so we should have at most only one empty string in the $bytes array
+		$found = false ;
+
+		foreach  ( $words  as  $word )
+		   {
+			if  (  $word  ===  "" )
+			   {
+				if  ( $found )
+					return ( false ) ;
+
+				$found = true ;
+				$count -- ;
+			    }
+		    }
+
+
+    		// Process each input byte, handling address compression ('::' notation)
+    		$in	=  0 ;
+    		$out 	=  0 ;
+
+    		while  ( $in  <  $actual_count )
+    		   {
+			$word = $words [$in] ;
+
+			if  ( $word  ===  "" )
+			   {
+				for  ( $j = 0 ; $j  <  8 - $count ; $j ++ )
+					$result [ $out ++ ] = 0 ;
+			    }
+			else
+				$result [ $out ++ ] = $word ;
+
+			$in ++ ;
+    		    }
+
+    		// Check that every word is a valid 16-bit hexadecimal number
+    		for  ( $i = 0 ; $i  <  8 ; $i ++ )
+    		   {
+			$word  	=  strtolower ( $result [$i] ) ;
+			$length =  strlen ( $word ) ;
+
+			for ( $j = 0 ; $j  <  $length ; $j ++ )
+			   {
+				$ch 	=  $word [$j] ;
+
+				if  ( strstr ( "0123456789abcdef", $ch )  ===  false )
+					return ( false ) ;
+			    }
+
+			$value =  base_convert ( $word, 16, 10 ) ;
+
+			if  ( $value  <  0  ||  $value  >  65535 )
+				return ( false ) ;
+
+			$result [$i] = $value ;
+    		    }
+
+    		return ( $result ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		IntegerToIpString, IpStringToInteger - Converts between string and IPV4 addresses
+
+	    PROTOTYPE
+	    	$ip	=  IP::StringToIp ( $string ) ;
+		$str    =  IP::IpToString ( $ipvalue ) ;
+
+	    DESCRIPTION
+	    	Converts an IPV4 address back and forth to a string.
+		The IpStringToInteger() function correctly handles a specification of '*' as an
+		address element.
+
+	    RETURN VALUE
+	    	IpStringToInteger() returns false if at least one of the IP address elements is incorrect.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  IntegerToIpString ( $ip )
+	   {
+		$a 	=  ( $ip  >>  24 )  &  0xFF ;
+		$b 	=  ( $ip  >>  16 )  &  0xFF ;
+		$c 	=  ( $ip  >>   8 )  &  0xFF ;
+		$d 	=  ( $ip         )  &  0xFF ;
+
+		return ( "$a.$b.$c.$d" ) ;
+	    }
+
+
+	public static function  IpStringToInteger ( $ip )
+	   {
+		$values = self::StringToIPV4Address ( $ip, true ) ;
+
+		if  ( $values  ===  false )
+			return ( false ) ;
+
+		$a 	=  $values [0] ;
+		$b 	=  $values [1] ;
+		$c 	=  $values [2] ;
+		$d 	=  $values [3] ;
+
+		return  ( ( $a  <<  24 ) | ( $b  <<  16 ) | ( $c  <<  8 ) | $d ) ;
+	    }
+    }

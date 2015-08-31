@@ -1,0 +1,250 @@
+<!--
+	Country codes.
+ -->
+
+<country-codes>
+	<country-code code="af" long-code="AFG" iso-code="004" name="AFGHANISTAN" short-name="Afghanistan" long-name="etat Islamique D'Afghanistan"/>
+	<country-code code="za" long-code="ZAF" iso-code="710" name="AFRIQUE DU SUD" short-name="Afrique Du Sud" long-name="Republique D'Afrique Du Sud"/>
+	<country-code code="al" long-code="ALB" iso-code="008" name="ALBANIE" short-name="Albanie" long-name="Republique D'Albanie"/>
+	<country-code code="dz" long-code="DZA" iso-code="012" name="ALGERIE" short-name="Algerie" long-name="Republique Algerienne Democratique Et Populaire"/>
+	<country-code code="de" long-code="DEU" iso-code="276" name="ALLEMAGNE" short-name="Allemagne" long-name="Republique Federale D'Allemagne"/>
+	<country-code code="ad" long-code="AND" iso-code="020" name="ANDORRE" short-name="Andorre" long-name="Principaute D'Andorre"/>
+	<country-code code="ao" long-code="AGO" iso-code="024" name="ANGOLA" short-name="Angola" long-name="Republique D'Angola"/>
+	<country-code code="ai" long-code="AIA" iso-code="660" name="ANGUILLA" short-name="Anguilla" long-name="Anguilla"/>
+	<country-code code="ag" long-code="ATG" iso-code="028" name="ANTIGUA-ET-BARBUDA" short-name="Antigua-Et-Barbuda" long-name="Antigua-Et-Barbuda"/>
+	<country-code code="an" long-code="ANT" iso-code="530" name="ANTILLES NEERLANDAISES" short-name="Antilles Neerlandaises" long-name="Antilles Neerlandaises"/>
+	<country-code code="sa" long-code="SAU" iso-code="682" name="ARABIE SAOUDITE" short-name="Arabie Saoudite" long-name="Royaume D'Arabie Saoudite"/>
+	<country-code code="ar" long-code="ARG" iso-code="032" name="ARGENTINE" short-name="Argentine" long-name="Republique Argentine"/>
+	<country-code code="am" long-code="ARM" iso-code="051" name="ARMENIE" short-name="Armenie" long-name="Republique D'Armenie"/>
+	<country-code code="aw" long-code="ABW" iso-code="533" name="ARUBA" short-name="Aruba" long-name="Aruba"/>
+	<country-code code="au" long-code="AUS" iso-code="036" name="AUSTRALIE" short-name="Australie" long-name="Australie"/>
+	<country-code code="at" long-code="AUT" iso-code="040" name="AUTRICHE" short-name="Autriche" long-name="Republique D'Autriche"/>
+	<country-code code="az" long-code="AZE" iso-code="031" name="AZERBAIDJAN" short-name="Azerbaidjan" long-name="Republique Azerbaidjanaise"/>
+	<country-code code="bs" long-code="BHS" iso-code="044" name="BAHAMAS" short-name="Bahamas" long-name="Commonwealth Des Bahamas"/>
+	<country-code code="bh" long-code="BHR" iso-code="048" name="BAHREIN" short-name="Bahrein" long-name="etat De Bahrein"/>
+	<country-code code="bd" long-code="BGD" iso-code="050" name="BANGLADESH" short-name="Bangladesh" long-name="Republique Populaire Du Bangladesh"/>
+	<country-code code="bb" long-code="BRB" iso-code="052" name="BARBADE" short-name="Barbade" long-name="Barbade"/>
+	<country-code code="be" long-code="BEL" iso-code="056" name="BELGIQUE" short-name="Belgique" long-name="Royaume De Belgique"/>
+	<country-code code="bz" long-code="BLZ" iso-code="084" name="BELIZE" short-name="Belize" long-name="Belize"/>
+	<country-code code="bj" long-code="BEN" iso-code="204" name="BENIN" short-name="Benin" long-name="Republique Du Benin"/>
+	<country-code code="bm" long-code="BMU" iso-code="060" name="BERMUDES" short-name="Bermudes" long-name="Bermudes"/>
+	<country-code code="bt" long-code="BNT" iso-code="064" name="BHOUTAN" short-name="Bhoutan" long-name="Royaume Du Bhoutan"/>
+	<country-code code="by" long-code="BLR" iso-code="112" name="BIELORUSSIE" short-name="Bielorussie" long-name="Republique De Bielorussie"/>
+	<country-code code="mm" long-code="MMR" iso-code="104" name="BIRMANIE" short-name="Birmanie" long-name="Union De Birmanie"/>
+	<country-code code="bo" long-code="BOL" iso-code="068" name="BOLIVIE" short-name="Bolivie" long-name="Republique De Bolivie"/>
+	<country-code code="ba" long-code="BIH" iso-code="070" name="BOSNIE-HERZEGOVINE" short-name="Bosnie-Herzegovine" long-name="Republique De Bosnie-Herzegovine"/>
+	<country-code code="bw" long-code="BWA" iso-code="072" name="BOTSWANA" short-name="Botswana" long-name="Republique Du Botswana"/>
+	<country-code code="bv" long-code="BVT" iso-code="074" name="BOUVET (ILE)" short-name="Bouvet (Ile)" long-name="Bouvet (ile)"/>
+	<country-code code="br" long-code="BRA" iso-code="076" name="BRESIL" short-name="Bresil" long-name="Republique Federative Du Bresil"/>
+	<country-code code="bn" long-code="BRN" iso-code="096" name="BRUNEI" short-name="Brunei" long-name="Negara Brunei Darussalam"/>
+	<country-code code="bg" long-code="BGR" iso-code="100" name="BULGARIE" short-name="Bulgarie" long-name="Republique De Bulgarie"/>
+	<country-code code="bf" long-code="BFA" iso-code="854" name="BURKINA" short-name="Burkina" long-name="Burkina Faso"/>
+	<country-code code="bi" long-code="BDI" iso-code="108" name="BURUNDI" short-name="Burundi" long-name="Republique Du Burundi"/>
+	<country-code code="ky" long-code="CYM" iso-code="136" name="CAIMANES (ILES)" short-name="Caimanes (Iles)" long-name="Caimanes (iles)"/>
+	<country-code code="kh" long-code="KHM" iso-code="116" name="CAMBODGE" short-name="Cambodge" long-name="Royaume Du Cambodge"/>
+	<country-code code="cm" long-code="CMR" iso-code="120" name="CAMEROUN" short-name="Cameroun" long-name="Republique Du Cameroun"/>
+	<country-code code="ca" long-code="CAN" iso-code="124" name="CANADA" short-name="Canada" long-name="Canada"/>
+	<country-code code="cv" long-code="CPV" iso-code="132" name="CAP-VERT" short-name="Cap-Vert" long-name="Republique Du Cap-Vert"/>
+	<country-code code="cf" long-code="CAF" iso-code="140" name="CENTRAFRICAINE (REPUBLIQUE)" short-name="Centrafricaine (Republique)" long-name="Republique Centrafricaine"/>
+	<country-code code="cl" long-code="CHL" iso-code="152" name="CHILI" short-name="Chili" long-name="Republique Du Chili"/>
+	<country-code code="cn" long-code="CHN" iso-code="156" name="CHINE" short-name="Chine" long-name="Republique Populaire De Chine"/>
+	<country-code code="cx" long-code="CXR" iso-code="162" name="CHRISTMAS (ILE)" short-name="Christmas (Ile)" long-name="Christmas (ile)"/>
+	<country-code code="cy" long-code="CYP" iso-code="196" name="CHYPRE" short-name="Chypre" long-name="Republique De Chypre"/>
+	<country-code code="cc" long-code="CCK" iso-code="166" name="COCOS ou KEELING (ILES)" short-name="Cocos Ou Keeling (Iles)" long-name="Cocos Ou Keeling (iles)"/>
+	<country-code code="co" long-code="COL" iso-code="170" name="COLOMBIE" short-name="Colombie" long-name="Republique De Colombie"/>
+	<country-code code="km" long-code="COM" iso-code="174" name="COMORES" short-name="Comores" long-name="Republique Federale Islamique Des Comores"/>
+	<country-code code="cg" long-code="COG" iso-code="178" name="CONGO" short-name="Congo" long-name="Republique Du Congo"/>
+	<country-code code="cd" long-code="COD" iso-code="180" name="CONGO (REPUBLIQUE DEMOCRATIQUE)" short-name="Congo (Republique Democratique)" long-name="Republique Democratique Du Congo"/>
+	<country-code code="ck" long-code="COK" iso-code="184" name="COOK (ILES)" short-name="Cook (Iles)" long-name="Cook (iles)"/>
+	<country-code code="kr" long-code="KOR" iso-code="410" name="COREE (REPUBLIQUE DE)" short-name="Coree (Republique De)" long-name="Republique De Coree"/>
+	<country-code code="kp" long-code="PRK" iso-code="408" name="COREE (REPUBLIQUE POPULAIRE DEMOCRATIQUE DE)" short-name="Coree (Republique Populaire Democratique De)" long-name="Republique Populaire Democratique De Coree"/>
+	<country-code code="cr" long-code="CRI" iso-code="188" name="COSTA RICA" short-name="Costa Rica" long-name="Republique Du Costa Rica"/>
+	<country-code code="ci" long-code="CIV" iso-code="384" name="COTE D'IVOIRE" short-name="Cote D'Ivoire" long-name="Republique De Cote D'Ivoire"/>
+	<country-code code="hr" long-code="HRV" iso-code="191" name="CROATIE" short-name="Croatie" long-name="Republique De Croatie"/>
+	<country-code code="cu" long-code="CUB" iso-code="192" name="CUBA" short-name="Cuba" long-name="Republique De Cuba"/>
+	<country-code code="dk" long-code="DNK" iso-code="208" name="DANEMARK" short-name="Danemark" long-name="Royaume Du Danemark"/>
+	<country-code code="dj" long-code="DJI" iso-code="262" name="DJIBOUTI" short-name="Djibouti" long-name="Republique De Djibouti"/>
+	<country-code code="do" long-code="DOM" iso-code="214" name="DOMINICAINE (REPUBLIQUE)" short-name="Dominicaine (Republique)" long-name="Republique Dominicaine"/>
+	<country-code code="dm" long-code="DMA" iso-code="212" name="DOMINIQUE" short-name="Dominique" long-name="Commonwealth De Dominique"/>
+	<country-code code="eg" long-code="EGY" iso-code="818" name="EGYPTE" short-name="Egypte" long-name="Republique Arabe D'egypte"/>
+	<country-code code="sv" long-code="SLV" iso-code="222" name="EL SALVADOR" short-name="El Salvador" long-name="Republique Du Salvador"/>
+	<country-code code="ae" long-code="ARE" iso-code="784" name="EMIRATS ARABES UNIS" short-name="Emirats Arabes Unis" long-name="Emirats Arabes Unis"/>
+	<country-code code="ec" long-code="ECU" iso-code="218" name="EQUATEUR" short-name="Equateur" long-name="Republique De L'equateur"/>
+	<country-code code="er" long-code="ERI" iso-code="232" name="ERYTHREE" short-name="Erythree" long-name="etat D'erythree"/>
+	<country-code code="es" long-code="ESP" iso-code="724" name="ESPAGNE" short-name="Espagne" long-name="Royaume D'Espagne"/>
+	<country-code code="ee" long-code="EST" iso-code="233" name="ESTONIE" short-name="Estonie" long-name="Republique D'Estonie"/>
+	<country-code code="us" long-code="USA" iso-code="840" name="ETATS-UNIS" short-name="Etats-Unis" long-name="Etats-Unis D'Amerique"/>
+	<country-code code="et" long-code="ETH" iso-code="231" name="ETHIOPIE" short-name="Ethiopie" long-name="Republique Democratique Federale D'ethiopie"/>
+	<country-code code="mk" long-code="MKD" iso-code="807" name="EX-REPUBLIQUE YOUGOSLAVE DE MACEDOINE" short-name="Ex-Republique Yougoslave De Macedoine" long-name="Ex-Republique Yougoslave De Macedoine"/>
+	<country-code code="fo" long-code="FRO" iso-code="234" name="FEROE (ILES)" short-name="Feroe (Iles)" long-name="Feroe (iles)"/>
+	<country-code code="fj" long-code="FJI" iso-code="242" name="FIDJI" short-name="Fidji" long-name="Republique Des Fidji"/>
+	<country-code code="fi" long-code="FIN" iso-code="246" name="FINLANDE" short-name="Finlande" long-name="Republique De Finlande"/>
+	<country-code code="fr" long-code="FRA" iso-code="250" name="FRANCE" short-name="France" long-name="Republique Francaise"/>
+	<country-code code="ga" long-code="GAB" iso-code="266" name="GABON" short-name="Gabon" long-name="Republique Gabonaise"/>
+	<country-code code="gm" long-code="GMB" iso-code="270" name="GAMBIE" short-name="Gambie" long-name="Republique De Gambie"/>
+	<country-code code="ge" long-code="GEO" iso-code="268" name="GEORGIE" short-name="Georgie" long-name="Republique De Georgie"/>
+	<country-code code="gs" long-code="SGS" iso-code="239" name="GEORGIE DU SUD ET LES ILES SANDWICH DU SUD" short-name="Georgie Du Sud Et Les Iles Sandwich Du Sud" long-name="Georgie Du Sud Et Les iles Sandwich Du Sud"/>
+	<country-code code="ga" long-code="GHA" iso-code="288" name="GHANA" short-name="Ghana" long-name="Republique Du Ghana"/>
+	<country-code code="gi" long-code="GIB" iso-code="292" name="GIBRALTAR" short-name="Gibraltar" long-name="Gibraltar"/>
+	<country-code code="gr" long-code="GRC" iso-code="300" name="GRECE" short-name="Grece" long-name="Republique Hellenique"/>
+	<country-code code="gd" long-code="GRD" iso-code="308" name="GRENADE" short-name="Grenade" long-name="Grenade"/>
+	<country-code code="gl" long-code="GRL" iso-code="304" name="GROENLAND" short-name="Groenland" long-name="Groenland"/>
+	<country-code code="gp" long-code="GLP" iso-code="312" name="GUADELOUPE" short-name="Guadeloupe" long-name="Departement De La Guadeloupe"/>
+	<country-code code="gu" long-code="GUM" iso-code="316" name="GUAM" short-name="Guam" long-name="Guam"/>
+	<country-code code="gt" long-code="GTM" iso-code="320" name="GUATEMALA" short-name="Guatemala" long-name="Republique Du Guatemala"/>
+	<country-code code="gg" long-code="GGY" iso-code="831" name="GUERNESEY" short-name="Guernesey" long-name="Guernesey"/>
+	<country-code code="gn" long-code="GIN" iso-code="324" name="GUINEE" short-name="Guinee" long-name="Republique De Guinee"/>
+	<country-code code="gq" long-code="GNQ" iso-code="226" name="GUINEE EQUATORIALE" short-name="Guinee Equatoriale" long-name="Republique De Guinee equatoriale"/>
+	<country-code code="gw" long-code="GNB" iso-code="624" name="GUINEE-BISSAU" short-name="Guinee-Bissau" long-name="Republique De Guinee-Bissau"/>
+	<country-code code="gy" long-code="GUY" iso-code="328" name="GUYANA" short-name="Guyana" long-name="Republique Cooperative De Guyana"/>
+	<country-code code="gf" long-code="GUF" iso-code="254" name="GUYANE" short-name="Guyane" long-name="Departement De La Guyane"/>
+	<country-code code="ht" long-code="HTI" iso-code="332" name="HAITI" short-name="Haiti" long-name="Republique D'Haiti"/>
+	<country-code code="hm" long-code="HMD" iso-code="334" name="HEARD ET MACDONALD (ILES)" short-name="Heard Et Macdonald (Iles)" long-name="Heard Et Macdonald (iles)"/>
+	<country-code code="hn" long-code="HND" iso-code="340" name="HONDURAS" short-name="Honduras" long-name="Republique Du Honduras"/>
+	<country-code code="hk" long-code="HKG" iso-code="344" name="HONG-KONG" short-name="Hong-Kong" long-name="Hong-Kong"/>
+	<country-code code="hu" long-code="HUN" iso-code="348" name="HONGRIE" short-name="Hongrie" long-name="Republique De Hongrie"/>
+	<country-code code="in" long-code="IND" iso-code="356" name="INDE" short-name="Inde" long-name="Republique De L'Inde"/>
+	<country-code code="id" long-code="IDN" iso-code="360" name="INDONESIE" short-name="Indonesie" long-name="Republique D'Indonesie"/>
+	<country-code code="ir" long-code="IRN" iso-code="364" name="IRAN" short-name="Iran" long-name="Republique Islamique D'Iran"/>
+	<country-code code="iq" long-code="IRQ" iso-code="368" name="IRAQ" short-name="Iraq" long-name="Republique D'Iraq"/>
+	<country-code code="ie" long-code="IRL" iso-code="372" name="IRLANDE, ou EIRE" short-name="Irlande, Ou Eire" long-name="Irlande"/>
+	<country-code code="is" long-code="ISL" iso-code="352" name="ISLANDE" short-name="Islande" long-name="Republique D'Islande"/>
+	<country-code code="il" long-code="ISR" iso-code="376" name="ISRAEL" short-name="Israel" long-name="etat D'Israel"/>
+	<country-code code="it" long-code="ITA" iso-code="380" name="ITALIE" short-name="Italie" long-name="Republique Italienne"/>
+	<country-code code="jm" long-code="JAM" iso-code="388" name="JAMAIQUE" short-name="Jamaique" long-name="Jamaique"/>
+	<country-code code="jp" long-code="JPN" iso-code="392" name="JAPON" short-name="Japon" long-name="Japon"/>
+	<country-code code="je" long-code="JEY" iso-code="832" name="JERSEY" short-name="Jersey" long-name="Jersey"/>
+	<country-code code="jo" long-code="JOR" iso-code="400" name="JORDANIE" short-name="Jordanie" long-name="Royaume Hachemite De Jordanie"/>
+	<country-code code="kz" long-code="KAZ" iso-code="398" name="KAZAKHSTAN" short-name="Kazakhstan" long-name="Republique Du Kazakhstan"/>
+	<country-code code="ke" long-code="KEN" iso-code="404" name="KENYA" short-name="Kenya" long-name="Republique Du Kenya"/>
+	<country-code code="kg" long-code="KGZ" iso-code="417" name="KIRGHIZISTAN" short-name="Kirghizistan" long-name="Republique Kirghize"/>
+	<country-code code="ki" long-code="KIR" iso-code="296" name="KIRIBATI" short-name="Kiribati" long-name="Republique De Kiribati"/>
+	<country-code code="kw" long-code="KWT" iso-code="414" name="KOWEIT" short-name="Koweit" long-name="etat Du Koweit"/>
+	<country-code code="re" long-code="REU" iso-code="638" name="LA REUNION" short-name="La Reunion" long-name="Departement De La Reunion"/>
+	<country-code code="la" long-code="LAO" iso-code="418" name="LAOS" short-name="Laos" long-name="Republique Democratique Populaire Lao"/>
+	<country-code code="ls" long-code="LSO" iso-code="426" name="LESOTHO" short-name="Lesotho" long-name="Royaume Du Lesotho"/>
+	<country-code code="lv" long-code="LVA" iso-code="428" name="LETTONIE" short-name="Lettonie" long-name="Republique De Lettonie"/>
+	<country-code code="lb" long-code="LBN" iso-code="422" name="LIBAN" short-name="Liban" long-name="Republique Libanaise"/>
+	<country-code code="lr" long-code="LBR" iso-code="430" name="LIBERIA" short-name="Liberia" long-name="Republique Du Liberia"/>
+	<country-code code="ly" long-code="LBY" iso-code="434" name="LIBYE" short-name="Libye" long-name="Jamahiriya Arabe Libyenne Populaire Et Socialiste"/>
+	<country-code code="li" long-code="LIE" iso-code="438" name="LIECHTENSTEIN" short-name="Liechtenstein" long-name="Principaute De Liechtenstein"/>
+	<country-code code="lt" long-code="LTU" iso-code="440" name="LITUANIE" short-name="Lituanie" long-name="Republique De Lituanie"/>
+	<country-code code="lu" long-code="LUX" iso-code="442" name="LUXEMBOURG" short-name="Luxembourg" long-name="Grand-Duche De Luxembourg"/>
+	<country-code code="mo" long-code="MAC" iso-code="446" name="MACAO" short-name="Macao" long-name="Macao"/>
+	<country-code code="mg" long-code="MDG" iso-code="450" name="MADAGASCAR" short-name="Madagascar" long-name="Republique De Madagascar"/>
+	<country-code code="my" long-code="MYS" iso-code="458" name="MALAISIE" short-name="Malaisie" long-name="Malaisie"/>
+	<country-code code="mw" long-code="MWI" iso-code="454" name="MALAWI" short-name="Malawi" long-name="Republique Du Malawi"/>
+	<country-code code="mv" long-code="MDV" iso-code="462" name="MALDIVES" short-name="Maldives" long-name="Republique Des Maldives"/>
+	<country-code code="ml" long-code="MLI" iso-code="466" name="MALI" short-name="Mali" long-name="Republique Du Mali"/>
+	<country-code code="fk" long-code="FLK" iso-code="238" name="MALOUINES, OU FALKLAND (ILES)" short-name="Malouines, Ou Falkland (Iles)" long-name="Malouines, Ou Falkland (iles)"/>
+	<country-code code="mt" long-code="MLT" iso-code="470" name="MALTE" short-name="Malte" long-name="Republique De Malte"/>
+	<country-code code="im" long-code="IMN" iso-code="833" name="MAN (ILE)" short-name="Man (Ile)" long-name="Man (ile)"/>
+	<country-code code="mp" long-code="MNP" iso-code="580" name="MARIANNES DU NORD (ILES)" short-name="Mariannes Du Nord (Iles)" long-name="Mariannes Du Nord (iles)"/>
+	<country-code code="ma" long-code="MAR" iso-code="504" name="MAROC" short-name="Maroc" long-name="Royaume Du Maroc"/>
+	<country-code code="mh" long-code="MHL" iso-code="584" name="MARSHALL (ILES)" short-name="Marshall (Iles)" long-name="Republique Des iles Marshall"/>
+	<country-code code="mq" long-code="MTQ" iso-code="474" name="MARTINIQUE" short-name="Martinique" long-name="Departement De La Martinique"/>
+	<country-code code="mu" long-code="MUS" iso-code="480" name="MAURICE" short-name="Maurice" long-name="Republique De Maurice"/>
+	<country-code code="mr" long-code="MRT" iso-code="478" name="MAURITANIE" short-name="Mauritanie" long-name="Republique Islamique De Mauritanie"/>
+	<country-code code="yt" long-code="MYT" iso-code="175" name="MAYOTTE" short-name="Mayotte" long-name="Collectivite Departementale De Mayotte"/>
+	<country-code code="mx" long-code="MEX" iso-code="484" name="MEXIQUE" short-name="Mexique" long-name="Etats-Unis Du Mexique"/>
+	<country-code code="fm" long-code="FSM" iso-code="583" name="MICRONESIE (ETATS FEDERES DE)" short-name="Micronesie (Etats Federes De)" long-name="Etats Federes De Micronesie"/>
+	<country-code code="md" long-code="MDA" iso-code="498" name="MOLDAVIE" short-name="Moldavie" long-name="Republique De Moldavie"/>
+	<country-code code="mc" long-code="MCO" iso-code="492" name="MONACO" short-name="Monaco" long-name="Principaute De Monaco"/>
+	<country-code code="mn" long-code="MNG" iso-code="496" name="MONGOLIE" short-name="Mongolie" long-name="Mongolie"/>
+	<country-code code="me" long-code="MNE" iso-code="499" name="MONTENEGRO" short-name="Montenegro" long-name="Republique Du Montenegro"/>
+	<country-code code="ms" long-code="MSR" iso-code="500" name="MONTSERRAT" short-name="Montserrat" long-name="Montserrat"/>
+	<country-code code="mz" long-code="MOZ" iso-code="508" name="MOZAMBIQUE" short-name="Mozambique" long-name="Republique Du Mozambique"/>
+	<country-code code="na" long-code="NAM" iso-code="516" name="NAMIBIE" short-name="Namibie" long-name="Republique De Namibie"/>
+	<country-code code="nr" long-code="NRU" iso-code="520" name="NAURU" short-name="Nauru" long-name="Republique De Nauru"/>
+	<country-code code="np" long-code="NPL" iso-code="524" name="NEPAL" short-name="Nepal" long-name="Royaume Du Nepal"/>
+	<country-code code="ni" long-code="NIC" iso-code="558" name="NICARAGUA" short-name="Nicaragua" long-name="Republique Du Nicaragua"/>
+	<country-code code="ne" long-code="NER" iso-code="562" name="NIGER" short-name="Niger" long-name="Republique Du Niger"/>
+	<country-code code="ng" long-code="NGA" iso-code="566" name="NIGERIA" short-name="Nigeria" long-name="Republique Federale Du Nigeria"/>
+	<country-code code="nu" long-code="NIU" iso-code="570" name="NIUE" short-name="Niue" long-name="Niue"/>
+	<country-code code="nf" long-code="NFK" iso-code="574" name="NORFOLK (ILE)" short-name="Norfolk (Ile)" long-name="Norfolk (ile)"/>
+	<country-code code="no" long-code="NOR" iso-code="578" name="NORVEGE" short-name="Norvege" long-name="Royaume De Norvege"/>
+	<country-code code="nc" long-code="NCL" iso-code="540" name="NOUVELLE-CALEDONIE" short-name="Nouvelle-Caledonie" long-name="Nouvelle-Caledonie"/>
+	<country-code code="nz" long-code="NZL" iso-code="554" name="NOUVELLE-ZELANDE" short-name="Nouvelle-Zelande" long-name="Nouvelle-Zelande"/>
+	<country-code code="io" long-code="IOT" iso-code="086" name="OCEAN INDIEN (TERRITOIRE BRITANNIQUE DE L')" short-name="Ocean Indien (Territoire Britannique De L')" long-name="Ocean Indien (Territoire Britannique De L')"/>
+	<country-code code="om" long-code="OMN" iso-code="512" name="OMAN" short-name="Oman" long-name="Sultanat D'Oman"/>
+	<country-code code="ug" long-code="UGA" iso-code="800" name="OUGANDA" short-name="Ouganda" long-name="Republique De L'Ouganda"/>
+	<country-code code="uz" long-code="UZB" iso-code="860" name="OUZBEKISTAN" short-name="Ouzbekistan" long-name="Republique D'Ouzbekistan"/>
+	<country-code code="pk" long-code="PAK" iso-code="586" name="PAKISTAN" short-name="Pakistan" long-name="Republique Islamique Du Pakistan"/>
+	<country-code code="pw" long-code="PLW" iso-code="585" name="PALAOS (ILES)" short-name="Palaos (Iles)" long-name="Republique Des iles Palaos"/>
+	<country-code code="ps" long-code="PSE" iso-code="275" name="PALESTINE" short-name="Palestine" long-name="Terr. Israelo-Palestinien De Gaza Et De Cisjordanie"/>
+	<country-code code="pa" long-code="PAN" iso-code="591" name="PANAMA" short-name="Panama" long-name="Republique Du Panama"/>
+	<country-code code="pg" long-code="PNG" iso-code="598" name="PAPOUASIE-NOUVELLE-GUINEE" short-name="Papouasie-Nouvelle-Guinee" long-name="Papouasie-Nouvelle-Guinee"/>
+	<country-code code="py" long-code="PRY" iso-code="600" name="PARAGUAY" short-name="Paraguay" long-name="Republique Du Paraguay"/>
+	<country-code code="nl" long-code="NLD" iso-code="528" name="PAYS-BAS" short-name="Pays-Bas" long-name="Royaume Des Pays-Bas"/>
+	<country-code code="pe" long-code="PER" iso-code="604" name="PEROU" short-name="Perou" long-name="Republique Du Perou"/>
+	<country-code code="ph" long-code="PHL" iso-code="608" name="PHILIPPINES" short-name="Philippines" long-name="Republique Des Philippines"/>
+	<country-code code="pn" long-code="PCN" iso-code="612" name="PITCAIRN (ILE)" short-name="Pitcairn (Ile)" long-name="Pitcairn (ile)"/>
+	<country-code code="pl" long-code="POL" iso-code="616" name="POLOGNE" short-name="Pologne" long-name="Republique De Pologne"/>
+	<country-code code="pf" long-code="PYF" iso-code="258" name="POLYNESIE FRANCAISE" short-name="Polynesie Francaise" long-name="Polynesie Francaise"/>
+	<country-code code="pr" long-code="PRI" iso-code="630" name="PORTO RICO" short-name="Porto Rico" long-name="Porto Rico"/>
+	<country-code code="pt" long-code="PRT" iso-code="620" name="PORTUGAL" short-name="Portugal" long-name="Republique Portugaise"/>
+	<country-code code="qa" long-code="QAT" iso-code="634" name="QATAR" short-name="Qatar" long-name="etat Du Qatar"/>
+	<country-code code="ro" long-code="ROU" iso-code="642" name="ROUMANIE" short-name="Roumanie" long-name="Roumanie"/>
+	<country-code code="gb" long-code="GBR" iso-code="826" name="ROYAUME-UNI" short-name="Royaume-Uni" long-name="Royaume-Uni De Grande-Bretagne Et D'Irlande Du Nord"/>
+	<country-code code="ru" long-code="RUS" iso-code="643" name="RUSSIE" short-name="Russie" long-name="Federation De Russie"/>
+	<country-code code="rw" long-code="RWA" iso-code="646" name="RWANDA" short-name="Rwanda" long-name="Republique Rwandaise"/>
+	<country-code code="eh" long-code="ESH" iso-code="732" name="SAHARA OCCIDENTAL" short-name="Sahara Occidental" long-name="Sahara Occidental"/>
+	<country-code code="bl" long-code="BLM" iso-code="652" name="SAINT-BARTHELEMY" short-name="Saint-Barthelemy" long-name="Collectivite D'Outre-Mer De Saint-Barthelemy"/>
+	<country-code code="kn" long-code="KNA" iso-code="659" name="SAINT-CHRISTOPHE-ET-NIEVES" short-name="Saint-Christophe-Et-Nieves" long-name="Federation De Saint-Christophe-Et-Nieves"/>
+	<country-code code="sh" long-code="SHN" iso-code="654" name="SAINTE-HELENE" short-name="Sainte-Helene" long-name="Sainte-Helene"/>
+	<country-code code="lc" long-code="LCA" iso-code="662" name="SAINTE-LUCIE" short-name="Sainte-Lucie" long-name="Sainte-Lucie"/>
+	<country-code code="sm" long-code="SMR" iso-code="674" name="SAINT-MARIN" short-name="Saint-Marin" long-name="Republique De Saint-Marin"/>
+	<country-code code="mf" long-code="MAF" iso-code="663" name="SAINT-MARTIN" short-name="Saint-Martin" long-name="Collectivite D'Outre-Mer De Saint-Martin"/>
+	<country-code code="pm" long-code="SPM" iso-code="666" name="SAINT-PIERRE-ET-MIQUELON" short-name="Saint-Pierre-Et-Miquelon" long-name="Collectivite Territoriale De Saint-Pierre-Et-Miquelon"/>
+	<country-code code="vc" long-code="VCT" iso-code="670" name="SAINT-VINCENT-ET-LES GRENADINES" short-name="Saint-Vincent-Et-Les Grenadines" long-name="Saint-Vincent-Et-Les Grenadines"/>
+	<country-code code="sb" long-code="SLB" iso-code="090" name="SALOMON (ILES)" short-name="Salomon (Iles)" long-name="Iles Salomon"/>
+	<country-code code="as" long-code="ASM" iso-code="016" name="SAMOA AMERICAINES" short-name="Samoa Americaines" long-name="Samoa Americaines"/>
+	<country-code code="ws" long-code="WSM" iso-code="882" name="SAMOA OCCIDENTALES" short-name="Samoa Occidentales" long-name="etat Independant Des Samoa Occidentales"/>
+	<country-code code="st" long-code="STP" iso-code="678" name="SAO TOME-ET-PRINCIPE" short-name="Sao Tome-Et-Principe" long-name="Republique Democratique De Sao Tome-Et-Principe"/>
+	<country-code code="sn" long-code="SEN" iso-code="686" name="SENEGAL" short-name="Senegal" long-name="Republique Du Senegal"/>
+	<country-code code="rs" long-code="SRB" iso-code="688" name="SERBIE" short-name="Serbie" long-name="Republique De Serbie"/>
+	<country-code code="sc" long-code="SYC" iso-code="690" name="SEYCHELLES" short-name="Seychelles" long-name="Republique Des Seychelles"/>
+	<country-code code="sl" long-code="SLE" iso-code="694" name="SIERRA LEONE" short-name="Sierra Leone" long-name="Republique De Sierra Leone"/>
+	<country-code code="sg" long-code="SGP" iso-code="702" name="SINGAPOUR" short-name="Singapour" long-name="Republique De Singapour"/>
+	<country-code code="sk" long-code="SVK" iso-code="703" name="SLOVAQUIE" short-name="Slovaquie" long-name="Republique Slovaque"/>
+	<country-code code="si" long-code="SVN" iso-code="705" name="SLOVENIE" short-name="Slovenie" long-name="Republique De Slovenie"/>
+	<country-code code="so" long-code="SOM" iso-code="706" name="SOMALIE" short-name="Somalie" long-name="Somalie"/>
+	<country-code code="sd" long-code="SDN" iso-code="736" name="SOUDAN" short-name="Soudan" long-name="Republique Du Soudan"/>
+	<country-code code="lk" long-code="LKA" iso-code="144" name="SRI LANKA" short-name="Sri Lanka" long-name="Republique Democratique Socialiste De Sri Lanka"/>
+	<country-code code="se" long-code="SWE" iso-code="752" name="SUEDE" short-name="Suede" long-name="Royaume De Suede"/>
+	<country-code code="ch" long-code="CHE" iso-code="756" name="SUISSE" short-name="Suisse" long-name="Confederation Suisse"/>
+	<country-code code="sr" long-code="SUR" iso-code="740" name="SURINAME" short-name="Suriname" long-name="Republique Du Suriname"/>
+	<country-code code="sj" long-code="SJM" iso-code="744" name="SVALBARD et ILE JAN MAYEN" short-name="Svalbard Et Ile Jan Mayen" long-name="Svalbard Et ile Jan Mayen"/>
+	<country-code code="sz" long-code="SWZ" iso-code="748" name="SWAZILAND" short-name="Swaziland" long-name="Royaume Du Swaziland"/>
+	<country-code code="sy" long-code="SYR" iso-code="760" name="SYRIE" short-name="Syrie" long-name="Republique Arabe Syrienne"/>
+	<country-code code="tj" long-code="TJK" iso-code="762" name="TADJIKISTAN" short-name="Tadjikistan" long-name="Republique Du Tadjikistan"/>
+	<country-code code="tw" long-code="TWN" iso-code="158" name="TAIWAN" short-name="Taiwan" long-name="Taiwan"/>
+	<country-code code="tz" long-code="TZA" iso-code="834" name="TANZANIE" short-name="Tanzanie" long-name="Republique Unie De Tanzanie"/>
+	<country-code code="td" long-code="TCD" iso-code="148" name="TCHAD" short-name="Tchad" long-name="Republique Du Tchad"/>
+	<country-code code="cz" long-code="CZE" iso-code="203" name="TCHEQUE (REPUBLIQUE)" short-name="Tcheque (Republique)" long-name="Republique Tcheque"/>
+	<country-code code="tf" long-code="ATF" iso-code="260" name="TERRES AUSTRALES FRANCAISES" short-name="Terres Australes Francaises" long-name="Terres Australes Francaises"/>
+	<country-code code="th" long-code="THA" iso-code="764" name="THAILANDE" short-name="Thailande" long-name="Royaume De Thailande"/>
+	<country-code code="tl" long-code="TLS" iso-code="626" name="TIMOR ORIENTAL" short-name="Timor Oriental" long-name="Republique Democratique Du Timor Oriental"/>
+	<country-code code="tg" long-code="TGO" iso-code="768" name="TOGO" short-name="Togo" long-name="Republique Togolaise"/>
+	<country-code code="tk" long-code="TKL" iso-code="772" name="TOKELAU" short-name="Tokelau" long-name="Tokelau"/>
+	<country-code code="to" long-code="TON" iso-code="776" name="TONGA" short-name="Tonga" long-name="Royaume Des Tonga"/>
+	<country-code code="tt" long-code="TTO" iso-code="780" name="TRINITE-ET-TOBAGO" short-name="Trinite-Et-Tobago" long-name="Republique De Trinite-Et-Tobago"/>
+	<country-code code="tn" long-code="TUN" iso-code="788" name="TUNISIE" short-name="Tunisie" long-name="Republique Tunisienne"/>
+	<country-code code="tm" long-code="TKM" iso-code="795" name="TURKMENISTAN" short-name="Turkmenistan" long-name="Turkmenistan"/>
+	<country-code code="tc" long-code="TCA" iso-code="796" name="TURKS ET CAIQUES (ILES)" short-name="Turks Et Caiques (Iles)" long-name="Turks Et Caiques (iles)"/>
+	<country-code code="tr" long-code="TUR" iso-code="792" name="TURQUIE" short-name="Turquie" long-name="Republique Turque"/>
+	<country-code code="tv" long-code="TUV" iso-code="798" name="TUVALU" short-name="Tuvalu" long-name="Tuvalu"/>
+	<country-code code="ua" long-code="UKR" iso-code="804" name="UKRAINE" short-name="Ukraine" long-name="Ukraine"/>
+	<country-code code="uy" long-code="URY" iso-code="858" name="URUGUAY" short-name="Uruguay" long-name="Republique Orientale De L'Uruguay"/>
+	<country-code code="vu" long-code="VUT" iso-code="548" name="VANUATU" short-name="Vanuatu" long-name="Republique De Vanuatu"/>
+	<country-code code="va" long-code="VAT" iso-code="336" name="VATICAN, ou SAINT-SIEGE" short-name="Vatican, Ou Saint-Siege" long-name="etat De La Cite Du Vatican"/>
+	<country-code code="ve" long-code="VEN" iso-code="862" name="VENEZUELA" short-name="Venezuela" long-name="Republique Du Venezuela"/>
+	<country-code code="vg" long-code="VGB" iso-code="092" name="VIERGES BRITANNIQUES (ILES)" short-name="Vierges Britanniques (Iles)" long-name="Vierges Britanniques (iles)"/>
+	<country-code code="vi" long-code="VIR" iso-code="850" name="VIERGES DES ETATS-UNIS (ILES)" short-name="Vierges Des Etats-Unis (Iles)" long-name="Vierges Des Etats-Unis (iles)"/>
+	<country-code code="vn" long-code="VNM" iso-code="704" name="VIET NAM" short-name="Viet Nam" long-name="Republique Socialiste Du Viet Nam"/>
+	<country-code code="wf" long-code="WLF" iso-code="876" name="WALLIS-ET-FUTUNA" short-name="Wallis-Et-Futuna" long-name="Wallis-Et-Futuna"/>
+	<country-code code="ye" long-code="YEM" iso-code="887" name="YEMEN" short-name="Yemen" long-name="Republique Du Yemen"/>
+	<country-code code="zm" long-code="ZMB" iso-code="894" name="ZAMBIE" short-name="Zambie" long-name="Republique De Zambie"/>
+	<country-code code="zw" long-code="ZWE" iso-code="716" name="ZIMBABWE" short-name="Zimbabwe" long-name="Republique Du Zimbabwe"/>
+	<country-code code="mf" long-code="MF" iso-code="" name="SAINT-MARTIN" short-name="Saint-Martin" long-name="Saint-Martin"/>
+</country-codes>

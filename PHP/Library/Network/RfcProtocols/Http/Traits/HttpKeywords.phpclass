@@ -1,0 +1,51 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        HttpKeywords.phpclass
+
+    DESCRIPTION
+        A trait to be used by http headers that can accept one specific keyword.
+
+    AUTHOR
+        Christian Vigh, 05/2015.
+
+    HISTORY
+    [Version : 1.0]    [Keywords : 2015/05/27]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace  	Thrak\Network\RfcProtocols\Http\Traits ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used classes
+use	Thrak\Types\String ;
+
+
+/*==============================================================================================================
+
+    HttKeywords class -
+        A trait to be used by http headers that can accept one specific keyword.
+
+  ==============================================================================================================*/
+trait  HttpKeywords
+   {
+	protected	$AcceptedKeywords ;
+	
+	
+	public function  Extract ( )
+	   {
+		foreach  ( $this -> AcceptedKeywords  as  $keyword )
+		   {
+			if  ( ! strcasecmp ( $this -> Text, $keyword ) )
+			   {
+				$this -> Fields -> Add ( null, $this -> Text ) ;
+				return ;
+			    }
+		    }
+
+		parent::Extract ( ) ;
+	    }
+    }

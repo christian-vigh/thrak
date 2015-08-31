@@ -1,0 +1,214 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        WhoisInformationBlock.phpclass
+
+    DESCRIPTION
+        Holds a whois information block. 
+	Objects of this class MUST be instanciated by a WhoisInformationRange object.
+
+    AUTHOR
+        Christian Vigh, 08/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/08/07]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace  Thrak\Processors\Whois ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces and classes
+use  	Thrak\System\Object ;
+use	Thrak\IO\Path ;
+use	Thrak\Types\String ;
+use	Thrak\Types\AssociativeArray ;
+use	Thrak\Processors\WhoisInformation ;
+use	Thrak\Processors\WhoisInformationBase ;
+use	Thrak\Processors\Whois\WhoisInformationRange ;
+
+
+/*==============================================================================================================
+
+    WhoisInformationBlock class -
+        Holds a whois information block.
+
+  ==============================================================================================================*/
+class  WhoisInformationBlock		extends		WhoisInformationBase
+					implements	\ArrayAccess, \Countable, \IteratorAggregate
+   {
+	// Parent WhoisInformation object
+	protected		$Parent ;
+	// Block type - one of the WhoisInformation::BLOCK_TYPE_* constants
+	public			$Type ;
+	// Block entries
+	protected		$Entries ;
+	// Very creation (registration) date and last update, as a Unix timestamp
+	protected		$CreationTime		=  false ; 
+	protected		$UpdateTime		=  false ;
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    Constructor -
+		Builds a WhoisInformationBlock object from an array of data collected by the WhoisInformation class.
+  
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( $parent, $block )
+	   {
+		$this -> Parent		=  $parent ;
+		$this -> Entries	=  new AssociativeArray ( ) ;
+		$this -> Type		=  $block [ 'type' ] ;
+
+		foreach  ( $block [ 'data' ]  as  $entry )
+			$this -> Entries []	=  new  WhoisInformationBlockEntry ( $parent, $entry ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    GetUpdateTime, GetCreationTime -
+		Returns the last update or creation date for this block, as a Unix timestamp.
+  
+	 *-------------------------------------------------------------------------------------------------------------*/
+	private function  __get_date ( $keywords ) 
+	   {
+		static		$email_date_re 	=  '/^
+							([^ ]+ \s+)?
+							(?P<date> \d{8,8})
+						     $/imsx' ;
+		static		$date_re 	=  '/^
+							(?P<date> \d+ - \d+ - \d+ .*)
+						     $/imsx' ;
+
+		$dates	=  [] ;
+
+		foreach ( $this -> Entries  as  $entry )
+		   {
+			foreach  ( $keywords  as  $keyword )
+			   {
+				if  ( ! strcasecmp ( $keyword, $entry -> Keyword ) )
+				   {
+					if  ( preg_match ( $email_date_re, $entry -> Text, $match ) )
+					   {
+						$dates []	=  String::IsDateString ( $match [ 'date' ] ) ;
+						break ;
+					    }
+					else if  ( preg_match ( $date_re, $entry -> Text, $match ) )
+					   {
+						$dates []	=  String::IsDateString ( $match [ 'date' ] ) ;
+						break ;
+					    }
+				    }
+			    }
+		    }
+
+		if  ( count ( $dates ) )
+		   {
+			sort ( $dates ) ;
+
+			return ( $dates [ count ( $dates ) - 1 ] ) ;
+		    }
+		else
+			return ( false ) ;
+	    }
+
+
+	public function  GetCreationTime ( )
+	   {
+		if  ( $this -> CreationTime  ===  false )
+			$this -> CreationTime	=  $this -> __get_date ( self::$CreationDateKeywords ) ;
+
+		return ( $this -> CreationTime ) ;
+	    }
+
+
+	public function  GetUpdateTime ( )
+	   {
+		if  ( $this -> UpdateTime  ===  false )
+			$this -> UpdateTime	=  $this -> __get_date ( self::$UpdateDateKeywords ) ;
+
+		return ( $this -> UpdateTime ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    GetEntry -
+		Returns an entry based on its type or keyword name.
+  
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  GetEntry ( $type_or_keyword )
+	   {
+		$result		=  [] ;
+
+		if  ( is_string ( $type_or_keyword ) )
+		   {
+			foreach  ( $this -> Entries  as  $entry )
+			   {
+				if  ( ! strcasecmp ( $entry -> Keyword, $type_or_keyword ) )
+					$result []	=  $entry ;
+			    }
+		    }
+		else
+		   {
+			foreach  ( $this -> Entries  as  $entry )
+			   {
+				if  ( $entry -> Type  ==  $type_or_keyword )
+					$result []	=  $entry ;
+			    }
+		    }
+
+		return ( ( count ( $result ) ) ?  $result : false ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    __tostring -
+		Returns the data block as a string.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __tostring ( )
+	   {
+		$result		=  '' ;
+
+		foreach  ( $this -> Entries  as  $entry ) 
+			$result		.=  ( string ) $entry . "\n" ;
+
+		return ( $result ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+		Interfaces implementations.
+  
+	 *-------------------------------------------------------------------------------------------------------------*/
+
+	 // Countable interface
+	 public function  Count ( )
+	    { return ( count ( $this -> Entries ) ) ; }
+		
+	 
+	 // IteratorAggregate interface
+	 public function  getIterator ( )
+	    { return ( new \ArrayIterator ( $this -> Entries -> getIterator ( ) ) ) ; }
+
+	// ArrayAccess interface
+	public function  offsetExists ( $offset )
+	   {  return ( $offset  >=  0  &&  $offset  <  count ( $this -> Entries ) ) ; }
+
+	public function  offsetGet ( $offset )
+	   { return ( $this -> Entries [ $offset ] ) ; }
+
+	public function  offsetSet ( $offset, $value )
+	   { error ( new \Thrak\System\UnsupportedOperationException ( ) ) ; }
+
+	public function  offsetUnset ( $offset )
+	   { error ( new \Thrak\System\UnsupportedOperationException ( ) ) ; }
+	
+    }

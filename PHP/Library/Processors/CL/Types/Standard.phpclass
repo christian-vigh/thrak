@@ -1,0 +1,41 @@
+<?php
+/***************************************************************************************************
+
+    NAME
+	Standard.phpclass
+
+    DESCRIPTION
+	Standard untyped command-line parameter.
+
+    AUTHOR
+     	Christian Vigh, 05/2011.
+
+    HISTORY
+    [Version : 1.0]	[Date : 2011/05/27]	[Author : CV]
+     	Initial version.
+
+   [Version : 2.0]	[Date : 2012/10/06]		[Author : CV]
+	Migrated to the Thrak library version 2.
+
+ ***************************************************************************************************/
+namespace 	Thrak\Processors\CL ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+/*==================================================================================================
+
+    CLStandardParameter class -
+	Implements a standard, untyped command-line parameter.
+	No additional attributes are added to the CLAbstractParameter class.
+
+  ==================================================================================================*/
+class  CLStandardParameter  extends  \Thrak\Processors\CL\CLAbstractParameter
+   {
+	public function  __construct ( $parent, $tags, $valuetext = "value" )
+	   {
+   		$this -> Help 			=  "Defines an untyped parameter." ;
+   		$this -> ReturnValueHelp	=  "Returns the specified parameter as is." ;
+		parent::__construct ( $parent, $tags, $valuetext ) ;
+	    }
+    }

@@ -1,0 +1,42 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        Exceptions.php
+
+    DESCRIPTION
+        Exceptions for the report system.
+
+    AUTHOR
+        Christian Vigh, 07/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/07/04]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Processors\Report ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces & objects
+use 		Thrak\System\Object ;
+use		Thrak\Types\String ;
+
+
+class	ReportException			extends  \Thrak\System\InvalidArgumentException		{} ;
+
+class   ReportDefinitionException	extends  Reportexception				{} ;
+
+
+class	ReportTagException		extends  ReportDefinitionException
+   {
+	public function  __construct ( $tag_name, $message, $code = 0, Exception  $previous = null )
+	   {
+		parent::__construct ( "<$tag_name> tag: $message", $code, $previous ) ;
+	    }
+    }
+
+class	ReportUnexpectedTagException	extends  ReportTagException				{} ;
+
+

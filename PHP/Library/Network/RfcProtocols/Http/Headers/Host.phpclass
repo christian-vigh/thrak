@@ -1,0 +1,89 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        Host.phpclass
+
+    DESCRIPTION
+        Http Host: header.
+
+    AUTHOR
+        Christian Vigh, 05/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/05/27]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace  	Thrak\Network\RfcProtocols\Http ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces and classes
+use     Thrak\System\Object ;
+use	Thrak\Network\RfcProtocols\Http\HttpStandardHeader ;
+
+
+/*==============================================================================================================
+
+    HttpHostHeader class -
+        Http Host header implementation (http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.23).
+
+ 	Examples :
+ 		Host: www.somewhere.com
+ 		Host: www.somewhere.com:80
+
+  ==============================================================================================================*/
+class	HttpHostHeader		extends  HttpStandardHeader
+   {
+	private		$Host ;
+	private		$Port	=  null ;
+	
+	
+	public function  __construct ( $header )
+	   {
+		parent::__construct ( 'Host', $header ) ;
+	    }
+	
+	
+	public function  __get ( $member )
+	   {
+		switch ( strtolower ( $member ) )
+		   {
+			case	'host' :  return ( $this -> Host ) ; 
+			case	'port' :  return ( $this -> Port ) ;
+			default	       :  return ( parent::__get ( $member ) ) ;
+		    }
+	    }
+	
+	
+	public function  __set ( $member, $value )
+	   {
+		switch ( strtolower ( $member ) )
+		   {
+			case	'host' :  $this -> Host		=  $value ; break ;
+			case	'port' :  $this -> Port		=  $value ; break ;
+			default	       :  parent::__get ( $member, $value ) ;
+		    }
+		
+		if  ( $this -> Port  ===  null )
+			$this -> Field -> Value		=  $this -> Host ;
+		else
+			$this -> Field -> Value		=  $this -> Host . ':' . $this -> Port ;
+	    }
+	
+	
+	protected function  CheckContent ( )
+	   {
+		if  ( preg_match ( '/(?P<host> [^:]+) ( : (?P<port> \d+) )/imsx', $this -> Text, $match ) )
+		   {
+			$this -> Host	=  $match [ 'host' ] ;
+			
+			if  ( isset ( $match [ 'port' ] )  &&  $match [ 'port' ] )
+				$this -> Port	=  ( integer ) $match [ 'port' ] ;
+		    }
+		else
+			$this -> Host	=  $this -> Text ;
+	    }
+    }

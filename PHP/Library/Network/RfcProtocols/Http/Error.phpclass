@@ -1,0 +1,90 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        Error.php
+
+    DESCRIPTION
+        Handles information about http error codes.
+
+    AUTHOR
+        Christian Vigh, 06/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/06/06]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace  	Thrak\Network\RfcProtocols\Http ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces and classes
+use     Thrak\System\Object ;
+use	Thrak\Types\String ;
+use	Thrak\Processors\Xml\XmlFileDocument ;
+
+
+/*==============================================================================================================
+
+    HttpError -
+        Holds information about http errors.
+
+  ==============================================================================================================*/
+class  HttpError		extends  Object 
+   {
+	private static	$HttpErrorCodes		=  [] ;
+	private static  $Url ;
+	
+	
+	public static function  GetErrorCodes ( )
+	   {
+		$contents	=  new XmlFileDocument ( "thrak://Data/HttpErrors.xml" ) ;
+		self::$Url	=  ( string ) $contents -> Document -> Attributes -> Url ;
+		self::__process_tree ( $contents -> Document -> Children ) ;
+		dump(self::$HttpErrorCodes );
+	    }
+	
+	
+	private static function  __process_tree ( $children )
+	   {
+		foreach  ( $children  as  $child )
+		   {
+			if  ( isset ( $child -> Attributes -> id ) )
+				$id		=  ( string ) $child -> Attributes -> id ;
+			else 
+				$id		=  0 ;
+			
+			if  ( isset ( $child -> Attributes -> error ) )
+				$error		=  ( string ) $child -> Attributes -> error ;
+			else
+				$error		=  "false" ;
+
+			if  ( isset ( $child -> Attributes -> section ) )
+				$section	=  ( string ) $child -> Attributes -> section ;
+			else 
+				$section	=  '' ;
+			
+			if  ( isset ( $child -> Attributes -> description ) )
+				$description	=  ( string ) $child -> Attributes -> description ;
+			else
+				$description	=  '' ;
+
+			if  ( String::IsBoolean ( $error ) )
+				$error	=  String::BooleanValue ( $error ) ;
+			else
+				$error	=  false ;
+
+			self::$HttpErrorCodes [ $id ]	=
+			   [
+				'id'		=>  $id,
+				'error'		=>  $error,
+				'section'	=>  $section,
+				'description'	=>  $description 
+			    ] ;
+			
+			self::__process_tree ( $child -> Children ) ;
+		    }
+	    }
+    }

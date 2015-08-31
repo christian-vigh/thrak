@@ -1,0 +1,302 @@
+<?php
+/***************************************************************************************************
+
+    NAME
+	CountryCodes.phpclass
+
+    DESCRIPTION
+	Manages the list of country codes.
+
+    AUTHOR
+     	Christian Vigh, 10/2011.
+
+    HISTORY
+    [Version : 1.0]	[Date : 2011/10/10]	[Author : CV]
+     	Initial version.
+
+   [Version : 2.0]	[Date : 2012/10/06]		[Author : CV]
+	Migrated to the Thrak library version 2.
+
+ ***************************************************************************************************/
+namespace  	Thrak\Internet ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces and classes
+use     Thrak\System\Object 		as  Object ;
+use 	Thrak\System\Exception 		as  Exception ;
+use 	Thrak\Internet\Xml\SimpleXML	as  SimpleXML ;
+use 	Thrak\IO\Path 			as  Path ;
+
+
+/*==================================================================================================
+
+     CountryCode class -
+	Holds information about a particular country.
+
+   ==================================================================================================*/
+class  CountryCode  extends  Object
+   {
+	// Country code (2 characters)
+	public		$CountryCode ;
+	// Country code (3 characters)
+	public		$CountryLongCode ;
+	// ISO country number
+	public		$ISOCode ;
+	// Country name
+	public		$CountryName ;
+	// Country (rich) short name
+	public 		$CountryShortName ;
+	// Country (rich) long name
+	public  	$CountryLongName ;
+
+
+	// Constructor
+	public function  __construct ( $code, $longcode, $isocode, $name, $shortname, $longname )
+	   {
+  		$this -> CountryCode 		=  $code ;
+  		$this -> CountryLongCode	=  $longcode ;
+  		$this -> ISOCode 		=  $isocode ;
+  		$this -> CountryName		=  $name ;
+  		$this -> CountryShortName 	=  $shortname ;
+  		$this -> CountryLongName 	=  $longname ;
+	    }
+    }
+
+
+ /*==================================================================================================
+
+     CountryCodes class -
+	Handles a list of available country codes.
+
+   ==================================================================================================*/
+class  CountryCodes  extends  Object
+			    implements  \ArrayAccess, \Countable, \Iterator
+   {
+   	public		$Countries ;
+   	public	 	$CountryCodes 	=  array ( ) ;
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Class constructor.
+
+	 --------------------------------------------------------------------------------------------*/
+   	public function  __construct  ( $file = "thrak://Data/CountryCodes.xml" )
+   	   {
+   	   	$file 	=  Path::RealPath ( $file ) ;
+
+		if  ( ! file_exists ( $file ) )
+			throw new Exception ( "CountryCodes : Country codes definition file '$file' does not exist." ) ;
+
+		$contents 	=  file_get_contents ( $file ) ;
+		$xml 		=  SimpleXML::LoadFromString ( $contents ) ;
+		$xml_array 	=  $xml -> AsArray ( ) ;
+
+		$this -> __process_xml_array ( $xml_array, $file ) ;
+   	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Processes XML data converted to an array.
+
+	 --------------------------------------------------------------------------------------------*/
+	private function  __process_xml_array ( $data, $file )
+	   {
+	   	// Check that the root tag is '<schemes>' and that no attribute has been specified.
+	   	$root 		=  $data [ 'tag' ] ;
+	   	$children       =  $data [ 'children' ] ;
+
+		if  ( strcasecmp ( $root, 'country-codes' ) )
+			throw new Exception ( "CountryCodes class : The root tag defined in the country code definitions file '$file' must be '<country-codes>'. '<$root>' was found instead." ) ;
+
+		if  ( count ( $data [ 'attributes' ] ) )
+			throw new Exception ( "CountryCodes class : The root tag defined in the country code definitions file '$file' cannot have attributes." ) ;
+
+		if  ( ! count ( $children ) )
+			throw new Exception ( "CountryCodes class : The root tag in the country code definitions file '$file' has no entries." ) ;
+
+
+		// Process children
+		$cc_index = 0 ;
+
+		foreach  ( $children  as  $child )
+		   {
+		   	$cc_index ++ ;
+
+		   	// Only '<scheme>' tags are allowed inside the root tag.
+		   	$tag 		=  $child [ 'tag' ] ;
+
+		   	if  ( strcasecmp ( $tag, "country-code" ) )
+				throw new Exception ( "CountryCodes class : The <country-codes> tag defined in the country code definitions file '$file' can only contain <country-code> tags." ) ;
+
+			// Attributes and other information
+			$code		=  null ;
+			$long_code 	=  null ;
+			$iso_code 	=  null ;
+			$name 		=  null ;
+			$short_name 	=  null ;
+			$long_name 	=  null ;
+
+			// Get attribute definitions
+			foreach  ( $child [ 'attributes' ]  as  $attribute )
+			   {
+				$attr_name 	=  strtolower ( $attribute [ 'name' ] ) ;
+				$attr_value 	=  trim ( $attribute [ 'value' ] ) ;
+
+				switch  ( $attr_name )
+				   {
+				   	// 2-letters country code
+				   	case	'code' :
+				   		$code 	=  $attr_value ;
+				   		break ;
+
+				   	// 3-letters country code
+				   	case	'long-code' :
+				   		$long_code 	=  $attr_value ;
+				   		break ;
+
+				   	// ISO code
+				   	case	'iso-code' :
+				   		$iso_code 	=  $attr_value ;
+				   		break ;
+
+				   	// Country name (uppercase)
+				   	case	'name' :
+				   		$name 	=  $attr_value ;
+				   		break ;
+
+				   	// Country name (short with accents)
+				   	case	'short-name' :
+				   		$short_name 	=  $attr_value ;
+				   		break ;
+
+				   	// Country name (long, with accents)
+				   	case	'long-name' :
+				   		$long_name 	=  $attr_value ;
+				   		break ;
+
+					// Other attributes are banished
+					default :
+						throw new Exception ( "CountryCodes class : Invalid attribute '$attr_name' in the <country-code> tag defined in the country code definitions file '$file'." ) ;
+				    }
+			    }
+
+			// Create the new country code entry object
+			$cc = new CountryCode ( $code, $long_code, $iso_code, $name, $short_name, $long_name ) ;
+			$this -> Countries [ strtolower ($code ) ]	=  $cc ;
+			$this -> CountryNames []			=  $code ;
+		    }
+
+		// Sort protocols by name
+		uksort ( $this -> Countries, "strcmp" ) ;
+		sort ( $this -> CountryNames ) ;
+	    }
+
+
+
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/******                                                                               ******/
+	/******                         INTERFACES IMPLEMENTATION                             ******/
+	/******                                                                               ******/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+
+	/*-------------------------------------------------------------------------------------------
+
+		ArrayAccess interface implementation.
+			Used for accessing country code entries.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  offsetSet ( $offset, $value )
+	   {
+		throw new Exception ( "Country code entries are read-only and cannot be set." ) ;
+	    }
+
+    	public function  offsetExists ( $offset )
+    	   {
+    	   	if  ( is_numeric ( $offset ) )
+    	   		$offset = $this -> CountryNames [ $offset ] ;
+   		else
+   			$offset = strtolower ( $offset ) ;
+
+	   	return ( isset ( $this -> Countries [ $offset ] ) ) ;
+	    }
+
+    	public function offsetUnset ( $offset )
+	   {
+		throw new Exception ( "Country code entries are read-only and cannot be unset." ) ;
+	    }
+
+        public function offsetGet ( $offset )
+           {
+    	   	if  ( is_numeric ( $offset ) )
+    	   		$offset = $this -> TLDNames [ $offset ] ;
+		else
+			$offset = strtolower ( $offset ) ;
+
+	   	return ( $this -> Countries [ $offset ] ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Countable interface implementation.
+			Counts the number of country code definitions.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  count ( )
+	   { return ( count ( $this -> Countries ) ) ; }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Iterator interface implementation.
+			Allows for looping through each country entry using a foreach() construct.
+
+	 --------------------------------------------------------------------------------------------*/
+	private  	$CountryIndex		=  0 ;
+
+	function  current ( )
+	   {
+		$key		=  $this -> key ( ) ;
+
+		return ( $this -> Countries [ $key ] ) ;
+	    }
+
+	function  key ( )
+	   {
+		return ( $this -> CountryNames [ $this -> CountryIndex ] ) ;
+	    }
+
+	function  next ( )
+	   {
+		$key		=  $this -> key ( ) ;
+		$this -> CountryIndex ++ ;
+
+		return ( $this -> Countries [ $key ] ) ;
+	    }
+
+	function  rewind ( )
+	   {
+	   	$this -> CountryIndex = 0 ;
+	    }
+
+	function  valid ( )
+	   {
+	   	return ( $this -> TLDIndex  <  count ( $this -> TLDS ) ) ;
+	    }
+
+	function  length ( )
+	   { return ( count ( $this -> Countries ) ) ; }
+
+	function  getIterator ( )
+	   { return ( $this ) ; }
+    }
+
+ 

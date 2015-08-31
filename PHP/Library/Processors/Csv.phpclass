@@ -1,0 +1,1015 @@
+<?php
+/***************************************************************************************************
+
+    NAME
+	Csv.phpclass
+
+    DESCRIPTION
+	CSV file handling.
+
+    AUTHOR
+	Christian Vigh, 04/2013.
+
+    HISTORY
+    [Version : 1.0]		[Date : 2013/04/28]		[Author : CV]
+	Initial release.
+
+    [Version : 2.0]		[Date : 2015/05/22]		[Author : CV]
+ 	. Completely rewrote this crap. The current version allows only for reading and writing back
+	  existing files.
+
+    [Version : 2.0.1]		[Date : 2015/07/03]		[Author : CV]
+	. Changed the CsvOptions::Escape() method, which improperly handled escaping and quoting.
+
+ ***************************************************************************************************/
+namespace  	Thrak\Processors ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use 	Thrak\System\Object ;
+
+
+/*==============================================================================================================
+
+    CsvBase class -
+        A base class for all Csv-related classes. In case of...
+
+  ==============================================================================================================*/
+abstract class  CsvBase		extends  Object
+   {
+	// Default options, when a Csv object is instanciated without any option
+	static public	$DefaultOptions		=  null ;
+	
+	// Parent Csv object ; inherited by all the Csv* classes
+	public		$Parent ;
+	
+	
+	/*==============================================================================================================
+	
+	    Static constructor -
+	        Instanciate a default option object.
+	
+	  ==============================================================================================================*/
+	public static function  __static_construct ( )
+	   {
+		self::$DefaultOptions	=  new  CsvOptions ( ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    Constructor -
+	        Builds a CsvBase object, whom all Csv* classes inherit from.
+	
+	  ==============================================================================================================*/
+	public function  __construct ( $parent )
+	   {
+		parent::__construct ( ) ;
+		
+		$this -> Parent		=  $parent ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    __dump_debuginfo -
+	        Hides the DefaultOptions and Parent properties when the dump() function is called.
+	
+	  ==============================================================================================================*/
+	public static function  __dump_debuginfo ( )
+	   {
+		return ( [ 'hidden' => [ 'DefaultOptions', 'Parent' ] ] ) ;
+	    }
+    }
+
+
+
+/*==============================================================================================================
+
+    CsvOptions class -
+        Options for reading/writing a CSV file.
+
+  ==============================================================================================================*/
+class  CsvOptions		extends  Object 
+   {
+	// Csv processing flags
+	const		CSV_NONE			=  0x0000 ;		// No specific option
+	const		CSV_IGNORE_EMPTY_LINES		=  0x0001 ;		// Suppress empty lines during reading
+	const		CSV_HEADER_LINE			=  0x0002 ;		// If specified, the first CSV file line is a header
+	const		CSV_ALWAYS_QUOTE		=  0x0004 ;		// When specified, all field values are quoted during writing
+										// Default is to quote only when needed (ie, when the field value
+										// contains a quote character)
+	const		CSV_LOCALE_CONVERT		=  0x0008 ;		// Converts numeric values and dates/times to current locale
+	const		CSV_NORMALIZE_COLUMN_COUNT	=  0x0010 ;		// Normalizes the column count to the greatest count encountered
+	
+	// Members
+	public		$Separator ;						// Field separator
+	public		$Quote ;						// Character used for string quoting
+	public		$Escape ;						// Escape character to be used before quote character inside a string
+	public		$Flags ;						// Csv processing flags
+	
+	protected	$Locale	;						// Locale parameters
+	
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        Constructor - Builds a Csv options object.
+	
+	    PROTOTYPE
+	        $options	=  new CsvOptions ( $separator = ';', $quote = '"', $escape = '"', 
+							$flags = self::CSV_IGNORE_EMPTY_LINES ) ;
+	
+	    DESCRIPTION
+	        Builds a CsvOptions object, which is used by the Csv class during processing of a .csv file.
+	
+	    PARAMETERS
+	        $separator (string) -
+	                Field separator character.
+	  
+	 	$quote (string) -
+	 		Quote character (to be used when the field value contains a field separator character).
+	  
+	 	$escape (string) -
+	 		Escape character to be used when the field value contains a quote character.
+	  
+	 	$flags (integer) -
+	 		Processing flags. Can be any combination of the following values :
+	  
+	 		- CSV_IGNORE_EMPTY_LINES :
+	 			During reading, empty lines will be discarded. Note that the string ";" is not considered
+	 			as an empty line, but rather as a line containing two empty fields.
+	  
+	 		- CSV_HEADER_LINE :
+	 			When set, the first line of the input file is considered as a header line.
+	  
+	 		- CSV_ALWAYS_QUOTE :
+	 			When set, field values are always quoted during writing, whathever their contents.
+	 			The default behavior is to quote field values only when needed, ie when the value 
+	 			contains a quote.
+	  
+	 		- CSV_NONE :
+	 			None of the above...
+	
+	  ==============================================================================================================*/
+	public function  __construct ( $separator = ';', $quote = '"', $escape = '"', 
+						$flags = self::CSV_IGNORE_EMPTY_LINES | self::CSV_NORMALIZE_COLUMN_COUNT )
+	   {
+		parent::__construct ( $this ) ;
+		
+		$this -> Separator	=  $separator ;
+		$this -> Quote		=  $quote ;
+		$this -> Escape		=  $escape ;
+		$this -> Flags		=  $flags ;
+		$this -> Locale		=  localeconv ( ) ;
+	    }
+	
+
+	/*==============================================================================================================
+	
+	    NAME
+	       Escape - Escapes a field value.
+	
+	    PROTOTYPE
+	        $value	=  $options -> Escape ( $value ) ;
+	
+	    DESCRIPTION
+	        Escapes a field value.
+	 	Escaping takes place when :
+	 	- The CSV_ALWAYS_QUOTE flag is set
+	 	- The field value contains a quote character which requires the whole field to be escaped and enclosed
+	 	  within quotes.
+	
+	    PARAMETERS
+	        $value (string) -
+	                Value to be escaped.
+	
+	    RETURN VALUE
+	        Returns the (potentially) escaped value.
+	
+	  ==============================================================================================================*/
+	public function  Escape ( $value )
+	   {
+		$needs_quoting	=  ( $this -> Flags  &  self::CSV_ALWAYS_QUOTE ) ;
+		
+		if  ( strpos ( $value, $this -> Separator )  !==  false )
+			$needs_quoting  =  true ;
+
+		if  ( strpos ( $value, $this -> Quote ) )
+		   {
+			$value		=  str_replace ( $this -> Separator, $this -> Escape . $this -> Separator, $value ) ;
+			$needs_quoting	=  true ;
+		    }
+		
+		if  ( $needs_quoting )
+			$value	= $this -> Quote . $value . $this -> Quote ;
+		
+		return ( $value ) ;
+	    }
+
+	
+	/*==============================================================================================================
+	
+	    __dump_debuginfo -
+	        Hides the Locale property when the dump() function is called.
+	
+	  ==============================================================================================================*/
+	public static function  __dump_debuginfo ( )
+	   {
+		return ( [ 'hidden' => [ 'Locale' ] ] ) ;
+	    }
+   }
+
+
+/*==============================================================================================================
+
+    Csv class -
+        A class for reading/writing CSV files.
+
+  ==============================================================================================================*/
+class  Csv		extends		CsvBase 
+			implements	\ArrayAccess, \Countable, \IteratorAggregate
+   {
+	// CSV processing options
+	public		$Options ;
+	// Input/output filename
+	public		$Filename		=  null ;
+	// CSV lines
+	public		$Header			=  null ;
+	public		$Lines			=  null ;
+	// Min and max column numbers encountered so far
+	public		$MinColumns		=  0 ;
+	public		$MaxColumns		=  0 ;
+	
+	
+	/*==============================================================================================================
+	
+	    Constructor -
+	        Builds a Csv object. Loads file contents if a filename has been specified.
+	
+	  ==============================================================================================================*/
+	public function  __construct ( $filename = null, $csv_options = null )
+	   {
+		if  ( $csv_options  ===  null )
+			$options	=  CsvBase::$DefaultOptions ;
+		else if  ( is_numeric ( $csv_options ) )
+		   {
+			$options		=  CsvBase::$DefaultOptions ;
+			$options -> Flags	=  $csv_options ;
+		    }
+		
+		$this -> Options	=  $options ;
+
+		if  ( $filename )
+			$this -> LoadFile ( $filename ) ;
+		else 
+			$this -> Lines	=  new  CsvLines ( null, $this ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	        Private functions.
+	
+	  ==============================================================================================================*/
+
+	// __is_non_empty_line :
+	//	Checks if a set of field values is to be considered as an empty line.
+	private function  __is_non_empty_line ( $columns )
+	   {
+		if  ( $this -> Options -> Flags & CsvOptions::CSV_IGNORE_EMPTY_LINES )
+		    {
+			if  ( count ( $columns )  ==  0  ||
+			      ( count ( $columns )  ==  1  &&  $columns [0]  ==  '' ) )
+				return ( false ) ;
+		     }
+		
+		return ( true ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        LoadFile, LoadString - Loads Csv contents
+	
+	    PROTOTYPE
+	        $csv -> LoadFile	( $filename ) ;
+	 	$csv -> LoadString	( $contents ) ;
+	
+	    DESCRIPTION
+	        Loads CSV contents from the specified file or string.
+	 	Processing options are defined by the Options member object.
+	
+	    PARAMETERS
+	        $filename (string) -
+	                Filename whose contents are to be loaded and parsed.
+	  
+	 	$contents (string) -
+	 		CSV contents to be parsed.
+	
+	  ==============================================================================================================*/
+	public function  LoadFile ( $filename )
+	   {
+		if  ( ! file_exists ( $filename ) )
+			error ( new \Thrak\System\FileNotFoundException ( "File \"$filename\" does not exist." ) ) ;
+		
+		$this -> Filename	=  $filename ;
+		$contents		=  file_get_contents ( $filename ) ;
+		
+		$this -> LoadString ( $contents ) ;
+	    }
+	
+	
+	public function  LoadString ( $contents, $no_header = true )
+	   {
+		$lines		=  self::Parse ( $contents ) ;
+		
+		if  ( ! $no_header  ||  ( $this -> Options -> Flags &  CsvOptions::CSV_HEADER_LINE ) )
+		   {
+			$header_line		=  array_shift ( $lines ) ;
+			$this -> Header		=  new CsvHeaderLine ( $header_line, $this ) ;
+		    }
+		
+		$this -> Lines	=  new CsvLines ( $lines, $this ) ;
+		
+		if  ( count ( $lines ) )
+		   {
+			$this -> MinColumns	=  PHP_INT_MAX ;
+			$this -> MaxColumns	=  -PHP_INT_MAX ;
+			
+			foreach  ( $this -> Lines  as  $line )
+			   {
+				$count		=  count ( $line ) ;
+				
+				if  ( $count  <  $this -> MinColumns )
+					$this -> MinColumns	=  $count ;
+				
+				if  ( $count  >  $this -> MaxColumns ) 
+					$this -> MaxColumns	=  $count ;
+			    }
+		     }
+	    }
+
+
+	/*==============================================================================================================
+	
+	    NAME
+	        Parse - Parses CSV contents.
+	
+	    PROTOTYPE
+	        $lines	=  $csv -> Parse ( $contents ) ;
+	
+	    DESCRIPTION
+	        Parses CSV contents.
+	
+	    PARAMETERS
+	        $contents (string) -
+	                Contents to be parsed.
+	
+	    RETURN VALUE
+	        Returns a two-dimensional array containing the parsed lines (dimension 1) and parsed columns (dimension 2).
+	
+	    NOTES
+	        . Empty lines are removed if the CSV_IGNORE_EMPTY_LINES flag is set. Note that a line containing the 
+	 	  string ";" is not considered as an empty line, but as a line containing two empty fields.
+	 	. Behavior during processing of quoted field values should be the same as Excel ; quoted values are 
+	 	  unquoted only if the starting quote is at the first character position of the field ; otherwise it is
+	 	  included in the field value. Thus, the input value :
+	  
+	 		"field "" value" 
+	  
+	 	  will yield to :
+	  
+	 		field " value
+	  
+	 	 whereas 
+	  
+	 		x"field ""value"
+	  
+	 	will be returned as is.
+	
+	  ==============================================================================================================*/
+	public function  Parse ( $contents )
+	   {
+		$lines			=  [] ;				// Return value
+		$length			=  strlen ( $contents ) ;	// Length of supplied contents
+		$columns		=  [] ;				// Current line columns
+		$column			=  false ;			// Current column contents ; false means uninitialized (not empty !)
+		$current_line		=  1 ;				// Current line number
+		$current_column		=  0 ;				// Current character position
+		$errstr			=  ( $this -> Filename ) ?  " in file \"{$this -> Filename}\"" : '' ;
+		
+		// Escape sequence within a quoted string
+		$escape_sequence	=  $this -> Options -> Escape . $this -> Options -> Quote ;
+		
+		// Loop through input string
+		for  ( $i = 0 ; $i  <  $length ; $i ++ )
+		   {
+			$ch	=  $contents [$i] ;		// Current character
+			$current_column ++ ;
+			
+			// Field separator :
+			//	Add a new column (empty or not) to the current line columns
+			if  ( $ch  ==  $this -> Options -> Separator )
+			   {
+				if  ( $column  ===  false )
+					$column		=  '' ;
+				
+				$columns []	=  $column ;
+				$column		=  '' ;
+			    }
+			// Newline :
+			//	Add currently parsed column values to the list of output lines array.
+			else if  ( $ch  ==  "\n" )
+			   {
+				$current_line ++ ;
+				$current_column		=  0 ;
+				
+				if  ( $column  ===  false )
+					$column		=  '' ;
+
+				$columns []	=  $column ;
+				$column		=  false ;
+				
+				// Discard empty lines if the CSV_IGNORE_EMPTY_LINES flag is set
+				if  ( $this -> __is_non_empty_line ( $columns ) )
+				   {
+					$columns	=  $this -> PreprocessColumns ( $columns ) ;
+					$lines []	=  $columns ;
+				    }
+
+				$columns	=  [] ;
+			    }	
+			// Quoted value
+			else if  ( $ch  ==  $this -> Options -> Quote )
+			   {
+				// Opening quote is not the first character of the field value : include it in the result
+				if  ( $column  !==  false  &&  $column  !==  '' )
+					$column		.=  $ch ;
+				// Otherwise, process characters until an ending quote has been found
+				else
+				   {
+					$column			=  '' ;
+					$found_ending_quote	=  false ;
+					$start_line		=  $current_line ;
+					$start_column		=  $current_column ;
+					
+					for  ( $j = $i + 1 ; $j  <  $length ; $j ++ )
+					   {
+						$ch2	=  $contents [$j] ;
+						
+						// Special processing for escaped quotes
+						if  ( ! substr_compare ( $contents, $escape_sequence, $j, 2 ) )
+						   {
+							$column		.=  $this -> Options -> Quote ;
+							$j ++ ;
+						    }
+						// Ending quote has been found
+						else if  ( $ch2  ==  $this -> Options -> Quote )
+						   {
+							$found_ending_quote	=  true ;
+							break ;
+						    }
+						// Other characters : simply add them to the current field value
+						else
+						   {
+							if  ( $ch2  !=  "\r" )			// ... but still ignore carriage returns
+							   {
+								if  ( $ch2  ==  "\n" )		// Don't forget to update coordinates
+								   {
+									$current_line ++ ;
+									$current_column		=  0 ;
+								    }
+								
+								$column		.=  $ch2 ;
+							    }
+						    }
+					    }
+					
+					// Complain if no ending quote has been found
+					if  ( ! $found_ending_quote )
+						error ( new \Thrak\System\RuntimeException ( "No ending quote found for the field value started at " .
+								"line #$start_line, column #$start_column$errstr" ) ) ;
+					
+					$i  =  $j ;		// Next outer loop run will start after the ending quote
+				    }
+			    }
+			// Characters other than carriage returns : add them to the current column value
+			else if  ( $ch  !=  "\r" )
+			   {
+				if  ( $column  ===  false )
+					$column		=  '' ;
+				
+				$column		.=  $ch ;
+			    }
+		    }
+		
+		// If a column has been collected, add it to the column list for the current line
+		if  ( $column  !==  false )
+			$columns []	=  $column ;
+
+		// Ignore empty lines if needed
+		if  ( $this -> __is_non_empty_line ( $columns ) )
+		   {
+			$columns	=  $this -> PreprocessColumns ( $columns ) ;
+			$lines []	=  $columns ;
+		    }
+		
+		// All done, return
+		return ( $lines ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    PreprocessColumns -
+	        Preprocess columns before creating the CsvLine and CsvColumn objects.
+	
+	  ==============================================================================================================*/
+	protected function  PreprocessColumns ( $columns )
+	   {
+		return ( $columns ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    __tostring -
+	        Converts the Csv contents to a string.
+	
+	  ==============================================================================================================*/
+	public function  __tostring ( )
+	   {
+		$result		=  '' ;
+		
+		if  ( $this -> Header )
+			$result		=  ( string ) $this -> Header . "\n" ;
+		
+		$result		.=  ( string ) $this -> Lines ;
+		
+		return ( $result ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	        Interfaces implementations.
+	
+	  ==============================================================================================================*/
+	function  Count ( )
+	   { return ( count ( $this -> Lines ) ) ; }
+	
+	
+	function  offsetExists ( $offset )
+	   { return ( $this -> Lines -> offsetExists ( $offset ) ) ; }
+	
+	
+	function  offsetGet ( $offset )
+	   { return ( $this -> Lines -> offsetGet ( $offset ) ) ; }
+	
+	
+	public function  offsetSet ( $offset, $member ) 
+	   { $this -> Lines -> offsetSet ( $offset, $member ) ; }
+	
+	
+	public function  offsetUnset ( $offset )
+	   { $this -> Lines -> offsetUnset ( $offset ) ; }
+	
+	
+	public function  getIterator ( )
+	   { return ( $this -> Lines -> getIterator ( ) ) ; }
+    }
+
+
+/*==============================================================================================================
+
+    CsvLines -
+        Implements a set of csv lines, containing CsvColumns.
+
+  ==============================================================================================================*/
+class  CsvLines		extends		CsvBase 
+			implements	\ArrayAccess, \Countable, \IteratorAggregate
+   {
+	// Csv lines
+	private		$Lines		=  [] ;
+	
+	
+	/*==============================================================================================================
+	
+	    Constructor -
+	        Builds a Csv lines array either from a string, or an array of strings or CsvLine objects.
+	
+	  ==============================================================================================================*/
+	public function  __construct ( $lines = null, $parent = null )
+	   {
+		parent::__construct ( $parent ) ;
+		
+		if  ( $lines  !==  null )
+		   {
+			if  ( is_string ( $lines ) )
+				$lines	=  $parent -> Parse ( $lines ) ;
+			
+			foreach  ( $lines  as  $line )
+			   {
+				$this -> Lines []	=  $this -> CreateColumns ( $line, $parent ) ;
+			    }
+		    }
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    CreateColumns -
+	        Instanciates a CsvColumns object.
+	
+	  ==============================================================================================================*/
+	protected function  CreateColumns ( $line, $parent )
+	   { return ( new CsvColumns ( $line, $parent ) ) ; }
+		
+	
+	/*==============================================================================================================
+	
+	    __tostring -
+	        Returns the string representation of this current set of Csv lines.
+	
+	  ==============================================================================================================*/
+	public function  __tostring ( )
+	   {
+		$lines	=  [] ;
+		
+		foreach  ( $this -> Lines  as  $line )
+			$lines []	=  ( string ) $line ;
+		
+		return ( implode ( "\n", $lines ) ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	        Interfaces implementations.
+	
+	  ==============================================================================================================*/
+	public function  Count ( )
+	   { return ( count ( $this -> Lines ) ) ; }
+	
+	
+	public function  getIterator ( )
+	   { return ( new \ArrayIterator ( $this -> Lines ) ) ; }
+	
+	
+	public function  offsetExists ( $offset )
+	   { return ( isset ( $this -> Lines [ $offset ] ) ) ; }
+	
+	
+	public function  offsetGet ( $offset )
+	   { return ( $this -> Lines [ $offset ] ) ; }
+	
+	
+	public function  offsetSet ( $offset, $value )
+	   {
+		if  ( $offset  ===  null )
+			$this -> Lines []		=  $value ;
+		else
+			$this -> Lines [ $offset ]	=  $value ;
+	    }
+
+	
+	public function  offsetUnset ( $offset )
+	   { unset ( $this -> Lines [ $offset ] ) ; }
+    }
+
+
+/*==============================================================================================================
+
+    CsvLine class -
+        Holds a Csv line.
+
+  ==============================================================================================================*/
+class  CsvLine		extends		CsvBase 
+			implements	\ArrayAccess, \Countable, \IteratorAggregate
+   {
+	// Column values
+	private		$Columns ;
+	
+	
+	/*==============================================================================================================
+	
+	    Constructor -
+	        Builds a Csv line from either a string, an array of string (column values) or an array of CsvColumn
+		objects.
+	
+	  ==============================================================================================================*/
+	public function  __construct ( $columns = null, $parent = null )
+	   {
+		parent::__construct ( $parent ) ;
+		
+		if  ( $columns  !==  null )
+		   {
+			if  ( is_string ( $columns ) )
+			   {
+				$columns	=  $parent -> Parse ( $columns ) ;
+				
+				if  ( count ( $columns )  >  1 )
+					error ( new \Thrak\System\RuntimeException ( "Parsed csv results returned more than one line." ) ) ;
+			    }
+
+			$result		=  new  CsvColumns ( $columns, $parent ) ;
+		    }
+		else
+			$result		=  new CsvColumns ( null, $parent ) ;
+		
+		$this -> Columns	=  $result ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    __tostring -
+	        Converts a CsvLine to a string of Csv format, using the Csv formatting options defined by the parent
+		object.
+	
+	  ==============================================================================================================*/
+	public function  __tostring ( )
+	   {
+		return ( ( string ) $this -> Columns ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	        Interfaces implementations.
+	
+	  ==============================================================================================================*/
+	public function  Count ( )
+	   { return ( count ( $this -> Columns ) ) ; }
+	
+	
+	public function  getIterator ( )
+	   { return ( new \ArrayIterator ( $this -> Columns ) ) ; }
+	
+	
+	public function  offsetExists ( $offset )
+	   { return ( isset ( $this -> Columns [ $offset ] ) ) ; }
+	
+	
+	public function  offsetGet ( $offset )
+	   { return ( $this -> Columns [ $offset ] ) ; }
+	
+	
+	public function  offsetSet ( $offset, $value )
+	   {
+		if  ( $offset  ===  null )
+			$this -> Columns []		=  $value ;
+		else
+			$this -> Columns [ $offset ]	=  $value ;
+	    }
+
+	
+	public function  offsetUnset ( $offset )
+	   { unset ( $this -> Columns [ $offset ] ) ; }
+    }
+
+
+
+/*==============================================================================================================
+
+    CsvColumns class -
+        Implements a set of CsvColumn objects within a Csv line.
+
+  ==============================================================================================================*/
+class  CsvColumns		extends		CsvBase 
+				implements	\ArrayAccess, \Countable, \IteratorAggregate
+   {
+	// Column values
+	private		$Columns	=  [] ;
+	
+	
+	/*==============================================================================================================
+	
+	    Constructor -
+	        Builds a CsvColumns object from either a string, an array of strings (column values) or an array of
+		CsvColumn objects.
+	
+	  ==============================================================================================================*/
+	public function  __construct ( $columns = null, $parent = null )
+	   {
+		parent::__construct ( $parent ) ;
+		
+		if  ( $columns  !==  null )
+		   {
+			if  ( is_string ( $columns ) )
+				$columns	=  $parent -> Parse ( $columns ) ;
+			
+			foreach  ( $columns  as  $column )
+			   {
+				$this -> Columns []	=  $this -> CreateColumn ( $column, $parent ) ;
+			    }
+		    }
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    Createcolumn -
+	        Creates a new column.
+	
+	  ==============================================================================================================*/
+	protected function  CreateColumn ( $column, $parent )
+	   {
+		return ( new CsvColumn ( $column, $parent ) ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    __tostring -
+	        Converts a set of columns to a string, using the formatting options defined into the Csv parent object.
+	
+	  ==============================================================================================================*/
+	public function  __tostring ( )
+	   {
+		$columns	=  [] ;
+		
+		foreach  ( $this -> Columns  as  $column )
+			$columns []	=  ( string ) $column ;
+		
+		if  ( $this -> Parent -> Options -> Flags  &  CsvOptions::CSV_NORMALIZE_COLUMN_COUNT )
+		   {
+			$count	=  count ( $columns ) ;
+			
+			for  ( $i = $count ; $i  <  $this -> Parent -> MaxColumns ; $i ++ )
+				$columns []	=  '' ;
+		    }
+		
+		return ( implode ( $this -> Parent -> Options -> Separator, $columns ) ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	        Interfaces implementations.
+	
+	  ==============================================================================================================*/
+	public function  Count ( )
+	   { return ( count ( $this -> Columns ) ) ; }
+	
+	
+	public function  getIterator ( )
+	   { return ( new \ArrayIterator ( $this -> Columns ) ) ; }
+	
+	
+	public function  offsetExists ( $offset )
+	   { return ( isset ( $this -> Columns [ $offset ] ) ) ; }
+	
+	
+	public function  offsetGet ( $offset )
+	   { return ( $this -> Columns [ $offset ] ) ; }
+	
+	
+	public function  offsetSet ( $offset, $value )
+	   {
+		if  ( $offset  ===  null )
+			$this -> Columns []		=  $value ;
+		else
+			$this -> Columns [ $offset ]	=  $value ;
+	    }
+
+	
+	public function  offsetUnset ( $offset )
+	   { unset ( $this -> Columns [ $offset ] ) ; }
+    }
+
+
+/*==============================================================================================================
+
+    CsvColumn class -
+        Implements a column within a line of a Csv file.
+
+  ==============================================================================================================*/
+class  CsvColumn		extends		CsvBase
+   {
+	// Column value
+	public		$Value ;
+	
+	
+	// Constructor -
+	//	Builds a Csv column object.
+	public function  __construct ( $value, $parent )
+	   {
+		parent::__construct ( $parent ) ;
+		
+		$this -> Value	=  $value ;
+	    }
+	
+	
+	// __tostring -
+	//	Returns the escaped value of the current column, taking into account the formatting options
+	//	defined in the parent Csv object.
+	public function  __tostring ( )
+	   {
+		return ( ( string ) $this -> Parent -> Options -> Escape ( $this -> Value ) ) ;
+	    }
+    }
+
+
+/*==============================================================================================================
+
+    CsvHeaderLine class -
+        Implements a Csv header line, which also gives the column definitions.
+
+  ==============================================================================================================*/
+class  CsvHeaderLine		extends  CsvLine
+   {
+	/*==============================================================================================================
+	
+	    Constructor -
+	        Builds a header line either from a string, an array of strings or an array of CsvHeaderColumn objects.
+	
+	  ==============================================================================================================*/
+	public function  __construct ( $columns = null, $parent = null )
+	   {
+		parent::__construct ( $columns, $parent ) ;
+	    }
+
+	
+	/*==============================================================================================================
+	
+	    CreateColumns -
+	        Instanciates a CsvColumns object.
+	
+	  ==============================================================================================================*/
+	protected function  CreateColumns ( $line, $parent )
+	   { return ( new CsvHeaderColumns ( $line, $parent ) ) ; }
+		
+	
+    }
+
+
+/*==============================================================================================================
+
+    CsvHeaderColumns class -
+        Implements a set of CsvHeaderColumn objects within a Csv line.
+
+  ==============================================================================================================*/
+class  CsvHeaderColumns		extends		CsvColumns 
+   {
+	// Column values
+	private		$Columns	=  [] ;
+	
+	
+	/*==============================================================================================================
+	
+	    Constructor -
+	        Builds a CsvColumns object from either a string, an array of strings (column values) or an array of
+		CsvColumn objects.
+	
+	  ==============================================================================================================*/
+	public function  __construct ( $columns = null, $parent = null )
+	   {
+		parent::__construct ( $parent ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    Createcolumn -
+	        Creates a new column.
+	
+	  ==============================================================================================================*/
+	protected function  CreateColumn ( $column, $parent )
+	   {
+		return ( new CsvHeaderColumn ( $column, $parent ) ) ;
+	    }
+    }
+
+
+/*==============================================================================================================
+
+    CsvHeaderColumn -
+        Implements a header column, which serves also as a column definition.
+	In the current version, header definitions 
+
+  ==============================================================================================================*/
+class  CsvHeaderColumn		extends  CsvColumn 
+   {
+	// Column types
+	const		CSV_COLUMN_TYPE_ANY		=  0 ;
+	const		CSV_COLUMN_TYPE_STRING		=  1 ;
+	const		CSV_COLUMN_TYPE_NUMERIC		=  2 ;
+	const		CSV_COLUMN_TYPE_DATETIME	=  3 ;
+	const		CSV_COLUMN_DATE			=  4 ;
+	const		CSV_COLUMN_TIME			=  5 ;
+	
+	// Current column type
+	public		$Type ;
+	
+	
+	// Constructor -
+	//	Builds a Csv header column.
+	public function  __construct ( $name, $type, $parent )
+	   {
+		parent::__construct ( $name, $parent ) ;
+		$this -> Type	=  $type ;
+	    }	
+    }

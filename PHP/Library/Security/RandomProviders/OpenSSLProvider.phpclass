@@ -1,0 +1,87 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        OpenSSL.phpclass
+
+    DESCRIPTION
+        Generates random numbers using openssl.
+
+    AUTHOR
+        Christian Vigh, 03/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/03/25]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Security\Random ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use  	Thrak\System\Object ;
+use     Thrak\Security\Random\RandomProvider ;
+use     Thrak\Security\Random\IPseudoRandomProvider ;
+
+
+/*==============================================================================================================
+
+    RandProvider -
+        A random number provider that uses the rand()/srand() functions.
+
+  ==============================================================================================================*/
+class	OpenSSLProvider			extends		RandomProvider
+					implements	IPseudoRandomProvider
+   {
+	// Constructor -
+	//	Defines the min and max values.
+	public function  __construct ( )
+	   {
+		$this -> MinValue	=  - PHP_INT_MAX - 1 ;
+		$this -> MaxValue	=  PHP_INT_MAX ;
+		parent::__construct ( 'openssl' ) ;
+	    }
+	
+	
+	// Randomize -
+	//	Randomizes the seed for this random number generator.
+	public function  Randomize ( $seed = null )
+	   { }
+	
+	
+	// Next -
+	//	Retrieves next '$count' values in the range $low..$high
+	public function  Next ( $count = 1, $low = null, $high = null )
+	   {
+		$bytes		=  openssl_random_pseudo_bytes ( $count * 4 ) ;
+		$result		=  [] ;
+		
+		if  ( $low  ===  null  &&  $high  ===  null )
+		   {
+			for  ( $i = 0 ; $i  <  $count ; $i ++ )
+			   {
+				$value		=  ( ord ( $bytes [ ( $i * 4 ) + 0 ] )  <<  24 )  |
+						   ( ord ( $bytes [ ( $i * 4 ) + 1 ] )  <<  16 )  |
+						   ( ord ( $bytes [ ( $i * 4 ) + 2 ] )  <<   8 )  |
+						   ( ord ( $bytes [ ( $i * 4 ) + 3 ] )  <<   0 ) ;
+				$result	[]	=  $value ;
+			    }
+		    }
+		else
+		   {
+			for  ( $i = 0 ; $i  <  $count ; $i ++ )
+			   {
+				$value		=  ( ord ( $bytes [ ( $i * 4 ) + 0 ] )  <<  24 )  |
+						   ( ord ( $bytes [ ( $i * 4 ) + 1 ] )  <<  16 )  |
+						   ( ord ( $bytes [ ( $i * 4 ) + 2 ] )  <<   8 )  |
+						   ( ord ( $bytes [ ( $i * 4 ) + 3 ] )  <<   0 ) ;
+				$result	[]	=  $this -> Normalize ( $value, $low, $high ) ;
+			    }
+		    }
+		
+		if  ( count ( $result )  ==  1 )
+			return ( $result [0] ) ;
+		else
+			return ( $result ) ;
+	    }
+    }

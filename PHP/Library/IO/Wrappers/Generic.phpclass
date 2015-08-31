@@ -1,0 +1,599 @@
+<?php
+/***************************************************************************************************
+
+    NAME
+	GenericWrapper.phpclass
+
+    DESCRIPTION
+	Generic stream wrapper.
+
+    AUTHOR
+	Christian Vigh, 10/2012.
+
+    HISTORY
+    [Version : 1.0]		[Date : 2012/10/04]		[Author : CV]
+	Initial release.
+
+ ***************************************************************************************************/
+namespace 	Thrak\IO\Wrappers ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces & objects
+use 		Thrak\System\Object 		as  Object ;
+use 		Thrak\System\Exception 		as  Exception ;
+use 		Thrak\Types\String		as  String ;
+use		Thrak\IO\Path			as  Path ;
+use  		Thrak\Internet\URI		as  URI ;
+
+
+// Supported functions
+define ( 'SW_SUPPORT_DIR_OPENDIR'		, 0x00000001 ) ;
+define ( 'SW_SUPPORT_DIR_CLOSEDIR'		, 0x00000002 ) ;
+define ( 'SW_SUPPORT_DIR_REWINDDIR'		, 0x00000004 ) ;
+define ( 'SW_SUPPORT_DIR_READDIR'		, 0x00000008 ) ;
+define ( 'SW_SUPPORT_DIR_MKDIR'			, 0x00000010 ) ;
+define ( 'SW_SUPPORT_DIR_RMDIR'			, 0x00000020 ) ;
+define ( 'SW_SUPPORT_UNLINK'			, 0x00000040 ) ;
+define ( 'SW_SUPPORT_RENAME'			, 0x00000080 ) ;
+define ( 'SW_SUPPORT_STREAM_CAST'		, 0x00000100 ) ;
+define ( 'SW_SUPPORT_STREAM_CLOSE'		, 0x00000200 ) ;
+define ( 'SW_SUPPORT_STREAM_EOF'		, 0x00000400 ) ;
+define ( 'SW_SUPPORT_STREAM_FLUSH'		, 0x00000800 ) ;
+define ( 'SW_SUPPORT_STREAM_METADATA'		, 0x00001000 ) ;
+define ( 'SW_SUPPORT_STREAM_LOCK'		, 0x00002000 ) ;
+define ( 'SW_SUPPORT_STREAM_OPEN'		, 0x00004000 ) ;
+define ( 'SW_SUPPORT_STREAM_READ'		, 0x00008000 ) ;
+define ( 'SW_SUPPORT_STREAM_SEEK'		, 0x00010000 ) ;
+define ( 'SW_SUPPORT_STREAM_SET_OPTION'		, 0x00020000 ) ;
+define ( 'SW_SUPPORT_STREAM_STAT'		, 0x00040000 ) ;
+define ( 'SW_SUPPORT_STREAM_TELL'		, 0x00080000 ) ;
+define ( 'SW_SUPPORT_STREAM_TRUNCATE'		, 0x00100000 ) ;
+define ( 'SW_SUPPORT_STREAM_WRITE'		, 0x00200000 ) ;
+define ( 'SW_SUPPORT_URL_STAT'			, 0x00400000 ) ;
+
+define ( 'SW_SUPPORT_MASK_ALL'			, 0xFFFFFFFF ) ;
+
+
+/*==================================================================================================
+
+    GenericWrapper class -
+	Implements a generic stream wrapper.
+
+  ==================================================================================================*/
+class  GenericWrapper	extends  Object
+   {
+   	public  		$context 	=  null ;
+   	public  static  	$WrapperData	=  array ( ) ;
+   	protected 		$AbortOnError	=  false ;
+   	public  		$Features ;
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    Class constructor.
+
+	 --------------------------------------------------------------------------------------------*/
+   	public function  __construct ( )
+	   {
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    Register -
+	    	Registers a new wrapper using this class.
+		The $parameters parameter is an associative array containing parameters (key/value
+		pairs) related to this wrapper.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  Register ( $wrapper_name, $parameters = null, $flags = 0 )
+	   {
+	   	$class_name	= "\\" . get_called_class ( ) ;
+	   	$status 	=  stream_wrapper_register ( $wrapper_name, $class_name, $flags ) ;
+
+	   	if  ( ! $status )
+	   		throw new Exception ( "Failed to register wrapper \"$wrapper_name\" for class \"$class_name\"." ) ;
+
+	   	// Parameters to be associated with this wrapper.
+	   	// Since there is no way from within the StreamWrapper class to retrieve the wrapper name specified during the
+	   	// call to the stream_wrapper_register function, the only chance to get it is in functions that receive an URL
+	   	// as a parameter (such as fopen, url_stat, etc.).
+	   	if  ( $parameters  !=  null  &&  is_array ( $parameters ) )
+	   	   {
+	   		if  ( array_key_exists ( $wrapper_name, GenericWrapper::$WrapperData ) )
+	   			GenericWrapper::$WrapperData [ $wrapper_name ] 	=  array_merge ( GenericWrapper::$WrapperData [ $wrapper_name ], $parameters ) ;
+	   		else
+	   			GenericWrapper::$WrapperData [ $wrapper_name ]  =  $parameters ;
+	   	    }
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    Unregister -
+	    	Unregisters a stream wrapper.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  Unregister ( $wrapper_name )
+	   {
+		$status 	=  stream_wrapper_unregister ( $wrapper_name ) ;
+
+	   	if  ( ! $status )
+	   		throw new Exception ( "Failed to unregister wrapper \"$wrapper_name\"." ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    Restore -
+	    	Restores the original stream wrapper.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  Restore ( $wrapper_name )
+	   {
+		$status 	=  stream_wrapper_unregister ( $wrapper_name ) ;
+
+	   	if  ( ! $status )
+	   		throw new Exception ( "Failed to restore wrapper \"$wrapper_name\"." ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    GetStreamOption -
+	    	Returns the specified parameter for the specified stream, or null if parameter does
+	    	not exist (parameters are arrays passed through the Register() function.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  GetStreamOption ( $wrapper_name, $parameter )
+	   {
+		if  ( array_key_exists ( $wrapper_name, GenericWrapper::$WrapperData ) )
+		   {
+			if  ( array_key_exists ( $parameter, GenericWrapper::$WrapperData [ $wrapper_name ] ) )
+				return ( GenericWrapper::$WrapperData [ $wrapper_name ] [ $parameter ] ) ;
+		    }
+
+		return ( null ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    Supports -
+	    	Checks if the object supports the specified features.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  Supports ( $features )
+	   {
+		$supported_features 	=  $this -> Features ;
+
+		return ( ( ( $supported_features  &  $features )  ==  $features ) ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    UnsupportedOperation -
+	    	Throws an exception for unsupported operations if the
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  UnsupportedOperation ( )
+	   {
+		if  ( $this -> AbortOnError )
+		   {
+		   	$trace 		=  debug_backtrace ( ) ;
+		   	$function 	=  $trace [1] [ 'function' ] ;
+			throw new Exception ( "Unsupported stream operation \"$function\"." ) ;
+		    }
+		else
+			return ( false ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    dir_closedir -
+	    	Closes a directory opened by dir_opendir.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  dir_closedir ( )
+	   {
+	   	if  ( $this -> Supports ( SW_SUPPORT_DIR_CLOSEDIR ) )
+	   		return ( $this ->  DirectoryClose ( ) ) ;
+	   	else
+	   		return ( $this -> UnsupportedOperation ( ) ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    dir_opendir -
+	    	Opens a directory for reading entries.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  dir_opendir ( $path, $options )
+	   {
+	   	if  ( $this -> Supports ( SW_SUPPORT_DIR_OPENDIR ) )
+	   		return ( $this ->  DirectoryOpen ( $path, $options ) ) ;
+	   	else
+	   		return ( $this -> UnsupportedOperation ( ) ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    dir_readdir -
+	    	Reads the next directory entry from a directory.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  dir_readdir ( )
+	   {
+	   	if  ( $this -> Supports ( SW_SUPPORT_DIR_READDIR ) )
+	   		return ( $this ->  DirectoryRead ( ) ) ;
+	   	else
+	   		return ( $this -> UnsupportedOperation ( ) ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    dir_rewinddir -
+	    	Rewinds a directory so that the next call to readdir() will return the first entry.
+
+	 --------------------------------------------------------------------------------------------*/
+	 public function  dir_rewinddir ( )
+	   {
+	   	if  ( $this -> Supports ( SW_SUPPORT_DIR_REWINDDIR ) )
+	   		return ( $this ->  DirectoryRewind ( ) ) ;
+	   	else
+	   		return ( $this -> UnsupportedOperation ( ) ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    mkdir -
+	    	Creates a directory.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  mkdir  ( $path, $mode, $options )
+	   {
+	   	if  ( $this -> Supports ( SW_SUPPORT_DIR_MKDIR ) )
+	   		return ( $this ->  DirectoryCreate ( $path, $mode, $options ) ) ;
+	   	else
+	   		return ( $this -> UnsupportedOperation ( ) ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    rename -
+	    	Renames a file or a directory.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  rename ( $from_path, $to_path )
+	   {
+	   	if  ( $this -> Supports ( SW_SUPPORT_RENAME ) )
+	   		return ( $this ->  FileRename ( $from_path, $to_path ) ) ;
+	   	else
+	   		return ( $this -> UnsupportedOperation ( ) ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    rmdir -
+	    	Removes a directory.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  rmdir ( $path, $options )
+	   {
+	   	if  ( $this -> Supports ( SW_SUPPORT_DIR_RMDIR ) )
+	   		return ( $this ->  DirectoryRemove ( $path, $options ) ) ;
+	   	else
+	   		return ( $this -> UnsupportedOperation ( ) ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    stream_cast -
+	    	Returns the underlying file handle.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  stream_cast ( $cast_as )
+	   {
+	   	if  ( $this -> Supports ( SW_SUPPORT_STREAM_CAST ) )
+	   		return ( $this ->  StreamCast ( $cast_as ) ) ;
+	   	else
+	   		return ( $this -> UnsupportedOperation ( ) ) ;
+	   		    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    stream_close -
+	    	Closes a stream.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  stream_close ( )
+	   {
+	   	if  ( $this -> Supports ( SW_SUPPORT_STREAM_CLOSE ) )
+	   		return ( $this ->  StreamClose ( ) ) ;
+	   	else
+	   		return ( $this -> UnsupportedOperation ( ) ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    stream_eof -
+	    	Tells if the stream has reach end-of-file.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  stream_eof  ( )
+	   {
+	   	if  ( $this -> Supports ( SW_SUPPORT_STREAM_EOF ) )
+	   		return ( $this ->  StreamEof ( ) ) ;
+	   	else
+	   		return ( $this -> UnsupportedOperation ( ) ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    stream_flush -
+	    	Flushes the current stream contents.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  stream_flush ( )
+	   {
+	   	if  ( $this -> Supports ( SW_SUPPORT_STREAM_FLUSH ) )
+	   		return ( $this ->  StreamFlush ( ) ) ;
+	   	else
+	   		return ( $this -> UnsupportedOperation ( ) ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    stream_lock -
+	    	Puts a lock on the current stream.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  stream_lock ( $mode )
+	   {
+	   	if  ( $this -> Supports ( SW_SUPPORT_STREAM_LOCK ) )
+	   		return ( $this ->  StreamLock ( $mode ) ) ;
+	   	else
+	   		return ( $this -> UnsupportedOperation ( ) ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    stream_metadata -
+	    	Changes stream metadata. Invoked when calling one of the following functions : touch(),
+	    	chmod(), chown() or chgrp().
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  stream_metadata ( $path, $option, $arg )
+	   {
+	   	if  ( $this -> Supports ( SW_SUPPORT_STREAM_METADATA ) )
+	   		return ( $this ->  StreamMetaData ( $path, $option, $arg ) ) ;
+	   	else
+	   		return ( $this -> UnsupportedOperation ( ) ) ;
+	    }
+
+	/*-------------------------------------------------------------------------------------------
+
+	    stream_open -
+	    	Opens the stream.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  stream_open  ( $path, $mode, $options, &$opened_path )
+	   {
+	   	if  ( $this -> Supports ( SW_SUPPORT_STREAM_OPEN ) )
+	   		return ( $this -> StreamOpen ( $path, $mode, $options, $opened_path ) ) ;
+	   	else
+	   		return ( $this -> UnsupportedOperation ( ) ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    stream_read -
+	    	Reads data from the stream.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  stream_read  ( $count )
+	   {
+	   	if  ( $this -> Supports ( SW_SUPPORT_STREAM_READ ) )
+	   		return ( $this ->  StreamRead ( $count ) ) ;
+	   	else
+	   		return ( $this -> UnsupportedOperation ( ) ) ;
+
+	    }
+
+	/*-------------------------------------------------------------------------------------------
+
+	    stream_seek -
+	    	Positions the stream to the current byte offset.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  stream_seek  ( $offset, $whence )
+	   {
+	   	if  ( $this -> Supports ( SW_SUPPORT_STREAM_SEEK ) )
+	   		return ( $this ->  StreamSeek ( $offset, $whence ) ) ;
+	   	else
+	   		return ( $this -> UnsupportedOperation ( ) ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    stream_set_option -
+	    	Sets a stream option. Invoked when one of the following functions is called :
+	    	stream_set_blocking(), stream_set_timeout() or stream_set_write_buffer().
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  stream_set_option ( $option, $arg1, $arg2 )
+	   {
+	   	if  ( $this -> Supports ( SW_SUPPORT_STREAM_SET_OPTION ) )
+	   		return ( $this ->  StreamSetOption ( $option, $arg1, $arg2 ) ) ;
+	   	else
+	   		return ( $this -> UnsupportedOperation ( ) ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    stream_stat -
+	    	Provides fstat() information about the stream.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  stream_stat  ( )
+	   {
+	   	if  ( $this -> Supports ( SW_SUPPORT_STREAM_STAT ) )
+	   		return ( $this ->  StreamStat ( ) ) ;
+	   	else
+	   		return ( $this -> UnsupportedOperation ( ) ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    stream_tell -
+	    	Returns the byte position within the stream.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  stream_tell  ( )
+	   {
+	   	if  ( $this -> Supports ( SW_SUPPORT_STREAM_TELL ) )
+	   		return ( $this ->  StreamTell ( ) ) ;
+	   	else
+	   		return ( $this -> UnsupportedOperation ( ) ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    stream_truncate -
+	    	Truncates the stream to the specified size.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  stream_truncate  ( $new_size )
+	   {
+	   	if  ( $this -> Supports ( SW_SUPPORT_STREAM_TRUNCATE ) )
+	   		return ( $this ->  StreamTruncate ( $new_size ) ) ;
+	   	else
+	   		return ( $this -> UnsupportedOperation ( ) ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    stream_write -
+	    	Writes data to the stream.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  stream_write  ( $data )
+	   {
+	   	if  ( $this -> Supports ( SW_SUPPORT_STREAM_WRITE ) )
+	   		return ( $this ->  StreamWrite ( $data ) ) ;
+	   	else
+	   		return ( $this -> UnsupportedOperation ( ) ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    unlink -
+	    	Unlinks the specified file.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  unlink	  ( $path )
+	   {
+	   	if  ( $this -> Supports ( SW_SUPPORT_UNLINK ) )
+	   		return ( $this ->  FileUnlink ( $path ) ) ;
+	   	else
+	   		return ( $this -> UnsupportedOperation ( ) ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    url_stat -
+	    	Provides fstat() information about the stream.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  url_stat ( $path, $flags )
+	   {
+	   	if  ( $this -> Supports ( SW_SUPPORT_URL_STAT ) )
+	   		return ( $this ->  FileStat ( $path, $flags ) ) ;
+	   	else
+	   		return ( $this -> UnsupportedOperation ( ) ) ;
+	    }
+
+
+   	/*-------------------------------------------------------------------------------------------
+
+	    Methods called by the streamwrapper class.
+
+	 --------------------------------------------------------------------------------------------*/
+   	public function  DirectoryClose 	( )						{ return ( false ) ; }
+   	public function  DirectoryOpen 		( $path, $options )				{ return ( false ) ; }
+   	public function  DirectoryRead 		( )						{ return ( false ) ; }
+   	public function  DirectoryRewind 	( ) 						{ return ( false ) ; }
+   	public function  DirectoryCreate 	( $path, $mode, $options ) 			{ return ( false ) ; }
+   	public function  DirectoryRemove 	( $path, $options )				{ return ( false ) ; }
+
+   	public function  FileRename 		( $from_url, $to_url )				{ return ( false ) ; }
+   	public function  FileUnlink 		( $path ) 					{ return ( false ) ; }
+   	public function  FileStat 		( $path, $flags ) 				{ return ( false ) ; }
+
+   	public function  StreamCast 		( $cast_as )					{ return ( false ) ; }
+   	public function  StreamClose 		( ) 						{ return ( false ) ; }
+   	public function  StreamEof 		( ) 						{ return ( false ) ; }
+   	public function  StreamFlush 		( )						{ return ( false ) ; }
+   	public function  StreamLock 		( $mode ) 					{ return ( false ) ; }
+   	public function  StreamMetaData 	( $path, $option, $arg )			{ return ( false ) ; }
+   	public function  StreamOpen 		( $path, $mode, $options, &$opened_path )	{ return ( false ) ; }
+   	public function  StreamRead 		( $count )					{ return ( false ) ; }
+   	public function  StreamSeek 		( $offset, $whence )				{ return ( false ) ; }
+   	public function  StreamSetOption 	( $option, $arg1, $arg2 )			{ return ( false ) ; }
+   	public function  StreamStat 		( ) 						{ return ( false ) ; }
+   	public function  StreamTell 		( )						{ return ( false ) ; }
+   	public function  StreamTruncate 	( $new_size )					{ return ( false ) ; }
+   	public function  StreamWrite 		( $data ) 					{ return ( false ) ; }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    Miscellaneous support functions.
+
+	 --------------------------------------------------------------------------------------------*/
+
+   	// ParseUrl -
+   	//	Decodes an URL.
+	protected function  ParseUrl ( $url )
+	   {
+		return ( URI::DecodeUrl ( $url ) ) ;
+	    }
+
+	// GetPath -
+	//	Returns the path component from a URL
+	protected function  GetPath ( $url )
+	   {
+		return ( $url [ 'path' ] ) ;
+	    }
+
+
+	// GetRealPath -
+	//	Returns the real path of an url.
+	protected function  GetRealPath ( $url )
+	   {
+		return ( $url [ 'full-path' ] ) ;
+	    }
+    }

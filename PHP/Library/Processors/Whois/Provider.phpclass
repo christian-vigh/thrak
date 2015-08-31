@@ -1,0 +1,52 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        WhoisProviderInformation.phpclass
+
+    DESCRIPTION
+        A processor for analyzing whois data based on address ranges.
+
+    AUTHOR
+        Christian Vigh, 07/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/07/31]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace  Thrak\Processors\Whois ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces and classes
+use  	Thrak\System\Object ;
+use	Thrak\IO\Path ;
+use	Thrak\Types\String ;
+use	Thrak\Processors\WhoisInformation ;
+
+
+/*==============================================================================================================
+
+    WhoisProviderInformation -
+        Base class for all sorts of whois output related to provider information.
+
+  ==============================================================================================================*/
+abstract class  WhoisProviderInformation		extends  WhoisInformation
+   {
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    Constructor -
+		Builds a WhoisData object.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( $queried_ip, $contents, $parse = true )
+	   {
+		$this -> QueriedIp	 =  $queried_ip ;
+		$this -> Flags		|=  self::WHOIS_FLAGS_PROVIDER ;
+
+		parent::__construct ( $contents, $parse ) ;
+	    }
+   }
+

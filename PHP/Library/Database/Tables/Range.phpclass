@@ -1,0 +1,570 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        Range.php
+
+    DESCRIPTION
+        A class to handle tables that hold ranges.
+
+    AUTHOR
+        Christian Vigh, 07/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/07/09]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace	Thrak\Database\Tables ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces & objects
+use	Thrak\System\Object ;
+use     Thrak\IO\Path ;
+use	Thrak\Types\String ;
+use	Thrak\Database\Table ;
+
+
+/*==============================================================================================================
+
+    Range class -
+        Abstract class for managing a table that holds range values.
+
+  ==============================================================================================================*/
+class  Range		extends Table
+   {
+	// Name of the id field
+	public		$IdFieldName ;
+	// Name of the range low/high fields
+	public		$LowFieldName,
+			$HighFieldName ;
+	// Lowest and highest range values - can be redefined by derived classes
+	protected	$LowestValue		=  - PHP_INT_MAX - 1 ;
+	protected	$HighestValue		=  PHP_INT_MAX ;
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        Constructor - Builds a Table object holding ranges.
+	 
+	    PROTOTYPE
+	        $range	=  new  Range ( $table_name, $id_field, $range_low_field, $range_high_field, $comment = '',
+					$database = null, $recreate = false ) ;
+	 
+	    DESCRIPTION
+	        Builds a table object holding ranges.
+	 
+	    PARAMETERS
+	        $table_name (string) -
+	                Name of the table to be considered as holding value ranges.
+
+		$id_field (string) -
+			Name of the id field in the supplied table.
+   
+		$range_low_field, $range_high_field (string) -
+			Names of the range low and range high fields.
+
+		$comment (string) -
+			Table comment (added when creating the table).
+
+		$database (Database object) -
+			See the Table constructor help.
+
+		$recreate (boolean) -
+			See the Table constructor help.
+	 
+	    NOTES
+	        The Create() function does nothing, so either the table must already exist or the derived class must
+		implement a Create() function that actually creates or recreates the table when needed.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( $table_name, $id_field, $range_low_field, $range_high_field, $comment = '', $database = null, $recreate = false )
+	   {
+		parent::__construct ( $table_name, $comment, $database, $recreate ) ;
+
+		$this -> IdFieldName		=  $id_field ;
+		$this -> LowFieldName		=  $range_low_field ;
+		$this -> HighFieldName		=  $range_high_field ;
+	    }
+	
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        Create - Recreates the table if needed.
+	 
+	    DESCRIPTION
+	        This function does nothing, therefore the table must exist before instanciation the Range object, or a
+		derived class must implement this function to create (or recreate) the table.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  Create ( ) {} 
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        GetLowestValue, GetHighestValue - Gets the minimum/maximum value authorized for a range.
+	 
+	    DESCRIPTION
+	        Gets the minimum/maximum value authorized for a range.
+		Derived classes must set the LowestValue and HighestValue members in their constructor if they differ
+		from the default ( -PHP_INT_MAX-1 and PHP_INT_MAX ).
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  GetLowestValue ( )
+	   { return ( $this -> LowestValue ) ; }
+	    
+	public function  GetHighestValue ( )
+	   { return ( $this -> HighestValue ) ; }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        GetNextValue, GetPreviousValue - Gets the next/previous value of a range value.
+	 
+	    DESCRIPTION
+		Gets the next/previous value of the specified value.
+
+		If the value type is non-numeric, derived classes can implement the following methods :
+		- NextValueOf, PreviousValueOf :
+			Returns the next/previous value of the specified one. Note that bounds checking is not 
+			mandatory, since it is performed by the GetNextValue() and GetPreviousValue() methods.
+			However, NextValueOf() and PreviousValueOf() can return null if the computed value is out of
+			range.
+		- CompareValues :
+			Compares two values and returns a comparison result similar to strcmp().
+
+		Note that GetNextValue() returns the highest possible value if the supplied parameter is null ;
+		similarly, GetPreviousValue() returns the lowest possible value if the supplied parameter is null.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  GetNextValue ( $value ) 
+	   {
+		if  ( $value  ===  null )
+			return ( $this -> HighestValue ) ;
+
+		$next		=  $this -> NextValueOf ( $value ) ;
+
+		if  ( $next  ===  null  ||  $this -> CompareValues ( $next,  $this -> HighestValue )  >  0 )
+			return ( null ) ;
+		else
+			return ( $next ) ;
+	    }
+
+	public function  GetPreviousValue ( $value ) 
+	   {
+		if  ( $value  ===  null )
+			return ( $this -> LowestValue ) ;
+
+		$previous	=  $this -> PreviousValueOf ( $value ) ;
+
+		if  ( $previous  ===  null  ||  $this -> CompareValues ( $previous, $this -> LowestValue )  <  0 )
+			return ( null ) ;
+		else
+			return ( $previous ) ;
+	    }
+
+
+	protected function  NextValueOf ( $value )
+	   { return ( $value + 1 ) ; }
+
+
+	protected function  PreviousValueOf ( $value )
+	   { return ( $value - 1 ) ; } 
+
+
+	protected function  CompareValues ( $value1, $value2 )
+	   { return ( $value1 - $value2 ) ; }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        GetCoveredRange - Returns a range that includes a given range.
+	 
+	    PROTOTYPE
+	        $result		=  $range -> GetCoveredRange ( $low, $high ) ;
+	 
+	    DESCRIPTION
+	        Returns a row whose range includes the given one, if any.
+	 
+	    PARAMETERS
+	        $low, $high (any) -
+	                Low and high values of the range to be searched.
+	 
+	    RETURN VALUE
+	        The row enclosing the specified range, or false if no such row exists in the table.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  GetCoveredRange ( $low, $high )
+	   {
+		$searched_low	=  $this -> Database -> Escape ( $low ) ;
+		$searched_high	=  $this -> Database -> Escape ( $high ) ;
+
+		$query		=  "
+					SELECT *
+					FROM {$this -> Name}
+					WHERE
+						'$searched_low' BETWEEN {$this -> LowFieldName} AND {$this -> HighFieldName}  AND
+						'$searched_high' BETWEEN {$this -> LowFieldName} AND {$this -> HighFieldName}
+				   " ;
+
+		$this -> Database -> SetQuery ( $query ) ;
+		$row		=  $this -> Database -> LoadRow ( ) ;
+
+		if  ( $row )
+			return ( $row ) ;
+		else
+			return ( false ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        GetUncoveredRange - Finds an empty range that includes the specified one.
+	 
+	    PROTOTYPE
+	        $result		=  $range -> GetUncoveredRange ( $low, $high ) ;
+	 
+	    DESCRIPTION
+	        Finds an empty range that includes the specified one.
+		For example, if the table contains the following ranges (rows) :
+
+			[ low: 100, high: 200 ],
+			[ low: 1000, high: 2000 ]
+
+		then GetUncoveredRange ( 500, 600 ) will return the following array :
+
+			[ 'low' => 201, 'high' => 999 ]
+
+		ie, the uncovered interval that lies between the values 200..1000 and that includes the range 500..600.
+		Note that range values that exceed the lowest or highest range values represented in the table will have
+		the value null ; for example, GetUncoveredRange ( 1, 50 ) will return :
+
+			[ 'low' => null, 'high' => 99 ] 
+
+		while GetUncoveredRange ( 10000, 20000 ) will return :
+
+			[ 'low' => 2001, 'high' => null ]
+	 
+	    PARAMETERS
+	        $low, $high (any) -
+	                Low and high values of the range to be searched.
+	 
+	    RETURN VALUE
+	        Returns the uncovered range enclosing the specified one, or false if the specified range overlaps one or
+		more ranges defined in the underlying table.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  GetUncoveredRange ( $low, $high )
+	   {
+		$searched_low	=  $this -> Database -> Escape ( $low ) ;
+		$searched_high	=  $this -> Database -> Escape ( $high ) ;
+
+		$query	=  "
+				SELECT
+					Selection. *,
+					(
+						SELECT COUNT(*)
+						FROM  {$this -> Name}
+						WHERE
+							{$this -> LowFieldName}  BETWEEN  '$searched_low' AND '$searched_high'  OR
+							{$this -> HighFieldName} BETWEEN  '$searched_low' AND '$searched_high'
+ 					 )  AS ranges_covered
+				FROM
+				   (
+					SELECT
+					   (
+						SELECT
+							MAX({$this -> HighFieldName})
+						FROM  {$this -> Name}
+						WHERE 
+							'$searched_low' > {$this -> HighFieldName}
+					    ) AS  low,
+					   (
+						SELECT
+							MIN({$this -> LowFieldName})
+						FROM {$this -> Name}
+						WHERE
+							'$searched_high' < {$this -> LowFieldName}
+					    )  AS  high
+				    ) AS Selection
+				   " ;
+
+		$this -> Database -> SetQuery ( $query ) ;
+		$row		=  $this -> Database -> LoadRow ( ) ;
+		$row [ 'low' ]	=  $this -> GetNextValue ( $row [ 'low' ] ) ;
+		$row [ 'high' ]	=  $this -> GetPreviousValue ( $row [ 'high' ] ) ;
+		$ranges_covered	=  ( integer ) $row [ 'ranges_covered' ] ;
+
+		if  ( $ranges_covered )
+			return ( $ranges_covered ) ;
+		else
+			return ( [ 'low' => $row [ 'low' ], 'high' => $row [ 'high' ] ] ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        GetCoveredRangeValue - Returns the row that contains the specified value.
+	 
+	    PROTOTYPE
+	        $result		=  $range -> GetCoveredRangeValue ( $value ) ;
+	 
+	    DESCRIPTION
+	        Returns the range row that contains the specified value, or false if the value is not included in any
+		range defined by any row in the underlying table.
+	 
+	    PARAMETERS
+	        $value (any) -
+	                Value to be searched.
+	 
+	    RETURN VALUE
+	        Returns the table row containing the specified value, or false if it does not exist.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  GetCoveredRangeValue ( $value )
+	   {
+		$searched_value		=  $this -> Database -> Escape ( $value ) ;
+
+		$query	=  "
+				SELECT
+					*
+				FROM {$this -> Name}
+				WHERE
+					{$this -> LowFieldName}  <=  '$searched_value' AND
+					{$this -> HighFieldName} >=  '$searched_value' 
+			   " ;
+
+		$this -> Database -> SetQuery ( $query ) ;
+		$row		=  $this -> Database -> LoadRow ( ) ;
+
+		if  ( $row )
+			return ( $row ) ;
+		else
+			return ( false ) ;
+	    }
+	
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        GetUncoveredRangeValue - Finds an empty range that includes the specified value.
+	 
+	    PROTOTYPE
+	        $result		=  $range -> GetUncoveredRangeValue ( $value ) ;
+	 
+	    DESCRIPTION
+	        Similar to the GetUncoveredRange() method, but a single value is searched, instead of a range.
+	 
+	    PARAMETERS
+	        $value (any) -
+	                Value to be searched.
+	 
+	    RETURN VALUE
+	        An associative array containing the lowest ('low') and highest ('high') values enclosing the specified
+		one.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  GetUncoveredRangeValue ( $value )
+	   {
+		$searched_value		=  $this -> Database -> Escape ( $value ) ;
+
+		$query	=  "
+				SELECT
+					IF ( Selection. in_range IS NULL, 0	, 1			) AS in_range,
+					IF ( Selection. low	 IS NULL, NULL	, Selection. low	) AS low,
+					IF ( Selection. high	 IS NULL, NULL	, Selection. high	) AS high
+				FROM
+				   (
+					SELECT 
+					   (
+						SELECT MAX( {$this -> HighFieldName} )
+						FROM {$this -> Name}
+						WHERE
+							'$searched_value' > {$this -> HighFieldName}
+					    ) AS  low,
+					   (
+						SELECT MIN( {$this -> LowFieldName} )
+						FROM {$this -> Name}
+						WHERE
+							'$searched_value' < {$this -> LowFieldName}
+					    ) AS  high,
+					   (
+						SELECT {$this -> IdFieldName}
+						FROM {$this -> Name}
+						WHERE
+							'$searched_value' >=  {$this -> LowFieldName}  AND  '$searched_value'  <=  {$this -> HighFieldName}
+					    )  as  in_range
+				     )  AS Selection
+			   " ;
+
+		$this -> Database -> SetQuery ( $query ) ;
+		$row		=  $this -> Database -> LoadRow ( ) ;
+		$row [ 'low' ]	=  $this -> GetNextValue ( $row [ 'low' ] ) ;
+		$row [ 'high' ]	=  $this -> GetPreviousValue ( $row [ 'high' ] ) ;
+		$in_range	=  ( integer ) $row [ 'in_range' ] ;
+
+		if  ( $in_range )
+			return ( false ) ;
+		else
+			return ( [ 'low' => $row [ 'low' ], 'high' => $row [ 'high' ] ] ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        GetRange - Returns a range row identified by its low and high values.
+	 
+	    PROTOTYPE
+	        $row  =  $range -> GetRange ( $low, $high ) ;
+	 
+	    DESCRIPTION
+	        Returns a range row identified by its low and high values. Note that the low and high values must 
+		strictly be equal to the ones defined in the underlying table.
+	 
+	    PARAMETERS
+	        $low, $high (any) -
+	                Low and high boundaries of the range to be retrived.
+	 
+	    RETURN VALUE
+	        Returns the found row or null if it does not exist.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  GetRange ( $low, $high )
+	   {
+		$searched_low		=  $this -> Database -> Escape ( $low ) ;
+		$searched_high		=  $this -> Database -> Escape ( $high ) ;
+
+		$query	=  "
+				SELECT *
+				FROM {$this -> Name}
+				WHERE
+					low  =  '$searched_low' AND
+					high =  '$searched_high' 
+			   " ;
+
+		$this -> Database -> SetQuery ( $query ) ;
+		$row	=  $this -> Database -> LoadRow ( ) ;
+
+		if  ( $row )
+			return ( $row ) ;
+		else
+			return ( false ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        GetRangesIn - Finds the ranges contained in the specified low/high values.
+	 
+	    PROTOTYPE
+	        $result		=  $range -> GetRangesIn ( $low, $high ) ;
+	 
+	    DESCRIPTION
+	        Retrieves the ranges that are covered by the specified low and high values.
+	 
+	    PARAMETERS
+	        $low, $high (any) -
+	                Low and high values to be looked up.
+	 
+	    RETURN VALUE
+	        Returns false if the specified range does not cover any range in the underlying tables, or an associative
+		array of rows whose keys are the names of the id field, the low range field and the high range field.
+		Array values come from the database.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  GetRangesIn ( $low, $high )
+	   {
+		$searched_low		=  $this -> Database -> Escape ( $low ) ;
+		$searched_high		=  $this -> Database -> Escape ( $high ) ;
+
+		// The query searches for :
+		// - Ranges that are enclosed by the low and high values
+		// - Ranges that enclose either the low or high value
+		// The query is split into two individual queries that are concatenated with a UNION statement, because
+		// they use different indexes. It is thus faster to perform the individual queries then join them instead 
+		// of running a single query with all the WHERE clauses.
+		$query	=  "
+				SELECT DISTINCT * FROM 
+				   (
+					SELECT {$this -> IdFieldName}, {$this -> LowFieldName}, {$this -> HighFieldName}
+					FROM {$this -> Name}
+					WHERE
+					   (
+						{$this -> HighFieldName}  <=  '$searched_high' AND
+						{$this -> LowFieldName}   >=  '$searched_low'
+					    ) 
+
+					UNION ALL
+
+					SELECT {$this -> IdFieldName}, {$this -> LowFieldName}, {$this -> HighFieldName}
+					FROM {$this -> Name}
+					WHERE
+					   '$searched_high' BETWEEN {$this -> LowFieldName} AND {$this -> HighFieldName}  OR
+					   '$searched_low'  BETWEEN {$this -> LowFieldName} AND {$this -> HighFieldName}
+				    )  AS Selection
+				ORDER BY {$this -> LowFieldName}
+			   " ;
+
+		$this -> Database -> SetQuery ( $query ) ;
+		$rows	=  $this -> Database -> LoadRows ( ) ;
+
+		if  ( $rows )
+			return ( $rows ) ;
+		else
+			return ( false ) ;
+	    }
+
+
+	public function  GetMissingRanges ( )
+	   {
+		
+		$query		=  "
+					SELECT {$this -> LowFieldName} AS 'low', {$this -> HighFieldName} AS 'high'
+					FROM {$this -> Name} 
+					ORDER BY {$this -> LowFieldName}, {$this -> HighFieldName}
+				   " ;
+
+		$this -> Database -> SetQuery ( $query ) ;
+		$rows			=  $this -> Database -> LoadRows ( ) ;
+		$row_count		=  count ( $rows ) ;
+
+		if  ( ! $row_count ) 
+			return ( false ) ;
+
+		$missing_ranges		=  [] ;
+		$row			=  $rows [0] ;
+		
+		if  ( $this -> CompareValues ( $this -> LowestValue, $row [ 'low' ] )  <  0 )
+			$missing_ranges []	=  [ 'low' => $this -> LowestValue, 'high' => $this -> PreviousValueOf ( $row [ 'low' ] ) ] ;
+
+		$previous	=  $this -> NextValueOf ( $rows [0] [ 'high' ] ) ;
+
+		for  ( $i = 1 ; $i < $row_count - 1 ; $i ++ )
+		   {
+			$row	=  $rows [$i] ;
+
+			if  ( $this -> CompareValues ( $previous, $row [ 'low' ] )  <  0 )
+				$missing_ranges []	=  [ 'low' => $previous, 'high' => $this -> PreviousValueOf ( $row [ 'low' ] ) ] ;
+
+			$previous =  $this -> NextValueOf ( $row [ 'high' ] ) ;
+		    }
+
+		$row	=  $rows [ $row_count - 1 ] ;
+
+		if  ( $this -> CompareValues ( $row [ 'high' ], $this -> HighestValue )  <  0 )
+			$missing_ranges []	=  [ 'low' => ( integer ) $row [ 'high' ], 'high' => $this -> HighestValue ] ;
+
+		return ( $missing_ranges ) ;
+	    }
+    }

@@ -1,0 +1,49 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        Expect.phpclass
+
+    DESCRIPTION
+        Http Expect: header.
+
+    AUTHOR
+        Christian Vigh, 05/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/05/27]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace  	Thrak\Network\RfcProtocols\Http ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces and classes
+use     Thrak\System\Object ;
+use	Thrak\Network\RfcProtocols\Http\HttpStandardHeader ;
+use	Thrak\Network\RfcProtocols\Http\Traits\HttpKeywords ;
+
+
+/*==============================================================================================================
+
+    HttpExpectHeader class -
+        Http Expect header implementation (http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.20).
+
+ 	Examples :
+ 		Expect: 100-continue
+ 		Expect: param=value;q=0.8
+
+  ==============================================================================================================*/
+class	HttpExpectHeader		extends  HttpStandardHeader
+   {
+	use		HttpKeywords ;
+	
+	
+	public function  __construct ( $header )
+	   {
+		$this -> AcceptedKeywords	=  [ '100-continue' ] ;
+		parent::__construct ( 'Expect', $header, self::HTTP_HEADER_LIST | self::HTTP_HEADER_KEY_VALUE | self::HTTP_HEADER_PARAMETERS ) ;
+	    }
+    }

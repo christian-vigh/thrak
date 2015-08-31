@@ -1,0 +1,162 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        Overloadable.phpclass
+
+    DESCRIPTION
+        description.
+
+    AUTHOR
+        Christian Vigh, 10/2014.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2014/10/14]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Internals ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use 	Thrak\System\Object ;
+use	Thrak\Internals\ReflectionMethod ;
+
+ 
+abstract class  AbstractSignature	extends  Object 
+   {
+	// Default separator between a function name and its signature
+	const   SIGNATURE_SEPARATOR	=  '_' ;
+	
+	// Argument types ; typed arguments are always uppercase
+	const	ARRAY_ARGUMENT		=  'A' ;
+	const   BOOLEAN_ARGUMENT	=  'B' ;
+	const   CALLABLE_ARGUMENT	=  'C' ;
+	const   DOUBLE_ARGUMENT		=  'D' ;
+	const   FLOAT_ARGUMENT		=  'F' ;
+	const	INTEGER_ARGUMENT	=  'I' ;
+	const   LONG_ARGUMENT		=  'L' ;
+	const   OBJECT_ARGUMENT		=  'O' ;
+	const   RESOURCE_ARGUMENT	=  'R' ;
+	const   STRING_ARGUMENT		=  'S' ;
+
+	// Groups of types are always lowercase
+	const   REAL_ARGUMENT		=  'r' ;	// Can be float or double
+	const   INTEGRAL_ARGUMENT	=  'i' ;	// Can be integer or long
+	const   NUMERIC_ARGUMENT	=  'n' ;	// Can be float, double, integer or long
+	const   SCALAR_ARGUMENT		=  's' ;	// Everything but callable, objects & resources
+	const   MIXED_ARGUMENT		=  'm' ;	// Everything (corresponds to "mixed")
+
+	// Additional argument types
+	const	NULL_ARGUMENT		=  'X' ;
+	
+
+	public		$Signature	=  null ;
+	
+
+	public function  __construct ( ) 
+	   {
+		parent::_construct ( ) ;
+	    }
+	
+	
+	public static abstract function  GetSignature ( $stuff ) ;
+
+	
+	public static function  GetType  ( $arg )
+	   {
+		if  ( is_array  ( $arg ) )
+			return ( self::ARRAY_ARGUMENT ) ;
+		else if  ( is_boolean ( $arg ) )
+			return ( self::BOOLEAN_ARGUMENT ) ;
+		else if  ( is_callable ( $arg ) )
+			return ( self::CALLABLE_ARGUMENT ) ;
+		else if  ( is_double ( $arg ) )
+			return ( self::DOUBLE_ARGUMENT ) ;
+		else if  ( is_float ( $arg ) )
+			return ( self::FLOAT_ARGUMENT ) ;
+		else if (  is_integer ( $arg ) )
+			return ( self::INTEGER_ARGUMENT ) ;
+		else if  ( is_long ( $arg ) )
+			return ( self::LONG_ARGUMENT ) ;
+		else if  ( is_object ( $arg ) )
+			return ( self::OBJECT_ARGUMENT ) ;
+		else if  ( is_resource ( $arg ) )
+			return ( self::RESOURCE_ARGUMENT ) ;
+		else 
+			return ( self::STRING_ARGUMENT ) ;
+	    }
+    }
+
+
+class  ArgumentSignature	extends  AbstractSignature
+   {	
+	public function  __construct  ( $argv )
+	   {
+		parent::__construct ( ) ;
+		$this -> Signature	=  self::GetSignature ( $argv ) ;
+	    }
+	
+	
+	public static function  GetSignature ( $argv )
+	   {
+		$signature	=  "" ;
+		
+		foreach  ( $argv  as  $arg )
+			$signature	.=  self::GetType ( $arg ) ;
+		
+		return  ( $signature ) ;
+	    }
+	
+	
+	public static function  GetType ( $arg )
+	   {
+		if  ( is_null ( $arg ) )
+			return  ( self::NULL_ARGUMENT ) ;
+		else 
+			return  ( parent::GetType ( $arg ) ) ;
+	    }
+    }
+
+
+class  MethodSignature		extends  AbstractSignature
+   {
+	public		$Method ;
+	
+	
+	public function  __construct ( $method )
+	   {
+		$this -> Method		=  $method ;
+		$this -> Signature	=  self::GetSignature ( $method ) ;
+	    }
+	
+	
+	public static function  GetSignature ( $method ) 
+	   {
+		$parameters	=  $method -> getParameters ( ) ;
+		$signature	=  "" ;
+		
+		foreach  ( $parameters  as  $parameter )
+			$signature	.=  self::GetType ( $parameter ) ;
+		
+		return  ( $signature ) ;
+	    }
+	
+	
+	public static function  GetType ( $parameter, $declared_type )
+	   {
+		$optional	=  ( $parameter -> isOptional ( ) ) ?  '?' : ' ' ;
+		
+		if  ( $parameter -> isCallable ( ) )
+			return ( self::CALLABLE_ARGUMENT . $optional ) ;
+		else if  ( $parameter -> isArray ( ) )
+			return ( self::ARRAY_ARGUMENT . $optional ) ;
+		
+		$class	=  $parameter -> getClass ( ) ;
+		
+		if  ( $class )
+		   {
+		    }
+		else
+	    }
+    }

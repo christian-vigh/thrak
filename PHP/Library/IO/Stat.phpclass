@@ -1,0 +1,220 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        Stat.php
+
+    DESCRIPTION
+        Unifies access to the stat structure between informations returned by filestat, fstat and dio_stat
+	(dio_stat does not return a real stat structure).
+
+    AUTHOR
+        Christian Vigh, 10/2014.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2014/10/17]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\IO ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use 	Thrak\System\Object ;
+use     Thrak\System\NonPublicConstructor ;
+
+
+/*==============================================================================================================
+
+    Stat class -
+        Stat structure information for a file.
+	Each array item can be accessed through a property name listed in the global Stat::$StatNameMap array.
+
+  ==============================================================================================================*/
+class  Stat	extends Object
+   {
+	use  NonPublicConstructor ;
+	
+	// Mapping between allowed property names and real stat structure entries
+	private static	$StatNameMap	=  array
+	   (
+		'dev'			=>  'dev',
+		'Device'		=>  'dev',
+		'device'		=>  'dev',
+		'ino'			=>  'ino',
+		'inode'			=>  'ino',
+		'Inode'			=>  'ino',
+		'mode'			=>  'mode',
+		'nlink'			=>  'nlink',
+		'Links'			=>  'nlink',
+		'uid'			=>  'uid',
+		'UserId'		=>  'ui',
+		'gid'			=>  'gid',
+		'GroupId'		=>  'gid',
+		'rdev'			=>  'rdev',
+		'device_type'		=>  'rdev',
+		'DeviceType'		=>  'rdev',
+		'size'			=>  'size',
+		'filesize'		=>  'size',
+		'FileSize'		=>  'size',
+		'atime'			=>  'atime',
+		'AccessTime'		=>  'atime',
+		'mtime'			=>  'mtime',
+		'ModificationTime'	=>  'mtime',
+		'ctime'			=>  'ctime',
+		'CreationTime'		=>  'ctime',
+		'blksize'		=>  'blksize',
+		'BlockSize'		=>  'blksize',
+		'blocks'		=>  'blocks',
+		'Blocks'		=>  'blocks',
+		'BlockCount'		=>  'blocks'
+	    ) ;
+	// Stat information
+	private		$StatInfo ;
+	
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        Constructor - Builds a Stat object.
+	
+	  ==============================================================================================================*/
+	public function  __construct ( $array )
+	   {
+		parent::__construct ( ) ;
+		self::IsNotPublic ( ) ;
+		
+		// Normalize each key of the input stat array
+		$result		=  array ( ) ;
+		
+		foreach  ( $array  as  $key => $value )
+		   {
+			if  ( is_numeric ( $key ) ) 
+				continue ;
+			
+			if  ( ! isset ( self::$StatNameMap [ $key ] ) ) 
+				warning ( "stat array key '$key' not recognized." ) ;
+			else
+				$result [ self::$StatNameMap [ $key ] ]		=  $value ;
+		    }
+		
+		// Only for dio_stat result, for which the entries below are missing
+		if  ( ! isset ( $result [ 'blksize' ] ) )
+			$result [ 'blksize' ]	=  -1 ;
+		
+		if  ( ! isset ( $result [ 'blocks' ] ) )
+			$result [ 'blocks' ]	=  -1 ;
+		
+		$this -> StatInfo	=  $result ;
+	    }
+
+
+	/*==============================================================================================================
+	
+	    NAME
+	        Stat - Retrieves stat information for a filename or file descriptor.
+	
+	    PROTOTYPE
+	        $result		=  Stat::Stat ( $string_or_resource, $resource_is_dio = false ) ;
+	
+	    DESCRIPTION
+	        Retrieves the stat information for the supplied argument, which can be :
+		- A filename
+	 	- A file descriptor returned by fopen()
+	 	- A file descriptor returned by dio_open(). In this case, the $resource_is_dio must be set to true.
+		  Although the function will first try @fopen(), a warning is printed if this parameter is false.
+	
+	    PARAMETERS
+	        $string_or_resource (string or resource) -
+	                Either a filename or a resource returned by fopen() or dio_open().
+	
+	    RETURN VALUE
+	        The stat information for the supplied argument, or false if an error occurred.
+	
+	  ==============================================================================================================*/
+	public static function  Stat ( $string_or_resource, $resource_is_dio = false ) 
+	   {
+		$result		=  null ;
+		
+		// Easy case : supplied parameter is a filename.
+		if  ( is_string ( $string_or_resource ) )
+		   {
+			$stat	=  @stat ( $string_or_resource ) ;
+			
+			if  ( ! $stat )
+				warning ( "stat(): stat failed for $string_or_resource." ) ;
+			
+			self::InternalConstructorCall ( true ) ;
+			$result				=   new Stat ( $stat )  ;
+			self::InternalConstructorCall ( false ) ;
+		    }
+		// Other case : either a resource returned by fopen() or by dio_open()
+		else if  ( is_resource ( $string_or_resource ) )
+		   {
+			// Resource is returned by fopen() ?
+			if  ( ! $resource_is_dio )
+			   {
+				$stat	=  @fstat ( $string_or_resource ) ;
+				
+				// Yes, we can safely process the result and instanciate a Stat object
+				if  ( $stat )
+				   {
+					self::InternalConstructorCall ( true ) ;
+					$result				=   new Stat ( $stat )  ;
+					self::InternalConstructorCall ( false ) ;
+				    }
+				// No. At that point, the fstat() function, despite the leading "@", will have issued a warning.
+				// Conclusion : think at setting the $resource_is_dio to true if the resource comes from dio_open().
+				else 
+					warning ( "fstat() expects parameter 1 to be a resource, " . gettype ( $string_or_resource ) . " given." ) ;
+			    }
+			
+			// No result found so far ; this means that the $resource_is_dio parameter was set tp true
+			if  ( $result  === null )
+			   {
+				$stat	=  @dio_stat ( $string_or_resource ) ;
+			
+				if  ( $stat )
+				   {
+					self::InternalConstructorCall ( true ) ;
+					$result				=   new Stat ( $stat )  ;
+					self::InternalConstructorCall ( false ) ;
+				    }
+				else 
+					warning ( "fstat() expects parameter 1 to be a resource, " . gettype ( $string_or_resource ) . " given." ) ;
+			    }
+		    }
+		// Caller is completely stupid. Tell him.
+		else 
+			warning ( "FileStat::Stat() expects parameter 1 to be a string or a resource, " . gettype ( $string_or_resource ) . " given." ) ;
+		
+		return ( $result ) ;
+	    }
+	
+
+	/*==============================================================================================================
+	
+	    NAME
+	        __get - Retrieves a stat member by one of its aliases.
+	
+	  ==============================================================================================================*/
+	public function  __get ( $member )
+	   {
+		if  ( isset  ( $this -> StatInfo [ $member ] ) )
+			return  ( $this -> StatInfo [ $member ] ) ;
+		else
+			return  ( null ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        __get - Converts a Stat object to an array, in a format compatible with stat.
+	
+	  ==============================================================================================================*/
+	public function  ToArray ( )
+	   { return ( $this -> StatInfo ) ; }
+    }
+
+

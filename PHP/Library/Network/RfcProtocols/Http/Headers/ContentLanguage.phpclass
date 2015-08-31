@@ -1,0 +1,48 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        ContentLanguage.phpclass
+
+    DESCRIPTION
+        Http Content-Language header.
+
+    AUTHOR
+        Christian Vigh, 05/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/05/27]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace  	Thrak\Network\RfcProtocols\Http ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces and classes
+use     Thrak\System\Object ;
+use	Thrak\Network\RfcProtocols\Http\HttpStandardHeader ;
+use	Thrak\Network\RfcProtocols\Http\Traits\HttpEncodings ;
+
+
+/*==============================================================================================================
+
+    HttpContentLanguageHeader class -
+        Http Content-Language header implementation (http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.12).
+  
+ 	Examples :
+ 		Content-Language: en, fr
+
+  ==============================================================================================================*/
+class	HttpContentLanguageHeader	extends  HttpStandardHeader
+   {
+	use	HttpLanguageTags ;
+	
+	
+	public function  __construct ( $header )
+	   {
+		parent::__construct ( 'Content-Language', $header, self::HTTP_HEADER_LIST | self::HTTP_HEADER_VALUE_IS_KEY ) ;
+		$this -> CheckValues ( self::$OfficialLanguageTags, $this -> Fields ) ;
+	    }
+    }

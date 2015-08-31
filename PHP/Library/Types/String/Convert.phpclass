@@ -1,0 +1,1815 @@
+<?php
+/***************************************************************************************************
+
+    NAME
+	Convert.phpclass
+
+    DESCRIPTION
+	String to other types conversions.
+
+    AUTHOR
+	Christian Vigh, 10/2012.
+
+    HISTORY
+    [Version : 1.0]		[Date : 2012/10/02]		[Author : CV]
+	. Initial release for Thrak library version 2. Most of the code comes from the original
+	  String.phpclass file.
+
+    [Version : 1.0.1]		[Date : 2014/01/20]		[Author : CV]
+	. Added the StringToIPV4Dword() function.
+
+    [Version : 1.0.1]		[Date : 2014/01/20]		[Author : CV]
+	. Moved the ToDigit and ToTimeString functions from String to Convert.
+
+    [Version : 1.0.2]		[Date : 2014/01/20]		[Author : CV]
+	. Changed the ToInteger() function that behaved incorrectly with the value "0".
+
+    [Version : 1.0.3]		[Date : 2015/02/21]		[Author : CV]
+	. Changed the ToTimeString() method, which returned an empty string instead of "<1unit"
+	  (where 'unit' is the lower unit) when the value to convert was less than the lower unit.
+
+    [Version : 1.0.4]		[Date : 2015/03/08]		[Author : CV]
+	. Moved the TTS_UNIT_* from String.phpclass to here.
+	. Changed the meaning of the $return_as_string parameter (now called $options) of the 
+ 	  ToTimeString() method to be a combination of TTS_OPTION_* flags. Backward compatibility
+ 	  is preserved since a boolean value can still be specified.
+ 
+     [Version : 1.0.5]		[Date : 2015/06/10]		[Author : CV]
+ 	. Added the ToCli() method.
+ 
+     [Version : 1.0.6]		[Date : 2015/07/10]		[Author : CV]
+	. Added the StringToIPV4AddressRange() method.
+	. Added the IntegerToIpString() and IpStringToInteger() methods.
+ 
+     [Version : 1.0.7]		[Date : 2015/08/05]		[Author : CV]
+	. Changed the StringToIPV4AddressRange() method to handle address masks with missing bytes.
+
+     [Version : 1.0.8]		[Date : 2015/08/27]		[Author : CV]
+	. Changed the IpStringToInteger() and IntegerToIpString() methods to use double instead of 
+	  integers,because the integer size on Windows platforms is still 32 bits, even on a 64-bits 
+	  PHP version.
+
+ ***************************************************************************************************/
+namespace 	Thrak\Types\String ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces & objects
+use 		Thrak\System\Object 		as  Object ;
+use 		Thrak\Types\String		as  String ;
+
+
+/*===========================================================================================
+
+	ToTimeString conversion limits.
+
+ ===========================================================================================*/
+define ( 'TTS_UNIT_MICROSECONDS'	,  0 ) ;
+define ( 'TTS_UNIT_MILLISECONDS'	,  1 ) ;
+define ( 'TTS_UNIT_SECONDS'		,  2 ) ;
+define ( 'TTS_UNIT_MINUTES'		,  3 ) ;
+define ( 'TTS_UNIT_HOURS'		,  4 ) ;
+define ( 'TTS_UNIT_DAYS'		,  5 ) ;
+
+/*===========================================================================================
+
+	ToTimeString conversion options. The $return_as_string parameter, which originally
+	was a boolean, is now the $options parameter, a combination of the flags below.
+
+ ===========================================================================================*/
+define ( 'TTS_OPTION_RETURN_AS_STRING'	,  0 ) ;		// Returns the result as a human-readable string
+define ( 'TTS_OPTION_RETURN_AS_ARRAY'	,  1 ) ;		// Returns the result as an array 
+define ( 'TTS_OPTION_ZERO_PAD'		,  2 ) ;		// Numeric values in a string result are padded with zeroes
+
+
+/*===========================================================================================
+
+    Convert class -
+	String to other types conversions.
+
+ ===========================================================================================*/
+class  	Convert		extends  Object
+   {
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		BytesToString - Converts a byte array to a string.
+
+	    PROTOTYPE
+                $string  = String::BytesToString ( $bytes ) ;
+
+	    DESCRIPTION
+                Converts a byte array to a string?
+
+	    PARAMETERS
+                $bytes (byte array) -
+                        Array of bytes to be converted to a string.
+
+	    RETURN VALUE
+                A string formed from the input bytes.
+
+	 --------------------------------------------------------------------------------------------*/
+       public static function  BytesToString ( $bytes )
+           {
+                $string         =  "" ;
+                $length         =  count ( $bytes ) ;
+
+                for  ( $i = 0 ; $i < $length ; $i ++ )
+                        $string .= chr ( $bytes [$i] ) ;
+
+                return ( $string ) ;
+            }
+
+
+   	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		CurrencyStringAsFloat - Converts a currency string to a float.
+
+	    PROTOTYPE
+		$value = Convert::CurrencyStringAsFloat ( $value, $strip_unwanted = true ) ;
+
+	    DESCRIPTION
+		This function makes its best possible to convert a string representing a currency
+		value to a float. It suppresses spaces, convert commas to decimal point, and so on.
+
+	    PARAMETERS
+	    	$value (string) -
+			Currency value to be converted to a float.
+
+		$strip_unwanted (boolean) -
+			When true, Strips any unwanted characters from the input string (ie, only
+			digits and the decimal point will kept).
+
+	    RETURN VALUE
+	    	The function returns the converted value of the input string, or false if the input
+		string contains incorrect data.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  CurrencyStringAsFloat ( $value, $strip_unwanted = true )
+	   {
+	   	$value = str_replace ( array ( ',', '\s', '€' ), array ( '.', '', '' ), $value ) ;
+
+		if  ( $strip_unwanted )
+			$value = preg_replace ( "/[^0-9.]/", "", $value ) ;
+
+		if  ( is_numeric ( $value ) )
+			return ( $value ) ;
+		else if ( $value  ==  ''  ||  $value  ==  0 )
+			return ( 0 ) ;
+		else
+			return ( false ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		DecimalToCurrencyText - Converts a number to a currency.
+
+	    PROTOTYPE
+		$result = Convert::DecimalToCurrencyText ( $value, $use_decimals = 2, $country = "fr" ) ;
+
+	    DESCRIPTION
+		Converts a number to a its equivalent text value as a currency.
+
+	    PARAMETERS
+		value (float) -
+			Value to be converted.
+		$use_decimals (integer) -
+			Number of decimals.
+		$force_decimals (boolean) -
+			When true, force decimal values to be returned even when zero.
+
+	    RETURN VALUE
+		The supplied input value, converted to full text.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  DecimalToCurrencyText ( $value, $use_decimals = 2, $country = "fr" )
+	   {
+	   	// Build conversion array
+		$elements 	=  array ( 'force-units' => true ) ;
+
+  		// Country-dependent settings
+  		switch ( strtolower ( $country ) )
+  		   {
+			case	'us' :
+				$integer 	=  'dollar' ;
+				$integers 	=  'dollars' ;
+				$decimal 	=  'cent' ;
+				$decimals 	=  'cents' ;
+				break ;
+
+			case	'uk' :
+				$integer 	=  'pound' ;
+				$integers 	=  'pounds' ;
+				$decimal 	=  'penny' ;
+				$decimals 	=  'pennies' ;
+				break ;
+
+			case	'fr' :
+			default :
+				$integer 	=  'euro' ;
+				$integers 	=  'euros' ;
+				$decimal 	=  'centime' ;
+				$decimals 	=  'centimes' ;
+				break ;
+  		    }
+
+    		// Add the country settings to the conversion array
+    		$elements [ 'unit'     ]	=  " $integer " ;
+    		$elements [ 'units'    ]	=  " $integers " ;
+    		$elements [ 'decimal'  ]	=  " $decimal" ;
+    		$elements [ 'decimals' ]	=  " $decimals" ;
+
+    		// Convert the value
+   		$result = Convert::DecimalToFrenchText ( $value, $use_decimals, $elements ) ;
+
+   		// All done, return
+   		return ( $result ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		DecimalToFrenchText - Converts a decimal value to its textual representation.
+
+	    PROTOTYPE
+		$result = Convert::DecimalToFrenchText ( $value, $round = 2, $elements = null ) ;
+
+	    DESCRIPTION
+		Converts a float or integer value to its textual representation.
+
+	    PARAMETERS
+		$value (integer or float) -
+			Value to be converted into text.
+
+		$round (boolean or integer) -
+			Specifies if the value will be rounded before processing ; can be any one of :
+			- true :
+				The value will be rounded to an integer.
+			- false :
+				The value will be kept as is.
+			- integer :
+				The value will be rounded to the specified number of digits.
+
+		$elements (associative array) -
+			Associative array containing the following entries :
+			- 'positive' (string) :
+				Text to be used as a prefix when the value is positive.
+				The default value for the french language is "".
+			- 'negative' (string) :
+				Text to be used as a prefix when the value is negative.
+				The default value for the french language is "moins ".
+			- 'zero' (string) :
+				Text to be used as a prefix  when the value is zero.
+				The default value for the french language is "".
+			- 'unit' (string) -
+				Text to be used when the integer part is equal to one.
+			- 'units' (string) :
+				Text to be used after the integer units.
+				The default value is " virgule ".
+			- 'force-units' (boolean) -
+				Force units even if the decimals are zero.
+			- 'decimal' (string) :
+				Text to be used when the decimal part is equal to one.
+			- 'decimals' (string) :
+				Text to be used after the decimal numbers.
+				The default value is "".
+
+			All the entries are optional but if they are specified, they will
+			override the default ones.
+
+	    RETURN VALUE
+		The textual representation of the supplied input text.
+
+	 --------------------------------------------------------------------------------------------*/
+	private static function __DecimalToFrenchText ( $value )
+	   {
+	   	// Special numeric cases
+	   	static 	$NumericCases		=  array
+	   	   (
+	   	   	0		=>  'zero',
+	   	   	1		=>  'un',
+	   	   	2		=>  'deux',
+	   	   	3		=>  'trois',
+	   	   	4		=>  'quatre',
+	   	   	5		=>  'cinq',
+	   	   	6		=>  'six',
+	   	   	7		=>  'sept',
+	   	   	8		=>  'huit',
+	   	   	9		=>  'neuf',
+	   	   	10		=>  'dix',
+	   	   	11		=>  'onze',
+	   	   	12		=>  'douze',
+	   	   	13		=>  'treize',
+	   	   	14		=>  'quatorze',
+	   	   	15		=>  'quinze',
+	   	   	16		=>  'seize',
+	   	   	17		=>  'dix-sept',
+	   	   	18		=>  'dix-huit',
+	   	   	19		=>  'dix-neuf',
+	   	   	20		=>  'vingt',
+	   	   	21		=>  'vingt-et-un',
+	   	   	30		=>  'trente',
+	   	   	31		=>  'trente-et-un',
+	   	   	40		=>  'quarante',
+	   	   	41		=>  'quarante-et-un',
+	   	   	50		=>  'cinquante',
+	   	   	51		=>  'cinquante-et-un',
+	   	   	60		=>  'soixante',
+	   	   	61		=>  'soixante-et-un',
+	   	   	70		=>  'soixante-dix',
+	   	   	71		=>  'soixante-et-onze',
+	   	   	72		=>  'soixante-douze',
+	   	   	73		=>  'soixante-treize',
+	   	   	74		=>  'soixante-quatorze',
+	   	   	75		=>  'soixante-quinze',
+	   	   	76		=>  'soixante-seize',
+	   	   	77		=>  'soixante-dix-sept',
+	   	   	78		=>  'soixante-dix-huit',
+	   	   	79		=>  'soixante-dix-neuf',
+	   	   	80		=>  'quatre-vingts',
+	   	   	81		=>  'quatre-vingt-un',
+	   	   	82		=>  'quatre-vingt-deux',
+	   	   	83		=>  'quatre-vingt-trois',
+	   	   	84		=>  'quatre-vingt-quatre',
+	   	   	85		=>  'quatre-vingt-cinq',
+	   	   	86		=>  'quatre-vingt-six',
+	   	   	87		=>  'quatre-vingt-sept',
+	   	   	88		=>  'quatre-vingt-huit',
+	   	   	89		=>  'quatre-vingt-neuf',
+	   	   	90		=>  'quatre-vingt-dix',
+	   	   	91		=>  'quatre-vingt-onze',
+	   	   	92		=>  'quatre-vingt-douze',
+	   	   	93		=>  'quatre-vingt-treize',
+	   	   	94		=>  'quatre-vingt-quatorze',
+	   	   	95		=>  'quatre-vingt-quinze',
+	   	   	96		=>  'quatre-vingt-seize',
+	   	   	97		=>  'quatre-vingt-dix-sept',
+	   	   	98		=>  'quatre-vingt-dix-huit',
+	   	   	99		=>  'quatre-vingt-dix-neuf'
+		    ) ;
+
+		// Resulting value
+		$result 	=  array ( ) ;
+
+		// Perform range checking
+		if  ( $value  >  999999999999  ||  $value  <  -999999999999 )
+			throw new Exception ( "Convert::DecimalToFrenchText : Number out of range ($value)." ) ;
+
+		// Billions
+		if  ( $value  >=  1000000000 )
+		   {
+			$remnant 	=  fmod ( $value, 1000000000 ) ;
+		   	$value 		=  round ( $value / 1000000000, 0 ) ;
+			$x		=  Convert::__DecimalToFrenchText ( $value ) ;
+
+			if  ( $value  >  1 )
+				$y = "milliards" ;
+			else
+				$y = "milliard" ;
+
+			$result []	=  $x ;
+			$result []	=  $y ;
+			$value 		=  $remnant ;
+    		    }
+
+   		// Millions
+   		if  ( $value  >=  1000000 )
+   		   {
+			$remnant 	=  $value % 1000000 ;
+		   	$value 		=  ( integer ) floor ( $value / 1000000 ) ;
+			$x		=  Convert::__DecimalToFrenchText ( $value ) ;
+
+			if  ( $value  >  1 )
+				$y = "millions" ;
+			else
+				$y = "million" ;
+
+			$result []	=  $x ;
+			$result []	=  $y ;
+			$value 		=  $remnant ;
+   		    }
+
+   		// Thousands
+   		if  ( $value  >=  1000 )
+   		   {
+			$remnant 	=  $value % 1000 ;
+		   	$value 		=  ( integer ) floor ( $value / 1000 ) ;
+			$x		=  Convert::__DecimalToFrenchText ( $value ) ;
+			$y		=  "mille" ;
+
+			if  ( $value > 1 )
+				$result []	=  $x ;
+
+			$result []	=  $y ;
+			$value 		=  $remnant ;
+   		    }
+
+   		// Hundreds
+   		if  ( $value  >=  100 )
+   		   {
+			$remnant 	=  $value % 100 ;
+		   	$value 		=  ( integer ) floor ( $value / 100 ) ;
+			$x		=  Convert::__DecimalToFrenchText ( $value ) ;
+
+			if  ( $value  >  1 )
+				$result []	=  $x ;
+
+			if  ( ! $remnant )
+				$y 		=  "cents" ;
+			else
+				$y 	=  "cent" ;
+
+			$result []	=  $y ;
+			$value 		=  $remnant ;
+   		    }
+
+		// Less than 100
+		$value 		=  ( integer ) $value ;
+
+		if  ( $value )
+		   {
+			if  ( array_key_exists ( $value, $NumericCases ) )
+	  			$result [] 	=  $NumericCases [ $value ] ;
+			else
+			   {
+				$tens_part 	=  ( integer ) ( floor ( $value / 10 ) * 10 ) ;
+				$unit_part 	=  $value % 10 ;
+
+				if  ( array_key_exists ( $tens_part, $NumericCases ) )
+					$result []	=  $NumericCases [ $tens_part ] . '-' . $NumericCases [ $unit_part ] ;
+				else
+					$result []	=  $NumericCases [ $unit_part ] ;
+			    }
+		    }
+
+   		// All done, return
+   		$return_value = implode ( ' ', $result ) ;
+   		return ( $return_value ) ;
+	    }
+
+
+	public static function  DecimalToFrenchText ( $value, $round = 2, $elements = null )
+	   {
+	   	// Default elements
+		static  $DefaultElements 	=  array
+		   (
+		   	'positive'			=>  "",
+		   	'negative'			=>  "moins ",
+		   	'zero'				=>  "",
+		   	'unit'				=>  " virgule ",
+		   	'units'				=>  " virgule ",
+		   	'decimal'			=>  "",
+		   	'decimals'			=>  "",
+		   	'force-units'			=>  false
+		    ) ;
+
+		// Merge supplied elements with default ones
+		if  ( $elements )
+			$elements 	=  array_merge ( $DefaultElements, $elements ) ;
+		else
+			$elements 	=  $DefaultElements ;
+
+		// Round the input value
+		$has_decimal_part 	=  false ;
+
+		if  ( $round  ===  true )
+			$value 			=  floor ( $value ) ;
+		else if  ( $round  !==  false )
+		   {
+			$value  		=  round ( $value, $round ) ;
+			$has_decimal_part 	=  true ;
+		    }
+   		else
+   			$has_decimal_part	=  true ;
+
+		// Build the result value
+		$result 	=  "" ;
+
+		// Check if something has to be added according to the sign
+		if  ( $value  <  0 )
+			$result .= $elements [ 'negative' ] ;
+		else if  ( $value  >  0 )
+			$result .= $elements [ 'positive' ] ;
+		else
+			$result .= $elements [ 'zero' ] ;
+
+		// Separate the integer and fractional parts
+		$value 			=  abs ( $value ) ;
+		$integer_part 		=  floor ( $value ) ;
+		$decimal_part 		=  substr ( ( string ) ( $value - $integer_part ), 2 ) ;
+
+		// Reduce the decimal part
+		while  ( $decimal_part  >  PHP_INT_MAX )
+			$decimal_part = floor ( $decimal_part / 10 ) ;
+
+		$decimal_part = rtrim ( $decimal_part, '0' ) ;
+
+		// But make sure we have the necessary number of decimals
+		if  ( $round  !==  true  &&  $round  !==  false )
+		   {
+			$decimal_part 	=  substr ( $decimal_part, 0, $round ) ;
+			$length 	=  strlen ( $decimal_part ) ;
+
+			if  ( $length  <  $round )
+				$decimal_part .= str_repeat ( '0', $round - $length ) ;
+		    }
+
+		// Add the integer part
+		$result .= Convert::__DecimalToFrenchText ( $integer_part ) ;
+
+		// Then the fractional part
+		$unit_text 	=  ( $integer_part  ==  1 ) ?  $elements [ 'unit' ] : $elements [ 'units' ] ;
+
+		if  ( $has_decimal_part  &&  ( float ) $decimal_part )
+		   {
+		   	$result .=  $unit_text ;
+			$result .=  Convert::__DecimalToFrenchText ( $decimal_part ) ;
+			$result .=  ( $decimal_part  ==  1 ) ?  $elements [ 'decimal' ] : $elements [ 'decimals' ] ;
+		    }
+   		else if  ( $elements [ 'force-units' ] )
+			$result .=  $unit_text ;
+
+   		// All done, return
+   		return ( rtrim ( $result ) ) ;
+	    }
+
+
+   	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		DecimalToRoman - Converts a decimal number to roman.
+
+	    PROTOTYPE
+		$roman = Convert::DecimalToRoman ( $value, $use_middle_age_convention = false ) ;
+
+	    DESCRIPTION
+		Converts an integer to its roman representation.
+
+	    PARAMETERS
+		$value (integer) -
+			Integer value to be converted into its roman representation.
+
+		$use_middle_age_convention (boolean) -
+			When true, the convention used in the middle ages will be applied (eg, 'IV'
+			will be represented as 'IIII').
+
+	    RETURN VALUE
+		The roman representation of the supplied input number, or false if the specified number
+		cannot be represented into the roman notation.
+		The special value 'N' represents 0.
+
+	    NOTES
+		The maximum authorized value is :
+		- In standard roman notation : MMMIM (3999)
+		- In middle-ages notation    : MMMMIM (4999)
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  DecimalToRoman ( $value, $use_middle_age_convention = false )
+	   {
+		static  $values 		=  array ( 1000,      900, 500,    400, 100,      90,   50,     40,  10,       9,   5,      4,   1 ) ;
+		static  $roman_numerals		=  array (  'M',     'CM', 'D',   'CD', 'C',    'XC',  'L',   'XL', 'X',    'IX', 'V',   'IV', 'I' ) ;
+		static  $middle_numerals	=  array (  'M' , 'DCCCC', 'D', 'CCCC', 'C', 'LXXXX',  'L', 'XXXX', 'X', 'VIIII', 'V', 'IIII', 'I' ) ;
+
+
+		// Check which numeral convention is to be used
+		if  ( $use_middle_age_convention )
+		   {
+		   	$max 		=  4999 ;
+		   	$numerals 	=  $middle_numerals ;
+		    }
+	    	else
+	    	   {
+	    	   	$max 		=  3999 ;
+	    	   	$numerals 	=  $roman_numerals ;
+	    	    }
+
+		// Check input value range
+	   	$value 		=  ( integer ) $value ;
+
+	   	if  ( $value  <  0  ||  $value  >  $max )
+	   		return ( false ) ;
+
+		// A special notation for zero
+   		if  ( ! $value )
+   			return ( 'N' ) ;
+
+   		// Resulting string
+   		$result 	=  "" ;
+
+		// Loop through each of the values to diminish the number
+		$count 		=  count ( $values ) ;
+
+		for  ( $i = 0 ; $i  <  $count ; $i ++ )
+		   {
+			    // If the number being converted is less than the test value, append
+			    // the corresponding numeral to the result string
+			    while  ( $value  >=  $values [$i] )
+			       {
+					$value  -=  $values [$i] ;
+					$result .=  $numerals [$i] ;
+			        }
+		    }
+
+   		// All done, return
+   		return ( $result ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		RomanToDecimal - Converts a roman number to its decimal value.
+
+	    PROTOTYPE
+		$value = Convert::RomanToDecimal ( $input, $use_middle_age_convention = false ) ;
+
+	    DESCRIPTION
+		Converts a roman number to its numeric value.
+
+	    PARAMETERS
+		$input (string) -
+			Input numeral value.
+
+		$use_middle_age_convention (boolean) -
+			When true, the convention used in the middle ages will be applied (eg, 'IV'
+			will be represented as 'IIII').
+
+	    RETURN VALUE
+		The integer representation of the supplied numeric value, or false if the roman value
+		contains incorrect characters.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  RomanToDecimal ( $input, $use_middle_age_convention = false )
+	   {
+	   	// Roman digit values
+	   	static 		$RomanDigits 		=  array
+		   (
+		   	'I'	=>  1,
+		   	'V'	=>  5,
+		   	'X'	=>  10,
+		   	'L'	=>  50,
+		   	'C'	=>  100,
+		   	'D'	=>  500,
+		   	'M'	=>  1000
+		    ) ;
+	    	// Invalid sequences
+	    	static 		$InvalidSequences 	=  array
+	    	   (
+	    	   	'VV', 'LL', 'DD'
+		    ) ;
+
+		// In middle-ages notations, we can use 4 instead of 3 consecutive digits like I, X, C and M
+	   	$max_digits 	=  ( $use_middle_age_convention ) ?  4 : 3 ;
+
+	   	// Check if value is zero
+	   	$input 	=  strtoupper ( $input ) ;
+		$length =  strlen ( $input ) ;
+
+	   	if  ( ! strcmp ( $input, 'N' ) )
+	   		return ( 0 ) ;
+
+	   	// Check for invalid combinations
+	   	foreach  ( $InvalidSequences  as  $invalid )
+	   	   {
+	   	   	if  ( strpos ( $input, $invalid ) )
+				return ( false ) ;
+	   	    }
+
+		// Check that the I, X, C and M characters do not exceed the maximum authorized value
+		// (3 for roman notation, 4 for middle-age notation)
+		$last 		=  'Z' ;
+		$count 		=  0 ;
+
+		for  ( $i = 0 ; $i < $length ; $i ++ )
+		   {
+			$ch 	=  $input [$i] ;
+
+			// Check for invalid character
+			if  ( strpos ( 'IVXLCDM', $ch )  ===  false )
+				return ( false ) ;
+
+			// Count duplicate characters
+			if  ( $ch  ==  $last )
+			   {
+			   	$count ++ ;
+
+				if  ( $count  >=  $max_digits )
+					return ( false ) ;
+			    }
+	    		else
+	    		   {
+				$count =  0 ;
+				$last  =  $ch ;
+	    		    }
+		    }
+
+		// Compute the integer result
+		// Note that "MIM" and "MCMXCIX" represent the same value, 1999.
+		$result 	=  0 ;
+		$last 		=  1000 ;
+		$values 	=  array ( ) ;
+		$count 		=  -1 ;
+
+		for  ( $i = 0 ; $i < $length ; $i ++ )
+		   {
+			$value 	=  $RomanDigits [ $input [$i] ] ;
+
+			if  ( $count  >=  0 &&  $value  >  $values [ $count ] )
+				$values [ $count ] 	=  - $values [ $count ] ;
+
+			$values [ ++ $count ] 	=  $value ;
+			$last 			=  $value ;
+		    }
+
+   		// Compute the result
+   		$result 	=  array_sum ( $values ) ;
+   		return ( $result ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		IntegerToIpString, IpStringToInteger - Converts between string and IPV4 addresses
+
+	    PROTOTYPE
+	    	$ip	=  IP::StringToIp ( $string ) ;
+		$str    =  IP::IpToString ( $ipvalue ) ;
+
+	    DESCRIPTION
+	    	Converts an IPV4 address back and forth to a string.
+		The IpStringToInteger() function correctly handles a specification of '*' as an
+		address element.
+
+	    RETURN VALUE
+	    	IpStringToInteger() returns false if at least one of the IP address elements is incorrect.
+
+	    NOTES
+		Since the integer size on Windows platforms is still 32 bits, even with a 64-bits PHP
+		version, all computations are made on doubles.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  IntegerToIpString ( $ip )
+	   {
+		$ip	=  ( double ) $ip ;
+		$a 	=  ( integer ) floor ( $ip / ( 256 * 256 * 256 ) ) ;
+		$b 	=  ( ( integer ) floor ( $ip / ( 256 * 256 ) ) )  &  0xFF ;
+		$c 	=  ( ( integer ) floor ( $ip / 256 ) )  &  0xFF ;
+		$d 	=  ( ( integer ) $ip )  &  0xFF ;
+
+		return ( "$a.$b.$c.$d" ) ;
+	    }
+
+
+	public static function  IpStringToInteger ( $ip )
+	   {
+		$values = self::StringToIPV4Address ( $ip, true ) ;
+
+		if  ( $values  ===  false )
+			return ( false ) ;
+
+		$a 	=  ( double ) $values [0] ;
+		$b 	=  ( double ) $values [1] ;
+		$c 	=  ( double ) $values [2] ;
+		$d 	=  ( double ) $values [3] ;
+
+		return  ( ( $a  * 256 * 256 * 256 ) + ( $b  * 256 * 256 ) + ( $c  * 256 ) + $d ) ;
+	    }
+
+
+   	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		StringToByteCount - Converts a string to a byte count.
+
+	    PROTOTYPE
+		$count = String::StringToByteCount ( $value ) ;
+
+	    DESCRIPTION
+		Converts a string to a byte count.
+
+	    PARAMETERS
+		$value (string) -
+			Byte count, specified as an numeric value followed by an optional suffix :
+			- 'kb' or 'kilobytes'  for kilobytes
+			- 'mb' or 'megabytes'  for megabytes
+			- 'gb' or 'gigabytes'  for gigabytes
+			- 'tb' or 'terabytes'  for terabytes
+			- 'pb' or 'petabytes'  for petabytes
+			- 'eb' or 'exabytes'   for exabytes
+			- 'zb' or 'zettabytes' for zettabytes
+			- 'yb' or 'yottabytes' for yottabytes
+
+	    RETURN VALUE
+		Returns the specified byte count, or false if the string was incorrect.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  StringToByteCount ( $value )
+	   {
+		$regex 		=  '/^ \s* (?P<value> ' . REGEX_UNSIGNED_FLOAT . ') \s* (?P<mul> [a-z]+)? \s* $/imsx' ;
+
+		if  ( preg_match ( $regex, $value, $matches ) )
+		   {
+			$value 		=  $matches [ 'value' ] ;
+
+			if  ( array_key_exists ( 'mul', $matches ) )
+			   {
+			   	switch  ( strtolower ( $matches [ 'mul' ] ) )
+			   	   {
+			   	   	case 'b'  : case 'o'  : case 'bytes' :
+			   	   		break ;
+
+					case 'kb' : case 'ko' : case 'kilobytes' :
+						$value *= 1024 ; break ;
+
+					case 'mb' : case 'mo' : case 'megabytes' :
+						$value *= 1024 * 1024 ; break ;
+
+					case 'gb' : case 'go' : case 'gigabytes' :
+						$value *= 1024 * 1024 * 1024 ; break ;
+
+					case 'tb' : case 'to' : case 'terabytes' :
+						$value *= 1024 * 1024 * 1024 * 1024 ; break ;
+
+					case 'pb' : case 'po' : case 'petabytes' :
+						$value *= 1024 * 1024 * 1024 * 1024 * 1024 ; break ;
+
+					case 'eb' : case 'eo' : case 'exabytes' :
+						$value *= 1024 * 1024 * 1024 * 1024 * 1024 * 1024 ; break ;
+
+					case 'zb' : case 'zo' : case 'zettabytes' :
+						$value *= 1024 * 1024 * 1024 * 1024 * 1024 * 1024 * 1024 ; break ;
+
+					case 'yb' : case 'yo' : case 'yottabytes' :
+						$value *= 1024 * 1024 * 1024 * 1024 * 1024 * 1024 * 1024 * 1024 ; break ;
+
+					default :
+						return ( false ) ;
+			   	    }
+			    }
+
+		    	$value = round ( $value, 0 ) ;
+		    	return ( $value ) ;
+		    }
+		else
+			return ( false ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		StringToBytes - Converts a string to a byte array.
+
+	    PROTOTYPE
+                $bytes  = Convert::StringToBytes ( $string ) ;
+
+	    DESCRIPTION
+                Converts a string to a byte array that will contain the integer values of each input
+                character.
+
+	    PARAMETERS
+                $string (string) -
+                        String to be converted to byte array.
+
+	    RETURN VALUE
+                A byte array containing the ordinal value of each character from the input string.
+
+	 --------------------------------------------------------------------------------------------*/
+        public static function  StringToBytes ( $string )
+           {
+                $bytes          =  array ( ) ;
+                $length         =  strlen ( $string ) ;
+
+                for ( $i = 0 ; $i < $length ; $i ++ )
+                        $bytes [] = ord ( $string{$i} ) ;
+
+                return ( $bytes ) ;
+            }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		StringToIntegerRange - Converts a string to an integer range.
+
+	    PROTOTYPE
+                $result  = ThrakString::StringToIntegerRange ( $str ) ;
+
+	    DESCRIPTION
+                Converts an integer range expression, such as 'low..high' or 'low-high', into a range
+		array.
+		A valid range is a pair of values separated by '..' ; valid ranges are :
+		- low..high
+		- ..high
+		- low..
+		- low
+
+	    PARAMETERS
+                $str -
+                        String to be converted into a range.
+
+	    RETURN VALUE
+                The return value is an array containing the following keys :
+
+		- 'low', 'high' :
+			Low and high range values.
+
+		- 'error' :
+			If the range is invalid (for example, the low value is greater than the high
+			value), this field will be set to the error message explaining the error.
+			When the range is correct, this field is set to boolean false.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  StringToIntegerRange ( $str )
+	   {
+		// Splits the range x..y or x-y
+		$items 		=  explode ( '..', $str ) ;
+		$low 		=  trim ( $items [0] ) ;
+		$high		=  trim ( $items [1] ) ;
+
+		// Normalize values
+		if  ( ! $low )
+			$low = 0 ;
+
+		if  ( ! $high )
+			$high = $low ;
+
+		// Check that the lower and upper range values are consistent
+		if  ( $low  >  $high )
+			$error = "Invalid range : low value ($low) is greater than high value ($high)." ;
+		else
+			$error = false ;  	// No error
+
+		// All done, return
+		return ( array ( 'low' => $low, 'high' => $high, 'error' => $error ) ) ;
+	    }
+
+
+ 	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		StringToIntegerRanges - Converts a string to an array of integer ranges.
+
+	    PROTOTYPE
+                $result  = String::StringToIntegerRanges ( $str ) ;
+
+	    DESCRIPTION
+		Converts a list of comma-separated integer ranges into an array of ranges.
+
+	    PARAMETERS
+                $str -
+                        String to be converted into a range list.
+
+	    RETURN VALUE
+		The return value is an array of ranges having the format specified in the
+		StringToIntegerRange() function.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  StringToIntegerRanges ( $str )
+	   {
+		$ranges 	=  explode ( ',', $str ) ;
+		$results	=  array ( ) ;
+
+		foreach  ( $ranges  as  $range )
+		   {
+			$item 		= String::StringToIntegerRange ( $range ) ;
+			$result [] 	= $item ;
+		    }
+
+		return ( $result ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		StringToIPAddress, StringToIPV4Address, StringToIPV6Address, StringToIPV4DWord - 
+			IP address conversion
+
+	    PROTOTYPE
+		$result = Convert::StringToIPAddress   ( $string ) ;
+		$result = Convert::StringToIPV4Address ( $string, $allow_mask = false ) ;
+		$result = Convert::StringToIPV6Address ( $string ) ;
+		$result = Convert::StringToIPV4Dword   ( $string ) ;
+
+	    DESCRIPTION
+		Converts an IP address to individual bytes.
+
+	    PARAMETERS
+	    	$string (string) -
+			String specifying the IP address.
+
+		$allow_mask (boolean) -
+			When true, for IP V4 addresses, the '*' character is considered as a network
+			mask and will be replaced by 255.
+
+	    RETURN VALUE
+		Either false if the supplied input string does not contain a valid IP address, or
+		an array of individual address bytes.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  StringToIPAddress ( $string )
+	   {
+		$result = Convert::StringToIPV4Address ( $string ) ;
+
+		if  ( $result  ===  false )
+			return ( Convert::StringToIPV6Address ( $string ) ) ;
+		else
+			return ( $result ) ;
+	    }
+
+	    
+	public static function  StringToIPV4Dword   ( $string )
+	   {
+		$result		=  self::StringToIPV4Address ( $string, false ) ;
+		
+		if  ( $result )
+		   {
+			$value	=  0 ;
+			
+			for  ( $i = 0 ; $i  <  4 ; $i ++ )
+			   {
+				$value  <<=  8 ;
+				$value   |=  $result [$i] ;
+			    }
+		    }
+		else
+			$value	=  0 ;
+			
+		return ( $value ) ;
+	    }
+	    
+
+	public static function  StringToIPV4Address ( $string, $allow_mask = false )
+	   {
+		$length = strlen ( $string ) ;
+
+		if  ( ! $length )
+			return ( false ) ;
+
+		if  ( $string [ $length - 1 ]  ==  '.' )
+			$string .=  ( $allow_mask ) ?  '*' : '0' ;
+
+		$result = explode ( '.', $string ) ;
+
+		if  ( ! $result )
+			return ( false ) ;
+
+		if  ( count ( $result )  !=  4 )
+			return ( false ) ;
+
+		foreach  ( $result  as  &$item )
+		   {
+			if  ( ! is_numeric ( $item )  &&  ! is_integer ( $item ) )
+		 	   {
+		 	   	if  ( $item  ==  '*' )
+					$item = 255 ;
+				else
+					return ( false ) ;
+			    }
+
+			if  ( $item  <  0  ||  $item  >  255 )
+				return ( false ) ;
+		    }
+
+		return ( $result ) ;
+	    }
+
+
+	public static function  StringToIPV6Address ( $string )
+	   {
+		$result 	=  array ( 0, 0, 0, 0, 0, 0, 0, 0 ) ;
+
+		// Most simple case : the '::' notation
+		if  ( $string  ==  '::' )
+			return ( $result ) ;
+
+		// Get individual elements
+		$words 		=  explode ( ':', $string ) ;
+		$count 		=  count ( $words ) ;
+		$actual_count   =  $count ;
+
+		// If number of elements is zero or greater than 8, then the address is invalid
+		if  ( ! $words  ||  $count  <  2  ||  $count  >  8 )
+			return ( false ) ;
+
+		// The '::' notation can be used only once so we should have at most only one empty string in the $bytes array
+		$found = false ;
+
+		foreach  ( $words  as  $word )
+		   {
+			if  (  $word  ===  "" )
+			   {
+				if  ( $found )
+					return ( false ) ;
+
+				$found = true ;
+				$count -- ;
+			    }
+		    }
+
+
+    		// Process each input byte, handling address compression ('::' notation)
+    		$in	=  0 ;
+    		$out 	=  0 ;
+
+    		while  ( $in  <  $actual_count )
+    		   {
+			$word = $words [$in] ;
+
+			if  ( $word  ===  "" )
+			   {
+				for  ( $j = 0 ; $j  <  8 - $count ; $j ++ )
+					$result [ $out ++ ] = 0 ;
+			    }
+			else
+				$result [ $out ++ ] = $word ;
+
+			$in ++ ;
+    		    }
+
+    		// Check that every word is a valid 16-bit hexadecimal number
+    		for  ( $i = 0 ; $i  <  8 ; $i ++ )
+    		   {
+			$word  	=  strtolower ( $result [$i] ) ;
+			$length =  strlen ( $word ) ;
+
+			for ( $j = 0 ; $j  <  $length ; $j ++ )
+			   {
+				$ch 	=  $word [$j] ;
+
+				if  ( strstr ( "0123456789abcdef", $ch )  ===  false )
+					return ( false ) ;
+			    }
+
+			$value =  base_convert ( $word, 16, 10 ) ;
+
+			if  ( $value  <  0  ||  $value  >  65535 )
+				return ( false ) ;
+
+			$result [$i] = $value ;
+    		    }
+
+    		return ( $result ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        StringToIPV4AddressRange - Converts an ip mask to an ip range.
+	 
+	    PROTOTYPE
+	        $result		=  Convert::StringToIPV4AddressRange ( $value, $return_as_string = false ) ;
+	 
+	    DESCRIPTION
+	        Converts an IP mask in the form "1.2.3.0/24" into an ip range. For example, supplying "1.2.3.0/24" to
+		this function will return a two-elements array with the following values, when the $return_as_string
+		parameter is set to true :
+			[ "1.2.3.0", "1.2.3.255" ]
+		and the following will be returned if set to false :
+			[ [ 1, 2, 3, 0 ], [ 1, 2, 3, 255 ] ]
+	 
+	    PARAMETERS
+	        $value (string) -
+	                IP V4 address mask to be converted.
+
+		$return_as_string (boolean) -
+			When true, the result is an array containing two ip addresses as a string.
+			When false, two arrays of 4-bytes values are returned.
+	 
+	    RETURN VALUE
+	        Returns a range of ip addresses.
+
+	    NOTES
+		Not specifying the "/length" part is equivalent to a length of 32. Thus, "1.2.3.4", which is
+		equivalent to "1.2.3.4/32", will return :
+			[ "1.2.3.4", "1.2.3.4" ]
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	static public function  StringToIPV4AddressRange ( $value, $return_as_string = false )
+	   {
+		$status		=  preg_match ( '/' . REGEX_IPV4_ADDRESS_MASK . '/', $value, $match ) ;
+
+		// Supplied value does not match an ip address 
+		if  ( ! $status )
+			return ( false ) ;
+
+		// Get individual address bytes and check their value is in the authorized range
+		$b1		=  ( isset ( $match [ 'b1' ] ) ) ?  ( integer ) $match [ 'b1' ] : 0 ;
+		$b2		=  ( isset ( $match [ 'b2' ] ) ) ?  ( integer ) $match [ 'b2' ] : 0 ;
+		$b3		=  ( isset ( $match [ 'b3' ] ) ) ?  ( integer ) $match [ 'b3' ] : 0 ;
+		$b4		=  ( isset ( $match [ 'b4' ] ) ) ?  ( integer ) $match [ 'b4' ] : 0 ;
+		$address_low	=  [ $b1, $b2, $b3, $b4 ] ;
+
+		foreach  ( $address_low  as  $item )
+		   {
+			if  ( $item  >  255 )
+				return ( false ) ;
+		    }
+
+		// Get optional mask and check it is not greater than 32
+		$mask		=  ( isset ( $match [ 'mask' ] ) ) ?  ( integer ) $match [ 'mask' ] : 32 ;
+
+		if  ( $mask  >  32 )
+			return ( false ) ;
+
+
+		// Compute the length of the mask that will be used to set the remaining bits to 1
+		$remaining_bits		=  32 - $mask ;
+		$end_mask		=  0 ;
+
+		// Starting address
+		$address		=  ( $address_low [0]  <<  24 )  |
+					   ( $address_low [1]  <<  16 )  |
+					   ( $address_low [2]  <<   8 )  |
+					   $address_low [3] ;
+
+		// Build the mask that will be used to set the remaining bits to 1
+		for ( $i = 0 ; $i  <  $remaining_bits ; $i ++ )
+		   {
+			$end_mask	<<=  1 ;
+			$end_mask	 |=  1 ;
+		    }
+
+		// Check that bits in the original address do not overlap with the mask ; otherwise, this means the address
+		// mask is incorrect
+		if  ( $address  &  $end_mask )
+			return ( false ) ;
+
+		// Set all remaining bits to 1
+		$address  |=  $end_mask ;
+
+		// Build the end address
+		$address_high	=  [ ( $address  >>  24 ) & 0xFF, ( $address  >>  16 ) & 0xFF, ( $address  >>  8 ) & 0xFF, $address & 0xFF ] ;
+
+		// All done, return
+		if  ( $return_as_string )
+			return ( [ implode ( '.', $address_low ), implode ( '.', $address_high ) ] ) ;
+		else
+			return ( [ $address_low, $address_high ] ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		StringToWord16, StringToWord32 - Converts a string to a word.
+
+	    PROTOTYPE
+		$word16 = Convert::StringToWord16 ( $str ) ;
+		$word32 = Convert::StringToWord32 ( $str ) ;
+
+	    DESCRIPTION
+		Returns a string of 2 or 4 characters as a 16 or 32 bits integer.
+
+	    RETURN VALUE
+	    	A 16- or 32-bits integer.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  StringToWord16 ( $str )
+	   {
+		return (
+				( ord ( $str{0} )  <<  16 )  |
+				( ord ( $str{1} )         )
+			) ;
+	    }
+
+
+	public static function  StringToWord32 ( $str )
+	   {
+		return (
+				( ord ( $str{0} )  <<  24 )  |
+				( ord ( $str{1} )  <<  16 )  |
+				( ord ( $str{2} )  <<   8 )  |
+				( ord ( $str{3} )         )
+			) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 *
+	 *  NAME
+	 *	ToCli - Converts text for CLI mode under Windows.
+	 *
+	 *  PROTOTYPE
+	 *	$text = Convert::ToCli ( $text ) ;
+	 *
+	 *  DESCRIPTION
+	 *	On Windows, in CLI mode, converts the specified text to the codepage CP437.
+	 *
+	 *  PARAMETERS
+	 *	$text (string) -
+	 *		Text to be converted.
+	 *
+	 *  RETURN VALUE
+	 *	Returns the converted text if running under Windows in CLI mode ; otherwise, returns the text as is.
+	 *
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public static function  ToCli ( $text )
+	   {
+		if  ( IS_WINDOWS  &&  IS_CLI )
+			$text		=  iconv ( 'ISO-8859-1', 'CP437', $text ) ;
+		
+		return ( $text ) ;
+	    }
+	
+		
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		ToComputerName - Given a string, returns a name usable as a PHP name.
+
+	    PROTOTYPE
+		$cname = Convert::ToComputerName ( $name, replace_dups = true ) ;
+
+	    DESCRIPTION
+		This function takes a string as input and replaces every character not in the set
+		[a-zA-Z0-9] by an underline. It also prepends an underline sign if the first character
+		is numeric.
+
+	    PARAMETERS
+	    	$name (string) -
+			String to be transformed into a valid PHP name.
+
+		$replace_dups (boolean) -
+			When true, duplicate underlines are replaced by only one.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  ToComputerName ( $name, $replace_dups = true )
+	   {
+	   	$name = preg_replace ( '/[^a-zA-Z0-9]/', '_', $name ) ;
+
+		if  ( is_numeric ( substr ( $name, 0, 1 ) ) )
+			$name = "_" . $name ;
+
+		if  ( $replace_dups )
+			$name = preg_replace ( '/[_]+/', '_', $name ) ;
+
+		return ( $name ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		ToDigit - Converts a character digit to a numeric value.
+
+	    PROTOTYPE
+	    	$value = Convert::ToDigit ( $ch, $base = 10 ) ;
+
+	    DESCRIPTION
+	    	Converts the specified character into a digit, using the specified base.
+
+	    PARAMETERS
+	    	$ch (string or integer) -
+	    		Digit to be converted.
+
+    		$base (integer) -
+    			Numeric base to be used for the conversion (between 2 and 36).
+
+	    RETURN VALUE
+	    	The function returns the value of the character digit or false if one of the following
+	    	conditions occur :
+	    	- The input base is incorrect
+	    	- The supplied digit is not a valid string or integer
+	    	- The digit value does not belong to the specified base
+
+	 --------------------------------------------------------------------------------------------*/
+	 public static function  ToDigit ( $ch, $base = 10 )
+	    {
+	   	if  ( $base  <  2  ||  $base  >  36 )
+	   		return ( false ) ;
+
+		if  ( is_string ( $ch ) )
+		   {
+		   	if  (  strlen ( $ch )  >  0 )
+		   	   {
+				$ch = strtoupper ( substr ( $ch, 0, 1 ) ) ;
+
+				if  ( String::IsLetter ( $ch ) )
+					$value = ord ( $ch ) - ord ( 'A' ) + 10 ;
+				else if  ( $ch  >=  '0'  &&  $ch  <=  '9' )
+					$value = ord ( $ch ) - ord ( '0' ) ;
+				else
+					return ( false ) ;
+			     }
+    			else
+    				return ( false ) ;
+		    }
+		else if ( ! is_numeric ( $ch ) )
+			return ( false ) ;
+		else
+			$value = $ch ;
+
+		if  ( $value  >=  $base )
+			return ( false ) ;
+		else
+			return ( $value ) ;
+	     }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		ToInteger - Converts an integer representation into its real value.
+
+	    PROTOTYPE
+		$value = Convert::ToInteger ( $value ) ;
+
+	    DESCRIPTION
+		Takes an integer string value and converts it to a real integer, taking into account
+		the specification of the value base.
+
+	    PARAMETERS
+		$value (string) -
+			String representation of an integer.
+			If the string starts with :
+			"0b" -
+				The value is considered as binary.
+			"0" or "0o" -
+				The value is considered as octal.
+			Any non-zero digit or "0d" -
+				The value is considered as decimal.
+			"0x" -
+				The value is considered as hexadecimal.
+
+	    RETURN VALUE
+	    	The integer value of the supplied input string, or false if the value is incorrect.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  ToInteger ( $value )
+	   {
+	   	static 		$digits 	=  "0123456789ABCDEF" ;
+
+   		// Check that the supplied input string does not overflow the size of an integer
+   		if  ( ( float ) $value  !=  ( integer ) $value )
+   			return ( false ) ;
+
+	   	// If the value is a good old integer, simply return it
+		if  ( ( integer ) $value  ==  $value )
+			return ( ( integer ) $value ) ;
+
+		// If the value does not start with zero, return false - there will be no radix specifier
+		if  ( $value [0]  !=  "0" )
+			return ( false ) ;
+
+		// Check second character (numeric base specification)
+		switch ( $value [1] )
+		   {
+			case  'd' : case  'D' :
+				$base  = 10 ;
+				$start = 2 ;
+				break ;
+
+			case  'b' : case  'B' :
+				$base  = 2 ;
+				$start = 2 ;
+				break ;
+
+			case  'o' : case  'O' :
+				$base  = 8 ;
+				$start = 2 ;
+				break ;
+
+			case  'x' : case  'X' :
+				$base  =  16 ;
+				$start =  2 ;
+				break ;
+
+			default :
+				$base  =  8 ;
+				$start =  1 ;
+		    }
+
+		// We have the numeric base specification, suppress leading information
+		$value = substr ( $value, $start ) ;
+
+		// Verify that each character is allowed in this base
+		$length = strlen ( $value ) ;
+
+		for ( $i = 0 ; $i  <  $length ; $i ++ )
+		   {
+			$index = strpos ( $digits, $value [$i] ) ;
+
+			if  ( $index  >=  $base )
+				return ( false ) ;
+		    }
+
+		// Convert the value to unsigned integer
+		$value = base_convert ( $value, $base, 10 ) ;
+		$value = sprintf ( "%u", $value ) ;
+
+   		// Check (again) that the supplied input string does not overflow the size of an integer
+   		if  ( ( float ) $value  >  $value )
+   			return ( false ) ;
+
+		if  ( ( float ) $value  <  $value )
+			return ( false ) ;
+
+		// All done, return
+		return ( ( integer ) $value ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		ToPHPName - Converts a string to a PHP name.
+
+	    PROTOTYPE
+		$name = Convert::ToPHPName ( $name ) ;
+
+	    DESCRIPTION
+		Converts a string to an official PHP name :
+		- The name is trimmed
+		- Inner spaces and other characters not belonging to the set [a-zA-Z0-9_] are replaced
+		  by an underline
+		- Consecutive underlines are replaced with a single one.
+
+	    PARAMETERS
+		$name (string) -
+			String to be transformed into a valid PHP name.
+
+	    RETURN VALUE
+		A valid PHP name corresponding to the supplied input string.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  ToPHPName ( $name )
+	   {
+		$name = trim ( $name ) ;
+		$name = preg_replace ( '/[^a-zA-Z0-9_]/', '_', $name ) ;
+		$name = preg_replace ( '/_+/', '_', $name ) ;
+
+		return ( $name ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	  	ToTimeString - Converts a value to a human-readable time string
+
+	    PROTOTYPE
+		$str = Convert::ToTimeString ( $value, 
+					       $options		=  true,
+					       $upper_unit	=  TTS_UNIT_HOURS, 
+					       $lower_unit	=  TTS_UNIT_MILLISECONDS ) ;
+
+	    DESCRIPTION
+		Converts the specified elapsed time value to a human-readable value.
+		
+	    PARAMETERS
+		$value (float) -
+			A number of seconds elapsed since january 1st, 1970, including an optional
+			decimal part specifying milliseconds or even microseconds.
+			
+		$options (boolean or integer) -
+	 		This parameter was originally called $return_as_string and was a boolean. To
+	 		preserve backward compatibility, a boolean can still be specified.
+	  
+			When specified as a boolean, Results are returned as a string if the value true
+	 		is specified ; if false, they are returned as an associative array whose keys 
+	 		are the time fraction and values the time fraction value (hours, minutes, etc.).
+	  
+	 		When specified as an integer, this parameter can be any combination of the 
+	 		following flags :
+	  
+	 		- TTS_OPTION_RETURN_AS_STRING :
+	 			The result is returned as a human-readable string. This is the default.
+	  
+	 		- TTS_OPTION_RETURN_AS_ARRAY :
+	 			The result is returned as an associative array.
+	  
+	 		- TTS_OPTION_ZERO_PAD :
+	 			Numeric values in a string result are padded with zeroes. For example,
+	 			"6mn" becomes "06mn" ; "21ms" becomes "021ms". This option is useful
+	 			for alignment when displaying a list which contains a timestring value.
+	 			This option implies the TTS_OPTION_RETURN_AS_STRING flag (ie, it turns
+	 			off the TTS_OPTION_RETURN_AS_ARRAY flag).
+			
+		$upper_unit (integer) -
+			The highest time unit to be used when converting the value. For example,
+			if the specified time value can be converted to "1h 25mn", and the upper unit
+			is TTS_UNIT_MINUTES, then the resulting string will be "85mn".
+			
+		$lower_unit (integer) -
+			This parameter specified the lowest unit where the value should be rounded to.
+			For example, if the specified time value could be converted to "1s 10ms 607µs",
+			and the lower limit is TTS_UNITS_MILLISECONDS, the resulting string will be :
+			"1s 11ms".
+			
+	    NOTES
+		- If the "µ" symbol is to be used, its equivalent html entity will be returned (&micro;),
+		  unless the program is running in CLI mode.
+		- If $lower_unit is not TTS_MICROSECONDS, the value will be rounded.
+		- Every unit which has a value of zero will not be returned , when the $return_as_string
+		  parameter is true.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  ToTimeString ( $value, 
+					       $options			=  true,
+					       $upper_unit		=  TTS_UNIT_HOURS, 
+					       $lower_unit		=  TTS_UNIT_MILLISECONDS )
+	   {
+		$micro		=  ( IS_STANDALONE ) ?  "us" : "&micro;s" ;
+
+
+		// Backward compatibility : if $options is specified as a boolean, convert it to a 
+		// TTS_OPTION_* mask
+		if  ( is_bool ( $options ) )
+		   {
+			if  ( $options )
+				$options	=  TTS_OPTION_RETURN_AS_STRING ;
+			else
+				$options	=  TTS_OPTION_RETURN_AS_ARRAY ;
+		    }
+		// Some TTS_OPTION_* flags are dedicated either to string or array return value types
+		else if  ( $options  &  TTS_OPTION_ZERO_PAD )
+			$options	&=  ~TTS_OPTION_RETURN_AS_ARRAY ;
+
+		// Extract integer and decimal parts (seconds and sub-values of a second)
+		$big_value	=  $value * 1000000 ;
+		$integer_part	=  floor ( $value ) ;
+		$decimal_part	=  fmod ( $big_value, 1000000 ) ;
+		
+		// Normalize units
+		if  ( $upper_unit  >  TTS_UNIT_DAYS )
+			$upper_unit	=  TTS_UNIT_DAYS ;
+			
+		if  ( $lower_unit  <  TTS_UNIT_MICROSECONDS )
+			$lower_unit	=  TTS_UNIT_MICROSECONDS ;
+			
+		if  ( $lower_unit  >  $upper_unit )
+		   {
+			$temp		=  $lower_unit ;
+			$lower_unit	=  $upper_unit ;
+			$upper_unit	=  $temp ;
+		    }
+		
+		// Compute the hours/minutes/seconds/milliseconds/microseconds values
+		$days			=  $big_value / ( 24 * 60 * 60 * 1000000 ) ;
+		$hours			=  $big_value / ( 60 * 60 * 1000000 ) ;
+		$minutes		=  $big_value / ( 60 * 1000000 ) ;
+		$seconds		=  $big_value / ( 100000 ) ;
+		$milliseconds		=  $big_value / 1000 ;
+		$microseconds		=  $big_value ;
+		
+		// Then the rounded parts
+		$rounded_days		=  $days ;
+		$rounded_hours		=  ( $big_value - ( floor ( $rounded_days ) * 24 * 60 * 60 * 1000000 ) ) / ( 60 * 60 * 1000000 ) ;
+		$rounded_minutes	=  ( fmod ( $big_value, 60 * 60 * 1000000 ) ) / ( 60 * 1000000 ) ;
+		$rounded_seconds	=  ( fmod ( $big_value, 60 * 1000000 ) ) / ( 1000000 ) ;
+		$rounded_milliseconds	=  fmod ( $big_value, 1000000 ) / ( 1000 ) ;
+		$rounded_microseconds	=  fmod ( $big_value, 1000 ) ;
+				
+		// Formatting data
+		$timeparts		=  array ( $microseconds, $milliseconds, $seconds, $minutes, $hours, $days ) ;
+		$rounded_timeparts	=  array ( $rounded_microseconds, $rounded_milliseconds, $rounded_seconds, 
+							$rounded_minutes, $rounded_hours, $rounded_days ) ;
+		$strings		=  array ( $micro, "ms", "s", "mn", "hr", "d" ) ;
+		$roundings		=  array ( 3, 0, 0, 1, 2, 3 ) ; 
+		$paddings		= 
+		   [
+			$micro	=>  3,
+			"ms"	=>  3,
+			"s"	=>  2,
+			"mn"	=>  2,
+			"hr"	=>  2,
+			"d"	=>  2
+		    ] ;
+		$results		=  array ( ) ;
+
+		// Build the time string, starting from the specified upper unit to the lower unit
+		$results	=  array ( ) ;
+
+		// But take care that the decimals of values above lower unit are truncated
+		for  ( $i = $upper_unit ; $i >= $lower_unit ; $i -- )
+		   {
+			if  ( $i  ==  $upper_unit )
+				$part	=  $timeparts [$i] ;
+			else
+				$part	=  $rounded_timeparts [$i] ;
+				
+			$results [ $strings [$i] ]	=  round ( $part, 0 ) ;
+		    }
+
+		// Last unit : use the rounding that applies. If lower and upper units are the same, use the totals
+		if  ( $upper_unit  ==  $lower_unit )
+			$results [ $strings [ $lower_unit ] ]	= round ( $timeparts [ $lower_unit ], $roundings [ $lower_unit ] ) ;
+		else
+			$results [ $strings [ $lower_unit ] ]	= round ( $rounded_timeparts [ $lower_unit ], $roundings [ $lower_unit ] ) ;
+		
+		// Return the results immediately, if they are to be returned as an array
+		if  ( $options  &  TTS_OPTION_RETURN_AS_ARRAY )
+			return ( $results ) ;
+
+		// Otherwise, build the time string
+		$result		=  "" ;
+		$index		=  0 ;
+		
+		foreach  ( $results  as  $key => $value )
+		   {
+			if  ( count ( $results )  ==  1  &&  $value  <  1 )
+				$result .= "<1$key" ;
+			else if  ( $value )
+			   {
+				if  ( $options  &  TTS_OPTION_ZERO_PAD )
+					$value	=  sprintf ( "%0{$paddings [ $key ]}d", $value ) ;
+				
+				$result .= "$value$key " ;
+			    }
+				
+			$index ++ ;
+		    }
+		    
+		$result		=  rtrim ( $result ) ;
+		
+		// When the measured value has a granularity less than the lower unit we have to manually add the "<1" string
+		if  ( $result  ==  "" )
+		   {
+			$count		=  count ( $results ) ;
+			$keys		=  array_keys ( $results ) ;
+			
+			$result		=  '<1' . $keys [ $count - 1 ] ;
+		    }
+		
+		// All done, return
+		return ( $result ) ;
+	    }
+	
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		VersionToBytes - Converts a version number to a byte array.
+
+	    PROTOTYPE
+		$bytes = Convert::VersionToBytes ( $version ) ;
+
+	    DESCRIPTION
+		Converts a 1- to 4-bytes version expressed as "a.b.c.d" into a byte array.
+		Missing bytes default to zero ; extra bytes are ignored.
+
+	    PARAMETERS
+	    	$version (string) -
+	    		A version string in the form "a.b.c.d" (items starting at "b" are optional).
+
+	    RETURN VALUE
+		A 4-bytes array containing the individual version items (major, minor, revision,
+		build).
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  VersionToBytes ( $version )
+	   {
+		$bytes 	=  explode ( '.', $version ) ;
+		$result =  array ( 0, 0, 0, 0 ) ;
+		$max	=  min ( count ( $bytes ), 4 ) ;
+
+		for  ( $i = 0 ; $i  < $max ; $i ++ )
+			$result [$i] = ( integer ) ( $bytes [$i] & 0xFF ) ;
+
+		return ( $result ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Word16ToString, Word32ToString - Converts a word to a string
+
+	    PROTOTYPE
+		$str = Convert::Word16ToString ( $integer_16 ) ;
+		$str = Convert::Word32ToString ( $integer_32 ) ;
+
+	    DESCRIPTION
+		Converts a 16/32-bits word to a string of 2/4 bytes.
+
+	    RETURN VALUE
+	    	Returns the individual bytes of the input value converted as a string. The conversion
+		is byte-order independent.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  Word16ToString ( $value )
+	   {
+		$b1	=  ( $value  >>   8 )  &  0xFF ;
+		$b2 	=  ( $value         )  &  0xFF ;
+		return ( chr ( $b1 ) . chr ( $b2 ) ) ;
+	    }
+
+
+	public static function  Word32ToString ( $value )
+	   {
+		$b1	=  ( $value  >>  24 )  &  0xFF ;
+		$b2	=  ( $value  >>  16 )  &  0xFF ;
+		$b3	=  ( $value  >>   8 )  &  0xFF ;
+		$b4 	=  ( $value         )  &  0xFF ;
+		return ( chr ( $b1 ) . chr ( $b2 ) . chr ( $b3 ) . chr ( $b4 ) ) ;
+	    }
+
+   }

@@ -1,0 +1,675 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        COMWrapper.phpclass
+
+    DESCRIPTION
+	A class that allows to wrap a COM object and use it as if it were a "normal" PHP object.
+	Although the print_r() function is allowed and show object properties, the Reflection class won't 
+	show the methods.
+
+    AUTHOR
+        Christian Vigh, 10/2014.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2014/10/21]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Windows\COM ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use  	Thrak\System\Object ;
+use	Thrak\Windows\AbstractWindowsBase ;
+use     Thrak\Windows\COM\COMClassDefinition ;
+
+
+/*==============================================================================================================
+
+    COMWrapper class -
+        Implements a wrapper class for COM objects.
+
+  ==============================================================================================================*/
+class  COMWrapper       extends Object
+   {
+	static private     $__class_definitions      =  array ( ) ;
+	
+	
+	/*===================================================================================================
+	
+	    NAME
+		Create - Creates a COM object and wrap it.
+	               
+	    PROTOTYPE
+	        $wrapped_object           =  COMWrapper::Create ( $module, $desired_class = null, $helper ) ;
+	               
+	    DESCRIPTION
+	        Creates a COM object using $module as parameter and returns a wrapped object.
+	               
+	    PARAMETERS
+	        $module (string) -
+			A reference to the COM object, for example "word.application".
+	                               
+	 	$desired_class (string) -
+	 		Can be used to specify an alternative class name. This can arise for example when
+	 		a word.application object is instanciated ; the official class name is "_Application",
+	 		which may not fit your needs.
+	  
+	 	$helper (string or object) -
+	 		Helper object or class that can provide additional methods and properties to the 
+	 		wrapped COM object. These members must have the [COMWrapperProperty] or 
+	 		[COMWrapperMethod] attributes.
+	 		If a class name is specified, only static properties and methods can be called.
+	 		The help class or object is considered to be a friend of the COMWrappedInstance
+	 		class : all its members will be accessible.
+	                               
+	    RETURN VALUE
+	               The function returns a COMWrappedInstance object using the created COM object or null if
+	               creation failed.
+	    
+	  ===================================================================================================*/
+	public static function  Create ( $module, $desired_class = null, $helper = null )
+	   {
+		// Instanciate the COM object
+	        $com_object     =  new \COM ( $module ) ;
+	               
+	        if  ( ! $com_object )
+	                return ( null ) ;
+	                               
+		// Wrap it
+	        $wrapped_object =  self::Wrap ( $com_object, $desired_class ) ;
+	               
+		// All done, return
+	        return ( $wrapped_object ) ;
+	    }
+	
+	
+	/*===================================================================================================
+	
+	    NAME
+	        GetCOMWrapperDefinition - Retrieves the text definition of a COM class.
+	               
+	    PROTOTYPE
+	        $text     =  COMWrapper::GetCOMWrapperDefinition ( $com_object_or_class, $desired_class = null ) ;
+	               
+	    DESCRIPTION
+	        Retrieves the text definition of a COM wrapper class for the specified COM object or class
+	        name.
+	        Note that if a class name is specified, it must correspond to an already wrapped COM class.
+	               
+	    PARAMETERS
+	        $com_object_or_class (object or string) -
+	                Either a COM object or a string.
+	                               
+	        $desired_class (string) -
+	                When specified, indicates the desired class for the COM object if it is to be created.
+	                               
+	    RETURN VALUE
+	        The text definition of the wrapper class, or null if :
+	        - $com_object_or_class is not a variant of type VT_DISPATCH
+	        - $com_object_or_class is a string but no COM object of that class has been wrapped so far
+	    
+	  ===================================================================================================*/
+	public static function  GetCOMWrapperDefinition ( $com_object_or_class, $desired_class = null )
+	   {
+	        // If an object has been supplied, wrap it to get a brand new wrapper class definition
+	        if  ( is_object ( $com_object_or_class ) )
+	           {
+	                if  ( ! is_a ( $com_object_or_class, 'VARIANT' )  ||  variant_get_type ( $com_object_or_class )  !=  VT_DISPATCH )
+	                        return ( null ) ;
+	                                               
+	                $class_definition       =  self::GetInterfaceDefinition ( $com_object_or_class ) ;
+	                               
+	                if  ( ! $class_definition )
+	                        return ( null ) ;
+	                                               
+	                $class_name		=  ( $desired_class ) ? $desired_class : self::GetClassNameFromDefinition ( $class_definition ) ;
+	                               
+	                if  ( ! isset ( self::$__class_definitions [ $class_name ] ) )
+	                   {
+				$def                                                =  self::GetClassStructure ( $class_name, $class_definition ) ;
+				self::$__class_definitions [ $class_name ]          =  $def ;
+	                    }
+	             }
+	        // If a class name is specified, then it may already be in the array of wrapped classes ?
+	        else
+	                $class_name                     =  $com_object_or_class ;
+	                               
+	        // Return the class definition...
+	        if  ( isset ( self::$__class_definitions [ $class_name ] ) )
+	                return ( self::$__class_definitions [ $class_name ] ) ;
+	        // ... or null if none defined
+	        else
+	                return ( null ) ;
+	    }
+	
+	
+	/*===================================================================================================
+	
+	    NAME
+	        IsWrappable - Determines if the supplied object can be wrapped.
+	               
+	    PROTOTYPE
+	        $bool	=  COMWrapper::IsWrappable ( $arg ) ;
+	               
+	    DESCRIPTION
+		Checks if the supplied argument is a COM object that can be wrapped by this class.
+	 
+	    PARAMETERS
+	        $arg (mixed) -
+	                Value to be tested.
+	                               
+	    RETURN VALUE
+	        True if the specified argument can be wrapped, false otherwise.
+	    
+	  ===================================================================================================*/
+	public static function  IsWrappable ( $arg )
+	   {
+	        return  ( is_a ( $arg, 'VARIANT' )  &&  variant_get_type ( $arg )  ==  VT_DISPATCH ) ;
+	    }
+	
+	
+	/*===================================================================================================
+	
+	    NAME
+	        Wrap - Creates a wrapper class around a COM object.
+	               
+	    PROTOTYPE
+	        $wrapped_object           =  COMWrapper::Wrap ( $com_object, $desired_class = null,
+								$helper = null ) ;
+	               
+	    DESCRIPTION
+	        Wrap() takes a COM object, gets its definition and creates on the fly a wrapper class of the
+	        same name as the object class.
+	        The returned object presents the same methods and properties as the underlying COM object.
+	               
+	    PARAMETERS
+	        $com_object (object) -
+	                COM object to be wrapped.
+	 
+	 	$desired_class (string) -
+	 		Can be used to specify an alternative class name. This can arise for example when
+	 		a word.application object is instanciated ; the official class name is "_Application",
+	 		which may not fit your needs.
+	  
+	 	$helper (string or object) -
+	 		Helper object or class that can provide additional methods and properties to the 
+	 		wrapped COM object. These members must have the [COMWrapperProperty] or 
+	 		[COMWrapperMethod] attributes.
+	 		If a class name is specified, only static properties and methods can be called.
+	 		The help class or object is considered to be a friend of the COMWrappedInstance
+	 		class : all its members will be accessible.
+	                               
+	    RETURN VALUE
+	        Null if :
+	        - $com_object_or_class is not a variant of type VT_DISPATCH
+	        - $com_object_or_class is a string but no COM object of that class has been wrapped so far
+	        Otherwise the return value is a wrapper class around the COM object.
+	               
+	  ===================================================================================================*/
+	public static function  Wrap ( $com_object, $desired_class = null, $helper = null )
+	   {
+	        // Not sure this satisfies all the situations
+		if  ( ! self::IsWrappable ( $com_object ) )
+			return ( $com_object ) ;
+	                               
+	        // Get class definition and class name
+	        $class_definition             =  self::GetInterfaceDefinition ( $com_object ) ;
+	               
+	        if  ( ! $class_definition ) 
+	                return ( $com_object ) ;
+	        
+		$official_class_name		=  self::GetClassNameFromDefinition ( $class_definition ) ;
+	        $class_name                     =  ( $desired_class ) ?  $desired_class : $official_class_name ;
+		
+		// If improper type information about the desired class, return the COM object as is
+		if  ( ! $official_class_name )
+			return ( $com_object ) ;
+		
+	        // If not already created, create a definition for this class
+	        if  ( ! isset ( self::$__class_definitions [ $class_name ] ) )
+	                self::CreateCOMWrapperClass ( $class_name, $class_definition ) ;
+	                               
+	        // Wraps the object with the created wrapper class
+	        $wrapped_object           =  new $class_name ( $com_object, $helper ) ;
+	               
+	        // All done, return
+	        return ( $wrapped_object ) ;
+	    }
+	    
+	    
+	/*===================================================================================================
+	
+	    NAME
+	        GetInterfaceDefinition - Retrieves the definition for an interface class.
+	               
+	    PROTOTYPE
+	        $text     =  COMWrapper::GetInterfaceDefinition ( $object, $interface = null ) ;
+	               
+	    DESCRIPTION
+	        Gets the interface definition for the specified object.
+	               
+	    PARAMETERS
+	        $object (object) -
+	                A COM object instance whose definition is to be displayed.
+	                               
+	        $interface (string) -
+	                Name of the interface to be retrieved. Default : default interface.
+	                               
+	    RETURN VALUE
+	        The text representation of the class definition. 
+	               
+	    NOTE
+	        This function uses com_print_typeinfo(), which does not give many ways to extract further
+	        class attributes. An output buffer is created before calling the function, then its content
+	        are retrieved.
+	    
+	  ===================================================================================================*/
+	private static function  GetInterfaceDefinition ( $object, $interface = null )
+	   {
+	        if  ( ob_get_level ( )  >  0 )
+	                @ob_end_clean ( ) ;
+	                               
+	        ob_start ( ) ;
+	        @com_print_typeinfo ( $object, $interface ) ;
+	        $result =  ob_get_clean ( ) ;
+
+		return ( $result ) ;
+	    }
+	      
+	
+	/*===================================================================================================
+	
+	    NAME
+	        GetClassNameFromDefinition - Gets the class name found in a class definition.
+	               
+	    PROTOTYPE
+	        $class_name     =  COMWrapper::GetClassNameFromDefinition ( $class_definition ) ;
+	               
+	    DESCRIPTION
+	        This methods extracts the class name from the return value of GetInterfaceDefinition().
+	        Note that the leading "I" (for "Interface") is systematically removed.
+	               
+	    PARAMETERS
+	        $class_definition (string) -
+	                The return value of a call to GetInterfaceDefinition().
+	                               
+	    RETURN VALUE
+	        The class name found in the definition.
+	               
+	  ===================================================================================================*/
+	private static function  GetClassNameFromDefinition ( $class_definition )
+	   {
+	        preg_match ( '/^\s* class \s+ (?P<class> \w+)/imsx', $class_definition, $match ) ;
+		
+		if  ( ! isset ( $match [ 'class' ] ) )
+			return ( null ) ;
+		
+	        $classname        =  $match [ 'class' ] ;
+	               
+	        if  ( $classname [0]  ==  'I' )
+	                $classname        =  substr ( $classname, 1 ) ;
+	               
+	        return ( trim ( $classname ) ) ;
+	    }
+	    
+	    
+	/*===================================================================================================
+	
+	    NAME
+	        GetClassStructure - Returns a class structure from the supplied class definition.
+	               
+	    PROTOTYPE
+	        $struct = COMWrapper::GetClassStructure ( $class_name, $class_definition ) ;
+	               
+	    DESCRIPTION
+	        Retrieves a class structure (of type COMClassDefinition) from the supplied textual class
+	        definition.
+	               
+	    PARAMETERS
+	        $class_name (string) -
+	                Name of the class.
+	                               
+	        $class_definition (string) -
+	                Return value from the GetInterfaceDefinition() method.
+	                               
+	    RETURN VALUE
+	        An object of class COMClassDefinition.
+	    
+	  ===================================================================================================*/
+	private static function  GetClassStructure ( $class_name, $class_definition )
+	   {
+	        $def      =  new  COMClassDefinition ( $class_name ) ;
+	               
+	        // Get GUID
+	        $guid_re             =  '#^ 
+	                                        \s*
+	                                        class \s+ \w+ \s* [{] \s*
+	                                        [/][*] \s* GUID=
+	                                        (?P<guid> [^*]+?)
+	                                        [*][/]
+	                                        (?P<end> \s*)
+	                                #imsx' ;
+								
+	        preg_match ( $guid_re, $class_definition, $match, PREG_OFFSET_CAPTURE ) ;
+	        $def -> GUID		=  $match [ 'guid' ] [0] ;
+	        $current_offset         =  $match [ 'end' ] [1] + strlen ( $match [ 'end' ] [0] ) ;
+		
+	        // Scan for methods & properties. The following RE matches :
+	        // - Comments above the method or property definition ; they can be of 3 types :
+	        //	. A DISPID specification (methods & properties)              : /* DISPID=num */
+	        //      . A return value type (methods and properties only)     : /* VT_xxx [yy] */
+	        //      . A comment (properties only ; method comments are put in the method body)
+	        // - For functions :
+	        //      - Function name
+	        //      - Function parameters
+	        //      - Comment (in the function body)
+	        // For properties, the property name is retrieved
+	        //
+	        // Note that the comment above a function and its parameters are both retrieved as
+	        // groups which need to be further parsed to extract individual items.
+	        $entry_re           =  '#
+	                                        (?P<comments> ( \s* [/][*] \s* [^*]*? [*][/] \s*)* )
+	                                        \s*
+	                                        (
+	                                                (?P<method>
+	                                                        function \s+ (?P<method_name> \w+) \s*
+	                                                        [(]
+	                                                                (?P<parameters> [^)]*?)
+	                                                        [)]
+	                                                        \s*
+	                                                        [{]
+	                                                        (
+	                                                                (             
+	                                                                        \s*
+	                                                                        [/][*] \s*
+	                                                                        (?P<method_comment> [^*]*?)
+	                                                                        [*][/]
+	                                                                        \s*
+	                                                                ) |
+	                                                                ([^}]*?)
+	                                                        )
+	                                                        [}]
+	                                                ) |
+	                                                (?P<property>
+	                                                                var \s+ (?P<property_name> [&$\w+]+) \s* [;]
+	                                                )
+	                                        )
+	                                        (?P<end> \s*)
+	                                #imsx' ;
+	                                                   
+	               while  ( preg_match ( $entry_re, $class_definition, $match, PREG_OFFSET_CAPTURE, $current_offset )  !==  false )
+	                  {
+	                        // Exit when our end marker has not been matched
+	                        if  ( ! isset ( $match [ 'end' ] ) )
+	                                break ;
+	                                               
+	                        // Extract the comments : DISPID, return value type, comment (for properties)
+	                        $comments               =  ( isset ( $match [ 'comments'   ] ) ) ?  trim ( $match [ 'comments' ] [0] ) : false ;
+	                        $property_comment	=  "" ;
+	                        $dispid                 =  false ;
+	                        $retval_type            =  false ;
+	                        $retval_value           =  false ;
+	                        $comment_re             =  '#
+								\s*
+								[/][*] \s*
+								(
+									( .*? DISPID= (?P<dispid> [+-]? \d+) [^*]*? ) |
+									( (?P<retvaltype> \w+) \s+ \[ (?P<retvalvalue> \d+) \] [^*]*? ) |
+									(?P<comment> .*?)
+								) 
+								[*][/] \s*
+								\s* 
+							     #imsx' ;
+	                               
+	                        // After that, we should have (if any) a dispid, a return value type (if applicable) and a comment (only for properties)
+	                        preg_match_all ( $comment_re, $comments, $comment_matches ) ;
+				
+	                        for  ( $i = 0 ; $i  <  count ( $comment_matches [ 'dispid' ] ) ; $i ++ )
+	                           {
+	                                // A DISPID can be zero ; the following tests fail when $comment_matches ['dispid'] is "0" :
+	                                // if  ( $comment_matches [ 'dispid' ] [$i] )...
+	                                // if  ( empty ( $comment_matches [ 'dispid' ] [$i] ) )...
+	                                // if  ( $comment_matches [ 'dispid' ] [$i] !==  null )...
+	                                if  ( strlen ( $comment_matches [ 'dispid' ] [$i] ) )
+	                                   {
+	                                        $dispid =  $comment_matches [ 'dispid' ] [$i] ;
+	                                                              
+	                                        if  ( ! $dispid )
+	                                                $dispid =  "0" ;
+	                                    }
+	                                else if  ( $comment_matches [ 'retvaltype' ] [$i] )
+	                                   {
+	                                        $retval_type     =  $comment_matches [ 'retvaltype'  ] [$i] ;
+	                                        $retval_value    =  $comment_matches [ 'retvalvalue' ] [$i] ;
+	                                    }
+	                                else if  ( $comment_matches [ 'comment' ] [$i] )
+	                                        $property_comment    =  $comment_matches [ 'comment' ] [$i] ;
+	                            }
+	                                   
+	                        // We matched a method definition
+	                        if  ( isset ( $match [ 'method' ] )  &&  $match [ 'method' ] [0] )
+	                           {
+	                                $parameters	=  ( isset ( $match [ 'parameters'     ] ) ) ?  trim ( $match [ 'parameters'     ] [0] ) : false ;
+	                                $method_comment =  ( isset ( $match [ 'method_comment' ] ) ) ?  trim ( $match [ 'method_comment' ] [0] ) : "" ;
+	                                $method_name    =  trim ( $match [ 'method_name' ] [0] ) ;
+	                                               
+	                                // Create a new COMClassMethodDefinition object
+	                                $method             =  new COMClassMethodDefinition ( $method_name ) ;
+	                                $method -> Comment  =  $method_comment ;
+	                                               
+	                                // Check if there is a return value type and a DISPID specified in the header comments
+	                                if  ( $dispid  !==  false )
+	                                        $method -> DispId         =  $dispid ;
+	                                                              
+	                                if  ( $retval_type )
+	                                        $method -> ReturnValue            =  new COMClassValueTypeDefinition ( $retval_type, $retval_value ) ;
+	                                                              
+	                                // Process parameter list
+	                                if  ( $parameters )
+	                                   {
+	                                        $parameter_re	=  '#
+									(
+										[/][*] \s*
+										(?P<in_type> \w+) \s* \[ (?P<in_value> \d+) \] \s* \[ (?P<inout> \w+) \]
+										\s*
+										(
+											(?P<hasout> -->) \s*
+											(?P<out_type> \w+) \s* \[ (?P<out_value> \d+) \]
+										 )?
+										[^*]*? [*][/]
+										\s*
+										(?P<name> [&$\w]+)
+									)
+	                                                             #imsx' ;
+	                                        preg_match_all ( $parameter_re, $parameters, $parameter_matches ) ;
+	                                                              
+	                                        // Loop through found parameters and process their definition
+	                                        for (  $i = 0 ; $i  <  count ( $parameter_matches [ 'in_type' ] ) ; $i ++ )
+	                                           {
+	                                                $name		=  $parameter_matches [ 'name' ] [$i] ;
+	                                                $in_value       =  new  COMClassValueTypeDefinition ( $parameter_matches [ 'in_type' ] [$i], $parameter_matches [ 'in_value' ] [$i] ) ;
+	                                                $inout          =  $parameter_matches [ 'inout' ] [$i] ;
+	                                                                              
+	                                                if  ( isset ( $parameter_matches [ 'hasout' ] )  &&  $parameter_matches [ 'hasout' ] [$i] )
+	                                                        $out_value        =  new  COMClassValueTypeDefinition ( $parameter_matches [ 'out_type' ] [$i], $parameter_matches [ 'out_value' ] [$i] ) ;
+	                                                else
+	                                                        $out_value        =  null ;
+	                                                                                              
+	                                                $parameter       =  new  COMClassMethodParameterDefinition ( $name, $inout, $in_value, $out_value ) ;
+	                                                $method -> AddParameter ( $parameter ) ;
+	                                            }
+	                                        }
+	                                                   
+	                                // Add this method to the class definition    
+	                                $def -> Add ( $method ) ;
+	                            }
+	                        // A property definition was matched
+	                        else if  ( isset ( $match [ 'property' ] ) )
+	                           {
+	                                $property_name		=  trim ( $match [ 'property_name' ] [0] ) ;
+	                                $property               =  new COMClassPropertyDefinition ( $property_name ) ;
+	                                $property -> Comment    =  $property_comment ;
+	                                               
+	                                // Check if there is a return value type and a DISPID specified in the header comments
+	                                if  ( $dispid  !==  false )
+	                                        $property -> DispId        =  $dispid ;
+	                                                              
+	                                if  ( $retval_type )
+	                                        $property -> ReturnValue          =  new COMClassValueTypeDefinition ( $retval_type, $retval_value ) ;
+	                                               
+	                                // Add this property to the class definition
+	                                $def -> Add ( $property ) ;
+	                            }
+	                                   
+	                        // Update current offset
+	                        $current_offset		=  $match [ 'end' ] [1] + strlen ( $match [ 'end' ] [0] ) ;
+	                               
+	                        if  ( $current_offset  >=  strlen ( $class_definition ) )
+	                                break ;
+	                   }
+	                   
+	               // All done, return
+	               return ( $def ) ;
+	        }
+	
+	
+	/*===================================================================================================
+	
+	    NAME
+	        CreateCOMWrapperClass - Performs the real job of creating the wrapper class.
+	               
+	    PROTOTYPE
+	        COMWrapper::CreateCOMWrapperClass ( $class_name, $class_definition ) ;
+	               
+	    DESCRIPTION
+	        From the specified class definition, CreateCOMWrapperClass() builds the definition of a 
+	        wrapper class inheriting from COMWrappedInstance, and puts the necessary methods to map the
+	        ones from the underlying COM object. It also creates "fake" properties that are used to
+	        provide the print_r() function the set of values to be displayed.
+	               
+	    PARAMETERS
+	        $class_name (string) -
+	                COM object class name.
+	                               
+	        $class_definition (string) -
+	                Class definition, as returned by GetInterfaceDefinition().
+	                               
+	  ===================================================================================================*/
+	private static function  CreateCOMWrapperClass ( $class_name, $class_definition )
+	   {
+	        // Get class structure
+	        $def            =  self::GetClassStructure ( $class_name, $class_definition ) ;
+	               
+	        // Current namespace
+	        $namespace      =  __NAMESPACE__ ;
+	               
+	        // Build class header
+	        $classtext           =<<<END
+class  $class_name\t\textends  $namespace\\COMWrappedInstance /* GUID = {$def -> GUID} */
+   {
+	// Class constructor 
+	public function  __construct ( \$com_object, \$helper = null )
+	   {
+	               parent::__construct ( \$com_object, \$helper ) ;
+	    }
+
+
+END;
+	        // Class body : loop through members
+	        foreach  ( $def -> Members  as  $member_name => $member )
+	           {
+	                // Ignore standard COM properties
+	                if  ( $member -> DispId  &  0xF0000000 )
+	                        continue ;
+	                                               
+	                if  ( $member -> Comment )
+	                        $comment         =  "\t// {$member -> Comment}\n" ;
+	                else
+	                        $comment         =  "\t// Property $member_name :\n" ;
+	                                               
+	                if  ( $member -> DispId  !==  null )
+	                        $comment         .=  "\t// DISPID : {$member -> DispId}\n" ;
+	                               
+	                if  ( $member -> ReturnValue )
+	                        $comment         .=  "\t// Type   : {$member -> ReturnValue -> ConstantName} [{$member -> ReturnValue -> ConstantValue}]\n" ;
+	                                               
+	                // Output the method body - We need to call the corresponding method in the COM object
+	                if  ( $member -> IsMethod ( ) )
+	                   {
+	                        // Method header
+	                        $method_name	=  COMWrappedInstance::GetResolvedName ( $member -> Name ) ;
+	                        $classtext     .=  "$comment\tpublic function  $method_name\n\t   ( \n" ;
+	                        
+				// Get maximum parameter name length, for aligment
+	                        $maxlength       =  -1 ;
+	                                               
+	                        foreach  ( $member -> Parameters  as  $parameter_name => $parameter )
+	                           {
+	                                $length		=  strlen ( $parameter -> Name ) ;
+	                                                              
+	                                if  ( $length  >  $maxlength )
+	                                        $maxlength       =  $length ;
+	                                                                              
+	                                $parameters []  =  str_replace ( array ( '&', '$' ), array ( '', '\$' ), $parameter -> Name ) ;
+	                            }
+				
+	                        // Now emit the method parameters
+	                        $index		=  0 ;
+	                        $names		=  array ( ) ;
+	                                               
+	                        foreach  ( $member -> Parameters  as  $parameter_name => $parameter )
+	                           {
+	                                // Collect all parameter names, without the reference character "&"
+	                                if  ( $parameter -> IsReference ( ) )
+	                                        $names []           =  substr ( $parameter -> Name, 1 ) ;
+	                                else
+	                                        $names []           =  $parameter -> Name ;
+	                                                                              
+	                                // Pad to maximum name length and don't forget the comma between two parameters
+	                                $comma                 =  ( $index + 1  ==  count ( $member -> Parameters ) ) ?  " " : "," ;
+	                                $name                  =  str_pad ( $parameter -> Name, $maxlength ) ;
+	                                                              
+	                                // Add method parameter
+	                                // FIX : since com_print_typeinfo() does not tell whether a parameter is optional or not, we have to
+	                                //       assign a default null value for all of them so that PHP won't scream
+	                                $classtext           .=  "\t\t{$name} = null{$comma}\t// {$parameter -> InType -> ConstantName} [{$parameter -> InType -> ConstantValue}] [{$parameter -> InOut}]" ;
+	                                                              
+	                                // Finish comment on parameter output type
+	                                if  ( $parameter -> OutType )
+	                                        $classtext           .=  "  -->  {$parameter -> OutType -> ConstantName} [{$parameter -> OutType -> ConstantValue}]" ;
+	                                                                              
+	                                $classtext .= "\n" ;
+	                                $index ++ ;
+	                           }
+	                                               
+	                        $classtext .= "\t    ) \n" ;
+	                                               
+	                        // Method body : we need to call the underlying COM object method and wrap its return value if needed
+	                        $classtext .= "\t   {\n" .
+	                                      "\t\t\$result = \$this -> ____com_object____ -> {$member -> Name} ( " . 
+	                                      implode ( ', ', $names ) .
+	                                      " ) ;\n" .
+	                                      "\t\treturn ( $namespace\\COMWrapper::Wrap ( \$result ) ) ;\n" .
+	                                      "\t    }\n\n" ;
+	                                               
+	                    }
+	                // Property - It is defined as "private", so that an external access will invoke the __get and __set
+	                // magic functions defined in the parent class.
+	                else
+	                   {
+	                        $classtext .= "$comment\tprivate\t\t{$member -> Name} ;\n\n" ;
+	                    }
+	            }
+		
+	        $classtext           .=  "    }\n" ;
+	               
+	        // All done, create the class 
+	        eval ( $classtext ) ;
+	        self::$__class_definitions [ $class_name ]          =  $classtext ;
+	    }
+    }
+
+

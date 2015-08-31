@@ -1,0 +1,284 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        WhoisInformationRange.phpclass
+
+    DESCRIPTION
+        Some whois data return definitions about multiple address ranges. The WhoisInformationRange class 
+	implements one definition extracted from whois data.
+	Objects of this class MUST be instanciated by a WhoisInformation object.
+
+    AUTHOR
+        Christian Vigh, 08/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/08/07]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace  Thrak\Processors\Whois ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces and classes
+use  	Thrak\System\Object ;
+use	Thrak\IO\Path ;
+use	Thrak\Types\String ;
+use	Thrak\Processors\Whois\WhoisInformationBlock ;
+use	Thrak\Processors\WhoisInformation ;
+use	Thrak\Processors\WhoisInformationBase ;
+use	Thrak\Processors\WhoisInformationException ;
+
+
+/*==============================================================================================================
+
+    WhoisInformationRange -
+        Implements an IP address range information extracted from whois data.
+
+  ==============================================================================================================*/
+class  WhoisInformationRange		extends		WhoisInformationBase
+					implements	\ArrayAccess, \Countable, \IteratorAggregate
+   {
+	// Parent WhoisInformation object
+	protected		$Parent ;
+	// Information blocks
+	protected		$Blocks ;
+	// Low and high ip
+	protected		$IpLow		=  null,
+				$IpHigh		=  null ;
+	// Country
+	protected		$Country	=  null ;
+	// Very creation (registration) date and last update, as a Unix timestamp
+	protected		$CreationTime		=  false ; 
+	protected		$UpdateTime		=  false ;
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    Constructor -
+		Builds a WhoisInformationRange object from an array of data collected by the WhoisInformation class.
+  
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( $parent, $range )
+	   {
+		$this -> Parent		=  $parent ; 
+
+		foreach  ( $range  as  $block )
+			$this -> Blocks []	=  new  WhoisInformationBlock ( $parent, $block ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    GetBlock -
+		Returns a whois information block corresponding to the specified block type.
+  
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  GetBlock ( $type )
+	   {
+		$result		=  [] ;
+
+		foreach  ( $this -> Blocks  as  $block )
+		   {
+			if  ( $block -> Type  ==  $type )
+				$result []	=  $block ;
+		    }
+
+		return ( ( count ( $result ) ) ?  $result : false ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    GetCountry -
+		Returns the 2-letters country code for this range.
+  
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  GetCountry ( )
+	   {
+		if  ( $this -> Country )
+			return ( $this -> Country ) ;
+
+		// Country information may be present in the provider, organization or customer block
+		$blocks		=  
+		   [ 
+			WhoisInformation::BLOCK_PROVIDER	=>  WhoisInformation::TYPE_PROVIDER_COUNTRY,
+			WhoisInformation::BLOCK_ORGANIZATION	=>  WhoisInformation::TYPE_ORGANIZATION_COUNTRY,
+			WhoisInformation::BLOCK_CUSTOMER	=>  WhoisInformation::TYPE_CUSTOMER_COUNTRY
+		    ] ;
+
+		foreach  ( $blocks  as  $block_id => $country_entry )
+		   {
+			$block	=  $this -> GetBlock ( $block_id ) ;
+
+			if  ( $block )
+			   {
+				$block	=  $block [0] ;
+				$entry	=  $block -> GetEntry ( $country_entry ) ;
+
+				if  ( $entry )
+				   {
+					$this -> Country	=  strtoupper ( $entry [0] -> Value ) ;
+
+					return ( $this -> Country ) ;
+				    }
+			    }
+		    }
+
+		// If a DefaultCountry property has been defined by a class derived from WhoisInformation (as it is the case for
+		// the FantomTWNIC class), then return it
+		if  ( isset ( $this -> Parent -> DefaultCountry ) )
+		   {
+			$this -> Country	=  strtoupper ( $this -> Parent -> DefaultCountry ) ;
+
+			return ( $this -> Country ) ;
+		    }
+
+		// All solutions have been explored : bail out
+		error ( new WhoisInformationException ( "Could not find country information in class " . get_class ( $this -> Parent ), 
+								$this -> Parent -> Contents ) ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    GetUpdateTime, GetCreationTime -
+		Returns the highest last update or creation date for this range, as a Unix timestamp.
+  
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  GetCreationTime ( )
+	   {
+		if  ( $this -> CreationTime  ===  false )
+		   {
+			$dates	=  [] ;
+
+			foreach ( $this -> Blocks  as  $block )
+				$dates []	=  $block -> GetCreationTime ( ) ;
+
+			if  ( count ( $dates ) )
+			   {
+				sort ( $dates ) ;
+
+				$this -> CreationTime =  $dates [ count ( $dates ) - 1 ] ;
+			    }
+			else
+				return ( false ) ;
+		    }
+
+		return ( $this -> CreationTime ) ;
+	    }
+
+
+	public function  GetUpdateTime ( )
+	   {
+		if  ( $this -> UpdateTime  ===  false )
+		   {
+			$dates	=  [] ;
+
+			foreach ( $this -> Blocks  as  $block )
+				$dates []	=  $block -> GetUpdateTime ( ) ;
+
+			if  ( count ( $dates ) )
+			   {
+				sort ( $dates ) ;
+
+				$this -> UpdateTime	=  $dates [ count ( $dates ) - 1 ] ;
+			    }
+			else
+				return ( false ) ;
+		    }
+
+		return ( $this -> UpdateTime ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    GetIpRange -
+		Returns the ip range corresponding to this whois information range.
+  
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  GetIpRange ( )
+	   {
+		// If GetIpRange() has already been called, return its previous results
+		if  ( $this -> IpLow )
+			return ( [ $this -> IpLow, $this -> IpHigh ] ) ;
+
+		// Get provider block
+		$block	=  $this -> GetBlock ( WhoisInformation::BLOCK_PROVIDER ) ;
+
+		// Paranoia : no provider block found
+		if  ( ! $block )
+			return ( false ) ;
+
+		// Get the 'NetRange' or 'inetnum' entry
+		$block	=  $block [0] ;
+		$entry	=  $block -> GetEntry ( WhoisInformation::TYPE_PROVIDER_NETRANGE ) ;
+
+		// Entry not found - search for a netmask to deduce low/high ip addresses
+		if  ( ! $entry )
+		   {
+			$entry =  $block -> GetEntry ( WhoisInformation::TYPE_PROVIDER_NETMASK ) ;
+
+			// Nothing found...
+			if  ( ! $entry )	
+				return ( false ) ;
+		    }
+
+		// All done, return 
+		$entry			=  $entry [0] ;
+		$this -> IpLow		=  $entry -> Value [ 'low' ] ;
+		$this -> IpHigh		=  $entry -> Value [ 'high' ] ;
+
+		return ( [ $this -> IpLow, $this -> IpHigh ] ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    __tostring -
+		Returns the data range as a string.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __tostring ( )
+	   {
+		$result		=  '' ;
+
+		foreach  ( $this -> Blocks  as  $block ) 
+			$result		.=  ( string ) $block . "\n" ;
+
+		return ( $result ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+		Interfaces implementations.
+  
+	 *-------------------------------------------------------------------------------------------------------------*/
+
+	 // Countable interface
+	 public function  Count ( )
+	    { return ( count ( $this -> Blocks ) ) ; }
+		
+	 
+	 // IteratorAggregate interface
+	 public function  getIterator ( )
+	    { return ( new \ArrayIterator ( $this -> Blocks ) ) ; }
+
+	// ArrayAccess interface
+	public function  offsetExists ( $offset )
+	   {  return ( $offset  >=  0  &&  $offset  <  count ( $this -> Blocks ) ) ; }
+
+	public function  offsetGet ( $offset )
+	   { return ( $this -> Blocks [ $offset ] ) ; }
+
+	public function  offsetSet ( $offset, $value )
+	   { error ( new \Thrak\System\UnsupportedOperationException ( ) ) ; }
+
+	public function  offsetUnset ( $offset )
+	   { error ( new \Thrak\System\UnsupportedOperationException ( ) ) ; }
+	
+    }

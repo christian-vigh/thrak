@@ -1,0 +1,89 @@
+<?php
+/***************************************************************************************************
+
+    NAME
+	Color.phpclass
+
+    DESCRIPTION
+	Color parameter.
+
+    AUTHOR
+     	Christian Vigh, 09/2011.
+
+    HISTORY
+    [Version : 1.0]	[Date : 2011/09/22]	[Author : CV]
+     	Initial version.
+
+   [Version : 2.0]	[Date : 2012/10/06]		[Author : CV]
+	Migrated to the Thrak library version 2.
+
+ ***************************************************************************************************/
+namespace  	Thrak\Processors\CL ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces and classes
+use 	Thrak\Graphics\Color		as  Color ;
+
+
+/*==================================================================================================
+
+    CLColorParameter class -
+	Implements a Color type parameter.
+
+  ==================================================================================================*/
+class  CLColorParameter  extends  \Thrak\Processors\CL\CLAbstractParameter
+   {
+   	// Color names
+	public 		$ColorNames ;
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Class constructor.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __construct ( $parent, $tags, $valuetext = "color" )
+	   {
+   		$this -> Help 			=<<<END
+			Defines a color parameter which can take the following forms :
+
+			'color name' -
+				Specifies the name of a particular color (eg., 'white', 'blue', 'black', etc.)
+
+			#RGB, RGB or rgb(r,g,b) -
+				Specifies the color using the supplied R, G and B values.
+				The #RGB and RGB notations assumes that the three color values are supplied as hex numbers.
+				The rgb(r,g,b) notation allows for specifying any kind of integer value.
+
+			hsl(h,s,l) -
+				HSL notation.
+
+			cmyk(c,m,y,k) -
+				CMYK notation.
+
+			cmy(c,m,y) -
+				CMY notation.
+END;
+
+   		$this -> ReturnValueHelp	=  "Returns an object of type Color." ;
+		parent::__construct ( $parent, $tags, $valuetext ) ;
+
+		$this -> ColorNames 		=  new  \Thrak\Graphics\NamedColors ( ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Preprocess value.
+
+	 --------------------------------------------------------------------------------------------*/
+  	protected function  ProcessValue ( $name, $value )
+  	   {
+		$color 		=  new  Color ( $value ) ;
+
+		// All done, return
+   		return ( $color -> ToArray ( ) ) ;
+  	    }
+    }

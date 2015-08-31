@@ -1,0 +1,543 @@
+<?php
+/***************************************************************************************************
+
+    NAME
+	Range.phpclass
+
+    DESCRIPTION
+     	Implements a range parameter.
+
+    AUTHOR
+     	Christian Vigh, 10/2011.
+
+    HISTORY
+    [Version : 1.0]	[Date : 2011/10/18]	[Author : CV]
+     	Initial version.
+
+   [Version : 2.0]	[Date : 2012/10/06]		[Author : CV]
+	Migrated to the Thrak library version 2.
+
+   [Version : 2.0.1]	[Date : 2015/03/07]		[Author : CV]
+	. Added the following attributes to the <range> tag :
+ 		- 'mode' or 'range-type' :
+ 			Can be one of the following values :
+ 			- 'ascending' or 'asc' :
+ 				Left value must be less or equal to right value.
+ 			- 'descending' or 'desc' :
+ 				Left value must be greater than or equal to right value.
+ 			- 'unchecked' or 'none' :
+ 				No checking is performed on values relationship.
+ 		- 'allow-null' :
+ 			Specifies which range values can be null. When not specified, the values of
+ 			the 'min-value' and 'max-value' attributes are considered to be the default
+ 			value(s) for the range part ; this attribute can have one of the following
+ 			values :
+ 			- 'low' or 'left' :
+ 				Left range part can be unspecified, such as in "..10".
+ 			- 'high' or 'right' :
+ 				Right range part can be unspecified, such as in "1..".
+ 			- 'both' or '*' :
+ 				Both range values are optional. Thus, ".." will be authorized.
+ 		- 'auto-reorder' :
+ 			When true, left/right values will be automatically swapped to fit the 'mode'
+ 			attribute value.
+
+   [Version : 2.0.2]	[Date : 2015/04/11]		[Author : CV]
+	. Replaced each exception throwing with "error ( new CLException (...) )".
+
+   [Version : 2.0.3]	[Date : 2015/06/28]		[Author : CV]
+	. Added the 'allow-length' attribute, to be able to specify a range as an offset/length 
+	  value.
+	. Added the 'length-separator' attribute, with specifies the string sequence to be used when
+	  specifying offset/length values.
+	. Added the CLRangeParameter::RANGE_ALLOW_NULL_EITHER to indicate that either the low or high
+	  value can be omitted, but not both.
+	. Added the "default-low" and "default-high" attributes, to provide for a default value when
+	  no low or high range value is specified. Php tags are evaluated in these default values if
+	  the command-line "allow-php-tags" attribute is true.
+
+   [Version : 2.0.4]	[Date : 2015/06/28]		[Author : CV]
+	. Corrected a bug that erroneously displayed an error message when only one range boundary
+	  was specified on the command-line, and lower/upper boundaries (or both) were specified as
+	  optional.
+
+ ***************************************************************************************************/
+namespace  	Thrak\Processors\CL ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+/*==================================================================================================
+
+    CLRangeParameter class -
+	Implements a range parameter.
+	A range can be specified on the command line using the following syntax :
+
+		low..high
+
+	The returned value is a array containing two entries, 'low' and 'high', which
+	contains the low and high range values.
+
+  ==================================================================================================*/
+
+class  CLRangeParameter  extends  \Thrak\Processors\CL\CLAbstractSimpleCompoundParameter
+   {
+	// Range modes
+	const	RANGE_MODE_ASCENDING		=  0 ;		// Low value first, high value last (default)
+	const	RANGE_MODE_DESCENDING		=  1 ;		// High value first, low value last
+	const   RANGE_MODE_UNCHECKED		=  3 ;		// No checking on low/high value order
+	
+	// Which range values are allowed to be null ?
+	const	RANGE_ALLOW_NULL_LOW		=  1 ;		// The low range value can be omitted
+	const	RANGE_ALLOW_NULL_HIGH		=  2 ;		// The high range value can be omitted
+	const   RANGE_ALLOW_NULL_BOTH		=  3 ;		// Both low and high range values can be omitted
+	const   RANGE_ALLOW_NULL_EITHER		=  4 ;		// Either the low or high range value can be omitted, but not both
+	const	RANGE_ALLOW_NULL_NONE		=  0 ;		// Range must be fully specified
+	
+	// Range-specific definitions
+	private  $RangeDefinitions = array
+	   (
+	    	array
+	    	   (
+	    	   	'names'		=>  array ( 'min-value', 'min-val', 'minvalue', 'minval' ),
+	    	   	'type'		=>  self::ATTRIBUTE_TYPE_ANY,
+	    	   	'member'	=>  'MinRangeValue',
+	   		'substitutions'	=>  array ( '*' => 0 ),
+	    	   	'help'		=>  'Specifies the minimum allowed value for a range.'
+      		    ),
+	    	array
+	    	   (
+	    	   	'names'		=>  array ( 'max-value', 'max-val', 'maxvalue', 'maxval' ),
+	    	   	'type'		=>  self::ATTRIBUTE_TYPE_ANY,
+	    	   	'member'	=>  'MaxRangeValue',
+	   		'substitutions'	=>  array ( '*' => PHP_INT_MAX ),
+	    	   	'help'		=>  'Specifies the maximum allowed value for a range.'
+      		    ),
+    		array
+    		   (
+    		   	'names'		=>  array ( 'separator', 'sep' ),
+    		   	'type'		=>  self::ATTRIBUTE_TYPE_STRING,
+    		   	'member'	=>  'RangeSeparator',
+    		   	'default'	=>  '..',
+    		   	'help'		=>  'Specifies the string sequence that separates the low and high values of a range.'
+		    ),
+		array
+		   (
+		   	'names'		=>  array ( 'mode', 'range-type' ),
+			'type'		=>  self::ATTRIBUTE_TYPE_KEYWORD,
+			'default'	=>  self::RANGE_MODE_ASCENDING,
+			'member'	=>  'RangeMode',
+			'keywords'	=>  array
+			   (
+				'ascending'	=>  self::RANGE_MODE_ASCENDING,
+				'asc'		=>  self::RANGE_MODE_ASCENDING,
+				'descending'	=>  self::RANGE_MODE_DESCENDING,
+				'desc'		=>  self::RANGE_MODE_DESCENDING,
+				'unchecked'	=>  self::RANGE_MODE_UNCHECKED,
+				'none'		=>  self::RANGE_MODE_UNCHECKED
+			    ),
+			'help'		=>  array
+			   (
+			   	"Defines the specification type of the range values :\n\n",
+			   	"'ascending' or 'asc' (default) -\n",
+				"\tLowest value must be specified first, then highest value.\n",
+				"'descending' or 'desc' -\n",
+				"\tHighest value must be specified first, then lowest value.\n",
+				"'unchecked' or 'none' -\n",
+				"\tNo verification is performed on the low/high values of the range.\n"
+			    )
+		    ),
+		array
+		   (
+		   	'names'		=>  array ( 'allow-null' ),
+			'type'		=>  self::ATTRIBUTE_TYPE_KEYWORD,
+			'default'	=>  self::RANGE_ALLOW_NULL_NONE,
+			'member'	=>  'AllowNull',
+			'keywords'	=>  array
+			   (
+				'none'		=>  self::RANGE_ALLOW_NULL_NONE,
+				'low'		=>  self::RANGE_ALLOW_NULL_LOW,
+				'left'		=>  self::RANGE_ALLOW_NULL_LOW,
+				'high'		=>  self::RANGE_ALLOW_NULL_HIGH,
+				'right'		=>  self::RANGE_ALLOW_NULL_HIGH,
+				'both'		=>  self::RANGE_ALLOW_NULL_BOTH,
+				'*'		=>  self::RANGE_ALLOW_NULL_BOTH,
+				'either'	=>  self::RANGE_ALLOW_NULL_EITHER,
+
+				// Aliases to boolean values
+				'true'		=>  self::RANGE_ALLOW_NULL_BOTH,
+				'1'		=>  self::RANGE_ALLOW_NULL_BOTH,
+				'on'		=>  self::RANGE_ALLOW_NULL_BOTH,
+				'yes'		=>  self::RANGE_ALLOW_NULL_BOTH,
+
+				'false'		=>  self::RANGE_ALLOW_NULL_NONE,
+				'0'		=>  self::RANGE_ALLOW_NULL_NONE,
+				'off'		=>  self::RANGE_ALLOW_NULL_NONE,
+				'no'		=>  self::RANGE_ALLOW_NULL_NONE,
+			    ),
+			'help'		=>  array
+			   (
+			   	"Defines which values can be omitted in the range. Missing values will be replaced by the min-value and max-value ",
+				"attribute values, if specified :\n\n",
+			   	"'none' -\n",
+				"\tLow and high values are required.\n",
+				"'both' or '*' -\n",
+				"\tLow and high values are optional.\n",
+				"'low' or 'left' -\n",
+				"\tLow value is optional.\n",
+				"'high' or 'right' -\n",
+				"\tHigh value is optional.\n"
+			    )
+		    ),
+    		array
+    		   (
+    		   	'names'		=>  array ( 'auto-reorder' ),
+    		   	'type'		=>  self::ATTRIBUTE_TYPE_BOOLEAN,
+    		   	'member'	=>  'AutoReorder',
+    		   	'default'	=>  false,
+    		   	'help'		=>  'When true, low and high values can be specified in any order.'
+		    ),
+    		array
+    		   (
+    		   	'names'		=>  array ( 'normalize' ),
+    		   	'type'		=>  self::ATTRIBUTE_TYPE_BOOLEAN,
+    		   	'member'	=>  'Normalize',
+    		   	'default'	=>  false,
+    		   	'help'		=>  'When true, missing range parts will be inferred (ie, "..1" or "1.." will become "1..1".'
+		    ),
+     		array
+    		   (
+    		   	'names'		=>  array ( 'length-separator', 'length-sep' ),
+    		   	'type'		=>  self::ATTRIBUTE_TYPE_STRING,
+    		   	'member'	=>  'LengthSeparator',
+    		   	'default'	=>  '/',
+    		   	'help'		=>  'Specifies the string sequence that separates the offset/length values in a range.'
+		    ),
+   		array
+    		   (
+    		   	'names'		=>  array ( 'allow-length' ),
+    		   	'type'		=>  self::ATTRIBUTE_TYPE_BOOLEAN,
+    		   	'member'	=>  'AllowLength',
+    		   	'default'	=>  true,
+    		   	'help'		=>  'When true, a range can be also specified as "offset/length" values instead of "start..end" offsets.'
+		    ),
+     		array
+    		   (
+    		   	'names'		=>  array ( 'default-low' ),
+    		   	'type'		=>  self::ATTRIBUTE_TYPE_STRING,
+    		   	'member'	=>  'DefaultLow',
+    		   	'help'		=>  'Specifies a default value to be used when the low range value is not specified.'
+		    ),
+     		array
+    		   (
+    		   	'names'		=>  array ( 'default-high' ),
+    		   	'type'		=>  self::ATTRIBUTE_TYPE_STRING,
+    		   	'member'	=>  'DefaultHigh',
+    		   	'help'		=>  'Specifies a default value to be used when the high range value is not specified.'
+		    )
+	    ) ;
+
+    	// Min and max values
+    	public		$MinRangeValue ;
+    	public 		$MaxRangeValue ;
+    	// Range separator
+    	public		$RangeSeparator ;
+	// Range specification mode
+	public		$RangeMode ;
+	// When true, low/high values are reordered according to the specified range mode
+	public		$AutoReorder ;
+	// Specifies which low/high values can be unspecified
+	public		$AllowNull ;
+	// When true, a partial range will be transformed as a full range (ie, "..1" or "1.." will become "1..1")
+	public		$Normalize ;
+	// When true, ranges can also be specified as "offset/length" items
+	public		$AllowLength ;
+	// Separator used for the "offset/length" form
+	public		$LengthSeparator ;
+	// Default values for unspecified low/high range values
+	public		$DefaultLow ;
+	public		$DefaultHigh ; 
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Class constructor.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __construct ( $parent, $tags, $valuetext = "range" )
+	   {
+   		$this -> Help 			=  "Defines a range parameter." ;
+;
+
+		$this -> ReturnValueHelp 	=<<<END
+The return value is an array containing two entries ; the first one (index #0) represents the low value,
+the second one (index #1) the high value.
+END;
+
+		parent::__construct ( $parent, $tags, $valuetext, $this -> RangeDefinitions ) ;
+	    }
+
+
+
+ 	/*-------------------------------------------------------------------------------------------
+
+	    __compare -
+	    	Compares two values according to their type and returns the comparison result.
+
+ 	 --------------------------------------------------------------------------------------------*/
+	private function  __compare ( $a, $b )
+	   {
+		switch ( $this -> ItemType )
+		   {
+		   	// By convention, 'any'-type values have no lower/upper relationship.
+		   	case	self::COMPOUND_TYPE_ANY :
+	   			$status 	=  strcmp ( $a, $b ) ;
+		   		break ;
+
+	   		// String comparison
+	   		case	self::COMPOUND_TYPE_STRING :
+	   			$status 	=  strcasecmp ( $a, $b ) ;
+	   			break ;
+
+   			// Character comparison
+   			case	self::COMPOUND_TYPE_CHARACTER :
+   				$status 	=  strcasecmp ( $a, $b ) ;
+   				break ;
+
+			// Numeric comparison
+			case	self::COMPOUND_TYPE_INTEGER :
+			case	self::COMPOUND_TYPE_FLOAT :
+			case	self::COMPOUND_TYPE_UNSIGNED_FLOAT :
+			case	self::COMPOUND_TYPE_UNSIGNED_INTEGER :
+				$status 	=  ( $a - $b ) ;
+				break ;
+
+			// Date and datetime comparison
+			case	self::COMPOUND_TYPE_DATE :
+			case	self::COMPOUND_TYPE_DATETIME :
+				$status 	=  ( $a [ 'unixtime' ] - $b [ 'unixtime' ] ) ;
+				break ;
+
+			// Time comparison
+			case	self::COMPOUND_TYPE_TIME :
+				$status 	=  ( $a [ 'day-seconds' ] - $b [ 'day-seconds' ] ) ;
+				break ;
+				
+			// Paranoia
+			default :
+				error ( new CLException ( "Undefined range item type {$this -> ItemType}" ) ) ;
+		    }
+		
+		return ( $status ) ;
+	    }
+
+
+ 	/*-------------------------------------------------------------------------------------------
+
+	    ProcessValue -
+	    	Processes a keyword value.
+
+ 	 --------------------------------------------------------------------------------------------*/
+	protected function  ProcessValue ( $pname, $pvalue )
+	   {
+	   	// Check separator
+	   	if  ( $this -> RangeSeparator  ==  "" )
+	   		error ( new CLException ( "An empty separator has been defined for range parameter '$pname'." ) ) ;
+
+		// Check for authorized types
+		if  ( $this -> ItemType  ==  self::COMPOUND_TYPE_BOOLEAN )
+			error ( new CLException ( "Boolean values are not allowed for range parameter '$pname'." ) ) ;
+
+		// Handle offset/length specifications
+		if  ( $this -> AllowLength  &&  strpos ( $pvalue, $this -> LengthSeparator )  !==  false )
+		   {
+			switch  ( $this -> ItemType )
+			   {
+				case	self::COMPOUND_TYPE_INTEGER :
+				case	self::COMPOUND_TYPE_FLOAT :
+				case	self::COMPOUND_TYPE_UNSIGNED_FLOAT :
+				case	self::COMPOUND_TYPE_UNSIGNED_INTEGER :
+					$values		=  explode ( $this -> LengthSeparator, $pvalue ) ;
+					$values	[1]	=  ( $values [1] ) ?  $values [0] + $values [1] - 1 : $values [0] ;
+					$pvalue		=  $values [0] . '..' . $values [1] ;
+					break ;
+
+				default :
+					error ( new CLException ( "Ranges of type offset/length can only be specified with numeric ranges." ) ) ;
+			    }
+		    }
+
+		// Make sure we have 2 values
+		$values 	=  explode ( $this -> RangeSeparator, $pvalue ) ;
+
+		switch ( count ( $values ) )
+		   {
+			case	1 :
+				$values [] = "" ;
+				break ;
+
+			case	2 :
+				break ;
+
+			default :
+				error ( new CLException ( "Invalid range specification '$pvalue' for parameter '$pname'." ) ) ;
+		    }
+
+		// Provide default values for low/high range values
+		$min 			=  $values [0] ;
+		$max 			=  $values [1] ;
+		$min_specified		=  true ;
+		$max_specified		=  true ;
+		
+		if  ( $min  ===  "" )
+		   {
+			$default_low		=  $this -> Parent -> EvaluatePhpTags ( $this -> DefaultLow, 'defaults' ) ;
+
+			if  ( $this -> AllowNull  ==  self::RANGE_ALLOW_NULL_LOW  ||  $this -> AllowNull  ===  self::RANGE_ALLOW_NULL_EITHER )
+				$min		=  ( $this -> MinRangeValue  ===  null ) ?  $default_low : $this -> MinRangeValue ;
+			
+			$min_specified	=  false ;
+		    }
+		
+		if  ( $max  ===  "" ) 
+		   {
+			$default_high		=  $this -> Parent -> EvaluatePhpTags ( $this -> DefaultHigh, 'defaults' ) ;
+
+			if  ( $this -> AllowNull  ==  self::RANGE_ALLOW_NULL_HIGH  ||  $this -> AllowNull  ===  self::RANGE_ALLOW_NULL_EITHER )
+				$max		=  ( $this -> MaxRangeValue  ===  null ) ?  $default_high : $this -> MaxRangeValue ;
+			
+			$max_specified	=  false ;
+		    }
+
+		// Normalize range values
+		if  ( $this -> Normalize )
+		   {
+			if  ( $min  ===  null  ||  $min  ===  '' )
+				$min	=  $max ;
+			else if  ( $max  ===  null  ||  $max  ===  '' )
+				$max	=  $min ;
+		    }
+		
+		// Check for authorized null values
+		switch  ( $this -> AllowNull )
+		   {
+			case	self::RANGE_ALLOW_NULL_LOW :
+				if  ( ( $max  ===  null  ||  $max  ===  "" )  &&  ! $max_specified )
+					error ( new CLException ( "The range \"$pvalue\" for parameter \"$pname\" has an unspecified high value. " .
+								  "Either set the 'allow-null' attribute to 'high' or 'both', specify a value, " .
+								  "or use the 'max-value' attribute to provide a default one." ) ) ;
+
+				if  ( ! $min_specified )
+					$min	=  $max ;
+
+				break ;
+
+			case	self::RANGE_ALLOW_NULL_HIGH :
+				if  ( ( $min  ===  null  ||  $min  ===  "" )  &&  ! $min_specified )
+					error ( new CLException ( "The range \"$pvalue\" for parameter \"$pname\" has an unspecified low value. " .
+								  "Either set the 'allow-null' attribute to 'low' or 'both', specify a value, " .
+								  "or use the 'min-value' attribute to provide a default one." ) ) ;
+				if  ( ! $max_specified )
+					$max	=  $min ;
+
+				break ;
+				
+			case	self::RANGE_ALLOW_NULL_NONE :
+				if  ( ( ( $min  ===  null  ||  $min  ===  "" )  &&  ! $min_specified )  ||
+				      ( ( $max  ===  null  ||  $max  ===  "" )  &&  ! $max_specified ) )
+					error ( new CLException ( "The range \"$pvalue\" for parameter \"$pname\" has an unspecified low and/or high value. " .
+								  "Either change the 'allow-null' attribute, specify a value, " .
+								  "or use the 'min/max-value' attributes to provide a default one." ) ) ;
+				break ;
+
+			case	self::RANGE_ALLOW_NULL_EITHER :
+				if  ( ( $min  ===  null  ||  $min  ===  "" )  &&  ( $max  ===  null  ||  $max  ===  "" ) ) 
+					error ( new CLException ( "The range \"$pvalue\" for parameter \"$pname\" must have either a low or a high boundary." ) ) ;
+				
+				break ;
+
+			case	self::RANGE_ALLOW_NULL_BOTH :
+				if  ( ! $min_specified )
+					$min	=  $max ;
+
+				if  ( ! $max_specified )
+					$max	=  $min ;
+				break ;
+		    }
+		
+		// Compare range values
+		$compare_status		=  $this -> __compare ( $min, $max ) ;
+
+		// Check for low/high values consistency
+		switch  ( $this -> RangeMode )
+		   {
+			case	self::RANGE_MODE_ASCENDING :
+				if  ( $max  !==  null  &&  $compare_status  > 0 )
+				   {
+					if  ( $this -> AutoReorder )
+					   {
+						$tmp	=  $min ;
+						$min	=  $max ;
+						$max	=  $tmp ;
+					    }
+					else if  ( ! $this -> AutoReorder )
+						error ( new CLException ( "The low range value \"$min\" for parameter \"$pname\" cannot be greater than its high value \"$max\"." ) ) ;
+				    }
+				
+				break ;
+				
+			case	self::RANGE_MODE_DESCENDING :
+				if  ( $min  !==  null  &&  $compare_status  < 0 )
+				   {
+					if  ( $this -> AutoReorder )
+					   {
+						$tmp	=  $min ;
+						$min	=  $max ;
+						$max	=  $tmp ;
+					    }
+					else
+						error ( new CLException ( "The high range value \"$min\" for parameter \"$pname\" cannot be smaller than its low value \"$max\"." ) ) ;
+				    }
+				
+				break ;
+				
+		    }
+		    
+		// Verify the value types
+		$range	=  [ $min, $max ] ;
+		$this -> VerifyValues ( $range ) ;
+
+		// Verify that the range low value is not less than the specified min-value attribute
+		if  ( $this -> MinRangeValue  !==  null )
+		   {
+			if  ( $min  ===  "" )
+				$min	=  $this -> MinRangeValue ;
+			else
+			   {
+				$status		=  $this -> __compare ( $range [0], $this -> MinRangeValue ) ;
+			
+				if  ( $status  <  0 )
+					error ( new CLException ( "The low range value \"{$range [0]}\" for parameter \"$pname\" cannot be smaller than the " .
+								  "value specified for the 'min-value' attribute ({$this -> MinRangeValue})." ) ) ;
+			    }
+		    }
+		
+		// Same for high value
+		if  ( $this -> MaxRangeValue  !==  null )
+		   {
+			if  ( $max  ===  "" )
+				$max	=  $this -> MaxRangeValue ;
+			else
+			    {
+				$status		=  $this -> __compare ( $range [1], $this -> MaxRangeValue ) ;
+			
+				if  ( $status  >  0 )
+					error ( new CLException ( "The high range value \"{$range [1]}\" for parameter \"$pname\" cannot be greater than the " .
+								  "value specified for the 'max-value' attribute ({$this -> MaxRangeValue})." ) ) ;
+			     }
+		    }
+		
+		// All done, return
+		return ( $range ) ;
+    	    }
+    }

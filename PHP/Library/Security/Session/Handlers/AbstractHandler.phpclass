@@ -1,0 +1,46 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        AbstractHandler.php
+
+    DESCRIPTION
+        Base class for session handlers.
+
+    AUTHOR
+        Christian Vigh, 06/2014.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2014/06/25]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Security\Session\Handlers ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces & objects
+use 		Thrak\System\Object 		as  Object ;
+use		Thrak\IO\Path			as  Path ;
+use		Thrak\Types\String		as  String ;
+
+
+/*==============================================================================================================
+
+    AbstractHandler -
+        Abstract session handler inherited from derived classes.
+
+  ==============================================================================================================*/
+abstract class	AbstractHandler	extends Object
+				implements SessionHandlerInterface
+   {
+	public abstract function	close		( ) ;
+	public abstract	function	destroy		( string	$session_id ) ;
+	public abstract	function	gc		( int		$max_lifetime ) ;
+	public abstract function	open		( string	$save_path,
+							  string	$session_id ) ;
+	public abstract function	read		( string	$session_id ) ;
+	public abstract function	write		( string	$session_id,
+							  string	$session_data ) ;
+    }

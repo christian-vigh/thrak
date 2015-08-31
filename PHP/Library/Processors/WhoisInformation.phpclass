@@ -1,0 +1,1636 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        WhoisInformation.phpclass
+
+    DESCRIPTION
+        A processor for analyzing whois data.
+
+    AUTHOR
+        Christian Vigh, 07/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/07/31]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace  Thrak\Processors ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces and classes
+use  	Thrak\System\Object ;
+use	Thrak\IO\Path ;
+use	Thrak\Types\String ;
+use	Thrak\Types\String\Convert ;
+use	Thrak\Types\ArrayHelpers ;
+use	Thrak\Internet\TLDList ;
+use	Thrak\Processors\Whois\WhoisInformationRange ;
+
+
+class  WhoisInformationException		extends  \Thrak\System\RuntimeException		
+   {
+	public function  __construct ( $message, $contents = null )
+	   {
+		if  ( $contents ) 
+			$message	.=  "\nContents :\n$contents" ;
+
+		parent::__construct ( $message ) ;
+	    }
+    }
+
+
+/*==============================================================================================================
+
+    WhoisInformationBase -
+        Base class for all whois-related objects.
+
+  ==============================================================================================================*/
+abstract class  WhoisInformationBase		extends  Object
+   {
+	// Keywords for last update and creation dates
+	protected static	$UpdateDateKeywords	=  [ 'changed', 'last-modified', 'Updated' ] ;
+	protected static	$CreationDateKeywords	=  [ 'created', 'RegDate' ] ;
+
+
+	public function  __construct ( )
+	   {
+		parent::__construct ( ) ;
+	    }
+    }
+
+
+/*==============================================================================================================
+
+    WhoisInformation -
+        Base class for all sorts of whois output.
+
+  ==============================================================================================================*/
+abstract class  WhoisInformation		extends		WhoisInformationBase
+						implements	\ArrayAccess, \Countable, \IteratorAggregate
+   {
+	// Class names whose definitions have already been validated ; index is called class, value is class definitions
+	// This allows for unnecessary checkings when the same class derived from WhoisInformation is instanciated several times
+	protected static		$CollectedDefinitions ;
+
+	// Various information blocks that may be found in whois data output
+	const	BLOCK_PROVIDER				=   1 ;			// Provider information (address range, etc.)
+	const	BLOCK_CUSTOMER				=   2 ;			// Customer information
+	const   BLOCK_ABUSE_CONTACT			=   3 ;			// Contact information for abuses
+	const   BLOCK_TECHNICAL_CONTACT			=   4 ;			// Contact information for technical aspects
+	const   BLOCK_REGIONAL_TECHNICAL_CONTACT	=   5 ;			// Contact information for regional technical aspects
+	const	BLOCK_ORGANIZATION			=   6 ;			// Organization information
+	const   BLOCK_ROUTE				=   7 ;			// Route information
+	const   BLOCK_NOC_CONTACT			=   8 ;			// Network Operation Center contact information
+	const   BLOCK_PERSON				=   9 ;			// Generic contact information
+	const   BLOCK_REGIONAL_ABUSE_CONTACT		=  10 ;			// Regional contact information for abuses
+	const   BLOCK_REGIONAL_NOC_CONTACT		=  11 ;			// Regional Network Operation Center contact information
+
+
+	// Entry types
+	const	TYPE_PROVIDER_NETRANGE			=  1001 ;		// Net range		: "209.128.64.0 - 209.128.127.255"
+	const   TYPE_PROVIDER_NETMASK			=  1002 ;		// Net mask		: "209.128.64.0/18"
+	const   TYPE_PROVIDER_NETNAME			=  1003 ;		// Net name		: "BAYAREA-BLK-1"
+	const	TYPE_PROVIDER_NETHANDLE			=  1004 ;		// Net handle		: "NET-209-128-64-0-1"
+	const   TYPE_PROVIDER_NETPARENT			=  1005 ;		// Net parent		: "NET209 (NET-209-0-0-0-0)"
+	const   TYPE_PROVIDER_NETTYPE			=  1006 ;		// Network type		: one of the NETTYPE_* constants
+	const	TYPE_PROVIDER_ORIGIN_AS			=  1007 ;		// Origin assigner	; "AS36375"
+	const	TYPE_PROVIDER_ORGANIZATION		=  1008 ;		// Organization		: "Bay Area Internet Solutions (BAYA)"
+	const	TYPE_PROVIDER_REGISTRATION_DATE		=  1009 ;		// Registration date
+	const	TYPE_PROVIDER_UPDATE_DATE		=  1010 ;		// Last update date
+	const   TYPE_PROVIDER_COMMENT			=  1011 ;		// Comments
+	const	TYPE_PROVIDER_REFERENCE			=  1012 ;		// Reference URL
+	const   TYPE_PROVIDER_CUSTOMER			=  1013 ;		// Customer name
+	const	TYPE_PROVIDER_DESCRIPTION		=  1014 ;		// Description
+	const	TYPE_PROVIDER_COUNTRY			=  1015 ;		// 2-letter country code
+	const	TYPE_PROVIDER_ADMINISTRATIVE_CONTACT	=  1016 ;		// Administrative contact
+	const   TYPE_PROVIDER_TECHNICAL_CONTACT		=  1017 ;		// Technical contact
+	const   TYPE_PROVIDER_MAINTAINED_BY		=  1018 ;		// Maintainer id
+	const   TYPE_PROVIDER_SOURCE			=  1019 ;		// Description of the source which holds the data
+	const   TYPE_PROVIDER_UPDATED_BY_AND_DATE	=  1020 ;		// A combination of "updated by" and "update date"
+	const   TYPE_PROVIDER_LOWER_MAINTAINER		=  1021 ;		// Maintainer id for lower ip blocks
+	const   TYPE_PROVIDER_ROUTES_MAINTAINER		=  1022 ;		// Routes maintainer
+	const   TYPE_PROVIDER_DOMAINS_MAINTAINER	=  1023 ;		// Domains maintainer
+	const   TYPE_PROVIDER_SPONSORING_ORGANIZATION	=  1024 ;		// Sponsoring organization
+	const   TYPE_PROVIDER_MAINTAINER_IRT		=  1025 ;		// Maintainer certificate id
+	const   TYPE_PROVIDER_ABUSE_CONTACT		=  1026 ;		// Abuse contact
+	const	TYPE_PROVIDER_ID			=  1027 ;		// Id
+	const   TYPE_PROVIDER_RESPONSIBLE		=  1028 ;		// Responsible title
+	const   TYPE_PROVIDER_CONTACT			=  1029 ;		// Contact information
+	const   TYPE_PROVIDER_NET_REVISION		=  1030 ;		// Looks like a net mask
+	const   TYPE_PROVIDER_NAME_SERVER		=  1031 ;		// Name server
+	const   TYPE_PROVIDER_NAME_SERVER_STAT		=  1032 ;		// Last status of name server
+	const   TYPE_PROVIDER_NAME_SERVER_LAST_AA	=  1033 ;		// Last AA record status
+	const   TYPE_PROVIDER_ADDRESS			=  1034 ;		// Address entries
+	const   TYPE_PROVIDER_PHONE			=  1035 ;		// Phone information
+	const   TYPE_PROVIDER_FAX			=  1036 ;		// Fax information
+	const   TYPE_PROVIDER_PARENT			=  1037 ;		// Parent address space
+	const   TYPE_PROVIDER_LANGUAGE			=  1038 ;		// Language code (???)
+	const   TYPE_PROVIDER_GEOLOCATION		=  1039 ;		// Geolocation
+	const   TYPE_PROVIDER_DS_NETRANGE		=  1040 ;		// 'ds*' entries - not much information about that
+	const   TYPE_PROVIDER_DS_STATUS			=  1041 ;
+	const   TYPE_PROVIDER_DS_RECORD			=  1042 ;
+	const   TYPE_PROVIDER_DS_LAST_OK		=  1043 ;
+
+	const   TYPE_CUSTOMER_NAME			=  1100 ;		// Customer information
+	const   TYPE_CUSTOMER_ADDRESS			=  1101 ;
+	const   TYPE_CUSTOMER_CITY			=  1102 ;
+	const   TYPE_CUSTOMER_STATE			=  1103 ;
+	const   TYPE_CUSTOMER_ZIPCODE			=  1104 ;
+	const   TYPE_CUSTOMER_COUNTRY			=  1105 ;
+	const   TYPE_CUSTOMER_REGISTRATION_DATE		=  1106 ;
+	const   TYPE_CUSTOMER_UPDATE_DATE		=  1107 ;
+	const   TYPE_CUSTOMER_REFERENCE			=  1108 ;
+
+	const	TYPE_ABUSE_HANDLE			=  1200 ;		// Information about entry point for abuses
+	const   TYPE_ABUSE_NAME				=  1201 ;
+	const   TYPE_ABUSE_PHONE			=  1202 ;
+	const   TYPE_ABUSE_EMAIL			=  1203 ;
+	const   TYPE_ABUSE_REFERENCE			=  1204 ;
+
+	const	TYPE_TECHNICAL_HANDLE			=  1300 ;		// Information about technical entry point
+	const   TYPE_TECHNICAL_NAME			=  1301 ;
+	const   TYPE_TECHNICAL_PHONE			=  1302 ;
+	const   TYPE_TECHNICAL_EMAIL			=  1303 ;
+	const   TYPE_TECHNICAL_REFERENCE		=  1304 ;
+	const   TYPE_TECHNICAL_ORGANIZATION		=  1305 ;
+	const   TYPE_TECHNICAL_ADDRESS			=  1306 ;
+
+	const	TYPE_REGIONAL_TECHNICAL_HANDLE		=  1400 ;		// Information about regional technical entry point
+	const   TYPE_REGIONAL_TECHNICAL_NAME		=  1401 ;
+	const   TYPE_REGIONAL_TECHNICAL_PHONE		=  1402 ;
+	const   TYPE_REGIONAL_TECHNICAL_EMAIL		=  1403 ;
+	const   TYPE_REGIONAL_TECHNICAL_REFERENCE	=  1404 ;
+
+	const   TYPE_ORGANIZATION_NAME			=  1500 ;		// Organization information
+	const   TYPE_ORGANIZATION_ADDRESS		=  1501 ;
+	const   TYPE_ORGANIZATION_CITY			=  1502 ;
+	const   TYPE_ORGANIZATION_STATE			=  1503 ;
+	const   TYPE_ORGANIZATION_ZIPCODE		=  1504 ;
+	const   TYPE_ORGANIZATION_COUNTRY		=  1505 ;
+	const   TYPE_ORGANIZATION_REGISTRATION_DATE	=  1506 ;
+	const   TYPE_ORGANIZATION_UPDATE_DATE		=  1507 ;
+	const   TYPE_ORGANIZATION_REFERENCE		=  1508 ;
+	const	TYPE_ORGANIZATION_ID			=  1509 ;
+	const   TYPE_ORGANIZATION_PHONE			=  1510 ;
+	const   TYPE_ORGANIZATION_FAX			=  1511 ;
+	const   TYPE_ORGANIZATION_ADMINISTRATIVE_CONTACT=  1512 ;
+	const   TYPE_ORGANIZATION_TECHNICAL_CONTACT	=  1513 ;
+	const   TYPE_ORGANIZATION_ABUSE_CONTACT		=  1514 ;
+	const   TYPE_ORGANIZATION_SOURCE		=  1515 ;
+	const   TYPE_ORGANIZATION_MAINTAINED_BY		=  1516 ;
+	const   TYPE_ORGANIZATION_COMMENT		=  1517 ;
+	const	TYPE_ORGANIZATION_TYPE			=  1518 ;
+	const   TYPE_ORGANIZATION_MAINTAINER_REFERENCE	=  1519 ;
+	const   TYPE_ORGANIZATION_CONTACT		=  1520 ;
+	const   TYPE_ORGANIZATION_AUTH			=  1521 ;
+	const   TYPE_ORGANIZATION_UPDATED_BY_AND_DATE	=  1522 ;
+	const   TYPE_ORGANIZATION_GEOLOCATION		=  1523 ;
+	const   TYPE_ORGANIZATION_DESCRIPTION		=  1524 ;
+
+	const   TYPE_ROUTE_MASK				=  1600 ;		// Route information
+	const   TYPE_ROUTE_DESCRIPTION			=  1601 ;
+	const   TYPE_ROUTE_ORIGIN			=  1602 ;
+	const   TYPE_ROUTE_LOWER_MAINTAINER		=  1603 ;
+	const   TYPE_ROUTE_ROUTES_MAINTAINER		=  1604 ;
+	const   TYPE_ROUTE_MAINTAINED_BY		=  1605 ;
+	const   TYPE_ROUTE_REGISTRATION_DATE		=  1606 ;
+	const   TYPE_ROUTE_UPDATE_DATE			=  1607 ;
+	const   TYPE_ROUTE_SOURCE			=  1608 ;
+	const   TYPE_ROUTE_COUNTRY			=  1609 ;
+	const   TYPE_ROUTE_CONTACT			=  1610 ;
+	const   TYPE_ROUTE_UPDATED_BY_AND_DATE		=  1611 ;
+	const   TYPE_ROUTE_ORGANIZATION			=  1612 ;
+	const   TYPE_ROUTE_COMMENT			=  1613 ;
+	const   TYPE_ROUTE_MEMBER_OF			=  1614 ;
+	const   TYPE_ROUTE_HOLES			=  1615 ;
+	const   TYPE_ROUTE_PINGABLE			=  1616 ;
+	const   TYPE_ROUTE_PING_HDL			=  1617 ;
+	const   TYPE_ROUTE_INJECT			=  1618 ;
+	const   TYPE_ROUTE_AGGREGATE_MTD		=  1619 ;		// ???
+
+	const	TYPE_NOC_HANDLE				=  1700 ;		// Network Operations Center information
+	const   TYPE_NOC_NAME				=  1701 ;
+	const   TYPE_NOC_PHONE				=  1702 ;
+	const   TYPE_NOC_EMAIL				=  1703 ;
+	const   TYPE_NOC_REFERENCE			=  1704 ;
+
+	const   TYPE_PERSON_NAME			=  1900 ;		// Generic contact information
+	const   TYPE_PERSON_ID				=  1901 ;
+	const   TYPE_PERSON_EMAIL			=  1902 ;
+	const   TYPE_PERSON_ADDRESS			=  1903 ;
+	const   TYPE_PERSON_PHONE			=  1904 ;
+	const   TYPE_PERSON_FAX				=  1905 ;
+	const   TYPE_PERSON_COUNTRY			=  1906 ;
+	const   TYPE_PERSON_UPDATED_BY_AND_DATE		=  1907 ;
+	const   TYPE_PERSON_MAINTAINED_BY		=  1908 ;
+	const   TYPE_PERSON_SOURCE			=  1909 ;
+	const   TYPE_PERSON_ABUSE_CONTACT		=  1910 ;
+	const   TYPE_PERSON_REGISTRATION_DATE		=  1911 ;
+	const   TYPE_PERSON_UPDATED_DATE		=  1912 ;
+	const   TYPE_PERSON_COMMENT			=  1913 ;
+	const   TYPE_PERSON_ORGANIZATION		=  1914 ;
+	const   TYPE_PERSON_PROVIDER			=  1915 ;
+
+	const	TYPE_REGIONAL_ABUSE_HANDLE		=  2000 ;		// Information about regional ABUSE entry point
+	const   TYPE_REGIONAL_ABUSE_NAME		=  2001 ;
+	const   TYPE_REGIONAL_ABUSE_PHONE		=  2002 ;
+	const   TYPE_REGIONAL_ABUSE_EMAIL		=  2003 ;
+	const   TYPE_REGIONAL_ABUSE_REFERENCE		=  2004 ;
+
+	const	TYPE_REGIONAL_NOC_HANDLE		=  2100 ;		// Regional Network Operations Center information
+	const   TYPE_REGIONAL_NOC_NAME			=  2101 ;
+	const   TYPE_REGIONAL_NOC_PHONE			=  2102 ;
+	const   TYPE_REGIONAL_NOC_EMAIL			=  2103 ;
+	const   TYPE_REGIONAL_NOC_REFERENCE		=  2104 ;
+
+	// Value types
+	const	VALUE_TYPE_STRING			=    1 ;		// A generic string
+	const	VALUE_TYPE_INTEGER			=    2 ;		// An integer value
+	const	VALUE_TYPE_DATE				=    3 ;		// A date
+	const	VALUE_TYPE_NETMASK			=  100 ;		// A netmask		: "209.128.64.0/18"
+	const   VALUE_TYPE_NETRANGE			=  101 ;		// A net range		: "209.128.64.0 - 209.128.127.255"
+	const   VALUE_TYPE_COUNTRY			=  102 ;		// A 2-letter country code
+	const   VALUE_TYPE_EMAIL			=  103 ;		// Email
+	const   VALUE_TYPE_ID_AND_DATE			=  104 ;		// A contact + a date
+
+	// Network allocation types ; LIR stands for "Local Internet Registries" and RIR for "Regional Internet Registries"
+
+	// Constants for RIPE
+	const	NETTYPE_ALLOCATED_PA			=   1 ;			// This address space has been allocated to an LIR and no assignments 
+										// or sub-allocations made from it are portable. Assignments and sub-allocations 
+										// cannot be kept when moving to another provider. 
+	const   NETTYPE_ALLOCATED_PI			=   2 ;			// This address space has been allocated to an LIR or RIR and all assignments 
+										// made from it are portable. Assignments can be kept as long as the criteria 
+										// for the original assignment are met. 
+										// Sub-allocations cannot be made from this type of address space. 
+	const   NETTYPE_ALLOCATED_UNSPECIFIED		=   3 ;			// This address space has been allocated to an LIR or RIR. 
+										// Assignments may be PA or PI. 
+										// This status is intended to document past allocations where assignments of 
+										// both types exist. It is avoided for new allocations. 
+										// Sub-allocations cannot be made from this type of address space. 
+	const   NETTYPE_SUBALLOCATED_PA			=   4 ;			// This address space has been sub-allocated by an LIR to a downstream network 
+										// operator that will make assignments from it. 
+										// All assignments made from it are PA. 
+										// They cannot be kept when moving to a service provided by another provider
+	const   NETTYPE_LIR_PARTITIONED_PA		=   5 ;			// This allows an LIR to document distribution and delegate management of 
+										// allocated space within their organisation. 
+										// Address space with a status of LIR-PARTITIONED is not considered used. 
+										// When the addresses are used, a more specific inetnum should be registered. 
+	const   NETTYPE_LIR_PARTITIONED_PI		=   6 ;			// This allows an LIR to document distribution and delegate management of 
+										// allocated space within their organisation. 
+										// Address space with a status of LIR-PARTITIONED is not considered used. 
+										// When the addresses are used, a more specific inetnum should be registered.
+	const   NETTYPE_EARLY_REGISTRATION		=   7 ;			// This is used by the RIPE Database administration when transferring pre-RIR 
+										// registrations from the ARIN Database. 
+										// The value can be changed by database users (except for ALLOCATED PA). 
+										// Only the RIPE Database administrators can create objects with this value. 
+	const	NETTYPE_NOT_SET				=   8 ;			// This indicates that the registration was made before the “status:” 
+										// attributes became mandatory for inetnum objects. 
+										// The object has not been updated since then. 
+										// New objects cannot be created with this value. 
+										// The value can be changed by database users. 
+	const	NETTYPE_ASSIGNED_PA			=   9 ;			// This address space has been assigned to an End User for use with services 
+										// provided by the issuing LIR. 
+										// It cannot be kept when terminating services provided by the LIR. 
+	const   NETTYPE_ASSIGNED_PI			=  10 ;			// This address space has been assigned to an End User and can be kept as long 
+										// as the criteria for the original assignment are met.
+	const   NETTYPE_ASSIGNED_ANYCAST		=  11 ;			// This address space has been assigned for use in TLD anycast networks. 
+										// It cannot be kept when no longer used for TLD anycast services.
+	const   NETTYPE_ASSIGNED_NON_PORTABLE		=  12 ;			// Assignments made by LIRs to their customers for specific use within the 
+										// Internet infrastructure they operate. 
+										// Assignments must only be made for specific, documented purposes and may not 
+										// be sub-assigned.; These assignments must be returned if the network changes 
+										// upstream provider.
+	const   NETTYPE_ALLOCATED_PORTABLE		=  13 ;			// Address space allocated by APNIC or NIRs to LIRs for the purpose of subsequent	
+										// distribution by LIRs to their customers.  
+										// These allocations remain valid if the network changes upstream provider.
+	const   NETTYPE_ALLOCATED_NON_PORTABLE		=  14 ;			// Address space allocated by LIRs to their customers for subsequent assignment 
+										// by those customers.  
+										// These allocations (and assignments made from these allocations) must be 
+										// returned if the network changes upstream provider
+	const   NETTYPE_LEGACY				=  15 ;			// (needs to be documented)
+	const   NETTYPE_ASSIGNED_PORTABLE		=  16 ;	
+	const   NETTYPE_REASSIGNED			=  17 ;	
+
+	// Constants for ARIN status
+	const	NETTYPE_DIRECT_ALLOCATION		= 100 ;			// Fixed ip addresses
+	const   NETTYPE_TRANSFERRED			= 101 ;			// Range of ip addresses currently being transferred
+	const	NETTYPE_REALLOCATED			= 102 ;			// Ip addresses have been reallocated
+	const   NETTYPE_PORTABLE			= 103 ;			// Ip addresses are portable
+	const   NETTYPE_IANA_SPECIAL_USE		= 104 ;			// Reserved
+
+	// Whois string store entry types
+	const	WHOIS_STRING_STORE_KEYWORD		=   1 ; 
+	const	WHOIS_STRING_STORE_TEXT			=   2 ;
+	const	WHOIS_STRING_STORE_VALUE		=   3 ;
+
+	// Entry flags
+	const   WHOIS_FLAGS_PROVIDER			=  0x0001 ;		// Whois data relates to a provider
+
+	const   WHOIS_FLAGS_TYPE_MASK			=  0x0006 ;		// Mask for address type (ip v4, ip v6, domain) - bits 2 & 3
+	const   WHOIS_FLAGS_IS_IPV4			=  0x0000 ;		// Current object relates to an IP V4 whois search
+	const   WHOIS_FLAGS_IS_IPV6			=  0x0002 ;		// Ip V6
+	const   WHOIS_FLAGS_IS_DOMAIN			=  0x0004 ;		// Search relates to a domain name
+
+	const   WHOIS_FLAGS_SERVER_MASK			=  0x00F0 ;		// Mask for various server data types
+	const   WHOIS_FLAGS_SERVER_FOUND		=  0x0000 ;		// Ok, server data found
+	const   WHOIS_FLAGS_SERVER_NOT_FOUND		=  0x0010 ;		// Server not found in whois database
+	const   WHOIS_FLAGS_SERVER_REFUSED_QUERY	=  0x0020 ;		// Server refused query for some... let's say, unknown reason
+	const   WHOIS_FLAGS_UNALLOCATED_RANGE		=  0x0040 ;		// Unallocated ip range
+
+	// Real whois data contents
+	public			$Contents ;
+	// Class definitions
+	public			$Ranges			=  [] ;
+	// Queried ip/domain
+	public			$QueriedIp		=  null ;
+	public			$QueriedDomain		=  null ;
+	// Whois flags
+	public			$Flags			=  0 ;
+	// Very creation (registration) date and last update, as a Unix timestamp
+	protected		$CreationTime		=  false ; 
+	protected		$UpdateTime		=  false ;
+
+	// TLD data - loaded only once
+	protected static	$TLDList		=  null ;
+
+	// List of strings that introduce referral data, which may be present in some whois output data
+	protected static	$ReferralDefinitions	=
+	   [
+		'Found a referral to'
+	    ] ;
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    Constructor -
+		Builds a WhoisInformation object.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( $contents, $parse = true )
+	   {
+		parent::__construct ( ) ;
+
+		$this -> Contents		=  $contents ;
+
+		if  ( self::$TLDList  ===  null )
+			self::$TLDList		=  new TLDList ( ) ;
+
+		if ( $parse )
+		   {
+			$this -> ClassDefinitions	=  $this -> __check_definitions ( ) ;
+			$this -> Parse ( $this -> Contents ) ;
+		    }
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+
+	    __dump_debuginfo -
+		Hides some members.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public static function  __dump_debuginfo ( )
+	   {
+		return ( [ 'hidden' => [ 'TLDList', 'ReferralDefinitions' ] ] ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+
+	    __check_definitions -
+		Checks the validity of the supplied whois data format definitions.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	private function  __check_definitions ( )
+	   {
+		$class			=  $this -> MyClass ;
+		$found_disjoint		=  false ;			// Only one disjoint data block is allowed 
+
+		// Check if we already met such a class
+		if  ( isset ( self::$CollectedDefinitions [ $class ] ) )
+			return self::$CollectedDefinitions [ $class ] ;
+
+		// Merge global and local definitions
+		$definitions		=  static::$Definitions ;
+
+		if  ( isset ( static::$LocalDefinitions ) )
+			$definitions	=  ArrayHelpers::MergeAssocRecursive ( $definitions, static::$LocalDefinitions ) ;
+
+		// The 'keyword-match' entry is mandatory
+		if  ( ! isset ( $definitions [ 'keyword-match' ] ) )
+			error ( new \Thrak\System\DataStructureException ( "The 'keyword-match' entry is required for class $class." ) ) ;
+    
+		// Also is the 'data-blocks' entry
+		if  ( ! isset ( $definitions [ 'data-blocks' ] ) )
+			error ( new \Thrak\System\DataStructureException ( "The 'data-blocks' entry is required for class $class." ) ) ;
+
+		// ... which must be a non-empty array
+		if  ( ! is_array ( $definitions [ 'data-blocks' ] )  ||  ! is_array ( $definitions [ 'data-blocks' ] ) )
+			error ( new \Thrak\System\DataStructureException ( "The 'data-blocks' entry for class $class must be a non-empty array." ) ) ;
+
+		// The 'line-breaks' entry defaults to false
+		if  ( ! isset ( $definitions [ 'line-breaks' ] ) ) 
+			$definitions [ 'line-breaks' ]	=  false ;
+
+		// Make sure 'ignore' entry is an array
+		if  ( isset ( $definitions [ 'ignore' ] ) )
+		   {
+			if  ( ! is_array ( $definitions [ 'ignore' ] ) )
+				$definitions [ 'ignore' ]	=  [ $definitions [ 'ignore' ] ] ;
+		    }
+		else
+			$definitions [ 'ignore' ]	=  [] ;
+
+		// Range definitions - make sure the array exists and that at least the 'drop' entry also exists
+		if  ( ! isset ( $definitions [ 'range-definitions' ] ) )
+			$definitions [ 'range-definitions' ]	=  [] ;
+
+		if  ( ! isset ( $definitions [ 'range-definitions' ] [ 'drop' ] ) )
+			$definitions [ 'range-definitions' ] [ 'drop' ]		=  false ;
+
+		// Check each individual 'data-block' entry
+		foreach  ( $definitions [ 'data-blocks' ]  as  $key => &$data_block )
+		   {
+			// The 'start-keywords' entry is mandatory
+			if  ( ! isset ( $data_block [ 'start-keywords' ] ) )
+				error ( new \Thrak\System\DataStructureException ( "The 'start-keywords' entry is required for the block type #$key of class $class." ) ) ;
+
+			// ... and it must be a non-empty array
+			if  ( ! is_array ( $data_block [ 'start-keywords' ] )  ||  ! count ( $data_block [ 'start-keywords' ] ) )
+				error ( new \Thrak\System\DataStructureException ( "The 'start-keywords' entry for the block type #$key of class $class must be a non-empty array." ) ) ;
+
+			// Make sure values are unique
+			$data_block [ 'start-keywords' ]	=  ArrayHelpers::Unique ( $data_block [ 'start-keywords' ], true ) ;
+
+			// The 'required' entry defaults to false
+			if  ( ! isset ( $data_block [ 'required' ] ) )
+				$data_block [ 'required' ]	=  false ;
+
+			// The 'multiple' entry defaults to false
+			if  ( ! isset ( $data_block [ 'multiple' ] ) )
+				$data_block [ 'multiple' ]	=  false ;
+
+			// The 'keywords' entry is mandatory
+			if  ( ! isset ( $data_block [ 'keywords' ] ) )
+				error ( new \Thrak\System\DataStructureException ( "The 'keywords' entry is required for the block type #$key of class $class." ) ) ;
+
+			// If no 'type' entry is defined, make it equal to the block index
+			if  ( ! isset ( $data_block [ 'type' ] ) )
+				$data_block [ 'type' ]	=  $key ;
+
+			// Make sure the block index and the 'type' entry are equal
+			if  ( $key  !=  $data_block [ 'type' ] )
+				error ( new \Thrak\System\DataStructureException ( "The 'type' entry ({$data_block [ 'type' ]}) differs from its key ($key) for the block type #$key of class $class." ) ) ;
+
+			// ... and it must be a non-empty array
+			if  ( ! is_array ( $data_block [ 'keywords' ] )  ||  ! count ( $data_block [ 'keywords' ] ) )
+				error ( new \Thrak\System\DataStructureException ( "The 'keywords' entry for the block type #$key of class $class must be a non-empty array." ) ) ;
+
+			// Default value for 'disjoint' is false 
+			if  ( ! isset ( $data_block [ 'disjoint' ] ) )
+				$data_block [ 'disjoint' ]	=  false ;
+
+			// Only one disjoint block is authorized
+			if  ( $data_block [ 'disjoint' ] )
+			   {
+				if  ( $found_disjoint )
+					error ( new \Thrak\System\DataStructureException ( "Only one disjoint entry is authorized for the block type #$key of class $class." ) ) ;
+
+				$found_disjoint		=  true ;
+			    }
+
+			// Make sure 'ignore' entry is an array, even if empty
+			if  ( isset ( $data_block [ 'ignore' ] ) )
+			   {
+				if  ( ! is_array ( $data_block [ 'ignore' ] ) )
+					$data_block [ 'ignore' ]	=  [ $data_block [ 'ignore' ] ] ;
+			    }
+			else
+				$data_block [ 'ignore']		=  [] ;
+
+			// Check individual keyword entries 
+			foreach  ( $data_block [ 'keywords' ]  as  $index => &$keyword_entry )
+			   {
+				// The 'name' entry is mandatory
+				if  ( ! isset ( $keyword_entry [ 'name' ] ) )
+					error ( new \Thrak\System\DataStructureException ( "The 'name' entry of keyword #$index for the block type #$key of class $class is mandatory." ) ) ;
+
+				// Convert the 'name' entry to an array, if needed
+				if  ( ! is_array ( $keyword_entry [ 'name' ] ) )
+					$keyword_entry [ 'name' ]	=  [ $keyword_entry [ 'name' ] ] ;
+
+				// Remove duplicate names
+				$keyword_entry [ 'name' ]	=  ArrayHelpers::Unique ( $keyword_entry [ 'name' ], true ) ;
+
+				// 'type' entries default to the keyword entry index
+				if  ( ! isset ( $keyword_entry [ 'type' ] ) )
+					$keyword_entry [ 'type' ]	=  $index ;
+
+				// If a 'type' entry is defined, it must equal the keyword entry index
+				if  ( $keyword_entry [ 'type' ]  !=  $index ) 
+					error ( new \Thrak\System\DataStructureException ( "The 'type' entry #{$keyword_entry [ 'type' ]} of keyword #$index for the block type #$key of class $class differs from its key." ) ) ;
+
+				// 'value-type' entries are mandatory
+				if  ( ! isset ( $keyword_entry [ 'value-type' ] ) )
+					error ( new \Thrak\System\DataStructureException ( "The 'value-type' entry of keyword #$index for the block type #$key of class $class is mandatory." ) ) ;
+
+				// 'list' entry defaults to false
+				if  ( ! isset ( $keyword_entry [ 'list' ] ) )
+					$keyword_entry [ 'list' ]	=  false ;
+
+				// 'list' entries are duplicated for each list item ; when true, this implies that the 'multiple'
+				// attribute is set to true
+				if  ( $keyword_entry [ 'list' ] )
+					$keyword_entry [ 'multiple' ]	=  true ;
+
+				// Default list separator is the comma
+				if  ( ! isset ( $keyword_entry [ 'list-separator' ] ) )
+					$keyword_entry [ 'list-separator' ]	=  ',' ;
+
+				// 'required' entry defaults to false
+				if  ( ! isset ( $keyword_entry [ 'required' ] ) )
+					$keyword_entry [ 'required' ]	=  false ;
+
+				// 'multiple' entry defaults to false
+				if  ( ! isset ( $keyword_entry [ 'multiple' ] ) )
+					$keyword_entry [ 'multiple' ]	=  false ;
+
+				// Check the 'matches' entry, if defined
+				if  ( isset ( $keyword_entry [ 'matches' ] ) )
+				   {
+					// The 'matches' entry, if defined, must be an array of key => [ value(s) ] pairs
+					if  ( ! is_array ( $keyword_entry [ 'matches' ] ) )
+						error ( new \Thrak\System\DataStructureException ( "When defined, the 'matches' entry for the block type #$key of class $class must be an array of key => [ value(s) ] pairs." ) ) ;
+
+					// Make sure all array values are themselves arrays
+					$keyword_matches	=  &$keyword_entry [ 'matches' ] ;
+
+					foreach  ( $keyword_matches  as  &$keyword_match )
+					   {
+						if  ( ! is_array ( $keyword_match ) )
+							$keyword_match	=  [ $keyword_match ] ;
+					    }
+				    }
+			    }
+		    }
+
+		// Keyword checks
+		foreach  ( $definitions [ 'data-blocks' ]  as  $block_id => $block_data )
+		   {
+			$keyword_names		=  [] ;
+
+			// Check for duplicate keyword name definitions
+			foreach  ( $block_data [ 'keywords' ]  as  $keyword_id => $keyword_data )
+			   {
+				foreach  ( $keyword_data [ 'name' ]  as  $name )
+				   {
+					$lcname		=  strtolower ( $name ) ;
+
+					if  ( isset ( $keyword_names [ $lcname ] ) )
+						error ( new \Thrak\System\DataStructureException ( "Keyword name '$name' (block entry #$block_id, keyword entry #$keyword_id) " .
+								"conflicts with block entry #{$keyword_names [ $lcname ] [0]}, keyword entry #{$keyword_names [ $lcname ] [1]} " .
+								"for class $class." ) ) ;
+
+					$keyword_names [ $lcname ] =  [ $block_id, $keyword_id ] ;
+				    }
+			    }
+
+			// Check that keywords listed in the 'start-keywords' entry are defined in the 'keywords' array
+			foreach  ( $block_data [ 'start-keywords' ]  as  $name )
+			   {
+				$lcname		=  strtolower ( $name ) ;
+
+				if  ( ! isset ( $keyword_names [ $lcname ] ) )
+					error ( new \Thrak\System\DataStructureException ( "Keyword name '$name' specified in the 'start-keywords' entry " .
+							"of block #$block_id does not exist for class $class." ) ) ;
+			    }
+		    }
+
+		// All done, return
+		self::$CollectedDefinitions [ $class ]	=  $definitions ;
+
+		return ( $definitions ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    GetUpdateTime, GetCreationTime -
+		Returns the highest last update or creation date for this range, as a Unix timestamp.
+  
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  GetCreationTime ( )
+	   {
+		if  ( $this -> CreationTime  ===  false )
+		   {
+			$dates	=  [] ;
+
+			foreach ( $this -> Ranges  as  $range )
+				$dates []	=  $range -> GetCreationTime ( ) ;
+
+			if  ( count ( $dates ) )
+			   {
+				sort ( $dates ) ;
+
+				$this -> CreationTime	=  $dates [ count ( $dates ) - 1 ] ;
+			    }
+			else
+				return ( false ) ;
+		    }
+
+		return ( $this -> CreationTime ) ;
+	    }
+
+
+	public function  GetUpdateTime ( )
+	   {
+		if  ( $this -> UpdateTime  ===  false )
+		   {
+			$dates	=  [] ;
+
+			foreach ( $this -> Ranges  as  $range )
+				$dates []	=  $range -> GetUpdateTime ( ) ;
+
+			if  ( count ( $dates ) )
+			   {
+				sort ( $dates ) ;
+
+				$this -> UpdateTime	=  $dates [ count ( $dates ) - 1 ] ;
+			    }
+			else
+				return ( false ) ;
+		    }
+
+		return ( $this -> UpdateTime ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        GetInstance - Retrieves a WhoisData instance.
+	 
+	    PROTOTYPE
+	        $object		=  WhoisData::GetInstance ( $ip_or_domain, $contents = null, $fail_if_empty = true ) ;
+	 
+	    DESCRIPTION
+	        Returns an object derived from the WhoisData class, whose real class is determined by the specified
+		contents.
+	 
+	    PARAMETERS
+		$ip_or_domain (string) -
+			Ip address or domain name to be parsed.
+
+	        $contents (string) -
+	                Output of the whois command. When null, the specified ip or domain will be searched.
+
+		$fail_if_empty (boolean) -
+			When true (the default), an exception will be thrown if empty whois information has been 
+			specified or retrieved.
+			When false, null is returned.
+	 
+	    RETURN VALUE
+	        An object of the appropriate WhoisxxxData class, including the WhoisNullData class which represents
+		a whois request which returned a failure.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public static function  GetInstance ( $ip_or_domain, $contents = null, $fail_if_empty = true ) 
+	   {
+		$class	=  null ;
+
+		if  ( $contents  ===  null ) 
+			$contents	=  self::Get ( $ip_or_domain ) ;
+
+		$contents	=  trim ( $contents ) ;
+
+		if  ( ! $contents )
+		    {
+			if  ( $fail_if_empty )
+				error ( new WhoisInformationException ( "Empty whois information retrieved for $ip_or_domain" ) ) ;
+			else
+				return ( null ) ;
+		     }
+
+		// Whois entry not found
+		if  ( strpos  ( $contents, 'NOT FOUND'						)  !==  false  ||
+		      stripos ( $contents, 'No whois server is known for this kind of object'	)  !==  false  ||
+		      stripos ( $contents, 'no match for'					)  !==  false  ||
+		      stripos ( $contents, 'no match found for'					)  !==  false  ||
+		      stripos ( $contents, 'no entries found'					)  !==  false  || 
+		      stripos ( $contents, 'domain not found'					)  !==  false  ||
+		      stripos ( $contents, 'Unallocated and unassigned in LACNIC block'		)  !==  false  || 
+		      stripos ( $contents, 'no match!'						)  !==  false )
+		    {
+			$class	=  '\Thrak\Processors\Whois\WhoisNullInformation' ;
+		    }
+		else if  ( stripos ( $contents, 'Cannot currently process your search request.' )  !==  false  ||
+			   stripos ( $contents, 'Unable to service request due to high volume'  )  !==  false  || 
+			   (
+				stripos ( $contents, 'Query rate limit exceeded'			)  !==  false   &&
+				stripos ( $contents, 'Query rate limit exceeded. Reduced information.'  )  ===  false
+			    ) )
+		   {
+			$class	=  '\Thrak\Processors\Whois\WhoisUnreachableInformation' ;
+		    }
+		// Ip address - extract provider information
+		else if  ( String::IsIpAddress ( $ip_or_domain ) ) 
+		   {
+			
+			if  ( ( $offset = stripos ( $contents, 'This is the RIPE Database query service' ) ) !==  false )
+			   {
+				$offset2	=  stripos ( $contents, 'ARIN WHOIS data and services are subject' ) ;
+
+				if  ( $offset2  !==  false  &&  $offset2  <  $offset )
+					$class		=  '\Thrak\Processors\Whois\WhoisARINInformation' ;
+				else
+					$class		=  '\Thrak\Processors\Whois\WhoisRIPEInformation' ;
+			    }
+			else if  ( ( $offset = stripos ( $contents, 'ARIN WHOIS data and services are subject' ) )  !==  false ) 
+			   {
+				$offset2	=  stripos ( $contents, 'This is the RIPE Database query service' ) ;
+
+				if  ( $offset2  !==  false  &&  $offset2  <  $offset )
+					$class		=  '\Thrak\Processors\Whois\WhoisRIPEInformation' ;
+				else
+					$class	=  '\Thrak\Processors\Whois\WhoisARINInformation' ;
+			    }
+			else if  ( stripos ( $contents, '% [whois.apnic.net]' )  !==  false ) 
+			   {
+				$class	=  '\Thrak\Processors\Whois\WhoisAPNICInformation' ;
+			    }
+			else if  ( stripos ( $contents, 'Joint Whois - whois.lacnic.net' )  !==  false  || 
+				   stripos ( $contents, 'registro.br' )  !==  false ) 
+			   {
+				$class	=  '\Thrak\Processors\Whois\WhoisLACNICInformation' ;
+			    }
+			else if  ( stripos ( $contents, 'This is the AfriNIC Whois server' )  !==  false ) 
+			   {
+				$class	=  '\Thrak\Processors\Whois\WhoisAFRNICInformation' ;
+			    }
+			else if  ( stripos ( $contents, 'KRNIC WHOIS Service' )  !==  false )
+			   {
+				$class	=  '\Thrak\Processors\Whois\WhoisKRNICInformation' ;
+			    }
+			else if  ( stripos ( $contents, 'JPNIC database' )  !==  false )
+			   {
+				$class	=  '\Thrak\Processors\Whois\WhoisJPNICInformation' ;
+			    }
+			// Non standard whois output or error - try to search a little bit further
+			else
+			   {
+				// Maybe a TWNIC undeclared entry
+				if  ( stripos ( $contents, 'Administrator contact:' )  !==  false )
+				   {
+					$new_contents	=  self::Get ( "$ip_or_domain/e" ) ;
+
+					if  ( strpos ( $new_contents, 'The IP address not belong to TWNIC' )  !==  false )
+					   {
+						$contents	=  preg_replace ( '/: [ \t\r]* \n \s*/imsx', ': ', $contents ) ;
+						$class		=  '\Thrak\Processors\Whois\WhoisFantomTWNICInformation' ;
+					    }
+				    }
+			    }
+		     }
+
+		if  ( $class )
+			return ( new $class ( $ip_or_domain, $contents ) ) ;
+		else
+			error ( new WhoisInformationException ( "Cannot determine Whois data class for $ip_or_domain with the contents listed below :\n$contents" ) ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	       Get - Returns whois data for a domain or an ip address.
+	 
+	    PROTOTYPE
+	        $contents	=  WhoisInformation::Get ( $ip_or_domain ) ;
+	 
+	    DESCRIPTION
+	        Returns whois information for the specified domain or ip address.
+	 
+	    PARAMETERS
+	        $ip_or_domain (string) -
+	                Ip address or domain name. This string can also include additional options for the whois command.
+	 
+	    RETURN VALUE
+	        The output of the whois command.
+
+	    NOTE
+		The exec() function was originally used here ; however, it does not return any output if the executed
+		command fails (typically, when the whois command finds a referral that does not answer and a timeout is
+		issued).
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public static function  Get ( $ip_or_domain )
+	   {
+		$volatile_output_file	=  "volatile://whoisinformation.phpclass.out" ;
+		$output_file		=  Path::RealPath ( $volatile_output_file ) ;
+		system ( "whois $ip_or_domain 2>&1 >$output_file" ) ;
+
+		return ( file_get_contents ( $volatile_output_file ) ) ;
+	    }
+
+
+
+	/**************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 ******                                    PROTECTED METHODS                                             ******
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************/
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    CheckBlocks -
+		Performs the following checks against a whois data entry :
+		- All 'required' blocks have been specified
+		- No 'multiple' blocks have been specified for single-values
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  CheckBlocks ( $blocks )
+	   {
+		// Checks that all required blocks have been specified
+		foreach  ( $this -> ClassDefinitions [ 'data-blocks' ]  as  $data_block )
+		   {
+			if  ( ! $data_block [ 'required' ] )
+				continue ;
+
+			$found	=  false ;
+
+			foreach ( $blocks as $block )
+			   {
+				if  ( $block [ 'type' ]	 ==  $data_block [ 'type' ] )
+				   {
+					$found	=  true ;
+					break ;
+				    }
+			    }
+
+			if  ( ! $found )
+				error ( new WhoisInformationException ( "Block type #{$data_block [ 'type' ]} is required for class {$this -> MyClass}.",
+						$this -> Contents ) ) ;
+		    }
+
+		// Check that non-multiple values are unique
+		$block_types		=  [] ;
+
+		foreach  ( $this -> ClassDefinitions [ 'data-blocks' ]  as  $data_block )
+		   {
+			if  ( $data_block [ 'multiple' ] )
+				continue ;
+
+			foreach  ( $blocks  as  $block )
+			   {
+				$type	=  $block [ 'type' ] ;
+
+				if  ( $type  ==  $data_block [ 'type' ] )
+				   {
+					if  ( ! isset ( $block_types [ $type ] ) )
+					   {
+						$block_types [ $type ] =  true ;
+						continue ;
+					    }
+
+					//error ( new WhoisInformationException ( "Block type #$type specified more than once for class {$this -> MyClass}.",
+					//		$this -> Contents ) ) ;
+				    }
+			    }
+		    }
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    CheckValues -
+		Performs the following checks against a block :
+		- All 'required' values have been specified
+		- No 'multiple' values have been specified for single-values
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  CheckValues ( $block, $definition )
+	   {
+		// Checks that all required values have been specified
+		foreach  ( $definition [ 'keywords' ]  as  $keyword_definition )
+		   {
+			if  ( ! $keyword_definition [ 'required' ] )
+				continue ;
+
+			$found	=  false ;
+
+			foreach ( $block [ 'data' ] as  $value )
+			   {
+				if  ( ArrayHelpers::InArray ( $keyword_definition [ 'name' ], $value [ 'keyword' ] ) )
+				   {
+					$found	=  true ;
+					break ;
+				    }
+			    }
+
+			if  ( ! $found )
+				error ( new WhoisInformationException ( "Keyword '{$keyword_definition [ 'name' ] [0]}' is required for block " .
+						"#{$definition [ 'type' ]} of class {$this -> MyClass}.", $this -> Contents ) ) ;
+		    }
+
+		// Check that non-multiple values are unique
+		$names		=  [] ;
+
+		foreach  ( $definition [ 'keywords' ]  as  $keyword_definition )
+		   {
+			if  ( $keyword_definition [ 'multiple' ] )
+				continue ;
+
+			foreach  ( $block [ 'data' ]  as  $value )
+			   {
+				if  ( ! ArrayHelpers::InArray ( $keyword_definition [ 'name' ], $value [ 'keyword' ] ) )
+					continue ;
+
+				$lcname		=  strtolower ( $value [ 'keyword' ] ) ;
+
+				if  ( isset ( $names [ $lcname ] ) )
+					error ( new WhoisInformationException ( "Keyword '{$keyword_definition [ 'name' ] [0]}' specified more than once for block " .
+							"#{$definition [ 'type' ]} of class {$this -> MyClass}.", $this -> Contents ) ) ;
+					
+
+				$names [ $lcname ] =  true ;
+			    }
+		    }
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    Evaluate -
+		Evaluates a value according to its definitions.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  Evaluate ( $keyword, $value, $block_id, $keyword_id, $ignore_list = false )
+	   {
+		$definition	=  $this -> GetDefinition ( $block_id, $keyword_id ) ;
+
+		// List items are duplicated as single elements and collected back as an array
+		// This is not a super-efficient method, but I was a little bit lazy and it was tempting to do that way
+		if  ( ! $ignore_list  &&  $definition [ 'list' ] )
+		   {
+			$values		=  explode ( $definition [ 'list-separator' ], $value ) ;
+
+			if  ( count ( $values )  >  1 )
+			   {
+				$result		=  [] ;
+
+				foreach  ( $values  as  $current_value )
+					$result []	=  $this -> Evaluate ( $keyword, $current_value, $block_id, $keyword_id, true ) ;
+
+				return ( $result ) ;
+			    }
+		    }
+
+		// Interpret value contents according to its type
+		switch ( $definition [ 'value-type' ] )
+		   {
+			// String type -
+			//	Returns the value as is.
+			case	self::VALUE_TYPE_STRING :
+				$result		=  $value ;
+				break ;
+
+			// Integer type -
+			//	Returns the integer value of a string, or complains if the analyzed value is not numeric.
+			case	self::VALUE_TYPE_INTEGER :
+				if  ( isset ( $definition [ 'matches' ] ) )
+				   {
+					$result		=  false ;
+
+					foreach  ( $definition [ 'matches' ]  as  $match_key => $match_values )
+					   {
+						foreach  ( $match_values  as  $match_value )
+						   {
+							if (  String::IsRegex ( $match_value ) )
+								$status		=  preg_match ( $match_value, $value ) ;
+							else
+								$status		=  ! strcasecmp ( $match_value, $value ) ;
+
+							if  ( $status ) 
+							   {
+								$result		=  $match_key ;
+								break 2 ;
+							    }
+						    }
+					    }
+
+					if  ( $result  ===  false )
+						error ( new WhoisInformationException ( "Expected an authorized string value for block #$block_id, keyword #$keyword_id ($keyword), " .
+								"class {$this -> MyClass}, found \"$value\".", $this -> Contents ) ) ;
+				    }
+				else
+				   {
+					if  ( ! is_numeric ( $value ) )
+						error ( new WhoisInformationException ( "Expected integer value for block #$block_id, keyword #$keyword_id ($keyword), " .
+								"class {$this -> MyClass}, found \"$value\".", $this -> Contents ) ) ;
+
+					$result		=  ( integer ) $value ;
+				    }
+
+				break ;
+
+			// Date type -
+			//	A date value, that can be interpreted by the strtotime() function.
+			case	self::VALUE_TYPE_DATE :
+				if  ( ! $value )
+					$result		=  0 ;
+				else if  ( ( $result = String::IsDateString ( $value ) )  ===  false )
+					error ( new WhoisInformationException ( "Expected date/time value for block #$block_id, keyword #$keyword_id ($keyword), " .
+							"class {$this -> MyClass}, found \"$value\".", $this -> Contents ) ) ;
+				break ;
+
+			// Id + date :
+			//	An updater name followed by an update date value.
+			case	self::VALUE_TYPE_ID_AND_DATE :
+				$parts	=  explode ( ' ', preg_replace ( '/\s+/', ' ', $value ) ) ;
+
+				if  ( count ( $parts )  <  2 )
+				   {
+					if  ( ( $date = String::IsDateString ( $parts [0] ) ) )
+						$result		=  [ 'id' => '', 'date' => $date ] ;
+					else
+						$result		=  [ 'id' => $parts [0], 'date' => 0 ] ;
+				    }
+				else if  ( ! ( $date = String::IsDateString ( $parts [1] ) ) )
+					error ( new WhoisInformationException ( "Expected id/date value for block #$block_id, keyword #$keyword_id ($keyword), " .
+							"class {$this -> MyClass}, found \"$value\".", $this -> Contents ) ) ;
+				else
+					$result		=  [ 'id' => $parts [0], 'date' => $date ] ;
+
+				break ;
+
+			// Netmask -
+			//	An ip address followed by a mask. For the moment, keep it as is
+			case	self::VALUE_TYPE_NETMASK :
+				$mask		=  Convert::StringToIPV4AddressRange ( $value, true ) ;
+				$result		=  [ 'mask' => $value, 'low' => $mask [0], 'high' => $mask [1] ] ;
+				break ;
+
+			// Net range -
+			//	Either a range of ip addresses of the form 'iplow - iphigh', or a netmask of the form 'ip/size'
+			case	self::VALUE_TYPE_NETRANGE :
+				if  ( strpos ( $value, '-' )  !==  false )
+				   {
+					$parts	=  explode ( '-', $value ) ;
+
+					if  ( count ( $parts )  !=  2 )
+						error ( new WhoisInformationException ( "Expected net range value for block #$block_id, keyword #$keyword_id ($keyword), " .
+								"class {$this -> MyClass}, found \"$value\".", $this -> Contents ) ) ;
+
+					$a	=  trim ( $parts [0] ) ;
+
+					if  ( ! String::IsIPAddress ( $a ) )
+						error ( new WhoisInformationException ( "Expected net mask or net range value for low ip value in block #$block_id, keyword #$keyword_id ($keyword), " .
+								"class {$this -> MyClass}, found \"$value\".", $this -> Contents ) ) ;
+
+					$b	=  trim ( $parts [1] ) ;
+
+					if  ( ! String::IsIPAddress ( $b ) )
+						error ( new WhoisInformationException ( "Expected net mask or net range value for high ip value in block #$block_id, keyword #$keyword_id ($keyword), " .
+								"class {$this -> MyClass}, found \"$value\".", $this -> Contents ) ) ;
+
+					$iplow		=  $a ;
+					$iphigh		=  $b ;
+				    }
+				else if  ( ( $parts = Convert::StringToIPV4AddressRange ( $value, true ) )  !==  false )
+				   {
+					$iplow		=  $parts [0] ;
+					$iphigh		=  $parts [1] ;
+				    }
+				else
+					error ( new WhoisInformationException ( "Expected net mask or net range value for block #$block_id, keyword #$keyword_id ($keyword), " .
+							"class {$this -> MyClass}, found \"$value\".", $this -> Contents ) ) ;
+				
+				$result		=  [ 'low' => $iplow, 'high' => $iphigh ] ;
+				break ;
+
+			// Country type - 
+			//	Checks that the two-letter country code is valid.
+			case	self::VALUE_TYPE_COUNTRY :
+				$value		=  preg_replace ( '/\s*\#.*/', '', $value ) ;
+
+				if  ( isset ( self::$TLDList [ $value ] ) )
+					$result		=  $value ;
+				else
+					error ( new WhoisInformationException ( "Expected valid country name for block #$block_id, keyword #$keyword_id ($keyword), " .
+							"class {$this -> MyClass}, found \"$value\".", $this -> Contents ) ) ;
+				break ;
+
+			// Email type -
+			//	Checks that the supplied value is a valid email.
+			case	self::VALUE_TYPE_EMAIL :
+				if  ( $value  ==  '' )
+					$result		=  '' ;
+				else if  ( preg_match ( '/' . REGEX_EMAIL_ADDRESS . '/', $value ) )
+					$result		=  $value ;
+				else
+				   {
+					//error ( new WhoisInformationException ( "Expected valid email address for block #$block_id, keyword #$keyword_id ($keyword), " .
+					//		"class {$this -> MyClass}, found \"$value\".", $this -> Contents ) ) ;
+					$result		=  $value ;
+				    }
+				break ;
+
+			default :	
+				error ( new WhoisInformation ( "Unknown value type {$definition [ 'value-type' ]} for block #$block_id, keyword #$keyword_id ($keyword) " .
+						"of class {$this -> MyClass}.", $this -> Contents ) ) ;
+		    }
+
+		// All done, return
+		return ( $result ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    FindBlockType -
+		Given a keyword, tries to find the block and keyword index containing its definition.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  FindBlockType ( $keyword, $contents = null ) 
+	   {
+		$status		=  true ;
+
+		if  ( ! $contents )
+			$contents	=  $this -> Contents ;
+
+		foreach  ( $this -> ClassDefinitions [ 'data-blocks' ]  as  $be => $block )
+		   {
+			foreach  ( $block [ 'keywords' ]  as  $ke => $keyword_entry ) 
+			   {
+				foreach  ( $keyword_entry [ 'name' ]  as  $name )
+				   {
+					if  ( ! strcasecmp ( $name, $keyword ) )
+					   {
+						if  ( ! ArrayHelpers::InArray ( $block [ 'start-keywords' ], $keyword ) )
+							continue ;
+
+						return ( [ $be, $ke, $status ] ) ;
+					    }
+				    }
+			    }
+		    }
+
+		error ( new WhoisInformationException ( "Keyword '$keyword' does not start any block defined for class {$this -> MyClass}.",
+				$contents ) ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    FindInBlock -
+		Given a keyword, tries to find its definition in the specified block.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  FindInBlock ( $keyword, $block_type )
+	   {
+		foreach  ( $this -> ClassDefinitions [ 'data-blocks' ]   as  $bt => $block )
+		   {
+			if  ( $bt  !=  $block_type ) 
+				continue ;
+
+			foreach  ( $block [ 'keywords' ]  as  $ke => $keyword_entry ) 
+			   {
+				foreach  ( $keyword_entry [ 'name' ]  as  $name )
+				   {
+					if  ( ! strcasecmp ( $name, $keyword ) )
+						return ( $ke ) ;
+				    }
+			    }
+		    }
+		
+		return ( false ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    GetDefinition -
+		Gets the definition of a block entry.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  GetDefinition ( $block_id, $keyword_id ) 
+	   {
+		if  ( ! isset ( $this -> ClassDefinitions [ 'data-blocks' ] [ $block_id ] [ 'keywords' ] [ $keyword_id ] ) )
+			error ( new WhoisInformationException ( "Undefined definition #$keyword_id for block #$block_id.", $this -> Contents ) ) ;
+
+		$definition	=  $this -> ClassDefinitions [ 'data-blocks' ] [ $block_id ] [ 'keywords' ] [ $keyword_id ] ;
+
+		return ( $definition ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    IsComment -
+		Checks if the specified line is a comment.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  IsComment ( $line )
+	   {
+		if  ( isset ( $this -> ClassDefinitions [ 'comments' ] )  &&  count ( $this -> ClassDefinitions [ 'comments' ] ) )
+		   {
+			foreach ( $this -> ClassDefinitions [ 'comments' ]  as  $comment )
+			   {
+				$re	=  '/^\s*' . $comment . '/' ;
+
+				if  ( preg_match ( $re, $line ) )
+					return ( true ) ;
+			    }
+		    }
+
+		return ( false ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    IsDataLine -
+		Checks if the specified line is a data line, ie a line with a keyword and a value.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  IsDataLine ( $line ) 
+	   {
+		if  ( @preg_match ( $this -> ClassDefinitions [ 'keyword-match' ], $line, $match ) )
+			return ( $match ) ;
+		else
+			return ( false ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    IsIgnored -
+		Checks if the specified line is to be ignored.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  IsIgnored ( $line ) 
+	   {
+		foreach  ( $this -> ClassDefinitions [ 'ignore' ]  as  $search )
+		   {
+			if  ( String::IsRegex ( $search ) )
+			   {
+				if  ( preg_match ( $search, $line ) )
+					return ( true ) ;
+			    }
+			else if  ( stripos ( $line, $search )  !==  false )
+				return ( true ) ;
+		    }
+
+		return ( false ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    IsRangeStart -
+		Some whois entries for providers contain multiple ip range definitions ; they are delimited by a start
+		and a stop comment.
+		This function checks if the specified line is a "range start" comment.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  IsRangeStart ( $line ) 
+	   {
+		if  ( isset ( $this -> ClassDefinitions [ 'range-definition' ] [ 'start' ] ) )
+		   {
+			$search		=  $this -> ClassDefinitions [ 'range-definition' ] [ 'start' ] ;
+
+			if  ( String::IsRegex ( $search ) )
+			   {
+				if  ( preg_match ( $search, $line ) )
+					return ( true ) ;
+			    }
+			else if  ( stripos ( $line, $search )  !==  false )
+				return ( true ) ;
+		    }
+
+		return ( false ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    IsRangeEnd -
+		Some whois entries for providers contain multiple ip range definitions ; they are delimited by a start
+		and a stop comment.
+		This function checks if the specified line is a "range end" comment.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  IsRangeEnd ( $line ) 
+	   {
+		if  ( isset ( $this -> ClassDefinitions [ 'range-definition' ] [ 'end' ] ) )
+		   {
+			$search		=  $this -> ClassDefinitions [ 'range-definition' ] [ 'end' ] ;
+
+			if  ( String::IsRegex ( $search ) )
+			   {
+				if  ( preg_match ( $search, $line ) )
+					return ( true ) ;
+			    }
+			else if  ( stripos ( $line, $search )  !==  false )
+				return ( true ) ;
+		    }
+
+		return ( false ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    IsReferral -
+		Checks if the specified line introduces referral data.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  IsReferral ( $line ) 
+	   {
+		foreach  ( self::$ReferralDefinitions  as  $search )
+		   {
+			if  ( String::IsRegex ( $search ) )
+			   {
+				if  ( preg_match ( $search, $line ) )
+					return ( true ) ;
+			    }
+			else if  ( stripos ( $line, $search )  !==  false )
+				return ( true ) ;
+		    }
+
+		return ( false ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    Parse -
+		This function is called to categorize whois data into data blocks and individual keyword/value pairs.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  Parse ( $contents )
+	   {
+		// Split supplied contents into individual lines
+		$lines		=  explode ( "\n", $contents ) ;
+		$line_count	=  count ( $lines ) ;
+
+		// Variables
+		$ranges				=  [] ;			// Range definitions, for multiple provider entries
+		$current_range			=  [] ;			// Current range
+		$current_block			=  [] ;			// Current block in current range
+		$current_block_type		=  false ;		// Current block type id of current block in current range
+		$current_block_keyword_id	=  false ;		// Current keyword index in current block
+		$disjoint_block			=  [] ;			// Disjoint block data
+		$disjoint_block_type		=  false ;		// Disjoint block type (if any)
+
+		// Loops through whois data lines
+		for  ( $i = 0 ; $i  <  $line_count ; $i ++ )
+		   {
+			$line	=  trim ( $lines [$i] ) ;
+
+			// Ignore empty lines
+			if  ( ! $line )
+			   {
+				// If the 'line-breaks' entry is set to true, this means that an empty line ends a data block
+				if  ( $this -> ClassDefinitions [ 'line-breaks' ] )
+				   {
+					if  ( $current_block_type )
+						$current_range []	=  [ 'type' => $current_block_type, 'data' => $current_block ] ;
+
+					$current_block			=  [] ;
+					$current_block_type		=  false ;
+					$current_block_keyword_id	=  false ;
+				    }
+
+				continue ;
+			    }
+
+			// Process ignored lines
+			if  ( $this -> IsIgnored ( $line ) )
+				continue ;
+
+			// Multi-ranges results
+			if  ( $this -> IsRangeStart ( $line )  ||  $this -> IsRangeEnd ( $line ) )
+			   {
+				if  ( $current_block_type )
+					$current_range []	=  [ 'type' => $current_block_type, 'data' => $current_block ] ;
+
+				if  ( $disjoint_block_type )
+					$current_range []	=  [ 'type' => $disjoint_block_type, 'data' => $disjoint_block ] ;
+
+				if  ( $current_range )
+					$ranges []	=  $current_range ;
+
+				$current_range			=  [] ;
+				$current_block			=  [] ;
+				$current_block_type		=  false ;
+				$current_block_keyword_id	=  false ;
+				$disjoint_block			=  [] ;
+				$disjoint_block_type		=  false ;
+			    }
+
+			// Handle optional referral data
+			if  ( $this -> IsReferral ( $line ) )
+			   {
+				$referral_data		=  array_slice ( $lines, $i + 1 ) ;
+				$this -> ReferralData	=  implode ( "\n", $referral_data ) ;
+
+				break ;
+			    }
+
+			// Ignore comments 
+			if  ( $this -> IsComment ( $line ) )
+				continue ;
+
+			// Well, ignore anything that is not a data line
+			if  ( ! ( $match = $this -> IsDataLine ( $line ) ) )
+			   {
+				continue ;
+			    }
+		
+			// Get keyword and value from current data line
+			$keyword	=  $match [ 'keyword' ] ;
+			$value		=  $match [ 'value' ] ;
+
+			// No data block started yet - Locate the first keyword in the whois definitions
+			if  ( $current_block_type  ===  false )
+			   {
+				$block_info		=  $this -> FindBlockType ( $keyword, $contents ) ;
+				$is_disjoint		=  $this -> ClassDefinitions [ 'data-blocks' ] [ $block_info [0] ] [ 'disjoint' ] ;
+
+				// Disjoint block : collect information in the disjoint array
+				if  ( $is_disjoint )
+				   {
+					if  ( $current_block_type  !==  false )
+						$current_range []	=  [ 'type' => $current_block_type, 'data' => $current_block ] ;
+
+					$disjoint_block []	=
+					   [
+						'type'			=>  $block_info [1],
+						'keyword'		=>  $keyword,
+						'text'			=>  $value,
+						'value'			=>  $this -> Evaluate ( $keyword, $value, $block_info [0], $block_info [1] ) 
+					    ] ;
+
+					$disjoint_block_type		=  $block_info [0] ;
+					$current_block_type		=  false ;
+					$current_block			=  [] ;
+				    }
+				// Regular information
+				else if  ( $block_info [2] ) 
+				   {
+					$current_block	=
+					   [[
+						'type'			=>  $block_info [1],
+						'keyword'		=>  $keyword,
+						'text'			=>  $value,
+						'value'			=>  $this -> Evaluate ( $keyword, $value, $block_info [0], $block_info [1] ) 
+					     ]] ;
+
+					$current_block_type		=  $block_info [0] ;
+					$current_block_keyword_id	=  $block_info [1] ;
+				    }
+				// Keyword not found 
+				else
+				   {
+					error ( new WhoisInformationException ( "Keyword '$keyword' matches block entry #{$block_info [0]}, keyword entry #{$block_info [1]} " .
+							"for class {$this -> MyClass}, but it does not belong to the list of authorized start keywords for this block.",
+							$contents ) ) ;
+				    }
+			    }
+			// A data block has been started - find the appropriate keyword entry in it
+			else
+			   {
+				$current_block_keyword_id	=  $this -> FindInBlock ( $keyword, $current_block_type ) ;
+				$is_disjoint			=  $this -> ClassDefinitions [ 'data-blocks' ] [ $current_block_type ] [ 'disjoint' ] ;
+
+				// No entry found - Check if the current keyword does not start a new data block 
+				if  ( $current_block_keyword_id  ===  false )
+				   {
+					$current_range []	=  [ 'type' => $current_block_type, 'data' => $current_block ] ;
+					$current_block		=  [] ;
+
+					// If line breaks separate data blocks, then the current keyword does not belong to the block definition
+					if  ( $this -> ClassDefinitions [ 'line-breaks' ] )
+					   {
+						error ( new WhoisInformationException ( "Keyword '$keyword' does not belong to block #$current_block_type " .
+								"for class {$this -> MyClass}.", $contents ) ) ;
+					     }
+					// Otherwise, scanning will be a little bit more fuzzy...
+					else
+					   {
+						error ( "TODO: implement scanning without line breaks" ) ;
+						$block_info	=  $this -> FindBlockType ( $keyword, $contents ) ;
+					    }
+				     }
+
+				// Disjoint block : continue collecting
+				if  ( $is_disjoint )
+				    {
+					$disjoint_block []	=
+					   [
+						'type'			=>  $current_block_keyword_id,
+						'keyword'		=>  $keyword,
+						'text'			=>  $value,
+						'value'			=>  $this -> Evaluate ( $keyword, $value, $disjoint_block_type, $current_block_keyword_id ) 
+					    ] ;
+				     }
+				// Otherwise collect in the regular data block
+				else
+				   {
+					$current_block []	=  
+					   [
+						'type'			=>  $current_block_keyword_id,
+						'keyword'		=>  $keyword,
+						'text'			=>  $value,
+						'value'			=>  $this -> Evaluate ( $keyword, $value, $current_block_type, $current_block_keyword_id ) 
+					    ] ;
+				    }
+			    }
+		     }
+
+		// If a block has been started, add it to the current range
+		if  ( $current_block_type )
+			$current_range []	=  [ 'type' => $current_block_type, 'data' => $current_block ] ;
+
+		// If a disjoint block has been found, add it to the current range
+		if (  $disjoint_block_type )
+			$current_range []	=  [ 'type' => $disjoint_block_type, 'data' => $disjoint_block ] ;
+
+		// Same for ip address range
+		if  ( $current_range )
+			$ranges []	=  $current_range ;
+
+		// Check each individual range and block inside the range
+		foreach  ( $ranges  as  $blocks )
+		   {
+			$this -> CheckBlocks ( $blocks ) ;
+
+			foreach  ( $blocks  as  $block )
+			   {
+				$definition  =  $this -> ClassDefinitions [ 'data-blocks' ] [ $block [ 'type' ] ] ;
+				$this -> CheckValues ( $block, $definition ) ;
+			    }
+		    }
+
+		// Instanciate the range objects
+		foreach  ( $ranges  as  $range )
+			$this -> Ranges []	=  new WhoisInformationRange ( $this, $range ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    __tostring -
+		Returns the reconstituted whois information as a string.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __tostring ( )
+	   {
+		$result		=  '' ;
+
+		foreach  ( $this -> Ranges  as  $range ) 
+			$result		.=  ( string ) $range . "\n" ;
+
+		return ( $result ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+		Interfaces implementations.
+  
+	 *-------------------------------------------------------------------------------------------------------------*/
+
+	 // Countable interface
+	 public function  Count ( )
+	    { return ( count ( $this -> Ranges ) ) ; }
+		
+	 
+	 // IteratorAggregate interface
+	 public function  getIterator ( )
+	    { return ( new \ArrayIterator ( $this -> Ranges ) ) ; }
+
+	// ArrayAccess interface
+	public function  offsetExists ( $offset )
+	   {  return ( $offset  >=  0  &&  $offset  <  count ( $this -> Ranges ) ) ; }
+
+	public function  offsetGet ( $offset )
+	   { return ( $this -> Ranges [ $offset ] ) ; }
+
+	public function  offsetSet ( $offset, $value )
+	   { error ( new \Thrak\System\UnsupportedOperationException ( ) ) ; }
+
+	public function  offsetUnset ( $offset )
+	   { error ( new \Thrak\System\UnsupportedOperationException ( ) ) ; }
+    }

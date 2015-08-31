@@ -1,0 +1,57 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        ContentType.phpclass
+
+    DESCRIPTION
+        Http Content-Type: header.
+
+    AUTHOR
+        Christian Vigh, 05/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/05/27]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace  	Thrak\Network\RfcProtocols\Http ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces and classes
+use     Thrak\System\Object ;
+use	Thrak\Network\RfcProtocols\Http\HttpStandardHeader ;
+use	Thrak\Types\Encoder ;
+
+
+/*==============================================================================================================
+
+    HttpContentTypeHeader class -
+        Http ContentType header implementation (http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.17).
+
+ 	Examples :
+ 		ContentType: text/html; charset=ISO-8859-4
+
+  ==============================================================================================================*/
+class	HttpContentTypeHeader		extends  HttpStandardHeader
+   {
+	public function  __construct ( $header )
+	   {
+		parent::__construct ( 'Content-Type', $header, self::HTTP_HEADER_STRING | self::HTTP_HEADER_PARAMETERS ) ;
+	    }
+ 	
+	
+	protected function  CheckContent ( )
+	   {
+		if  ( isset  ( $this -> Field -> Parameters [ 'charset' ] ) )
+		   {
+			$cset	=  $this -> Field -> Parameters [ 'charset' ] -> Value ;
+			$name	=  Encoder::GetEncodingName ( $cset ) ;
+			
+			if  ( $name  ===  false )
+				$this -> ReportError ( "Invalid character set name \"$cset\"" ) ;
+		    }
+	    }
+   }

@@ -1,0 +1,125 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        Table.phpclass
+
+    DESCRIPTION
+	A wrapper for encapsulating tables with a generic class.
+ 
+    AUTHOR
+        Christian Vigh, 06/2015.
+
+    HISTORY
+    [Version : 1.0]	[Date : 2015/06/08]     [Author : CV]
+        Initial version.
+
+    [Version : 1.0.1]	[Date : 2015/07/07]     [Author : CV]
+	. Added the $comment parameter to the class constructor.
+
+ **************************************************************************************************************/
+namespace	Thrak\Database ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces & objects
+use	Thrak\System\Object ;
+use     Thrak\IO\Path ;
+use	Thrak\Types\String ;
+
+
+/*==============================================================================================================
+
+    Table class -
+        Provides an abstraction layer for managing a database table.
+
+  ==============================================================================================================*/
+abstract class  Table		extends  Object 
+   {
+	// Table name
+	public		$Name ;
+	// Associated database object
+	public		$Database ;
+	// Comment
+	protected	$Comment ;
+	
+	
+	/*==============================================================================================================
+	
+	    Constructor -
+	        Creates a table object.
+	
+	  ==============================================================================================================*/
+	public function  __construct ( $table_name, $comment = '', $database = null, $recreate = false )
+	   {
+		global		$Database ;
+		
+		
+		parent::__construct ( ) ;
+		$this -> Name		=  $table_name ;
+		$this -> Database	=  ( $database ) ?  $database : $Database ;
+		$this -> Comment	=  $this -> Database -> Escape ( $comment ) ;
+		$this -> EnsureExists ( $recreate ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    EnsureExists -
+	        Ensures that the encapsulated table exists.
+	
+	  ==============================================================================================================*/
+	protected function  EnsureExists ( $drop_before = false )
+	   {
+		if  ( $drop_before )
+			$this -> Drop ( ) ;
+		
+		$this -> Create ( ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    Create -
+	        Effectively creates the table. Must be implemented by derived classes.
+	
+	  ==============================================================================================================*/
+	public abstract function  Create ( ) ;
+	
+	
+	/*==============================================================================================================
+	
+	    Drop -
+	        Deletes the encapsulated table.
+	
+	  ==============================================================================================================*/
+	public function  Drop ( )
+	   {
+		$this -> Database -> Execute ( "DROP TABLE IF EXISTS {$this -> Name}" ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    Optimize -
+	        Optimizes the encapsulated table.
+	
+	  ==============================================================================================================*/
+	public function  Optimize ( )
+	   {
+		$this -> Database -> Execute ( "OPTIMIZE TABLE {$this -> Name}" ) ;
+	    }
+	    
+	    
+	/*==============================================================================================================
+	
+	    Truncate -
+	        Truncates the encapsulated table. Returns the number of deleted rows.
+	
+	  ==============================================================================================================*/
+	public function  Truncate ( )
+	   {
+		return ( $this -> Database -> Truncate ( $this -> Name ) ) ;
+	    }
+    }

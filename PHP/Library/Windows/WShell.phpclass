@@ -1,0 +1,919 @@
+<?php
+
+/***************************************************************************************************
+
+    NAME
+	WShell.phpclass
+
+    DESCRIPTION
+	Windows OS-specific functions.
+
+    AUTHOR
+	Christian Vigh, 03/2010.
+
+    HISTORY
+    [Version : 1.0]		[Date : 2010/03/21]		[Author : CV]
+	Initial release.
+
+    [Version : 2.0]		[Date : 2010/03/21]		[Author : CV]
+	. Adapted to the version 2 of the Thrak library.
+
+    [Version : 2.0.1]		[Date : 2014/10/07]		[Author : CV]
+	. Removed the useless RegistryShortcut function.
+
+    [Version : 2.0.2]		[Date : 2015/03/13]		[Author : CV]
+	. Added the AppActivate(), Exec() and SendKeys() methods.
+
+ ***************************************************************************************************/
+namespace 	Thrak\Windows ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+use  	Thrak\System\Object ;
+use	Thrak\Windows\AbstractWindowsBase ;
+use     Thrak\Types\String ;
+use     Thrak\Types\String\Formatting ;
+
+
+/*===========================================================================================
+
+    WShell class -
+	Provides facilities to uses the WShell object.
+
+  ===========================================================================================*/
+class  WShell extends AbstractWindowsBase
+   {
+	// WScript object
+	public  		$ShellInstance 		=  null ;
+	// Clipboard object
+	public  		$Clipboard		=  null ;
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Class constructor.
+
+	    PROTOTYPE
+		$shell = new WShell ( ) ;
+
+	    DESCRIPTION
+		Gets an instance of a Windows WShell object. Reuse existing instance if needed.
+
+	    RETURN VALUE
+		An instance of a WShell object.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __construct ( )
+	   {
+		parent::__construct ( ) ;
+		$this -> ShellInstance = new \COM ( "WScript.Shell" ) ;
+  	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	  	AppActivate - Activates a running application.
+
+	    PROTOTYPE
+	    	WShell::AppActivate ( $app ) ;
+
+	    DESCRIPTION
+		Activates the specified running application.
+	  
+	    PARAMETERS
+	 	$app (integer or string) -
+	 		Either the process ID of the application, or the application title.
+	 		In determining which application to activate, the specified title is compared 
+	 		to the title string of each running application. If no exact match exists, any 
+	 		application whose title string begins with title is activated. If an application 
+	 		still cannot be found, any application whose title string ends with title is 
+	 		activated. If more than one instance of the application named by title exists, 
+	 		one instance is arbitrarily activated.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  AppActivate ( $app )
+	   {
+		$this -> ShellInstance -> AppActivate ( $app ) ;
+	    }
+	
+	
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	  	Exec - Executes a command as a background task.
+
+	    PROTOTYPE
+	    	$process = WShell::Exec ( $command ) ;
+
+	    DESCRIPTION
+		Executes a command in background
+	  
+	   RETURN VALUE
+	 	Return a WshScriptExec object.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  Exec ( $command )
+	   {
+		$process	=  $this -> ShellInstance -> Exec ( $command ) ;
+		
+		return ( $process ) ;
+	    }
+	
+	
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	  	Execute - Executes a command as a background task.
+
+	    PROTOTYPE
+	    	WShell::Execute ( $command, $wait = false ) ;
+
+	    DESCRIPTION
+		Executes a command in background if the $wait parameter is false.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  Execute ( $command, $wait = false )
+	   {
+		$this -> ShellInstance -> Run ( $command, 0, $wait ) ;
+	    }
+
+	
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	  	SendKeys - Send keys to the application that currently has the focus.
+
+	    PROTOTYPE
+	    	WShell::SendKeys ( $sequence, $pause_between_keys = 0, $default_pause = 100 ) ;
+
+	    DESCRIPTION
+		Send keys to the application that currently has the focus. It provides some additional
+		features compared to the WShell.SendKeys() method, and overcomes some quirks.
+	 	Backward compatibility has been preserved (ie, any string passed to the Windows API
+	 	SendKeys method will work when passed to the WShell::SendKeys one).
+	 	Enhancements are signalled by the "[EXTENSION]" string.
+	  
+	 	- Simple characters, except those listed below, are sent as is : "abc" sends the 
+	 	  characters "a", "b" and "c"
+	 	- The following characters have special meanings, they are modifiers :
+	 		. + : Simulates a keypress on the SHIFT key. For example, the string "+a" will
+	 		      send capital letter A.
+	 		. ^ : CTRL key.
+	 		. % : ALT key.
+		  Note that duplicate modifiers will be removed.
+		  The following characters also have special meanings :
+	 		. ~ : Synonym for the {ENTER} key.
+	 	- {} construct : 
+	 		. Can be used to specify a special key that have no Ascii equivalent ; the list
+	 		  of special keys is given below :
+				BACKSPACE	{BACKSPACE},	{BS}, or	{BKSP}
+				BREAK		{BREAK}
+				CAPS LOCK	{CAPSLOCK} or [EXTENSION] {CAPS}
+				DEL or DELETE	{DELETE} or	{DEL}
+				DOWN ARROW	{DOWN}
+				END		{END}
+				ENTER		{ENTER} or ~
+				ESC		{ESC} or [EXTENSION] {ESCAPE}
+				HELP		{HELP}
+				HOME		{HOME}
+				INS or INSERT	{INSERT} or	{INS}
+				LEFT ARROW	{LEFT}
+				NUM LOCK	{NUMLOCK} or [EXTENSION] {NUM}
+				PAGE DOWN	{PGDN} or [EXTENSION] {PAGEDOWN}
+				PAGE UP		{PGUP} or [EXTENSION] {PAGEUP}
+				PRINT SCREEN	{PRTSC}
+				RIGHT ARROW	{RIGHT}
+				SCROLL LOCK	{SCROLLLOCK}
+				SPACE		[EXTENSION] {SPACE} or {SP}
+				TAB		{TAB}
+				UP ARROW	{UP}
+				F1		{F1}
+				F2		{F2}
+				F3		{F3}
+				F4		{F4}
+				F5		{F5}
+				F6		{F6}
+				F7		{F7}
+				F8		{F8}
+				F9		{F9}
+				F10		{F10}
+				F11		{F11}
+				F12		{F12}
+				F13		{F13}
+				F14		{F14}
+				F15		{F15}
+				F16		{F16}
+	 			PAUSE		[EXTENSION] Introduces a pause whose duration is
+	 					given by the $default_pause parameter :
+	 						{PAUSE}
+	 					An optional number of milliseconds can be given after
+	 					the "PAUSE" keyword to override $default_pause value :
+	 						{PAUSE 100}
+	 					Internally, SendKeys() will be called up to the first
+	 					{PAUSE} construct, then the usleep() function, then a
+	 					second SendKeys() call.
+	 		. Must be used to escape the following characters : +^%~(){}.
+			  - [EXTENSION] MS SendKeys() requires that the characters [] be escaped, 
+	 		    although they do not have any special meaning. They can be specified as is
+	 		    with the WShell::SendKeys() method.
+	 		. Can be used to specify a repeat count. For example, {a 10} will send 10
+	 		  times the letter "a".
+	 		  - [EXTENSION] This notation can be used on special keys : {F1 10} will send 10
+	 		    times the F1 key.
+			  - [EXTENSION] A space can be escaped such as in : {F1\ 10} or {F1\s10}, which
+			    will send the string "F1 10" without any preprocessing on the "F1" token.
+	 		  - [EXTENSION] Strings longer than 1 character can also be sent :
+	 			{abc 3}
+	 		    will send the string "abcabcabc"
+	 		  - [EXTENSION] Strings to be sent as is but which also are a special key name
+	 		    can be prefixed with the backslash character :
+	 			{\F10}
+	 		    will send the string "F10", not the F10 key code.
+			  - [EXTENSION] Although the $pause_between_keys parameter applies to key repetitions,
+			    a specific timing can also be specified after a semicolon : {F1 10:100}
+	 		. [EXTENSION] Any modifier (+, ^ or %) before a {} construct will apply to all
+	 		  the characters within it. For example :
+	 			+{abc}
+	 		  will send the key sequences SHIFT+A, SHIFT+B and SHIFT+C. This is the equivalent
+	 		  to the +(abc) construct.
+	 	- () grouping construct :
+	 		Allows for applying a key modifier to a group of letters :
+	 			+(abc)
+	 		will send the key sequences SHIFT+A, SHIFT+B and SHIFT+C.
+			[EXTENSION] Special characters inside a "(...)" construct need not to be escaped.
+			Note that backslashes are not interpreted in such a construct.
+	 	- [EXTENSION] Any character, special or not, can be escaped with the backslash character.
+	 	- [EXTENSION] PHP code can be specified using the construct traditional constructs
+	 	  "<?" or "<?php" and "?>". The character "<" must be escaped with a backslash if it
+	 	  is to be sent as is.
+		- [EXTENSION] The backslash character can be used to escape the character following.
+	 	  "\r" and "\n" will be replaced with {ENTER}, "\t" with {TAB}, "\\" with "\". Any 
+	 	  other character will be processed without any interpretation.
+	 		  
+	    PARAMETERS 
+	 	$sequence (string) -
+	 		Sequence of keys to be sent.
+	  
+	 	$pause_between_keys (integer) -
+	 		Number of milliseconds to wait before each keystroke.
+	  
+	 	$default_pause (integer) -
+	 		Default number of milliseconds to wait for each {PAUSE} construct.
+	  
+	   RETURNS
+	 	The sequences sent to the SendKeys() API function. Note that the special notation
+	 	{PAUSE [x]}, where "x" is a number of milliseconds, is not directly sent to SendKeys
+	 	but rather interpreted to introduce a pause between two keys.
+	  
+	   NOTES
+	 	The parsing process has two phases :
+	 	- The first phase translates character sequences into "SendKeys" independent format
+	 	- The second phase converts the sequences in independent format into SendKeys sequences
+
+	   TODO
+	 	- Interpret escaped characters (with backslash) in the "{...}" construct. This implies
+	 	  splitting the input sequence into as many output sequences as necessary.
+	 	- Interpret "<?php ... ?>" constructs
+	  
+	 --------------------------------------------------------------------------------------------*/
+	// Special keys - currently only the {SPACE} and {SP} strings are extensions to the SendKeys() method
+	private static		$SpecialKeys	=
+	   [
+		"BACKSPACE"	=>  "{BACKSPACE}",
+		"BKSP"		=>  "{BKSP}",
+		"BS"		=>  "{BS}",
+		"BREAK"		=>  "{BREAK}",
+		"BRK"		=>  "{BREAK}",
+		"CAPSLOCK"	=>  "{CAPSLOCK}",
+		"CAPS"		=>  "{CAPS}",
+		"DELETE"	=>  "{DELETE}",
+		"DEL"		=>  "{DEL}",
+		"DOWN"		=>  "{DOWN}",
+		"END"		=>  "{END}",
+		"ENTER"		=>  "{ENTER}",
+		"ESC"		=>  "{ESC}",
+		"ESCAPE"	=>  "{ESC}",
+		"HELP"		=>  "{HELP}",
+		"HOME"		=>  "{HOME}",
+		"INS"		=>  "{INS}",
+		"INSERT"	=>  "{INSERT}",
+		"LEFT"		=>  "{LEFT}",
+		"NUMLOCK"	=>  "{NUMLOCK}",
+		"NUM"		=>  "{NUMLOCK}",
+		"PGDN"		=>  "{PGDN}",
+		"PAGEDOWN"	=>  "{PGDN}",
+		"PAGEUP"	=>  "{PGUP}",
+		"PGUP"		=>  "{PGUP}",
+		"PRTSC"		=>  "{PRTSC}",
+		"RIGHT"		=>  "{RIGHT}",
+		"SCROLLLOCK"	=>  "{SCROLLOCK}",
+		"SPACE"		=>  " ",
+		"SP"		=>  " ",
+		"TAB"		=>  "{TAB}",
+		"UP"		=>  "{UP}",
+		"F1"		=>  "{F1}",
+		"F2"		=>  "{F2}",
+		"F3"		=>  "{F3}",
+		"F4"		=>  "{F4}",
+		"F5"		=>  "{F5}",
+		"F6"		=>  "{F6}",
+		"F7"		=>  "{F7}",
+		"F8"		=>  "{F8}",
+		"F9"		=>  "{F9}",
+		"F10"		=>  "{F10}",
+		"F11"		=>  "{F11}",
+		"F12"		=>  "{F12}",
+		"F13"		=>  "{F13}",
+		"F14"		=>  "{F14}",
+		"F15"		=>  "{F15}",
+		"F16"		=>  "{F16}"
+	    ] ;
+	
+	
+	// __sendkeys_error -
+	//	Issues an error message upon first syntax error.
+	private function  __sendkeys_error ( $text, $column, $message )
+	   {
+		$result		=  Formatting::InsertTextAtColumn ( $text, "^ $message", $column + 1 ) ;
+		
+		error ( new \Thrak\System\ParseException ( "SendKeys input syntax error :\n\t" . str_replace ( "\n", "\n\t", $result ) ) ) ;
+	    }
+	
+	
+	// __sendkeys_escape -
+	//	Processes character escaped after a backslash.
+	private function  __sendkeys_escape ( $ch, $modifiers )
+	   {
+		switch  ( strtolower ( $ch ) )
+		   {
+			// \n or \r : Expands to {ENTER}
+			case	'n' :
+			case	'r' :
+				return ( [ 'text' => '{ENTER}', 'modifiers' => $modifiers, 'escape' => false, 'special' => true ] ) ;
+							
+			// \t : Expands to {TAB}
+			case	't' :
+				return ( [ 'text' => '{TAB}', 'modifiers' => $modifiers, 'escape' => false, 'special' => true ] ) ;
+							
+			// \s : Expands to a space
+			case	's' :
+				return ( [ 'text' => ' ', 'modifiers' => $modifiers, 'escape' => false ] ) ;
+					
+			// Other : check if character needs to be escaped
+			default :
+				return ( [ 'text' => $ch, 'modifiers' => $modifiers, 'escape' => true ] ) ;
+		     }
+	    }
+	
+	
+	public function  SendKeys ( $sequence, $pause_between_keys = 0, $default_pause = 100 )
+	   {
+		// Characters that need to be escaped using the {} construct
+		static		$escaped_chars	=  '+^%~[](){}' ;
+		
+		// Final sendkeys sequences
+		$sequences			=  [] ;
+		$sequence_length		=  strlen ( $sequence ) ;
+		
+		// Modifiers (+^%) that will be applicable to next character or next construct
+		$modifiers			=  '' ;
+		
+		// Loop through input sequence
+		for  ( $i = 0 ; $i  <  $sequence_length ; $i ++ )
+		   {
+			$ch	=  $sequence [$i] ;
+			
+			// The big switch for processing input characters
+			switch  ( $ch )
+			   {
+				// Escaped character 
+				case	'\\' :
+					// Error if backslash is the last character of the input sequence
+					if  ( $i + 1  >=  $sequence_length )
+						$this -> __sendkeys_error ( $sequence, $i, 'End of string found after backslash character' ) ;
+					
+					// Get next character
+					$i ++ ;
+					$ch		=  $sequence [$i] ;
+					$sequences []	=  $this -> __sendkeys_escape ( $ch, $modifiers ) ;
+					$modifiers	=  '' ;
+					break ;
+						
+				// Modifier characters : collect them for the next loop turn
+				case	'+' :
+				case	'^' :
+				case	'%' :
+					$modifiers	=  String::RemoveDuplicateCharacters ( "$modifiers$ch" ) ;
+					break ;
+					
+				// Tilde : synonym for {ENTER} ; make sure the character won't be escaped during second pass
+				case	'~' :
+					$sequences []	=  [ 'text' => '~', 'modifiers' => $modifiers, 'escape' => false ] ;
+					$modifiers	=  '' ;
+					break ;
+					
+				// "(..)" construct : a sequence of keys on which modifiers apply
+				case	'(' :
+					// Opening parenthesis without a closing one
+					if  ( $i + 1  >=  $sequence_length )
+						$this -> __sendkeys_error ( $sequence, $sequence_length, 'Missing closing parenthesis.' ) ;
+					
+					$text		=  '' ;			// Text to be processed
+					$found_closing	=  false ;		// True if closing parenthesis has been found
+					$j		=  $i + 1 ;		// Current input character index
+					
+					// Loop through key sequence until a closing parenthesis or some other crap has been found
+					while  ( $j  <  $sequence_length )
+					   {
+						$ch	=  $sequence [$j] ;
+							
+						// Allow for escape sequences
+						if  ( $ch  ==  '\\' )
+						   {
+							// If the sequence ends with a backslash, fire the developer please...
+							if   ( $j + 1  >=  $sequence_length )
+								$this -> __sendkeys_error ( $sequence, $j, 'End of string found after backslash character' ) ;
+							
+							$ch	=  $sequence [ ++ $j ] ;
+						
+							// If some text has already been collected, then isolate it from the rest and put it in the sequence list
+							if (  $text )
+							   {
+								$sequences []	=  
+								   [ 
+									'text'		=>  "($text)", 
+									'modifiers'	=>  $modifiers, 
+									'escape'	=>  false, 
+									'special'	=>  true 
+								    ] ;
+								$text		=  '' ;
+							    }
+
+							// Process the escaped character
+							$sequences []	=  $this -> __sendkeys_escape ( $ch, $modifiers ) ;
+						    }
+						// Closing parenthesis, job is done
+						else if  ( $ch  ==  ')' )
+						   {
+							$found_closing	=  true ;
+							break ;
+						    }
+						// Other character : collect it
+						else
+							$text	.=  $ch ;
+						
+						$j ++ ;
+					    }
+					
+					// Complain if no closing parenthesis found...
+					if  ( ! $found_closing )
+						$this -> __sendkeys_error ( $sequence, $sequence_length, 'Missing closing parenthesis.' ) ;
+					// ... or if the "(...)" construct is empty
+					else if  ( $i + 1  ==  $j )
+						$this -> __sendkeys_error ( $sequence, $j, "Empty \"(...)\" construct." ) ;
+					
+					if  ( $text ) 
+						$sequences []	=  
+						   [ 
+							'text'		=>  "($text)", 
+							'modifiers'	=>  $modifiers, 
+							'escape'	=>  false, 
+							'special'	=>  true 
+						    ] ;
+
+					$i		=  $j ;
+					$modifiers	=  '' ;
+					break ;
+					
+				// "{..}" construct
+				case	'{' :
+					// Special constructs
+					if  ( ! substr_compare ( $sequence, '{{}', $i, 3 )  ||
+					      ! substr_compare ( $sequence, '{}}', $i, 3 ) )
+					   {
+						$sequences []	=  
+						   [ 
+							'text'		=>  substr ( $sequence, $i, 3 ), 
+							'modifiers'	=>  $modifiers, 
+							'escape'	=>  false, 
+							'special'	=>  true 
+						    ] ;
+							
+						$i += 2 ;
+						break ;
+					    }
+					
+					// If the string within the curly braces starts with a backslash, then all contents will be treated as is
+					$escaped_contents	=  false ;
+					
+					if  ( $i + 1  <  $sequence_length  &&  $sequence [$i + 1]  ==  '\\' )
+					   {
+						$escaped_contents	=  true ;
+						$i ++ ;
+					    }
+					
+					// Opening brace without a closing one
+					if  ( $i + 1  >=  $sequence_length )
+						$this -> __sendkeys_error ( $sequence, $sequence_length, 'Missing closing brace.' ) ;
+					
+					$text		=  '' ;			// Text to be processed
+					$found_closing	=  false ;		// True if closing parenthesis has been found
+					$j		=  $i + 1 ;		// Current input character index
+					
+					// Loop through key sequence until a closing brace or some other crap has been found
+					while  ( $j  <  $sequence_length )
+					   {
+						$ch	=  $sequence [$j] ;
+							
+						// Allow for escape sequences but don't process them at this point, just collect them
+						if  ( $ch  ==  '\\' )
+						   {
+							if   ( $j + 1  >=  $sequence_length )
+								$this -> __sendkeys_error ( $sequence, $j, 'End of string found after backslash character' ) ;
+							
+							$ch	=  $sequence [ ++ $j ] ;
+							$text  .=  '\\' . $ch ;
+						    }
+						// Closing parenthesis, job is done
+						else if  ( $ch  ==  '}' )
+						   {
+							$found_closing	=  true ;
+							break ;
+						    }
+						// Other character : collect it
+						else
+							$text	.=  $ch ;
+						
+						$j ++ ;
+					    }
+					
+					// Complain if no closing brace found...
+					if  ( ! $found_closing )
+						$this -> __sendkeys_error ( $sequence, $sequence_length, 'Missing closing brace.' ) ;
+					// ... or if the "{...}" construct is empty
+					else if  ( $i + 1  ==  $j )
+						$this -> __sendkeys_error ( $sequence, $j, "Empty \"{...}\" construct." ) ;
+					
+					// Analyze contents between braces (optional repeat count and pause time may happen)
+					static $brace_re	=  '#^
+									(?P<text> .*?)
+									(
+										\s
+										(?P<repeat> \d+)
+										(
+											:
+											(?P<pause> \d+)
+										 )?
+									 )?
+								    $#imsx' ;
+
+					preg_match ( $brace_re, $text, $match ) ;
+					$keytext	=  $match [ 'text' ] ;
+					$uppertext	=  strtoupper ( $keytext ) ;
+					$repeat		=  ( isset ( $match [ 'repeat' ] ) ) ?  $match [ 'repeat' ] : 1 ;
+					$pause		=  ( isset ( $match [ 'pause'  ] ) ) ?  $match [ 'pause'  ] : 0 ;
+					
+					// Unescaped contents : some preprocessing have to take place here
+					if  ( ! $escaped_contents )
+					   {
+						// Special {PAUSE x} construct
+						if  ( ! strncasecmp ( $uppertext, 'PAUSE', 5 ) )
+						   {
+							$sequences []	=  
+							   [ 
+								'text'		=>  '{PAUSE ' . $repeat . '}', 
+								'modifiers'	=>  $modifiers, 
+								'escape'	=>  false, 
+								'special'	=>  true
+							    ] ;
+						    }
+						// Special compound construct
+						else if  (  isset ( self::$SpecialKeys [ $uppertext ] ) )
+						   {
+							$sequences []	=  
+							   [ 
+								'text'		=>  self::$SpecialKeys [ $uppertext ],
+								'modifiers'	=>  $modifiers, 
+								'escape'	=>  false, 
+								'special'	=>  true,
+								'repeat'	=>  $repeat,
+								'pause'		=>  $pause
+							    ] ;
+						     }
+						// Other type of construct : consider it as a simple sequence of keys
+						else
+						   {
+							$sequences []	=  
+							   [ 
+								'text'		=>  $keytext, 
+								'modifiers'	=>  $modifiers, 
+								'escape'	=>  false, 
+								'special'	=>  true,
+								'repeat'	=>  $repeat,
+								'pause'		=>  $pause
+							    ] ;
+						     }
+					    }
+					// Escaped sequence : consider it as a simple sequence of keys
+					else
+					   {
+						$sequences []	=  
+						   [ 
+							'text'		=>  $keytext, 
+							'modifiers'	=>  $modifiers, 
+							'escape'	=>  false, 
+							'special'	=>  true,
+							'repeat'	=>  $repeat,
+							'pause'		=>  $pause
+						    ] ;
+					    }
+						
+					// Prepare for next loop
+					$i		=  $j ;
+					$modifiers	=  '' ;
+					break ;
+					
+				// Other : normal character, only check if it needs to be escaped
+				default :
+					$sequences []	=  [ 'text' => $ch, 'modifiers' => $modifiers, 'escape' => true ] ;
+					$modifiers	=  '' ;
+			    }
+		    }
+		
+		// If modifiers are remaining, they are applying on... nothing
+		if  ( $modifiers )
+			$this -> __sendkeys_error ( $sequence, $i - strlen ( $modifiers ),
+				"Input sequence ends with the modifier character(s) \"$modifiers\", which apply to nothing." ) ;
+		
+		// Convert input sequences in a format that the SendKeys API function can understand
+		$sendkey_sequences	=  [] ;
+		$current_sequence	=  '' ;
+		
+		foreach  ( $sequences  as  $entry )
+		   {
+			// Special {} forms
+			if  ( isset ( $entry [ 'special' ] ) )
+			   {
+				// A repeat count is present : demultiply the keystrokes
+				if  ( isset ( $entry [ 'repeat' ] ) )
+				   {
+					for  ( $i = 0 ; $i  <  $entry [ 'repeat' ] ; $i ++ )
+					   {
+						$sendkey_sequences []	=  $entry [ 'modifiers' ] . $entry [ 'text' ] ;
+						
+						// Take into account the optional pause time
+						if  ( $entry [ 'pause' ] )
+							$sendkey_sequences []	=  '{PAUSE ' . $entry [ 'pause' ] . '}' ;
+					    }
+				    }
+				// No repeat count : simply add this keystroke to the key sequences
+				else
+					$sendkey_sequences []	=  $entry [ 'modifiers' ] . $entry [ 'text' ] ;
+			    }
+			// Other forms
+			else
+			   {
+				$length		=  strlen ( $entry [ 'text' ] ) ;
+
+				// Sequences whose length is longer than 1 (typically originating from "(...)" constructs)
+				if  ( $length  >  1 )
+				   {
+					// Separate the sequence into a series of escaped/unescaped characters
+					$parts		=  [] ;
+					$part		=  '' ;
+					
+					for  ( $i  =  0 ; $i  <  $length ; $i ++ )
+					   {
+						$ch	=  $entry [ 'text' ] [$i] ;
+						
+						// Character is not to be escaped 
+						if  ( strpos ( $escaped_chars, $ch )  ===  false )
+							$part	.=  $ch ;
+						// Character must be escaped
+						else
+						   {
+							// Add previous character sequence if needed
+							if  ( $part )
+								$parts []	=  ( strlen ( $part )  ==  1 ) ? $part : "($part)" ;
+							
+							$part		=  '' ;
+							
+							// Then this escaped character
+							$parts []	=  '{' . $ch . '}' ;
+						    }
+					    }
+					
+					// If a previous character sequence remains, add it to the list
+					if  ( $part )
+						$parts []	=  ( strlen ( $part )  ==  1 ) ? $part : "($part)" ;
+					
+					// Now, add those individual escaped and unescaped slices to the output sequence
+					foreach  ( $parts  as  $part )
+						$current_sequence	.=  $entry [ 'modifiers' ] . $part ;
+				    }
+				// Single char that needs to be escaped
+				else if  ( $entry [ 'escape' ]  &&  strpos ( $escaped_chars, $entry [ 'text' ] )  !==  false )
+					$current_sequence	.=  $entry [ 'modifiers' ] . '{' . $entry [ 'text' ] . '}' ;
+				// Single char that is not a character to be escaped
+				else
+					$current_sequence	.=  $entry [ 'modifiers' ] . $entry [ 'text' ] ;
+
+				// Add last sequence (if any) to the list of sequences
+				if  ( $current_sequence )
+				   {
+					$sendkey_sequences []	=  $current_sequence ;
+					$current_sequence	=  '' ;
+				    }
+			    }	
+		    }
+		
+		// Loop through generated sequences
+		foreach  ( $sendkey_sequences  as  $entry )
+		   {
+			// Catch exceptions : a syntax error, even if corrected from input, can always throw a COM exception
+			try
+			   {
+				// Special case for the {PAUSE} sequence
+				if  ( preg_match ( '/{PAUSE ( \s+ (?P<duration> \d+) )?/imsx', $entry, $match ) )
+				   {
+					if  ( isset ( $match [ 'duration' ] ) )
+						usleep ( $match [ 'duration' ] * 1000 ) ;
+					else
+						usleep ( $default_pause * 1000 ) ;
+				    }
+				// Other cases
+				else
+				   {
+					$this -> ShellInstance -> SendKeys ( $entry ) ;
+					usleep ( $pause_between_keys * 1000 ) ;
+				    }
+			    }
+			catch ( com_exception  $e )		// Currently a COM exception does not appear to be catchable
+			   {
+				error ( new \Thrak\System\RuntimeException ( 
+						"The following sequence caused an exception :\n" .
+						"\t" . $entry . "\n" .
+						"Exception text is :\n" .
+						"\t" . $e -> getMessage ( ) . "\n" ) ) ;
+			    }
+		    }
+		
+		// All done, return
+		return ( $sendkey_sequences ) ;
+	    }
+		
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Registry - Access to the Windows registry.
+
+	    PROTOTYPE
+		$value		=  WShell::RegistryRead   ( $name ) ;
+		$status		=  WShell::RegistryWrite  ( $name, $value, $type ) ;
+		$status		=  WShell::RegistryDelete ( $name ) ;
+
+	    DESCRIPTION
+		Allows for simple access to the CrimsonWindows registry.
+
+	    PARAMETERS
+		$name (string) -
+			Name of the registry value to retrieved, set or delete. Individual elements
+			can either be separated by a slash or backslash character. If not reference
+			to a registry root is given (HKCU, HKLM, etc.) then "HKCU" is assumed.
+
+		$value (string) -
+			(RegistryWrite only) New value to be written.
+
+		$type (string) -
+			(RegistryWrite only). Specifies the type of the new registry key. It can be
+			any of the following values :
+
+			- WShell::REG_SZ :
+				String value.
+
+			- WShell::REG_DWORD :
+				Double-word value.
+
+			- WShell::REG_BINARY :
+				Binary value.
+
+			- WShell::REG_EXPAND_SZ :
+				Expandable string.
+
+	 --------------------------------------------------------------------------------------------*/
+
+	// Registry value types
+	const  	REG_SZ		=  "REG_SZ" ;
+	const	REG_DWORD	=  "REG_DWORD" ;
+	const	REG_BINARY	=  "REG_BINARY" ;
+	const   REG_EXPAND_SZ 	=  "REG_EXPAND_SZ" ;
+
+
+	// Preprocesses a key name to replace slashes with backslashes, and prepend the HKCU key root
+	// if no root has been specified
+	private function  __RegistryKey ( $key )
+	   {
+		$key = str_replace ( '/', '\\', $key ) ;
+
+		if  ( strncasecmp ( $key, "HK", 2 ) )
+		   {
+			if  ( $key{0}  !=  '\\' )
+				$root = '\\' ;
+			else
+				$root = "" ;
+
+			$key = "HKCU" . $root . $key ;
+		    }
+
+		return ( $key ) ;
+	    }
+
+
+	// Reads a registry value
+	public function  RegistryRead ( $key )
+	   {
+		$key   = $this -> __RegistryKey ( $key ) ;
+
+		return  ( $this -> ShellInstance -> RegRead ( $key ) ) ;
+	    }
+
+
+	// Writes a registry value
+	public function  RegistryWrite ( $key, $value, $type = self::REG_SZ )
+	   {
+		$key   = $this -> __RegistryKey ( $key ) ;
+
+		return  ( $this -> ShellInstance -> RegWrite ( $key, $value, $type ) ) ;
+	    }
+
+
+	// Delete a registry value
+	public function  RegistryDelete ( $key )
+	   {
+		$key   = $this -> __RegistryKey ( $key ) ;
+
+		return  ( $this -> ShellInstance -> RegDelete ( $key ) ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Clipboard functions.
+
+	 --------------------------------------------------------------------------------------------*/
+	// Clipboard formats
+	const 		CLIF_BITMAP	=  2 ;		// Bitmap
+	const		CLIF_METAFILE	=  3 ;		// Metafile (.WMF)
+	const		CLIF_DIB	=  8 ;		// Device-independent bitmap
+	const		CLIF_PALETTE	=  9 ;		// Color palette
+
+
+	// Gets the CrimsonWindows clipboard
+	private function  GetClipboard ( )
+	   {
+		if  ( ! $this -> Clipboard )
+			$this -> Clipboard = new \COM ( "clipbrd.Clipboard" ) ;
+
+		return ( $this -> __Clipboard ) ;
+  	    }
+
+	// Set clipboard text
+	public function  SetClipboardText  ( $text )
+	   {
+		$this -> GetClipboard ( ) ;
+		return ( $this -> Clipboard -> settext ( $text ) ) ;
+	    }
+
+
+	// Get clipboard text
+	public function  GetClipboardText  ( )
+	   {
+		$this -> GetClipboard ( ) ;
+	   	return ( $this -> Clipboard -> gettext ( ) ) ;
+	    }
+
+	// Clears clipboard
+	public function  ClearClipboard ( )
+	   {
+		$this -> GetClipboard ( ) ;
+	   	return ( $this -> Clipboard -> clear ( ) ) ;
+	    }
+
+	// Sets clipboard data
+	public function  SetClipboardData ( $object, $format )
+	   {
+		$this -> GetClipboard ( ) ;
+	   	return  ( $this -> Clipboard -> setdata ( $object, $format ) ) ;
+	    }
+
+	// Gets clipboard data
+	public function  GetClipboardData ( $format )
+	   {
+		$this -> GetClipboard ( ) ;
+		return ( $this -> Clipboard -> getdata ( $format ) ) ;
+	    }
+    }

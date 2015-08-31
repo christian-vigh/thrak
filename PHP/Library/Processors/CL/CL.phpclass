@@ -1,0 +1,2301 @@
+<?php
+/***************************************************************************************************
+
+    NAME
+	CL.phpclass
+
+    DESCRIPTION
+	Implements a command-line parameters collecting class.
+
+    AUTHOR
+     	Christian Vigh, 05/2011.
+
+    HISTORY
+    [Version : 1.0]	[Date : 2011/05/25]	[Author : CV]
+     	Initial version.
+
+   [Version : 2.0]	[Date : 2012/10/06]		[Author : CV]
+	Migrated to the Thrak library version 2.
+
+   [Version : 2.0.1]	[Date : 2015/02/11]		[Author : CV]
+	. Moved the --expressions definition from Numeric.phpclass to here.
+
+   [Version : 2.0.2]	[Date : 2015/02/11]		[Author : CV]
+	. Replaced each exception throwing with "error ( new CLException (...) )".
+
+   [Version : 2.0.3]	[Date : 2015/07/30]		[Author : CV]
+	. Removed environment variable expansion. Not sure it is absolutely needed.
+ 
+ ***************************************************************************************************/
+namespace 	Thrak\Processors\CL ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces & objects
+use 		Thrak\System\Object 		as  Object ;
+use 		Thrak\Processors\CL\CLException	as  CLException ;
+use 		Thrak\Types\String 		as  String ;
+use 		Thrak\Types\String\Convert ;
+use 		Thrak\Processors\PHP		as  PHP ;
+use 		Thrak\IO\Path 			as  Path ;
+use 		Thrak\IO\Console		as  Console ;
+use  		Thrak\IO\AsciiReport		as  AsciiReport ;
+use  		Thrak\System\Timer 		as  Timer ;
+
+
+/*==================================================================================================
+
+    CL class -
+	A class for collecting command-line options.
+	The class is able to handle argc/argv parameters, as well as an input string that contains
+	the command line itself.
+	It is also able to handle a command line supplied as a single string.
+
+	It recognizes the following 'special' parameters :
+
+	--help (or --?) :
+		Displays help information about the special parameters listed here.
+		The program is stopped after processing this option.
+
+	--phpinfo [keyword] :
+		Displays PHP information. The optional keyword can be a comma-separated list that can
+		contain the following keyword(s) :
+
+		'general' -
+			Displays general information (version, php.ini location, compilation time, etc.).
+		'credits' -
+			Credits information.
+		'configuration' (or 'config' or 'conf') :
+			Configuration information (local and global settings).
+		'modules' (or 'mods' or 'mod') :
+			Loaded modules.
+		'environment' (or 'env') :
+			Environment variables ($_ENV contents).
+		'variables' (or 'vars' or 'var') :
+			Predefined variables, such as $_SERVER, etc.
+		'license' (or 'lic') :
+			License information.
+		'all' :
+			Displays all information. This is equivalent to specifying the --phpinfo
+			option without any argument.
+
+	--phpini [value] :
+		Displays the specified PHP.INI value, or all values if no parameters has been
+		specified.
+
+	--phpmodules (or --phpmods) :
+		Displays loaded PHP modules.
+
+	--phpmodule name (or --phpmod) :
+		Displays extension functions for the specified module.
+
+	--thrakroot :
+		Displays the root path of the Thrak library.
+
+	--thrakconfig :
+		Displays the path of the Thrak library configuration file.
+
+	--thrakversion (or --thrakver) :
+		Displays the current Thrak library version.
+
+	--time (or --elapsed) :
+		Outputs elapsed time at the end of program execution.
+
+	--set varname=value :
+		Defines 'varname' to have the specified value as an environment variable during
+		program execution.
+
+	--unset varname :
+		Unsets the specified environment variable during program execution.
+		Limitations : no known way of unsetting an environment variable has been found in PHP.
+
+	--defined varname :
+		Runs the program only if the specified environment variable is defined.
+
+	--undefined varname :
+		Runs the program only if the specified environment variable is undefined.
+
+	--exists filename :
+		Runs the program only if the specified file exists.
+
+	--notexists filename :
+		Runs the program only if the specified file does not exist.
+
+	@file :
+		Reads further parameters from the specified file (the CommandLineOptions property
+		must have the CL_ALLOW_AT_NOTATION flag set).
+		The specified file can itself contain further '@file' references if the
+		CommandLineOptions property has the CL_EMBEDDED_AT flag set. An exception is thrown
+		if a circular file reference is detected.
+		Option files can contain C-style comments such as '// single-line comment' or
+		'/* multiline comment * /'.
+
+	@ :
+		A special notation that reads further arguments from standard input.
+		This notation is not authorized in files referenced by the '@file' notation.
+
+	--saveto (or --save) :
+		Saves the command-line options to the specified file. The default extension
+		is '.txt'.
+
+	--classes (or --class) :
+		Lists the defined classes.
+
+	--stdclasses (or --stdclass):
+		Lists the defined standard classes.
+
+	--userclasses (or --userclass) :
+		Lists the user-defined classes.
+
+	--functions (or --function, --funcs, --func) :
+		Lists all the defined functions.
+
+	--stdfunctions (or --stdfunction, --stdfuncs, --stdfunc) :
+		Lists the standard functions.
+
+	--userfunctions (or --userfunction, --userfuncs, --userfunc) :
+		Lists the user-defined functions.
+
+	--variables (or --variable, --vars, --var) :
+		Lists the program variables.
+
+	--constants (or --constant, --consts, --const) :
+		Lists the defined constants.
+
+	--stdconstants (or --stdconstant, --stdconsts, --stdconst) :
+		Lists the standard defined constants.
+
+	--userconstants (or --userconstant, --userconsts, --userconst) :
+		Lists the user-defined constants.
+
+	--interfaces (or --interface) :
+		Lists the defined interfaces.
+
+	--stdinterfaces (or --stdinterface) :
+		Lists the standard interfaces.
+
+	--userinterfaces (or --userinterface) :
+		Lists the user interfaces.
+
+	--dump [variable] :
+		Dumps the contents of the specified variable.
+		If no variable is specified, all the declared variables will be dumped.
+
+
+	--compress_statistics (or --cmpstats) :
+		Displays compression statistics, when removing comments and whitespaces.
+
+	--compress :
+		Outputs the contents of the called file after compression.
+
+	--class_definitions classname (or --class_definition, --class_defs, --classdefinitions, --classdefs, --class_definition, --class_def, --classdefinition, --classdef) :
+		Outputs class definitions (methods & properties) for the specified class.
+
+	--class_members classname (or --class_mbrs, --classmembers, --classmbrs, --class_member, --class_mbr, --classmember, --classmbr)
+	  (works also with 'properties', 'property', 'props' or 'prop' instead of 'mbr') :
+	  	Outputs class members for the specified class.
+
+	--class_methods (or --classmethods, --class_method, --classmethod) :
+		Outputs class methods for the specified class.
+
+	--include_tree (or --includetree, --inc_tree, --inctree) :
+		Displays the include tree.
+
+	--autoloaded_classes ( or --autoloaded, --ac ) :
+		Shows the classes that have been autoloaded.
+
+	All options are immediately processed and cause the program to stop, except the
+	following one :
+	--time
+	--saveto
+	--set
+	--unset
+
+  ==================================================================================================*/
+class CL  extends     Object
+		 implements  \ArrayAccess, \Countable, \Iterator
+   {
+   	// Command-line analysis options
+   	const	CL_ALLOW_AT_NOTATION		=  0x0001 ;	// Allows the '@file' notation, which reads the contents of the specified file
+	const	CL_EMBEDDED_AT			=  0x0002 ;	// The '@file' notation can be used within '@' files
+	const	CL_ALL_OPTIONS			=  0x0007 ;	// Shortcut for 'ALLOW_AT_NOTATION' and 'EMBEDDED_AT'
+
+
+	// Parser object
+	public 		$ParserObject			=  null ;
+	// Command-line as a string
+	public		$CommandLine ;
+	// Executable path and name
+	public		$ExecutablePath 		=  null ;
+	public		$ExecutableName 		=  null ;
+	// Indicates if a command has been supplied
+	public		$CommandIncluded		=  true ;
+	// Command-line analysis options
+	public		$CommandLineOptions		=  self::CL_ALL_OPTIONS ;
+	// Argc and Argv, including the executable name.
+	// Note that the foreach() instruction will start at offset 1 (ie, the first parameter) but
+	// the executable path can still be accessed through Argv[0] or $clobject [0]
+	public		$Argv				=  array ( ) ;
+	public		$Argc				=  0 ;
+	// Min and max number of arguments, not including the command line
+	public		$MinParameters			=  null ;
+	public		$MaxParameters			=  null ;
+	// Starting time
+	public		$StartTime ;
+	// Display hidden parameters ?
+	public		$DisplayHiddenParameters	=  false ;
+	// Save option required ?
+	private		$SaveTo				=  false ;
+	// Callback functions to be called if special parameters have been specified
+	private		$CallbackFunctions		=  null ;
+
+
+	// Special parameters. Each entry can have the following entries :
+	// - names (string or array of strings) :
+	//	List of parameter name and aliases
+	// - help (string or array of strings) :
+	//	Parameter help
+	// - callback (string or callback) -
+	//	Callback function to be called when the parameter is encountered on the command line.
+	//	Private CL object functions can be specified.
+	// - exit (boolean) :
+	//	When true, the program exists after the associated function has been executed.
+	// - arguments (integer or pair of integers) :
+	//	Number of expected arguments after the special parameter. If not specified, no argument is expected.
+	//	This value can also be an array specifying the minimum and maximum number of arguments.
+	// - value (string) -
+	//	When parameter are expected, specifies the value string to be displayed.
+	// - extra (any) -
+	// 	Additional argument passed to the callback function as its second parameter.
+	// - @allowed (boolean) -
+	//	Specifies if the parameter is allowed in embedded files using the '@file' syntax.
+	public static		$SpecialParameters	=  array
+	   (
+	   	// --help or --? :
+	   	//	Displays special parameters help.
+	   	array
+		   (
+		   	'names'		=>  array ( '--help', '--?' ),
+		   	'help'		=>  'Shows this help text.',
+		   	'callback'	=>  '__display_help',
+		   	'exit'		=>  true
+		    ),
+	    	// --time or --elapsed :
+	    	//	Times command execution.
+    		array
+    		   (
+    		   	'names'		=>  array ( '--time', '--elapsed' ),
+    		   	'help'		=>  'Times command execution.',
+			'callback'	=>  '__establish_timer',
+			'exit'		=>  false,
+			'@allowed'	=>  true
+       		    ),
+		// --phpinfo :
+		//	Displays PHP information. An optional argument list can restrict the information displayed.
+ 		array
+ 		   (
+ 		   	'names'		=>  '--phpinfo',
+			'help'		=>  array
+			   (
+			   	"Shows the output of the phpinfo() function.",
+			   	"The next argument can be a combination of the following keywords, separated by commas :",
+			   	"- general :",
+			   	"      Displays general information (version, php.ini location, compilation time, etc.)",
+			   	"- credits :",
+			   	"      Credits information.",
+			   	"- configuration (or config, conf, cnf) :",
+			   	"      Local and global settings.",
+			   	"- modules (or mods or mod) :",
+			   	"      Loaded modules",
+			   	"- environment (or env) :",
+			   	"      Environment variables (ie, \$_ENV contents)",
+			   	"- variables (or vars or var) :",
+			   	"      Predefined variables",
+			   	"- license (or lic) :",
+			   	"      PHP license information",
+			   	"- all :",
+			   	"      Displays all PHP information (equivalent to the --phpinfo option alone)"
+			    ),
+			'callback'	=>  '__display_phpinfo',
+			'arguments'	=>  array ( 0, 1 ),
+			'value'		=>  'keyword',
+			'exit'		=>  true
+		    ),
+   		// --phpversion or --phpver :
+   		//	Displays the current PHP version.
+   		array
+   		   (
+   		   	'names'		=>  array ( '--phpversion', '--phpver' ),
+   		   	'help'		=>  'Displays current PHP version',
+   		   	'callback'	=>  '__display_php_version',
+   		   	'exit'		=>  true
+     		    ),
+		// --phpini [varmask] :
+		//	Displays PHP.INI values
+		array
+		   (
+		   	'names'		=>  '--phpini',
+		   	'help'		=>  'Displays php.ini parameters. [varmask] can be used as a mask for filtering results',
+		   	'callback'	=>  '__display_phpini',
+		   	'exit'		=>  'true',
+		   	'arguments'	=>  array ( 0, 1 )
+		    ),
+		// --phpmodules (or --phpmods) :
+		//	Displays the loaded php modules.
+		array
+		   (
+		   	'names'		=>  array ( '--phpmodules', '--phpmods' ),
+		   	'help'		=>  'Displays the loaded PHP modules',
+		   	'callback'	=>  '__display_php_modules',
+		   	'exit'		=>  true
+		    ),
+		// --phpmodule name (or --phpmod) :
+		//	Displays the loaded extensions for the specified module.
+		array
+		   (
+		   	'names'		=>  array ( '--phpmodule', '--phpmod' ),
+		   	'help'		=>  'Displays the extension functions loaded with the specified module',
+		   	'callback'	=>  '__display_extension_functions',
+		   	'arguments'	=>  1,
+		   	'exit'		=>  true,
+		   	'value'		=>  'module_name(s)'
+		    ),
+		// --thrakroot :
+		//	Displays the root path of the Thrak library
+		array
+		   (
+		   	'names'		=>  '--thrakroot',
+		   	'help'		=>  'Displays the root path of the Thrak library',
+		   	'callback'	=>  '__display_thrak_root',
+		   	'exit'		=>  true
+		    ),
+	    	// --thrakconfig :
+	    	//	Display the path of the Thrak configuration file.
+	    	array
+	    	   (
+	    	   	'names'		=>  '--thrakconfig',
+	    	   	'help'		=>  'Displays the path of the Thrak configuration file',
+	    	   	'callback'	=>  '__display_thrak_config',
+	    	   	'exit'		=>  true
+		    ),
+  		// --thrakversion (or --thrakver) :
+  		//	Displays the current Thrak library version.
+  		array
+  		   (
+  		   	'names'		=>  array ( '--thrakversion', '--thrakver' ),
+  		   	'help'		=>  'Displays the current Thrak library version',
+  		   	'callback'	=>  '__display_thrak_version',
+  		   	'exit'		=>  true
+		    ),
+    		// --thraksettings :
+    		//	Displays the current Thrak library settings.
+    		array
+    		   (
+    		   	'names'		=>  '--thraksettings',
+    		   	'help'		=>  'Displays the current Thrak library settings',
+    		   	'callback'	=>  '__display_thrak_settings',
+    		   	'exit'		=>  true
+		    ),
+    		// @file notation
+    		array
+    		   (
+    		   	'names'		=>  '@file',
+    		   	'help'		=>  'Gets further arguments from the specified file'
+      		    ),
+  		// @ notation
+  		array
+  		   (
+  		   	'names'		=>  '@',
+  		   	'help'		=>  'Reads further arguments from standard input'
+		    ),
+  		// --saveto or --save :
+  		//	Saves parameters to the specified file.
+  		array
+  		   (
+  		   	'names'		=>  array ( '--saveto', '--save' ),
+  		   	'help'		=>  'Saves the command-line parameters to the specified file',
+  		   	'callback'	=>  '__process_saveto',
+  		   	'arguments'	=>  1,
+  		   	'value'		=>  'file'
+		    ),
+  		// --set varname=value :
+  		//	Defines the specified environment variable.
+  		array
+  		   (
+  		   	'names'		=>  '--set',
+  		   	'help'		=>  'Defines the specified environment variable before program execution.',
+  		   	'callback'	=>  '__process_set_variable',
+  		   	'arguments'	=>  1,
+  		   	'value'		=>  'varname=value'
+		    ),
+    		// --unset varname :
+    		//	Unsets the specified variable.
+    		array
+    		   (
+    		   	'names'		=>  '--unset',
+    		   	'help'		=>  'Undefines the specified environment variable before program execution.',
+    		   	'callback' 	=>  '__process_unset_variable',
+    		   	'arguments'     =>  1,
+    		   	'value'		=>  'varname'
+		    ),
+  		// --defined varname :
+  		//	Runs the program only if the specified environment variable is defined.
+  		array
+  		   (
+  		   	'names'		=>  array ( '--defined', '--def' ),
+  		   	'help'		=>  'Runs the program only if the specified environment variable is defined',
+  		   	'callback'	=>  '__check_variable',
+  		   	'arguments'	=>  1,
+  		   	'value'		=>  'varname',
+  		   	'extra'		=>  true
+		    ),
+  		// --undefined varname :
+  		//	Runs the program only if the specified environment variable is undefined.
+  		array
+  		   (
+  		   	'names'		=>  array ( '--undefined', '--undef' ),
+  		   	'help'		=>  'Runs the program only if the specified environment variable is undefined',
+  		   	'callback'	=>  '__check_variable',
+  		   	'arguments'	=>  1,
+  		   	'value'		=>  'varname',
+  		   	'extra'		=>  false
+		    ),
+    		// --exists filename :
+    		//	Runs the program only if the specified file exists.
+    		array
+    		   (
+    		   	'names'		=>  '--exists',
+    		   	'help'		=>  'Runs the program if the specified file exists',
+    		   	'callback'	=>  '__check_file',
+    		   	'arguments'	=>  1,
+    		   	'value'		=>  'file',
+    		   	'extra'		=>  true
+		    ),
+    		// --notexists filename :
+    		//	Runs the program only if the specified file does not exist.
+    		array
+    		   (
+    		   	'names'		=>  '--notexists',
+    		   	'help'		=>  'Runs the program if the specified file does not exist',
+    		   	'callback'	=>  '__check_file',
+    		   	'arguments'	=>  1,
+    		   	'value'		=>  'file',
+    		   	'extra'		=>  false
+		    ),
+    		// --classes :
+    		//	Lists the defined classes.
+    		array
+    		   (
+    		   	'names'		=>  array ( '--classes', '--class', '--cls' ),
+    		   	'help'		=>  'Lists all the available classes',
+    		   	'callback'	=>  '__display_classes',
+    		   	'exit'		=>  true,
+    		   	'extra'		=>  0
+		    ),
+    		// --stdclasses :
+    		//	Lists the standard PHP classes.
+    		array
+    		   (
+    		   	'names'		=>  array ( '--stdclasses', '--stdcls' ),
+    		   	'help'		=>  'Lists the standard PHP classes',
+    		   	'callback'	=>  '__display_classes',
+    		   	'exit'		=>  true,
+    		   	'extra'		=>  1
+		    ),
+    		// --usrclasses :
+    		//	Lists the user-defined classes.
+    		array
+    		   (
+    		   	'names'		=>  array ( '--usrclasses', '--usrcls' ),
+    		   	'help'		=>  'Lists the user-defined PHP classes',
+    		   	'callback'	=>  '__display_classes',
+    		   	'exit'		=>  true,
+    		   	'extra'		=>  2
+		    ),
+		// --functions :
+		//	Lists the defined functions.
+		array
+		   (
+		   	'names'		=>  array ( '--functions', '--funcs' ),
+		   	'help'		=>  'Lists the available functions',
+		   	'callback'	=>  '__display_functions',
+		   	'exit'		=>  'true',
+		   	'extra'		=>  0
+		    ),
+		// --stdfunctions :
+		//	Lists the standard functions.
+		array
+		   (
+		   	'names'		=>  array ( '--stdfunctions', '--stdfuncs' ),
+		   	'help'		=>  'Lists the available standard functions',
+		   	'callback'	=>  '__display_functions',
+		   	'exit'		=>  'true',
+		   	'extra'		=>  1
+		    ),
+		// --usrfunctions :
+		//	Lists the defined functions.
+		array
+		   (
+		   	'names'		=>  array ( '--usrfunctions', '--usrfuncs' ),
+		   	'help'		=>  'Lists the available user-defined functions',
+		   	'callback'	=>  '__display_functions',
+		   	'exit'		=>  'true',
+		   	'extra'		=>  2
+		    ),
+		// --variables :
+		//	Displays the list of defined variables.
+		array
+		   (
+		   	'names'		=>  array ( '--variables', '--vars' ),
+		   	'help'		=>  'Displays the list of defined variables',
+		   	'callback'	=>  '__display_variables',
+		   	'exit'		=>  true,
+		   	'extra'		=>  0
+		    ),
+		// --stdvariables :
+		//	Displays the list of predefined variables.
+		array
+		   (
+		   	'names'		=>  array ( '--stdvariables', '--stdvars' ),
+		   	'help'		=>  'Displays the list of PHP-defined variables',
+		   	'callback'	=>  '__display_variables',
+		   	'exit'		=>  true,
+		   	'extra'		=>  1
+		    ),
+		// --usrvariables :
+		//	Displays the list of defined variables.
+		array
+		   (
+		   	'names'		=>  array ( '--usrvariables', '--usrvars' ),
+		   	'help'		=>  'Displays the list of user-defined variables',
+		   	'callback'	=>  '__display_variables',
+		   	'exit'		=>  true,
+		   	'extra'		=>  2
+		    ),
+		// --constants :
+		//	Displays the list of defined constants.
+		array
+		   (
+		   	'names'		=>  array ( '--constants', '--const' ),
+		   	'help'		=>  'Displays the list of defined constants',
+		   	'callback'	=>  '__display_constants',
+		   	'exit'		=>  true,
+		   	'extra'		=>  0
+		    ),
+		// --stdvariables :
+		//	Displays the list of predefined variables.
+		array
+		   (
+		   	'names'		=>  array ( '--stdconstants', '--stdconst' ),
+		   	'help'		=>  'Displays the list of predefined constants',
+		   	'callback'	=>  '__display_constants',
+		   	'exit'		=>  true,
+		   	'extra'		=>  1
+		    ),
+		// --usrvariables :
+		//	Displays the list of defined variables.
+		array
+		   (
+		   	'names'		=>  array ( '--usrconstants', '--usrconst' ),
+		   	'help'		=>  'Displays the list of user-defined constants',
+		   	'callback'	=>  '__display_constants',
+		   	'exit'		=>  true,
+		   	'extra'		=>  2
+		    ),
+		// --interfaces :
+		//	Displays the list of defined interfaces.
+		array
+		   (
+		   	'names'		=>  array ( '--interfaces' ),
+		   	'help'		=>  'Displays the list of defined interfaces',
+		   	'callback'	=>  '__display_interfaces',
+		   	'exit'		=>  true,
+		   	'extra'		=>  0
+		    ),
+		// --stdinterfaces :
+		//	Displays the list of PHP-defined interfaces.
+		array
+		   (
+		   	'names'		=>  array ( '--stdinterfaces' ),
+		   	'help'		=>  'Displays the list of PHP-defined interfaces',
+		   	'callback'	=>  '__display_interfaces',
+		   	'exit'		=>  true,
+		   	'extra'		=>  1
+		    ),
+		// --usrinterfaces :
+		//	Displays the list of user-defined interfaces.
+		array
+		   (
+		   	'names'		=>  array ( '--usrinterfaces' ),
+		   	'help'		=>  'Displays the list of user-defined interfaces',
+		   	'callback'	=>  '__display_interfaces',
+		   	'exit'		=>  true,
+		   	'extra'		=>  2
+		    ),
+		// --dump variable :
+		//	Dumps a variable contents.
+		array
+		   (
+		   	'names'		=>  '--dump',
+		   	'help'		=>  'Dumps the specified variable contents',
+		   	'callback'	=>  '__dump_variable',
+		   	'arguments'	=>  array ( 0, 255 ),
+		   	'exit'		=>  true
+		    ),
+		// --compress :
+		//	Outputs the compressed version of the PHP file.
+		array
+		   (
+		   	'names'		=>  '--compress',
+		   	'help'		=>  'Outputs the compressed version of this PHP file',
+		   	'callback'	=>  '__display_compressed_file',
+		   	'exit'		=>  true
+		    ),
+		// --compress_statistics :
+		//	Displays information about compression statistics.
+		array
+		   (
+		   	'names'		=>  array ( '--compress_statistics', '--cmpstats' ),
+		   	'help'		=>  'Displays informations about compression statistics.',
+		   	'callback'	=>  '__display_compression_statistics',
+		   	'exit'		=>  true
+		    ),
+		// --class_definitions :
+		//	Displays informations about class definition.
+		array
+		   (
+		   	'names'		=>  array ( '--class_definitions', '--classdefs', '--classdef' ),
+		   	'help'		=>  'Displays class information.',
+		   	'callback'	=>  '__display_class_information',
+		   	'arguments'	=>  1,
+		   	'exit'		=>  true,
+		   	'extra'		=>  0x03
+		    ),
+		// --class_properties :
+		//	Displays informations about class members.
+		array
+		   (
+		   	'names'		=>  array ( '--class_properties', '--classprops', '--classprop' ),
+		   	'help'		=>  'Displays information about class properties.',
+		   	'callback'	=>  '__display_class_information',
+		   	'arguments'	=>  1,
+		   	'exit'		=>  true,
+		   	'extra'		=>  0x02
+		    ),
+		// --class_methods :
+		//	Displays informations about class methods.
+		array
+		   (
+		   	'names'		=>  array ( '--class_methods', '--classmethods', '--classmethod' ),
+		   	'help'		=>  'Displays information about class methods.',
+		   	'callback'	=>  '__display_class_information',
+		   	'arguments'	=>  1,
+		   	'exit'		=>  true,
+		   	'extra'		=>  0x01
+		    ),
+		// --hidden :
+		//	Displays informations about hidden parameters.
+		array
+		   (
+		   	'names'		=>  array ( '--hidden' ),
+		   	'help'		=>  'Displays information about hidden parameters. To be used with the standard -help option.',
+		   	'callback'	=>  '__display_hidden_parameters',
+		   	'arguments'	=>  0,
+		   	'exit'		=>  false
+		    ),
+		// --include_tree :
+		//	Displays the include tree for the running executable.
+		array
+		   (
+		   	'names'		=>  array ( '--include_tree', '--inctree' ),
+			'help'		=>  'Displays the include tree for the running executable',
+			'callback'	=>  '__display_complete_include_tree',
+			'exit'		=>  true
+		    ),
+		// --autoloaded_classes :
+		//	Displays the list of autoloaded classes and their corresponding include file.
+		array
+		   (
+		   	'names'		=>  array ( '--autoloaded_classes', '--autoloaded', '--ac' ),
+			'help'		=>  'Displays the list of autoloaded classes and their corresponding include file',
+			'callback'	=>  '__display_autoloaded_classes',
+			'exit'		=>  true
+		    ),
+		// --expressions :
+		//	Displays the list of authorized functions in a mathematical expression.
+		array 
+	   	   (
+		   	'names'		=>  array ( '--expressions', '--expr', '--exp' ),
+		   	'help'		=>  'Displays the functions authorized in a numeric expression.',
+		   	'callback'	=>  array ( '\Thrak\Processors\CL\CLNumericParameter', 'ShowAuthorizedFunctions' ),
+			'exit'		=>  true
+	     	    ) 
+	    ) ;
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Constructor
+
+	    PROTOTYPE
+		$clobject = new CL ( $object, $argv_or_string = null, $command = true,
+						$options = self::CL_ALL_OPTIONS,
+						$process_special_parameters = true,
+						$min_parameters = null, $max_parameters = null ) ;
+
+	    DESCRIPTION
+		Builds a command-line object.
+
+	    PARAMETERS
+	    	$object (CLParser) -
+	    		Parser object.
+
+		$argv_or_string (type) -
+			Either an array of argument, a string to be parsed, or null. If null, the global
+			$argv and $argc variables will be used.
+
+		$command (boolean or name) -
+			Either a boolean value indicating if the command name is included in the
+			$argv_or_string parameter, or the command name itself.
+			If this parameter is null, it will default to the boolean value 'true'.
+
+		$options (bitmask) -
+			Set of command-line analysis options ; can be any combination of :
+
+			CL_ALLOW_AT_NOTATION -
+				Allows the '@file' notation to be used. This means that the contents
+				of the specified file are read and included into the command-line
+				parameters.
+				If only the '@' character is specified, then further options are read
+				from the standard input. You can terminate input reading by typing a
+				dot character ('.') followed by a newline, or simply the EOF character
+				(^Z in Windows, ^D on Unix).
+				This flag is enabled by default.
+
+			CL_EMBEDDED_AT -
+				When enabled, the '@file' notation can be recursively used within
+				files specified on the command-line through the '@file' notation.
+				An exception is thrown when a circular inclusion is detected.
+
+			CL_ALL_OPTIONS -
+				Enables all the above options. This is the default value.
+
+			If this parameter is null, it will default to CL_ALL_OPTIONS.
+
+		$min_parameters, $max_parameters (integer) -
+			The min and max number of parameters can be restricted by specifying these
+			extra parameters.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __construct ( $object, $argv_or_string = null, $command = true, $options = self::CL_ALL_OPTIONS,
+					$process_special_parameters = true,
+					$min_parameters = null, $max_parameters = null )
+	   {
+		parent::__construct ( ) ;
+		
+	   	// Get current time
+	   	$this -> StartTime	=  microtime ( true ) ;
+
+		// Caller object
+		$this -> ParserObject 	=  $object ;
+
+		// Array of callback functions to be called once all the arguments have been processed
+		$callbacks 		=  array ( ) ;
+
+	   	// Normalize values
+	   	if  ( $command  ===  null )
+	   		$command = false ;
+
+   		if  ( $options  ===  null )
+   			$options = self::CL_ALL_OPTIONS ;
+
+		// Check & store min/max parameters
+		if  (  $min_parameters  !==  null  &&  $max_parameters  !==  null  &&  $min_parameters  >  $max_parameters )
+			error ( new CLException ( "The minimum number of command-line parameters ($min_parameters) cannot exceed the maximum ($max_parameters)" ) ) ;
+
+		$this -> MinParameters 		=  $min_parameters ;
+		$this -> MaxParameters		=  $max_parameters ;
+
+		// Store command line options and command specification
+		$this -> CommandLineOptions	=  $options ;
+
+		if  ( String::IsTrue ( $command ) )
+			$this -> CommandIncluded = true ;
+		else if  ( String::IsFalse ( $command ) )
+		   {
+			$this -> CommandIncluded 	=  false ;
+			$this -> ExecutablePath		=  "(unknown command)" ;
+			$this -> ExecutableName		=  "(unknown)" ;
+		    }
+		else
+		   {
+		   	$this -> CommandIncluded        =  true ;
+			$this -> ExecutablePath 	=  realpath ( $command ) ;
+			$this -> ExecutableName		=  Path::Filename ( $command ) ;
+		    }
+
+		// Get argument list
+		if  ( $argv_or_string  ===  null )
+		   {
+			global		$argv ;
+
+			$arguments = $argv ;
+		    }
+		else if  ( is_array ( $argv_or_string ) )
+			$arguments = $argv_or_string ;
+		else if  ( is_string ( $argv_or_string ) )
+			$arguments = String::ExplodeWithQuotedStrings ( $argv_or_string ) ;
+		else
+			error ( new CLException ( "Unexpected value type for argv_or_string" ) ) ;
+
+		// Then loop through individual arguments, to process special arguments such as --help, etc.
+		$argc = count ( $arguments ) ;
+
+		for  ( $i = 0 ; $i < $argc ; $i ++ )
+		   {
+		   	$argument 		=  trim ( strtolower ( $arguments [$i] ) ) ;
+
+			// Special processing for the '@[file]' notation ; read the arguments and add them to the output list
+			// Note that special parameters such as --help are not authorized
+			if  ( $argument  !=  ""  &&  $argument [0]  ==  '@' )
+			   {
+			   	// Well, allow only if this option is authorized
+				if  ( ! ( $this -> CommandLineOptions &  self::CL_ALLOW_AT_NOTATION ) )
+					error ( new CLException ( "The '@file' notation is not authorized for this command." ) ) ;
+
+				// Get the parameter list from either standard input ('@' notation) or specified file ('@file')
+				$list 		=  $this -> __process_at_notation ( $arguments [$i] ) ;
+				$output_list    =  array ( ) ;
+
+				// Check that the loaded parameters are not special parameters or, if yes, that there are
+				// authorized within embedded files
+				foreach  ( $list  as  $item )
+				   {
+				   	// Loop through sxpecial parameters
+					foreach  ( CL::$SpecialParameters  as  $parameter )
+					   {
+				   		// Otherwise, check that the embedded parameter is not a special one
+						if  ( is_array ( $parameter [ 'names' ] ) )
+							$names = $parameter [ 'names' ] ;
+						else
+							$names = array ( $parameter [ 'names' ] ) ;
+
+						foreach  ( $names  as  $name )
+						   {
+							if  ( ! strcasecmp ( $item, $name ) )
+							   {
+							   	// No checking on embeddable parameters. Simply add them to the current arglist
+							   	// (this is useful for parameters such as --elapsed, which can be embedded)
+							   	if  ( isset  ( $parameter [ '@allowed' ] )  &&  $parameter [ '@allowed' ] )
+							   	   {
+							   	   	$arguments [] = $item ;
+							   	   	$argc ++ ;
+							   		continue 3 ;	// Process next $item from $list and forget this one
+						   		    }
+
+					   			// Otherwise, throw an exception
+								if  ( $argument  ==  '@' )
+									$input = 'standard input' ;
+								else
+									$input = "file '" . substr ( $arguments [$i], 1 ) . "'" ;
+
+								error ( new CLException ( "Special parameters are not authorized in embedded files ; the '$item' parameter has been found in $input." ) ) ;
+							    }
+						    }
+					    }
+
+					// Add the parameter to the output list
+					$output_list [] = $item ;
+				    }
+
+				$output_arguments = array_merge ( $output_arguments, $output_list ) ;
+				continue ;
+			    }
+
+		   	// Get potential special argument definition
+			$argument_definition    =  $this ->  __get_argument_definition ( $argument ) ;
+
+			// If not a special argument, then the current argument will be placed in the list of command-line arguments
+			if  ( $argument_definition  ===  null )
+			   {
+				$output_arguments [] 	=  $arguments [$i] ;
+				continue ;
+			    }
+
+			// Check if some other arguments are expected
+			$special_arguments 	=  array ( ) ;
+
+			if  ( isset ( $argument_definition [ 'arguments' ] ) )
+			   {
+			   	// Determine the minimum and maximum amount of arguments
+				if  ( is_array ( $argument_definition [ 'arguments' ] ) )
+				   {
+					$min_args 	=  $argument_definition [ 'arguments' ] [0] ;
+					$max_args	=  $argument_definition [ 'arguments' ] [1] ;
+				    }
+				else
+				   {
+					$min_args 	=  $argument_definition [ 'arguments' ] ;
+					$max_args 	=  $min_args ;
+				    }
+
+				// If the special option needs some arguments, check that sufficient command-line options remain
+				if  ( $i + $min_args  >=  $argc )
+				   {
+					if  ( isset ( $argument_definition [ 'error' ] ) )
+						error ( new CLException ( $argument_definition [ 'error' ] ) ) ;
+					else
+					   {
+						if  ( $min_args  ==  $max_args )
+						   {
+						   	if  ( $min_args  ==  1 )
+						   		$msg = "argument is required" ;
+					   		else
+					   			$msg = "arguments are required" ;
+
+							error ( new CLException ( "$min_args $msg after the {$arguments [$i]} option." ) ) ;
+						    }
+						else
+						   {
+						   	if  ( $max_args  >  1 )
+						   		$msg = "arguments" ;
+					   		else
+					   			$msg = "argument" ;
+
+							error ( new CLException ( "The {$arguments [$i]} option requires from $min_args to $max_args $msg." ) ) ;
+						    }
+					    }
+				    }
+
+				// Collect the parameters
+				$max = min ( $argc, $i + $max_args + 1 ) ;
+
+				for  ( $j = $i + 1 ; $j < $max ; $j ++ )
+				   {
+					$special_arguments [] = $arguments [$j] ;
+					$i ++ ;
+				    }
+			    }
+
+			// Save the associated function
+			if  ( isset ( $argument_definition [ 'callback' ] ) )
+			   {
+			   	$argument_definition [ 'special-arguments' ] = $special_arguments ;
+				$callbacks [] = $argument_definition ;
+			    }
+		    }
+
+		// Save the callback functions
+		$this -> CallbackFunctions = $callbacks ;
+
+		// Get executable path and name, if not specified by the $command parameter
+		if  ( ! $this -> ExecutablePath )
+		   {
+			$this -> ExecutablePath	=  realpath ( $output_arguments [0] ) ;
+			$this -> ExecutableName =  Path::Filename ( $output_arguments [0] ) ;
+		    }
+
+
+		// Build a command line from input parameters
+		$this -> CommandLine = String::QuotedStringArray ( $output_arguments ) ;
+
+		// Save argc and argv
+		$this -> Argv 	=  $output_arguments ;
+		$this -> Argc	=  count ( $output_arguments ) ;
+
+		// Check min and max parameters
+		if  ( $this -> MinParameters  !=  null  &&  $this -> Argc - 1  <  $this -> MinParameters )
+			error ( new CLException ( "At least {$this -> MinParameters} parameters were expected ; " . ( $this -> Argc - 1 ) . " were specified." ) ) ;
+
+		if  ( $this -> MaxParameters  !=  null  &&  $this -> Argc - 1  >  $this -> MaxParameters )
+			error ( new CLException ( "At most {$this -> MaxParameters} parameters were expected ; " . ( $this -> Argc - 1 ) . " were specified." ) ) ;
+
+		// Check if we need to process special parameters
+		if  ( $process_special_parameters )
+			$this -> ProcessSpecialParameters ( ) ;
+	   }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		__tostring - Returns the whole command line.
+
+	    PROTOTYPE
+		$str = ( string ) $cl ;
+
+	    DESCRIPTION
+		Returns the whole command line.
+
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __tostring ( )
+	   {
+		return ( $this -> CommandLine ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		__toarray - Returns the command-line parameters.
+
+	    PROTOTYPE
+		$str = $cl -> __toarray ( ) );
+
+	    DESCRIPTION
+		Returns the command-line parameters.
+
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __toarray ( )
+	   {
+	   	if  ( $this -> Argc  >  0 )
+			return ( array_slice ( $this -> Argv, 1 ) ) ;
+		else
+			return ( array ( ) ) ;
+	    }
+
+
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/******                                                                               ******/
+	/******                           UTILITY FUNCTIONS                                   ******/
+	/******                                                                               ******/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+
+
+	// __check_file -
+	//	Checks if the specified file exists or not. Aborts the program if this is not the case.
+	private function  __check_file ( $file, $exists )
+	   {
+		$file	 	=  $file [0] ;
+		$status 	=  file_exists ( $file ) ;
+
+		if  ( ! $status  &&  $exists )
+		   {
+			error ( new \Thrak\System\RuntimeException ( "Program execution aborted ; the '$file' file should exist." ) ) ;
+			exit ( ) ;
+		    }
+
+		if  ( $status  &&  ! $exists )
+		   {
+			error ( new \Thrak\System\RuntimeException ( "Program execution aborted ; the '$file' file should not exist." ) ) ;
+			exit ( ) ;
+		    }
+	    }
+
+
+	// __check_variable -
+	//	Checks if the specified environment variable is defined or not. Aborts the program if this is not the case.
+	private function  __check_variable ( $variable, $defined )
+	   {
+		$variable = $variable [0] ;
+		$result   = getenv ( $variable ) ;
+
+		if  ( $result  ===  false  &&  $defined )
+		   {
+   			error ( new \Thrak\System\RuntimeException ( "Program execution aborted ; the '$variable' environment variable should be defined." ) ) ;
+   			exit ( ) ;
+		    }
+
+		if  ( $result  !==  false  &&  ! $defined )
+		   {
+   			error ( new \Thrak\System\RuntimeException ( "Program execution aborted ; the '$variable' environment variable should be undefined." ) ) ;
+   			exit ( ) ;
+		    }
+	    }
+
+
+	// __classinfo -
+	//	Displays class information.
+	private function  __classinfo ( $classname, $display_flags )
+	   {
+		if  ( ! class_exists ( $classname ) )
+			error ( new CLException ( "Class '$classname' does not exist." ) ) ;
+
+		$display_properties	=  ( $display_flags  &  0x02 ) ?  true : false ;
+		$display_methods 	=  ( $display_flags  &  0x01 ) ?  true : false ;
+
+		// Get class methods
+		$methods 		=  get_class_methods ( $classname ) ;
+		sort ( $methods ) ;
+
+		// Then class properties
+		$properties 		=  get_class_vars ( $classname ) ;
+		ksort ( $properties ) ;
+
+		// Display title
+		$title 			=  "Class $classname" ;
+		output ( $title . " :" ) ;
+		output ( str_repeat ( '~', strlen ( $title ) ) ) ;
+
+		// Then properties, if needed
+		if  ( $display_properties )
+		   {
+			output ( "\tProperties :" ) ;
+
+			foreach  ( $properties  as  $property => $junk )
+				output ( "\t\t$property" ) ;
+		    }
+
+		// And methods
+    		if  ( $display_methods )
+    		   {
+			output ( "\tMethods :" ) ;
+
+			foreach  ( $methods  as  $method )
+				output ( "\t\t$method" ) ;
+    		    }
+	    }
+
+
+	// __display_class_information -
+	//	Displays class information.
+	private function  __display_class_information ( $params, $option )
+	   {
+		$this -> __classinfo ( $params [0], $option ) ;
+	    }
+
+
+	// __display_classes :
+	//	Displays the defined classes.
+	private function  __display_classes ( $params, $option )
+	   {
+	   	global  		$__THRAK_STDCLASSES__ ;
+
+	   	switch  ( $option )
+	   	   {
+			case	0 :
+				$this -> __list ( 'Classes', get_declared_classes ( ) ) ;
+				break ;
+
+			case	1 :
+				$this -> __list ( 'Standard classes', $__THRAK_STDCLASSES__ ) ;
+				break ;
+
+			case	2 :
+				$this -> __list ( 'User-defined classes', array_diff ( get_declared_classes ( ), $__THRAK_STDCLASSES__ ) ) ;
+				break ;
+	   	    }
+	    }
+
+
+	// __display_compressed_file :
+	//	Displays the current compressed file.
+	private function  __display_compressed_file ( $params )
+	   {
+	   	$trace 		=  debug_backtrace ( ) ;
+	   	$file 		=  $trace [ count ( $trace ) - 1 ] [ 'file' ] ;
+		$contents 	=  php_strip_whitespace ( $file ) ;
+		echo $contents ;
+	    }
+
+
+	// __display_compression_statistics :
+	//	Displays information about compression statistics.
+	private function  __display_compression_statistics ( $params )
+	   {
+	   	$trace 		=  debug_backtrace ( ) ;
+	   	$file 		=  $trace [ count ( $trace ) - 1 ] [ 'file' ] ;
+		$data1 		=  file_get_contents ( $file ) ;
+		$data2 		=  php_strip_whitespace ( $file ) ;
+		$data1length 	=  strlen ( $data1 ) ;
+		$data2length 	=  strlen ( $data2 ) ;
+		$delta 	 	=  $data1length - $data2length ;
+		$gain 		=  100 - round ( ( 100 / $data1length ) * $data2length, 2 ) ;
+		output ( "Actual file size     : $data1length" ) ;
+		output ( "Compressed file size : $data2length" ) ;
+		output ( "Gain in bytes        : $delta ({$gain}%)" ) ;
+	    }
+
+
+	// __display_constants :
+	//	Displays the defined constants.
+	private function  __display_constants ( $params, $option )
+	   {
+	   	global 		$__THRAK_STDCONSTANTS__ ;
+
+	   	$constant_list 	=  get_defined_constants ( ) ;
+
+	   	switch  ( $option )
+	   	   {
+			case	0 :
+					$this -> __listpairs ( 'Constants', $constant_list ) ;
+				break ;
+
+			case	1 :
+					$this -> __listpairs ( 'Standard constants', $__THRAK_STDCONSTANTS__ ) ;
+				break ;
+
+			case	2 :
+				$this -> __listpairs ( 'User constants', array_diff ( $constant_list, $__THRAK_STDCONSTANTS__ ) ) ;
+				break ;
+	   	    }
+	    }
+
+
+	// __display_functions :
+	//	Displays the defined functions.
+	private function  __display_functions ( $params, $option )
+	   {
+		$function_list = get_defined_functions ( ) ;
+
+	   	switch  ( $option )
+	   	   {
+			case	0 :
+				$this -> __list ( 'Functions', array_merge ( $function_list [ 'internal' ], $function_list [ 'user' ] ) ) ;
+				break ;
+
+			case	1 :
+				$this -> __list ( 'Standard functions', $function_list [ 'internal' ] ) ;
+				break ;
+
+			case	2 :
+				$this -> __list ( 'User-defined functions', $function_list [ 'user' ] ) ;
+				break ;
+	   	    }
+	    }
+
+
+
+	// __display_hidden_parameters -
+	//	Display hidden parameters.
+	private function  __display_hidden_parameters ( )
+	   {
+		$this -> DisplayHiddenParameters	=  true ;
+	    }
+
+
+	// __display_interfaces :
+	//	Displays the defined interfaces.
+	private function  __display_interfaces ( $params, $option )
+	   {
+	   	global 		$__THRAK_STDINTERFACES__ ;
+
+	   	$interface_list 	=  get_declared_interfaces ( ) ;
+
+	   	switch  ( $option )
+	   	   {
+			case	0 :
+				$this -> __list ( 'Interfaces', $interface_list ) ;
+				break ;
+
+			case	1 :
+				$this -> __list ( 'Standard interfaces', $__THRAK_STDINTERFACES__ ) ;
+				break ;
+
+			case	2 :
+				$this -> __list ( 'User interfaces', array_diff ( $interface_list, $__THRAK_STDINTERFACES__ ) ) ;
+				break ;
+	   	    }
+	    }
+
+
+	// __display_variables :
+	//	Displays the defined variables.
+	private function  __display_variables ( $param, $option )
+	   {
+	   	global  		$__THRAK_STDVARIABLES__ ;
+
+	   	$defined_variables 	=  array_keys ( get_defined_vars ( ) ) ;
+	   	$standard_variables 	=  array_keys ( $__THRAK_STDVARIABLES__ ) ;
+
+	   	switch  ( $option )
+	   	   {
+			case	0 :
+				$this -> __list ( 'Variables', array_merge ( $standard_variables, $defined_variables ) ) ;
+				break ;
+
+			case	1 :
+				$this -> __list ( 'Standard variables', $standard_variables ) ;
+				break ;
+
+			case	2 :
+				$this -> __list ( 'User-defined variables', $defined_variables ) ;
+				break ;
+	   	    }
+	    }
+
+
+	// __display_thrak_root :
+	//	Displays the root path of the Thrak library.
+	private function  __display_thrak_root ( )
+	   {
+		global 	$THRAK_ROOT ;
+		output ( 'Thrak root directory : ' . Path::ToUnix ( $THRAK_ROOT ) ) ;
+	    }
+
+
+	// __display_thrak_config :
+	//	Displays the actual Thrak configuration file path.
+	private function  __display_thrak_config ( )
+	   {
+		global  $THRAK_CONFIGURATION ;
+		output ( 'Thrak configuration file : ' . Path::ToUnix ( $THRAK_CONFIGURATION ) ) ;
+	    }
+
+
+	// __display_thrak_version :
+	//	Displays the current Thrak library version.
+	private function  __display_thrak_version ( )
+	   {
+		global	$THRAK_VERSION ;
+		output ( 'Thrak version : ' . $THRAK_VERSION ) ;
+	    }
+
+	// __display_thrak_settings :
+	//	Displays the current Thrak configuration.
+	private function  __display_thrak_settings ( )
+	   {
+		global	$Configuration ;
+
+		dump ( $Configuration ) ;
+	    }
+
+
+	// __display_extension_functions :
+	//	Displays the extension functions for the specified module.
+	private function  __display_extension_functions ( $names )
+	   {
+	   	if  ( ! $names )
+			error ( new CLException ( "A module name is required after the --phpmodule parameter." ) ) ;
+
+		$modules =  get_loaded_extensions ( ) ;
+		$names   =  explode ( ',', $names [0] ) ;
+
+		foreach  ( $names  as  $name )
+		   {
+		   	$found = false ;
+
+			foreach  ( $modules  as  $module )
+			   {
+				if  ( ! strcasecmp ( $module, $name ) )
+				   {
+				   	$functions = get_extension_funcs ( $name ) ;
+					output ( "Functions in the '$module' module : " ) ;
+
+					if  ( $functions )
+					   {
+					   	foreach  ( $functions  as  $function )
+					   		output ( "\t$function" ) ;
+
+						output ( "*** " . count ( $functions ) . " functions listed. ***" ) ;
+			   		    }
+   		    			else
+						output ( "\t*** no function defined ***" ) ;
+
+					$found = true ;
+				    }
+			    }
+
+			if  ( ! $found )
+				error ( new  CLException ( "The '$name' module is not loaded in your current PHP version." ) ) ;
+		     }
+	    }
+
+
+	// __display_help -
+	//	Displays special options' help.
+	private function  __display_help ( )
+ 	   {
+		output ( "Special options common to all commands :" ) ;
+		output ( "" ) ;
+		$help_array 		=  array ( ) ;
+		$max_name_length        =  0 ;
+
+		// Loop through special parameter definitions
+		foreach  ( CL::$SpecialParameters  as  $entry )
+		   {
+		   	// Build the name string, which will look like :
+		   	//	pname (or pname1 or pname2)
+		   	// if the parameter has several aliases
+			if  ( is_array ( $entry [ 'names' ] ) )
+			   {
+				if  ( count ( $entry [ 'names' ] )  ==  1 )
+					$names	= $entry [ 'names' ] [0] ;
+				else
+					$names  = $entry [ 'names' ] [0] . ' (or ' .
+							implode ( ' or ', array_slice ( $entry [ 'names' ], 1 ) ) . ')' ;
+			    }
+			else
+				$names = $entry [ 'names' ] ;
+
+			// If arguments needed, add them
+			if  ( isset ( $entry [ 'arguments' ] )  &&  $entry [ 'arguments' ] )
+			   {
+				if  ( isset ( $entry [ 'value' ] ) )
+					$value = $entry [ 'value' ] ;
+				else
+					$value = 'value' ;
+
+				if  ( is_array ( $entry [ 'arguments' ] ) )
+				   {
+					$value .= ' ' . $entry [ 'arguments' ] [0] . '..' . $entry [ 'arguments' ] [1] ;
+
+					if  ( ! $entry [ 'arguments' ] [0] )
+						$value = '[' . $value . ']' ;
+				    }
+
+		    		$names .= " $value" ;
+			    }
+
+			// Adjust max name string length
+			$length 	=  strlen ( $names ) ;
+
+			if  ( $length  >  $max_name_length )
+				$max_name_length = $length ;
+
+			// Get the help strings
+			if  ( is_array ( $entry [ 'help' ] ) )
+				$help = $entry [ 'help' ] ;
+			else
+				$help = array ( $entry [ 'help' ] ) ;
+
+			$last 	=  count ( $help ) - 1 ;
+
+			if  ( ! String::EndsWith ( $help [ $last ], '.' ) )
+				$help [ $last ] .= '.' ;
+
+			// Add the entry to the help array
+			$help_array [] = array ( 'name' => $names, 'help' => $help ) ;
+		    }
+
+		// Build a string of spaces to correctly align extra help lines
+		$filler = str_repeat ( ' ', $max_name_length + 3 ) ;
+
+	       // Sort the parameters in alphabetical order
+	       $cmp = function ( $a, $b )
+	           {
+			return ( strcasecmp ( $a [ 'name'], $b [ 'name' ] ) ) ;
+	            } ;
+
+	       usort ( $help_array, $cmp ) ;
+
+	       // Display individual special parameters help
+	       foreach  ( $help_array  as  $entry )
+	          {
+	          	$names	=  sprintf ( "%-{$max_name_length}s", $entry [ 'name' ] ) ;
+			output ( "$names : {$entry [ 'help' ] [0]}" ) ;
+
+			for  ( $i = 1 ; $i  <  count ( $entry [ 'help' ] ) ; $i ++ )
+				output ( $filler . $entry [ 'help' ] [$i] ) ;
+	           }
+	    }
+
+
+	// __display_complete_input_tree :
+	//	Displays the complete include tree of the called program.
+	private function  __display_complete_include_tree ( $params )
+	   {
+		$trace =  debug_backtrace ( ) ;
+		$file  =  $trace [ count ( $trace ) - 1 ] [ 'file' ] ;
+		output ( Path::ToUnix ( $file, true ) . " :" ) ;
+		$this -> __display_include_tree ( $file, 1 ) ;
+	    }
+
+
+	// __display_autoloaded_classes :
+	//	Displays the autoloaded classes.
+	private function  __display_autoloaded_classes ( $params )
+	   {
+	   	global 		$Autoloader ;
+
+	   	foreach  ( $Autoloader -> AutoloadedClasses as  $key => $value )
+	   		output ( "$key -> $value" ) ;
+	    }
+
+
+	// __display_include_tree -
+	//	Displays include tree for the specified file.
+	private function 	__display_include_tree  ( $current_file, $level )
+	   {
+	   	// Holds the stack of included files
+	   	static 	$includes	=  array ( ) ;
+
+		// Regex to find included files
+		$re	=  '/' .
+			 	'( require | require_once | include | include_once ) ' .
+		 		'\s* \( \s* ' .
+		 			'(?P<files> .*? )' .
+	 			'\s* \) \s* ;' .
+			   '/msx' ;
+
+		// Get current file contents
+		$contents 	=  file_get_contents ( $current_file ) ;
+
+		// Indent according to the specified level
+		$tab 		=  str_repeat ( "    ", $level ) ;
+
+		// Get include directory list
+		$include_directories 	=  explode ( ";", get_include_path ( ) ) ;
+
+		// If files are included by the specified one, then...
+		if  ( preg_match_all ( $re, $contents, $matches ) )
+  		   {
+  		   	// Loop through the files included in $file
+			foreach  ( $matches [ 'files' ]  as  $file )
+			   {
+			   	// Thrak inclusions allow several files to be specified at once : split them
+				$include_list 	=  explode ( ',', $file ) ;
+
+				// Loop through the files included by $file
+				foreach  ( $include_list  as  $include_file )
+				   {
+				   	// Make sure we have no extraneous spaces
+				   	$include_file 	=  trim ( $include_file ) ;
+
+				   	// Allow expressions to be specified instead of hardcoded filenames
+				   	$expr 		=  "\$include_file = $include_file ;" ;
+
+					// If the expression contains variables, declare them as global
+					// Note that this will not work if the expression references variables local to a function
+				   	if  ( preg_match_all ( '/\$(?<vname> [a-zA-Z_][a-zA-Z0-9_]*)/imsx', $include_file, $matches ) )
+				   	   {
+						foreach  ( $matches [ 'vname' ]  as  $match )
+							global  $$match ;
+				   	    }
+
+					// Run the expression
+				   	@eval ( $expr ) ;
+
+				   	// Search the file in the include directory list
+				   	if  ( ! file_exists ( $include_file ) )
+				   	   {
+					   	foreach  ( $include_directories  as  $include_directory )
+					   	   {
+					   		if  ( file_exists ( $include_directory . '/' . $include_file ) )
+					   		   {
+					   		   	$include_file  =  $include_directory . '/' . $include_file ;
+					   		   	break ;
+					   		    }
+					   	    }
+				   	    }
+
+					// Check that the resulting filename is valid
+					if  ( $include_file  &&  is_file ( $include_file ) )
+					   {
+						// Silently ignore inexisting files ; the inclusion may use a local variable we cannot access
+						if  ( ! file_exists ( $include_file ) )
+							continue ;
+
+						// Remember the current include file
+						$real_file 	=  $include_file ;
+
+						// Transform the current path to a Unix path
+						$include_file 	=  Path::ToUnix ( $include_file, true ) ;
+						$include_file 	=  str_replace ( '//', '/', $include_file ) ;
+
+						// Output information about this file
+						echo ( "{$tab}[$level] $include_file" ) ;
+
+						// And if this file has already been included, tell from which file
+						if  ( isset ( $includes [ $include_file ] ) )
+							output ( "\n$tab    *** called from : " . $includes [ $include_file ] . " ***" ) ;
+						else
+						   {
+							$includes [ $include_file ] = Path::ToUnix ( $current_file, true ) ;
+							output ( "" ) ;
+
+							// Then recursively process file contents
+							$this -> __display_include_tree ( $real_file, $level + 1 ) ;
+						   }
+					    }
+
+				    }
+			    }
+  		    }
+	    }
+
+	// __display_phpinfo -
+	//	Displays php information
+	private function  __display_phpinfo ( $value )
+	   {
+		$display_options 	=  0 ;
+
+		if  ( $value )
+		   {
+		   	$value = $value [0] ;
+			$options = explode ( ',', $value ) ;
+
+			foreach  ( $options  as  $option )
+			   {
+				switch ( strtolower ( trim ( $option ) ) )
+				   {
+				   	case	'general' :
+				   		$display_options |= INFO_GENERAL ;
+				   		break ;
+
+					case    'credits' :
+						$display_options |= INFO_CREDITS ;
+						break ;
+
+					case	'configuration' :
+					case	'config' :
+					case	'conf' :
+					case	'cnf' :
+						$display_options |= INFO_CONFIGURATION ;
+						break ;
+
+					case	'modules' :
+					case 	'mods' :
+					case	'mod' :
+						$display_options |= INFO_MODULES ;
+						break ;
+
+					case	'environment' :
+					case	'env' :
+						$display_options |= INFO_ENVIRONMENT ;
+						break ;
+
+					case	'variables' :
+					case	'vars' :
+					case	'var' :
+						$display_options |= INFO_VARIABLES ;
+						break ;
+
+					case	'license' :
+					case	'lic' :
+						$display_options |= INFO_LICENSE ;
+						break ;
+
+					case	'all' :
+						$display_options = INFO_ALL ;
+						break 2 ;
+
+					default :
+						error ( new CLException ( "Invalid option '$option' for the --phpinfo parameter" ) ) ;
+				    }
+			    }
+		    }
+
+		if  ( ! $display_options )
+			$display_options = INFO_ALL ;
+
+		ob_start ( ) ;
+	   	phpinfo ( $display_options ) ;
+	   	$contents = ob_get_clean ( ) ;
+
+	   	output ( $contents ) ;
+	    }
+
+
+	// __display_phpini -
+	//	Displays PHP.INI information.
+	private function  __display_phpini ( $argument )
+	   {
+		$phpini		=  ini_get_all ( ) ;
+
+		if  ( $argument )
+		   {
+		   	$argument = $argument [0] ;
+
+			if  ( isset ( $phpini [ $argument ] ) )
+				$retained_values [ $argument ] = $phpini [ $argument ] ;
+			else
+			   {
+			   	$found 	=  false ;
+			   	$arglen =  strlen ( $argument ) ;
+
+				foreach  ( $phpini  as  $key => $value )
+	   			   {
+	   			   	 if  ( stristr ( $key, $argument )  !==  false  || Path::Matches ( $key, $argument ) )
+	   			   	    {
+	   			   	 	$retained_values [ $key ] = $phpini [ $key ] ;
+	   			   	 	$found = true ;
+   			   	 	     }
+	   			    }
+
+				if  ( ! $found )
+					error ( new CLException ( "The '$argument' parameter does not exist in PHP.INI" ) ) ;
+			     }
+		    }
+		else
+			$retained_values = $phpini ;
+
+		// Collect values
+		$data 	=  array ( ) ;
+
+		foreach  ( $retained_values  as $key => $value )
+		   {
+		   	$mask 	=  $value [ 'access' ] ;
+		   	$access =  array ( ) ;
+
+		   	if  ( $mask  &  1 )
+		   		$access [] = "script or registry" ;
+
+	   		if  ( $mask  &  2 )
+	   			$access [] = ".htaccess" ;
+
+   			if  ( $mask  &  4 )
+   				$access [] = "php.ini, httpd.conf" ;
+
+			$data [] = array ( 'Setting' => $key, 'Global value' => $value [ 'global_value'], 'Local value' => $value [ 'local_value'],
+	  				'Access from' => implode ( ', ', $access ) ) ;
+		     }
+
+		// Display report
+		$report = new AsciiReport
+		   (
+		   	array ( 'member' => 'Setting' ),
+		   	array ( 'member' => 'Global value' ),
+		   	array ( 'member' => 'Local value' ),
+		   	array ( 'member' => 'Access from' )
+		    ) ;
+
+		echo $report -> Generate ( $data ) ;
+		echo $report -> Summary ( 'setting' ) ;
+	    }
+
+
+	// __display_php_modules :
+	//	Displays the loaded PHP modules.
+	private function  __display_php_modules ( )
+	   {
+		$list = get_loaded_extensions ( ) ;
+		sort ( $list ) ;
+
+		foreach  ( $list  as  $item )
+			output ( $item ) ;
+
+		output ( "*** " . count ( $list ) . " modules listed. ***" ) ;
+	     }
+
+
+	// __display_php_version -
+	//	Displays the current PHP version
+	private function __display_php_version ( )
+	   {
+		output ( "PHP version : " . phpversion ( ) ) ;
+	    }
+
+
+	// __dump_variable :
+	//	Dumps a variable.
+	private function  __dump_variable ( $variables )
+	   {
+		// Loop through the specified variables
+		if  ( ! count ( $variables ) )
+		   {
+		   	global 		$GLOBALS ;
+
+			$variables 	=  array_keys ( $GLOBALS ) ;
+			$variables 	=  array_merge ( $variables, array_keys ( get_defined_vars ( ) ) ) ;
+		    }
+
+		foreach  ( $variables  as  $variable_name )
+		   {
+	   		global 		$$variable_name ;
+
+
+			echo "$variable_name => " ;
+			print_r ( $$variable_name ) ;
+			output ( "" ) ;
+		    }
+	    }
+
+
+	// __establish_timer -
+	//	Displays the command elapsed time.
+	private function  __establish_timer ( )
+	   {
+	   	$display_elapsed = function ( $start )
+	   	   {
+			$end 		=  microtime ( true ) ;
+			$elapsed 	=  $end - $start ;
+
+			output ( "\n*** Elapsed time : " . Convert::ToTimeString ( $elapsed ) . " ***" ) ;
+	   	    } ;
+
+		register_shutdown_function ( $display_elapsed, $this -> StartTime ) ;
+	    }
+
+
+	// __get_argument_definition -
+	//	Gets an argument definition.
+	private function  __get_argument_definition ( $argument )
+	   {
+		foreach  ( CL::$SpecialParameters  as  $entry )
+		   {
+			$names = $entry [ 'names' ] ;
+
+			if  ( ! is_array ( $names ) )
+				$names = array ( $names ) ;
+
+			foreach ( $names  as  $name )
+			   {
+				if  ( ! strcasecmp ( $argument, $name ) )
+					return ( $entry ) ;
+			    }
+		    }
+
+		return ( null ) ;
+	    }
+
+
+	// __list -
+	//	Lists the specified array items.
+	private function  __list ( $title, $array )
+	   {
+	   	sort ( $array ) ;
+		output ( $title . ' :' ) ;
+		output ( str_repeat ( '~', strlen ( $title ) ) ) ;
+
+		foreach  ( $array  as  $item )
+			output ( $item ) ;
+
+		output ( "*** " . count ( $array ) . " " . strtolower ( $title ) . " listed ***" ) ;
+	    }
+
+	// __listpairs -
+	//	Lists the specified associative array items.
+	private function  __listpairs ( $title, $array )
+	   {
+	   	ksort ( $array ) ;
+		output ( $title . ' :' ) ;
+		output ( str_repeat ( '~', strlen ( $title ) ) ) ;
+		$max_length = -1 ;
+
+		foreach  ( $array  as  $key => $item )
+		   {
+		   	$length = strlen ( $key ) ;
+
+			if  ( $length  >  $max_length )
+				$max_length = $length ;
+		    }
+
+    		foreach (  $array  as  $key => $item )
+    			output ( sprintf ( "%-{$max_length}s", $key ) . " = " . $item ) ;
+
+		output ( "*** " . count ( $array ) . " " . strtolower ( $title ) . " listed ***" ) ;
+	    }
+
+
+	// __process_at_notation -
+	//	Reads file contents after the '@' character and returns individual arguments.
+	private function  __process_at_notation ( $argument )
+	   {
+	   	global		$Runtime ;
+	   	static 		$included_files		=  array ( ) ;
+
+
+	   	// Assume the argument starts with the 'at' character
+		$file = trim ( substr ( $argument, 1 ) ) ;
+
+		// Determine last including file
+		if  ( count ( $included_files ) )
+			$last_file = $included_files [ count ( $included_files ) - 1 ] ;
+		else
+			$last_file = null ;
+
+		// If only the '@' sign is specified, then read from standard input
+		if  ( $file  ==  "" )
+		   {
+		   	if  ( $last_file )
+		   	   	error ( new CLException ( "The '@' notation alone (without a file name) can only be used from the command line (in file '$last_file')." ) ) ;
+
+			$real_file =  "stdin" ;
+			$contents  =  $this -> __read_from_stdin ( ) ;
+		    }
+		// Otherwise, check that the file exists and read its contents
+		else
+		   {
+			if  ( ! file_exists ( $file ) )
+			   {
+	   			if  ( $last_file )
+	   				$message = " (referenced from file '$last_file')" ;
+				else
+					$message = "" ;
+
+				error ( new CLException ( "'@' command-line parameter notation : the '$file' file does not exist$message." ) ) ;
+			     }
+
+			// Get the real path of this file name and store it
+			$real_file 		=  Path::ToUnix ( realpath ( $file ) ) ;
+
+			if  ( IS_STANDALONE )
+				$compare_function = "strcasecmp" ;
+			else
+				$compare_function = "strcmp" ;
+
+			foreach ( $included_files  as  $included_file )
+			   {
+				if  ( ! $compare_function ( $included_file, $real_file ) )
+					error ( new CLException ( "'@' command-line parameter notation : circular reference to file '$file' in file '$last_file'." ) ) ;
+			    }
+
+			// Add this file to the stack of included files
+			$included_files []	=  $real_file ;
+
+			// Get file contents
+	    		$contents 		=  file_get_contents ( $real_file ) ;
+		     }
+
+    		// Get file contents as argument list ; allow C++ style comments
+    		$contents		=  preg_replace ( '-//.*?$-imsx', '', $contents ) ;
+    		$contents 		=  preg_replace ( '-/\*.*?\*/-imsx', '', $contents ) ;
+    		$contents 		=  str_replace ( array ( "\r", "\n" ), ' ', $contents ) ;
+    		$arguments		=  String::ExplodeWithQuotedStrings ( $contents ) ;
+    		$output_arguments       =  array ( ) ;
+
+    		// Loop through arguments
+		foreach  ( $arguments  as  $argument )
+  		   {
+			if  ( $argument [0]  ==  '@' )
+			   {
+				if  ( $this -> CommandLineOptions  &  self::CL_EMBEDDED_AT )
+				   {
+				   	$list 			=  $this -> __process_at_notation ( $argument ) ;
+					$output_arguments 	=  array_merge ( $output_arguments, $list ) ;
+				    }
+				else
+					error ( new CLException ( "The '@file' notation is not authorized in file '$file'." ) ) ;
+			    }
+			else
+				$output_arguments [] = $argument ;
+  		    }
+
+    		// All done, return
+    		return ( $output_arguments ) ;
+	    }
+
+
+	// __process_saveto :
+	//	Processes the --saveto option
+	private function  __process_saveto ( $file )
+	   {
+	   	$this -> SaveTo = $file [0] ;
+	   }
+
+
+	// __process_set_variable :
+	//	Sets the specified environment variable for program execution.
+	private function  __process_set_variable ( $variable )
+	   {
+		$variable 	=  $variable [0] ;
+
+		if  ( ! preg_match ( '/^[^\'"=]+\=/', $variable ) )
+			error ( new CLException ( "Invalid variable definition for the --set parameter : $variable" ) ) ;
+
+		$status = putenv ( $variable ) ;
+
+		if  ( $status  ===  false )
+			error ( new CLException ( "Cannot define the following variable through the --set parameter : $variable" ) ) ;
+	    }
+
+
+	// __process_unset_variable :
+	//	Sets the specified environment variable for program execution.
+	private function  __process_unset_variable ( $variable )
+	   {
+		$variable 	=  $variable [0] ;
+
+		if  ( ! preg_match ( '/^(?P<name>[^\'"=]+)[=]?$/', $variable, $matches )  ||
+		      ! isset ( $matches [ 'name' ] )  ||  ! $matches [ 'name' ] )
+			error ( new CLException ( "Invalid variable name for the --unset parameter : $variable" ) ) ;
+
+		$status = putenv ( $matches [ 'name' ] . "=" ) ;
+
+		if  ( $status  ===  false )
+			error ( new CLException ( "Cannot undefine the following variable through the --unset parameter : $variable" ) ) ;
+	    }
+
+
+	// __read_from_stding -
+	//	Reads argument data from stdin
+	private function  __read_from_stdin ( )
+	   {
+	   	global		$Runtime ;
+
+
+	   	$contents 	=  "" ;
+
+	   	if  ( IS_STANDALONE )
+	   		$eof = "^Z" ;
+   		else
+   			$eof = "^D" ;
+
+		$prompt = ">> " ;
+		output ( "Enter command-line arguments (multilines are allowed) ; end with '$eof' or '.' :" ) ;
+		echo  $prompt ;
+
+		while  ( $line = Console::Input ( ) )
+		   {
+			$line 	=  trim ( $line ) ;
+
+			if  ( $line  ==  '.' )
+				break ;
+
+			$contents .= $line . "\n" ;
+		   	echo $prompt ;
+		    }
+
+		return ( $contents ) ;
+	    }
+
+
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/******                                                                               ******/
+	/******                               PUBLIC FUNCTIONS                                ******/
+	/******                                                                               ******/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		IsSpecialParameter - Checks if the specified name is a special parameter.
+
+	    PROTOTYPE
+		$status = $CL -> IsSpecialParameter ( $name ) ;
+
+	    DESCRIPTION
+		Checks if the specified parameter is a special one.
+		Only parameters having a 'callback' entry or a 'isspecial' one are checked.
+
+	    PARAMETERS
+		$name (string) -
+			Parameter name to be checked, included the leading signs.
+
+	    RETURN VALUE
+		True if the parameter is a special one, false otherwise.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  IsSpecialParameter ( $name )
+	   {
+		foreach  ( CL::$SpecialParameters  as  $parameter )
+		   {
+		   	if  ( isset ( $parameter [ 'callback' ] )  ||  isset ( $parameter [ 'isspecial' ] ) )
+		   	   {
+			   	if  ( is_array ( $parameter [ 'names' ] ) )
+			   		$pnames = $parameter [ 'names' ] ;
+				else
+					$pnames = array ( $parameter [ 'names' ] ) ;
+
+				foreach  ( $pnames  as  $pname )
+				   {
+					if  ( ! strcasecmp ( $pname, $name ) )
+						return ( true ) ;
+				    }
+			    }
+		    }
+
+		return ( false ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		ProcessSpecialParameters - Processes special command-line parameters.
+
+	    PROTOTYPE
+		$cl -> ProcessSpecialParameters ( ) ;
+
+	    DESCRIPTION
+		This function executes the actions collected after parsing the special command line
+		parameters.
+		It is the very last action executed by the CL constructor, if the
+		$process_special_parameters is set to true.
+		Setting this parameter to false allows the CLParser class to register the
+		classes that are to be used as regular command-line options, which can themselves add
+		their own special command-line options.
+		This is the case for example of the CLNumericParameter class, which adds the
+		special parameter '--expressions' to list the allowed mathematical functions that can
+		be used in the context of a numeric parameter.
+		There was thus a necessity to be able to dissociate the construction of this object
+		from the processing of special parameters.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  ProcessSpecialParameters ( )
+	   {
+	   	$callbacks 	=  $this -> CallbackFunctions ;
+
+		foreach  ( $callbacks  as  $definition )
+		   {
+		   	$function 		=  $definition [ 'callback' ] ;
+			$special_arguments	=  $definition [ 'special-arguments' ] ;
+
+		   	if  ( isset ( $definition [ 'extra' ] ) )
+		   		$extra = $definition [ 'extra' ] ;
+	   		else
+	   			$extra = null ;
+
+			if  ( is_array ( $function ) )
+				call_user_func ( $function, $special_arguments, $extra ) ;
+			else
+				$this -> $function ( $special_arguments, $extra ) ;
+
+			if  ( isset ( $definition [ 'exit' ] )  &&  $definition [ 'exit' ] )
+				exit( ) ;
+		    }
+
+		// If the --saveto option has been specified, save arguments to the specified file
+		if  ( $this -> SaveTo  !==  false )
+		   {
+			$fp = @fopen ( $this -> SaveTo, "w" ) ;
+
+			if  ( ! $fp )
+				error ( new CLException ( "--saveto option : Invalid file name '{$this -> SaveTo}'." ) ) ;
+
+			$arguments_to_save = $this -> Argv ;
+			array_shift ( $arguments_to_save ) ;
+
+			foreach  ( $arguments_to_save  as  $argument )
+			   {
+			   	$argument 	=  String::QuotedString ( $argument ) ;
+				fwrite ( $fp, "$argument\n" ) ;
+			    }
+
+			fclose ( $fp ) ;
+			output ( "Command-line arguments saved to file \"{$this -> SaveTo}\"." ) ;
+			exit ( ) ;
+		    }
+	     }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		RegisterSpecialParameter - registers a special parameter.
+
+	    PROTOTYPE
+		$CLParser -> RegisterSpecialParameter ( $definition ) ;
+
+	    DESCRIPTION
+		Registers an additional special command-line parameter (such as --help, --usage and
+		so on).
+
+	    PARAMETERS
+		$definition (array of strings) -
+			Array of strings that contain the special parameter name and definitions.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  RegisterSpecialParameter ( $definition )
+	   {
+		if  ( is_array ( $definition [ 'names' ] ) )
+			$names = $definition [ 'names' ] ;
+		else
+			$names = array ( $definition [ 'names' ] ) ;
+
+		foreach  ( CL::$SpecialParameters  as  $parameter )
+		   {
+			if  ( is_array ( $parameter [ 'names' ] ) )
+				$pnames = $parameter [ 'names' ] ;
+			else
+				$pnames = array ( $parameter [ 'names'] ) ;
+
+			foreach  ( $pnames  as  $pname )
+			   {
+				foreach  ( $names  as  $name )
+				   {
+					if  ( ! strcasecmp ( $pname, $name ) )
+						error ( new CLException ( new \Thrak\System\RuntimeException ( "Internal error : trying to register an existing parameter '$name'." ) ) ) ;
+				    }
+			    }
+		    }
+
+	    	CL::$SpecialParameters [] = $definition ;
+	   }
+
+
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/******                                                                               ******/
+	/******                         INTERFACES IMPLEMENTATION                             ******/
+	/******                                                                               ******/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+
+	/*-------------------------------------------------------------------------------------------
+
+		ArrayAccess interface implementation.
+			Used for accessing individual parameters.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  offsetSet ( $offset, $value )
+	   {
+		error ( new CLException ( "Parameters are read-only and cannot be set." ) ) ;
+	    }
+
+    	public function  offsetExists ( $offset )
+    	   {
+	   	return ( isset ( $this -> Argv [ $offset ] ) ) ;
+	    }
+
+    	public function offsetUnset ( $offset )
+	   {
+		error ( new CLException ( "Parameters are read-only and cannot be unset." ) ) ;
+	    }
+
+        public function offsetGet ( $offset )
+           {
+	   	return ( $this -> Argv [ $offset ] ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Countable interface implementation.
+			Counts the number of entries in the $Argv property.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  count ( )
+	   { return ( $this -> Argc ) ; }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Iterator interface implementation.
+			Allows for looping through each parameter using a foreach() construct.
+			The first element (command executable) is not included in the loop.
+
+	 --------------------------------------------------------------------------------------------*/
+	private  	$ArgvIndex		=  1 ;
+
+	function  current ( )
+	   {
+		$key		=  $this -> key ( ) ;
+
+		return ( $this -> Argv [ $key ] ) ;
+	    }
+
+	function  key ( )
+	   {
+		return ( $this -> ArgvIndex ) ;
+	    }
+
+	function  next ( )
+	   {
+		$key		=  $this -> key ( ) ;
+		$this -> ArgvIndex ++ ;
+
+		return ( $this -> Argv [ $key ] ) ;
+	    }
+
+	function  rewind ( )
+	   {
+	   	$this -> ArgvIndex = 1 ;
+	    }
+
+	function  valid ( )
+	   {
+	   	return ( $this -> ArgvIndex  <  $this -> Argc ) ;
+	    }
+
+	function  length ( )
+	   { return ( $this -> Argc ) ; }
+
+	function  getIterator ( )
+	   { return ( $this ) ; }
+    }

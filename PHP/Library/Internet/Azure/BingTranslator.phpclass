@@ -1,0 +1,1557 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        BingTranslator.phpclass
+
+    DESCRIPTION
+        Language translator class using the Bing API.
+
+    AUTHOR
+        Christian Vigh, 02/2015.
+
+    HISTORY
+    [Version : 1.0]	[Date : 2015/02/01]     [Author : CV]
+        Initial version.
+
+    [Version : 1.0.1]   [Date : 2015/03/15]     [Author : CV]
+ 	. Created the AbstractAzureBase parent class, which implements methods for global Microsoft Azure services
+ 	. Moved the GetAccessToken() method to AbstractAzureBase.
+ 	. Added the GetServiceInformation() method.
+ 	. Added the method which implements request to Bing translator.
+
+ **************************************************************************************************************/
+namespace	Thrak\Internet\Azure ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces & objects
+use		Thrak\System\Object ;
+use		Thrak\System\Exception ;
+use		Thrak\Internet\Azure\AbstractAzureBase ;
+use		Thrak\Internet\Azure\AzureException ;
+use		Thrak\Internet\Azure\IAzureService ;
+use		Thrak\Processors\IniFile ;
+use		Thrak\Types\String ;
+use		Thrak\Types\String\Formatting ;
+
+class  BingTranslatorException		extends  AzureException { } ;
+
+
+/*==============================================================================================================
+
+    BingTranslator -
+        Language translator class using the Bing API.
+
+  ==============================================================================================================*/
+class  BingTranslator		extends		AbstractAzureBase 
+				implements	IAzureService 
+   {
+	// Bing api url requests
+	const  ADD_TRANSLATION_METHOD			=  'AddTranslation' ;			// Not implemented
+	const  ADD_TRANSLATION_ARRAY_METHOD		=  'AddTranslationArray' ;		// Not implemented
+	const  BREAK_SENTENCES_METHOD			=  'BreakSentences' ;
+	const  DETECT_METHOD				=  'Detect' ;
+	const  DETECT_ARRAY_METHOD			=  'DetectArray' ;
+	const  GET_LANGUAGE_NAMES_METHOD		=  'GetLanguageNames' ;
+	const  GET_LANGUAGES_FOR_SPEECH_METHOD		=  'GetLanguagesForSpeak' ;
+	const  GET_LANGUAGES_FOR_TRANSLATE_METHOD	=  'GetLanguagesForTranslate' ;
+	const  GET_TRANSLATIONS_METHOD			=  'GetTranslations' ;
+	const  GET_TRANSLATIONS_ARRAY_METHOD		=  'GetTranslationsArray' ;
+	const  SPEAK_METHOD				=  'Speak' ;
+	const  TRANSFORM_TEXT_METHOD			=  'TransformText' ;
+	const  TRANSLATE_METHOD				=  'Translate' ;
+	const  TRANSLATE_ARRAY_METHOD			=  'TranslateArray' ;
+
+	// Language store file
+	const  LANGUAGE_STORE				=  'thrak://Data/BingTranslator.ini' ;
+	
+	// Min and max number of translations for the GET_TRANSLATIONS_*_METHOD
+	const	MIN_TRANSLATION_COUNT			=  1 ;
+	const   MAX_TRANSLATION_COUNT			=  1000 ;
+	
+	// Speak-related constants
+	const	MAX_SPEAK_LENGTH			=  2000 ;				// Max number of characters in a sentence to be spoken
+	const   SPEAK_WAV_FORMAT			=  'audio/wav' ;			// Returned files format
+	const   SPEAK_MP3_FORMAT			=  'audio/mp3' ;
+	
+	// TranslateArray limitations
+	const   MAX_TRANSLATE_ARRAY_CHARACTERS		=  10000 ;
+	const   MAX_TRANSLATE_ARRAY_ITEMS		=  2000 ;
+	
+	// List of available languages. 
+	public static		$TranslatedLanguages	=  [] ;
+	public static		$SpokenLanguages	=  [] ;
+	
+	// URL of the Bing Translator API
+	public			$ServiceUrl			=  'http://api.microsofttranslator.com/v2/Http.svc/' ;
+	public			$Service2Url			=  'http://api.microsofttranslator.com/V3/json/' ;
+
+	
+	/*==============================================================================================================
+	
+		Class constructor.
+	 
+	  ==============================================================================================================*/
+	public function  __construct ( $account_id, $client_application_id, $secret_key )
+	   {
+		parent::__construct ( $account_id, $client_application_id, $secret_key ) ;
+		
+		if  ( ! count ( self::$TranslatedLanguages )  ||  ! count ( self::$SpokenLanguages ) )
+			$this -> __load_languages ( ) ;
+	    }
+
+
+	/*==============================================================================================================
+	
+	    __build_xml_array_of_strings -
+	        Builds an xml tree containing an <ArrayOfString> root element, with <string> tags for each element found
+		in the supplied array.
+	
+	  ==============================================================================================================*/
+	private function  __build_xml_array_of_strings ( $array )
+	   {
+		$xml	= '<ArrayOfstring xmlns="http://schemas.microsoft.com/2003/10/Serialization/Arrays" xmlns:i="http://www.w3.org/2001/XMLSchema-instance">';
+		
+		foreach  ( $array  as  $item )
+			$xml	.=  "<string>$item</string>" ;
+		
+		$xml	.=  '</ArrayOfstring>' ;
+		
+		return ( $xml ) ;
+	    }
+	
+
+	/*==============================================================================================================
+	
+	    __check_language -
+	        Checks for the existence of the specified language.
+	
+	  ==============================================================================================================*/
+	private function  __check_language ( $language, $origin )
+	   {
+		$code	=  $this -> GetLanguageCode ( $language, true ) ;
+		
+		if  ( ! $code )
+			error ( new \Thrak\System\InvalidArgumentException ( "Invalid $origin language name or code : \"$language\"." ) ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    __get_translator_options -
+	        Returns an xml string containing translator options. Input value can either be a BingTranslatorOptions
+		object or an array of key/value pairs. 
+	 	An empty parameter will yield to an empty return value.
+	
+	  ==============================================================================================================*/
+	private function  __get_translator_options ( $options )
+	   {
+		if  ( is_a ( $options, 'Thrak\\Internet\\Azure\\BingTranslatorOptions' ) )
+			$xml_options	=  ( string ) $options ;
+		else if  ( is_array ( $options )  &&  count ( $options ) )
+			$xml_options	=  ( string ) new BingTranslatorOptions ( $options ) ;
+		else 
+			$xml_options	=  '' ;
+		
+		return ( $xml_options ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    __http_build_request -
+	        Builds a curl object.
+	
+	  ==============================================================================================================*/
+	private function  __http_build_request ( $url, $headers = [], $post_data = null ) 
+	   {
+		$this -> GetAccessToken ( ) ;
+		$headers []	=  'Authorization: Bearer ' . $this -> AccessToken ;
+		
+		if  ( is_string ( $post_data ) )
+			$headers []	=  'Content-length: ' . strlen ( $post_data ) ;
+		else
+			$headers []	=  'Content-length: 0' ;
+		
+		$request	=  curl_init ( ) ;
+
+		curl_setopt ( $request, CURLOPT_URL		, $url ) ;
+		curl_setopt ( $request, CURLOPT_RETURNTRANSFER	, true ) ;
+		curl_setopt ( $request, CURLOPT_SSL_VERIFYPEER	, false ) ;
+		curl_setopt ( $request, CURLOPT_HTTPHEADER	, $headers ) ;
+		
+		if  ( $post_data  !==  null )
+		   {
+			curl_setopt ( $request, CURLOPT_POST		, true ) ;
+			
+			if  ( is_string ( $post_data ) )
+				curl_setopt ( $request, CURLOPT_POSTFIELDS	, $post_data ) ;
+		    }
+		
+		return ( $request ) ;
+	    }
+	
+
+	/*==============================================================================================================
+	
+	    __http_execute_request -
+	        Executes the specified request.
+	
+	  ==============================================================================================================*/
+	private function  __http_execute_request ( $request )
+	   {
+		$response	=  curl_exec ( $request ) ;
+
+		if  ( curl_errno ( $request ) )
+			error ( new \Thrak\System\HttpErrorException ( "Error executing Http request : \n" . curl_error ( $request ) ) ) ;
+		
+		curl_close ( $request ) ;
+		
+		return ( $response ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    __http_get_xml_contents -
+	        Interpret the response from __http_execute_request as xml contents.
+	
+	  ==============================================================================================================*/
+	private function  __http_get_xml_contents ( $response )
+	   {
+		$previous	=  libxml_use_internal_errors ( false ) ;
+		$xml		=  simplexml_load_string ( $response ) ;
+		
+		if  ( ! $xml )
+		   {
+			$message	=  "Errors occurred while interpreting xml response from Bing Translator :\n" ;
+			
+			foreach  ( libxml_get_errors ( )  as  $error )
+				$message	.= '- ' . $error -> message . "\n" ;
+			
+			$message	.=  "Xml data :\n$response" ;
+			
+			libxml_clear_errors ( ) ;
+			error ( new \Thrak\System\XmlErrorException ( $message ) ) ;
+		    }
+		
+		libxml_use_internal_errors ( $previous ) ;
+		
+		return ( $xml ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    __load_languages -
+	        Either loads the available languages stored in the thrak://Data/BingTranslator.ini file, or creates it
+		with data from Bing translator.
+	
+	  ==============================================================================================================*/
+	private function  __load_languages ( )
+	   {
+		$rewrite	=  false ;
+
+		// If the .ini language store file exists, load its contents
+		if  ( file_exists ( self::LANGUAGE_STORE ) )
+		   {
+			$inifile	=  IniFile::LoadFromFile ( self::LANGUAGE_STORE ) ;
+			$translated	=  $inifile -> GetKeys ( 'Translated Languages' ) ;
+			$spoken		=  $inifile -> GetKeys ( 'Spoken Languages' ) ;
+		    }
+		// Otherwise let's say that we didn't find nothing
+		else
+		   {
+			$translated	=  [] ;
+			$spoken		=  [] ;
+		    }
+		
+		// If no translated and/or spoken language list has been found, then we need to reload them from Bing translator
+		if  ( ! count ( $translated ) )
+		   {
+			$translated		=  $this -> GetLanguagesForTranslation ( true ) ;
+			$rewrite		=  true ;
+		    }
+
+		self::$TranslatedLanguages	=  $this -> __transform_languages ( $translated ) ;
+		
+		if  ( ! count ( $spoken ) )
+		   {
+			$spoken			=  $this -> GetLanguagesForSpeech ( true ) ;
+			$rewrite		=  true ;
+		    }
+
+		self::$SpokenLanguages	=  $this -> __transform_languages ( $spoken ) ;
+		
+		// Once reloaded, we need to write them back for future calls
+		if  ( $rewrite )
+		   {
+			$fp	=  fopen ( self::LANGUAGE_STORE, 'w' ) ;
+			
+			// Write some unuseful header comments
+			fputs ( $fp, "# This file has been automatically generated by the BingTranslator class at " .
+					date ( 'Y-m-d H:i:s' ) . ".\n" ) ;
+			fputs ( $fp, "# Do not modify its contents, since they can be overridden by future instantiations of the BingTranslator class.\n\n" ) ;
+			
+			// Write the [Translated languages] section
+			fputs ( $fp, "# [Translated Languages] section : holds the list of language code/name pairs that can be used for translations.\n" ) ;
+			fputs ( $fp, "[Translated Languages]\n" ) ;
+			
+			foreach  ( self::$TranslatedLanguages  as  $entry )
+			   {
+				$line	=  $entry [ 'code' ] . str_repeat ( ' ', 24 - strlen ( $entry [ 'code' ] ) ) . " =  " . $entry [ 'name' ] ;
+				fputs ( $fp, "$line\n" ) ;
+			    }
+			
+			fputs ( $fp, "\n\n" ) ;
+
+			// Write the [Spoken languages] section
+			fputs ( $fp, "# [Spoken Languages] section : holds the list of language code/name pairs that can be used for speech synthesis.\n" ) ;
+			fputs ( $fp, "[Spoken Languages]\n" ) ;
+			
+			foreach  ( self::$SpokenLanguages  as  $entry )
+			   {
+				$line	=  $entry [ 'code' ] . 
+						str_repeat ( ' ', 24 - strlen ( $entry [ 'code' ] ) ) . 
+						" =  " . 
+						$entry [ 'name' ] ;
+				fputs ( $fp, "$line\n" ) ;
+			    }
+			
+			// All done, close the language list .ini file
+			fclose ( $fp ) ;
+		    }
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    _transform_languages -
+	        Transforms an array of languages, as returned by the GetLanguagesForxxx methods, into an associative
+		array whose elements contain the following elements :
+	 	- 'code' :
+	 		Language code
+	 	- 'name' :
+	 		Language name. Note that the language name always use the 'en' locale.
+	  
+	 	The associative array keys are the lowercased version of language code.
+	
+	  ==============================================================================================================*/
+	private function  __transform_languages ( $list )
+	   {
+		$result		=  [] ;
+		
+		foreach  ( $list  as  $key => $value )
+			$result [ strtolower ( $key ) ]		=  [ 'code' => $key, 'name' => $value ] ;
+		
+		ksort ( $result ) ;
+
+		return ( $result ) ;
+	    }
+	
+
+	/*==============================================================================================================
+	
+	    NAME
+	        BreakSentences - Breaks a piece of text into sentences.
+	
+	    PROTOTYPE
+	        $array	=  $translator -> BreakSentences ( $language, $text ) ;
+	
+	    DESCRIPTION
+	        Breaks a piece of text into sentences and returns an array containing each sentence. 
+	
+	    PARAMETERS
+	        $language (string) -
+	                Language code.
+	
+	 	$text (string) - 
+	 		Text string to be split.
+	  
+	    RETURN VALUE
+	        An array containing each broken sentence.
+	
+	  ==============================================================================================================*/
+	public function  BreakSentences ( $language, $text )
+	   {
+		$this -> __check_language ( $language, "sentence to be broken" ) ;
+		
+		$url		=  $this -> ServiceUrl . self::BREAK_SENTENCES_METHOD . '?text=' . urlencode ( $text ) . '&language=' . $language ;
+		$request	=  $this -> __http_build_request ( $url ) ;
+		$response	=  $this -> __http_execute_request ( $request ) ;
+
+		// Interpret the response
+		$xml		=  $this -> __http_get_xml_contents ( $response ) ;
+		$result		=  [] ;
+		$start_index	=  0 ;
+		
+		foreach  ( $xml -> int  as  $value )
+		   {
+			$length 	=  ( integer ) ( string ) $value ;
+			$result []	=  trim ( substr ( $text, $start_index, $length ) ) ;
+			$start_index   +=  $length ;
+		    }
+		
+		return ( $result ) ;
+	    }
+	
+
+	/*==============================================================================================================
+	
+	    NAME
+	        Detect - Detects the language of a supplied input string.
+	
+	    PROTOTYPE
+	        $result = $translator -> Detect ( $text ) ;
+	
+	    DESCRIPTION
+		Detects the language of the supplied text.
+	  
+	    PARAMETERS
+	 	$text (string) -
+	 		Text string(s) whose source language is to be detected.
+	  
+	    RETURN VALUE
+	 	Returns the language code.
+	
+	  ==============================================================================================================*/
+	public function  Detect ( $text )
+	   {
+		$url		=  $this -> ServiceUrl . self::DETECT_METHOD . '?text=' . urlencode ( $text ) ;
+		$request	=  $this -> __http_build_request ( $url ) ;
+		$response	=  $this -> __http_execute_request ( $request ) ;
+
+		// Interpret the response
+		$xml		=  $this -> __http_get_xml_contents ( $response ) ;
+		$language_code	=  ( string ) $xml [0] ;
+		
+		return ( $language_code ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        DetectArray - Detects the language of a supplied input string array.
+	
+	    PROTOTYPE
+	        $result = $translator -> DetectArray ( $text_array ) ;
+	
+	    DESCRIPTION
+		Detects the language of the supplied text strings.
+	  
+	    PARAMETERS
+	 	$text_array (string or array) -
+	 		Text string(s) whose source language is to be detected.
+	  
+	    RETURN VALUE
+	 	Returns the language code.
+	
+	  ==============================================================================================================*/
+	public function  DetectArray ( $text )
+	   {
+		if  ( ! is_array ( $text ) )
+			$text	=  [ $text ] ;
+		
+		$url		=  $this -> ServiceUrl . self::DETECT_ARRAY_METHOD ;
+		$post_data	=  $this -> __build_xml_array_of_strings ( $text ) ;
+		$request	=  $this -> __http_build_request ( $url, [ 'Content-type: text/xml' ], $post_data ) ;
+		$response	=  $this -> __http_execute_request ( $request ) ;
+
+		// Interpret the response
+		$xml		=  $this -> __http_get_xml_contents ( $response ) ;
+		$language_codes	=  [] ;
+		
+		foreach  ( $xml -> string  as  $item )
+			$language_codes []	=  ( string ) $item ;
+		
+		return ( $language_codes ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    NAME
+		GetLanguage     - Returns the real code and name of a language.
+	        GetLanguageCode - Returns the real code of a language.
+		GetLanguageName - Returns the real name of a language.
+	
+	    PROTOTYPE
+	        $code = $translator -> GetLanguage     ( $language, $translated_languages = true ) ;
+	        $code = $translator -> GetLanguageCode ( $language, $translated_languages = true ) ;
+	        $code = $translator -> GetLanguageName ( $language, $translated_languages = true ) ;
+	
+	    DESCRIPTION
+	        Returns the real Bin Translator language code for a language.
+	
+	    PARAMETERS
+	        $language (string) -
+	                Either a language code or name.
+	  
+	 	$translated_languages (boolean) -
+	 		When true, search is performed on languages available for translation.
+	 		When false, search is performed on languages available for speech synthesis.
+	
+	    RETURN VALUE
+	 	- GetLanguage() returns an associative array containing two entries, 'code' and 'name'.
+	        - GetLanguageCode() returns the real case-sensitive language code corresponding to the supplied language 
+		  code or name, or an empty string if not found.
+		- GetLanguageName() returns the language name associated to a language code.
+	
+	  ==============================================================================================================*/
+	private function  __find_language ( $language, $translated_languages )
+	   {
+		$array	=  ( $translated_languages ) ?  self::$TranslatedLanguages : self::$SpokenLanguages ;
+		
+		foreach  ( $array  as  $key => $supported_language )
+		   {
+			if  ( ! strcasecmp ( $supported_language [ 'code' ], $language )  ||
+			      ! strcasecmp ( $supported_language [ 'name' ], $language ) )
+				return ( $key ) ;
+		    }
+		
+		return ( false ) ;
+	    }
+	
+	public function  GetLanguageCode ( $language, $translated_languages = true )
+	   {
+		if  ( $key = $this -> __find_language ( $language, $translated_languages ) )
+			return ( ( $translated_languages ) ?  self::$TranslatedLanguages [ $key ] [ 'code' ] : self::$SpokenLanguages [ $key ] [ 'code' ] ) ;
+		else
+			return ( false ) ;
+	    }
+	
+	
+	public function  GetLanguageName ( $language, $translated_languages = true )
+	   {
+		if  ( $key = $this -> __find_language ( $language, $translated_languages ) )
+			return ( ( $translated_languages ) ?  self::$TranslatedLanguages [ $key ] [ 'name' ] : self::$SpokenLanguages [ $key ] [ 'name' ] ) ;
+		else
+			return ( false ) ;
+	    }
+
+	
+	public function  GetLanguage ( $language, $translated_languages = true )
+	   {
+		if  ( $key = $this -> __find_language ( $language, $translated_languages ) )
+			return ( ( $translated_languages ) ?  self::$TranslatedLanguages [ $key ] : self::$SpokenLanguages [ $key ] ) ;
+		else
+			return ( false ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        GetLanguages - Gets the list of available languages.
+	
+	    PROTOTYPE
+	        $list	=  $tranlator -> GetLanguages ( $sort_by_code = true ) ;
+	
+	    DESCRIPTION
+	        Gets the list of available translation languages.
+	
+	    PARAMETERS
+		$for_translation (boolean) -
+	 		When true, returns the language codes for text translation.
+	 		When false, returns the language codes for speech synthesis.
+	 
+	        $sort_by_code (boolean) -
+	                When true, the list is sorted by language code, otherwise by language name.
+	
+	    RETURN VALUE
+	        An array of associative arrays describing the currently supported languages.
+		Each associative array contains the following entries :
+	 	- 'code' :
+	 		Language code.
+	 	- 'name' :
+	 		Language name.
+	
+	  ==============================================================================================================*/
+	public function  GetLanguages ( $for_translation = true, $sort_by_code = true )
+	   {
+		$list	=  ( $for_translation ) ?  self::$TranslatedLanguages : self::$SpokenLanguages ;
+		$index	=  ( $sort_by_code ) ?  'code' : 'name' ;
+		
+		uksort ( $list, function ( $a, $b ) use ( $list, $index ) { return ( strcasecmp ( $list [$a] [ $index ], $list [$b] [ $index ] ) ) ; } ) ;
+		
+		return ( $list ) ;
+	    }
+	
+
+	/*==============================================================================================================
+	
+	    NAME
+	        GetLanguagesNames - Get languages names from an array of language codes.
+	
+	    PROTOTYPE
+	        $result = $translator -> GetLanguagesNames ( $language_codes, $locale = 'en' ) ;
+	
+	    DESCRIPTION
+	        Gets the list of languages supported for textual translation.
+		
+	   PARAMETERS
+	 	$language_codes (array of string) -
+	 		List of language codes whose name is to be retrieved.
+	  
+	 	$locale (string) -
+	 		Locale to be used for returning the results.
+	  
+	    RETURN VALUE
+	 	The returned value is an associative array whose keys are language codes and whose values are language
+	 	names.
+	
+	  ==============================================================================================================*/
+	public function  GetLanguageNames ( $language_codes, $locale = 'en' )
+	   {
+		if  ( ! count ( $language_codes ) )
+			return ( [] ) ;
+		
+		$url		=  $this -> ServiceUrl . self::GET_LANGUAGE_NAMES_METHOD . "?locale=$locale" ;
+		$list		=  $this -> __build_xml_array_of_strings ( $language_codes ) ;
+		$request	=  $this -> __http_build_request ( $url, [ 'Content-Type: text/xml' ], $list ) ;
+		$response	=  $this -> __http_execute_request ( $request ) ;
+
+		// Interpret the response
+		$xml		=  $this -> __http_get_xml_contents ( $response ) ;
+
+		// Retrieve xml results
+		$xml		=  simplexml_load_string ( $response ) ;
+		$result		=  [] ;
+		$index		=  0 ;
+		
+		foreach  ( $xml -> string  as  $name )
+		   {
+			$result [ $language_codes [ $index ] ]	=  utf8_decode ( ( string ) $name ) ;
+			$index ++ ;
+		    }
+
+		return ( $result ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        GetLanguagesForTranslation - Get languages supported for translation.
+	
+	    PROTOTYPE
+	        $result = $translator -> GetLanguagesForTranslation ( $get_language_names = false,  $locale = 'en' ) ;
+	
+	    DESCRIPTION
+	        Gets the list of languages supported for textual translation.
+		
+	   PARAMETERS
+	 	$get_language_names (boolean) -
+	 		When true, an additional request (GET_LANGUAGE_NAMES_METHOD) is issued to retrieve the complete
+			language names.
+	  
+	 	$locale (string) -
+	 		If the $get_language_names parameter is true, indicates the language code to be used for naming
+	 		the full language names.
+	  
+	    RETURN VALUE
+	        If  $get_language_names is false, the returned value is an array containing the list of language codes
+	 	supported for bidirectional translation.
+	 	If true, the returned value is an associative array whose keys are language codes and whose values are
+	 	language names.
+	
+	  ==============================================================================================================*/
+	public function  GetLanguagesForTranslation ( $get_language_names = false, $locale = 'en' )
+	   {
+		$url		=  $this -> ServiceUrl . self::GET_LANGUAGES_FOR_TRANSLATE_METHOD . "?locale=$locale" ;
+		$request	=  $this -> __http_build_request ( $url ) ;
+		$response	=  $this -> __http_execute_request ( $request ) ;
+
+		// Interpret the response
+		$xml		=  $this -> __http_get_xml_contents ( $response ) ;
+		$result		=  [] ;
+		
+		foreach  ( $xml -> string  as  $language )
+			$result []	=  utf8_decode ( ( string ) $language ) ;
+
+		if  ( $get_language_names )
+			$result		=  $this -> GetLanguageNames ( $result, $locale ) ;
+
+		return ( $result ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        GetLanguagesForSpeech - Get list of languages available for speech synthesis.
+	
+	    PROTOTYPE
+	        $result = $translator -> GetLanguagesForSpeech ( $get_language_names = false, $locale = 'en' ) ;
+
+	
+	    DESCRIPTION
+	        Get list of languages available for speech synthesis.
+		
+	   PARAMETERS
+	 	$get_language_names (boolean) -
+	 		When true, an additional request (GET_LANGUAGE_NAMES_METHOD) is issued to retrieve the complete
+			language names.
+	  
+	 	$locale (string) -
+	 		If the $get_language_names parameter is true, indicates the language code to be used for naming
+	 		the full language names.
+	  
+	    RETURN VALUE
+	        If  $get_language_names is false, the returned value is an array containing the list of language codes
+	 	supported for speech synthesis.
+	 	If true, the returned value is an associative array whose keys are language codes and whose values are
+	 	language names.
+	
+	  ==============================================================================================================*/
+	public function  GetLanguagesForSpeech ( $get_language_names = false, $sort_by_code = true, $locale = 'en' )
+	   {
+		$url		=  $this -> ServiceUrl . self::GET_LANGUAGES_FOR_SPEECH_METHOD . "?locale=$locale" ;
+		$request	=  $this -> __http_build_request ( $url ) ;
+		$response	=  $this -> __http_execute_request ( $request ) ;
+
+		// Interpret the response
+		$xml		=  $this -> __http_get_xml_contents ( $response ) ;
+		$result		=  [] ;
+		
+		foreach  ( $xml -> string  as  $language )
+			$result []	=  utf8_decode ( ( string ) $language ) ;
+
+		if  ( $get_language_names )
+			$result		=  $this -> GetLanguageNames ( $result, $locale ) ;
+
+		return ( $result ) ;
+	    }
+
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        GetTranslations - Retrieves multiple translations.
+	
+	    PROTOTYPE
+	        $result		=  $translator -> GetTranslations ( $from_language, $to_language, $text, 
+	 								$max_translations = 100, $options = false ) ;
+	
+	    DESCRIPTION
+	        Description
+	
+	    PARAMETERS
+	        $from_language (string) -
+	                Source language.
+	  
+	 	$to_language (string) -
+	 		Destination language.
+	  
+	 	$text (string) -
+	 		Text to be translated.
+	  
+	 	$max_translations (integer) -
+	 		Maximum number of translations to be returned.
+	  
+	 	$options (BingTranslatorOptions object or array of key/value pairs) -
+	 		Either a BingTranslatorOptions object, or an array of key/value pairs specifying the options.
+	
+	    RETURN VALUE
+	 	The returned value is an associative array with the following entries :
+	  
+	 	- 'from-language' :
+	 		Input language.
+	  
+	 	- 'to-language' :
+	 		Output language.
+	  
+	 	- 'original-text' :
+	 		Original text to be translated.
+	  
+	 	- 'translations' :
+	 		An array of associative arrays that contain the following entries :
+	  
+	 		- 'matched-text' :
+	 			Original text that was matched for this result. Only returned if the matched original 
+	 			text was different than the input text. Used to return the source text of a fuzzy match. 
+	 			Not returned for Microsoft Translator results.
+	  
+	 		- 'text' :
+	 			Translated text.
+	  
+	 		- 'count' :
+	 			The number of times this translation with this rating has been selected. The value will 
+	 			be 0 for the automatically translated response.
+	  
+	 		- 'match-degree' :
+	 			The system matches input sentences against the store, including inexact matches. 
+	 			Indicates how closely the input text matches the original text found in the store. 
+	 			The value returned ranges from 0 to 100, where 0 is no similarity and 100 is an exact 
+	 			case sensitive match.
+	  
+	 		- 'rating' :
+	 			Indicates the authority of the person making the quality decision. 
+	 			Machine Translation results will have a rating of 5. 
+	 			Anonymously provided translations will generally have a rating of 1 to 4, whilst 
+	 			authoritatively provided translations will generally have a rating of 6 to 10.
+	
+	  ==============================================================================================================*/
+	public function  GetTranslations ( $from_language, $to_language, $text, $max_translations = 100, $options = false )
+	   {
+		$this -> __check_language ( $from_language, "source" ) ;
+		$this -> __check_language ( $to_language  , "destination" ) ;
+		
+		$url		=  $this -> ServiceUrl . self::GET_TRANSLATIONS_METHOD . 
+						'?text=' . urlencode ( $text ) .
+						'&from=' . $from_language .
+						'&to=' . $to_language .
+						'&maxTranslations=' . $max_translations ; 
+		$xml_options	=  $this -> __get_translator_options ( $options ) ;
+		
+		if  ( $xml_options )
+			$request	=  $this -> __http_build_request ( $url, [ 'Content-type: text/xml' ], $xml_options ) ;
+		else
+			$request	=  $this -> __http_build_request ( $url, [], true ) ;
+		
+		$response	=  $this -> __http_execute_request ( $request ) ;
+
+		// Interpret the response
+		$xml		=  $this -> __http_get_xml_contents ( $response ) ;
+		$result		=  [] ;
+		
+		$result [ 'from-language' ]	=  ( string ) $xml -> From ;
+		$result [ 'to-language' ]	=  $to_language ;
+		$result [ 'original-text' ]	=  $text ;
+		$result [ 'translations' ]	=  [] ;
+		$translations			=  $xml -> Translations ;
+		
+		foreach  ( $translations -> TranslationMatch  as  $match )
+		   {
+			$result [ 'translations' ] []	=
+			   [
+				'matched-text'	=>  utf8_decode ( ( string ) $match -> MatchedOriginalText ),
+				'text'		=>  strtolower ( utf8_decode ( ( string ) $match -> TranslatedText ) ),
+				'count'		=>  ( integer ) ( string ) $match -> Count,
+				'match-degree'	=>  ( integer ) ( string ) $match -> MatchDegree,
+				'rating'	=>  ( integer ) ( string ) $match -> Rating
+			    ] ;
+		    }
+
+		return ( $result ) ;
+	    }
+
+
+	/*==============================================================================================================
+	
+	    NAME
+	        GetTranslationsArray - Translates an array.
+	
+	    PROTOTYPE
+	        $result		=  $translator -> TranslateArray ( $from_language, $to_language, $text, 
+									$max_translations = 100, $options = false )
+	
+	    DESCRIPTION
+	        Description
+	
+	    PARAMETERS
+	        $from_language (string) -
+	                Source language.
+	  
+	 	$to_language (string) -
+	 		Destination language.
+	  
+	 	$text (array of string) -
+	 		Array of texts to be translated.
+	  
+	 	$max_translations (integer) -
+	 		Maximum number of translations to be returned.
+	  
+	 	$options (BingTranslatorOptions object or array of key/value pairs) -
+	 		Either a BingTranslatorOptions object, or an array of key/value pairs specifying the options.
+	
+	    RETURN VALUE
+		The returned value is an array having the same number of elements as the input text array. Each array 
+		contains is an associative array providing the following entries :
+	 
+	 	- 'from-language' :
+	 		Input language.
+	  
+	 	- 'to-language' :
+	 		Output language.
+	  
+	 	- 'original-text' :
+	 		Original text to be translated.
+	  
+	 	- 'translations' :
+	 		An array of associative arrays that contain the following entries :
+	  
+	 		- 'matched-text' :
+	 			Original text that was matched for this result. Only returned if the matched original 
+	 			text was different than the input text. Used to return the source text of a fuzzy match. 
+	 			Not returned for Microsoft Translator results.
+	  
+	 		- 'text' :
+	 			Translated text.
+	  
+	 		- 'count' :
+	 			The number of times this translation with this rating has been selected. The value will 
+	 			be 0 for the automatically translated response.
+	  
+	 		- 'match-degree' :
+	 			The system matches input sentences against the store, including inexact matches. 
+	 			Indicates how closely the input text matches the original text found in the store. 
+	 			The value returned ranges from 0 to 100, where 0 is no similarity and 100 is an exact 
+	 			case sensitive match.
+	  
+	 		- 'rating' :
+	 			Indicates the authority of the person making the quality decision. 
+	 			Machine Translation results will have a rating of 5. 
+	 			Anonymously provided translations will generally have a rating of 1 to 4, whilst 
+	 			authoritatively provided translations will generally have a rating of 6 to 10.
+	
+	
+	  ==============================================================================================================*/
+	public function  GetTranslationsArray ( $from_language, $to_language, $text, $max_translations = 100, $options = false )
+	   {
+		$this -> __check_language ( $from_language, "source" ) ;
+		$this -> __check_language ( $to_language  , "destination" ) ;
+		
+		if  ( ! is_array ( $text ) )
+			$text	= [ $text ] ;
+		
+		// Allow for either string or array of strings to be translated
+		if  ( ! is_array ( $text ) )
+			$text		=  [ $text ] ;
+		
+		// Check limits
+		if  ( count ( $text )  >  self::MAX_TRANSLATE_ARRAY_ITEMS )
+			error ( new BingTranslatorException ( 'Too many items to translate. Current limit is ' . self::MAX_TRANSLATE_ARRAY_ITEMS ) ) ;
+		
+		if  ( String::StringArrayLength ( $text )  >  self::MAX_TRANSLATE_ARRAY_CHARACTERS )
+			error ( new BingTranslatorException ( 'Too many characters to translate. Current limit is ' . self::MAX_TRANSLATE_ARRAY_CHARACTERS ) ) ;			
+
+		// Build the request
+		$url		=  $this -> ServiceUrl . self::GET_TRANSLATIONS_ARRAY_METHOD ;
+		
+		// Build the input xml data
+		$xml_options	=  $this -> __get_translator_options ( $options ) ;
+		$xml_text		=  "\n" ;
+		
+		foreach  ( $text  as  $string )
+			$xml_text	.=  "\t\t" . '<string xmlns="http://schemas.microsoft.com/2003/10/Serialization/Arrays">' . $string . "</string>\n" ;
+		
+		$xml_input	=  <<<END
+<GetTranslationsArrayRequest>
+	<AppId/>
+	<From>$from_language</From>
+	$xml_options
+	<Texts>$xml_text	</Texts>
+	<To>$to_language</To>
+	<MaxTranslations>$max_translations</MaxTranslations>
+</GetTranslationsArrayRequest>
+END;
+
+		$request	=  $this -> __http_build_request ( $url, [ 'Content-type: text/xml' ], $xml_input ) ;
+		
+		// Execute it
+		$response	=  $this -> __http_execute_request ( $request ) ;
+
+		// Interpret the response
+		$xml		=  $this -> __http_get_xml_contents ( $response ) ;
+
+		// Build the result 
+		$result		=  [] ;
+		$index		=  0 ;
+		
+		// Loop through translation resonses 
+		foreach  ( $xml -> GetTranslationsResponse  as  $item )
+		   {
+			$from					=  utf8_decode ( ( string ) $item -> From ) ;
+			
+			$answer		= 
+			   [
+				'from-language'				=>  $from,
+				'to-language'				=>  $to_language,
+				'original-text'				=>  $text [ $index ],
+				'state'					=>  ( isset ( $item -> State ) ) ?  utf8_decode ( ( string ) $item -> State ) : null,
+				'translations'				=>  []
+			    ] ;
+			
+			// Loop through translation matches
+			foreach  ( $item -> Translations -> TranslationMatch  as  $subitem )
+			   {
+				$answer [ 'translations' ] []	= 
+				   [ 
+					'count'		=>  ( integer ) ( string ) $subitem -> Count,
+					'error'		=>   ( isset ( $subitem -> Error ) ) ?  utf8_decode ( ( string ) $subitem -> Error ) : null,
+					'match-degree'	=>  ( integer ) ( string ) $subitem -> MatchDegree,
+					'matched-text'	=>  utf8_decode ( ( string ) $subitem -> MatchedOriginalText ),
+					'rating'	=>  ( integer ) ( string ) $subitem -> Rating,
+					'text'		=>  strtolower ( utf8_decode ( ( string ) $subitem -> TranslatedText ) )
+				    ] ;
+			    }
+			
+			// Add this translation response to the result			
+			$index ++ ;
+			$result []	=  $answer ;
+		    }
+
+		// All done, return
+		return ( $result ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        IsLanguageDefined - Checks if a language is supported for translation.
+	
+	    PROTOTYPE
+	        $status	= $translator -> IsLanguageDefined ( $language, $search_code = true ) ;
+	
+	    DESCRIPTION
+	        Checks if the specified language belongs to the list of languages supported for translation.
+		The search can be performed either by language code ($search_code = true) or by language name
+		($search_code = false).
+	
+	    PARAMETERS
+	        $language (string) -
+	                Language code or name to be searched for.
+	  
+	 	$search_code (boolean) -
+	 		When true, search is performed on the language code.
+	 		When false, search is performed on the language name.
+	
+	    RETURN VALUE
+	        true if the language is supported for translation, false otherwise.
+	
+	  ==============================================================================================================*/
+	public function  IsLanguageDefined ( $language, $search_code = true )
+	   {
+		$index	=  ( $search_code ) ?  'code' : 'name' ;
+		
+		foreach  ( self::$Languages  as  $language )
+		   {
+			if  ( ! strcasecmp ( $language [ $index ], $language ) )
+				return ( true ) ;
+		    }
+		
+		return ( false ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        ReloadLanguages - Rebuilds the language list.
+	
+	    PROTOTYPE
+	        $translator -> ReloadLanguages ( ) ;
+	
+	    DESCRIPTION
+	        Rebuilds the language list.
+	
+	  ==============================================================================================================*/
+	public function  ReloadLanguages ( )
+	   {
+		if  ( file_exists ( self::LANGUAGE_STORE ) )
+			unlink ( self::LANGUAGE_STORE ) ;
+		
+		$this -> __load_languages ( ) ;
+	    }
+
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        Speak - Generates a sound file with the specified spoken sentence.
+	
+	    PROTOTYPE
+	        $translator -> Speak ( $language, $text,  $format = self::SPEAK_WAV_FORMAT, 
+						$best_quality = false ) ;
+	
+	    DESCRIPTION
+	        Generates a sound file containing the specified spoken sentence in the specified language.
+	
+	    PARAMETERS
+	 	$language (string) -
+	 		Language of the text to be spoken.
+	  
+	 	$text (string) -
+	 		Text to be spoken.
+	  
+	 	$format (integer) -
+	 		Either BingTranslator::SPEAK_WAV_FORMAT for .wav files or BingTranslator::SPEAK_MP3_FORMAT for
+	 		.mp3 files.
+	  
+	 	$best_quality (boolean) -
+	 		When true, the returned sound file will emphasize on sound quality.
+	 		When false, result size is privileged.
+	
+	    RETURN VALUE
+	        Returns sound file data, or an empty string if an error occurred.
+	
+	  ==============================================================================================================*/
+	public function  Speak ( $language, $text,  $format = self::SPEAK_WAV_FORMAT, $best_quality = false )
+	   {
+		$this -> __check_language ( $language, "spoken" ) ;
+		
+		// Check options
+		$options	=  ( $best_quality ) ?  'MaxQuality' : 'MinSize' ;
+
+		switch ( strtolower ( $format ) )
+		   {
+			case	self::SPEAK_MP3_FORMAT :
+			case	self::SPEAK_WAV_FORMAT :
+				break ;
+				
+			default :
+				error ( new \Thrak\System\InvalidArgumentException ( "Invalid output sound format \"$format\"." ) ) ;
+		    }
+				
+		// Build the request
+		$url		=  $this -> ServiceUrl . self::SPEAK_METHOD . 
+					'?text=' . urlencode ( utf8_encode ( $text ) ) .
+					'&language=' . $language .
+					'&format='   . $format .
+					'&options=' . $options ;
+
+		// Build the request
+		$request	=  $this -> __http_build_request ( $url , [ 'Content-type: ' . $format ] ) ;
+		
+		// Execute it
+		$response	=  $this -> __http_execute_request ( $request ) ;
+
+		return ( $response ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        TransformText - Normalizes a sentence.
+	
+	    PROTOTYPE
+	        $array	=  $translator -> TransformText ( $language, $text, $category = null ) ;
+	
+	    DESCRIPTION
+		The TransformText method is a text normalization function for social media, which returns a normalized 
+		form of the input. The method can be used as a preprocessing step in Machine Translation or other 
+		applications, which expect clean input text than is typically found in social media or user-generated 
+		content. The function currently works only with English input. 
+		The method is a RESTful service using GET over HTTP. It supports simple XML and JSON serialization.
+	 
+	    PARAMETERS
+	        $language (string) -
+	                Language code. Currently, only the 'en' language is supported.
+	
+	 	$text (string) - 
+	 		Text string to be normalized.
+	  
+	 	$category (string) -
+	 		Search category. Defaults to "general".
+	  
+	    RETURN VALUE
+	        An associative array containing the following entries :
+	  
+	 	- 'errno' :
+	 		Error code (0 means transformation went ok).
+	  
+	 	- 'error' :
+	 		Error message if any ; "OK" if everything went ok.
+	  
+	 	- 'text' :
+	 		Normalized text.
+	
+	  ==============================================================================================================*/
+	public function  TransformText ( $language, $text, $category = null )
+	   {
+		if  ( $language  !=  'en' ) 
+			error ( new \Thrak\System\InvalidArgumentException ( "The TransformText API currently supports only the 'en' language." ) ) ;
+		
+		$this -> __check_language ( $language, "source" ) ;
+		
+		$url		=  $this -> Service2Url . self::TRANSFORM_TEXT_METHOD . '?sentence=' . urlencode ( $text ) . '&language=' . $language ;
+		
+		if  ( $category )
+			$url	.=	'&category=' . $category ;
+		
+		$request	=  $this -> __http_build_request ( $url ) ;
+		$response	=  $this -> __http_execute_request ( $request ) ;
+
+		// First 3 bytes seem to be for UTF8 encoding
+		$json		=  json_decode ( substr ( $response, 3 ) ) ;
+		
+		// Exit if input does not have those extraneous 3 bytes
+		if  ( ! isset ( $json -> ec ) )
+			error ( new \Thrak\System\RuntimeException ( "Unexpected answer from TransformText :\n" . $response ) ) ;
+		
+		$result		=  [ 'errno' => $json -> ec, 'error' => $json -> em, 'text' => $json -> sentence ] ;
+		
+		return ( $result ) ;
+	    }
+	
+
+	/*==============================================================================================================
+	
+	    NAME
+	        Translate - Translates a text.
+	
+	    PROTOTYPE
+	        $result = $translator -> Translate ( $from_language, $to_language, $text, $html_contents = false,
+	 					     $limit_results = false ) ;
+	
+	    DESCRIPTION
+	        Translates a text using the specified source and destination languages.
+	
+	    PARAMETERS
+	        $from_language, $to_language (string) -
+	                Source and destination languages. Can either be a language code or name.
+	  
+	 	$text (string) -
+	 		Text to be translated.
+	  
+	 	$html_contents (boolean) -
+	 		When true, the supplied text is in html format.
+	  	
+	    RETURN VALUE
+	        The translated string.
+	
+	  ==============================================================================================================*/
+	public function  Translate ( $from_language, $to_language, $text, $html_contents = false, $category = null )
+	   {
+		$this -> __check_language ( $from_language, "source" ) ;
+		$this -> __check_language ( $to_language  , "destination" ) ;
+		
+		// Build the request
+		$url		=  $this -> ServiceUrl . self::TRANSLATE_METHOD . 
+					'?text=' . urlencode ( utf8_encode ( $text ) ) .
+					'&from=' . $from_language .
+					'&to='   . $to_language .
+					'&contentType=' . ( ( $html_contents ) ?  'text/html' : 'text/plain' ) ;
+		
+		if  ( $category )
+			$url	.=  '&category=' . $category ;
+		
+		$request	=  $this -> __http_build_request ( $url ) ;
+		
+		// Execute it
+		$response	=  $this -> __http_execute_request ( $request ) ;
+
+		// Interpret the response
+		$xml		=  $this -> __http_get_xml_contents ( $response ) ;
+		$result		=  [] ;
+		
+		// Get 		
+		$xml		=  simplexml_load_string ( $response ) ;
+		
+		foreach  ( ( array ) $xml [0]  as  $value )
+		   {
+			$value		=  utf8_decode ( html_entity_decode ( $value ) ) ;
+			$result []	=  $value ;
+		    }
+		
+		return ( $result [0] ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        TranslateArray - Translates a text.
+	
+	    PROTOTYPE
+	        $result = $translator -> TranslateEx ( $from_language, $to_language, $text, $options = false ) ;
+	
+	    DESCRIPTION
+	        Translates a text using the specified source and destination languages.
+	
+	    PARAMETERS
+	        $from_language, $to_language (string) -
+	                Source and destination languages. Can either be a language code or name.
+	  
+	 	$text (string or array of strings) -
+	 		Text to be translated.
+	  
+	 	$options (BingTranslatorOptions object) -
+	 		Translation options.
+	  
+	    RETURN VALUE
+	        An array of associative arrays which contain the following entries :
+	 	- 'from-language' :
+	 		Source language.
+	  
+	 	- 'to-language' :
+	 		Destination language.
+	  
+	 	- 'original-text' :
+	 		Original text.
+	  
+		- 'translated-text' :
+	 		Translated text.
+	
+	  ==============================================================================================================*/
+	public function  TranslateArray ( $from_language, $to_language, $text, $options = false )
+	   {
+		// Allow for either string or array of strings to be translated
+		if  ( ! is_array ( $text ) )
+			$text		=  [ $text ] ;
+		
+		// Check limits
+		if  ( count ( $text )  >  self::MAX_TRANSLATE_ARRAY_ITEMS )
+			error ( new BingTranslatorException ( 'Too many items to translate. Current limit is ' . self::MAX_TRANSLATE_ARRAY_ITEMS ) ) ;
+		
+		if  ( String::StringArrayLength ( $text )  >  self::MAX_TRANSLATE_ARRAY_CHARACTERS )
+			error ( new BingTranslatorException ( 'Too many characters to translate. Current limit is ' . self::MAX_TRANSLATE_ARRAY_CHARACTERS ) ) ;			
+
+		$this -> __check_language ( $from_language, "source" ) ;
+		$this -> __check_language ( $to_language  , "destination" ) ;
+		
+		// Build the request
+		$url		=  $this -> ServiceUrl . self::TRANSLATE_ARRAY_METHOD ;
+		
+		// Build the input xml data
+		$xml_options	=  $this -> __get_translator_options ( $options ) ;
+		$xml_text		=  "\n" ;
+		
+		foreach  ( $text  as  $string )
+			$xml_text	.=  "\t\t" . '<string xmlns="http://schemas.microsoft.com/2003/10/Serialization/Arrays">' . $string . "</string>\n" ;
+		
+		$xml_input	=  <<<END
+<TranslateArrayRequest>
+	<AppId/>
+	<From>$from_language</From>
+	$xml_options
+	<Texts>$xml_text	</Texts>
+	<To>$to_language</To>
+</TranslateArrayRequest>
+END;
+
+		$request	=  $this -> __http_build_request ( $url, [ 'Content-type: text/xml' ], $xml_input ) ;
+		
+		// Execute it
+		$response	=  $this -> __http_execute_request ( $request ) ;
+
+		// Interpret the response
+		$xml		=  $this -> __http_get_xml_contents ( $response ) ;
+
+		// Build the result 
+		// Note that that the <OriginalTextSentenceLengths> and <TranslatedTextSentenceLengths> entries are not
+		// included in the result for two reasons :
+		// - They are not meaningful since the text lengths can be obtained from the original and translated texts
+		// - I could not get the <a:int> child values using simplexml
+		$result		=  [] ;
+		$index		=  0 ;
+		
+		foreach  ( $xml -> TranslateArrayResponse  as  $item )
+		   {
+			$from					=  utf8_decode ( ( string ) $item -> From ) ;
+			$translated_text			=  utf8_decode ( ( string ) $item -> TranslatedText ) ;
+			
+			$answer		= 
+			   [
+				'from-language'				=>  $from,
+				'to-language'				=>  $to_language,
+				'original-text'				=>  $text [ $index ],
+				'translated-text'			=>  $translated_text
+			    ] ;
+			
+			if  ( isset ( $item -> State ) )
+				$answer	[ 'state' ]	=  utf8_decode ( ( string ) $item -> State ) ;
+			else
+				$answer [ 'state' ]	=  null ;
+			
+			if  ( isset ( $item -> Error ) )
+				$answer [ 'error' ]	=  utf8_decode ( ( string ) $item -> Error ) ;
+			else
+				$answer [ 'error' ]	=  null ;
+			
+			$index ++ ;
+			$result []	=  $answer ;
+		    }
+
+		return ( $result ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	        IAzureService interface implementation.
+	
+	  ==============================================================================================================*/
+	public function  GetServiceName ( )
+	   {
+		return ( "Microsoft Translator" ) ;
+	    }
+    }
+
+
+/*==============================================================================================================
+
+    BingTranslatorOptions -
+        Options for some requests that may require them, such as TranslateArray or GetTranslationArray.
+
+  ==============================================================================================================*/
+class  BingTranslatorOptions		extends  Object
+   {
+	const	SCHEMA_NAMESPACE		=  "http://schemas.datacontract.org/2004/07/Microsoft.MT.Web.Service.V2" ;
+
+	// Available options
+	private static $OptionNames		=  
+	   [
+		// Category (domain) of the translation ; default is "general" but Bing is particularly silent about other choices
+		'Category',
+		// The format of the text being translated. The supported formats are "text/plain", "text/xml" and "text/html". 
+		// Any HTML needs to be well-formed
+		'ContentType',
+		// To be documented by Microsoft
+		'ReservedFlags',
+		// User state to help correlate request and response. The same contents will be returned in the response. 
+		'State',
+		// Filter results by this URI. Default: all 
+		'Uri',
+		// Filter results by this user. Default: all 
+		'User'
+	    ] ;
+	
+	// Options for this instance
+	protected	$Options		=  [] ;
+	
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        Constructor - builds a BingTranslatorOptions object.
+	
+	    PROTOTYPE
+	        $options	=  new  BingTranslatorOptions ( $options = [] ) ;
+	
+	    DESCRIPTION
+	        Builds a BingTranslatorOptions object using the associative array values given by the $options parameter.
+	
+	    PARAMETERS
+	        $options (array) -
+	                Associative array whose keys are option names and values are option values. Option names are not
+	 		case-sensitive and can be any on of the following :
+	  
+			- 'Category' :
+	 			Category (domain) of the translation ; default is "general" but Bing is particularly silent 
+	 			about other choices
+	  
+	 		- 'ContentType' :
+				The format of the text being translated. The supported formats are "text/plain", "text/xml" 
+	 			and "text/html". Html format needs to be well-formed.
+			
+	 		- 'ReservedFlags' :
+	 			To be documented by Microsoft.
+	  
+	 		- 'State' :
+	  			User state to help correlate request and response. The same contents will be returned in 
+	 			the response. 
+	  
+	 		- 'Uri' :
+	 			Filter results by this URI. Default: all.
+	  
+	 		- 'User' :
+	 			Filter results by this user. Default: all 
+	  
+	    NOTES
+	 	Options can be set after object instanciation by using them as properties.
+	
+	  ==============================================================================================================*/
+	public function  __construct ( $options = [] )
+	   {
+		parent::__construct ( ) ;
+		
+		foreach  ( self::$OptionNames  as  $name )
+			$this -> Options [ strtolower ( $name ) ]	=  [ 'name' => $name, 'value' => false ] ;
+		
+		foreach  ( $options  as  $name => $value )
+			$this -> $name	=  $value ;
+	    }
+
+	
+	/*==============================================================================================================
+	
+	    Getter and setter -
+	        Gets/sets the specified option.
+	
+	  ==============================================================================================================*/
+	public function  __get ( $member )
+	   {
+		$loname		=  strtolower ( $member ) ;
+		
+		if  ( isset ( $this -> Options [ $loname ] ) )
+			return ( $this -> Options [ $loname ] [ 'value' ] ) ;
+		else
+			error ( new \Thrak\System\InvalidArgumentException ( "Invalid Bing translator option \"$name\"" ) ) ;
+	    }
+	
+	
+	public function  __set ( $member, $value )
+	   {
+		$loname		=  strtolower ( $member ) ;
+		
+		if  ( isset ( $this -> Options [ $loname ] ) )
+			$this -> Options [ $loname ] [ 'value' ]	=  $value ;
+		else
+			error ( new \Thrak\System\InvalidArgumentException ( "Invalid Bing translator option \"$name\"" ) ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    __toString, AsXml -
+	        Converts the object's options to an Xml string.
+		If not option has been set, returns an empty string.
+	
+	  ==============================================================================================================*/
+	public function  AsXml ( )
+	   { return ( ( string ) $this ) ; }
+	
+	
+	public function  __to_option ( $name, $value, $default )
+	   {
+		if  ( $value  ===  false )
+		   {
+			if  ( $default  ===  false )
+				$result		=  '<' . $name . ' xmlns="' . self::SCHEMA_NAMESPACE . '" />' ;
+			else
+				$result		=  '<' . $name . ' xmlns="' . self::SCHEMA_NAMESPACE . '">' . $default .  '</' . $name . '>' ;
+		    }
+		else	
+			$result		=  '<' . $name . ' xmlns="' . self::SCHEMA_NAMESPACE . '">' . $value .  '</' . $name . '>' ;
+		
+		return ( "$result\n" ) ;
+	    }
+	
+	
+	public function  __tostring ( )
+	   {
+		$has_options	=  false ;
+		
+		foreach  ( $this -> Options  as  $option )
+		   {
+			if  ( $option [ 'value' ]  !==  false )
+			   {
+				$has_options	=  true ;
+				break ;
+			    }
+		    }
+		
+		if  ( ! $has_options )
+			return ( "" ) ;
+		
+		$options	=  "<Options>\n" ;
+		
+		$options	.=  $this -> __to_option ( 'Category'		, $this -> Options [ 'category'		] [ 'value' ], 'general' ) ;
+		$options	.=  $this -> __to_option ( 'ContentType'	, $this -> Options [ 'contenttype'	] [ 'value' ], 'text/plain') ;
+		$options	.=  $this -> __to_option ( 'ReservedFlags'	, $this -> Options [ 'reservedflags'	] [ 'value' ], false ) ;
+		$options	.=  $this -> __to_option ( 'State'		, $this -> Options [ 'state'		] [ 'value' ], false ) ;
+		$options	.=  $this -> __to_option ( 'Uri'		, $this -> Options [ 'uri'		] [ 'value' ], 'all') ;
+		$options	.=  $this -> __to_option ( 'User'		, $this -> Options [ 'user'		] [ 'value' ], 'all') ;
+		
+		$options	.=  "</Options>\n" ;
+		
+		return ( $options ) ;
+	    }
+    }

@@ -1,0 +1,778 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        HttpHeader.phpclass
+
+    DESCRIPTION
+        Base base class for Http header objects.
+
+    AUTHOR
+        Christian Vigh, 05/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/05/26]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace  	Thrak\Network\RfcProtocols\Http ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces and classes
+use     Thrak\System\Object ;
+use 	Thrak\System\Exception ;
+use     Thrak\Types\String  ;
+use     Thrak\IO\Path ;
+use	Thrak\Types\AssociativeArray ;
+use	Thrak\Types\Dictionary ;
+use	Thrak\Types\DictionaryEntry ;
+
+
+class	HttpHeaderException	extends \Thrak\System\HttpException {} ;
+
+
+/*==============================================================================================================
+
+    HttpHeader class -
+        Base class for Http headers.
+
+  ==============================================================================================================*/
+class  HttpHeader		extends  Object
+   {
+	// Http header value type options
+	const		HTTP_HEADER_STRING		=  0x0001 ;	// Header value is to be considered as a single string
+	const		HTTP_HEADER_LIST		=  0x0002 ;	// Header value is a list of values
+	const		HTTP_HEADER_PARAMETERS		=  0x0004 ;	// Header value, either string or list, can have extension parameters
+	const		HTTP_HEADER_KEY_VALUE		=  0x0008 ;	// Each header value may have the form : key=value
+	const		HTTP_HEADER_VALUE_IS_KEY	=  0x0010 ;	// Each header value is also used as a key for indexing the $Fields array
+	const		HTTP_HEADER_IS_GENERIC		=  0x8000 ;	// Set when no specialized class has been found
+	const		HTTP_HEADER_IS_STANDARD		=  0x4000 ;	// Set for standardized headers
+	
+	// Http header error reporting
+	const		REPORT_ERROR_NONE	=  0 ;			// No reporting
+	const		REPORT_ERROR_WARNING	=  1 ;			// Report invalid http headers as warnings
+	const		REPORT_ERROR_EXCEPTION	=  2 ;			// Report invalid http headers as errors
+	
+	public static	$ErrorReporting		=  self::REPORT_ERROR_WARNING ;
+	
+	protected	$OfficialName		=  null ;		// Official name (set by derived classes)
+	public		$Name ;						// Header name (beautified)
+	public		$Text ;						// Header initial content (value part)
+	public		$SourceText ;					// Original source text
+	public		$Fields ;					// An HttpHeaderValues array, containing the parsed values
+	
+	public		$Flags ;					// Header type (a combination of HTTP_HEADER_* flags)
+	public		$ListSeparator ;				// List separator character
+	public		$ParameterSeparator ;				// Parameter separator
+	
+	
+	/*==============================================================================================================
+	
+	    Constructor -
+	        Builds and parses an Http header.
+	
+	  ==============================================================================================================*/
+	public function  __construct ( $header, $flags = self::HTTP_HEADER_STRING, $list_separator = ',', $parameter_separator = ';' )
+	   {
+		parent::__construct ( ) ;
+		
+		$this -> Flags			=  $flags ;
+		$this -> ListSeparator		=  $list_separator ;
+		$this -> ParameterSeparator	=  $parameter_separator ;
+		$this -> Fields			=  new HttpHeaderFields ( $list_separator ) ;
+		$this -> SourceText		=  $header ;
+		
+		// Get header name and content
+		$parts	=  $this -> Parse ( $header ) ;
+		
+		$this -> Name			=  $parts [ 'name' ] ;
+		$this -> Text			=  $parts [ 'value' ] ;
+		
+		// Set official name equal to parsed name for generic headers
+		if  ( $this -> Flags & self::HTTP_HEADER_IS_GENERIC )
+			$this -> OfficialName	=  $this -> Name ;
+		// Specialized header class and no official name : 
+		else if  ( ! $this -> OfficialName )
+			error ( new HttpHeaderException ( "Class " . get_called_class ( ) . " did not define its http header name through the OfficialName property" ) ) ;
+
+		if  ( ! $this -> Name )
+			$this -> Name	=  $this -> OfficialName ;
+		else if  ( strcasecmp ( $this -> OfficialName, $this -> Name ) )
+			error ( new HttpHeaderException ( "Http header name mismatch ; supplied name : \"{$this -> Name}\" ; " .
+								"expected name : \"{$this -> OfficialName}\"" ) ) ;
+			
+		$this -> Extract ( ) ;
+		$this -> CheckContent ( ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    __get, __set -
+	        Provides access to 
+	
+	  ==============================================================================================================*/
+	public function  __get ( $member )
+	   {
+		switch ( strtolower ( $member ) )
+		   {
+			case	'field' :
+				return ( $this -> Fields [0] ) ;
+				
+			default :
+				error ( new \Thrak\System\UndefinedPropertyException ( $member ) ) ;
+		    }
+	    }
+	
+
+	public function  __set ( $member, $value )
+	   {
+		switch ( strtolower ( $member ) )
+		   {
+			case	'field' :
+				$this -> Fields [0] -> Value	=  $value ;
+				break ;
+				
+			default :
+				error ( new \Thrak\System\UndefinedPropertyException ( $member ) ) ;
+		    }
+	    }
+	
+
+	/*==============================================================================================================
+	
+	        Internal functions.
+	
+	  ==============================================================================================================*/
+
+	private function  __check_compound ( $method )
+	   {
+		if  ( ! ( $this -> Flags  &  self::HTTP_HEADER_LIST ) )
+			error ( new \Thrak\System\RuntimeException ( "The $method() method can only be called on HttpHeader classes " .
+					"that have the HTTP_HEADER_LIST flag set." ) ) ;
+		
+		if  ( ! ( $this -> Flags  &  self::HTTP_HEADER_PARAMETERS ) )
+			error ( new \Thrak\System\RuntimeException ( "The $method() method can only be called on HttpHeader classes " .
+					"that have the HTTP_HEADER_PARAMETERS flag set." ) ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    CheckContent -
+	        Verifies the underlying header content. Should throw an exception if the value is incorrect.
+		To be implemented by derived classes.
+	
+	  ==============================================================================================================*/
+	protected function  CheckContent ( )
+	   { 
+	    }
+	
+
+	/*==============================================================================================================
+	
+	    CheckValues -
+	        To be called when specified values are constrained.
+	
+	  ==============================================================================================================*/
+	protected function  CheckValues ( $array, $values, $extra = [] )
+	   {
+		$array	=  array_merge ( $array, $extra ) ;
+		
+		//if  ( ! is_array ( $values ) )
+		//	$values		=  [ $values ] ;
+		
+		$found	=  false ;
+
+		foreach  ( $values  as  $item )
+		   {
+			$item_value	=  ( is_string ( $item ) ) ?  $item : $item -> Value ;
+
+			foreach  ( $array  as  $array_item )
+			   {
+				if  ( ! strcasecmp ( $array_item, $item_value ) )
+				   {
+					$found	=  true ;
+					break 2 ;
+				    }
+			    }
+			
+			if  ( ! $found )
+				$this -> ReportError ( "Unreferenced value \"$item_value\"" ) ;
+		    }
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    CompareHeaderValues -
+	        Compares two header values in a list. This function is used by the GetSortedValues() method when two
+		values of the same weight are found.
+	
+		For example, the Accept: header will choose the most specific media specification. Thus, in the following :
+			text/*, text/html, * /*
+		the order of preference will be :
+			text/html, text/*, * /*
+	 
+	 	The default behavior is to return false, which means : chose the value that has the lowest position into
+	 	the initial, unsorted list.
+	 	It will be the responsibility of derived classes to implement this comparison function to suit their own
+	 	need (for example, in the HttpAcceptHeader class).
+	
+	  ==============================================================================================================*/
+	protected function  CompareHeaderValues ( $a, $b )
+	   {
+		return ( false ) ;
+	    }
+	
+	
+	
+	/*==============================================================================================================
+	
+	    Extract -
+	        Called mainly for preprocessing the right-hand value part of an http header.
+	
+	  ==============================================================================================================*/
+	private function  __extract_parameters ( &$text, &$parameters )
+	   {
+		$parts		=  explode ( $this -> ParameterSeparator, $text ) ;
+		
+		if  ( count ( $parts )  >  1 )
+		   {
+			$text		=  trim ( array_shift ( $parts ) ) ;
+			$parameters	=  new  HttpHeaderParameters ( $this -> ParameterSeparator ) ;
+			
+			foreach  ( $parts  as  $part )
+			   {
+				$parameter				=  new HttpHeaderParameter ( $part ) ;
+				$parameters [ $parameter -> Key ]	=  $parameter ;
+			    }
+		    }
+	    }
+	
+	
+	private function  __explode_with_strings ( $separator, $text )
+	   {
+		$length		=  strlen ( $text ) ;
+		$items		=  [] ;
+		$quote		=  '' ;
+		$current_value	=  '' ;
+		$ch		=  '' ;
+		
+		for  ( $i = 0 ; $i  <  $length ; $i ++ )
+		   {
+			$ch	=  $text [$i] ;
+			
+			switch ( $ch )
+			   {
+				case	$separator :
+					if  ( $quote )
+						$current_value	.=  $ch ;
+					else
+					   {
+						$items []	=  $current_value ;
+						$current_value	=  '' ;
+						$quote		=  '' ;
+					    }
+					
+					break ;
+					
+				case	'"' :
+				case	"'" :
+					if  ( $ch  ==  $quote )
+						$quote		=  '' ;
+					else
+						$quote		=  $ch ;
+					
+					$current_value	.=  $ch ;
+					break ;
+					
+				default :
+					$current_value  .=  $ch ;
+			    }
+		    }
+		
+		if ( $current_value  ||  $ch  ==  $separator )
+			$items []	=  $current_value ;
+		
+		return ( $items ) ;
+	    }
+	
+	
+	protected function  Extract ( )
+	   {
+		$text			=  $this -> Text ;
+		
+		// Consider every header is a list of values ; HTTP_HEADER_STRING ones having only one single value...
+		if  ( $this -> Flags  &  self::HTTP_HEADER_STRING )
+			$parts	=  [ $text ] ;
+		else if  ( $this -> Flags  &  self::HTTP_HEADER_LIST )
+			$parts	=  $this -> __explode_with_strings ( $this -> ListSeparator, $text ) ;
+		// Paranoia
+		else
+			error ( new \Thrak\System\RuntimeException ( "An http header flag must include either the HTTP_HEADER_STRING or " .
+						"HTTP_HEADER_LIST flag." ) ) ;
+			
+		// Loop through header values
+		$part_count	=  count ( $parts ) ;
+		
+		for  ( $i = 0 ; $i  <  $part_count ; $i ++ )
+		   {
+			$part		=  $parts [$i] ;
+			$parameters	=  null ;
+		
+			// If header value extension parameters are allowed, parse them
+			if  ( $this -> Flags & self::HTTP_HEADER_PARAMETERS )
+				$this -> __extract_parameters ( $part, $parameters ) ;
+		
+			// Header values are a set of key/value pairs
+			if  ( $this -> Flags  &  self::HTTP_HEADER_KEY_VALUE )
+			   {
+				$part	=  new  DictionaryEntry ( $part ) ;
+				$key	=  trim ( $part -> Key ) ;
+				$value	=  trim ( $part -> Value ) ;
+			    }
+			// Standard header values, accessible through their numeric index
+			else
+			   {
+				$key	=  null ;
+				$value	=  trim ( $part ) ;
+			    }
+			
+			// Header values are only values, but they should be accessible as an array key
+			if  ( $this -> Flags & self::HTTP_HEADER_VALUE_IS_KEY  &&  $key  ===  null )
+				$key = trim ( $part ) ;
+
+			// Add the current (field) header value
+			$field	=  $this -> Fields -> Add ( $key, $value, $parameters, $this -> Flags & self::HTTP_HEADER_KEY_VALUE ) ;
+			
+			// Header value sequential position
+			$field -> Index		=  $i ;
+		    }
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    GetInstance -
+	        Returns an instance of an http header object corresponding to the specified header.
+	
+	  ==============================================================================================================*/
+	public static function  GetInstance ( $header )
+	   {
+		// A colon is specified after the header name
+		$index		=  strpos ( $header, ':' ) ;
+		
+		// Complain if no colon found ; this means an invalid http header
+		if  ( $index  ===  false )
+			error ( new HttpHeaderException ( "Invalid Http header :\n\t$header" ) ) ;
+		
+		// The class name is the http header name, stripped from dashes. Ensure that all characters are lowercased,
+		// except the first letter of each part (separated by a dash) which is capitalized.
+		$header_name	=  substr ( $header, 0, $index ) ;
+		$names		=  explode ( '-', trim ( $header_name ) ) ;
+		$classname	=  'Thrak\\Network\\RfcProtocols\\Http\\Http' ;
+		
+		foreach  ( $names  as  $name )
+			$classname	.=  ucfirst ( strtolower ( $name ) ) ;
+		
+		// So, the final class name is 'HttpxxxHeader', where 'xxx' stands for the http header name, stripped from dashes
+		$classname	.=  'Header' ;
+		
+		// Check that the class exists ; if yes, the autoloader will load it automatically because of the call to the
+		// class_exists() function ; if no, the HttpHeader class will be instanciated instead
+		if  ( @class_exists ( $classname ) )
+			$object			=  new  $classname ( $header ) ; 
+		else
+			$object			=  new HttpHeader ( $header, self::HTTP_HEADER_STRING | self::HTTP_HEADER_IS_GENERIC ) ;
+		
+		// All done, return
+		return ( $object ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    GetHighestPriorityValue -
+	        Returns the entry whose value matches the specified criteria (a wildcard expression). The returned value
+		is the one whose 'level' extension parameter is the lowest, and 'q' (priority) extension parameter is the
+		highest.
+	
+	  ==============================================================================================================*/
+	public function  GetHighestPriorityValue ( $criteria  =  '*' )
+	   {
+		$this -> __check_compound ( 'GetHighestPriorityValue' ) ;
+		
+		// Sort items by ascending level and descending quality
+		$items		=  $this -> GetSortedValues ( ) ;
+
+		foreach  ( $items  as  $item )
+		   {
+			if  ( String::Matches ( $item -> Value, $criteria ) )
+				return  ( $item ) ;
+		    }
+		
+		return ( false ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    GetSortedValues -
+	        Sorts the field values by their weight, in descending order.
+	
+	  ==============================================================================================================*/
+	public function  GetSortedValues ( )
+	   {
+		$this -> __check_compound ( 'GetSortedValues' ) ;
+		
+		$items	=  $this -> Fields ;
+		$count	=  count ( $items ) ;
+		$array	=  $items -> ToArray ( ) ;
+		
+		usort
+		   (
+			$array,
+			function  ( $a, $b )
+			   {
+				// Perform further comparisons only if compared values are the same
+				$a_level	=  PHP_INT_MAX ;
+				$a_q		=  1 ;
+				$b_level	=  PHP_INT_MAX ;
+				$b_q		=  1 ;
+					
+				// Get 'q' and 'level' extension parameters for $a
+				foreach  ( $a  as  $name => $value )
+				   {
+					if  ( ! strcasecmp ( $name, 'q' ) )
+						$a_q		=  ( double ) $value ;
+					else if  ( ! strcasecmp ( $name, 'level' ) )
+						$a_level	=  ( integer ) $value ;
+				    }
+						
+				// Get 'q' and 'level' extension parameters for $b
+				foreach  ( $b  as  $name => $value )
+				   {
+					if  ( ! strcasecmp ( $name, 'q' ) )
+						$b_q		=  ( double ) $value ;
+					else if  ( ! strcasecmp ( $name, 'level' ) )
+						$b_level	=  ( integer ) $value ;
+				    }
+						
+				// Same level : sort by descending quality order
+				if  ( $a_level  ==  $b_level )
+				   {
+					// Same quality
+					if  ( $a_q  ==  $b_q )
+					   {
+						// When both quality and level are equal, some headers may require additional comparison operations
+						$cmpresult	=  $this -> CompareHeaderValues ( $a -> Value, $b -> Value ) ;
+						
+						if  ( $cmpresult  ===  false )
+							return ( $a -> Index - $b -> Index ) ;
+						else
+							return ( $cmpresult ) ;
+					    }
+					else
+					   {
+						$a_q	=  ( integer ) ( $a_q * 100 ) ;
+						$b_q	=  ( integer ) ( $b_q * 100 ) ;
+						return ( $b_q - $a_q ) ;
+					    }
+				    }
+				// Different levels : sort by ascending level
+				else
+					return  ( $a_level - $b_level ) ;
+			    }
+		    ) ;
+		
+		return ( $array ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    IsGeneric -
+	        Checks if the current object is a generic HttpHeader class, or a specialized class.
+	
+	  ==============================================================================================================*/
+	protected function  IsGeneric ( )
+	   {
+		return ( ( $this -> Flags & self::HTTP_HEADER_IS_GENERIC )  !=  0 ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    IsStandard -
+	        Checks if the current object implements a standard header.
+	
+	  ==============================================================================================================*/
+	protected function  IsStandard ( )
+	   {
+		return ( ( $this -> Flags & self::HTTP_HEADER_IS_STANDARD )  !=  0 ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    Parse -
+	        Extracts the name and value parts of an http header.
+		Returns an associative array with 'name' and 'value' keys.
+	
+	  ==============================================================================================================*/
+	public function  Parse ( $string )
+	   {
+		$string		=  trim ( $string ) ;
+		$re		=  '/^ ( (?P<name> [^ \t:]+) \s* : )? \s* (?P<value> .*)? $/imsx' ;
+
+
+		if  ( preg_match ( $re, $string, $matches ) )
+		   {
+			if  ( isset ( $matches [ 'name' ] )  &&  $matches [ 'name' ] )
+				$name	=  trim ( $matches [ 'name' ] ) ;
+			else
+				$name	=  $this -> OfficialName ;
+				
+			if  ( isset ( $matches [ 'value' ] ) )
+				$value = ltrim ( $matches [ 'value' ] ) ;
+			else
+				$value = '' ;
+
+			$name_parts	=  explode ( '-', $name ) ;
+		
+			foreach  ( $name_parts  as  &$name_part ) 
+				$name_part	=  ucfirst ( strtolower ( $name_part ) ) ;
+			
+			$name	=  implode ( '-', $name_parts ) ;
+			
+			return ( [ 'name' => $name, 'value' => trim ( $value ) ] ) ;
+		    }
+		else
+			error ( new HttpHeaderException ( "\"$string\" is not a valid Http header." ) ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    ReportError -
+	        Reports the specified error message, using the current reporting error mode.
+	
+	  ==============================================================================================================*/
+	protected function  ReportError ( $message )
+	   {
+		$message	=  "\"{$this -> Name}\" http header: $message" ;
+		
+		switch ( self::$ErrorReporting )
+		   {
+			case	self::REPORT_ERROR_WARNING :
+				warning ( $message ) ;
+				break ;
+				
+			case	self::REPORT_ERROR_EXCEPTION :
+				error ( new HttpHeaderException ( $message ) ) ;
+				break ;
+		    }
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    __tostring -
+	        Converts an http header object to a header string.
+	
+	  ==============================================================================================================*/
+	public function  __tostring ( )
+	   {
+		return ( $this -> OfficialName . ': ' . ( ( string ) $this -> Fields ) ) ;
+	    }
+    }
+
+
+/*==============================================================================================================
+
+    HttpSpecializedHeader class -
+        Base class for Http specific headers (ie, headers that have their own php class).
+
+  ==============================================================================================================*/
+abstract class  HttpSpecializedHeader		extends  HttpHeader
+   {
+	public function  __construct ( $official_name, $header, $flags = self::HTTP_HEADER_STRING, $list_separator = ',', $parameter_separator = ';' )
+	   {
+		$this -> Flags	       &=  ~self::HTTP_HEADER_IS_GENERIC ;
+		$this -> OfficialName	=  $official_name ;
+		
+		parent::__construct ( $header, $flags, $list_separator, $parameter_separator ) ;
+	    }
+    }
+
+
+
+/*==============================================================================================================
+
+    HttpStandardHeader & HttpNonStandardHeader classes -
+        Implements standard and non-standard headers
+
+  ==============================================================================================================*/
+abstract class  HttpStandardHeader		extends  HttpSpecializedHeader
+   {
+	public function  __construct ( $official_name, $header, $flags = self::HTTP_HEADER_STRING, $list_separator = ',', $parameter_separator = ';' )
+	   {
+		$this -> Flags	       |=  self::HTTP_HEADER_IS_STANDARD ;
+		
+		parent::__construct ( $official_name, $header, $flags, $list_separator, $parameter_separator ) ;
+	    }
+    }
+
+abstract class  HttpNonStandardHeader		extends  HttpSpecializedHeader
+   {
+	public function  __construct ( $official_name, $header, $flags = self::HTTP_HEADER_STRING, $list_separator = ',', $parameter_separator = ';' )
+	   {
+		parent::__construct ( $official_name, $header, $flags, $list_separator, $parameter_separator ) ;
+	    }
+    }
+
+
+/*==============================================================================================================
+
+    HttpHeaderFields class -
+        Implements a set of header fields, with optional extension parameters.
+
+  ==============================================================================================================*/
+class  HttpHeaderFields			extends		AssociativeArray
+   {
+	protected	$Separator ;
+	
+	
+	/*==============================================================================================================
+	
+	    Constructor -
+	        Initializes the object.
+	
+	  ==============================================================================================================*/
+	public function  __construct ( $separator = ',' )
+	   {
+		parent::__construct ( ) ;
+		
+		$this -> Separator		=  $separator ;
+	    }
+
+	
+	/*==============================================================================================================
+	
+	    Add -
+	        Adds a new HttpHeaderField.
+	
+	  ==============================================================================================================*/
+	public function  Add ( $field_name, $field_value, $parameters = null, $is_key_value_pair = false )
+	   {
+		if  ( $is_key_value_pair )
+			$field		=  new HttpHeaderField ( $field_value, $parameters, $field_name ) ;
+		else
+			$field		=  new HttpHeaderField ( $field_value, $parameters ) ;
+		
+		if  ( $field_name  ===  null )
+			$this []		=  $field ;
+		else
+			$this [ $field_name ]	=  $field ;
+		
+		return ( $field ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	   __tostring -
+		Returns a string representation of the header fields together with their optional extension parameters.
+	
+	  ==============================================================================================================*/
+	public function  __tostring ( )
+	   {
+		$list	=  [] ;
+		
+		foreach  ( $this  as  $item )
+			$list []	=  ( string ) $item ;
+		
+		return ( implode ( $this -> Separator . ' ', $list ) ) ;
+	    }
+    }
+
+
+/*==============================================================================================================
+
+    HttpHeaderField class -
+        Implements a header field, with its optional extension parameters.
+
+  ==============================================================================================================*/
+class  HttpHeaderField			extends  Object 
+   {
+	public		$Name ;
+	public		$Value ;
+	public		$Parameters ;
+	public		$Index		=  -1 ;
+	
+	
+	public function  __construct ( $value, $parameters = null, $name = null ) 
+	   {
+		$this -> Name		=  $name ;
+		$this -> Value		=  trim ( $value ) ;
+		$this -> Parameters	=  ( $parameters ) ?  $parameters : new AssociativeArray ( ) ;
+	    }
+	
+	
+	public function  __tostring ( )
+	   {
+		$result		=  '' ;
+		
+		if  ( $this -> Name )
+			$result		.=  $this -> Name . '=' ;
+		
+		$result		.=  $this -> Value ;
+		
+		if  ( count ( $this -> Parameters ) )
+			$result		.=  $this -> Parameters -> Separator . ' ' . ( ( string ) $this -> Parameters ) ;
+		
+		return ( ( string ) $result ) ;
+	    }
+    }
+
+
+/*==============================================================================================================
+
+    HttpHeaderParameters -
+        Implements a set of extension parameters, introduced by a semicolon after a header field.
+
+  ==============================================================================================================*/
+class  HttpHeaderParameters	extends  Dictionary
+   {
+	public	$Separator ;
+	
+	public function  __construct ( $separator )
+	   {
+		$this -> Separator	=  $separator ;
+	    }
+	
+	
+	public function  __tostring ( )
+	   {
+		$items	=  [] ;
+		
+		foreach  ( $this  as  $item )
+			$items []	=  ( string ) $item ;
+		
+		return  ( implode ( $this -> Separator . ' ', $items ) ) ;
+	    }
+    }
+    
+    
+/*==============================================================================================================
+
+    HttpHeaderParameter class -
+        Http parameter (name=value).
+
+  ==============================================================================================================*/
+class  HttpHeaderParameter	extends  DictionaryEntry
+   {
+    }

@@ -1,0 +1,276 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        ResolvedDomains.phpclass
+
+    DESCRIPTION
+        Encapsulates a set of tables whose purpose is to store resolved domain information.
+ 
+    AUTHOR
+        Christian Vigh, 06/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/06/08]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace	Thrak\Database\Tables ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces & objects
+use	Thrak\System\Object ;
+use     Thrak\IO\Path ;
+use	Thrak\Types\String ;
+use	Thrak\Database\Table ;
+use	Thrak\Database\Tables\KeyValueStore ;
+use	Thrak\Database\Tables\StringStore ;
+use	Thrak\Network\RfcProtocols\Whois ;
+
+
+/*==============================================================================================================
+
+    ResolvedDomains class -
+        Holds resolved domain entries.
+
+  ==============================================================================================================*/
+class   ResolvedDomains		extends  Table
+    {
+	const		STRING_STORE_KEY		=  16384 ;
+	const		STRING_STORE_VALUE		=  16385 ;
+
+	public		$DomainDataTableName ;
+	public		$StringStore ;
+
+	
+	/*==============================================================================================================
+	
+	    Constructor -
+	        Instanciates a ResolvedDomains object, and creates the underlying tables if necessary.
+	
+	  ==============================================================================================================*/
+	public function  __construct ( $domain_table_name	=  'thrak_resolved_domains', 
+				       $domain_data_table_name	=  'thrak_resolved_domains_data',
+				       $string_store		=  null,
+				       $database		=  null, 
+				       $recreate		=  false )
+	   {
+		$this -> StringStore		=  $string_store ;
+		$this -> DomainDataTableName	=  $domain_data_table_name ;
+		parent::__construct ( $domain_table_name, 'Holds resolved domains', $database, $recreate ) ;		
+	    }
+	
+
+	/*==============================================================================================================
+	
+	    Create -
+	        Creates the underlying tables.
+	
+	  ==============================================================================================================*/
+	public function  Create ( )
+	   {
+		if  ( $this -> StringStore )
+		   {
+			$key_value_fields	=  "
+							data_key_id		VARCHAR(64)		NOT NULL DEFAULT ''
+													COMMENT 'Domain data key',
+							data_value_id		VARCHAR(1024)		NOT NULL DEFAULT ''
+													COMMENT 'Domain data key value',
+						   " ;
+
+			$indexes		=  "
+							KEY			( data_key_id ),
+							KEY			( data_value_id )
+						   " ;
+		    }
+		else
+		   {
+			$key_value_fields	=  "
+							data_key		VARCHAR(64)		NOT NULL DEFAULT ''
+													COMMENT 'Domain data key',
+							data_value		VARCHAR(1024)		NOT NULL DEFAULT ''
+													COMMENT 'Domain data key value',
+							data_value_md5		CHAR(32)		NOT NULL DEFAULT ''
+													COMMENT 'Md5 hash of the value field, for indexing purposes',
+						   " ;
+
+			$indexes		=  "
+							KEY			( data_key ),
+							KEY			( value_md5 )
+						   " ;
+		    }
+
+		$query	=<<<END
+CREATE TABLE IF NOT EXISTS  {$this -> Name}
+   (
+	id			BIGINT			NOT NULL AUTO_INCREMENT
+							COMMENT 'Unique id for this domain',
+	ip			VARCHAR(39)		NOT NULL DEFAULT ''
+							COMMENT 'Ip address',
+	domain			VARCHAR(1024)		NOT NULL DEFAULT ''
+							COMMENT 'Hostname',
+	update_time		TIMESTAMP		NOT NULL DEFAULT 0
+							COMMENT 'Local update time',
+						
+	PRIMARY KEY	( id ),
+	UNIQUE KEY	( ip ),
+	KEY		( domain(64) ),
+	KEY		( update_time, domain(64) )
+    ) ENGINE = MyISAM CHARSET latin1 COMMENT '{$this -> Comment}' ;
+
+CREATE TABLE IF NOT EXISTS  {$this -> DomainDataTableName}
+   (
+	id			BIGINT			NOT NULL AUTO_INCREMENT
+							COMMENT 'Unique id for this domain data',
+	parent_id		BIGINT			NOT NULL DEFAULT 0
+							COMMENT 'Domain id in the main table',
+	whois_index		TINYINT			NOT NULL DEFAULT 0
+							COMMENT 'Index of the answer returned by the whois server',
+	$key_value_fields
+
+	PRIMARY KEY		( id ),
+	KEY			( parent_id, whois_index ),
+	$indexes
+    ) ENGINE = MyISAM CHARSET latin1 COMMENT 'Holds resolved domains data' ;
+
+END;
+		
+		$this -> Database -> Execute ( $query ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    Delete -
+	        Deletes a resolved domain.
+	
+	  ==============================================================================================================*/
+	public function  Delete ( $ip )
+	   {
+		$this -> Database -> SetQuery ( "SELECT id FROM {$this -> Name} WHERE ip = $ip" ) ;
+		$ip_id	=  $this -> Database -> LoadValue ( ) ;
+
+		if  ( $ip_id )
+		   {
+			$this -> Database -> Execute ( "DELETE FROM {$this -> Name} WHERE ip = '$ip'" ) ;
+			$this -> Database -> Execute ( "DELETE FROM {$this -> DomainDataTableName} WHERE parent_id = $ip_id" ) ;
+		    }
+	    }
+
+
+	/*==============================================================================================================
+	
+	    Drop -
+	        Deletes the encapsulated tables.
+	
+	  ==============================================================================================================*/
+	public function  Drop ( )
+	   {
+		parent::Drop ( ) ;
+		$this -> Database -> Execute ( "DROP TABLE IF EXISTS {$this -> DomainDataTableName}" ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    Insert -
+	        Resolves an ip address and inserts it into the resolved ips table.
+	
+	  ==============================================================================================================*/
+	public function  Insert ( $ip, $domain, $whois = null )
+	   {
+		// Check if the database entry already exists
+		$this -> Database -> SetQuery ( "SELECT * FROM {$this -> Name} WHERE ip = '$ip'" ) ;
+		$row	=  $this -> Database -> LoadRow ( ) ;
+		
+		if  ( $row )
+			return ( $row ) ;
+
+		if  ( ! $whois )
+			return ( false ) ;
+
+		// Insert entry in the main table
+		$index		=  0 ;
+		$escaped_ip	=  $this -> Database -> Escape ( $ip ) ;
+		$escaped_domain	=  $this -> Database -> Escape ( $domain ) ;
+
+		$query		=  "
+					INSERT INTO {$this -> Name}
+					SET
+						ip			=  '$escaped_ip',
+						domain			=  '$escaped_domain',
+						update_time		=  NOW()
+				   " ; 
+		$this -> Database -> Execute ( $query ) ;
+		$parent_id	=  $this -> Database -> GetLastInsertid ( ) ;
+
+		// Then insert whois data, for each of the registrations found
+		foreach  ( $whois  as  $whois_data )
+		   {
+			foreach  ( $whois_data  as  $data )
+			   {
+				$key		=  $this -> Database -> Escape ( $data [ 'name' ] ) ;
+				$value		=  $this -> Database -> Escape ( implode ( "\n", $data [ 'value' ] ) ) ;
+
+				// A string store object has been specified when constructing the objet : use it to store
+				// the whois data keys and values
+				if  ( $this -> StringStore )
+				   {
+					$key_id		=  $this -> StringStore -> Insert ( self::STRING_STORE_KEY, $key ) ;
+					$value_id	=  $this -> StringStore -> Insert ( self::STRING_STORE_VALUE, $value ) ;
+					$query		=  "
+								INSERT INTO {$this -> DomainDataTableName}
+								SET
+									parent_id	=  $parent_id,
+									data_key_id	=  '$key_id',
+									data_value_id	=  '$value_id'
+							   " ;
+
+				    }
+				// Otherwise, use regular fields
+				else
+				   {
+					$md5		=  md5 ( $value ) ;
+					$query		=  "
+								INSERT INTO {$this -> DomainDataTableName}
+								SET
+									parent_id	=  $parent_id,
+									data_key	=  '$key',
+									data_value	=  '$value',
+									value_md5	=  '$md5'
+							   " ;
+				    }
+
+				// Insert the new whois data entry
+				$this -> Database -> Execute ( $query ) ;
+			    }
+
+			// When several addresses or address ranges have been registered, $index help to keep the
+			// current index value
+			$index ++ ;
+		    }
+
+		// Return the newly inserted record
+		$this -> Database -> SetQuery ( "SELECT * FROM {$this -> Name} WHERE ip = '$ip'" ) ;
+		$row	=  $this -> Database -> LoadRow ( ) ;
+
+		return ( $row ) ;
+	    }
+
+
+	/*==============================================================================================================
+	
+	    Optimize -
+	        Deletes the encapsulated tables.
+	
+	  ==============================================================================================================*/
+	public function  Optimize ( )
+	   {
+		parent::Optimize ( ) ;
+		$this -> Database -> Execute ( "OPTIMIZE TABLE {$this -> DomainDataTableName}" ) ;
+	    }
+	
+	
+    }

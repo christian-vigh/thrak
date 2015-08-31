@@ -1,0 +1,1075 @@
+<?php
+/***************************************************************************************************
+
+    NAME
+	PHP.phpclass
+
+    DESCRIPTION
+	Utility functions related to PHP parsing.
+
+    AUTHOR
+	Christian Vigh, 10/2012.
+
+    HISTORY
+    [Version : 1.0]		[Date : 2012/10/02]		[Author : CV]
+	Initial release for Thrak library version 2. Most of the code comes from the original
+	String.phpclass file.
+
+    [Version : 1.0.1]		[Date : 2015/06/17]		[Author : CV]
+	. Added the EvaluateTags() method.
+	. Changed the ExpandShellParameters() method so that the default value array is $argv.
+
+ ***************************************************************************************************/
+namespace 	Thrak\Processors ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces & objects
+use 		Thrak\System\Object ;
+use 		Thrak\Types\String ;
+use 		Thrak\Types\String\Regex ;
+
+
+/*===========================================================================================
+
+	Additional PHP token constants for the GetPHPTokens() method.
+
+ ===========================================================================================*/
+define ( 'XT_TOKEN_BASE'		, 0x8000 ) ;
+define ( 'XT_LESS_THAN'			, 0x8001 ) ;
+define ( 'XT_GREATER_THAN'		, 0x8002 ) ;
+define ( 'XT_QUESTION_MARK'		, 0x8003 ) ;
+define ( 'XT_LEFT_PARENT'		, 0x8004 ) ;
+define ( 'XT_RIGHT_PARENT'		, 0x8005 ) ;
+define ( 'XT_COMMA'			, 0x8006 ) ;
+define ( 'XT_AMPERSAND'			, 0x8007 ) ;
+define ( 'XT_TILDE'			, 0x8008 ) ;
+define ( 'XT_SHARP'			, 0x8009 ) ;
+define ( 'XT_DOUBLE_QUOTE'		, 0x800A ) ;
+define ( 'XT_SINGLE_QUOTE'		, 0x800B ) ;
+define ( 'XT_LEFT_BRACE'		, 0x800C ) ;
+define ( 'XT_LEFT_BRACKET'		, 0x800D ) ;
+define ( 'XT_DASH'			, 0x800E ) ;
+define ( 'XT_VERTICAL_BAR'		, 0x800F ) ;
+define ( 'XT_UNDERLINE'			, 0x8010 ) ;
+define ( 'XT_BACKSLASH'			, 0x8011 ) ;
+define ( 'XT_CARET'			, 0x8012 ) ;
+define ( 'XT_AT_SIGN'			, 0x8013 ) ;
+define ( 'XT_RIGHT_BRACKET'		, 0x8014 ) ;
+define ( 'XT_EQUAL_SIGN'		, 0x8015 ) ;
+define ( 'XT_PLUS'			, 0x8016 ) ;
+define ( 'XT_RIGHT_BRACE'		, 0x8017 ) ;
+define ( 'XT_PERCENT_SIGN'		, 0x8018 ) ;
+define ( 'XT_STAR'			, 0x8019 ) ;
+define ( 'XT_BANG'			, 0x801A ) ;
+define ( 'XT_COLON'			, 0x801B ) ;
+define ( 'XT_SLASH'			, 0x801C ) ;
+define ( 'XT_SEMICOLON'			, 0x801D ) ;
+define ( 'XT_DOT'			, 0x801E ) ;
+define ( 'XT_BACKQUOTE'			, 0x801F ) ;
+define ( 'XT_DOLLAR'			, 0x8020 ) ;
+define ( 'XT_CATENATE'			, 0x8021 ) ;
+define ( 'XT_EOF'			, 0x8FFF ) ;
+define ( 'XT_UNKNOWN'			, 0x9000 ) ;
+
+/*===========================================================================================
+
+	Flags for the GetPHPTokens() method.
+
+ ===========================================================================================*/
+define ( 'PHP_TOKENS_ADD_PHP_TAGS'	, 0x0001 ) ;	// PHP opening and closing tags are added before parsing
+define ( 'PHP_TOKENS_ADD_EOF'		, 0x0002 ) ;	// A XT_EOF entry is added as the last part element
+define ( 'PHP_TOKENS_REMOVE_SPACES'	, 0x0004 ) ;	// Ignore T_WHITESPACE tokens
+define ( 'PHP_TOKENS_ALL'		, 0xFFFF ) ;	// Include all flags
+define ( 'PHP_TOKENS_DEFAULT'		, 0x0003 ) ;	// Default flags : ADD_PHP_TAGS | ADD_EOF
+
+
+/*===========================================================================================
+
+    PHP class -
+	String utilities for shell-oriented packages.
+
+ ===========================================================================================*/
+class  	PHP	extends  Object
+   {
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		EvaluateTags - Evaluates the code between PHP tags.
+
+	    PROTOTYPE
+		$result = EvaluateTags ( $value, $prepend ) ;
+
+	    DESCRIPTION
+		Evaluates code within Php tags in a string.
+		The recognized Php tags are the following :
+		- <?php ... ?> :
+			Classic PHP tag.
+		- <? ... ?> :
+			Short Php tag. The short_open_tag php.ini value is taken into account ; if
+			false, short open tags will be left as is.
+		- <?= expression ?>
+			Substitutes to the given expression or variable.
+
+	    PARAMETERS
+		$value (string) -
+			Value to be interpreted.
+
+		$prepend (string) -
+			String to be prepended to all lines except the first one. This is intended
+			for text alignment.
+		
+	    RETURN VALUE
+		Returns the initial value, with all php tags replaced after their interpretation.
+		 
+	    NOTES
+		. PHP code is interpreted using the eval() function.
+		. The <?= ?> construct is equivalent to : <?php echo $eval ?>
+		. Short tags (<? ?>) will not be interpreted if the short_open_tags directive in
+		  php.ini is set to false.
+		. A "global $variable" instruction is inserted before the code to be evaluated, for 
+		  each variable defined in the $GLOBALS array. This allows eval'ed code to reference
+		  global variables without having to include a "global" instruction.
+		. Replacement strings from php code are captured using the ob_xxx() functions.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  EvaluateTags ( $value, $prepend = null )
+	   {
+		static $php_tag_re		=  '#(?P<php_code>
+							< 
+							(
+								(
+									\?
+									(?P<php_tag> =)
+								 )
+								|
+								(
+									\?
+									(?P<php_tag> php)
+									\s
+								 )
+								|
+								(
+									\?
+									(?P<php_tag> \s? )
+								 )
+							 )
+							\s*
+							(?P<code> .*?)
+							\s* \?>
+						      )
+						    #imsx' ;
+
+		// The supplied value contains PHP tags : evaluate them
+		if  ( Regex::PregMatchAllEx ( $php_tag_re, $value, $matches, PREG_OFFSET_CAPTURE ) )
+		   {
+			$replacements		=  [] ;
+			$count			=  count ( $matches [ 'php_tag' ] ) ;
+			$allow_short_tags	=  ini_get ( 'short_open_tag' ) ;
+
+			// Build the set of "global $variable" declarations to be inserted before the eval'ed code
+			$globals		=  '' ;
+			foreach  ( $GLOBALS  as  $variable => $junk )
+				$globals .= "global \$$variable ;" ;
+
+			// Check if short open tags are allowed
+			$short_open_tag		=  ini_get ( 'short_open_tag' ) ;
+
+			// Loop through matches
+			for  ( $i = 0 ; $i  <  $count ; $i ++ )
+			   {
+				$tag		=  $matches [ 'php_tag' ] [$i] ;
+				$code		=  $matches [ 'code' ] [$i] ;
+				$whole_code	=  $matches [ 'php_code' ] [$i] ;
+
+				// <?= tag : simply prepend the "echo" instruction to the eval'ed code
+				if  ( $tag [0]  ==  '=' )
+					$code [0]	=  "echo {$code [0]}" ;
+				// Short open tag : don't process it if the short_open_tag directive of php.ini is set to off
+				else if  ( ! $short_open_tag  &&  ! trim ( $tag [0] ) )
+					continue ;
+
+				// Capture eval'ed code output from output buffer 
+				ob_start ( ) ;
+				$php_code =  "$globals {$code[0]} ;" ;
+				eval ( $php_code ) ;
+				$current_value		=  ob_get_clean ( ) ;
+
+				if  ( $prepend ) 
+					$current_value	=  str_replace ( "\n", "\n$prepend", $current_value ) ;
+
+				// Add captured output to the list of strings that will replace their original value in the input string
+				$replacements []	=  [ $whole_code [0], $current_value, $whole_code [1] ] ;
+			    }
+
+			// Perform the replacements
+			if  ( count ( $replacements ) ) 
+				$return_value	=  Regex::MultiSubstrReplace ( $value, $replacements ) ;
+			else
+				$return_value	=  $value ;
+		    }
+		// No PHP tag : return the value as is
+		else
+			$return_value	=  $value ;
+
+		// All done, return
+		return ( $return_value ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		ExpandShellParameters - Expand parameter references in a string.
+
+	    PROTOTYPE
+	    	$result = PHP::ExpandShellParameters ( $string, $values = null ) ;
+
+	    DESCRIPTION
+	    	ExpandShellParameters() expands any shell-like reference to a parameter by its
+		corresponding value in $parameters.
+		Parameter references are :
+
+		$1, $2, ... $n -
+			Reference to parameter number 'n'. $1 will be replaced by array element #0 in
+			the $values array, $2 by element #1, and $n by element #n-1.
+			Parameter numbering starts at 1.
+
+		$* -
+			Will be replaced by all the parameters, separated with a space.
+
+		$x-y -
+			Will be replaced by parameters x through y. The form '$x-' means 'all
+			parameters from #x to the last one', while the form '$-y' means 'all
+			parameters from 1 to #y'.
+
+		$$ -
+			Means the last parameter (in the $parameters array).
+
+	    PARAMETERS
+	    	$string (string) -
+			String whose parameters are to be expanded.
+
+		$values (array of strings)
+			Array of values which will be substituted to the parameter references.
+			If only one value is supplied, it can be specified as is, not as an array.
+			If null, the global $arv array is used.
+
+	    NOTES
+	    	The function does not complain if the input string references a parameter that does
+		not exist in the $values array.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  ExpandShellParameters ( $string, $values = null )
+	   {
+		global		$argv ;
+
+		// Check if supplied input is a string
+		if  ( ! is_string ( $string ) )
+			return ( "" ) ;
+
+		// Null values : use $argv 
+		if  ( ! $values  &&  isset ( $argv ) ) 
+			$values		=  $argv ;
+
+		// Allow lazy callers to specify a single value instead of an array containing a single value
+		if  ( ! is_array ( $values ) )
+		   {
+			if  ( $values )
+				$values = array ( $values ) ;
+			else
+				$values = array ( ) ;
+		    }
+
+		// Initializations
+		$output 	=  "" ;			// Expanded string
+		$index		=  0 ;			// Current index in $string
+		$length		=  strlen ( $string ) ;	// Input string length
+		$value_count	=  count ( $values ) ;	// number of values in $values
+
+
+		// Main loop : iterate through input string, finding the next '$' character
+		while  ( ( $i = strpos ( $string, '$', $index ) )  !==  false )
+		   {
+			// Normal case : copy the input characters up to the one before the dollar sign to the output string
+			if  ( $i )
+			   {
+				$delta   	 = $i - $index ;
+				$output 	.= substr ( $string, $index, $delta ) ;
+			    }
+			else	// Special case when the input string starts with a dollar sign
+				$delta 		 = 0 ;
+
+			// Set index to the position of the dollar sign
+			$index 		+= $delta ;
+
+			// RE for matching various kinds of parameter references
+			$re		 = '/\$' .
+						// $$ : References the last parameter
+						'(?P<dollar> \$) |' .
+						// $* : References all the parameters
+						'(?P<star> \* ) |' .
+						// $x-y : References parameters x to y
+						'(?P<range1>  (?P<min1> [0-9]+) - (?P<max1> [0-9]+) ) |' .
+						// $-y : References parameters 1 to y
+						'(?P<range2>  - (?P<max2> [0-9]+) ) |' .
+						// $x- : References parameters x to the last one
+						'(?P<range3>  (?P<min3> [0-9]+) - ) |' .
+						// $x : References parameter #x
+						'(?P<number> [0-9]+ ) |' .
+						// Special case when we have a dollar sign not followed by one of the above constructs
+						'(?P<other> [^0-9\-$*] )' .
+					   '/ix' ;
+
+			// Did we find a match ? (Curiously, even without the <other> construct in the regex, the expression will match
+			// a string like $ZZZ, because the caret sign does not force to match from start of line)
+			if  ( preg_match ( $re, $string, $match, PREG_OFFSET_CAPTURE, $index ) )
+			   {
+				// Proceed with any unrecognized construct
+				if  ( isset ( $match [ 'other' ] )  &&  $match [ 'other' ] [1]  !=  -1 )
+				    {
+					$output .= '$' . $match [ 'other' ] [0] ;
+					$index  += 2 ;
+				     }
+				// $$
+				else if  ( isset ( $match [ 'dollar' ] )  &&  $match [ 'dollar' ] [1]  !=  -1 )
+				   {
+					$output .= $values [ $value_count -1 ] ;
+					$index  += 2 ;
+				    }
+				// $*
+				else if  ( isset ( $match [ 'star' ] )  &&  $match [ 'star' ] [1]  !=  -1 )
+				   {
+					$output .= implode ( ' ', $values ) ;
+					$index  += 2 ;
+				    }
+				// $x-y or $x- or $-y
+				else if  ( isset ( $match [ 'number' ] )  &&  $match [ 'number' ] [1]  !=  -1 )
+				   {
+					$value 		= $match [ 'number' ] [0] ;
+					$vlength 	= strlen ( $value ) ;
+					$value -- ;
+
+					if  ( isset ( $values [ $value ] ) )
+						$output .= $values [ $value ] ;
+
+					$index += $vlength + 1 ;
+				    }
+				else
+				   {
+					if  ( isset ( $match [ 'range1' ] )  &&  $match [ 'range1' ] [1]  !=  -1 )
+					   {
+						$vlength 	=  strlen ( $match [ 'range1' ] [0] ) ;
+						$min		=  $match [ 'min1' ] [0] ;
+						$max 		=  $match [ 'max1' ] [0] ;
+					    }
+					else if  ( isset ( $match [ 'range2' ] )  &&  $match [ 'range2' ] [1]  !=  -1 )
+					   {
+						$vlength 	=  strlen ( $match [ 'range2' ] [0] ) ;
+						$min		=  1 ;
+						$max 		=  $match [ 'max2' ] [0] ;
+					    }
+					else if  ( isset ( $match [ 'range3' ] )  &&  $match [ 'range3' ] [1]  !=  -1 )
+					   {
+						$vlength 	=  strlen ( $match [ 'range3' ] [0] ) ;
+						$min		=  $match [ 'min3' ] [0] ;
+						$max 		=  $value_count ;
+					    }
+
+					// Silently ignore bad ranges
+					if  ( $min  <=  $max )
+					   {
+						$min -- ; $max -- ;
+
+						if  ( $max  >  $value_count )
+							$max = $value_count ;
+
+						$output .= implode ( ' ', array_slice ( $values, $min, $max - $min + 1 ) ) ;
+					    }
+
+					$index  += $vlength + 1 ;
+				    }
+			    }
+			else 	// We never fall here !
+			   {
+				$output .= '$' ;
+				$index ++ ;
+			    }
+		    }
+
+		// Copy the remainder of the string
+		if  ( $index  <  $length )
+			$output .= substr ( $string, $index ) ;
+
+		// All done, return expanded string
+		return ( $output ) ;
+	    }
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		ExpandVariables - Expands references to environment variables.
+
+	    PROTOTYPE
+		$string = PHP::ExpandVariables ( $string ) ;
+
+	    DESCRIPTION
+		Replaces all references to environment variables with their contents.
+		An environment variable can be referenced using the '$envname' notation.
+
+	    PARAMETERS
+		$string (string) -
+			String to be expanded.
+
+	    RETURN VALUE
+		The input string, with all references to environment variables replaced with their contents.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  ExpandVariables ( $string )
+	   {
+	   	static  $characters	=  "abcdefghijklmnopqrstuvwxyz0123456789_" ;
+
+		$length 	=  strlen ( $string ) ;
+		$result 	=  "" ;
+
+		for  ( $i = 0 ; $i < $length ; $i ++ )
+		   {
+			$ch = $string [$i] ;
+
+			if  ( $ch  ==  '$' )
+			   {
+				$name 	=  "" ;
+
+				for  ( $j = $i + 1 ; $j < $length ; $j ++ )
+				   {
+					$ch2 = $string [$j] ;
+
+					if  ( stripos ( $characters, $ch2 )  !==  false )
+						$name .= $ch2 ;
+					else
+						break ;
+				    }
+
+				$i = $j - 1 ;
+
+				if  ( $name )
+					$result .= getenv ( $name ) ;
+			    }
+			else
+				$result .= $ch ;
+		    }
+
+		return ( $result ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		GetPHPTokenName - Returns the name of a PHP token.
+
+	    PROTOTYPE
+		$name = PHP::GetPHPTokenName ( $value ) ;
+
+	    DESCRIPTION
+		Returns the name of a PHP token.
+
+	    PARAMETERS
+		$value (integer) -
+			PHP token value.
+
+	    RETURN VALUE
+		The constant name of the PHP token.
+
+	    NOTES
+		This function handles the extra PHP token values (XT_xxx constants).
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  GetPHPTokenName ( $value )
+	   {
+		if  ( $value  >=  XT_TOKEN_BASE )
+		   {
+		   	PHP::__initialize_extra_php_tokens ( ) ;
+
+			if  ( array_key_exists ( $value, PHP::$ExtraPHPTokensByValue ) )
+				return ( PHP::$ExtraPHPTokens [ $value ] ) ;
+		    }
+    		else
+    		   {
+			$name 	=  token_name ( $value ) ;
+
+			if  ( $name  !=  "UNKNOWN" )
+				return ( $name ) ;
+    		    }
+
+    		return ( "XT_UNKNOWN" ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		GetPHPTokens - Tokenizes PHP code.
+
+	    PROTOTYPE
+		$tokens = PHP::GetPHPTokens ( $input, $flags = PHP_TOKENS_DEFAULT ) ;
+
+	    DESCRIPTION
+		Tokenizes the supplied input string, which should contain PHP code.
+
+	    PARAMETERS
+		$input (string) -
+			PHP code to be tokenized.
+
+		$flags (integer) -
+			Can be any combination of the following flags :
+
+			- PHP_TOKENS_ADD_PHP_TAGS :
+				Adds the PHP opening and closing tags before parsing.
+				If the supplied string already contains those tags, nothing will
+				happen.
+
+			- PHP_TOKENS_ADD_EOF :
+				Add an XT_EOF pseudo-token as the last parsed element.
+
+			- PHP_TOKENS_REMOVE_SPACES :
+				Remove T_WHITESPACE tokens.
+
+			The special constants below have the following values :
+
+			- PHP_TOKENS_ALL :
+				Include the PHP_TOKENS_ADD_PHP_TAGS, PHP_TOKENS_ADD_EOF and
+				PHP_TOKENS_REMOVE_WHITESPACES flags.
+
+			- PHP_TOKENS_DEFAULT :
+				Default flags ( PHP_TOKENS_ADD_PHP_TAGS + PHP_TOKENS_ADD_EOF).
+
+	    RETURN VALUE
+		Returns an array of associative arrays, one array per token found, which contains the
+		following entries :
+
+		'id' (integer) -
+			Token id, ie one of the T_xxx PHP constants.
+
+		'name' (string) -
+			Token name (a string specifying the corresponding T_xxx constant).
+
+		'value' (string) -
+			Input value that has been identified as a PHP token.
+
+		'line' (integer) -
+			Input line.
+
+	    NOTES
+		- GetPHPTokens() normalizes the results of the token_get_all() function. When a string
+		  is returned, it is automatically converted an associative array containing the 'id',
+		  'name', 'value' and 'line' entries. 'id' and 'name' will be set to T_UNKNOWN.
+		- Whatever the value of the $add_php_tags parameter, the returned value
+		  will not include the T_OPEN_TAG and T_CLOSE_TAG tokens.
+		- The '# ...' constructs are not considered as T_COMMENT, but as XT_SHARP followed by
+		  whatever takes places after the sharp sign.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  GetPHPTokens ( $input, $flags = PHP_TOKENS_DEFAULT )
+	   {
+		PHP::__initialize_extra_php_tokens ( ) ;
+
+		return ( PHP::__GetPHPTokens ( $input, $flags, true ) ) ;
+	    }
+
+
+	private static function  __GetPHPTokens ( $input, $flags, $main )
+	   {
+	   	// Get flags
+	   	$add_php_tags 	=  ( $flags  &  PHP_TOKENS_ADD_PHP_TAGS  ) ?  true : false ;
+		$add_eof 	=  ( $flags  &  PHP_TOKENS_ADD_EOF       ) ?  true : false ;
+		$remove_spaces 	=  ( $flags  &  PHP_TOKENS_REMOVE_SPACES ) ?  true : false ;
+
+		$extra_open_tag 	=  false ;
+
+		// if the input string contains a PHP close tag, then add a PHP open tag before otherwise the parser will be confused
+		if  ( ( $index1  =  strpos ( $input, '?>' ) )  !==  false )
+		   {
+			$index2 	=  stripos ( $input, '<?php' ) ;
+
+			// If no opening tag, or opening tag happens after a closing tag, add an artificial opening tag before the closing one.
+			if  ( $index2  ===  false  ||  $index2  >  $index1 )
+			   {
+			   	$extra_key 		=  '_' . md5 ( time ( ) ) ;
+
+			   	// The PHP tokenizer eats the first space after the '<?php' opning tag ; remember it
+			   	$search 	=  " \t" ;
+
+			   	if  ( $index1  &&  ( $ch = strpos ( $search, $input [ $index1 - 1 ] ) ) !==  false )
+			   		$extra_space = $search [$ch] ;
+		   		else
+		   			$extra_space = "" ;
+
+				$input 			=  '<?php ' . str_replace ( '?>', $extra_key . '?>', $input ) ;
+				$extra_open_tag 	=  true ;
+			    }
+		    }
+	   	// Add PHP starting and ending tags if needed
+		else if  ( $add_php_tags )
+		   {
+		   	if ( substr ( $input, 0, 2 )  !=  '/*' )
+		   		$input = '<?php ' . $input . ' ?>' ;
+		    }
+
+		// Get tokens
+		$tokens 	=  token_get_all ( $input ) ;
+
+		// Normalize the values
+		$result 	=  array ( ) ;
+		$previous_line 	=  1 ;
+		$last 		=  count ( $tokens ) - 1 ;
+		$index 		=  0 ;
+
+
+		for ( $index = 0 ; $index  <=  $last ; $index ++ )
+		   {
+   			$token 		=  $tokens [ $index ] ;
+		   	$result_count 	=  count ( $result ) ;
+
+			// Exclude whitespaces if needed
+			if  ( $remove_spaces  &&  $token [0]  ==  T_WHITESPACE )
+				continue ;
+
+		   	// Exclude starting and closing PHP tags
+		   	if  ( $add_php_tags )
+		   	   {
+		   	   	// Exclude starting PHP tags
+			   	if  ( $index  ==  0  &&  $token [0]  ==  T_OPEN_TAG )
+				      	continue ;
+
+			      	// Exclude closing PHP tags + preceding white space
+			      	if  ( $token [0]  ==  T_CLOSE_TAG )
+			      	   {
+					if  ( $result_count )
+					   {
+					   	$result_entry  =  &$result [ $result_count - 1 ] ;
+
+						if  ( $result_entry [ 'id' ]  ==  T_WHITESPACE )
+						   {
+						   	if  ( strlen ( $result_entry [ 'value' ] )  ==  1 )
+						   		array_pop ( $result ) ;
+					   		else
+					   			$result_entry [ 'value' ] = substr ( $result_entry [ 'value'], 1 ) ;
+					   	    }
+					    }
+
+		    			continue ;
+			      	    }
+    	    		    }
+
+		      	// If an embedded '<?php' tag occurs, it will be parsed as "<", "&" and a T_STRING entry with the value "php".
+		      	// Group them into one single T_OPEN_TAG
+		      	if  ( $index + 2  <=  $last  &&
+	      		      ( is_string ( $tokens [ $index ] )  &&  $tokens [ $index ]  ==  "<" )  &&
+	      		      ( is_string ( $tokens [ $index + 1 ] )  &&  $tokens [ $index + 1 ]  ==  "?" )  &&
+	      		      ( is_array ( $tokens [ $index + 2 ] )  &&  ! strcasecmp ( $tokens [ $index + 2 ] [1], 'php' ) ) )
+ 		          {
+				$entry 	=  array
+				   (
+				   	'id' 	=>  T_OPEN_TAG,
+				   	'name'	=>  'T_OPEN_TAG',
+				   	'value' =>  '<?' . $tokens [ $index + 2 ] [1],
+				   	'line'	=>  $previous_line
+				    ) ;
+
+				$result []	=  $entry ;
+				$index         +=  2 ;
+				continue ;
+ 		           }
+
+			// Process closing tag substitution
+			if  ( is_array ( $token )  &&  $extra_open_tag  &&  $token [0]  ==  T_STRING  &&  $token [1]  ==  $extra_key )
+			   {
+			   	// Make sure that a potential space before the closing tag will be preserved
+			   	if  ( $result_count  &&  $result [ $result_count - 1 ] [ 'id' ]   ==  T_WHITESPACE )
+			   	   	$result [ $result_count - 1 ] [ 'value' ]  = $extra_space . $result [ $result_count - 1 ] [ 'value' ] ;
+  	   			else
+  			    	   {
+					$entry 	=  array
+					   (
+					   	'id'	=>  T_WHITESPACE,
+					   	'name'	=>  'T_WHITESPACE',
+					   	'value' =>  $extra_space,
+					   	'line'  =>  $previous_line
+					    ) ;
+
+					$result [] 	=  $entry ;
+  			    	    }
+
+				// Add the close tag substitution
+				$entry 	=  array
+				   (
+				   	'id' 	=>  T_CLOSE_TAG,
+				   	'name'	=>  'T_CLOSE_TAG',
+				   	'value' =>  '?>',
+				   	'line'	=>  $previous_line
+				    ) ;
+
+				$result []	=  $entry ;
+			    }
+		   	// Unrecognized tokens are returned as a string ; convert them to an array
+			else if  ( is_string ( $token ) )
+			   {
+			   	// Search for an existing token entry
+			   	if  ( array_key_exists ( $token, PHP::$ExtraPHPTokensByToken ) )
+			   	   {
+					$id 	=  PHP::$ExtraPHPTokensByToken [ $token ] ;
+					$name  	=  PHP::$ExtraPHPTokensByValue [ $id ] ;
+			   	    }
+	    			// Otherwise, set it to unknown
+ 				else
+ 				   {
+					$id		=  XT_UNKNOWN ;
+					$name 		=  'XT_UNKNOWN' ;
+				    }
+
+				// Build the entry
+				$entry 		=  array
+				   (
+				   	'id'	=>  $id,
+				   	'name'	=>  $name,
+				   	'value' =>  $token,
+				   	'line'  =>  $previous_line
+				    ) ;
+
+			    	// Add the entry
+			    	$result []	=  $entry ;
+			    }
+    			// Otherwise, reformat the token array
+    			else
+    			   {
+    			   	// Constructs starting with '#' are considered as a comment. Since the purpose of this
+    			   	// function is to mainly serve for the PPP object, the sharp will be promoted to
+    			   	// an XT_SHARP token, and the rest of the input line will be tokenized as well
+				// Also handle the concatenation operator ( ## )
+    			   	if  ( $token [0]   ==  T_COMMENT  &&  $token [1] [0]  ==  '#' )
+    			   	   {
+					if  ( strlen ( $token [1] )  >  1  )
+					   {
+						if  ( $token [1] [1]  ==  '#' )
+						   {
+							$entry 	=  array
+							   (
+								'id'	=>  XT_CATENATE,
+								'name'  =>  'XT_CATENATE',
+								'value' =>  '##',
+								'line'	=>  $token [2]
+							    ) ;
+
+							$index ++ ;
+							$remove		=  2 ;
+						    }
+    			   	   		// '#' token entry
+						else
+						   {
+							$entry 	=  array
+							   (
+								'id'	=>  XT_SHARP,
+								'name'  =>  'XT_SHARP',
+								'value' =>  '#',
+								'line'	=>  $token [2]
+							    ) ;
+
+							$remove		=  1 ;
+						     }
+					    }
+
+					$result []	=  $entry ;
+
+					// Analyze the remaining characters after the sharp
+					$new_input	=  substr ( $token [1], $remove, strlen ( $token [1] ) - $remove - 1 ) ;
+					$entries 	=  PHP::__GetPHPTokens ( $new_input, $add_php_tags, $add_eof, false ) ;
+
+					// Merge the results with the return value
+					$result 	=  array_merge ( $result, $entries ) ;
+    			   	    }
+	    			// Normal case : simply add the entry
+		   	    	else
+		   	    	   {
+					$add_token	=  true ;
+
+		   	    	   	switch ( $token [0] )
+		   	    	   	   {
+			   	    	   	// Special processing for __FILE__ and __LINE__ macros
+		   	    	   	   	case	T_FILE :
+						case	T_LINE :
+		   	    	   	   		$token_id 	=  T_STRING ;
+		   	    	   	   		$token_name 	=  'T_STRING' ;
+		   	    	   	   		break ;
+
+						// When a string is surrounded by backquotes, it is interpreted as T_ENCAPSED_AND_WHITESPACE
+						// Simply replace it with T_STRING. Note that the backquoted string can contain anything so
+						// we need to reevaluate them
+						case	T_ENCAPSED_AND_WHITESPACE :
+							if  ( count ( $result )  &&  $result [ count ( $result ) - 1 ] [ 'id' ]  ==  XT_BACKQUOTE )
+							   {
+								$result		=  array_merge ( $result, PHP::__GetPhpTokens ( $token [1], $flags, $main ) ) ;
+								array_pop ( $result ) ;		// Remove last XT_EOF token
+								$add_token	=  false ;
+							    }
+							break ;
+
+						default :
+							$token_id 	=  $token [0] ;
+							$token_name 	=  token_name ( $token [0] ) ;
+		   	    	   	    }
+
+					if  ( $add_token )
+					   {
+						// Add the entry
+						$entry 		=  array
+						   (
+					   		'id'	=>  $token_id,
+					   		'name'	=>  $token_name,
+					   		'value'	=>  $token [1],
+					   		'line'	=>  $token [2]
+						    ) ;
+
+		    				// Add the value
+		    				$result [] 	=  $entry ;
+					    }
+				    }
+
+				// Remember last seen line number
+				$previous_line  =  $token [2] ;
+    			    }
+		    }
+
+		// Add the eof token
+		if  ( $main  &&  $add_eof )
+		   {
+			$entry 		=  array
+			   (
+			   	'id'		=>  XT_EOF,
+			   	'name'		=>  'XT_EOF',
+			   	'value'		=>  "",
+			   	'line'		=>  $previous_line
+			    ) ;
+
+		    	$result [] 	=  $entry ;
+	     	    }
+
+		// All done, return
+		return ( $result ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		__initialize_extra_php_tokens -
+			Initializes the structures for extra PHP tokens.
+
+	 --------------------------------------------------------------------------------------------*/
+	private static 		$ExtraPHPTokens 	=  array
+	   (
+		 array ( 'name' => 'XT_LESS_THAN'	, 'value' => XT_LESS_THAN	, 'token' => "<"  ),
+		 array ( 'name' => 'XT_GREATER_THAN'	, 'value' => XT_GREATER_THAN	, 'token' => ">"  ),
+		 array ( 'name' => 'XT_QUESTION_MARK'	, 'value' => XT_QUESTION_MARK	, 'token' => "?"  ),
+		 array ( 'name' => 'XT_LEFT_PARENT'	, 'value' => XT_LEFT_PARENT	, 'token' => "("  ),
+		 array ( 'name' => 'XT_RIGHT_PARENT'	, 'value' => XT_RIGHT_PARENT	, 'token' => ")"  ),
+		 array ( 'name' => 'XT_COMMA'		, 'value' => XT_COMMA		, 'token' => ","  ),
+		 array ( 'name' => 'XT_AMPERSAND'	, 'value' => XT_AMPERSAND	, 'token' => "&"  ),
+		 array ( 'name' => 'XT_TILDE'		, 'value' => XT_TILDE		, 'token' => "~"  ),
+		 array ( 'name' => 'XT_SHARP'		, 'value' => XT_SHARP		, 'token' => "#"  ),
+		 array ( 'name' => 'XT_DOUBLE_QUOTE'	, 'value' => XT_DOUBLE_QUOTE	, 'token' => "\"" ),
+		 array ( 'name' => 'XT_SINGLE_QUOTE'	, 'value' => XT_SINGLE_QUOTE	, 'token' => "'"  ),
+		 array ( 'name' => 'XT_LEFT_BRACE'	, 'value' => XT_LEFT_BRACE	, 'token' => "{"  ),
+		 array ( 'name' => 'XT_LEFT_BRACKET'	, 'value' => XT_LEFT_BRACKET	, 'token' => "["  ),
+		 array ( 'name' => 'XT_DASH'		, 'value' => XT_DASH		, 'token' => "-"  ),
+		 array ( 'name' => 'XT_VERTICAL_BAR'	, 'value' => XT_VERTICAL_BAR	, 'token' => "|"  ),
+		 array ( 'name' => 'XT_UNDERLINE'	, 'value' => XT_UNDERLINE	, 'token' => "_"  ),
+		 array ( 'name' => 'XT_BACKSLASH'	, 'value' => XT_BACKSLASH	, 'token' => "\\" ),
+		 array ( 'name' => 'XT_CARET'		, 'value' => XT_CARET		, 'token' => "^"  ),
+		 array ( 'name' => 'XT_AT_SIGN'		, 'value' => XT_AT_SIGN		, 'token' => "@"  ),
+		 array ( 'name' => 'XT_RIGHT_BRACKET'	, 'value' => XT_RIGHT_BRACKET	, 'token' => "]"  ),
+		 array ( 'name' => 'XT_EQUAL_SIGN'	, 'value' => XT_EQUAL_SIGN	, 'token' => "="  ),
+		 array ( 'name' => 'XT_PLUS'		, 'value' => XT_PLUS		, 'token' => "+"  ),
+		 array ( 'name' => 'XT_RIGHT_BRACE'	, 'value' => XT_RIGHT_BRACE	, 'token' => "}"  ),
+		 array ( 'name' => 'XT_PERCENT_SIGN'	, 'value' => XT_PERCENT_SIGN	, 'token' => "%"  ),
+		 array ( 'name' => 'XT_STAR'		, 'value' => XT_STAR		, 'token' => "*"  ),
+		 array ( 'name' => 'XT_BANG'		, 'value' => XT_BANG		, 'token' => "!"  ),
+		 array ( 'name' => 'XT_COLON'		, 'value' => XT_COLON		, 'token' => ":"  ),
+		 array ( 'name' => 'XT_SLASH'		, 'value' => XT_SLASH		, 'token' => "/"  ),
+		 array ( 'name' => 'XT_SEMICOLON'	, 'value' => XT_SEMICOLON	, 'token' => ";"  ),
+		 array ( 'name' => 'XT_DOT'		, 'value' => XT_DOT		, 'token' => "."  ),
+		 array ( 'name' => 'XT_DOLLAR'		, 'value' => XT_DOLLAR		, 'token' => "\$" ),
+		 array ( 'name' => 'XT_BACKQUOTE'	, 'value' => XT_BACKQUOTE	, 'token' => "`"  )
+ 	    ) ;
+
+	private static		$ExtraPHPTokensByName	=  array ( ) ;
+	private static 		$ExtraPHPTokensByValue	=  array ( ) ;
+	private static 		$ExtraPHPTokensByToken	=  array ( ) ;
+
+
+	private static function  __initialize_extra_php_tokens ( )
+	   {
+		if  ( PHP::$ExtraPHPTokensByName )
+			return ;
+
+		foreach  ( PHP::$ExtraPHPTokens  as  $entry )
+		   {
+			PHP::$ExtraPHPTokensByName  [ $entry [ 'name'  ] ]	=  $entry [ 'value' ] ;
+			PHP::$ExtraPHPTokensByValue [ $entry [ 'value' ] ]	=  $entry [ 'name'  ] ;
+			PHP::$ExtraPHPTokensByToken [ $entry [ 'token' ] ]	=  $entry [ 'value' ] ;
+		    }
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		ParseCallback - Parses a callback specification string.
+
+	    PROTOTYPE
+		$callback = PHP::ParseCallback ( $value ) ;
+
+	    DESCRIPTION
+		Parses a callback specification string.
+
+	    PARAMETERS
+		$value (string) -
+			Callback specification. It can have one of the following forms :
+
+			- 'function_name' :
+				The callback is a user-defined function name.
+
+			- 'class::method' :
+				The callback is a static method defined in the specified class.
+
+			- '$object -> method' :
+				The callback is a method defined in the specified global object.
+
+	    RETURN VALUE
+		Callback value (either an array of two values or a function name), or false if the
+		specification is incorrect.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  ParseCallback ( $value )
+	   {
+		if  ( preg_match ( '/^ (?P<class> \w+) \s* \:\: \s* (?P<method> \w+) $/imsx', $value, $matches ) )
+		   {
+			$class		=  $matches [ 'class' ] ;
+			$method 	=  $matches [ 'method' ] ;
+
+			return ( array ( $class, $method ) ) ;
+		    }
+   		else if  ( preg_match ( '/^ (?P<object> \$ \w+) \s* \-\> \s* (?P<method> \w+) $/imsx', $value, $matches ) )
+   		   {
+   		   	$object 		=  $matches [ 'object' ] ;
+			$method 		=  $matches [ 'method' ] ;
+
+			global 		$$object ;
+			$object_instance	=  $$object ;
+
+			return ( array ( $object_instance, $method ) ) ;
+   		    }
+   		else if  ( preg_match ( '/^\w+$/', $value ) )
+   			return ( $value ) ;
+
+		return ( false ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		SplitParameterSequence - Splits a sequence of parameter/value pairs.
+
+	    PROTOTYPE
+		$params = Shell::SplitParameterSequence (
+						$value,
+						$parameter_assignment_sign = '=',
+						$parameter_separator  = ';' ) ;
+
+	    DESCRIPTION
+		Splits a string containing a list of parameter name/value pairs.
+
+	    PARAMETERS
+	    	$value (string) -
+			String to be processed.
+
+		$parameter_assignment_sign (string) -
+			Sequence of characters that separates a parameter name from its value.
+
+		$parameter_separator (string) -
+			Sequence of characters that separates two parameter name/value pairs.
+			If this parameter is null, then the parameters are assumed to be separated by
+			a newline or crlf sequence.
+
+	    RETURN VALUE
+		This function returns an associative array where the key is the parameter name and
+		the value is the parameter value.
+
+	    NOTES
+	    	. Empty parameter name/value pairs are ignored.
+	    	. Parameter values can be quoted and can use backslashed characters.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  SplitParameterSequence ( $value,
+							 $parameter_assignment_sign = '=',
+							 $parameter_separator  = ';' )
+	   {
+	   	// Result array
+		$result			=  array ( ) ;
+
+		// Build the pattern match regex
+		$name_pattern		=  '(?P<name>[a-zA-Z\-_0-9]+)' ;
+		$assignment_pattern	=  addcslashes ( $parameter_assignment_sign, ' ..~' ) ;
+
+		if  ( $parameter_separator )
+		   {
+			$separator_pattern 	=  '(' . addcslashes ( $parameter_separator, ' ..~' ) . '|$)' ;
+			$sep			=  substr ( $parameter_separator, 0, 1 ) ;
+		    }
+		else
+		   {
+			$separator_pattern	=  '((\r\n)|(\n)|$)' ;
+			$sep			=  '\r\n' ;
+		    }
+
+		$value_pattern		=  '(?P<value>(' .
+						'([^' . $sep . ']*)|' .
+						'("([^"\\\\' . $sep . ']|(\\\\"))*")|' .
+						'(\'([^\'\\\\' . $sep . ']|(\\\\\'))*\')' .
+					   ')?)' ;
+
+		$pattern = '/' . $name_pattern . '\s*' . $assignment_pattern . '\s*' . $value_pattern .
+				'\s*' . $separator_pattern . '/' ;
+
+		// Perform the matching
+		preg_match_all ( $pattern, $value, $matches ) ;
+
+		// If some matching occured, then parameter names are in the 'name' array and values in
+		// the 'value' array
+		if  ( isset ( $matches [ 'name' ] ) )
+		   {
+		   	$count = count ( $matches [ 'name' ] ) ;
+
+		   	// Loop through the found patterns
+			for  ( $i = 0 ; $i < $count ; $i ++ )
+			   {
+				$name   = trim ( $matches [ 'name' ] [$i] ) ;
+
+				// For parameter values, we need to interpret backslashed characters
+				$value  = stripcslashes ( trim ( $matches [ 'value' ] [$i] ) ) ;
+
+				// And for quoted strings, we need to suppress the leading and trailing quotes
+				$quote = substr ( $value, 0, 1 ) ;
+
+				if  ( $quote  ==  "'"  ||  $quote  ==  '"' )
+					$value = substr ( $value, 1, strlen ( $value ) - 2 ) ;
+
+				// All done, add the name/value pair to our result array
+				$result [ $name ] = $value ;
+			    }
+		    }
+
+		// Return the result
+		return ( $result ) ;
+	    }
+   }

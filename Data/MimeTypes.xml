@@ -1,0 +1,1309 @@
+<!--
+	Mime types.
+	The root tag is <mime-types>.
+	Each child tag, <mime-type>, has the following attributes :
+
+	extension -
+		File type extension. If no leading dot is supplied, it will be automatically added.
+
+	application -
+		Associated application.
+
+	(node contents) -
+		Description of the MIME type/
+ -->
+
+<mime-types>
+	<mime-type extension=".3dm" application="x-world/x-3dmf">
+	</mime-type>
+	<mime-type extension=".3dmf" application="x-world/x-3dmf">
+	</mime-type>
+	<mime-type extension=".a" application="application/octet-stream">
+	</mime-type>
+	<mime-type extension=".aab" application="application/x-authorware-bin">
+	</mime-type>
+	<mime-type extension=".aam" application="application/x-authorware-map">
+	</mime-type>
+	<mime-type extension=".aas" application="application/x-authorware-seg">
+	</mime-type>
+	<mime-type extension=".abc" application="text/vnd.abc">
+	</mime-type>
+	<mime-type extension=".acgi" application="text/html">
+	</mime-type>
+	<mime-type extension=".afl" application="video/animaflex">
+	</mime-type>
+	<mime-type extension=".ai" application="application/postscript">
+	</mime-type>
+	<mime-type extension=".aif" application="audio/aiff">
+	</mime-type>
+	<mime-type extension=".aif" application="audio/x-aiff">
+	</mime-type>
+	<mime-type extension=".aifc" application="audio/aiff">
+	</mime-type>
+	<mime-type extension=".aifc" application="audio/x-aiff">
+	</mime-type>
+	<mime-type extension=".aiff" application="audio/aiff">
+	</mime-type>
+	<mime-type extension=".aiff" application="audio/x-aiff">
+	</mime-type>
+	<mime-type extension=".aim" application="application/x-aim">
+	</mime-type>
+	<mime-type extension=".aip" application="text/x-audiosoft-intra">
+	</mime-type>
+	<mime-type extension=".ani" application="application/x-navi-animation">
+	</mime-type>
+	<mime-type extension=".aos" application="application/x-nokia-9000-communicator-add-on-software">
+	</mime-type>
+	<mime-type extension=".aps" application="application/mime">
+	</mime-type>
+	<mime-type extension=".arc" application="application/octet-stream">
+	</mime-type>
+	<mime-type extension=".arj" application="application/arj">
+	</mime-type>
+	<mime-type extension=".arj" application="application/octet-stream">
+	</mime-type>
+	<mime-type extension=".art" application="image/x-jg">
+	</mime-type>
+	<mime-type extension=".asf" application="video/x-ms-asf">
+	</mime-type>
+	<mime-type extension=".asm" application="text/x-asm">
+	</mime-type>
+	<mime-type extension=".asp" application="text/asp">
+	</mime-type>
+	<mime-type extension=".asx" application="application/x-mplayer2">
+	</mime-type>
+	<mime-type extension=".asx" application="video/x-ms-asf">
+	</mime-type>
+	<mime-type extension=".asx" application="video/x-ms-asf-plugin">
+	</mime-type>
+	<mime-type extension=".au" application="audio/basic">
+	</mime-type>
+	<mime-type extension=".au" application="audio/x-au">
+	</mime-type>
+	<mime-type extension=".avi" application="application/x-troff-msvideo">
+	</mime-type>
+	<mime-type extension=".avi" application="video/avi">
+	</mime-type>
+	<mime-type extension=".avi" application="video/msvideo">
+	</mime-type>
+	<mime-type extension=".avi" application="video/x-msvideo">
+	</mime-type>
+	<mime-type extension=".avs" application="video/avs-video">
+	</mime-type>
+	<mime-type extension=".bcpio" application="application/x-bcpio">
+	</mime-type>
+	<mime-type extension=".bin" application="application/mac-binary">
+	</mime-type>
+	<mime-type extension=".bin" application="application/macbinary">
+	</mime-type>
+	<mime-type extension=".bin" application="application/octet-stream">
+	</mime-type>
+	<mime-type extension=".bin" application="application/x-binary">
+	</mime-type>
+	<mime-type extension=".bin" application="application/x-macbinary">
+	</mime-type>
+	<mime-type extension=".bm" application="image/bmp">
+	</mime-type>
+	<mime-type extension=".bmp" application="image/bmp">
+	</mime-type>
+	<mime-type extension=".bmp" application="image/x-windows-bmp">
+	</mime-type>
+	<mime-type extension=".boo" application="application/book">
+	</mime-type>
+	<mime-type extension=".book" application="application/book">
+	</mime-type>
+	<mime-type extension=".boz" application="application/x-bzip2">
+	</mime-type>
+	<mime-type extension=".bsh" application="application/x-bsh">
+	</mime-type>
+	<mime-type extension=".bz" application="application/x-bzip">
+	</mime-type>
+	<mime-type extension=".bz2" application="application/x-bzip2">
+	</mime-type>
+	<mime-type extension=".c" application="text/plain">
+	</mime-type>
+	<mime-type extension=".c" application="text/x-c">
+	</mime-type>
+	<mime-type extension=".c++" application="text/plain">
+	</mime-type>
+	<mime-type extension=".cat" application="application/vnd.ms-pki.seccat">
+	</mime-type>
+	<mime-type extension=".cc" application="text/plain">
+	</mime-type>
+	<mime-type extension=".cc" application="text/x-c">
+	</mime-type>
+	<mime-type extension=".ccad" application="application/clariscad">
+	</mime-type>
+	<mime-type extension=".cco" application="application/x-cocoa">
+	</mime-type>
+	<mime-type extension=".cdf" application="application/cdf">
+	</mime-type>
+	<mime-type extension=".cdf" application="application/x-cdf">
+	</mime-type>
+	<mime-type extension=".cdf" application="application/x-netcdf">
+	</mime-type>
+	<mime-type extension=".cer" application="application/pkix-cert">
+	</mime-type>
+	<mime-type extension=".cer" application="application/x-x509-ca-cert">
+	</mime-type>
+	<mime-type extension=".cha" application="application/x-chat">
+	</mime-type>
+	<mime-type extension=".chat" application="application/x-chat">
+	</mime-type>
+	<mime-type extension=".class" application="application/java">
+	</mime-type>
+	<mime-type extension=".class" application="application/java-byte-code">
+	</mime-type>
+	<mime-type extension=".class" application="application/x-java-class">
+	</mime-type>
+	<mime-type extension=".com" application="application/octet-stream">
+	</mime-type>
+	<mime-type extension=".com" application="text/plain">
+	</mime-type>
+	<mime-type extension=".conf" application="text/plain">
+	</mime-type>
+	<mime-type extension=".cpio" application="application/x-cpio">
+	</mime-type>
+	<mime-type extension=".cpp" application="text/x-c">
+	</mime-type>
+	<mime-type extension=".cpt" application="application/mac-compactpro">
+	</mime-type>
+	<mime-type extension=".cpt" application="application/x-compactpro">
+	</mime-type>
+	<mime-type extension=".cpt" application="application/x-cpt">
+	</mime-type>
+	<mime-type extension=".crl" application="application/pkcs-crl">
+	</mime-type>
+	<mime-type extension=".crl" application="application/pkix-crl">
+	</mime-type>
+	<mime-type extension=".crt" application="application/pkix-cert">
+	</mime-type>
+	<mime-type extension=".crt" application="application/x-x509-ca-cert">
+	</mime-type>
+	<mime-type extension=".crt" application="application/x-x509-user-cert">
+	</mime-type>
+	<mime-type extension=".csh" application="application/x-csh">
+	</mime-type>
+	<mime-type extension=".csh" application="text/x-script.csh">
+	</mime-type>
+	<mime-type extension=".css" application="application/x-pointplus">
+	</mime-type>
+	<mime-type extension=".css" application="text/css">
+	</mime-type>
+	<mime-type extension=".csv" application="text/csv">
+	</mime-type>
+	<mime-type extension=".csv" application="text/comma-separated-values">
+	</mime-type>
+	<mime-type extension=".cxx" application="text/plain">
+	</mime-type>
+	<mime-type extension=".dcr" application="application/x-director">
+	</mime-type>
+	<mime-type extension=".deepv" application="application/x-deepv">
+	</mime-type>
+	<mime-type extension=".def" application="text/plain">
+	</mime-type>
+	<mime-type extension=".der" application="application/x-x509-ca-cert">
+	</mime-type>
+	<mime-type extension=".dif" application="video/x-dv">
+	</mime-type>
+	<mime-type extension=".dir" application="application/x-director">
+	</mime-type>
+	<mime-type extension=".dl" application="video/dl">
+	</mime-type>
+	<mime-type extension=".dl" application="video/x-dl">
+	</mime-type>
+	<mime-type extension=".doc" application="application/msword">
+	</mime-type>
+	<mime-type extension=".dot" application="application/msword">
+	</mime-type>
+	<mime-type extension=".dp" application="application/commonground">
+	</mime-type>
+	<mime-type extension=".drw" application="application/drafting">
+	</mime-type>
+	<mime-type extension=".dump" application="application/octet-stream">
+	</mime-type>
+	<mime-type extension=".dv" application="video/x-dv">
+	</mime-type>
+	<mime-type extension=".dvi" application="application/x-dvi">
+	</mime-type>
+	<mime-type extension=".dwf" application="drawing/x-dwf:(old)">
+	</mime-type>
+	<mime-type extension=".dwf" application="model/vnd.dwf">
+	</mime-type>
+	<mime-type extension=".dwg" application="application/acad">
+	</mime-type>
+	<mime-type extension=".dwg" application="image/vnd.dwg">
+	</mime-type>
+	<mime-type extension=".dwg" application="image/x-dwg">
+	</mime-type>
+	<mime-type extension=".dxf" application="application/dxf">
+	</mime-type>
+	<mime-type extension=".dxf" application="image/vnd.dwg">
+	</mime-type>
+	<mime-type extension=".dxf" application="image/x-dwg">
+	</mime-type>
+	<mime-type extension=".dxr" application="application/x-director">
+	</mime-type>
+	<mime-type extension=".el" application="text/x-script.elisp">
+	</mime-type>
+	<mime-type extension=".elc" application="application/x-bytecode.elisp:(compiled:elisp)">
+	</mime-type>
+	<mime-type extension=".elc" application="application/x-elc">
+	</mime-type>
+	<mime-type extension=".env" application="application/x-envoy">
+	</mime-type>
+	<mime-type extension=".eps" application="application/postscript">
+	</mime-type>
+	<mime-type extension=".es" application="application/x-esrehber">
+	</mime-type>
+	<mime-type extension=".etx" application="text/x-setext">
+	</mime-type>
+	<mime-type extension=".evy" application="application/envoy">
+	</mime-type>
+	<mime-type extension=".evy" application="application/x-envoy">
+	</mime-type>
+	<mime-type extension=".exe" application="application/octet-stream">
+	</mime-type>
+	<mime-type extension=".f" application="text/plain">
+	</mime-type>
+	<mime-type extension=".f" application="text/x-fortran">
+	</mime-type>
+	<mime-type extension=".f77" application="text/x-fortran">
+	</mime-type>
+	<mime-type extension=".f90" application="text/plain">
+	</mime-type>
+	<mime-type extension=".f90" application="text/x-fortran">
+	</mime-type>
+	<mime-type extension=".fdf" application="application/vnd.fdf">
+	</mime-type>
+	<mime-type extension=".fif" application="application/fractals">
+	</mime-type>
+	<mime-type extension=".fif" application="image/fif">
+	</mime-type>
+	<mime-type extension=".fli" application="video/fli">
+	</mime-type>
+	<mime-type extension=".fli" application="video/x-fli">
+	</mime-type>
+	<mime-type extension=".flo" application="image/florian">
+	</mime-type>
+	<mime-type extension=".flx" application="text/vnd.fmi.flexstor">
+	</mime-type>
+	<mime-type extension=".fmf" application="video/x-atomic3d-feature">
+	</mime-type>
+	<mime-type extension=".for" application="text/plain">
+	</mime-type>
+	<mime-type extension=".for" application="text/x-fortran">
+	</mime-type>
+	<mime-type extension=".fpx" application="image/vnd.fpx">
+	</mime-type>
+	<mime-type extension=".fpx" application="image/vnd.net-fpx">
+	</mime-type>
+	<mime-type extension=".frl" application="application/freeloader">
+	</mime-type>
+	<mime-type extension=".funk" application="audio/make">
+	</mime-type>
+	<mime-type extension=".g" application="text/plain">
+	</mime-type>
+	<mime-type extension=".g3" application="image/g3fax">
+	</mime-type>
+	<mime-type extension=".gif" application="image/gif">
+	</mime-type>
+	<mime-type extension=".gl" application="video/gl">
+	</mime-type>
+	<mime-type extension=".gl" application="video/x-gl">
+	</mime-type>
+	<mime-type extension=".gsd" application="audio/x-gsm">
+	</mime-type>
+	<mime-type extension=".gsm" application="audio/x-gsm">
+	</mime-type>
+	<mime-type extension=".gsp" application="application/x-gsp">
+	</mime-type>
+	<mime-type extension=".gss" application="application/x-gss">
+	</mime-type>
+	<mime-type extension=".gtar" application="application/x-gtar">
+	</mime-type>
+	<mime-type extension=".gz" application="application/x-compressed">
+	</mime-type>
+	<mime-type extension=".gz" application="application/x-gzip">
+	</mime-type>
+	<mime-type extension=".gzip" application="application/x-gzip">
+	</mime-type>
+	<mime-type extension=".gzip" application="multipart/x-gzip">
+	</mime-type>
+	<mime-type extension=".h" application="text/plain">
+	</mime-type>
+	<mime-type extension=".h" application="text/x-h">
+	</mime-type>
+	<mime-type extension=".hdf" application="application/x-hdf">
+	</mime-type>
+	<mime-type extension=".help" application="application/x-helpfile">
+	</mime-type>
+	<mime-type extension=".hgl" application="application/vnd.hp-hpgl">
+	</mime-type>
+	<mime-type extension=".hh" application="text/plain">
+	</mime-type>
+	<mime-type extension=".hh" application="text/x-h">
+	</mime-type>
+	<mime-type extension=".hlb" application="text/x-script">
+	</mime-type>
+	<mime-type extension=".hlp" application="application/hlp">
+	</mime-type>
+	<mime-type extension=".hlp" application="application/x-helpfile">
+	</mime-type>
+	<mime-type extension=".hlp" application="application/x-winhelp">
+	</mime-type>
+	<mime-type extension=".hpg" application="application/vnd.hp-hpgl">
+	</mime-type>
+	<mime-type extension=".hpgl" application="application/vnd.hp-hpgl">
+	</mime-type>
+	<mime-type extension=".hqx" application="application/binhex">
+	</mime-type>
+	<mime-type extension=".hqx" application="application/binhex4">
+	</mime-type>
+	<mime-type extension=".hqx" application="application/mac-binhex">
+	</mime-type>
+	<mime-type extension=".hqx" application="application/mac-binhex40">
+	</mime-type>
+	<mime-type extension=".hqx" application="application/x-binhex40">
+	</mime-type>
+	<mime-type extension=".hqx" application="application/x-mac-binhex40">
+	</mime-type>
+	<mime-type extension=".hta" application="application/hta">
+	</mime-type>
+	<mime-type extension=".htc" application="text/x-component">
+	</mime-type>
+	<mime-type extension=".htm" application="text/html">
+	</mime-type>
+	<mime-type extension=".html" application="text/html">
+	</mime-type>
+	<mime-type extension=".htmls" application="text/html">
+	</mime-type>
+	<mime-type extension=".htt" application="text/webviewhtml">
+	</mime-type>
+	<mime-type extension=".htx" application="text/html">
+	</mime-type>
+	<mime-type extension=".ice" application="x-conference/x-cooltalk">
+	</mime-type>
+	<mime-type extension=".ico" application="image/x-icon">
+	</mime-type>
+	<mime-type extension=".idc" application="text/plain">
+	</mime-type>
+	<mime-type extension=".ief" application="image/ief">
+	</mime-type>
+	<mime-type extension=".iefs" application="image/ief">
+	</mime-type>
+	<mime-type extension=".iges" application="application/iges">
+	</mime-type>
+	<mime-type extension=".iges" application="model/iges">
+	</mime-type>
+	<mime-type extension=".igs" application="application/iges">
+	</mime-type>
+	<mime-type extension=".igs" application="model/iges">
+	</mime-type>
+	<mime-type extension=".ima" application="application/x-ima">
+	</mime-type>
+	<mime-type extension=".imap" application="application/x-httpd-imap">
+	</mime-type>
+	<mime-type extension=".inf" application="application/inf">
+	</mime-type>
+	<mime-type extension=".ins" application="application/x-internett-signup">
+	</mime-type>
+	<mime-type extension=".ip" application="application/x-ip2">
+	</mime-type>
+	<mime-type extension=".isu" application="video/x-isvideo">
+	</mime-type>
+	<mime-type extension=".it" application="audio/it">
+	</mime-type>
+	<mime-type extension=".iv" application="application/x-inventor">
+	</mime-type>
+	<mime-type extension=".ivr" application="i-world/i-vrml">
+	</mime-type>
+	<mime-type extension=".ivy" application="application/x-livescreen">
+	</mime-type>
+	<mime-type extension=".jam" application="audio/x-jam">
+	</mime-type>
+	<mime-type extension=".jav" application="text/plain">
+	</mime-type>
+	<mime-type extension=".jav" application="text/x-java-source">
+	</mime-type>
+	<mime-type extension=".java" application="text/plain">
+	</mime-type>
+	<mime-type extension=".java" application="text/x-java-source">
+	</mime-type>
+	<mime-type extension=".jcm" application="application/x-java-commerce">
+	</mime-type>
+	<mime-type extension=".jfif" application="image/jpeg">
+	</mime-type>
+	<mime-type extension=".jfif" application="image/pjpeg">
+	</mime-type>
+	<mime-type extension=".jfif-tbnl" application="image/jpeg">
+	</mime-type>
+	<mime-type extension=".jpe" application="image/jpeg">
+	</mime-type>
+	<mime-type extension=".jpe" application="image/pjpeg">
+	</mime-type>
+	<mime-type extension=".jpeg" application="image/jpeg">
+	</mime-type>
+	<mime-type extension=".jpeg" application="image/pjpeg">
+	</mime-type>
+	<mime-type extension=".jpg" application="image/jpeg">
+	</mime-type>
+	<mime-type extension=".jpg" application="image/pjpeg">
+	</mime-type>
+	<mime-type extension=".jps" application="image/x-jps">
+	</mime-type>
+	<mime-type extension=".js" application="application/x-javascript">
+	</mime-type>
+	<mime-type extension=".jut" application="image/jutvision">
+	</mime-type>
+	<mime-type extension=".kar" application="audio/midi">
+	</mime-type>
+	<mime-type extension=".kar" application="music/x-karaoke">
+	</mime-type>
+	<mime-type extension=".ksh" application="application/x-ksh">
+	</mime-type>
+	<mime-type extension=".ksh" application="text/x-script.ksh">
+	</mime-type>
+	<mime-type extension=".la" application="audio/nspaudio">
+	</mime-type>
+	<mime-type extension=".la" application="audio/x-nspaudio">
+	</mime-type>
+	<mime-type extension=".lam" application="audio/x-liveaudio">
+	</mime-type>
+	<mime-type extension=".latex" application="application/x-latex">
+	</mime-type>
+	<mime-type extension=".lha" application="application/lha">
+	</mime-type>
+	<mime-type extension=".lha" application="application/octet-stream">
+	</mime-type>
+	<mime-type extension=".lha" application="application/x-lha">
+	</mime-type>
+	<mime-type extension=".lhx" application="application/octet-stream">
+	</mime-type>
+	<mime-type extension=".list" application="text/plain">
+	</mime-type>
+	<mime-type extension=".lma" application="audio/nspaudio">
+	</mime-type>
+	<mime-type extension=".lma" application="audio/x-nspaudio">
+	</mime-type>
+	<mime-type extension=".log" application="text/plain">
+	</mime-type>
+	<mime-type extension=".lsp" application="application/x-lisp">
+	</mime-type>
+	<mime-type extension=".lsp" application="text/x-script.lisp">
+	</mime-type>
+	<mime-type extension=".lst" application="text/plain">
+	</mime-type>
+	<mime-type extension=".lsx" application="text/x-la-asf">
+	</mime-type>
+	<mime-type extension=".ltx" application="application/x-latex">
+	</mime-type>
+	<mime-type extension=".lzh" application="application/octet-stream">
+	</mime-type>
+	<mime-type extension=".lzh" application="application/x-lzh">
+	</mime-type>
+	<mime-type extension=".lzx" application="application/lzx">
+	</mime-type>
+	<mime-type extension=".lzx" application="application/octet-stream">
+	</mime-type>
+	<mime-type extension=".lzx" application="application/x-lzx">
+	</mime-type>
+	<mime-type extension=".m" application="text/plain">
+	</mime-type>
+	<mime-type extension=".m" application="text/x-m">
+	</mime-type>
+	<mime-type extension=".m1v" application="video/mpeg">
+	</mime-type>
+	<mime-type extension=".m2a" application="audio/mpeg">
+	</mime-type>
+	<mime-type extension=".m2v" application="video/mpeg">
+	</mime-type>
+	<mime-type extension=".m3u" application="audio/x-mpequrl">
+	</mime-type>
+	<mime-type extension=".man" application="application/x-troff-man">
+	</mime-type>
+	<mime-type extension=".map" application="application/x-navimap">
+	</mime-type>
+	<mime-type extension=".mar" application="text/plain">
+	</mime-type>
+	<mime-type extension=".mbd" application="application/mbedlet">
+	</mime-type>
+	<mime-type extension=".mc$" application="application/x-magic-cap-package-1.0">
+	</mime-type>
+	<mime-type extension=".mcd" application="application/mcad">
+	</mime-type>
+	<mime-type extension=".mcd" application="application/x-mathcad">
+	</mime-type>
+	<mime-type extension=".mcf" application="image/vasa">
+	</mime-type>
+	<mime-type extension=".mcf" application="text/mcf">
+	</mime-type>
+	<mime-type extension=".mcp" application="application/netmc">
+	</mime-type>
+	<mime-type extension=".me" application="application/x-troff-me">
+	</mime-type>
+	<mime-type extension=".mht" application="message/rfc822">
+	</mime-type>
+	<mime-type extension=".mhtml" application="message/rfc822">
+	</mime-type>
+	<mime-type extension=".mid" application="application/x-midi">
+	</mime-type>
+	<mime-type extension=".mid" application="audio/midi">
+	</mime-type>
+	<mime-type extension=".mid" application="audio/x-mid">
+	</mime-type>
+	<mime-type extension=".mid" application="audio/x-midi">
+	</mime-type>
+	<mime-type extension=".mid" application="music/crescendo">
+	</mime-type>
+	<mime-type extension=".mid" application="x-music/x-midi">
+	</mime-type>
+	<mime-type extension=".midi" application="application/x-midi">
+	</mime-type>
+	<mime-type extension=".midi" application="audio/midi">
+	</mime-type>
+	<mime-type extension=".midi" application="audio/x-mid">
+	</mime-type>
+	<mime-type extension=".midi" application="audio/x-midi">
+	</mime-type>
+	<mime-type extension=".midi" application="music/crescendo">
+	</mime-type>
+	<mime-type extension=".midi" application="x-music/x-midi">
+	</mime-type>
+	<mime-type extension=".mif" application="application/x-frame">
+	</mime-type>
+	<mime-type extension=".mif" application="application/x-mif">
+	</mime-type>
+	<mime-type extension=".mime" application="message/rfc822">
+	</mime-type>
+	<mime-type extension=".mime" application="www/mime">
+	</mime-type>
+	<mime-type extension=".mjf" application="audio/x-vnd.audioexplosion.mjuicemediafile">
+	</mime-type>
+	<mime-type extension=".mjpg" application="video/x-motion-jpeg">
+	</mime-type>
+	<mime-type extension=".mm" application="application/base64">
+	</mime-type>
+	<mime-type extension=".mm" application="application/x-meme">
+	</mime-type>
+	<mime-type extension=".mme" application="application/base64">
+	</mime-type>
+	<mime-type extension=".mod" application="audio/mod">
+	</mime-type>
+	<mime-type extension=".mod" application="audio/x-mod">
+	</mime-type>
+	<mime-type extension=".moov" application="video/quicktime">
+	</mime-type>
+	<mime-type extension=".mov" application="video/quicktime">
+	</mime-type>
+	<mime-type extension=".movie" application="video/x-sgi-movie">
+	</mime-type>
+	<mime-type extension=".mp2" application="audio/mpeg">
+	</mime-type>
+	<mime-type extension=".mp2" application="audio/x-mpeg">
+	</mime-type>
+	<mime-type extension=".mp2" application="video/mpeg">
+	</mime-type>
+	<mime-type extension=".mp2" application="video/x-mpeg">
+	</mime-type>
+	<mime-type extension=".mp2" application="video/x-mpeq2a">
+	</mime-type>
+	<mime-type extension=".mp3" application="audio/mpeg3">
+	</mime-type>
+	<mime-type extension=".mp3" application="audio/x-mpeg-3">
+	</mime-type>
+	<mime-type extension=".mp3" application="video/mpeg">
+	</mime-type>
+	<mime-type extension=".mp3" application="video/x-mpeg">
+	</mime-type>
+	<mime-type extension=".mpa" application="audio/mpeg">
+	</mime-type>
+	<mime-type extension=".mpa" application="video/mpeg">
+	</mime-type>
+	<mime-type extension=".mpc" application="application/x-project">
+	</mime-type>
+	<mime-type extension=".mpe" application="video/mpeg">
+	</mime-type>
+	<mime-type extension=".mpeg" application="video/mpeg">
+	</mime-type>
+	<mime-type extension=".mpg" application="audio/mpeg">
+	</mime-type>
+	<mime-type extension=".mpg" application="video/mpeg">
+	</mime-type>
+	<mime-type extension=".mpga" application="audio/mpeg">
+	</mime-type>
+	<mime-type extension=".mpp" application="application/vnd.ms-project">
+	</mime-type>
+	<mime-type extension=".mpt" application="application/x-project">
+	</mime-type>
+	<mime-type extension=".mpv" application="application/x-project">
+	</mime-type>
+	<mime-type extension=".mpx" application="application/x-project">
+	</mime-type>
+	<mime-type extension=".mrc" application="application/marc">
+	</mime-type>
+	<mime-type extension=".ms" application="application/x-troff-ms">
+	</mime-type>
+	<mime-type extension=".mv" application="video/x-sgi-movie">
+	</mime-type>
+	<mime-type extension=".my" application="audio/make">
+	</mime-type>
+	<mime-type extension=".mzz" application="application/x-vnd.audioexplosion.mzz">
+	</mime-type>
+	<mime-type extension=".nap" application="image/naplps">
+	</mime-type>
+	<mime-type extension=".naplps" application="image/naplps">
+	</mime-type>
+	<mime-type extension=".nc" application="application/x-netcdf">
+	</mime-type>
+	<mime-type extension=".ncm" application="application/vnd.nokia.configuration-message">
+	</mime-type>
+	<mime-type extension=".nif" application="image/x-niff">
+	</mime-type>
+	<mime-type extension=".niff" application="image/x-niff">
+	</mime-type>
+	<mime-type extension=".nix" application="application/x-mix-transfer">
+	</mime-type>
+	<mime-type extension=".nsc" application="application/x-conference">
+	</mime-type>
+	<mime-type extension=".nvd" application="application/x-navidoc">
+	</mime-type>
+	<mime-type extension=".o" application="application/octet-stream">
+	</mime-type>
+	<mime-type extension=".oda" application="application/oda">
+	</mime-type>
+	<mime-type extension=".omc" application="application/x-omc">
+	</mime-type>
+	<mime-type extension=".omcd" application="application/x-omcdatamaker">
+	</mime-type>
+	<mime-type extension=".omcr" application="application/x-omcregerator">
+	</mime-type>
+	<mime-type extension=".p" application="text/x-pascal">
+	</mime-type>
+	<mime-type extension=".p10" application="application/pkcs10">
+	</mime-type>
+	<mime-type extension=".p10" application="application/x-pkcs10">
+	</mime-type>
+	<mime-type extension=".p12" application="application/pkcs-12">
+	</mime-type>
+	<mime-type extension=".p12" application="application/x-pkcs12">
+	</mime-type>
+	<mime-type extension=".p7a" application="application/x-pkcs7-signature">
+	</mime-type>
+	<mime-type extension=".p7c" application="application/pkcs7-mime">
+	</mime-type>
+	<mime-type extension=".p7c" application="application/x-pkcs7-mime">
+	</mime-type>
+	<mime-type extension=".p7m" application="application/pkcs7-mime">
+	</mime-type>
+	<mime-type extension=".p7m" application="application/x-pkcs7-mime">
+	</mime-type>
+	<mime-type extension=".p7r" application="application/x-pkcs7-certreqresp">
+	</mime-type>
+	<mime-type extension=".p7s" application="application/pkcs7-signature">
+	</mime-type>
+	<mime-type extension=".part" application="application/pro_eng">
+	</mime-type>
+	<mime-type extension=".pas" application="text/pascal">
+	</mime-type>
+	<mime-type extension=".pbm" application="image/x-portable-bitmap">
+	</mime-type>
+	<mime-type extension=".pcl" application="application/vnd.hp-pcl">
+	</mime-type>
+	<mime-type extension=".pcl" application="application/x-pcl">
+	</mime-type>
+	<mime-type extension=".pct" application="image/x-pict">
+	</mime-type>
+	<mime-type extension=".pcx" application="image/x-pcx">
+	</mime-type>
+	<mime-type extension=".pdb" application="chemical/x-pdb">
+	</mime-type>
+	<mime-type extension=".pdf" application="application/pdf">
+	</mime-type>
+	<mime-type extension=".pfunk" application="audio/make">
+	</mime-type>
+	<mime-type extension=".pfunk" application="audio/make.my.funk">
+	</mime-type>
+	<mime-type extension=".pgm" application="image/x-portable-graymap">
+	</mime-type>
+	<mime-type extension=".pgm" application="image/x-portable-greymap">
+	</mime-type>
+	<mime-type extension=".pic" application="image/pict">
+	</mime-type>
+	<mime-type extension=".pict" application="image/pict">
+	</mime-type>
+	<mime-type extension=".pkg" application="application/x-newton-compatible-pkg">
+	</mime-type>
+	<mime-type extension=".pko" application="application/vnd.ms-pki.pko">
+	</mime-type>
+	<mime-type extension=".pl" application="text/plain">
+	</mime-type>
+	<mime-type extension=".pl" application="text/x-script.perl">
+	</mime-type>
+	<mime-type extension=".plx" application="application/x-pixclscript">
+	</mime-type>
+	<mime-type extension=".pm" application="image/x-xpixmap">
+	</mime-type>
+	<mime-type extension=".pm" application="text/x-script.perl-module">
+	</mime-type>
+	<mime-type extension=".pm4" application="application/x-pagemaker">
+	</mime-type>
+	<mime-type extension=".pm5" application="application/x-pagemaker">
+	</mime-type>
+	<mime-type extension=".png" application="image/png">
+	</mime-type>
+	<mime-type extension=".pnm" application="application/x-portable-anymap">
+	</mime-type>
+	<mime-type extension=".pnm" application="image/x-portable-anymap">
+	</mime-type>
+	<mime-type extension=".pot" application="application/mspowerpoint">
+	</mime-type>
+	<mime-type extension=".pot" application="application/vnd.ms-powerpoint">
+	</mime-type>
+	<mime-type extension=".pov" application="model/x-pov">
+	</mime-type>
+	<mime-type extension=".ppa" application="application/vnd.ms-powerpoint">
+	</mime-type>
+	<mime-type extension=".ppm" application="image/x-portable-pixmap">
+	</mime-type>
+	<mime-type extension=".pps" application="application/mspowerpoint">
+	</mime-type>
+	<mime-type extension=".pps" application="application/vnd.ms-powerpoint">
+	</mime-type>
+	<mime-type extension=".ppt" application="application/mspowerpoint">
+	</mime-type>
+	<mime-type extension=".ppt" application="application/powerpoint">
+	</mime-type>
+	<mime-type extension=".ppt" application="application/vnd.ms-powerpoint">
+	</mime-type>
+	<mime-type extension=".ppt" application="application/x-mspowerpoint">
+	</mime-type>
+	<mime-type extension=".ppz" application="application/mspowerpoint">
+	</mime-type>
+	<mime-type extension=".pre" application="application/x-freelance">
+	</mime-type>
+	<mime-type extension=".prt" application="application/pro_eng">
+	</mime-type>
+	<mime-type extension=".ps" application="application/postscript">
+	</mime-type>
+	<mime-type extension=".psd" application="application/octet-stream">
+	</mime-type>
+	<mime-type extension=".pvu" application="paleovu/x-pv">
+	</mime-type>
+	<mime-type extension=".pwz" application="application/vnd.ms-powerpoint">
+	</mime-type>
+	<mime-type extension=".py" application="text/x-script.phyton">
+	</mime-type>
+	<mime-type extension=".pyc" application="application/x-bytecode.python">
+	</mime-type>
+	<mime-type extension=".qcp" application="audio/vnd.qcelp">
+	</mime-type>
+	<mime-type extension=".qd3" application="x-world/x-3dmf">
+	</mime-type>
+	<mime-type extension=".qd3d" application="x-world/x-3dmf">
+	</mime-type>
+	<mime-type extension=".qif" application="image/x-quicktime">
+	</mime-type>
+	<mime-type extension=".qt" application="video/quicktime">
+	</mime-type>
+	<mime-type extension=".qtc" application="video/x-qtc">
+	</mime-type>
+	<mime-type extension=".qti" application="image/x-quicktime">
+	</mime-type>
+	<mime-type extension=".qtif" application="image/x-quicktime">
+	</mime-type>
+	<mime-type extension=".ra" application="audio/x-pn-realaudio">
+	</mime-type>
+	<mime-type extension=".ra" application="audio/x-pn-realaudio-plugin">
+	</mime-type>
+	<mime-type extension=".ra" application="audio/x-realaudio">
+	</mime-type>
+	<mime-type extension=".ram" application="audio/x-pn-realaudio">
+	</mime-type>
+	<mime-type extension=".ras" application="application/x-cmu-raster">
+	</mime-type>
+	<mime-type extension=".ras" application="image/cmu-raster">
+	</mime-type>
+	<mime-type extension=".ras" application="image/x-cmu-raster">
+	</mime-type>
+	<mime-type extension=".rast" application="image/cmu-raster">
+	</mime-type>
+	<mime-type extension=".rexx" application="text/x-script.rexx">
+	</mime-type>
+	<mime-type extension=".rf" application="image/vnd.rn-realflash">
+	</mime-type>
+	<mime-type extension=".rgb" application="image/x-rgb">
+	</mime-type>
+	<mime-type extension=".rm" application="application/vnd.rn-realmedia">
+	</mime-type>
+	<mime-type extension=".rm" application="audio/x-pn-realaudio">
+	</mime-type>
+	<mime-type extension=".rmi" application="audio/mid">
+	</mime-type>
+	<mime-type extension=".rmm" application="audio/x-pn-realaudio">
+	</mime-type>
+	<mime-type extension=".rmp" application="audio/x-pn-realaudio">
+	</mime-type>
+	<mime-type extension=".rmp" application="audio/x-pn-realaudio-plugin">
+	</mime-type>
+	<mime-type extension=".rng" application="application/ringing-tones">
+	</mime-type>
+	<mime-type extension=".rng" application="application/vnd.nokia.ringing-tone">
+	</mime-type>
+	<mime-type extension=".rnx" application="application/vnd.rn-realplayer">
+	</mime-type>
+	<mime-type extension=".roff" application="application/x-troff">
+	</mime-type>
+	<mime-type extension=".rp" application="image/vnd.rn-realpix">
+	</mime-type>
+	<mime-type extension=".rpm" application="audio/x-pn-realaudio-plugin">
+	</mime-type>
+	<mime-type extension=".rt" application="text/richtext">
+	</mime-type>
+	<mime-type extension=".rt" application="text/vnd.rn-realtext">
+	</mime-type>
+	<mime-type extension=".rtf" application="application/rtf">
+	</mime-type>
+	<mime-type extension=".rtf" application="application/x-rtf">
+	</mime-type>
+	<mime-type extension=".rtf" application="text/richtext">
+	</mime-type>
+	<mime-type extension=".rtx" application="application/rtf">
+	</mime-type>
+	<mime-type extension=".rtx" application="text/richtext">
+	</mime-type>
+	<mime-type extension=".rv" application="video/vnd.rn-realvideo">
+	</mime-type>
+	<mime-type extension=".s" application="text/x-asm">
+	</mime-type>
+	<mime-type extension=".s3m" application="audio/s3m">
+	</mime-type>
+	<mime-type extension=".saveme" application="application/octet-stream">
+	</mime-type>
+	<mime-type extension=".sbk" application="application/x-tbook">
+	</mime-type>
+	<mime-type extension=".scm" application="application/x-lotusscreencam">
+	</mime-type>
+	<mime-type extension=".scm" application="text/x-script.guile">
+	</mime-type>
+	<mime-type extension=".scm" application="text/x-script.scheme">
+	</mime-type>
+	<mime-type extension=".scm" application="video/x-scm">
+	</mime-type>
+	<mime-type extension=".sdml" application="text/plain">
+	</mime-type>
+	<mime-type extension=".sdp" application="application/sdp">
+	</mime-type>
+	<mime-type extension=".sdp" application="application/x-sdp">
+	</mime-type>
+	<mime-type extension=".sdr" application="application/sounder">
+	</mime-type>
+	<mime-type extension=".sea" application="application/sea">
+	</mime-type>
+	<mime-type extension=".sea" application="application/x-sea">
+	</mime-type>
+	<mime-type extension=".set" application="application/set">
+	</mime-type>
+	<mime-type extension=".sgm" application="text/sgml">
+	</mime-type>
+	<mime-type extension=".sgm" application="text/x-sgml">
+	</mime-type>
+	<mime-type extension=".sgml" application="text/sgml">
+	</mime-type>
+	<mime-type extension=".sgml" application="text/x-sgml">
+	</mime-type>
+	<mime-type extension=".sh" application="application/x-bsh">
+	</mime-type>
+	<mime-type extension=".sh" application="application/x-sh">
+	</mime-type>
+	<mime-type extension=".sh" application="application/x-shar">
+	</mime-type>
+	<mime-type extension=".sh" application="text/x-script.sh">
+	</mime-type>
+	<mime-type extension=".shar" application="application/x-bsh">
+	</mime-type>
+	<mime-type extension=".shar" application="application/x-shar">
+	</mime-type>
+	<mime-type extension=".shtml" application="text/html">
+	</mime-type>
+	<mime-type extension=".shtml" application="text/x-server-parsed-html">
+	</mime-type>
+	<mime-type extension=".sid" application="audio/x-psid">
+	</mime-type>
+	<mime-type extension=".sit" application="application/x-sit">
+	</mime-type>
+	<mime-type extension=".sit" application="application/x-stuffit">
+	</mime-type>
+	<mime-type extension=".skd" application="application/x-koan">
+	</mime-type>
+	<mime-type extension=".skm" application="application/x-koan">
+	</mime-type>
+	<mime-type extension=".skp" application="application/x-koan">
+	</mime-type>
+	<mime-type extension=".skt" application="application/x-koan">
+	</mime-type>
+	<mime-type extension=".sl" application="application/x-seelogo">
+	</mime-type>
+	<mime-type extension=".smi" application="application/smil">
+	</mime-type>
+	<mime-type extension=".smil" application="application/smil">
+	</mime-type>
+	<mime-type extension=".snd" application="audio/basic">
+	</mime-type>
+	<mime-type extension=".snd" application="audio/x-adpcm">
+	</mime-type>
+	<mime-type extension=".sol" application="application/solids">
+	</mime-type>
+	<mime-type extension=".spc" application="application/x-pkcs7-certificates">
+	</mime-type>
+	<mime-type extension=".spc" application="text/x-speech">
+	</mime-type>
+	<mime-type extension=".spl" application="application/futuresplash">
+	</mime-type>
+	<mime-type extension=".spr" application="application/x-sprite">
+	</mime-type>
+	<mime-type extension=".sprite" application="application/x-sprite">
+	</mime-type>
+	<mime-type extension=".src" application="application/x-wais-source">
+	</mime-type>
+	<mime-type extension=".ssi" application="text/x-server-parsed-html">
+	</mime-type>
+	<mime-type extension=".ssm" application="application/streamingmedia">
+	</mime-type>
+	<mime-type extension=".sst" application="application/vnd.ms-pki.certstore">
+	</mime-type>
+	<mime-type extension=".step" application="application/step">
+	</mime-type>
+	<mime-type extension=".stl" application="application/sla">
+	</mime-type>
+	<mime-type extension=".stl" application="application/vnd.ms-pki.stl">
+	</mime-type>
+	<mime-type extension=".stl" application="application/x-navistyle">
+	</mime-type>
+	<mime-type extension=".stp" application="application/step">
+	</mime-type>
+	<mime-type extension=".sv4cpio" application="application/x-sv4cpio">
+	</mime-type>
+	<mime-type extension=".sv4crc" application="application/x-sv4crc">
+	</mime-type>
+	<mime-type extension=".svf" application="image/vnd.dwg">
+	</mime-type>
+	<mime-type extension=".svf" application="image/x-dwg">
+	</mime-type>
+	<mime-type extension=".svr" application="application/x-world">
+	</mime-type>
+	<mime-type extension=".svr" application="x-world/x-svr">
+	</mime-type>
+	<mime-type extension=".swf" application="application/x-shockwave-flash">
+	</mime-type>
+	<mime-type extension=".t" application="application/x-troff">
+	</mime-type>
+	<mime-type extension=".talk" application="text/x-speech">
+	</mime-type>
+	<mime-type extension=".tar" application="application/x-tar">
+	</mime-type>
+	<mime-type extension=".tbk" application="application/toolbook">
+	</mime-type>
+	<mime-type extension=".tbk" application="application/x-tbook">
+	</mime-type>
+	<mime-type extension=".tcl" application="application/x-tcl">
+	</mime-type>
+	<mime-type extension=".tcl" application="text/x-script.tcl">
+	</mime-type>
+	<mime-type extension=".tcsh" application="text/x-script.tcsh">
+	</mime-type>
+	<mime-type extension=".tex" application="application/x-tex">
+	</mime-type>
+	<mime-type extension=".texi" application="application/x-texinfo">
+	</mime-type>
+	<mime-type extension=".texinfo" application="application/x-texinfo">
+	</mime-type>
+	<mime-type extension=".text" application="application/plain">
+	</mime-type>
+	<mime-type extension=".text" application="text/plain">
+	</mime-type>
+	<mime-type extension=".tgz" application="application/gnutar">
+	</mime-type>
+	<mime-type extension=".tgz" application="application/x-compressed">
+	</mime-type>
+	<mime-type extension=".tif" application="image/tiff">
+	</mime-type>
+	<mime-type extension=".tif" application="image/x-tiff">
+	</mime-type>
+	<mime-type extension=".tiff" application="image/tiff">
+	</mime-type>
+	<mime-type extension=".tiff" application="image/x-tiff">
+	</mime-type>
+	<mime-type extension=".tr" application="application/x-troff">
+	</mime-type>
+	<mime-type extension=".tsi" application="audio/tsp-audio">
+	</mime-type>
+	<mime-type extension=".tsp" application="application/dsptype">
+	</mime-type>
+	<mime-type extension=".tsp" application="audio/tsplayer">
+	</mime-type>
+	<mime-type extension=".tsv" application="text/tab-separated-values">
+	</mime-type>
+	<mime-type extension=".turbot" application="image/florian">
+	</mime-type>
+	<mime-type extension=".txt" application="text/plain">
+	</mime-type>
+	<mime-type extension=".ini" application="text/plain">
+	</mime-type>
+	<mime-type extension=".sql" application="text/plain">
+	</mime-type>
+	<mime-type extension=".uil" application="text/x-uil">
+	</mime-type>
+	<mime-type extension=".uni" application="text/uri-list">
+	</mime-type>
+	<mime-type extension=".unis" application="text/uri-list">
+	</mime-type>
+	<mime-type extension=".unv" application="application/i-deas">
+	</mime-type>
+	<mime-type extension=".uri" application="text/uri-list">
+	</mime-type>
+	<mime-type extension=".uris" application="text/uri-list">
+	</mime-type>
+	<mime-type extension=".ustar" application="application/x-ustar">
+	</mime-type>
+	<mime-type extension=".ustar" application="multipart/x-ustar">
+	</mime-type>
+	<mime-type extension=".uu" application="application/octet-stream">
+	</mime-type>
+	<mime-type extension=".uu" application="text/x-uuencode">
+	</mime-type>
+	<mime-type extension=".uue" application="text/x-uuencode">
+	</mime-type>
+	<mime-type extension=".vcd" application="application/x-cdlink">
+	</mime-type>
+	<mime-type extension=".vcs" application="text/x-vcalendar">
+	</mime-type>
+	<mime-type extension=".vda" application="application/vda">
+	</mime-type>
+	<mime-type extension=".vdo" application="video/vdo">
+	</mime-type>
+	<mime-type extension=".vew" application="application/groupwise">
+	</mime-type>
+	<mime-type extension=".viv" application="video/vivo">
+	</mime-type>
+	<mime-type extension=".viv" application="video/vnd.vivo">
+	</mime-type>
+	<mime-type extension=".vivo" application="video/vivo">
+	</mime-type>
+	<mime-type extension=".vivo" application="video/vnd.vivo">
+	</mime-type>
+	<mime-type extension=".vmd" application="application/vocaltec-media-desc">
+	</mime-type>
+	<mime-type extension=".vmf" application="application/vocaltec-media-file">
+	</mime-type>
+	<mime-type extension=".voc" application="audio/voc">
+	</mime-type>
+	<mime-type extension=".voc" application="audio/x-voc">
+	</mime-type>
+	<mime-type extension=".vos" application="video/vosaic">
+	</mime-type>
+	<mime-type extension=".vox" application="audio/voxware">
+	</mime-type>
+	<mime-type extension=".vqe" application="audio/x-twinvq-plugin">
+	</mime-type>
+	<mime-type extension=".vqf" application="audio/x-twinvq">
+	</mime-type>
+	<mime-type extension=".vql" application="audio/x-twinvq-plugin">
+	</mime-type>
+	<mime-type extension=".vrml" application="application/x-vrml">
+	</mime-type>
+	<mime-type extension=".vrml" application="model/vrml">
+	</mime-type>
+	<mime-type extension=".vrml" application="x-world/x-vrml">
+	</mime-type>
+	<mime-type extension=".vrt" application="x-world/x-vrt">
+	</mime-type>
+	<mime-type extension=".vsd" application="application/x-visio">
+	</mime-type>
+	<mime-type extension=".vst" application="application/x-visio">
+	</mime-type>
+	<mime-type extension=".vsw" application="application/x-visio">
+	</mime-type>
+	<mime-type extension=".w60" application="application/wordperfect6.0">
+	</mime-type>
+	<mime-type extension=".w61" application="application/wordperfect6.1">
+	</mime-type>
+	<mime-type extension=".w6w" application="application/msword">
+	</mime-type>
+	<mime-type extension=".wav" application="audio/wav">
+	</mime-type>
+	<mime-type extension=".wav" application="audio/x-wav">
+	</mime-type>
+	<mime-type extension=".wb1" application="application/x-qpro">
+	</mime-type>
+	<mime-type extension=".wbmp" application="image/vnd.wap.wbmp">
+	</mime-type>
+	<mime-type extension=".web" application="application/vnd.xara">
+	</mime-type>
+	<mime-type extension=".wiz" application="application/msword">
+	</mime-type>
+	<mime-type extension=".wk1" application="application/x-123">
+	</mime-type>
+	<mime-type extension=".wmf" application="windows/metafile">
+	</mime-type>
+	<mime-type extension=".wml" application="text/vnd.wap.wml">
+	</mime-type>
+	<mime-type extension=".wmlc" application="application/vnd.wap.wmlc">
+	</mime-type>
+	<mime-type extension=".wmls" application="text/vnd.wap.wmlscript">
+	</mime-type>
+	<mime-type extension=".wmlsc" application="application/vnd.wap.wmlscriptc">
+	</mime-type>
+	<mime-type extension=".word" application="application/msword">
+	</mime-type>
+	<mime-type extension=".wp" application="application/wordperfect">
+	</mime-type>
+	<mime-type extension=".wp5" application="application/wordperfect">
+	</mime-type>
+	<mime-type extension=".wp5" application="application/wordperfect6.0">
+	</mime-type>
+	<mime-type extension=".wp6" application="application/wordperfect">
+	</mime-type>
+	<mime-type extension=".wpd" application="application/wordperfect">
+	</mime-type>
+	<mime-type extension=".wpd" application="application/x-wpwin">
+	</mime-type>
+	<mime-type extension=".wq1" application="application/x-lotus">
+	</mime-type>
+	<mime-type extension=".wri" application="application/mswrite">
+	</mime-type>
+	<mime-type extension=".wri" application="application/x-wri">
+	</mime-type>
+	<mime-type extension=".wrl" application="application/x-world">
+	</mime-type>
+	<mime-type extension=".wrl" application="model/vrml">
+	</mime-type>
+	<mime-type extension=".wrl" application="x-world/x-vrml">
+	</mime-type>
+	<mime-type extension=".wrz" application="model/vrml">
+	</mime-type>
+	<mime-type extension=".wrz" application="x-world/x-vrml">
+	</mime-type>
+	<mime-type extension=".wsc" application="text/scriplet">
+	</mime-type>
+	<mime-type extension=".wsrc" application="application/x-wais-source">
+	</mime-type>
+	<mime-type extension=".wtk" application="application/x-wintalk">
+	</mime-type>
+	<mime-type extension=".xbm" application="image/x-xbitmap">
+	</mime-type>
+	<mime-type extension=".xbm" application="image/x-xbm">
+	</mime-type>
+	<mime-type extension=".xbm" application="image/xbm">
+	</mime-type>
+	<mime-type extension=".xdr" application="video/x-amt-demorun">
+	</mime-type>
+	<mime-type extension=".xgz" application="xgl/drawing">
+	</mime-type>
+	<mime-type extension=".xif" application="image/vnd.xiff">
+	</mime-type>
+	<mime-type extension=".xl" application="application/excel">
+	</mime-type>
+	<mime-type extension=".xla" application="application/excel">
+	</mime-type>
+	<mime-type extension=".xla" application="application/x-excel">
+	</mime-type>
+	<mime-type extension=".xla" application="application/x-msexcel">
+	</mime-type>
+	<mime-type extension=".xlb" application="application/excel">
+	</mime-type>
+	<mime-type extension=".xlb" application="application/vnd.ms-excel">
+	</mime-type>
+	<mime-type extension=".xlb" application="application/x-excel">
+	</mime-type>
+	<mime-type extension=".xlc" application="application/excel">
+	</mime-type>
+	<mime-type extension=".xlc" application="application/vnd.ms-excel">
+	</mime-type>
+	<mime-type extension=".xlc" application="application/x-excel">
+	</mime-type>
+	<mime-type extension=".xld" application="application/excel">
+	</mime-type>
+	<mime-type extension=".xld" application="application/x-excel">
+	</mime-type>
+	<mime-type extension=".xlk" application="application/excel">
+	</mime-type>
+	<mime-type extension=".xlk" application="application/x-excel">
+	</mime-type>
+	<mime-type extension=".xll" application="application/excel">
+	</mime-type>
+	<mime-type extension=".xll" application="application/vnd.ms-excel">
+	</mime-type>
+	<mime-type extension=".xll" application="application/x-excel">
+	</mime-type>
+	<mime-type extension=".xlm" application="application/excel">
+	</mime-type>
+	<mime-type extension=".xlm" application="application/vnd.ms-excel">
+	</mime-type>
+	<mime-type extension=".xlm" application="application/x-excel">
+	</mime-type>
+	<mime-type extension=".xls" application="application/excel">
+	</mime-type>
+	<mime-type extension=".xls" application="application/vnd.ms-excel">
+	</mime-type>
+	<mime-type extension=".xls" application="application/x-excel">
+	</mime-type>
+	<mime-type extension=".xls" application="application/x-msexcel">
+	</mime-type>
+	<mime-type extension=".xlt" application="application/excel">
+	</mime-type>
+	<mime-type extension=".xlt" application="application/x-excel">
+	</mime-type>
+	<mime-type extension=".xlv" application="application/excel">
+	</mime-type>
+	<mime-type extension=".xlv" application="application/x-excel">
+	</mime-type>
+	<mime-type extension=".xlw" application="application/excel">
+	</mime-type>
+	<mime-type extension=".xlw" application="application/vnd.ms-excel">
+	</mime-type>
+	<mime-type extension=".xlw" application="application/x-excel">
+	</mime-type>
+	<mime-type extension=".xlw" application="application/x-msexcel">
+	</mime-type>
+	<mime-type extension=".xm" application="audio/xm">
+	</mime-type>
+	<mime-type extension=".xml" application="application/xml">
+	</mime-type>
+	<mime-type extension=".xml" application="text/xml">
+	</mime-type>
+	<mime-type extension=".xmz" application="xgl/movie">
+	</mime-type>
+	<mime-type extension=".xpix" application="application/x-vnd.ls-xpix">
+	</mime-type>
+	<mime-type extension=".xpm" application="image/x-xpixmap">
+	</mime-type>
+	<mime-type extension=".xpm" application="image/xpm">
+	</mime-type>
+	<mime-type extension=".x-png" application="image/png">
+	</mime-type>
+	<mime-type extension=".xsr" application="video/x-amt-showrun">
+	</mime-type>
+	<mime-type extension=".xwd" application="image/x-xwd">
+	</mime-type>
+	<mime-type extension=".xwd" application="image/x-xwindowdump">
+	</mime-type>
+	<mime-type extension=".xyz" application="chemical/x-pdb">
+	</mime-type>
+	<mime-type extension=".z" application="application/x-compress">
+	</mime-type>
+	<mime-type extension=".z" application="application/x-compressed">
+	</mime-type>
+	<mime-type extension=".zip" application="application/x-compressed">
+	</mime-type>
+	<mime-type extension=".zip" application="application/x-zip-compressed">
+	</mime-type>
+	<mime-type extension=".zip" application="application/zip">
+	</mime-type>
+	<mime-type extension=".zip" application="multipart/x-zip">
+	</mime-type>
+	<mime-type extension=".zoo" application="application/octet-stream">
+	</mime-type>
+	<mime-type extension=".zsh" application="text/x-script.zsh">
+	</mime-type>
+</mime-types>

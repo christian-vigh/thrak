@@ -1,0 +1,384 @@
+<?php
+/***************************************************************************************************
+
+    NAME
+	VersionableObject.phpclass
+
+    DESCRIPTION
+     	Provides facilities for objects that need to manage separate software versions at the same
+     	time.
+
+    AUTHOR
+     	Christian Vigh, 10/2011.
+
+    HISTORY
+    [Version : 1.0]	[Date : 2011/10/09]	[Author : CV]
+     	Initial version.
+
+   [Version : 2.0]	[Date : 2012/10/06]		[Author : CV]
+	Migrated to the Thrak library version 2.
+
+ ***************************************************************************************************/
+namespace  	Thrak\Runtime ;
+
+// Used namespaces and classes
+use 	Thrak\System\Object 		as  Object ;
+use  	Thrak\System\Exception 		as  Exception ;
+
+
+/*==================================================================================================
+
+    VersionableObject class -
+	Provides facilities for objects that need to manage separate software versions at the
+	same time.
+	A version number has the following form :
+
+		major.minor.revision.build
+
+	Where :
+	- 'major' is the major version number (between 1 and 255)
+	- 'minor' is the minor version number (between 0 and 255)
+	- 'revision' is the revision number (between 0 and 255)
+	- 'build' is the release build number (between 0 and 2555)
+
+	Derived classes must call the constructor with an array of associative arrays
+	describing each supported version. The entries of each version description are the
+	following :
+	- 'name' :
+		Version name, either as a string (eg, "1.9") or as an integer (0x010090000).
+	- 'date' :
+		Version date, in the form 'yyyy/mm/dd'.
+	- 'description' :
+		Version description.
+
+	After processing, a 4th entry called 'value' will be added, containing the integer
+	representation of the supplied input version name.
+	If the supplied input version name was a string, it will be replaced with its string
+	representation. If both revision and build numbers are null, they will not be
+	included into this string representation.
+
+	The currently used version can be specified either through the class constructor or
+	by calling the VersionSet() method.
+
+  ==================================================================================================*/
+abstract class  VersionableObject  extends  Object
+   {
+	// Defined versions
+	protected			$VersionDefinitions ;
+	// Current version information
+	protected			$MyVersionString ;
+	protected	 		$MyVersionValue ;
+	protected			$MyVersionMajor ;
+	protected			$MyVersionMinor ;
+	protected			$MyVersionRevision ;
+	protected	 		$MyVersionBuild ;
+	// Tells if a version has been defined
+	private				$__VersionDefined 		=  false ;
+
+
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/******                                                                               ******/
+	/******                            MAGIC FUNCTIONS                                    ******/
+	/******                                                                               ******/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Constructor
+
+	    PROTOTYPE
+	    	$object = new VersionableObject ( $definitions, $current_version = null ) ;
+
+	    DESCRIPTION
+		Builds a versionable object.
+
+	    PARAMETERS
+		$definitions (array of associative arrays) -
+			List of associative arrays wwhich defines the currently supported versions.
+			Each associative array must have the following members :
+
+			'name' -
+				Version name (a list of byte values separated by a dot) or value
+				(a 32-bit integer value).
+
+			'date' -
+				Version date, in the form 'yyyy/mm/dd'.
+
+			'description' -
+				Version description.
+
+		$current_version (string) -
+			Current version to be applied. If null, the derived class can later call the
+			VersionSet() method.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __construct ( $definitions, $current_version  =  null )
+	   {
+		parent::__construct ( ) ;
+		
+	   	$class 		=  __CLASS__ ;
+
+		// Check that supplied definitions are an array
+	   	if  ( ! is_array ( $definitions ) )
+	   		throw new Exception ( "The version definitions parameter must be an array for class '$class'." ) ;
+
+		// Initializations
+   		$result 	=  array ( ) ;
+   		$index 		=  0 ;
+
+		// Loop through definitions
+   		foreach  ( $definitions  as  $definition )
+   		   {
+   		   	$index ++ ;
+
+   		   	$name 		=  null ;
+   		   	$date 		=  null ;
+   		   	$description 	=  null ;
+
+			// Check definition entries (name, date and description)
+			foreach  ( $definition  as  $key => $value )
+			   {
+				switch  ( strtolower ( $key ) )
+				   {
+					case	'name' :
+						$name 		=  $value ;
+						break ;
+
+					case	'date' :
+						$date	 	=  $value ;
+						break ;
+
+					case	'description' :
+						$description 	=  $value ;
+						break ;
+
+					default :
+						throw new Exception ( "Class $class : invalid entry '$key' for definition #$index." ) ;
+				    }
+			    }
+
+			// Check that all entries have been supplied for this definition
+		    	if  ( $name  ===  null )
+		    		throw new Exception ( "Class  $class : the 'name' entry is mandatory for definition #index." ) ;
+
+		    	if  ( $date  ===  null )
+		    		throw new Exception ( "Class  $class : the 'date' entry is mandatory for definition #index." ) ;
+
+		    	if  ( $description  ===  null )
+		    		throw new Exception ( "Class  $class : the 'description' entry is mandatory for definition #index." ) ;
+
+			// Get version information for this definition
+	    		$items 		=  $this -> __process_version_value ( $name ) ;
+
+	    		// Add the resulting item to the list of supported versions
+    			$result [] 	=  array_merge ( array ( 'version' => $name, 'date' => $date, 'description' => $description ), $items ) ;
+   		    }
+
+		// Save the definition list
+		$this -> VersionDefinitions 	=  $result ;
+		$count 				=  count ( $result ) ;
+
+		// If a version number has been specified, set the applicable version to this one
+	   	if  ( $current_version  !==  null )
+		   	$this -> VersionSet ( $current_version ) ;
+	   	else
+	   		$this -> VersionSet ( $this -> VersionDefinitions [ $count - 1 ] [ 'version' ] ) ;
+	    }
+
+
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/******                                                                               ******/
+	/******                            PROTECTED FUNCTIONS                                ******/
+	/******                                                                               ******/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+
+	 // __process_version_value -
+	 //	Returns an associative array containing version data :
+	 //	'name'		- Full version name, as a string
+	 //	'value'		- Version value, as a 32-bits integer
+	 //	'major'		- Version major value
+	 //	'minor'		- Version minor value
+	 //	'revision'	- Version revision
+	 //	'build'		- Version build number
+	 //	'size'		- Number of bytes specified in the input version number
+	 //	'bytes'		- Array of version bytes (major, minor, revision, build)
+	 private function  __process_version_value ( $version )
+  	   {
+   		// String version number
+    		if  ( is_string ( $version ) )
+    		   {
+			$items 		=  explode ( '.', $version ) ;
+			$class		=  __CLASS__ ;
+			$version_number =  array ( 0, 0, 0, 0 ) ;
+			$index 		=  0 ;
+			$count  	=  count ( $items ) ;
+
+			if  ( $count  >  4 )
+				throw new Exception ( "Class $class : The specified version number ($version) must not exceed 4 elements (major, minor, revision, build)." ) ;
+
+			// Loop through each version item
+			foreach  ( $items  as  $item )
+			   {
+			   	// ... which must be between 0 and 255
+				if  ( ! is_numeric ( $item )  ||  $item  <  0  ||  $item  >  255 )
+					throw new Exception ( "Class $class : version item #$index must be in the range 0..255" ) ;
+
+				$version_number [ $index ] 	=  ( integer ) ( $item & 0xFF ) ;
+				$index ++ ;
+			    }
+
+			// The only mandatory non-zero version item is the first one
+			if  ( ! $version_number [0] )
+				throw new Exception ( "Class $class : The major version number cannot be zero." ) ;
+    		    }
+  	   	// Handle the case where the supplied version number is a 32-bits integer
+    	   	else
+		   {
+			if  ( $version  <  256 )
+				$version_number = array ( $version, 0, 0, 0 ) ;
+			else if  ( $version  <  65536 )
+				$version_number = array ( ( $version  >>  8 ) &  0xFF, $version & 0xFF, 0, 0 ) ;
+			else if  ( $version  <  0x1000000 )
+				$version_number = array ( ( $version  >>  16 )  &  0xFF, ( $version  >>  8 ) & 0xFF, $version & 0xFF, 0 ) ;
+			else
+				$version_number = array ( ( $version  >>  24 )  &  0xFF, ( $version  >>  16 )  &  0xFF, ( $version  >>  8 ) & 0xFF, $version & 0xFF ) ;
+
+			$count	 	=  4 ;
+		    }
+
+		// Build the resulting array
+		$number =  ( $version_number [0] << 24 ) | ( $version_number [1] << 16 ) | ( $version_number [2] << 8 ) | $version_number [3] ;
+   		$result =  array
+		  (
+		  	'version'	=>  $version,
+		  	'name'		=>  implode ( '.', $version_number ),
+			'value'		=>  sprintf ( "0x%08X", $number ),
+			'major'		=>  $version_number [0],
+			'minor'		=>  $version_number [1],
+			'revision'	=>  $version_number [2],
+			'build'		=>  $version_number [3],
+			'size'		=>  $count,
+			'bytes'		=>  array ( $version_number [0], $version_number [1], $version_number [2], $version_number [3] )
+		   ) ;
+
+		// All done, return
+   		return ( $result ) ;
+	    }
+
+
+	// __version_exists -
+	//	Checks if the specified version exists.
+	//	If less than four bytes are supplied, the checking will happen only on the bytes specified.
+	private function  __version_exists ( $array )
+	   {
+	   	$searched_count 	=  $array [ 'size' ] ;
+		$searched_bytes 	=  $array [ 'bytes' ] ;
+
+		foreach  ( $this-> VersionDefinitions  as  $definition )
+		   {
+		   	$bytes 		=  $definition [ 'bytes' ] ;
+		   	$mismatch	=  false ;
+
+			for  ( $i = 0 ; $i  <  $searched_count ; $i ++ )
+			   {
+			   	$searched_byte 	=  $searched_bytes [$i] ;
+
+			   	if  ( $searched_byte  !=  $bytes [$i] )
+			   	   {
+					$mismatch = true ;
+					break ;
+			   	    }
+			    }
+
+	    		if  ( ! $mismatch )
+	    			return ( true ) ;
+		    }
+
+		return ( false ) ;
+	    }
+
+
+
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/******                                                                               ******/
+	/******                           PROTECTED FUNCTIONS                                 ******/
+	/******                                                                               ******/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		VersionSet - Sets the applicable object version.
+
+	    PROTOTYPE
+		$this -> VersionSet ( $version ) ;
+
+	    DESCRIPTION
+		Sets the currently applicable version.
+
+	    PARAMETERS
+		$version (string or integer) -
+			Version number.
+
+	 --------------------------------------------------------------------------------------------*/
+    	protected function  VersionSet  ( $version )
+    	   {
+		$result 			=  $this -> __process_version_value ( $version ) ;
+
+		if  ( $this -> __version_exists ( $result ) )
+		   {
+			$this -> __VersionDefined	=  true ;
+			$this -> MyVersionString	=  $result [ 'name' ] ;
+			$this -> MyVersionValue		=  $result [ 'value' ] ;
+			$this -> MyVersionMajor		=  $result [ 'major' ] ;
+			$this -> MyVersionMinor		=  $result [ 'minor' ] ;
+			$this -> MyVersionRevision	=  $result [ 'revision' ] ;
+			$this -> MyVersionBuild		=  $result [ 'build' ] ;
+		    }
+  		else
+  		   {
+			$class 	=  __CLASS__ ;
+			throw new Exception ( "Class $class : The version supplied to the VersionSet() method ($version) does not exist." ) ;
+  		    }
+    	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		VersionExists - Checks if a version exists.
+
+	    PROTOTYPE
+		$status = $this -> VersionExists ( $version ) ;
+
+	    DESCRIPTION
+		Checks if the specified version exists.
+
+	    PARAMETERS
+		$version (string or integer) -
+			Version number.
+
+	    RETURN VALUE
+		Returns true if the specified version exists, false otherwise.
+
+	 --------------------------------------------------------------------------------------------*/
+	protected function	VersionExists ( $version )
+	   {
+		$result 	=  $this -> __process_version_value ( $version ) ;
+
+		return ( $this -> __version_exists ( $result ) ) ;
+	    }
+    }

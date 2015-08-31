@@ -1,0 +1,164 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        BufferedInsert.php
+
+    DESCRIPTION
+        A class for buffering INSERT statements.
+ 	Typical use is :
+  
+ 		$inserter	=  new BufferedInsert ( 'table_name', [ fields ], 100 ) ;
+  
+ 		while  ( $condition )
+ 			$inserter -> Add ( [ values ] ) ;
+  
+ 		$inserter -> Flush ( ) ;
+
+    AUTHOR
+        Christian Vigh, 06/2015.
+
+    HISTORY
+    [Version : 1.0]		[Date : 2015/06/09]     [Author : CV]
+        Initial version.
+
+    [Version : 1.0.1]		[Date : 2015/07/27]     [Author : CV]
+	. Adapted for the new BufferedOperation parent class.
+
+ **************************************************************************************************************/
+namespace	Thrak\Database ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces & objects
+use	Thrak\System\Object ;
+use     Thrak\IO\Path ;
+use	Thrak\Types\String ;
+use     Thrak\Types\ArrayHelpers ;
+use	Thrak\Database\BufferedOperation ;
+
+
+/*==============================================================================================================
+
+    BufferedInsert -
+        A class for buffering INSERT statements.
+	This class is not designed to provide a universal solution for buffering rows before inserting them into
+	a database, but rather to provide a straightforward way to perform this operation. So don't expect
+	elaborate methods for that...
+
+  ==============================================================================================================*/
+class  BufferedInsert		extends  BufferedOperation
+   {
+	// Buffered insert flags
+	const		INSERT_FLAGS_NONE		=  0 ;			// No particular option
+	const		INSERT_FLAGS_IGNORE		=  0x00000001 ;		// Ignore duplicate keys
+	
+
+	// List of field names
+	public		$FieldNames ;
+	// Insert flags
+	public		$Flags ;
+	
+	
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        Constructor - Builds a BufferedInsert object
+	
+	    PROTOTYPE
+	        $inserter	=  new BufferedInsert ( $table_name, $field_names, $buffer_size = 100, 
+							$flags = self::INSERT_FLAGS_NONE, $database = null ) ;
+	
+	    DESCRIPTION
+	        Builds a BufferedInsert object.
+	
+	    PARAMETERS
+	        $table_name (string) -
+	                Name of the underlying table.
+	  
+	 	$field_names (array of strings) -
+	 		Field names.
+	  
+	 	$buffer_size (integer) -
+	 		Number of rows to be buffered before an INSERT statement is issued.
+	  
+	 	$flags (integer) -
+	 		A combination of the following flags :
+	 		- INSERT_FLAGS_IGNORE :
+	 			Ignore duplicate keys (duplicate records will not be added).
+	 		- INSERT_FLAGS_NONE :
+	 			Default value. No specific insert option is to be used.
+	  
+	 	$database (Database) -
+	 		Database object. If not specified, the global $Database object will be used.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( $table_name, $field_names, $buffer_size = 100, $flags = self::INSERT_FLAGS_NONE, $database = null )
+	   {
+		global		$Database ;
+		
+		
+		parent::__construct ( $table_name, $buffer_size, $database ) ;
+		
+		$this -> FieldNames	=  $field_names ;
+		$this -> Flags		=  $flags ;
+	    }
+	
+	
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        CanAddToQuery - Checks if a row can be added to a query.
+	
+	    PROTOTYPE
+	        $status =	$inserter -> CanAddToQuery ( $values ) ;
+	
+	    DESCRIPTION
+	       Checks if a row can be added to a query.
+	
+	    PARAMETERS
+	        $values (array) -
+	                Array of record values to be added to the buffer.
+
+	    RETURN VALUE 
+		Returns true if the row can be added to the query, false otherwise.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  CanAddToQuery ( &$values ) 
+	   {
+		$this -> ValidateFieldNames ( $this -> FieldNames, $values ) ;
+  
+		return ( true ) ;
+	    }
+	
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        BuildQuery - Builds the final query.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  BuildQuery ( )
+	   {
+		$rows	=  [] ;
+			
+		foreach  ( $this -> Rows  as  $row )
+		   {
+			$values		=  [] ;
+				
+			foreach  ( $row  as  $field )
+				$values []	=   "'" . $this -> Database -> Escape ( $field ) . "'" ;
+				
+			$rows []	=  '( ' . implode ( ', ', $values ) . ' )' ;
+		    }
+			
+		$ignore_option	=  ( $this -> Flags  &  self::INSERT_FLAGS_IGNORE ) ?  "IGNORE" : "" ;
+			
+		$query	=  "INSERT $ignore_option INTO {$this -> TableName} ( " .
+				implode ( ', ', $this -> FieldNames ) . ' ) VALUES ' . "\n" .
+				implode ( ",\n\t", $rows ) ;
+
+		return ( $query ) ;
+	    }
+    }

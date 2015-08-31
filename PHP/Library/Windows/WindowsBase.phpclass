@@ -1,0 +1,61 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        WindowsBase.phpclass
+
+    DESCRIPTION
+        Abstract class for classes using Windows features.
+
+    AUTHOR
+        Christian Vigh, 10/2014.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2014/10/07]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Windows ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use  	Thrak\System\Object ;
+
+
+/*==============================================================================================================
+
+	Exception classes.
+
+  ==============================================================================================================*/
+class	WindowsException  extends  \Thrak\System\RuntimeException { }
+
+
+/*==============================================================================================================
+
+    AbstractWindowsBase class -
+        Abstract class for classes using Windows features.
+	This class is mainly meant to provide safeguards regarding the execution environment, and ensure that
+	we are running on a Windows platform.
+
+  ==============================================================================================================*/
+class  AbstractWindowsBase	extends  Object
+   {
+	/*==============================================================================================================
+	
+	    NAME
+	        Constructor
+	
+	    DESCRIPTION
+	        Ensures that we are running on a Windows platform.
+	
+	  ==============================================================================================================*/
+
+	public function  __construct ( ) 
+	   {
+		parent::__construct ( ) ;
+		
+	   	if  ( ! IS_WINDOWS )
+	   		error ( new WindowsException ( "WShell objects can only be created on a Windows platform." ) ) ;
+	    }
+    }
+    

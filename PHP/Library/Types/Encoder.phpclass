@@ -1,0 +1,479 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        Encoder.phpclass
+
+    DESCRIPTION
+        A class for character set encoding.
+
+    AUTHOR
+        Christian Vigh, 05/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/05/07]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace	Thrak\Types ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces and classes
+use 	Thrak\System\Object ;
+
+
+/*==============================================================================================================
+
+    Encoder class -
+        A class for character set encoding.
+
+  ==============================================================================================================*/
+abstract class  Encoder		extends  Object
+   {
+	// List of available character encoding names, with their aliases
+	public static		$Encodings		=  false ;
+	// List of character sets used for determining encoding detecting order - provides a default value for new instances of Encoder objects
+	protected static	$DefaultDetectionOrder	=  [ 'ASCII', 'UTF-8', 'ISO-8859-1' ] ;
+	
+	// Source and target contents and character sets
+	protected		$SourceData			=  false ;
+	protected		$DestinationData		=  false ;
+	protected		$SourceCharacterSet		=  false ;
+	protected		$DestinationCharacterSet	=  false ;
+	// Character set encoding detection order
+	protected		$DetectionOrder	;
+	
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        Static constructor
+	
+	    DESCRIPTION
+	        Called by the Autoloader class when the class is loaded. Initializes the $Encodings array, which contains
+		the list of character set encoding names together with their aliases.
+	
+	  ==============================================================================================================*/
+	public static function  __static_construct ( )
+	   {
+		self::__get_encodings ( ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        Constructor
+	
+	    PROTOTYPE
+	 	$encoder	=  new Encoder ( $data, $target, $source = false ) ;
+		
+	    DESCRIPTION
+		Creates an encoded version of the specified string.
+	 
+	    PARAMETERS
+		$data (string) -
+	 		Data to be encoded.
+	  
+	 	$target (string) -
+	 		Target character set.
+	  
+	 	$source (string) -
+	 		Source character set. If not specified, the character set will be automatically determined using
+	 		the 
+	
+	  ==============================================================================================================*/
+	public function  __construct ( $data, $target, $source = false ) 
+	   {
+		parent::__construct ( ) ;
+		self::__get_encodings ( ) ;	// In case of this class was not loaded by our Autoloader
+		
+		$this -> DetectionOrder		=  self::$DefaultDetectionOrder ;
+		$this -> Convert ( $data, $target, $source ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    __get_encodings -
+	        Retrieves the list of character set encoding names and their aliases. Add aliases by removing dashes and
+		underlines from the original name. Make sure no duplicate exists within the alias list.
+	
+	  ==============================================================================================================*/
+	private static function  __get_encodings ( )
+	   {
+		if  ( self::$Encodings )
+			return ;
+		
+		// Get character sets list and loop through them
+		$list	=  mb_list_encodings ( ) ;
+		
+		foreach  ( $list  as  $encoding_name )
+		   {
+			// Get current character set aliases
+			$aliases	=  mb_encoding_aliases ( $encoding_name ) ;
+			
+			// List of name and aliases for this character set
+			$encodings	=  [ strtolower ( $encoding_name ) ] ;
+			
+			// If aliases are found, then we have extra processing to perform :
+			// - Create an alias without dashes and underlines
+			// - Add alias #1 and/or #2 to the existing list of encodings if not found
+			if  ( $aliases )
+			   {
+				// Loop through aliases list
+				foreach  ( $aliases  as  $alias )
+				   {
+					$alias2		=  str_replace ( [ '-', '_' ], '', $alias ) ;	// Second possible alias, without dashes and underlines
+					$found		=  false ;
+					$found2		=  false ;
+					$different	=  strcasecmp ( $alias, $alias2 ) ;
+					
+					// Check if the alias (and its stripped version) is already in the list
+					foreach  ( $encodings  as  $encoding )
+					   {
+						if  ( ! strcasecmp ( $encoding, $alias ) )
+							$found		=  true ;
+						else if  ( $different  &&  ! strcasecmp ( $encoding, $alias2 ) )
+							$found2		=  true ;
+					    }
+					
+					// Original alias not in the list : add it
+					if  ( ! $found ) 
+						$encodings []	=  $alias ;
+					
+					// Alias stripped from dashes and underlines not in the list : add it
+					if  ( ! $found2 )
+						$encodings []	=  $alias2 ;
+				    }
+			    }
+			
+			// Add this new set of name and aliases to the list of supported encodings
+			self::$Encodings [ $encoding_name ]	=  array_unique ( $encodings, SORT_STRING | SORT_FLAG_CASE ) ;
+		    }
+
+		// Sort the result by character set name. For cosmetic reasons, trailing numbers, such as in 'ISO-8859-1', 'ISO-8859-13', 'ISO-8859-2'
+		// are sorted numerically, not alphabetically, so that '-13' will appear AFTER '-1' and '-2', not between.
+		uksort 
+		   ( 
+			self::$Encodings, 
+			function  ( $a, $b ) 
+			   {
+				// Check if compared values end with '-number'
+				preg_match ( '/^(?P<code> .*?)-(?P<sequence> \d+)$/imsx', $a, $a_match ) ;
+				preg_match ( '/^(?P<code> .*?)-(?P<sequence> \d+)$/imsx', $b, $b_match ) ;
+				
+				$a_sequence	=  ( isset ( $a_match [ 'sequence' ] ) ) ?  $a_match [ 'sequence' ] : 0 ;
+				$a_code		=  ( isset ( $a_match [ 'code'     ] ) ) ?  $a_match [ 'code'     ] : $a ;
+				$b_sequence	=  ( isset ( $b_match [ 'sequence' ] ) ) ?  $b_match [ 'sequence' ] : 0 ;
+				$b_code		=  ( isset ( $b_match [ 'code'     ] ) ) ?  $b_match [ 'code'     ] : $b ;
+					
+				// Compare character set names ; comparison will be performed on the original charater set name if it doesn't
+				// end with a '-number' sequence
+				$status		=  strcasecmp ( $a_code, $b_code ) ;
+					
+				if  ( ! $status )
+				   {
+					// A numeric sequence ends at least one of the character set names ; the comparison result will be their difference
+					if  ( $a_sequence  ||  $b_sequence )
+						$status		=  $a_sequence - $b_sequence ;
+				     }
+					
+				return ( $status ) ;
+			    }
+		    ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    __get_encoding_name -
+	        Returns the real character set name corresponding to the specified value.
+		Throws an exception if character set does not exist.
+	
+	  ==============================================================================================================*/
+	protected function  __get_encoding_name ( $encoding )
+	   {
+		$result		=  self::GetEncodingName ( $encoding ) ;
+		
+		if  ( $result )
+			return ( $result ) ;
+		else
+			error ( new \Thrak\System\InvalidArgumentException ( "Unrecognized character set \"$encoding\"" ) ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        Convert - Converts a string from one character set to another.
+	
+	    PROTOTYPE
+	        $data	=  $encoder -> Convert ( $data, $target = false, $source = false ) ;
+	
+	    DESCRIPTION
+	        Converts a string from one character set to another.
+	
+	    PARAMETERS
+	        $data (string) -
+	                String to be converted.
+	  
+	 	$target (string) -
+	 		Destination character set. Defaults to the TargetCharacterSet property.
+	  
+	 	$source (string) -
+	 		Source character set. Defaults to the SourceCharacterSet property.
+	
+	    RETURN VALUE
+	        Returns the converted text, which is also available in the Text property.
+	
+	  ==============================================================================================================*/
+	public function  Convert ( $data, $target = false, $source = false )
+	   {
+		$this -> SourceData	=  $data ;
+		
+		// If target character set not specified, use the value of the DestinationCharacterSet property
+		if  ( ! $target )
+		   {
+			if  ( ! $this -> DestinationCharacterSet )
+				error ( new \Thrak\System\InvalidArgumentException ( "No target character set specified" ) ) ;
+			
+			$target		=  $this -> DestinationCharacterSet ;
+		    }
+		else
+		   {
+			$target					= 
+			$this -> DestinationCharacterSet	=  $this -> __get_encoding_name ( $target ) ;
+		    }
+		
+		// If no source character set specified, detect the source encoding
+		if  ( ! $source )
+		   {
+			$source		=  $this -> DetectEncoding ( $data ) ;
+			
+			if  ( ! $source )
+				error ( new \Thrak\System\RuntimeException ( "Unable to detect source data character set encoding." ) ) ;
+			
+			$this -> SourceCharacterSet	=  $source ;
+		    }
+		else
+		   {
+			$source				= 
+			$this -> SourceCharacterSet	=  $this -> __get_encoding_name ( $source ) ;
+		    }
+		
+		// Convert source text only if source encoding differs from target encoding		
+		if  ( strcasecmp ( $target, $source ) )
+			$translated_data		=  mb_convert_encoding ( $data, $target, $source ) ;
+		else
+			$translated_data		=  $data ;
+
+		// For UTF-x encoding, get rid from the optional starting BOM
+		if  ( ! strncasecmp ( $target, 'UTF', 3 ) )
+		   {
+			// UTF-8 : 0xEFBBBF
+			if  ( strlen ( $translated_data )  >=  3  &&
+					ord ( $translated_data [0] )  ==  0xEF  &&
+					ord ( $translated_data [1] )  ==  0xBB  &&
+					ord ( $translated_data [2] )  ==  0xBF )
+				$translated_data	=  substr ( $translated_data, 3 ) ;
+			// UTF-16 and others : 0xFEFF or 0xFFFE
+			else if  ( strlen ( $translated_data )  >=  2  &&
+					(
+						( ord ( $translated_data [0] )  ==  0xFE  &&  ord ( $translated_data [1]  ==  0xFF ) ) ||
+						( ord ( $translated_data [0] )  ==  0xFF  &&  ord ( $translated_data [1]  ==  0xFE ) )
+					 ) )
+				$translated_data	=  substr ( $translated_data, 2 ) ;
+		    }
+		
+		// Save translated data
+		$this -> DestinationData	=  $translated_data ;
+		
+		// All done, return
+		return ( $translated_data ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        DetectEncoding - Detects character set encoding
+	
+	    PROTOTYPE
+	        $result		=  $encoder -> DetectEncoding ( $data ) ;
+	
+	    DESCRIPTION
+	        Detects the character set encoding for the specified string, using the current detection order.
+	
+	    PARAMETERS
+	        $data (string) -
+	                String whose encoding is to be detected.
+	
+	    RETURN VALUE
+	        The character set encoding name for the specified string.
+	
+	  ==============================================================================================================*/
+	public function  DetectEncoding ( $data )
+	   {
+		$result		=  mb_detect_encoding ( $data, $this -> DetectionOrder ) ;
+		
+		return ( $result ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        GetEncodingName - Retrieves character set name for the specified alias.
+	
+	    PROTOTYPE
+	        $cset	=  $encoder -> GetEncodingName ( $value ) ;
+	
+	    DESCRIPTION
+	        Retrieves the official character set name for the specified character set alias.
+	
+	    PARAMETERS
+	        $value (string) -
+	                Character set name or alias whose official name is to be retrieved.
+	
+	    RETURN VALUE
+	        Official character set, or false if not found.
+	
+	  ==============================================================================================================*/
+	public static function  GetEncodingName ( $encoding )
+	   {
+		foreach  ( self::$Encodings  as  $encoding_name => $encoding_list )
+		   {
+			foreach  ( $encoding_list  as  $encoding_code )
+			   {
+				if  ( ! strcasecmp ( $encoding_code, $encoding ) )
+					return ( $encoding_name ) ;
+			    }
+		    }
+		
+		return ( false ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    __get -
+	        Magic function to retrieve a property value.
+	
+	  ==============================================================================================================*/
+	public function  __get ( $member )
+	   {
+		switch ( strtolower ( $member ) )
+		   {
+			case	'text' :
+				return ( $this -> DestinationData ) ;
+				
+			case	'sourcetext' :
+				return ( $this -> SourceData ) ;
+				
+			case	'targetcharacterset' :
+				return ( $this -> DestinationCharacterSet ) ;
+				
+			case	'sourcecharacterset' :
+				return ( $this -> SourceCharacterSet ) ;
+				
+			case	'detectionorder' :
+				return ( $this -> DetectionOrder ) ;
+				
+			default :
+				error ( new \Thrak\System\UndefinedPropertyException ( ) ) ;
+		    }
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    __set -
+	        Magic function to set a property value.
+	
+	  ==============================================================================================================*/
+	public function  __set ( $member, $value )
+	   {
+		switch ( strtolower ( $member ) )
+		   {
+			case	'text' :
+				$this -> DestinationData		=  $value ;
+				break ;
+				
+			case	'sourcetext' :
+				$this -> SourceData			=  $value ;
+				break ;
+				
+			case	'targetcharacterset' :
+				$this -> DestinationCharacterSet	=  $this -> __get_encoding_name ( $value ) ;
+				break ;
+				
+			case	'sourcecharacterset' :
+				$this -> SourceCharacterSet		=  $this -> __get_encoding_name ( $value ) ;
+				break ;
+				
+			case	'detectionorder' :
+				if  ( ! is_array ( $value ) )
+					$value	=  [ $value ] ;
+				
+				$csets	=  [] ;
+				
+				foreach  ( $value  as  $cset )
+					$csets []	=  $this -> __get_encoding_name ( $cset ) ;
+				
+				$this -> DetectionOrder	=  $csets ;
+				break ;
+				
+			default :
+				error ( new \Thrak\System\UndefinedPropertyException ( ) ) ;
+		    }
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    __toString -
+	        Returns the converted text value.
+	
+	  ==============================================================================================================*/
+	public function  __toString ( )
+	   {
+		return ( $this -> DestinationData ) ;
+	    }
+    }
+
+
+/*==============================================================================================================
+
+    FileEncoder class -
+        Encoder class for file contents.
+
+  ==============================================================================================================*/
+class  FileEncoder		extends  Encoder 
+   {
+	public function  __construct ( $file, $target, $source = false ) 
+	   {
+		if  ( ! file_exists ( $file ) )
+			error ( new \Thrak\System\FileNotFoundException ( "File $file does not exist" ) ) ;
+		
+		$contents	=  file_get_contents ( $file ) ;
+		parent::__construct ( $contents, $target, $source ) ;
+	    }
+    }
+
+
+/*==============================================================================================================
+
+    StringEncoder -
+        Encoder class for string contents.
+
+  ==============================================================================================================*/
+class  StringEncoder		extends  Encoder 
+   {
+	public function  __construct ( $data, $target, $source = false ) 
+	   {
+		parent::__construct ( $data, $target, $source ) ;
+	    }
+    }

@@ -1,0 +1,300 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        Wrapper.phpclass
+
+    DESCRIPTION
+        Implements wrapper classes for various variables types, such as objects, arrays, etc.
+	This set of classes can later be used to implement input value sanitizers.
+
+    AUTHOR
+        Christian Vigh, 06/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/06/01]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Types ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces & objects
+use 	Thrak\System\Object ;
+use	Thrak\IO\Path ;
+use	Thrak\Types\String ;
+
+
+/*==============================================================================================================
+
+    Wrapper -
+        A base class for wrapping http arrays such as $_GET or $_POST, in order to provide methods for 
+	sanitizing input.
+ 	Usage is simple :
+  
+ 		$result		=  Wrapper::Wrap ( $_GET ) ;
+
+  ==============================================================================================================*/
+abstract class  Wrapper		extends		Object 
+				implements	\Countable 
+   {
+	// Wrapper classes used by default ; associative array that specifies the classes to instanciate for the various
+	// item types ; it can contain the following (optional) keys :
+	//  - scalar :
+	//	The value contains the class name to be used for scalar value types. Defaults to ScalarValueWrapper.
+	//  - array :
+	//	Class name for wrapped arrays. Defaults to ArrayValueWrapper.
+	//  - object :
+	//	Class name for wrapped objects. Defaults to ObjectValueWrapper.
+	//  - resource :
+	//	Class name for wrapped resources. Defaults to ResourceValueWrapper.
+	static protected 	$WrapperClasses	=  
+	   [
+		'scalar'	=>  '\Thrak\Types\ScalarWrapper',
+		'array'		=>  '\Thrak\Types\ArrayWrapper',
+		'object'	=>  '\Thrak\Types\ObjectWrapper',
+		'resource'	=>  '\Thrak\Types\ResourceWrapper'
+	    ] ;
+		
+	// The wrapped value can be a scalar, resource, array or object
+	protected		$WrappedValue ;
+	
+	
+	/*==============================================================================================================
+	
+	    Contructor -
+	        Wraps a value from a wrapper-derived class.
+	
+	  ==============================================================================================================*/
+	public function  __construct ( $value )
+	   {
+		parent::__construct ( ) ;
+		$this -> WrappedValue		=  $value ;
+	    }
+	
+	
+	// Hide non-pertinent information when dumping this object
+	public static function  __dump_debuginfo ( )
+	   { return ( [ 'hidden' => [ 'WrapperClasses' ] ] ) ; }
+	
+	
+	public function  __get ( $member )
+	   {
+		if  ( ! strcmp ( $member, '#' ) ) 
+			return ( $this -> WrappedValue ) ;
+		else
+			error ( new \Thrak\System\UndefinedPropertyException ( $member ) ) ;
+	    }
+	
+	
+	public function  __set ( $member, $value )
+	   {
+		if  ( ! strcmp ( $member, '#' ) ) 
+			$this -> WrappedValue	=  self::Wrap ( $value ) ;
+		else
+			error ( new \Thrak\System\UndefinedPropertyException ( $value ) ) ;
+	    }
+
+	
+	/*==============================================================================================================
+	
+	    GetValue -
+		Returns the wrapped value contents.
+	
+	  ==============================================================================================================*/
+	public function  GetValue ( )
+	{ return ( $this -> WrappedValue ) ; }
+	
+	
+	/*==============================================================================================================
+	
+	    Wrap -
+	        Creates a wrapper object depending on the supplied variable type.
+	
+	  ==============================================================================================================*/
+	public static function  Wrap ( $variable )
+	   {
+		$classes	=  self::$WrapperClasses ;
+		
+		if  ( is_scalar ( $variable ) )
+			return ( new $classes [ 'scalar' ] ( $variable ) ) ;
+		else if  ( is_array ( $variable ) )
+			return ( new $classes [ 'array' ] ( $variable ) ) ;
+		else if  ( is_resource ( $variable ) )
+			return ( new  $classes [ 'resource' ] ( $variable ) ) ;
+		else if  ( is_object ( $variable ) )
+			return ( new  $classes [ 'object' ] ( $variable ) ) ;
+		else
+			return ( null ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    __tostring -
+	        Returns the string representation of the wrapped value.
+	
+	  ==============================================================================================================*/
+	public function  __tostring ( )
+	   {
+		return ( ( string ) $this -> WrappedValue ) ;
+	    }
+
+	
+	/*==============================================================================================================
+	
+	        Countable interface implementation.
+	
+	  ==============================================================================================================*/
+	public function  Count ( )
+	   {
+		if  ( is_a ( $this -> WrappedValue, 'Wrapper' ) )
+			return ( count ( $this -> WrappedValue ) ) ;
+		else
+			return ( 0 ) ;
+	    }
+    }
+
+
+/*==============================================================================================================
+
+    ScalarWrapper -
+        Wraps a scalar value.
+
+  ==============================================================================================================*/
+class  ScalarWrapper	extends		Wrapper 
+   {
+	public function  __construct ( $value )
+	   {
+		parent::__construct ( $value ) ;
+	    }
+    }
+
+
+/*==============================================================================================================
+
+    ResourceWrapper -
+        Wraps a resource value. Note that the Wrapper classes are not really intended to wrap everything, but
+	classes as the ResourceValueWrapper class are provided for consistency.
+
+  ==============================================================================================================*/
+class  ResourceWrapper	extends		Wrapper 
+   {
+	public function  __construct ( $value )
+	   {
+		parent::__construct ( $value ) ;
+	    }
+    }
+
+
+/*==============================================================================================================
+
+    ObjectWrapper -
+        Wraps a scalar value.
+	For the moment, object members are not wrapped and must be accessed as normal object members.
+
+  ==============================================================================================================*/
+class  ObjectWrapper	extends		Wrapper 
+   {
+	public function  __construct ( $value )
+	   {
+		parent::__construct ( $value ) ;
+	    }
+	
+	
+	public function  __get ( $member )
+	   { 
+		if  ( ! isset ( $this -> WrappedValue -> $member ) )
+		   {
+			$scalar_class				=  self::$WrapperClasses [ 'scalar' ] ;
+			$this -> WrappedValue -> $member  	=  new $scalar_class ( null ) ;
+		    }
+		
+		return ( $this -> WrappedValue -> $member ) ; 
+	    }
+	
+	
+	public function  __set ( $member, $value )
+	   { 
+		$this -> WrappedValue -> $member	=  $value ; 
+	    }
+    }
+
+
+/*==============================================================================================================
+
+    ArrayWrapper -
+        Wraps a (possibly recursive) array.
+
+  ==============================================================================================================*/
+class	ArrayWrapper		extends		Wrapper 
+				implements	\ArrayAccess, \IteratorAggregate
+   {
+	public function  __construct ( $value )
+	   {
+		parent::__construct ( $value ) ;
+		$this -> WrappedValue	=  $this -> __wrap_array ( [], $value ) ;
+	    }
+	
+	
+	// __wrap_array :
+	//	Recursively wraps array content.
+	private function  __wrap_array ( $result, $variable ) 
+	   {
+		foreach  ( $variable  as  $key => $value )
+		   {
+			$item			=  Wrapper::Wrap ( $value ) ;
+			$result [ $key ]	=  $item ;
+		    }
+	
+		return ( $result ) ;
+	    }
+
+	
+	// Getter/setter to access array elements as object properties
+	public function  __get ( $member )
+	   {
+		if  ( ! $this -> offsetExists ( $member ) )
+		   {
+			$scalar_class				=  self::$WrapperClasses [ 'scalar' ] ;
+			$this -> WrappedValue [ $member ]	=  new $scalar_class ( null ) ;
+		    }
+		
+		return ( $this -> offsetGet ( $member ) ) ; 
+	    }
+	
+	
+	public function  __set ( $member, $value )
+	   { 
+		$this -> offsetSet ( $member, $value ) ; 
+	    }
+	
+	
+	
+	/*==============================================================================================================
+	
+	        Interfaces implementations.
+	
+	  ==============================================================================================================*/
+	public function  getIterator ( )
+	   { return ( new \ArrayIterator ( $this -> WrappedValue ) ) ; }
+	
+	
+	public function  offsetExists ( $offset )
+	   { return ( isset ( $this -> WrappedValue [ $offset ] ) ) ; }
+	
+	
+	public function  offsetGet ( $offset )
+	   { return ( $this -> WrappedValue [ $offset ] ) ; }
+	
+	
+	public function  offsetSet ( $offset, $value )
+	   { $this -> WrappedValue [ $offset ]  =  self::Wrap ( $value ) ; }
+	
+	
+	public function  offsetUnset ( $offset )
+	   { unset ( $this -> WrappedValue [ $offset ] ) ; }
+		
+    }
+

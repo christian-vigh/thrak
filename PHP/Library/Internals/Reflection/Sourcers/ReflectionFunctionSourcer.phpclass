@@ -1,0 +1,266 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        ReflectionFunctionSourcer.phpclass
+
+    DESCRIPTION
+        A sourcer for the ReflectionMethod and ReflectionFunction classes.
+
+    AUTHOR
+        Christian Vigh, 11/2014.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2014/11/08]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Reflection\Sourcers ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use  	Thrak\System\Object ;
+use	Thrak\Reflection\ReflectionHelpers ;
+use	Thrak\Reflection\ReflectionClass ;
+
+
+/*==============================================================================================================
+
+    ReflectionAbstractFunctionSourcer -
+        A sourcer for the ReflectionMethod and ReflectionFunction classes.
+
+  ==============================================================================================================*/
+abstract class  ReflectionAbstractFunctionSourcer 	extends  ReflectionSourcer 
+   {
+	
+	
+	/*==============================================================================================================
+	
+	    Constructor -
+	        Builds an instance of a ReflectionMethodSourcer object, using the specified ReflectionMethod object.
+	
+	  ==============================================================================================================*/
+	public function  __construct  ( $reflector, $get_source = false )
+	   {
+		parent::__construct ( $reflector, $get_source ) ;
+	    }
+	
+
+	/*==============================================================================================================
+	
+	    __get_source_code -
+	        Returns the source code of a function or a method.
+	
+	  ==============================================================================================================*/
+	private function  __get_source_code ( )
+	   {
+		$source		=  "" ;
+		$result		=  "   {"  ;
+		
+		// Get the source code
+		// Extracting and reformatting source code should be tedious - not sure it is of interest
+		/***
+		$filename	=  $this -> Reflector -> getFilename ( ) ;
+		
+		if  ( $filename  &&  file_exists ( $filename ) )
+		   {
+			$start_line	=  $this -> Reflector -> getStartLine ( ) ;
+			$end_line	=  $this -> Reflector -> getEndLine ( ) ;
+			
+			if  ( $start_line  &&  $end_line )
+			   {
+				$lines	=  file ( $filename ) ;
+				$lines	=  array_slice ( $lines, $start_line, $end_line - $start_line ) ;
+				dump ( $lines ) ;
+			    }
+		    }
+		 ***/
+		
+		// Puts empty source on single line if not available
+		if  ( $source )
+			$result		.=  PHP_EOL . $source . PHP_EOL . "    }" ;
+		else
+			$result		.= " }" ;
+		
+		return ( $result ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    __get_contents -
+	        Returns the whole method definition, including its source if the $include_source parameter is true.
+	
+	  ==============================================================================================================*/
+	private function  __get_contents ( $include_source )
+	   {
+		$result		=  "function  " ;
+		
+		// Function may return a reference
+		if  ( $this -> Reflector -> returnsReference ( ) )
+			$result		.=  "&" ;
+		
+		// Function name
+		$result		.=  $this -> Reflector -> getUsageName ( ) .
+				    " ( " ;
+		
+		// Function parameters
+		$parameters	=  $this -> Reflector -> getParameters ( ) ;
+		$text		=  [] ;
+		
+		foreach  ( $parameters  as  $parameter )
+			$text []	=  $parameter -> getText ( ) ;
+		
+		$result		.=  implode ( ", ", $text ) ;
+		
+		// End of parameters
+		if  ( $this -> Reflector -> getNumberOfParameters ( ) )
+			$result		.=  " " ;
+		
+		$result		.=  ")" ;
+		
+		// Function body, if needed 
+		if  ( $include_source  &&  ! $this -> Reflector -> isInternal ( ) )
+		   {
+			$result		.=  PHP_EOL . $this -> __get_source_code ( ) ;
+		    }
+		else
+			$result		.=  " ;" ;
+		
+		return ( $result ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	        Implementation of the RefelectionSourcerInterface interface.
+	
+	  ==============================================================================================================*/
+	public function  getText ( $include_source = false )
+	   { return ( $this -> __get_contents ( $include_source ) ) ; }
+    }
+
+
+
+/*==============================================================================================================
+
+    ReflectionMethodSourcer -
+        A sourcer for the ReflectionMethod class.
+
+  ==============================================================================================================*/
+class  ReflectionMethodSourcer 		extends  ReflectionAbstractFunctionSourcer 
+   {
+	/*==============================================================================================================
+	
+	    Constructor -
+	        Builds an instance of a ReflectionMethodSourcer object, using the specified ReflectionMethod object.
+	
+	  ==============================================================================================================*/
+	public function  __construct  ( $reflector, $get_source = false )
+	   {
+		parent::__construct ( $reflector, $get_source ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    __get_contents -
+	        Returns the whole method definition, including its source if the $include_source parameter is true.
+	
+	  ==============================================================================================================*/
+	private function  __get_contents ( $include_source )
+	   {
+		// Get doc comment
+		$docComment 	=  $this -> Reflector -> getDocComment ( ) ;
+		
+		if  ( $docComment )
+			$docComment 	.=  PHP_EOL ;
+		
+		// Retrieve function modifiers
+		$method_modifiers	=  $this -> Reflector -> getModifiers ( ) ;
+		$modifiers		=  [] ;
+		
+		if  ( $method_modifiers  &  ReflectionClass::IS_PRIVATE )
+			$modifiers []	=  "private" ;
+		else if  ( $method_modifiers  &  ReflectionClass::IS_PROTECTED )
+			$modifiers []	=  "protected" ;
+		else
+			$modifiers []	=  "public" ;
+		
+		if  ( $method_modifiers  &  ReflectionClass::IS_ABSTRACT )
+			$modifiers []	=  "abstract" ;
+		
+		if  ( $method_modifiers  &  ReflectionClass::IS_STATIC )
+			$modifiers []	=  "static" ;
+		
+		if  ( $method_modifiers  &  ReflectionClass::IS_FINAL )
+			$modifiers []	=  "final" ;
+		
+		$result		=  $docComment .
+				   implode ( ' ', $modifiers ) .
+				   " " .
+				   parent::getText ( $include_source ) ;
+		
+		return ( $result ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	        Implementation of the RefelectionSourcerInterface interface.
+	
+	  ==============================================================================================================*/
+	public function  getText ( $include_source = false )
+	   { return ( $this -> __get_contents ( $include_source ) ) ; }
+    }	
+
+
+/*==============================================================================================================
+
+    ReflectionMethodSourcer -
+        A sourcer for the ReflectionMethod class.
+
+  ==============================================================================================================*/
+class  ReflectionFunctionSourcer 		extends  ReflectionAbstractFunctionSourcer 
+   {
+	/*==============================================================================================================
+	
+	    Constructor -
+	        Builds an instance of a ReflectionMethodSourcer object, using the specified ReflectionMethod object.
+	
+	  ==============================================================================================================*/
+	public function  __construct  ( $reflector, $get_source = false )
+	   {
+		parent::__construct ( $reflector, $get_source ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    __get_contents -
+	        Returns the whole method definition, including its source if the $include_source parameter is true.
+	
+	  ==============================================================================================================*/
+	private function  __get_contents ( $include_source )
+	   {
+		// Get doc comment
+		$docComment 	=  $this -> Reflector -> getDocComment ( ) ;
+		
+		if  ( $docComment )
+			$docComment 	.=  PHP_EOL ;
+				
+		$result		=  $docComment .
+				   parent::getText ( $include_source ) ;
+		
+		return ( $result ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	        Implementation of the RefelectionSourcerInterface interface.
+	
+	  ==============================================================================================================*/
+	public function  getText ( $include_source = false )
+	   { return ( $this -> __get_contents ( $include_source ) ) ; }
+    }	

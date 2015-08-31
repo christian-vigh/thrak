@@ -1,0 +1,152 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        ResolvedIps.phpclass
+
+    DESCRIPTION
+        Encapsulates a table whose purpose is to store resolved ip addresses.
+ 
+    AUTHOR
+        Christian Vigh, 06/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/06/08]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace	Thrak\Database\Tables ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces & objects
+use	Thrak\System\Object ;
+use     Thrak\IO\Path ;
+use	Thrak\Types\String ;
+use	Thrak\Database\Table ;
+
+
+/*==============================================================================================================
+
+    ResolvedIps class -
+        Holds resolved ip entries.
+
+  ==============================================================================================================*/
+class   ResolvedIps		extends  Table
+    {
+	// Hostname types stored with the resolved ips
+	const  HOSTNAME_TYPE_DOMAIN		=  0 ;		// Hostname is a true domain name
+	const  HOSTNAME_TYPE_IPV4		=  1 ;		// Hostname could not be resolved ; only the IP V4 address will be stored in this table
+	const  HOSTNAME_TYPE_IPV6		=  2 ;		// Same, for IP V6 addresses
+	const  HOSTNAME_TYPE_WORKSTATION	=  3 ;		// Hostname is not a real domain name but a simple workstation name
+	const  HOSTNAME_TYPE_UNKNOWN		=  0x8000 ;	// Unknown hostname type
+	
+	
+	/*==============================================================================================================
+	
+	    Constructor -
+	        Instanciates a ResolvedIps object, and creates the underlying table if necessary.
+	
+	  ==============================================================================================================*/
+	public function  __construct ( $table_name = 'thrak_resolved_ips', $database = null, $recreate = false )
+	   {
+		parent::__construct ( $table_name, 'Holds resolved ip addresses', $database, $recreate ) ;
+	    }
+	
+
+	/*==============================================================================================================
+	
+	    Create -
+	        Creates the underlying table.
+	
+	  ==============================================================================================================*/
+	public function  Create ( )
+	   {
+		$query	=<<<END
+CREATE TABLE IF NOT EXISTS  {$this -> Name}
+   (
+	id		BIGINT			NOT NULL AUTO_INCREMENT
+						COMMENT 'Unique id for this ip',
+	ip		VARCHAR(39)		NOT NULL DEFAULT ''
+						COMMENT 'Ip address',
+	hostname	VARCHAR(1024)		NOT NULL DEFAULT ''
+						COMMENT 'Hostname',
+	hostname_type	TINYINT			NOT NULL DEFAULT 0
+						COMMENT '0 = domain name, 1 = IP V4 address, 2 = IP V6 address, 3 = workstation name',
+	update_time	TIMESTAMP		NOT NULL DEFAULT 0
+						COMMENT 'Update time',
+						
+	PRIMARY KEY	( id ),
+	UNIQUE KEY	( ip ),
+	KEY		( hostname ),
+	KEY		( hostname_type, hostname(128) )
+    ) ENGINE = MyISAM CHARSET latin1 COMMENT '{$this -> Comment}'
+END;
+		
+		$this -> Database -> Execute ( $query ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    Delete -
+	        Deletes a resolved ip address.
+	
+	  ==============================================================================================================*/
+	public function  Delete ( $ip )
+	   {
+		$this -> Database -> Execute ( "DELETE FROM {$this -> Name} WHERE ip = '$ip'" ) ;
+	    }
+
+
+	/*==============================================================================================================
+	
+	    Insert -
+	        Resolves an ip address and inserts it into the resolved ips table.
+	
+	  ==============================================================================================================*/
+	public function  Insert ( $ip )
+	   {
+		if  ( $ip  ==  '::1'  ||  $ip  ==  '127.0.0.1' )
+			return ( false ) ;
+		
+		$this -> Database -> SetQuery ( "SELECT * FROM {$this -> Name} WHERE ip = '$ip'" ) ;
+		$row	=  $this -> Database -> LoadRow ( ) ;
+		
+		if  ( ! $row )
+		   {
+			$timestamp	=  date ( 'Y-m-d H:i:s', time ( ) ) ;
+			$host		=  gethostbyaddr ( $ip ) ;
+			
+			if  ( String::IsIPV4Address ( $host ) )
+				$host_type	=  self::HOSTNAME_TYPE_IPV4 ;
+			else if  ( String::IsIPV6Address ( $host ) )
+				$host_type	=  self::HOSTNAME_TYPE_IPV6 ;
+			else if  ( preg_match ( '/' . REGEX_DOMAIN_NAME . '/', $host ) )
+			   {
+				if  ( strpos ( $host, '.' )  !==  false )
+					$host_type	=  self::HOSTNAME_TYPE_DOMAIN ;
+				else
+					$host_type	=  self::HOSTNAME_TYPE_WORKSTATION ;
+			    }
+			else
+				$host_type	=  self::HOSTNAME_TYPE_UNKNOWN ;
+			
+			$this -> Database -> Execute
+			   ("
+				INSERT INTO {$this -> Name} ( ip, hostname, hostname_type, update_time )
+					VALUES ( '$ip', '$host', $host_type, '$timestamp' )
+				ON DUPLICATE KEY UPDATE
+					hostname	=  '$host',
+					hostname_type	=  $host_type,
+					update_time	=  '$timestamp'
+			    ") ;
+			
+			$this -> Database -> SetQuery ( "SELECT * FROM {$this -> Name} WHERE ip = '$ip'" ) ;
+			$row	=  $this -> Database -> LoadRow ( ) ;
+		    }
+		
+		return ( $row ) ;
+	    }
+    }

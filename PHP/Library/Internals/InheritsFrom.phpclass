@@ -1,0 +1,704 @@
+<?php
+/************************************************************************************************************
+
+    FILE
+	InheritsFrom.phpclass
+	
+    DESCRIPTION 
+	Implements quite successfully multiple inheritance for PHP classes.
+	First declare your parent classes :
+	
+		class A 
+		   { 
+			public property  $a_property ; 
+			public function  doSomethingFromClassA ( ) { ... }
+		    }
+		class B { ... }
+		   { 
+			public property  $b_property ; 
+			public function  doSomethingFromClassB ( ) { ... }
+		    }
+	
+	Then your base class, which will inherits from A and B :
+	
+		class Multiple  extends InheritsFrom
+		   {
+			public 	$value ;
+			
+			public function  __construct ( )
+			   {
+				// Mandatory : calling the InheritsFrom class constructor allows for
+				// initializing the inheritance mechanism.
+				// Note that the instances of classes A and B will be available through
+				// $this -> A and $this -> B upon return.
+				parent::__construct ( 'A', 'B' ) ;
+				
+				// Then freely call classes A and B constructors as if they were static functions :
+				self::A ( 'A class constructor argument' ) ;
+				self::B ( 'B class constructor argument' ) ;
+			    }
+		    }
+	
+	Then freely access each method and property from those three classes :
+	
+		$m 	=  new Multiple ( ) ;
+		$m -> doSomethingFromClassA ( ) ;
+		$m -> doSomethingFromClassB ( ) ;
+		$m -> value 	=  ( $m -> a_property ) ?  $m -> a_property : $m -> b_property ;
+		
+		
+    IMPLEMENTATION
+	The InheritsFrom class heavily relies on magic functions to achieve multiple inheritance "look&feel", at
+	the cost of performance maybe since, when a property or method is referenced, all parent class instances
+	are checked for the availability of the property or method.
+	
+	There is a mechanism that uses the debug backtrace to check if a property or method was referenced from
+	within or outside from the derived class. This allows to implement a consistent visibility of those items :
+	- private methods or properties from parent class are not visible to anyone
+	- protected methods are only visible from within the derived class. They cannot be called from outside
+	  the class.
+	- public method are visible to anyone.
+	
+    LIMITATIONS
+	- Since there is no __getstatic/__setstatic magic method, static properties in inherited classes must 
+	  be accessed through an instance of the derived object using the "->" operator.
+	- The instanceof operator will not work
+	- There is no provision to resolve collisions on property and method names. If the same property or
+	  method exists in two or more parent classes, only the one in the first class will be accessible.
+		
+    AUTHOR
+	Christian Vigh, 10/2014.
+	
+    HISTORY
+	tbc
+
+ ************************************************************************************************************/
+namespace 	Thrak\Internals ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use 	Thrak\System\Object ;
+
+ 
+/*===========================================================================================================
+
+    Class InheritedClass -
+	A simple class used to store relevant information about an inherited class.
+	This class is for internal use only.
+	
+ *===========================================================================================================*/ 
+class  InheritedClass	extends  Object 
+   {
+	// Inherited class name
+	public		$ClassName ;
+	// Reflection object (only one instanciation per inherited class)
+	public 		$Reflector ;
+	// Object instance
+	public 		$Instance ;
+	
+	
+	// Constructor -
+	//	Initialize the stuff.
+	public function  __construct ( $parent )
+	   {
+		$this -> ClassName 	=  $parent ;
+		$this -> Reflector 	=  new  ReflectionClass ( $parent ) ;
+		$this -> Instance 	=  $this -> Reflector -> newInstanceWithoutConstructor ( ) ;
+	    }
+	    
+	    
+	// GetMethod -
+	//	Gets a class method, avoiding Reflection to throw an exception if the method does not exist.
+	public function	GetMethod ( $name )
+	   {
+		if  ( $this -> Reflector -> hasMethod ( $name ) )
+			return ( $this -> Reflector -> getMethod ( $name ) ) ;
+		else
+			return ( false ) ;
+	    }
+
+	    
+	// GetProperty -
+	//	Gets a class property, avoiding Reflection to throw an exception if the property does not exist.
+	public function	GetProperty ( $name )
+	   {
+		if  ( $this -> Reflector -> hasProperty ( $name ) )
+			return ( $this -> Reflector -> getProperty ( $name ) ) ;
+		else
+			return ( false ) ;
+	    }
+    }
+
+    
+/*===========================================================================================================
+
+    Class InheritedFrom -
+	Multiple inheritance implementation.
+	Steps :
+	1) Create a class that has to inherits from two or more classes :
+		class Multiple  extends  InheritsFrom
+		   {
+			public function __construct ( ) { }
+		    }
+	2) In the class constructor, call its parent constructor, specifying all the classes it should inherit
+	  from :
+		parent::__construct ( 'Class1', 'Class2', ... ) ;
+	3) Call the constructors of your parent classes using the notation below :
+		self::Class1 ( 1 ) ; 
+		self::Class2 ( 2 ) ;
+		...
+	4) Et voilà ! At any time, you will be able to specifically reference properties and methods from one
+	   parent class because an object of the same name has been created :
+		$this -> Class1 -> SomeValue = 1 ;
+		$this -> Class2 -> OtherValue = 2 ;
+	
+ *===========================================================================================================*/ 
+class 	InheritsFrom	extends  Object
+   {
+	// Class information is stored in each instance, but also globally to the InheritsFrom class (this is 
+	// for the __callstatic function to be able to retrieve class information without having an object).
+	// The $_global_inheritances member is an array whose keys are class names and whose values are array
+	// of InheritedClass objects.
+	// The $__inheritances member is an array of InheritedClass objects.
+	private static	$__global_inheritances	=  array ( ) ;
+	private  	$__inheritances 	=  array ( ) ;
+
+	
+	/*===================================================================================================
+	
+	    NAME
+		Constructor
+		
+	    PROTOTYPE
+		parent::__construct ( $class1 [, $class2, ...] ) ;
+		
+	    DESCRIPTION
+		Initialize the class inheritance mechanisme. Stores information about each inherited class in 
+		the $__inheritances array.
+		
+	    PARAMETERS
+		$classx (string) -
+			Names of the classes to inherit from.
+	
+	  ===================================================================================================*/
+	public function  __construct ( )
+	   {
+		$derived_class	=  get_called_class ( ) ;
+		$classes	=  func_get_args ( ) ;
+		
+		if (  ! count ( $classes ) )
+			error ( new \Thrak\System\RuntimeException ( "No parent class specified." ) ) ;
+			
+		foreach  ( $classes  as  $parent )
+		   {
+			if  ( ! class_exists ( $parent ) )
+				error ( new \Thrak\System\RuntimeException ( "Class $class does not exist." ) ) ;
+				
+			$this -> __inheritances [ $parent ]	=  new  InheritedClass ( $parent ) ;
+			$this -> $parent 			=  $this -> __inheritances [ $parent ] -> Instance ;
+		    }
+		
+		// Remember globally this information. Note that in this case, the $Instance member of the
+		// InheritedClass class is not useful.
+		self::$__global_inheritances [ $derived_class ] 	=  $this -> __inheritances ;
+	    }
+
+	    
+	/*===================================================================================================
+	
+		__get - 
+			Retrieves the value of a property in the first inherited class that implements it.
+	
+	  ===================================================================================================*/
+	public	function  __get ( $member )
+	   {
+		$derived_class	=  get_called_class ( ) ;
+
+		// Loop through inherited class data
+		foreach (  $this -> __inheritances  as  $class => $inheritance )
+		   {
+			$property		=  $inheritance -> GetProperty ( $member ) ;
+			
+			// Check if this class has the specified member
+			if  ( $property ) 
+			    {
+				// Enforce visibility restrictions. For protected members, ensure that the caller is
+				// the derived class.
+				$has_permission	=  self::__has_access_permission ( '__get',
+								$property -> isPrivate ( ), $property -> isProtected ( ), 
+								$derived_class, $member, 'property' ) ;
+				
+				// When private or protected, we need to temporarily give access to the member...
+				if  ( ! $has_permission )
+					$property -> setAccessible ( true ) ;
+					
+				// ... to retrieve its value
+				$value 	=  $property -> getValue ( $inheritance -> Instance ) ;
+				
+				// ... then remove temporary access
+				if  ( ! $has_permission )
+					$property -> setAccessible ( false ) ;
+					
+				// All done, return
+				return ( $value ) ;
+			     }
+		    }
+		
+		// Complain if member does not exist
+		error ( new \Thrak\System\RuntimeException ( "Property $derived_class::$member does not exist." ) ) ;
+	    }
+
+	    
+	/*===================================================================================================
+	
+		__set - 
+			Sets the value of a property in the first inherited class that implements it.
+	
+	  ===================================================================================================*/
+	public	function  __set ( $member, $value )
+	   {
+		// Special handling for the properties that represent derived instances ; this happens when
+		// the class constructor creates one new property for each inherited class
+		if  ( isset ( $this -> __inheritances [ $member ] ) )
+		   {
+			$this -> $member 	=  $value ;
+			return ;
+		    }
+		    
+		$derived_class	=  get_called_class ( ) ;
+		
+		// Loop through inherited class data
+		foreach (  $this -> __inheritances  as  $class => $inheritance )
+		   {
+			$property		=  $inheritance -> GetProperty ( $member ) ;
+			
+			// Check if this class has the specified member
+			if  ( $property ) 
+			    {
+				// Enforce visibility restrictions. For protected members, ensure that the caller is
+				// the derived class.
+				$has_permission	=  self::__has_access_permission ( '__set',
+								$property -> isPrivate ( ), $property -> isProtected ( ), 
+								$derived_class, $member, 'property' ) ;
+				
+				// When private or protected, we need to temporarily give access to the member...
+				if  ( ! $has_permission )
+					$property -> setAccessible ( true ) ;
+				
+				// ... to set the property value
+				$property -> setValue ( $inheritance -> Instance , $value ) ;
+				
+				// ... then remove temporary access
+				if  ( ! $has_permission )
+					$property -> setAccessible ( false ) ;
+					
+				// All done, return
+				return ;
+			     }
+		    }
+		    
+		// Complain if member does not exist
+		error ( new \Thrak\System\BadMethodCallException ( "Property $derived_class::$member does not exist." ) ) ;
+	    }
+
+	    
+	/*===================================================================================================
+	
+	    __isset -
+		Checks if the value of a property is set in the first inherited class that implements it.
+		
+	  ===================================================================================================*/
+	public	function  __isset ( $member )
+	   {
+		foreach (  $this -> __inheritances  as  $class => $inheritance )
+		   {
+			if  ( $inheritance -> GetProperty ( $member ) )
+				return ( true ) ;
+		    }
+		    
+		return ( false ) ;
+	    }
+
+
+	    
+	/*===================================================================================================
+	
+	    __unset -
+		Unsets a property in the first inherited class that implements it.
+		
+	  ===================================================================================================*/
+	public function  __unset ( $member )
+	   {
+		foreach (  $this -> __inheritances  as  $class => $inheritance )
+		   {
+			if  ( $inheritance -> GetProperty ( $member ) )
+			   {
+				unset ( $inheritance -> Instance -> $member ) ;
+			    }
+		    }
+	    }
+	    
+	    
+	/*===================================================================================================
+	
+	    __call -
+		Calls a method in the first inherited class that implements it.
+	
+	  ===================================================================================================*/
+	public function  __call ( $member, $args )
+	   {
+		// Allows for syntactic sugar for calling parent classes constructors, such as :
+		//	$this -> ParentClass1 ( args ) ;
+		if  ( isset ( $this -> __inheritances [ $member ] ) )
+		   {
+			call_user_func_array ( array ( $this -> $member, '__construct' ), $args ) ;
+			return ;
+		    }
+		    
+		$derived_class	=  get_called_class ( ) ;
+		
+		// Loop through inherited class data
+		foreach (  $this -> __inheritances  as  $class => $inheritance )
+		   {
+			$method		=  $inheritance -> GetMethod ( $member ) ;
+			
+			// Check if this class has the specified member
+			if  ( $method ) 
+			    {
+				// Enforce visibility restrictions. For protected members, ensure that the caller is
+				// the derived class.
+				$has_permission	=  self::__has_access_permission ( '__call',
+								$method -> isPrivate ( ), $method -> isProtected ( ), 
+								$derived_class, $member, 'method' ) ;
+				
+				// When private or protected, we need to temporarily give access to the member...
+				if  ( ! $has_permission )
+					$method -> setAccessible ( true ) ;
+				
+				// ... to invoke the method
+				$result 	=  $method -> invokeArgs ( $inheritance -> Instance, $args ) ;
+				
+				// ... then remove temporary access
+				if  ( ! $has_permission )
+					$method -> setAccessible ( false ) ;
+					
+				// All done, return
+				return ( $result ) ;
+			     }
+		    }
+		    
+		// Complain if member does not exist
+		error ( new \Thrak\System\BadMethodCallException ( "Method $derived_class::$member does not exist." ) ) ;
+	    }
+	
+	
+	/*===================================================================================================
+	
+	    __callstatic -
+		Calls a static method in the first inherited class that implements it.
+	
+	  ===================================================================================================*/
+	public static function  __callstatic ( $member, $args )
+	   {
+		$derived_class	=  get_called_class ( ) ;
+		
+		// Here, we have to rely on global class data, since we have no object instance
+		$__inheritances	=  self::$__global_inheritances [ $derived_class ] ;
+		
+		// Loop through inherited class data
+		foreach (  $__inheritances  as  $class => $inheritance )
+		   {
+			$method		=  $inheritance -> GetMethod ( $member ) ;
+			
+			// Check if this class has the specified member
+			if  ( $method ) 
+			    {
+				// Complain if the specified method is a non-static one
+				if  ( ! $method -> isStatic ( ) )
+					error ( new \Thrak\System\BadMethodCallException ( "Calling non-static method $class::$member in static context." ) ) ;
+					
+				// Enforce visibility restrictions. For protected members, ensure that the caller is
+				// the derived class.
+				$has_permission	=  self::__has_access_permission ( '__call',
+								$method -> isPrivate ( ), $method -> isProtected ( ), 
+								$derived_class, $member, 'method' ) ;
+				
+				// When private or protected, we need to temporarily give access to the member...
+				if  ( ! $has_permission )
+					$method -> setAccessible ( true ) ;
+				
+				// ... to invoke the method
+				$result 	=  $method -> invokeArgs ( $inheritance -> Instance, $args ) ;
+				
+				// ... then remove temporary access
+				if  ( ! $has_permission )
+					$method -> setAccessible ( false ) ;
+					
+				// All done, return
+				return ( $result ) ;
+			     }
+		    }
+		    
+		// Complain if member does not exist
+		error ( new \Thrak\System\BadMethodCallException ( "Method $derived_class::$member does not exist." ) ) ;
+	    }
+	    
+	    
+	/*===================================================================================================
+	
+	    __invoke -
+		Calls the __invoke method of the first inherited class that implements it.
+	
+	  ===================================================================================================*/
+	public function  __invoke ( )
+	   {
+		$derived_class	=  get_called_class ( ) ;
+
+		// Loop through class data
+		foreach (  $this -> __inheritances  as  $class => $inheritance )
+		   {
+			// Here no need to use reflection, since this method is alwawys public
+			if  ( method_exists ( $inheritance -> Instance, '__invoke' ) )
+			   {
+				$args 	=  func_get_args ( ) ;
+				
+				return ( call_user_func_array ( array ( $inheritance -> Instance, '__invoke' ), $args ) ) ;
+			    }
+		    }
+		    
+		// Complain if no inherited class implements this function.
+		error ( new \Thrak\System\RuntimeException ( "Invoking an instance of $derived_class as a function." ) ) ;
+	    }
+	
+	
+	/*===================================================================================================
+	
+	    NAME
+		__called_from_outside - Checks who performed the call.
+		
+	    PROTOTYPE
+		$bool 	=  self::__called_from_outside ( $magic, $derived_class ) ;
+		
+	    DESCRIPTION
+		This function is the central point of the visibility enforcement mechanism. Its main goal is
+		to :
+		- Prevent any private method or property to be accessed
+		- Authorize access to private methods and properties when issued from a derived class
+		
+		It scans the return value of the debug_backtrace() function to determine that.
+		- For properties :
+			1. Find the first trace whose 'function' entry matches the supplied $magic name.
+			2. No additional trace exists : the function has been called from the top
+			  level scope.
+			3. Additional traces exists : examine the next one
+				a. The next one has a 'class' entry equal to the supplied $derived_class :
+				   access to protected member functions is authorized
+				b. The next one has no 'class' entry, or it differs from the supplied
+				   $derived_class : access to protected member functions is denied
+		- For methods : At step 3. use the second next one (the next one will correspond to the
+		  method call).
+		
+	    PARAMETERS
+		$magic (string) -
+			Name of the calling magic function (__get, __set, __call, __callstatic).
+			
+		$derived_class (string) -
+			Name of the derived class.
+	    
+	    RETURN VALUE
+		True if the magic function was called outside the specified derived class, false otherwise.
+	
+	    NOTE 
+		This method has been tested in most general cases. More intensive testing has to be done.
+	    
+	  ===================================================================================================*/
+	private static function  __called_from_outside ( $magic, $derived_class )
+	{
+		$traces 	=  debug_backtrace ( ) ;
+		$trace_count	=  count ( $traces ) ;
+		
+		// We start at index 2, since we are called by getter/setter/caller which in turn calls
+		// the has_access_permission method
+		for ( $index = 2 ; $index  <  $trace_count ; $index ++ )
+		   {
+			$trace 	=  $traces [ $index ] ;
+			
+			if  ( $trace [ 'function' ]  ==  $magic )
+				break ;
+		    }
+		    
+		if  ( $index + 1  >=  $trace_count )
+			return ( true ) ;
+		
+		$index ++ ;	
+
+		// For calls, an extra backtrace entry is added, to illustrate the function call in the class
+		// So skip it
+		if (  $magic  ==  '__call'  ||  $magic  ==  '__callstatic' )
+		   {
+			if  ( $index + 1  >=  $trace_count )
+				return ( true ) ;
+				
+			$index ++ ;
+		    }
+		    
+		$trace 	=  $traces [ $index ] ;
+		
+		// If we have a 'class' entry...
+		if  ( isset ( $trace [ 'class' ] ) )
+		   {
+			// If it differs from $derived_class, then we are called from another class and access
+			// to protected members is denied
+			if (  $trace [ 'class' ]  !=  $derived_class )
+				return ( true ) ;
+			// Otherwise give access to protected members
+			else
+				return ( false ) ;
+		    }
+		// No 'class' entry : we are called from outside.
+		else
+			return ( true ) ;
+	}
+	
+	
+	/*===================================================================================================
+	
+	    NAME
+		__has_access_permission - Checks if a class member can be accessed.
+		
+	    PROTOTYPE
+		$bool = self::_has_access_permission ( $magic, $is_private, $is_protected, $derived_class, 
+								$member, $object_type ) ;
+								
+	    DESCRIPTION
+		Encapsulapes the __called_from_outside() method to return a consistent value to the caller
+		(a magic function) so that it can decide whether it has to call the setAccessible() method
+		on the member it has to handle.
+		
+	    PARAMETERS
+		$magic (string) -
+			Caller's magic function name.
+			
+		$is_private (boolean) -
+			Whether the member to handle is private.
+			
+		$is_protected (boolean) -
+			Whether the member to handle is protected.
+			
+		$derived_class (string) -
+			Derived class name.
+			
+		$member (string) -
+			Member name.
+			
+		$object_type (string) -
+			For error messages, the member type (property or method).
+	    
+	    RETURN VALUE
+		False if member accessibility should be temporarily turned on during the processing, false
+		otherwise.
+		
+	  ===================================================================================================*/
+	private static function  __has_access_permission ( $magic, $is_private, $is_protected, $derived_class, $member, $object_type )
+	   {
+		if  ( $is_private  ||  $is_protected )
+		   {
+			$called_from_outside 	=  self::__called_from_outside ( $magic, $derived_class ) ;
+			
+			if (  $called_from_outside )
+			   {
+				if (  $is_private )
+				   {
+					error ( new \Thrak\System\BadMethodCallException ( "Cannot access private $object_type $derived_class::$member." ) ) ;
+					return ( false ) ;
+				    }
+					
+				if  ( $is_protected )
+				   {
+					error ( new \Thrak\System\BadMethodCallException ( "Cannot access protected $object_type $derived_class::$member." ) ) ;
+					return ( false ) ;
+				    }
+			    }
+			else
+			   {
+				if  ( $is_protected )
+					return ( false ) ;	// Just to turn accessibility on
+					
+				if (  $is_private )
+				   {
+					error ( new \Thrak\System\BadMethodCallException ( "Cannot access private $object_type $derived_class::$member." ) ) ;
+					return ( false ) ;
+				    }
+			    }
+		    }
+		    
+		return ( true ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        IsInstanceOf, IsSubclassOf - Overrides the corresponding methods from the Object class.
+	
+	    PROTOTYPE
+	        InheritsFrom::IsInstanceOf ( $object, $class ) ;
+	        InheritsFrom::IsSubclassOf ( $object, $class ) ;
+	
+	    DESCRIPTION
+	        Overrides the corresponding methods from the Object class to check the subclassing of the current class,
+		but also of all the classes it inherits from.
+	
+	    PARAMETERS
+		$object (object) -
+			Object to be checked.
+	 
+	        $class (object or string) -
+	                Either an object or a class name.
+	
+	    RETURN VALUE
+	        True if the current object is derived from the specified class or object's class, false otherwise.
+	
+	  ==============================================================================================================*/
+	public static function  IsInstanceOf ( $object, $class )
+	   {
+		if  ( is_object ( $class ) )
+			$class	=  get_class ( $clss ) ;
+		
+		if  ( is_a ( $object, $class ) )
+			return ( true ) ;
+		
+		$derived_class	=  get_called_class ( ) ;
+		$inheritances	=  self::$__global_inheritances [ $derived_class ] ;
+		
+		foreach  ( $inheritances  as  $inheritance )
+		   {
+			if  ( is_a  ( $inheritance -> Instance, $class ) )
+				return ( true ) ;
+		    }
+		
+		return ( false ) ;
+	    }
+	    
+	public static function  IsSubclassOf ( $object, $class )
+	   {
+		if  ( is_object ( $class ) )
+			$class	=  get_class ( $clss ) ;
+		
+		if  ( is_subclass_of ( $object, $class ) )
+			return ( true ) ;
+		
+		$derived_class	=  get_called_class ( ) ;
+		$inheritances	=  self::$__global_inheritances [ $derived_class ] ;
+		
+		foreach  ( $inheritances  as  $inheritance )
+		   {
+			// We use is_a(), not is_subclass_of() because the inherited class can never be the current object's class
+			if  ( is_a  ( $inheritance -> Instance, $class ) )
+				return ( true ) ;
+		    }
+		
+		return ( false ) ;
+	    }
+	    
+   }

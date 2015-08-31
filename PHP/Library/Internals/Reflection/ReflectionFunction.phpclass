@@ -1,0 +1,119 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        ReflectionFunction.phpclass
+
+    DESCRIPTION
+        An enhanced ReflectionFunction class.
+
+    AUTHOR
+        Christian Vigh, 10/2014.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2014/11/08]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+ namespace 	Thrak\Reflection ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use  	Thrak\System\Object ;
+use     Thrak\System\IsNonObject ;
+use     Thrak\Reflection\ReflectionHelpers ;
+use     Thrak\Reflection\DocCommentExtender ;
+use	Thrak\Reflection\Sourcers\ReflectionSourcerInterface ;
+use	Thrak\Reflection\Sourcers\ReflectionFunctionSourcer ;
+
+
+/*==============================================================================================================
+
+    ReflectionFunction class -
+        An enhanced ReflectionFunction class.
+
+  ==============================================================================================================*/
+class  ReflectionFunction	extends 	\ReflectionFunction
+				implements 	\Reflector, ReflectionSourcerInterface
+   {
+	use IsNonObject, DocCommentExtender ;
+	
+	// For compatibility with ReflectionMethod::$usageName
+	public			$usageName ;
+	
+	
+	/*==============================================================================================================
+	
+	    Constructor -
+	        Initializes the instance.
+	
+	  ==============================================================================================================*/
+	public function  __construct ( $name )
+	   {
+		parent::__construct ( $name ) ;
+		
+		$this -> usageName	=  $name ;
+	    }
+
+
+	/*==============================================================================================================
+	
+	    getDocComment -
+	        Retrieves the doc comment contents.
+	
+	  ==============================================================================================================*/
+	public function  getDocComment ( )
+	   {
+		$comment	=  $this -> formatDocComment ( parent::getDocComment ( ) ) ;
+		
+		return ( $comment ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    getParameters -
+	        Returns the function parameters.
+	
+	  ==============================================================================================================*/
+	public function  getParameters ( )
+	   {
+		$php_parameters		=  parent::getParameters ( ) ;
+		$parameters		=  [] ;
+		
+		foreach  ( $php_parameters  as  $php_parameter )
+		   {
+			// ReflectionParameter constructor accepts a "callable" parameter (such as : array ( class, function ))
+			$function	=  $php_parameter -> getDeclaringFunction ( ) ;
+			$function_name	=  $function -> name ;
+			
+			$parameters []	=  new ReflectionParameter ( $function_name, $php_parameter -> name ) ;
+		    }
+		
+		return ( $parameters ) ;
+	    }
+
+	
+	/*==============================================================================================================
+	
+	     getUsageName -
+		Returns function name (only makes sense for trait methods that have been renamed).
+	
+	  ==============================================================================================================*/
+	public function  getUsageName ( )
+	   { return ( $this -> usageName ) ; }
+	
+		
+	/*==============================================================================================================
+	
+	        Implementation of the RefelectionSourcerInterface interface.
+	
+	  ==============================================================================================================*/
+	public function  getText ( $include_source = false )
+	   {
+		$sourcer 	=  new  ReflectionFunctionSourcer ( $this ) ;
+		
+		return  ( $sourcer -> getText ( $include_source ) ) ;
+	    }
+    }
+

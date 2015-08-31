@@ -1,0 +1,867 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        Whois.phpclass
+
+    DESCRIPTION
+        Whois server querying class.
+
+    AUTHOR
+        Christian Vigh, 11/2014.
+
+    HISTORY
+    [Version : 1.0]	[Date : 2014/11/30]     [Author : CV]
+        Initial version.
+
+    [Version : 1.0.1]	[Date : 2015/06/25]     [Author : CV]
+	. Changed the WhoisDescription class and the Query() method to be able to handle multiple whois entries
+	  for the same ip address.
+	. Added the 'last-entry' item in the Components array of the WhoisDescription class.
+	   
+ **************************************************************************************************************/
+namespace	Thrak\Network\RfcProtocols ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces & objects
+use	Thrak\System\Object ;
+use	Thrak\Types\String ;
+use	Thrak\Network\RfcProtocol ;
+use	Thrak\Internet\Xml\SimpleXml ;
+use     Thrak\Types\AssociativeArray ;
+
+
+/*==============================================================================================================
+
+    WhoisDescription class -
+        Holds the description returned by a Whois server.
+
+  ==============================================================================================================*/
+class  WhoisDescription		extends		Object
+				implements	\ArrayAccess, \Countable, \IteratorAggregate
+   {
+	// Constants used for parsing whois output data
+	const		STATE_IN_HEADER			=  0 ;
+	const		STATE_IN_FOOTER			=  1 ;
+	const		STATE_NOMATCH			=  2 ;
+	const		STATE_IN_ATTRIBUTES_START	=  3 ;
+	const		STATE_IN_ATTRIBUTES		=  4 ;
+	const		STATE_LAST_UPDATE		=  5 ;
+	
+	// The whole text data returned by the whois server
+	private		$Data ;
+	
+	// An associative array that holds the following information :
+	// - 'server' :
+	//	Queried whois server name.
+	// - 'domain' :
+	//	Queried domain name.
+	// - 'header' :
+	//	Header information from the whois server.
+	// - 'footer' :
+	//	Footer information.
+	// - 'nomatch' :
+	//	When true, the queried domain was not found.
+	//	The $nomatch_string parameter of the constructor specifies the string that indicates that 
+	//	the queried server was not found.
+	// - 'fallback-server' :
+	//	Specifies the url of an alternate whois server, where the queried domain can be found.
+	//	The $fallback_server_string parameter of the constructor indicates the whois attribute name
+	//	to be searched.
+	// - 'attributes' :
+	//	An array of associative arrays, which contain the following entries :
+	//	- 'name' :
+	//		Attribute name (eg, "Registrar").
+	//	- 'value' :
+	//		Attribute value.
+	private		$Components ;
+
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        Constructor - Creates a WhoisDescription object.
+	
+	    PROTOTYPE
+	        $description	=  new  WhoisDescription ( $server, $domain, $data, $nomatch_string, $fallback_server_string ) ;
+	
+	    DESCRIPTION
+	        Creates a WhoisDescription object, parsing the specified data returned by a Whois server.
+	
+	    PARAMETERS
+	        $server (string) -
+	                Whois server that has been queried.
+	  
+	 	$domain (string) -
+	 		Queried domain.
+	  
+	 	$data (string) -
+	 		Data returned by the whois server.
+	  
+	 	$nomatch_string (string) -
+	 		String returned by a whois server when the queried domain does not exist.
+	  
+	 	$fallback_server_string (string) -
+	 		Specifies the attribute returned by a whois server when the queried domain is hosted by another
+	 		whois server.
+			  
+		$start_index (integer) -
+			Start line index.
+	
+	  ==============================================================================================================*/
+	public function  __construct ( $server, $domain, $data, $nomatch_string, $fallback_server_string, &$start_index = 0 )
+	   {
+		// Convert the "nomatch" string into a regular expression
+		$nomatch_re		=  '/' . str_replace ( ' ', '\s+', $nomatch_string ) . '/i' ;
+		
+		// Split whois server response into an array of lines
+		$lines			=  explode ( "\n", str_replace ( "\r", "", $data ) ) ;
+		$line_count		=  count ( $lines ) ;
+		$line_index		=  $start_index ;
+		
+		// Initialize response parts
+		$header			=  [] ;
+		$footer			=  [] ;
+		$attributes		=  [] ;
+		$nomatch		=  false ;
+		$fallback_server	=  false ;
+		$last_update		=  '0000-00-00' ;
+		
+		// At the beginning, we consider that we are in the whois server response header part
+		$state			=  self::STATE_IN_HEADER ;
+		
+		// A regex to match an attribute value
+		$attribute_re		=  '#^
+						\s*
+						(?P<name> [\w\s\-/]+)
+						\s* : 
+						( \s+ (?P<value> .*) )?
+						\s*
+					    $#imsx' ;
+
+		// Whois information may contain multiple entries, when queried for a single ip address. In this case, there may
+		// a separator line (for example, "# end").
+		// However, this regular expression will have to be completed if additional separator lines are found.
+		$separator_re		=   '/^
+						( \# \s+ end )
+					     /imsx' ;
+
+		// Loop through server response lines
+		while  ( $line_index  <  $line_count )
+		   {
+			$line	=  trim ( $lines [ $line_index ] ) ;
+			
+			// Check for separator line, for whois entries that are attributed to multiple address ranges
+			if  ( preg_match ( $separator_re, $line ) )
+			   {
+				$footer	[]	=  $line ;
+				$line_index ++ ;
+				break ;
+			    }
+
+			// Current state will determine which part of the server response we are processing
+			switch  ( $state )
+			   {
+				// Header part - we can meet either an attribute, a "nomatch" answer or a "last update" entry
+				case	self::STATE_IN_HEADER :
+					if  ( preg_match ( $attribute_re, $line, $attribute_match ) )
+					   {
+						$state	=  self::STATE_IN_ATTRIBUTES ;
+						continue 2 ;
+					    }
+					else if  ( preg_match ( $nomatch_re, $line, $nomatch_match ) )
+					   {
+						$state	=  self::STATE_NOMATCH ;
+						continue 2 ;
+					    }
+					else if  ( strpos ( $line, '>>>' )  !==  false )
+					   {
+						$state	=  self::STATE_LAST_UPDATE ;
+						continue 2 ;
+					    }
+					else
+						$header []	=  $line ;
+					
+					break ;
+					
+				// Nomatch answer
+				case	self::STATE_NOMATCH :
+					$nomatch	=  true ;
+					$state		=  self::STATE_IN_FOOTER ;
+					break ;
+					
+				// Attributes - We can have an empty line, a last update entry  or another attribute
+				case	self::STATE_IN_ATTRIBUTES :
+					if  ( ! $line )
+						break ;
+					else if  ( strpos ( $line, '>>>' )  !==  false )
+					   {
+						$state	=  self::STATE_LAST_UPDATE ;
+						continue 2 ;
+					    }
+					else if  ( ! preg_match ( $attribute_re, $line, $attribute_match ) )
+					   {
+						$state	=  self::STATE_IN_FOOTER ;
+						continue 2 ;
+					    }
+					/* No break here, we fall through the next case */
+										
+				// An attribute - either come from STATE_IN_HEADER or the above case
+				case	self::STATE_IN_ATTRIBUTES_START :
+					$name		=  $attribute_match [ 'name' ] ;
+					$value		=  isset ( $attribute_match [ 'value' ] ) ?  $attribute_match [ 'value' ] : '' ;
+					$count		=  count ( $attributes ) ;
+					
+					if  ( $count  >  0  &&  $attributes [ $count - 1 ] [ 'name' ]  ==  $name )
+					   {
+						$attr_entry	=  $attributes [ $count - 1 ] ;
+						
+						if  ( is_array ( $attr_entry [ 'value' ] ) )
+							$attr_entry [ 'value' ] []	=  $value ;
+						else
+							$attr_entry [ 'value' ]		=  [ $attr_entry [ 'value' ], $value ] ;
+						
+						$attributes [ $count - 1 ]	=  $attr_entry ;
+					    }
+					else 
+						$attributes []	=  [ 'name' => $name, 'value' => [ $value ] ] ;
+					
+					if  ( ! strcasecmp ( $name, $fallback_server_string ) )
+						$fallback_server	=  $value ;
+					
+					$state	=  self::STATE_IN_ATTRIBUTES ;
+					break ;
+					
+				// Update entry line	
+				case	self::STATE_LAST_UPDATE :
+					if  ( preg_match ( '/:\s* (?P<date> .*?) \s* \<\<\</imsx', $line, $match ) )
+					   {
+						$last_update	=  strtotime ( $match [ 'date' ] ) ;
+						break ;
+					    }
+					
+				// Footer - All the remaining lines will be collected here
+				case	self::STATE_IN_FOOTER :
+					$footer []	=  $line ;
+					break ;
+					
+					
+			    }
+			
+			$line_index ++ ;
+		    }
+
+		// Save collected data
+		$entry [ 'server' ]		=  $server ;
+		$entry [ 'domain' ]		=  $domain ;
+		$entry [ 'header' ]		=  implode ( "\n", $header ) ;
+		$entry [ 'footer' ]		=  implode ( "\n", $footer ) ;
+		$entry [ 'attributes' ]		=  $attributes ;
+		$entry [ 'nomatch' ]		=  $nomatch ;
+		$entry [ 'fallback-server' ]	=  $fallback_server ;
+		$entry [ 'last-update' ]	=  $last_update ;
+		
+		$this -> Components		=  $entry ;
+		$this -> Data			=  $data ;
+		$start_index			=  $line_index ;
+	    }
+	
+
+	/*==============================================================================================================
+	
+	        Property getters.
+	
+	  ==============================================================================================================*/
+
+	// GetAttributes -
+	//	Returns the list of attribute name/values.
+	public function  GetAttributes ( )
+	   { return ( $this -> Components [ 'attributes' ] ) ; }
+
+	
+	// GetData -
+	//	Returns the data that has been sent by the whois server.
+	public function  GetData ( )
+	   { return ( $this -> Data ) ; }
+	
+	
+	// GetFallbackServer -
+	//	Returns the alternate whois server hosting the queried domain, or false if no fallback server exists.
+	public function  GetFallbackServer ( )
+	   { return ( $this -> Components [ 'fallback-server' ] ) ; }
+		
+		
+	// GetFooter -
+	//	Returns footer data from the whois server.
+	public function  GetFooter ( )
+	   { return ( $this -> Components [ 'footer' ] ) ; }
+	
+	
+	// GetHeader -
+	//	Returns header data from the whois server.
+	public function  GetHeader ( )
+	   { return ( $this -> Components [ 'header' ] ) ; }
+	
+	
+	// GetLastUpdate -
+	//	Gets the last update date from the whois server, or false or zero if none found.
+	public function  GetLastUpdate ( )
+	   { return ( $this -> Components [ 'last-update' ] ) ; }
+	
+	
+	// GetServer -
+	//	Returns the queried whois server name.
+	public function  GetServer ( )
+	   { return ( ( $this -> Components [ 'server' ] ) ?  $this -> Components [ 'server' ] : 'whois command information' ) ; }
+	
+	
+	// Matches -
+	//	Returns true if the queried domain has a match.
+	public function  Matches ( )
+	   { return ( ! $this -> Components [ 'nomatch' ] ) ; }
+	
+	
+	/*==============================================================================================================
+	
+	        Interfaces implementation.
+	
+	  ==============================================================================================================*/
+	public function  Count ( )
+	   { return ( count ( $this -> Components [ 'attributes' ] ) ) ; }
+	
+	
+	public function  getIterator ( )
+	   { return ( new \ArrayIterator ( $this -> Components [ 'attributes' ] ) ) ; }
+	
+	
+	public function  offsetExists ( $offset )
+	   { return ( isset ( $this -> Components [ 'attributes' ] [ $offset ] ) ) ; }
+	
+	
+	public function  offsetGet ( $offset )
+	   { return ( $this -> Components [ 'attributes' ] [ $offset ] ) ; }
+		
+	
+	public function  offsetSet ( $offset, $value )
+	   { return ( new \Thrak\System\UnsupportedOperationException ( ) ) ; }
+		
+	
+	public function  offsetUnset ( $offset )
+	   { return ( new \Thrak\System\UnsupportedOperationException ( ) ) ; }
+    }
+
+
+/*==============================================================================================================
+
+    Whois class -
+        A class to query against Whois server.
+
+  ==============================================================================================================*/
+class  Whois		extends		RfcProtocol
+			implements	\ArrayAccess, \Countable, \IteratorAggregate
+   {
+	// Whois server default port
+	const		WHOIS_PORT			=  43 ;
+	
+	// Queried domain, if any
+	public		$Domain ; 
+	
+	// Queried server
+	protected	$Server ;
+	// Queried server port
+	protected	$Port ;
+	// String returned when the queried domain does not have a match
+	protected	$NoMatchString ;
+	// String returned by the whois server when the queried domain is located on another host (in the whois attributes part)
+	protected	$FallbackServerString ;
+	// Whois information. Several items may be present if fallback servers are specified.
+	protected	$WhoisInformation		=  [] ;
+	
+
+	/*==============================================================================================================
+	
+	    Constructor -
+	        Builds a Whois object. No query is made at that time, use the Query() method for that.
+	
+	  ==============================================================================================================*/
+	public function  __construct ( $server = null, $port = self::WHOIS_PORT, $nomatch_string = "No match", $fallback_server_string = "Whois server" )
+	   {
+		parent::__construct ( "whois" ) ;
+		
+		$this -> Server			=  $server ;
+		$this -> Port			=  $port ;
+		$this -> NoMatchString		=  $nomatch_string ;
+		$this -> FallbackServerString	=  $fallback_server_string ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	        Property getters.
+	
+	  ==============================================================================================================*/
+
+	// GetPort -
+	//	Gets the queried server port number.
+	public function  GetPort ( )
+	   { return ( $this -> Port ) ; }
+	
+	
+	// GetServer -
+	//	Returns the queried whois server name.
+	public function  GetServer ( )
+	   { return ( $this -> Server ) ; }
+	
+	
+	// Matches -
+	//	Checks the Matches() property of the very last queried domain.
+	public function  Matches ( )
+	   {
+		if  ( count ( $this -> WhoisInformation ) )
+			return ( $this -> WhoisInformation [ count ( $this -> WhoisInformation ) - 1 ] -> Matches ( ) ) ;
+		else
+			return ( false ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        Query - Queries a whois server against a domain.
+	
+	    PROTOTYPE
+	        $whois -> Query ( $domain ) ;
+	
+	    DESCRIPTION
+	        Queries a whois server against a domain.
+		Whois servers are recursively followed until no fallback server is specified.
+	
+	    PARAMETERS
+	        $domain (string) -
+	                Domain to be queried.
+	
+	  ==============================================================================================================*/
+	public function  Query ( $domain )
+	   {
+		$this -> InternalQuery ( $domain, $this -> Server ) ;
+	    }
+	
+	
+	protected function  InternalQuery ( $domain, $server )
+	   {
+		// Save the last queried domain
+		$this -> Domain		=  $domain ;
+		
+		// Perform the query
+		if  ( $this -> Server )
+		   {
+			$this -> Open ( $server, $this -> Port ) ;
+			$this -> Write ( $domain . self::RFC_EOL ) ;
+			$data	=  $this -> Read ( ) ;
+			$this -> Close ( ) ;
+		    }		
+		else
+		   {
+			$output		=  [] ;
+			exec ( "whois $domain", $output ) ;
+			$data		=  implode ( "\n", $output ) ;
+		    }
+
+		// Parse results
+		$line_count			=  substr_count ( $data, "\n" ) ;
+		$line_index			=  0 ;
+		$info				=  new WhoisDescription ( $server, $domain, $data, $this -> NoMatchString, $this -> FallbackServerString,
+								$line_index ) ;
+		$this -> WhoisInformation []	=  $info ;
+
+		// Handle the case where the whois information contains several entries for the same ip or domain name
+		while  ( $line_index  <  $line_count )
+		   {
+			$info				=  new WhoisDescription ( $server, $domain, $data, $this -> NoMatchString, $this -> FallbackServerString,
+									$line_index ) ;
+
+			if  ( count ( $info -> GetAttributes ( ) ) )
+				$this -> WhoisInformation []	=  $info ;
+		    }
+		
+		// Get fallback servers
+		$fallback			=  $info -> GetFallbackServer ( ) ;
+
+		// If fallback server found...
+		if  ( $fallback )
+		   {
+			// Check if not already specified (this situation should never arise)
+			$found	=  false ;
+			$count	=  count ( $this -> WhoisInformation ) - 1 ;
+			
+			for  ( $i = 0 ; $i  <  $count ; $i ++ )
+			   {
+				$previous_info	=  $this -> WhoisInformation [$i] ;
+				
+				if  ( isset ( $previous_info [ 'server' ] )  &&  ! strcasecmp ( $previous_info [ 'server' ], $fallback ) )
+				   {
+					$found	=  true ;
+					break ;
+				    }
+			    }
+			
+			if  ( ! $found )
+				$this -> InternalQuery ( $domain, $fallback ) ;
+		    }
+		
+		return ( $data ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	        Interfaces implementations.
+	
+	  ==============================================================================================================*/
+	public function  Count ( )
+	   { return ( count ( $this -> WhoisInformation ) ) ; } 
+	
+	
+	public function  getIterator ( )
+	   { return ( new \ArrayIterator ( $this -> WhoisInformation ) ) ; }
+	
+	
+	public function  offsetExists ( $offset )
+	   { return ( isset ( $this -> WhoisInformation [ $offset ] ) ) ; }
+	
+	
+ 	public function  offsetGet ( $offset )
+	   { return ( $this -> WhoisInformation [ $offset ] ) ; }
+	
+	
+	public function  offsetSet ( $offset, $value ) 
+	   { error ( new \Thrak\System\UnsupportedOperationException ( ) ) ; }
+	
+	
+	public function  offsetUnset ( $offset )
+	   { error ( new \Thrak\System\UnsupportedOperationException ( ) ) ; }
+	
+   }
+
+
+/*==============================================================================================================
+
+    WhoisDatabase class -
+        A class to query against Whois servers.
+
+  ==============================================================================================================*/
+class  WhoisDatabase		extends		Object 
+				implements	\ArrayAccess, \Countable, \IteratorAggregate
+   {
+	// Default database file to be loaded - this file must exist
+	const		DEFAULT_DATABASE	=  "thrak://data/Whois.xml" ;
+	
+	// Whois server list
+	protected	$Servers		=  [] ;
+		
+	
+	/*==============================================================================================================
+	
+	    Constructor -
+	        Creates a WhoisDatabase object and loads default database entries.
+	
+	  ==============================================================================================================*/
+	public function  __construct ( )
+	   {
+		parent::__construct ( ) ;
+		$this -> AddDatabase ( self::DEFAULT_DATABASE ) ;
+	    }
+	
+
+	/*==============================================================================================================
+	
+	    NAME
+	        AddDatabase - Adds a server database to the list of whois servers.
+	
+	    PROTOTYPE
+	        $whoisdb -> AddDatabase ( $file ) ;
+	
+	    DESCRIPTION
+	        Adds the servers listed in the specified file to the list of whois servers to be queried.
+	
+	    PARAMETERS
+	        $file (string) -
+	                Xml database to be loaded. The WhoisDescription class for more information on the format of this
+			file.
+	
+	  ==============================================================================================================*/
+	public function  AddDatabase ( $file )
+	   {
+		if  ( ! file_exists ( $file ) )
+			error ( new \Thrak\System\FileNotFoundException ( "Could not find default whois database file \"$file\"" ) ) ;
+		
+		$xml		=  SimpleXml::LoadFromFileAsArray ( $file ) ;
+		$servers	=  $xml [ 'children' ] ;
+		
+		// Loop through server entry definitions
+		foreach  ( $servers  as  $server )
+		   {
+			// Exclude any non <server> tag
+			if  ( strcasecmp ( $server [ 'tag' ], 'server' ) )
+				continue ;
+			
+			// Default values
+			$data	=  
+			   [ 
+				'description'		=> 'Whois server', 
+				'port'			=>  Whois::WHOIS_PORT,
+				'error-match'		=>  'No match',
+				'fallback-server-entry'	=>  'Whois server'
+			    ] ;
+			
+			// Loop through server entry attributes
+			foreach  ( $server [ 'attributes' ]  as  $attribute )
+			   {
+				switch  ( strtolower ( $attribute [ 'name' ] ) )
+				   {
+					// Whois server url
+					case	'url' :
+						$data [ 'url' ]				=  strtolower ( $attribute [ 'value' ] ) ;
+						break ;
+
+					// Associated top-level domain
+					case	'tld' :
+						$data [ 'tld' ]				=  strtolower ( $attribute [ 'value' ] ) ;
+						break ;
+						
+					// Whois server port
+					case	'port' :
+						$data [ 'port' ]			=  $attribute [ 'value' ] ;
+						break ;
+						
+					// Whois server description
+					case	'description' :
+						$data [ 'description' ]			=  $attribute [ 'value' ] ;
+						break ;
+						
+					// String returned by the whois server when the queried domain has not been found
+					case	'error-match' :
+						$data [ 'error-match' ]			=  $attribute [ 'value' ] ;
+						break ;
+						
+					// Attribute string displayed when the queried domain is not hosted on the queried server
+					case    'fallback-server-entry' :
+						$data [ 'fallback-server-entry' ]	=  $attribute [ 'value' ] ;
+						break ;
+						
+					default :
+						error ( new \Thrak\System\InvalidArgumentException ( "Invalid attribute {$attribute [ 'name' ]}" ) ) ;
+				    }
+			    }
+			
+			// Check mandatory values
+			if  ( ! isset ( $data [ 'url' ] ) )
+				error ( new \Thrak\System\InvalidArgumentException ( "Missing required attribute \"url\"." ) ) ;
+			
+			if  ( ! isset ( $data [ 'tld' ] ) )
+				error ( new \Thrak\System\InvalidArgumentException ( "Missing required attribute \"tld\"." ) ) ;
+
+			// Check that the top-level domain specified in the database does not already exist
+			if  ( isset ( $this -> Servers [ $data [ 'tld' ] ] ) )
+				warning ( "Top level domain already exists ({$data [ 'tld' ]})." ) ;
+			else
+				$this -> Servers [ $data [ 'tld' ] ]	=  $data ;
+		    }
+		
+		// Sort servers by name
+		ksort ( $this -> Servers ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        GetTlds - Gets top-level domains 
+	
+	    PROTOTYPE
+	        $tlds = $whoisdb -> GetTlds ( $server ) ;
+	
+	    DESCRIPTION
+	        Gets the top-level domains served by the specified whois server.
+	
+	    PARAMETERS
+	        $server (string) -
+	                Name of the whois server whose served top-level domains are to be retrieved.
+	
+	    RETURN VALUE
+	        An array containing the top-level domains server by the specified whois server.
+		If no domains have been found, the returned value will be an empty array.
+	
+	  ==============================================================================================================*/
+	public function  GetTlds ( $server )
+	   {
+		$lcserver	=  strtolower ( $server ) ;
+		$result		=  [] ;
+		
+		foreach  ( $this -> Servers  as  $entry )
+		   {
+			if  ( ! strcmp ( $entry [ 'url' ], $lcserver ) )
+				$result []	=  $entry [ 'tld' ] ;
+		    }
+		
+		return ( $result ) ;
+	    }
+	
+
+	/*==============================================================================================================
+	
+	    NAME
+	        IsValid - Checks if a domain is valid.
+	
+	    PROTOTYPE
+	        $status		=  $whoisdb -> IsValid ( $domain ) ;
+	
+	    DESCRIPTION
+	        Checks if the specified domain has a top-level domain entry in the whois database currently loaded.
+	
+	    PARAMETERS
+	        $domain (string) -
+	                Domain to be queried.
+	
+	    RETURN VALUE
+	        True if the specified domain can be queried through the currently loaded list of whois servers, false
+		otherwise.
+	
+	  ==============================================================================================================*/
+	public function  IsValid ( $domain )
+	   {
+		$domain	=  $this -> NormalizeDomain ( $domain ) ;
+		$index	=  $this -> GetDomainIndex ( $domain ) ;
+		
+		return ( $index  !==  false ) ;
+	    }
+	
+
+	/*==============================================================================================================
+	
+	    NAME
+	        Query - Queries a whois server against a domain.
+	
+	    PROTOTYPE
+	        $whois_object	=  $whoisdb -> Query ( $domain ) ;
+	
+	    DESCRIPTION
+	        Queries a whois server against a domain. 
+		Whois servers are checked in the database until a corresponding match on the top-level domain has been
+		found.
+	
+	    PARAMETERS
+	        $domain (string) -
+	                Domain to be checked.
+	
+	    RETURN VALUE
+	        A Whois object containing the query results.
+	
+	  ==============================================================================================================*/
+	public function  Query ( $domain )
+	   {
+		if  ( String::IsIpAddress ( $domain ) )
+		   {
+			$old_domain	=  $domain ;
+			$new_domain	=  gethostbyaddr ( $old_domain ) ;
+
+			if  ( $new_domain  ===  false )
+				error ( new \Thrak\System\NetworkException ( "No whois server found for domain \"$domain\"." ) ) ;
+
+			$whois	=  new  Whois ( ) ;
+		    }
+		else
+		   {
+			$domain	=  $this -> NormalizeDomain ( $domain ) ;
+			$index	=  $this -> GetDomainIndex ( $domain ) ;
+			
+			if  ( $index  ===  false )
+				error ( new \Thrak\System\NetworkException ( "No whois server found for domain \"$domain\"." ) ) ;
+
+			$whois	=  new Whois 
+			   ( 
+				$this -> Servers [ $index ] [ 'url' ],
+				$this -> Servers [ $index ] [ 'port' ], 
+				$this -> Servers [ $index ] [ 'error-match' ],
+				$this -> Servers [ $index ] [ 'fallback-server-entry' ]
+			    ) ;
+		    }
+	
+
+		$whois -> Query ( $domain ) ;
+		
+		return ( $whois ) ;
+	    }
+	
+
+	/*==============================================================================================================
+	
+	    GetDomainIndex -
+	        Retrieves the index of the top-level domain part of the specified domain.
+	
+	  ==============================================================================================================*/
+	protected function  GetDomainIndex ( $domain )
+	   {
+		$domain_parts	=  explode ( '.', $domain ) ;
+		$part_count	=  count ( $domain_parts ) ;
+		
+		if  ( $part_count  <  2 )
+			return ( false ) ;
+		
+		for  ( $i = $part_count - 1 ; $i  >=  0 ; $i -- )
+		   {
+			$tld	=  array_slice ( $domain_parts, $i ) ;
+			$stld	=  implode ( '.', $tld ) ;
+			
+			if  ( isset ( $this -> Servers [ $stld ] ) )
+				return ( $stld ) ;
+		    }
+		
+		return ( false ) ;
+	    }
+
+	
+	/*==============================================================================================================
+	
+	    NormalizeDomain -
+	        Normalizes a domain name (ie, removes the www part).
+	
+	  ==============================================================================================================*/
+	protected function  NormalizeDomain ( $domain ) 
+	   {
+		$domain		=  preg_replace ( '/^www\./', '', $domain ) ;
+		
+		return ( $domain ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	        Interfaces implementations.
+	
+	  ==============================================================================================================*/
+	public function  Count ( )
+	   { return ( count ( $this -> Servers ) ) ; }
+	
+	
+	public function  offsetExists ( $offset )
+	   { return  ( isset ( $this -> Servers [ strtolower ( $offset ) ] ) ) ; }
+	
+	
+	public function  offsetGet ( $offset )
+	   { return ( $this -> Servers [ strtolower ( $offset ) ] ) ; }
+	
+	
+	public function  offsetSet ( $offset, $value ) 
+	   { error ( new \Thrak\System\UnsupportedOperationException ( ) ) ; }
+	
+	
+	public function  offsetUnset ( $offset )
+	   { error ( new \Thrak\System\UnsupportedOperationException ( ) ) ; }
+	
+	
+	public function  getIterator ( )
+	   { return ( new \ArrayIterator ( $this -> Servers ) ) ; }
+    }

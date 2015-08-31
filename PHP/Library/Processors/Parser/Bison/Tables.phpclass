@@ -1,0 +1,328 @@
+<?php
+/***************************************************************************************************
+
+    NAME
+	Tables.phpclass
+
+    DESCRIPTION
+	Handles Bison parser tables.
+
+    AUTHOR
+	Christian Vigh, 05/2013.
+
+    HISTORY
+    [Version : 1.0]		[Date : 2013/05/14]		[Author : CV]
+	Initial release.
+
+ ***************************************************************************************************/
+namespace 	Thrak\Processors\Parser\Bison ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces & objects
+use 		Thrak\System\Object 			as  Object ;
+use 		Thrak\System\Exception 			as  Exception ;
+use 		Thrak\Types\String			as  String ;
+use		Thrak\IO\Path				as  Path ;
+
+
+
+
+/*==================================================================================================
+
+    Tables class -
+	Handles Bison parser tables.
+
+  ==================================================================================================*/
+class  Tables	extends  Object
+   {
+   	// XmlDocument containing the Xml Bison parsing tables
+	public  $XmlDocument		=  null ;
+
+        /* -----------------------------
+                constructor
+        -----------------------------*/
+
+        function __construct($xmlString)
+        {
+                $this->xmlDocument=new SimpleXMLElement($xmlString);
+        }
+
+        /* -----------------------------
+                error handling
+        -----------------------------*/
+
+        function error($msg)
+        {
+                error ( new \Thrak\System\Exception($msg) );
+        }
+
+        function tokenError($msg,$token)
+        {
+                $this->error($msg.": '".$token->symbol."' with value '". $token->value ."' in line ".
+                                $token->lineNumber.' column '.$token->columnNumber.'.');
+        }
+
+        /* -----------------------------
+                xpath
+        -----------------------------*/
+
+        function xpath($query)
+        {
+                return $this->xmlDocument->xpath($query);
+        }
+
+        function isEmpty($array)
+        {
+                if(count($array)==0)
+                        return true;
+                else return false;
+        }
+
+        /* -----------------------------
+                finders
+        -----------------------------*/
+
+        function findReductions($stateNumber)
+        {
+                $query="automaton/state[@number='$stateNumber']/actions/reductions/reduction";
+                return $this->xpath($query);
+        }
+
+        function findTransitions($stateNumber,$type)
+        {
+                $query="automaton/state[@number='$stateNumber']/actions/transitions/transition[@type='$type']";
+                return $this->xpath($query);
+        }
+
+        function findLookaheads($stateNumber)
+        {
+                $query="automaton/state[@number='$stateNumber']/itemset/item/lookaheads/symbol";
+                return $this->xpath($query);
+        }
+
+        function findSolvedConflicts($stateNumber)
+        {
+                $query="automaton/state[@number='$stateNumber']/solved-conflicts/resolution";
+                return $this->xpath($query);
+        }
+
+        function defaultRuleNumberForStateNumber($stateNumber)
+        {
+                $query="automaton/state[@number='$stateNumber']/actions/reductions/reduction";
+                $result=$this->xpath($query);
+                $result=$result[0]; //take first rule
+                return intval($result['rule']);
+        }
+
+        function findRule($ruleNumber)
+        {
+                $query="grammar/rules/rule[@number='$ruleNumber']";
+                $result=$this->xpath($query);
+                $result=$result[0]; //take first rule
+                return $result;
+        }
+
+        function findRuleNumbers()
+        {
+                $query="grammar/rules/rule/@number";
+                $result=$this->xpath($query);
+                return $result;
+        }
+
+        function findRuleNumbersForRHSSymbol($symbol)
+        {
+                $ruleNumbers=array();
+                $allRuleNumbers=$this->findRuleNumbers();
+                foreach($allRuleNumbers as $ruleNumber)
+                {
+                        $ruleNumber=$ruleNumber['number'];
+                        if($this->hasRHSSymbol($ruleNumber,$symbol))
+                        {
+                                $ruleNumbers[]=$ruleNumber;
+                        }
+                }
+                return $ruleNumbers;
+        }
+
+        function findFirstRuleNumberForRHSSymbol($symbol)
+        {
+                $ruleNumbers=$this->findRuleNumbersForRHSSymbol($symbol);
+                if(count($ruleNumbers)>0) return intval($ruleNumbers[0]);
+                else return null; //not found
+        }
+
+        function findRHSSymbolsForRuleNumber($ruleNumber)
+        {
+                $query="grammar/rules/rule[@number=$ruleNumber]/rhs/symbol";
+                $result=$this->xpath($query);
+                return $result;
+        }
+
+        function findLHSForRuleNumber($ruleNumber)
+        {
+                $query="grammar/rules/rule[@number=$ruleNumber]/lhs";
+                $result=$this->xpath($query);
+                return $result[0];
+        }
+
+        function findFirstRuleNumberForRHSSymbolAndNumberOfTerms($symbol,$numberOfTerms)
+        {
+                $ruleNumbers=$this->findRuleNumbersForRHSSymbol($symbol);
+                foreach($ruleNumbers as $ruleNumber)
+                {
+                        $ruleNumber=$ruleNumber[0];
+                        $terms=$this->findRHSSymbolsForRuleNumber($ruleNumber);
+                        $count=count($terms);
+                        if($count==$numberOfTerms) return intval($ruleNumber);
+                }
+                return null; //not found
+        }
+
+        function findFirstRuleNumberForLHSANdRHSSymbols($lhsSymbol,$rhsSymbol)
+        {
+                $ruleNumbers=$this->findRuleNumbersForRHSSymbol($rhsSymbol);
+                foreach($ruleNumbers as $ruleNumber)
+                {
+                        $ruleNumber=$ruleNumber[0];
+                        $lhs=$this->findLHSForRuleNumber($ruleNumber);
+                        if($lhs==$lhsSymbol) return intval($ruleNumber);
+                }
+                return null; //not found
+        }
+
+        function findFirstRuleNumberForLHSSymbol($symbol)
+        {
+                $ruleNumbers=$this->findRuleNumbers();
+                foreach($ruleNumbers as $ruleNumber)
+                {
+                        $ruleNumber=$ruleNumber[0];
+                        $lhs=$this->findLHSForRuleNumber($ruleNumber);
+                        if($lhs==$symbol) return intval($ruleNumber);
+                }
+                return null; //not found
+        }
+
+        /* -----------------------------
+                check rule situation
+        -----------------------------*/
+        function hasRHSSymbol($ruleNumber,$symbol)
+        {
+                $query="grammar/rules/rule[@number='$ruleNumber']/rhs[symbol='$symbol']";
+                $result=$this->xpath($query);
+                if(count($result)>0) return true;
+                else return false;
+        }
+        /* -----------------------------
+                find for token
+        -----------------------------*/
+
+        function findNextStateNumberForToken($stateNumber,$token)
+        {
+                $transitions=$this->findTransitions($stateNumber,'shift');
+                foreach($transitions as $transition)
+                {
+                        if($transition['symbol']==$token->symbol)
+                        {
+                                return intval($transition['state']);
+                        }
+                }
+                $this->tokenError("unexpected token",$token);
+        }
+
+        function findNextStateNumberForLHS($stateNumber,$symbol)
+        {
+                $transitions=$this->findTransitions($stateNumber,'goto');
+                foreach($transitions as $transition)
+                {
+                        if($transition['symbol']==$symbol)
+                        {
+                                return intval($transition['state']);
+                        }
+                }
+                $this->error("unexpected LHS '$symbol'.");
+        }
+
+        function findSolvedConflictOperation($stateNumber,$token)
+        {
+                $solvedConflicts=$this->findSolvedConflicts($stateNumber);
+                foreach($solvedConflicts as $solvedConflict)
+                {
+                        if($solvedConflict['symbol']==$token->symbol)
+                        {
+                                return $solvedConflict['type'];
+                        }
+                }
+                $this->error("Cannot find solved conflict for '$symbol' in state $stateNumber.");
+        }
+
+        /* -----------------------------
+                check state situation
+        -----------------------------*/
+
+        function hasReductions($stateNumber)
+        {
+                return !$this->isEmpty($this->findReductions($stateNumber));
+        }
+
+
+        function hasLookaheads($stateNumber)
+        {
+                return !$this->isEmpty($this->findLookaheads($stateNumber));
+        }
+
+
+        function hasSolvedConflicts($stateNumber)
+        {
+                return !$this->isEmpty($this->findSolvedConflicts($stateNumber));
+        }
+
+        /* -----------------------------
+                check state/token situation
+        -----------------------------*/
+
+        function hasSolvedConflict($stateNumber,$token)
+        {
+                $solvedConflicts=$this->findSolvedConflicts($stateNumber);
+                foreach($solvedConflicts as $solvedConflict)
+                {
+                        if((string)$solvedConflict['symbol']==$token->symbol) return true;
+                }
+                return false;
+        }
+
+        function hasLookahead($stateNumber,$token)
+        {
+                $lookaheads=$this->findLookaheads($stateNumber);
+                foreach($lookaheads as $lookahead)
+                {
+                        if((string)$lookahead == $token->symbol) return true;
+                }
+                return false;
+        }
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Constructor - Creates a grammar state.
+
+	    PROTOTYPE
+	    	$state	=  new StackState ( $state_number, $token ) ;
+
+	    DESCRIPTION
+	    	Creates a stack state.
+
+	    PARAMETERS
+		$state_number (integer)  -
+			Bison state number.
+
+		$token (lexer token) -
+			Lexer token, as returned by the Lexer class.
+
+	 --------------------------------------------------------------------------------------------*/
+  	function __construct  ( $state_number, $token )
+           {
+                $this -> StateNumber	=  $state_number;
+                $this -> Token		=  $token ;
+            }
+   }

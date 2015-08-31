@@ -1,0 +1,808 @@
+<?php
+/***************************************************************************************************
+
+    NAME
+	Autoload.phpclass
+
+    DESCRIPTION
+	Class autoloader.
+
+    AUTHOR
+     	Christian Vigh, 03/2013.
+
+    HISTORY
+    [Version : 1.0]	[Date : 2013/03/30]	[Author : CV]
+     	Initial version.
+
+    [Version : 1.0.1]	[Date : 2014/11/09]	[Author : CV]
+     	. Added the possibility a namespace with a directory, using the following notation in the
+	  autoload.php script :
+  
+ 		'namespace\*'	=>  'path/to/file/*'
+
+    [Version : 1.1]	[Date : 2014/11/16]	[Author : CV]
+	. Rewrote completely this crap.
+
+    [Version : 1.1.1]	[Date : 2015/03/08]	[Author : CV]
+ 	. Fixed a bug in GetCachedClassPath() which caused cached files to be created with the name
+ 	  of the first class they contained that was referenced, instead of their original filename.
+	. Fixed a bug in the ReportStatistics() method which displayed a regenerated cached file count
+	  of zero when detailed report statistics were selected.
+
+    [Version : 1.1.2]	[Date : 2015/04/12]	[Author : CV]
+ 	. The AUTOLOAD_DEBUG constant, when defined, will cause the AutoloadCallback() method to
+ 	  display debug information using __autoload_debug().
+ 	. Fixed a bug in AutoloadCallback() that caused cached files to be systematically
+ 	  regenerated.
+	. Fixed a bug in the class constructor which incorrectly handled autoload reporting requests.
+	  The rule for reporting statistics is now base on, by descending order of priority :
+	  . The contents of the AUTOLOAD_REPORTING constant, if defined
+	  . The contents of the AUTOLOAD_REPORTING environment variable, if defined
+	  . The contents of the Autoload/Reporting-Level configuration parameter
+	  The contents of the constant/environment variable/configuration parameter can be :
+	  . A boolean :
+ 		. When true, reporting level is set to REPORTING_LEVEL_DETAILED
+ 		. When false, no reporting occurs.
+ 	  . A numeric value :
+ 		. When 0, no reporting occurs
+ 		. When 1, reporting level is set to REPORTING_LEVEL_SUMMARY
+ 		. When >1, reporting level is set to REPORTING_LEVEL_DETAILED.
+
+    [Version : 1.1.3]	[Date : 2015/04/12]	[Author : CV]
+	. Changed the AutoloadCallback() method so that no error message is displayed ("Failed to 
+	  load class xxx") when error reporting is set to zero, either by a configuration directive
+	  or by prepending an arobas to a function call.
+
+    [Version : 1.1.4]	[Date : 2015/08/07]	[Author : CV]
+	. Changed the AutoloadCallback() method so that an error message is displayed ("File xxx not
+	  found") when the file meant to declare the searched class does not exist.
+ 
+ ***************************************************************************************************/
+namespace  	Thrak\System ;
+
+defined ( '__THRAK_SETUP__' ) or  defined ( '__THRAK_CUSTOM_AUTOLOADER__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use 	Thrak\IO\Path 			as  Path ;
+use	Thrak\System\Object		as  Object ;
+
+
+class	Autoloader
+   {
+	// Due to its early instanciation in the "boot" process, Autoloader cannot inherit from Object.
+	// This static variable is here to make the object gardenkeeper happy
+	public static	$IsObject			=  false ;
+	
+	// Available compression methods
+	const		COMPRESSION_GZIP_FLAG		=  0x8000 ;		// A flag indicating that the compression method uses gzip
+	const		COMPRESSION_NONE		=  0x0000 ;
+	const		COMPRESSION_STRIP		=  0x0001 ;
+	const		COMPRESSION_GZIP		=  0x8002 ;
+	const		COMPRESSION_GZIP_STRIP		=  0x8003 ;
+	const		COMPRESSION_CSTRIP		=  0x0004 ;		// My custom strip function
+	const		COMPRESSION_GZIP_CSTRIP		=  0x8000 ;
+	
+	// Reporting levels
+	const		REPORTING_LEVEL_NONE		=  0 ;
+	const		REPORTING_LEVEL_SUMMARY		=  1 ;
+	const		REPORTING_LEVEL_DETAILED	=  2 ;
+	
+	// Configuration parameters
+	public		$UseCache			=  false ;				// Use cache ?
+	public		$CompressionMethod		=  self::COMPRESSION_NONE ;		// Cache compression method
+	public		$CacheDirectory			=  null ;				// Cache directory
+	public		$Reporting			=  false ;				// True to show post-run reporting
+	public		$ReportingLevel			=  self::REPORTING_LEVEL_DETAILED ;	// Reporting level
+	public		$Debug				=  false ;				// Autoloader debug
+	public		$ClassSuffixes			=  [ 'phpclass' ] ;			// Searched class file suffixes, for wildcarded classes
+	
+	// List of autoloadable classes (defined in the autoload.php file). Entries are of the form :
+	//	'fully/qualified/class'		=>  'path/to/class.php'
+	protected	$AutoloadClasses		=  [] ;
+	protected	$AutoloadNamespaces		=  [] ;
+	
+	// Autoload statistics
+	protected	$Statistics			=  
+	   [ 
+		'autoload'	=>  
+		   [
+			'original-size'		=>  0,
+			'compressed-size'	=>  0,
+			'compression-time'	=>  0,
+			'load-time'		=>  0,
+			'elapsed'		=>  0
+		    ], 
+		'classes' => [] 
+	   ] ;
+	
+	// Compression and load functions
+	protected	$CompressionFunction ;
+	
+	// Prefixes & suffixes for output cached file names
+	protected	$CachedFilePrefix		=  "" ;
+	protected	$CachedFileSuffix		=  "" ;
+	
+	
+	/*==============================================================================================================
+	
+	    Constructor -
+	        Instanciates an Autoloader object using the specified configuration object parameters.
+	
+	  ==============================================================================================================*/
+
+	public function  __construct ( $configuration )
+	   {
+		$this_class	=  get_called_class ( ) ;
+		
+		// 'Autoload/Cache' parameter -
+		//	Enables/disable the cache.
+		$value	=  $configuration -> Get ( 'Autoload/Cache' ) ;
+		
+		if  ( $value ) 
+			$this -> UseCache	=  true ;
+		
+		// 'Autoload/Suffixes' parameter -
+		//	List of file suffixes for PHP class files.
+		$value	=  $configuration -> Get ( 'Autoload/Suffixes' ) ;
+		
+		if  ( is_array ( $value ) )
+			$this -> ClassSuffixes	=  ( $value [0]  ==  '.' ) ?  substr ( $value, 1 ) : $value ;
+		
+		// 'Autoload/Cache-directory' parameter -
+		//	The path where to store cached files.
+		//	The directory tree will be created as needed.
+		$value	=  $configuration -> Get ( 'Autoload/cache-directory' ) ;
+		
+		if  ( $value )
+		   {
+			$value		=  str_replace ( [ "\\", '//' ], '/', $value ) ;
+			$parts		=  explode ( '/', $value ) ;
+			
+			if  ( count ( $parts ) )
+			   {
+				$current_path	=  "" ;
+				
+				foreach  ( $parts  as  $part )
+				   {
+					if  ( $part  &&  strpos ( $part, ':' )  ===  false )
+					   {
+						if  ( ! file_exists ( "$current_path$part" ) )
+							mkdir  ( "$current_path$part", 0660 ) ;
+					    }
+					
+					$current_path	.=  "$part/" ;
+				    }
+			    }
+			
+			$this -> CacheDirectory		=  $value ;
+		    }
+		
+		// 'Autoload/Cache-compression' parameter - 
+		//	Specifies the compression method to be used for caching.
+		$value		=  $configuration -> Get ( "Autoload/Cache-compression" ) ;
+		
+		switch  ( strtolower ( $value ) )
+		   {
+			case	'strip' :
+				$this -> CompressionMethod	=  self::COMPRESSION_STRIP ;
+				$this -> CompressionFunction	=  [ $this_class, '__compression_strip' ] ;
+				$this -> CachedFilePrefix	=  "strip." ;
+				break ;
+				
+			case	'cstrip' :
+				$this -> CompressionMethod	=  self::COMPRESSION_CSTRIP ;
+				$this -> CompressionFunction	=  [ $this_class, '__compression_cstrip' ] ;
+				$this -> CachedFilePrefix	=  "cstrip." ;
+				break ;
+				
+			case	'gzip' :
+			case    'gz' :
+				$this -> CompressionMethod	=  self::COMPRESSION_GZIP ;
+				$this -> CompressionFunction	=  [ $this_class, '__compression_gzip' ] ;
+				$this -> CachedFilePrefix	=  "gzip." ;
+				break ;
+			
+			case	'gzip/strip' :
+			case    'strip/gzip' :
+				$this -> CompressionMethod	=  self::COMPRESSION_GZIP_STRIP ;
+				$this -> CompressionFunction	=  [ $this_class, '__compression_gzip_strip' ] ;
+				$this -> CachedFilePrefix	=  "gzstrip." ;
+				break ;
+			
+			case	'gzip/cstrip' :
+			case    'cstrip/gzip' :
+				$this -> CompressionMethod	=  self::COMPRESSION_GZIP_CSTRIP ;
+				$this -> CompressionFunction	=  [ $this_class, '__compression_gzip_cstrip' ] ;
+				$this -> CachedFilePrefix	=  "gzcstrip." ;
+				break ;
+				
+			
+			case	'gzip/cstrip2' :
+			case    'cstrip2/gzip' :
+				$this -> CompressionMethod	=  self::COMPRESSION_GZIP_CSTRIP ;
+				$this -> CompressionFunction	=  [ $this_class, '__compression_gzip_cstrip2' ] ;
+				$this -> CachedFilePrefix	=  "gzcstrip2." ;
+				break ;
+				
+			case	'none' :
+			default :
+				$this -> CompressionMethod	=  self::COMPRESSION_NONE ;
+				$this -> CompressionFunction	=  [  $this_class, '__compression_none' ] ;
+				$this -> CachedFilePrefix	=  "original." ;
+				break ;
+		    }
+		
+		// 'Autoload/reporting-level' parameter -
+		//	Specifies the level of detail for the post-run reporting.
+		$value	=  $configuration -> Get ( 'Autoload/Reporting-level' ) ;
+		
+		switch ( strtolower ( $value ) )
+		   {
+			case  'summary'		:  $this -> ReportingLevel = self::REPORTING_LEVEL_SUMMARY  ; break ;
+			case  'detail'		:  $this -> ReportingLevel = self::REPORTING_LEVEL_DETAILED ; break ;
+		    }
+		
+		// 'Autoload/reporting' parameter -
+		//	Either true, false or the name of an environment variable that determines the reporting level.
+		//	It can have the following values :
+		//	. 0   : disable reporting
+		//	. 1   : enable summary reporting.
+		//	. > 1 : enable detailed reporting.
+		// The AUTOLOAD_REPORTING constant or environment variable can be defined to override this setting.
+		$reporting	=  null ;
+		
+		if  ( defined ( 'AUTOLOAD_REPORTING' ) )
+			$reporting	=  AUTOLOAD_REPORTING ;
+		else
+		   {
+			$reporting	=  getenv ( 'AUTOLOAD_REPORTING' ) ;
+			
+			if  ( $reporting  ===  false  ||  $reporting  ===  "" )
+				$reporting	=  $configuration -> Get ( 'Autoload/Reporting', false ) ;
+		    }
+				
+		if  ( is_bool ( $value ) )
+			$this -> Reporting	=  $value ;
+		else if  ( ! strcasecmp ( $value, "true" ) )
+			$this -> Reporting	=  true ;
+		else if  ( strcasecmp ( $value, "false" ) )
+		   {
+			$level			=  ( integer ) $reporting ;
+				
+			switch  ( $level ) 
+			   {
+				case	0 :
+					$this -> Reporting	=  false ;
+					break ;
+						
+				case	1 :
+					$this -> Reporting	=  true ;
+					$this -> ReportingLevel =  self::REPORTING_LEVEL_SUMMARY ;
+					break ;
+					
+				default	:
+					$this -> Reporting	=  true ;
+					$this -> ReportingLevel =  self::REPORTING_LEVEL_DETAILED ;
+					break ;
+			    }
+		    }
+
+		// The AUTOLOADER_DEBUG define can help tracking syntax error or file not found errors during the initial
+		// bootstrap process
+		if  ( defined ( 'AUTOLOAD_DEBUG' ) )
+			$this -> Debug	=  true ;
+		
+		// Install the autoloader callback
+		$this -> RegisterCallback ( ) ;
+		
+		// Install the reporting function (only for CLI mode)
+		if  ( IS_STANDALONE  &&  $this -> Reporting )
+			register_shutdown_function ( [ $this, 'ReportStatistics' ] ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        Load - Loads a file containing class associations.
+	
+	    PROTOTYPE
+	        $status		=  $autoloader -> Load ( $file ) ;
+	
+	    DESCRIPTION
+	        Loads a file containing class associations. The supplied file has the .ini format. Section names can
+		be specified but will be ignored, and each entry has the following format :
+	  
+	 		qualified_class_name	=  path
+	  
+	 	Where :
+	 	- "qualified_class_name" is the fully qualified name of the class, including its absolute namespace
+	 	- "path" is the path to the file containing the class definition.
+	  
+	 	The qualified class name can contain a '*', such as in :
+	  
+	 		\Thrak\Reflection\Annotations\*
+	  
+	 	meaning that all classes in the "\Thrak\Reflection\Annotations" namespace will be found in "path" which,
+	 	in this case, must be a directory.
+	
+	    PARAMETERS
+	        $file (string) -
+	                Path of the .ini file containing the class associations with files or directories.
+	
+	    RETURN VALUE
+	        True if loading succeeded, false otherwise.
+	  
+	    NOTES
+		For performance reasons, no checkings are made at this stage of the autoload process.
+	
+	  ==============================================================================================================*/
+	public function  Load ( $file ) 
+	   {
+		// Preliminary checks
+		if  ( ! file_exists ( $file ) )
+		   {
+			echo ( "***  error  *** Autoloader file $file does not exist." ) ;
+			return ( false ) ;
+		    }
+		
+		$entries	=  parse_ini_file ( $file ) ;
+		
+		if  ( $entries  ===  false )
+			return ( false ) ;
+		
+		// Process entries
+		foreach  ( $entries  as  $class => $path )
+		   {
+			$value	=  str_replace ( "\\", "/", $class ) ;
+			
+			if  ( substr ( $value, -2 )  ==  '/*' )
+				$this -> AutoloadNamespaces [ substr ( $class, 0, strlen ( $class ) - 2 ) ]	=  $path ;
+			else
+				$this -> AutoloadClasses [ $class ]	=  $path ;
+		    }
+		
+		// All done, return
+		return ( true ) ;
+	    }
+
+	
+	/*==============================================================================================================
+	
+	    CallCustomMagicFunctions -
+	        Calls custom magic functions upon class initialization, such as "__static_construct".
+	
+	  ==============================================================================================================*/
+	protected function  CallCustomMagicFunctions ( $class )
+	   {
+		// If the class has a 'static' constructor, call it
+   	   	$callback 	=  array ( $class, '__static_construct' ) ;
+
+		if  ( method_exists ( $callback [0], $callback [1] ) )
+			call_user_func ( $callback ) ;
+	    }
+		
+	
+	/*==============================================================================================================
+	
+	    GetClassPath -
+	        Returns the source class path based on the specified class name, or false if the file does not exist.
+	
+	  ==============================================================================================================*/
+	protected function  GetClassPath ( $class )
+	   {
+		// First, search through specific class -> file associations
+		if  ( isset ( $this -> AutoloadClasses [ $class ] ) ) 
+		   {
+			$path	=  $this -> AutoloadClasses [ $class ] ;
+
+			return  ( $path ) ;
+		    }
+		// Then look in namespace -> directory associations
+		else
+		   {
+			$parts		=  explode ( "\\", $class ) ;
+			$class_name	=  array_pop ( $parts ) ;
+			$class_path	=  implode ( "\\", $parts ) ;
+			
+			if  ( isset ( $this -> AutoloadNamespaces [ $class_path ] ) )
+			   {
+				foreach  ( $this -> ClassSuffixes  as  $suffix )
+				   {
+					$path	=  $this -> LocatePath ( "$class_path\\$class_name.$suffix" ) ;
+					
+					if  ( $path )
+						return ( $path ) ;
+				    }
+			    }
+		    }
+		
+		return ( false ) ;
+	    }
+
+	
+	/*==============================================================================================================
+	
+	    GetCachedClassPath -
+	        Returns the path to the cached version of a class.
+	
+	  ==============================================================================================================*/
+	protected function  GetCachedClassPath ( $uncached_path )
+	   {
+		$path		=  $this -> CacheDirectory . "/" . $this -> CachedFilePrefix . str_replace ( [ "\\", '/' ], ".", $uncached_path ) .
+				   $this -> CachedFileSuffix ;
+		
+		return ( $path ) ;
+	    }
+
+	
+	/*==============================================================================================================
+	
+	    LocatePath -
+	        Locates a path using the php include path.
+	
+	  ==============================================================================================================*/
+	protected function  LocatePath ( $path )
+	   {
+		$directories	=  explode ( PATH_SEPARATOR, get_include_path ( ) ) ;
+		
+		foreach  ( $directories  as  $directory ) 
+		   {
+			$test_path	=  "$directory/$path" ;
+			
+			if  ( file_exists ( $test_path ) )
+				return ( $test_path ) ;
+		    }
+		
+		return ( false ) ;
+	    }
+	
+			
+	/*==============================================================================================================
+	
+	    RegisterCallback -
+	        Registers the autoload callback function, which is called when an unknown class is referenced.
+	
+	  ==============================================================================================================*/
+	protected function  RegisterCallback ( )
+	   {
+		spl_autoload_register ( [ get_called_class ( ), 'AutoloadCallback' ], true, true ) ;
+	    }
+	
+
+	/*==============================================================================================================
+	
+	    ReportStatistics -
+	        Outputs autoload statistics. This function is called at script shutdown, if reporting is enabled.
+	
+	  ==============================================================================================================*/
+	public function  ReportStatistics ( )
+	   {
+		// Create the report 
+		$report		=  new \Thrak\IO\AsciiReport
+		   (
+			[ 'member' => 'class'		, 'title' => 'Class'		, 'align' => 'left'  ],
+			[ 'member' => 'original-size'	, 'title' => 'Initial size'	, 'align' => 'right' ],
+			[ 'member' => 'compressed-size'	, 'title' => 'Compressed size'	, 'align' => 'right' ],
+			[ 'member' => 'size-gain'	, 'title' => 'Size gain'	, 'align' => 'right' ],
+			[ 'member' => 'size-gain-pc'	, 'title' => 'Size gain (%)'	, 'align' => 'right' ],
+			[ 'member' => 'compression-time', 'title' => 'Comp. time'	, 'align' => 'right' ],
+			[ 'member' => 'load-time'	, 'title' => 'Load time'	, 'align' => 'right' ]
+		    ) ;
+		$data			=  [] ;
+		$global			=  $this -> Statistics [ 'autoload' ] ;
+		$regenerated_count	=  0 ;
+
+		// Detail lines
+		if  ( $this -> ReportingLevel  ==  self::REPORTING_LEVEL_DETAILED )
+		   {
+			foreach  ( $this -> Statistics [ 'classes' ]  as  $class => $class_data )
+			   {
+				$bytes_gained		=  $class_data [ 'original-size' ] - $class_data [ 'compressed-size' ] ;
+				$bytes_gained_pc	=  100 - ( ( 100 / $class_data [ 'original-size' ] ) * $class_data [ 'compressed-size' ] ) ;
+				
+				$row	=  
+				   [
+					'class'			=>  $class,
+					'original-size'		=>  number_format ( $class_data [ 'original-size' ], 0, '.', ' ' ),
+					'compressed-size'	=>  number_format ( $class_data [ 'compressed-size' ], 0, '.', ' ' ),
+					'size-gain'		=>  number_format ( $bytes_gained, 0, '.', ' ' ),
+					'size-gain-pc'		=>  number_format ( $bytes_gained_pc, 2, '.', ' ' ) . '%',
+					'compression-time'	=>  ( $class_data [ 'regenerated' ] ) ?
+									number_format ( $class_data [ 'compression-time' ], 2, '.', ' ' ) . ' ms' : '',
+					'load-time'		=>  number_format ( $class_data [ 'load-time' ], 2, '.', ' ' ) . ' ms',
+				    ] ;
+				
+				$data []	=  $row ;
+			    }
+			
+			$data []	=  "!=" ;
+		    }
+		
+		// Count regenerated classes
+		foreach  ( $this -> Statistics [ 'classes' ]  as  $class_data )
+		   {
+			if  ( $class_data [ 'regenerated' ] )
+				$regenerated_count ++ ;
+		    }
+		
+		// Total line
+		$bytes_gained		=  $global [ 'original-size' ] - $global [ 'compressed-size' ] ;
+		$bytes_gained_pc	=  100 - ( ( 100 / $global [ 'original-size' ] ) * $global [ 'compressed-size' ] ) ;
+				
+		$row	=  
+		   [
+			'class'			=>  'Autoload total',
+			'original-size'		=>  number_format ( $global [ 'original-size' ], 0, '.', ' ' ),
+			'compressed-size'	=>  number_format ( $global [ 'compressed-size' ], 0, '.', ' ' ),
+			'size-gain'		=>  number_format ( $bytes_gained, 0, '.', ' ' ),
+			'size-gain-pc'		=>  number_format ( $bytes_gained_pc, 2, '.', ' ' ) . '%',
+			'compression-time'	=>  ( $regenerated_count  > 0 ) ?  number_format ( $global [ 'compression-time' ], 2, '.', ' ' ) . ' ms' : 'N/A',
+			'load-time'		=>  number_format ( $global [ 'load-time' ], 2, '.', ' ' ) . ' ms',
+		    ] ;
+		
+		$data []	=  $row ;
+		$data []	=  "!=" ;
+		
+		// Output the report
+		echo ( "\n\n************************  Autoloading of " . count ( $this -> Statistics [ 'classes' ] ) . " classes ($regenerated_count regenerated) :\n" ) ;
+		echo ( $report -> Generate ( $data ) ) ;
+		echo ( "Total elapsed time : " . number_format ( $global [ 'elapsed' ], 2, '.', ' ' ) . " ms\n" ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    AutoloadCallback -
+	        Called when an unloaded class is referenced.
+	
+	  ==============================================================================================================*/
+	public function  AutoloadCallback ( $class )
+	   {
+		// Reporting
+		if  ( $this -> Reporting )
+		   {
+			$callback_start		=  microtime ( true ) ;
+			$this -> Statistics [ 'classes' ] [ $class ]	=
+			   [
+				'original-size'		=>  0,
+				'compressed-size'	=>  0,
+				'compression-time'	=>  0,
+				'load-time'		=>  0,
+				'regenerated'		=>  false 
+			    ] ;
+		    }
+		
+		// Load the class if it does not exist
+		$class_path	=  '' ;
+
+		if  ( ! class_exists ( $class ) )
+		   {
+			$this -> __autoload_debug ( 'notice', "Try loading class $class..." ) ;
+			
+			// Cache is enabled ; let's see if we have a fresh version in there...
+			if  ( $this -> UseCache )
+			   {
+				// Source file containing the desired class
+				$uncached_path		=  $this -> GetClassPath ( $class ) ;
+				
+				// Source file containing the cached source
+				$cached_path		=  $this -> GetCachedClassPath ( $uncached_path ) ;
+				$cached_path_exists	=  file_exists ( $cached_path ) ;
+				$cached_path_mtime	=  ( $cached_path_exists ) ?  @filemtime ( $cached_path ) : 0 ;
+				
+				// Full path
+				$real_uncached_path	=  $this -> LocatePath ( $uncached_path ) ;
+				
+				// Cached path is incorrect (invalid file name or target file is a directory)
+				if  ( ! $real_uncached_path  ||  ( ! file_exists ( $real_uncached_path )  ||  is_dir ( $real_uncached_path ) ) )
+				   {
+					$this -> __autoload_debug ( 'notice', "\tCached file \"$real_uncached_path\" does not exist." ) ;
+					$cached_path = false ;
+				    }
+				// Either cached file does not exist or it is out of date
+				else if  ( ! $cached_path_exists  || ( $cached_path_mtime  <  @filemtime ( $real_uncached_path ) ) )
+				   {
+					// Debug message construction
+					if  ( $this -> Debug )
+					   {
+						if  ( ! $cached_path_exists )
+							$message	=  "\tCached file \"$cached_path\" does not yet exist" ;
+						else
+							$message	=  "\tCached file \"$cached_path\" exists but is out of date"  ;
+					    }
+					    
+					// Reporting stuff
+					if  ( $this -> Reporting )
+					   {
+						$compression_start	=  ( double ) microtime ( true ) ;
+						$original_size		=  filesize ( $real_uncached_path ) ;
+					    }
+					
+					// Run the compression function
+					$func	=  $this -> CompressionFunction ;
+					$func ( $cached_path, $real_uncached_path ) ;
+					
+					// Reporting stuff
+					if  ( $this -> Reporting )
+					   {
+						$compression_end	=  ( double ) microtime ( true ) ;
+						$compression_elapsed	=  $compression_end - $compression_start ;
+						$compressed_size	=  filesize ( $cached_path ) ;
+						
+						$this -> Statistics [ 'classes' ] [ $class ] [ 'original-size' ]	=  $original_size ;
+						$this -> Statistics [ 'classes' ] [ $class ] [ 'compressed-size' ]	=  $compressed_size ;
+						$this -> Statistics [ 'classes' ] [ $class ] [ 'compression-time' ]	=  $compression_elapsed * 1000 ;
+						$this -> Statistics [ 'classes' ] [ $class ] [ 'regenerated' ]		=  true ;
+					    }
+					
+					// Debug message
+					if  ( $this -> Debug )
+					   {
+						$message	.=  " and was regenerated using the " ;
+						
+						switch  ( $this -> CompressionMethod )
+						   {
+							case	self::COMPRESSION_NONE		:  $message .= "original file contents" ; break ;
+							case	self::COMPRESSION_STRIP		:  $message .= "strip method"		; break ;
+							case	self::COMPRESSION_GZIP		:  $message .= "gzip"			; break ;
+							case	self::COMPRESSION_GZIP_STRIP	:  $message .= "strip/gzip"		; break ;
+							case	self::COMPRESSION_CSTRIP	:  $message .= "cstrip"			; break ;
+							case	self::COMPRESSION_GZIP_CSTRIP	:  $message .= "cstrip/gzip"		; break ;
+							default					:  $message .= "not yet documented" ;
+						    }
+						
+						$message	.=  " method." ;
+						$this -> __autoload_debug ( 'notice', $message ) ;
+					    }
+				    }
+				else
+				   {
+					$this -> __autoload_debug ( 'notice', "\tCached file \"$cached_path\" exists and is up-to-date." ) ;
+					
+					// Reporting stuff
+					$this -> Statistics [ 'classes' ] [ $class ] [ 'original-size' ]	=  filesize ( $real_uncached_path ) ;
+					$this -> Statistics [ 'classes' ] [ $class ] [ 'compressed-size' ]	=  filesize ( $cached_path ) ;
+				    }
+			
+				// Gzipped compression methods require that we use a special file naming scheme
+				if  ( $this -> CompressionMethod  &  self::COMPRESSION_GZIP_FLAG )
+					$cached_path	=  "compress.zlib://$cached_path" ;
+			    }
+			// No cache : simply load the original file
+			else 
+			   {
+				$cached_path	=  $this -> GetClassPath ( $class ) ;
+				$this ->  __autoload_debug ( 'notice', "Loading class $class from file \"$cached_path\"." ) ;
+				
+				// Reporting stuff 
+				if  ( $this -> Reporting )
+					$this -> Statistics [ 'classes' ] [ $class ] [ 'original-size' ]	=  filesize ( $this -> LocatePath ( $cached_path ) ) ;
+			    }
+		
+			// The original file could not exist...
+			if  ( $cached_path )
+			   {
+				if  ( file_exists ( $cached_path ) )
+				   {
+					// Reporting stuff 
+					if  ( $this -> Reporting )
+						$load_start	=  ( double ) microtime ( true ) ;
+			
+					// Load file
+					require_once ( $cached_path ) ;
+		
+					// Call custom "magic" functions
+					$this -> CallCustomMagicFunctions ( $class ) ;
+			
+					// Reporting stuff
+					if  ( $this -> Reporting )
+					   {
+						$load_end	=  ( double ) microtime ( true ) ;
+						$load_elapsed	=  $load_end - $load_start ;
+				
+						$this -> Statistics [ 'classes' ] [ $class ] [ 'load-time' ]	=  $load_elapsed * 1000 ;
+				
+						$this -> Statistics [ 'autoload' ] [ 'original-size' ]		+=  $this -> Statistics [ 'classes' ] [ $class ] [ 'original-size' ] ;
+						$this -> Statistics [ 'autoload' ] [ 'compressed-size' ]	+=  $this -> Statistics [ 'classes' ] [ $class ] [ 'compressed-size' ] ; 
+						$this -> Statistics [ 'autoload' ] [ 'compression-time' ]	+=  $this -> Statistics [ 'classes' ] [ $class ] [ 'compression-time' ] ;
+						$this -> Statistics [ 'autoload' ] [ 'load-time' ]		+=  $this -> Statistics [ 'classes' ] [ $class ] [ 'load-time' ] ;
+					    }
+				    }
+				else
+					echo "*** Autoloader error *** File $cached_file does not exist.\n" ;
+			    }
+			else
+			   {
+				$path	=  $this -> GetClassPath ( $class ) ;
+
+				if  ( $path )
+					echo "*** Autoloader error *** File \"$path\" does not exist for class \"$class\".\n" ;
+				else
+					echo "*** Autoloader error *** No source file found for class \"$class\".\n" ;
+
+				$this -> __autoload_debug ( 'notice', "\tClass $class not found." ) ;
+			    }
+			
+			$class_path	=  $cached_path ;
+		    }
+
+		// Complain if class loading failed
+		if  ( ! class_exists ( $class )  &&  !  trait_exists ( $class )  &&  ! interface_exists ( $class )  &&  error_reporting ( ) )
+		   {
+			if  ( $class_path )
+				$extra	=  " from file \"$class_path\"" ;
+			else
+				$extra	=  '' ;
+			
+			echo "*** Autoloader error *** Failed to load class $class$extra.\n" ;
+		    }
+		
+		// Reporting
+		if  ( $this -> Reporting )
+		   {
+			$callback_end	=  ( double ) microtime ( true ) ;
+			
+			$this -> Statistics [ 'autoload' ] [ 'elapsed' ]	+=  ( $callback_end - $callback_start ) * 1000 ;
+		    }
+	    }
+
+	
+	/*==============================================================================================================
+	
+		Internal helpers.
+	
+	  ==============================================================================================================*/
+	
+	// __autoload_debug -
+	//	Displays a debug message if the AUTOLOAD_DEBUG constant is defined.
+	private function  __autoload_debug ( $type, $message )
+	   {
+		if  ( $this -> Debug )
+		   {
+			echo "*** Autoloader $type *** $message\n" ;
+		    }
+	    }
+	
+	
+	/*==============================================================================================================
+	
+		Compression functions.
+	
+	  ==============================================================================================================*/
+	private static function  __compression_none ( $output, $input )
+	   { copy ( $input, $output ) ; }
+	
+	private static function  __compression_strip ( $output, $input )
+	   { file_put_contents ( $output, php_strip_whitespace ( $input ) ) ; }
+	
+	private static function  __compression_cstrip ( $output, $input )
+	   { file_put_contents ( $output, minify_php ( $input ) ) ; }
+	
+	private static function  __compression_gzip ( $output, $input )
+	   {
+		$fp	=  gzopen ( $output, "w" ) ;
+		gzwrite ( $fp, file_get_contents ( $input ) ) ;
+		gzclose ( $fp ) ;
+	    }
+	
+	private static function  __compression_gzip_strip ( $output, $input )
+	   {
+		$fp	=  gzopen ( $output, "w" ) ;
+		gzwrite ( $fp, php_strip_whitespace ( $input ) ) ;
+		gzclose ( $fp ) ;
+	    }
+	
+	private static function  __compression_gzip_cstrip ( $output, $input )
+	   {
+		$fp	=  gzopen ( $output, "w" ) ;
+		gzwrite ( $fp, minify_php ( $input ) ) ;
+		gzclose ( $fp ) ;
+	    }
+	
+	private static function  __compression_gzip_cstrip2 ( $output, $input )
+	   {
+		$fp	=  gzopen ( $output, "w" ) ;
+		gzwrite ( $fp, minify_php ( $input, true ) ) ;
+		gzclose ( $fp ) ;
+	    }
+    }

@@ -1,0 +1,114 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        ReflectionMethodSourcer.php
+
+    DESCRIPTION
+        A sourcer for the ReflectionMethod class.
+
+    AUTHOR
+        Christian Vigh, 11/2014.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2014/11/08]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Reflection ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use  	Thrak\System\Object ;
+
+
+/*==============================================================================================================
+
+    ReflectionMethodSourcer -
+        A sourcer for the ReflectionMethod class.
+
+  ==============================================================================================================*/
+class  ReflectionMethodSourcer 		extends  ReflectionSourcer 
+   {
+	use	ReflectionHelpers ;
+	
+	
+	/*==============================================================================================================
+	
+	    Constructor -
+	        Builds an instance of a ReflectionMethodSourcer object, using the specified ReflectionMethod object.
+	
+	  ==============================================================================================================*/
+	public function  __construct  ( $reflector, $get_source = false )
+	   {
+		parent::__construct ( $reflector, $get_source ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    __get_contents -
+	        Returns the whole method definition, including its source if the $include_source parameter is true.
+	
+	  ==============================================================================================================*/
+	private function  __get_contents ( $include_source )
+	   {
+		// Retrieve function modifiers
+		$method_modifiers	=  $this -> Reflector -> getModifiers ( ) ;
+		$modifiers		=  [] ;
+		
+		if  ( $method_modifiers  &  ReflectionClass::IS_PRIVATE )
+			$modifiers []	=  "private" ;
+		else if  ( $method_modifiers  &  ReflectionClass::IS_PROTECTED )
+			$modifiers []	=  "protected" ;
+		else
+			$modifiers []	=  "public" ;
+		
+		if  ( $method_modifiers  &  ReflectionClass::IS_ABSTRACT )
+			$modifiers []	=  "abstract" ;
+		
+		if  ( $method_modifiers  &  ReflectionClass::IS_STATIC )
+			$modifiers []	=  "static" ;
+		
+		if  ( $method_modifiers  &  ReflectionClass::IS_FINAL )
+			$modifiers []	=  "final" ;
+		
+		$result		=  implode ( ' ', $modifiers ) .
+				   "   " ;
+		
+		// Function may return a reference
+		if  ( $this -> Reflector -> returnsReference ( ) )
+			$result		.=  "&" ;
+		
+		// Function name
+		$result		.=  $this -> Reflector -> usageName .
+				    " ( " ;
+		
+		// Function parameters
+		$parameters	=  $this -> Reflector -> getParameters ( ) ;
+		$text		=  [] ;
+		
+		foreach  ( $parameters  as  $parameter )
+			$text []	=  $parameter -> getText ( ) ;
+		
+		$result		.=  implode ( ", ", $text ) ;
+		
+		// End of parameters
+		if  ( $this -> Reflector -> getNumberOfParameters ( ) )
+			$result		.=  " " ;
+		
+		$result		.=  ")" ;
+		
+		
+		return ( $result ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	        Implementation of the RefelectionSourcerInterface interface.
+	
+	  ==============================================================================================================*/
+	public function  getText ( $include_source = false )
+	   { return ( $this -> __get_contents ( $include_source ) ) ; }
+    }

@@ -1,0 +1,248 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        PuttyConfiguration.phpclass
+
+    DESCRIPTION
+        A class for administering putty sessions.
+
+    AUTHOR
+        Christian Vigh, 12/2014.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2014/12/03]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Windows ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use  	Thrak\System\Object ;
+use	Thrak\IO\Path ;
+use	Thrak\Types\AssociativeArray ;
+use	Thrak\Windows\Registry ;
+
+
+class  PuttySession		extends		Object 
+				implements	\ArrayAccess, \Countable, \IteratorAggregate
+   {
+	const		PUTTY_CONFIGURATION_VALUE	=  'PuttyConfiguration.phpclass' ;
+	public		$Name ;
+	public		$RegistryKey ;	
+	protected	$Registry ;
+	protected	$SessionValues ;
+	
+	
+	public function  __construct ( $name, $key )
+	   {
+		$this -> Registry	=  new  Registry ( ) ;
+		$this -> SessionValues	=  $this -> Registry -> EnumValuesEx ( Registry::HKEY_CURRENT_USER, $key ) ;
+		$this -> RegistryKey	=  $key ;
+		$this -> Name		=  $name ;
+	    }
+	
+	
+	public function  IsReadOnly ( )
+	   { return ( ! isset ( $this -> SessionValues [ self::PUTTY_CONFIGURATION_VALUE ] ) ) ; }
+	
+	
+	public function  getIterator ( )
+	   { return ( $this -> SessionValues -> getIterator ( ) ) ; }
+	
+	
+	public function  Count ( )
+	   { return ( count ( $this -> SessionValues ) ) ; }
+	
+	
+	public function  offsetExists ( $offset )
+	   { return ( isset ( $this -> SessionValues [ $offset ] ) ) ; }
+	
+	
+	public function  offsetGet ( $offset )
+	   { return ( $this -> SessionValues [ $offset ] -> Value ) ; }
+	
+	
+	public function  offsetSet ( $offset, $value )
+	   {
+		if  ( isset ( $this -> SessionValues [ $offset ] ) )
+			$this -> SessionValues [ $offset ] -> Value = $value ; 
+		else
+		   {
+			$regvalue		=  new RegistryValue ( $this -> Registry, Registry::HKEY_CURRENT_USER, 
+										$this -> RegistryKey, $offset, Registry::REG_SZ ) ;
+			$regvalue -> Value	=  $value ;
+			
+			$this -> SessionValues [ $offset ]	=  $value ;
+		    }
+	    }
+	
+	
+	public function  offsetUnset ( $offset )
+	   { error ( new \Thrak\System\UnsupportedOperationException ( ) ) ; }
+    }
+
+
+class  PuttyConfiguration	extends		Object 
+				implements	\ArrayAccess, \Countable, \IteratorAggregate
+   {
+	const	PUTTY_REGISTRY_KEY		=  'Software/SimonTatham/PuTTY' ;
+	const	PUTTY_SESSIONS_REGISTRY_KEY	=  'Sessions' ;
+	
+	
+	public		$Sessions ;
+	protected	$Registry ;
+	
+	
+	public function  __construct ( )
+	   {
+		$this -> Registry		=  new  Registry ( ) ;
+		$this -> __read_configuration ( $this -> Registry ) ;
+	    }
+
+	
+	private function  __read_configuration ( $registry )
+	   {
+		$this -> Sessions	=  new  AssociativeArray ( ) ;
+		$sessions_key		=  self::PUTTY_REGISTRY_KEY . '/' . self::PUTTY_SESSIONS_REGISTRY_KEY ;
+		$session_list		=  $registry -> EnumKeys ( Registry::HKEY_CURRENT_USER, $sessions_key ) ;
+									
+		
+		if  ( $session_list  ===  false )
+			error ( new \Thrak\System\RuntimeException ( "No putty registry key found on this system." ) ) ;
+
+		foreach  ( $session_list  as  $session )
+		   {
+			$putty_session	=  rawurldecode ( $session ) ;
+			$this -> Sessions [ $putty_session ]	=  new PuttySession ( $putty_session, $sessions_key . '/' . $session ) ;
+		    }
+	    }
+	
+	
+	public function  CreateSession ( $session_name, $host, $port = null, $keyfile = null, $user = null, $title = null )
+	   {
+		$default_session	=  $this -> GetDefaultSession ( ) ;
+		
+		if  ( ! $default_session )
+			error ( new \Thrak\System\RuntimeException ( "No default session found." ) ) ;
+		
+		if  ( isset ( $this -> Sessions [ $session_name ] ) ) 
+			error ( new \Thrak\System\InvalidArgumentException ( "Session \"$session_name\" alread exists." ) ) ;
+		
+		if  ( $port  ===  null )
+			$port	=  22 ;
+		
+		if  ( $keyfile  &&  ! file_exist ( $keyfile ) )
+			error ( new \Thrak\System\FileNotFoundException ( "Key file \"$keyfile\" does not exist." ) ) ;
+		
+		if  ( $user  ===  null )
+			$user	=  'root' ;
+		
+		if  ( $title  ===  null )
+			$title	=  $session_name ;
+		
+		$session_key		=  rawurlencode ( $session_name ) ;
+		$new_session_key	=  self::PUTTY_REGISTRY_KEY . '/' . self::PUTTY_SESSIONS_REGISTRY_KEY . '/' .  $session_key ;
+		$registry		=  $this -> Registry ;
+		
+		$registry -> CreateKey ( Registry::HKEY_CURRENT_USER, $new_session_key ) ;
+		
+		foreach  ( $default_session  as  $name => $registry_value )
+		   {
+			$new_registry_value	=  new RegistryValue ( $registry, 
+								$registry_value -> Root,
+								$new_session_key,
+								$registry_value -> Name,
+								$registry_value -> Type ) ;
+			
+			$value			=  $registry_value -> Value ;
+			
+			if  ( ! strcasecmp ( $value, 'Hostname' ) )
+				$value	=  $host ;
+			else if  ( ! strcasecmp ( $value, 'PortNumber' ) )
+				$value	=  $port ;
+			else if  ( ! strcasecmp ( $value, 'PublicKeyFile' )  &&  $keyfile  !==  null )
+				$value	=  $keyfile ;
+			else if  ( ! strcasecmp ( $value, 'UserName' ) )
+				$value	=  $user ;
+			else if  ( ! strcasecmp ( $value, 'WinTitle' ) )
+				$value	=  $title ;
+			else if  ( ! strcasecmp ( $value, 'WinNameAlways' ) )
+				$value	=  1 ;
+			
+			$new_registry_value -> Value	=  $value ;
+		    }
+		
+		$registry -> SetStringValue ( Registry::HKEY_CURRENT_USER, $new_session_key, 
+				PuttySession::PUTTY_CONFIGURATION_VALUE, "" ) ;
+		
+		$this -> __read_configuration ( $this -> Registry ) ;
+	    }
+	
+	
+	public function  DeleteSession ( $session_name )
+	   {
+		if  ( ! isset ( $this -> Sessions [ $session_name ] ) )
+			error ( new \Thrak\System\InvalidArgumentException ( "Unknown session name \"$session_name\"." ) ) ;
+		
+		if  ( $this -> Sessions [ $session_name ] -> IsReadOnly ( ) )
+			error ( new \Thrak\System\InvalidArgumentException ( "Session \"$session_name\" cannot be deleted, because it was not created by the PuttyConfiguration class." ) ) ;
+
+		$this -> Registry -> DeleteKey ( Registry::HKEY_CURRENT_USER, $this -> Sessions [ $session_name ] -> RegistryKey ) ;
+		unset ( $this -> Sessions [ $session_name ] ) ;
+	    }
+
+	
+	public function  FindSession ( $session_name, $loose_search = false )
+	   {
+		if  ( ! $loose_search )
+		   {
+			if  ( isset ( $this -> Sessions [ $session_name ] ) )
+				return ( $this -> Sessions [ $session_name ] ) ;
+			else
+				return ( false ) ;
+		    }
+		
+		$session_names	=  [] ;
+		$re		=  '/' . str_replace ( ' ', '\s', $session_name ) . '/' ;
+		
+		foreach  ( $this -> Sessions  as  $name => $session )
+		   {
+			if  ( preg_match ( $re, $name )  ||
+			      preg_match ( $re, $session [ 'Hostname' ] )  ||
+			      preg_match ( $re, $session [ 'WinTitle' ] ) )
+				$session_names []	=  $name ;
+		    }
+		
+		return ( $session_names ) ;
+	    }
+	
+	
+	public function  GetDefaultSession ( )
+	   { return ( ( $this -> Sessions [ 'Default Settings' ] ) ?  $this -> Sessions [ 'Default Settings' ] : null ) ; }
+	
+	
+	public function  getIterator ( )
+	   { return ( $this -> Sessions -> getIterator ( ) ) ; }
+	
+	
+	public function  Count ( )
+	   { return ( count ( $this -> Sessions ) ) ; }
+	
+	
+	public function  offsetExists ( $offset )
+	   { return ( isset ( $this -> Sessions [ $offset ] ) ) ; }
+	
+	
+	public function  offsetGet ( $offset )
+	   { return ( $this -> Sessions [ $offset ] ) ; }
+	
+	
+	public function  offsetSet ( $offset, $value )
+	   { error ( new \Thrak\System\UnsupportedOperationException ( ) ) ; }
+	
+	
+	public function  offsetUnset ( $offset )
+	   { error ( new \Thrak\System\UnsupportedOperationException ( ) ) ; }
+    }

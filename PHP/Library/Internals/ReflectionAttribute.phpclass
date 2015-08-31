@@ -1,0 +1,408 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        Attribute.php
+
+    DESCRIPTION
+        A light implementation of C# attributes that use class, method, function and property doc comments.
+	Doc comments have the following format :
+ 
+ 	/ **
+ 		(anything)
+ 	 * /
+
+ 	They start with a C-style comment followed by a star. They can be specified on a single line or on
+ 	multiple lines.
+  
+ 	The syntax for specifying an attribute is quite similar to C# :
+  
+ 	[attrname param1="value" param2="value" ...]
+  
+ 	In the current implementation, attributes and parameters can be specified more than once and no
+	provisions have been made about parameter typing.
+  
+    AUTHOR
+        Christian Vigh, 10/2014.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2014/10/11]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Internals ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces & objects
+use 		Thrak\System\Object 			as  Object ;
+
+
+
+/*==============================================================================================================
+
+    ReflectionAttributeParameter -
+        Encapsulates an attribute parameter (name/value pair).
+
+  ==============================================================================================================*/
+class  ReflectionAttributeParameter  extends  Object
+   {
+	public 		$Name ;
+	public 		$Value ;
+	
+	
+	public function  __construct ( $name, $value )
+	   {
+		$this -> Name 	=  $name ;
+		$this -> Value 	=  $value ;
+	    }
+    }
+    
+    
+/*==============================================================================================================
+
+    ReflectionAttribute -
+        Encapsulates an attribute with its parameters.
+
+  ==============================================================================================================*/
+class ReflectionAttribute  	extends  	Object
+				implements	\ArrayAccess, \Countable, \IteratorAggregate
+   {
+	public 		$Name ;
+	private		$Parameters ;
+	
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        Constructor - Builds an attribute.
+	
+	    PROTOTYPE
+	        $attr	=  new  ReflectionAttribute ( $name, $parameters ) ;
+	
+	    DESCRIPTION
+	        Creates a reflection attribute.
+	
+	    PARAMETERS
+	        $name (string) -
+	                Attribute name.
+	  
+	 	$parameters (array of ReflectionAttributeParameter) -
+	 		Attribute parameters.
+	
+	  ==============================================================================================================*/
+	public function  __construct ( $name, $parameters = array ( ) )
+	   {
+		$this -> Name 		=  $name ;
+		$this -> Parameters	=  $parameters ;
+	    }
+
+
+	/*==============================================================================================================
+	
+	    NAME
+	        GetParameter, GetParameters - Returns one or more attribute parameters.
+	
+	    PROTOTYPE
+	        $params		=  $attr -> GetParameter  ( $pname ) ;
+		$params		=  $attr -> GetParameters ( $pname ) ;
+	
+	    DESCRIPTION
+	        GetParameter() returns the value (as a ReflectionAttributeParameter object) of the first parameter
+		having the $pname name.
+	 	GetParameters() returns all parameters having the specified name $pname. If $pname is not specified,
+		all the parameters will be returned.
+	
+	    PARAMETERS
+	        $pname (string) -
+	                Parameter name.
+	
+	    RETURN VALUE
+	        GetParameter() returns the value of the first parameter having the specified name, or false if no 
+		parameter of that name has been found.
+		GetParameters() returns an array of all the parameters having the specified name for this attribute. It
+		returns the whole parameter list if $pname is not specified. An empty array will be returned if no 
+		parameter matches the specified name, or if the attribute has no parameter.
+	 
+	  ==============================================================================================================*/
+	function  GetParameter ( $pname )
+	   {
+		foreach (  $this -> Parameters  as  $parameter )
+		   {
+			if  ( ! strcasecmp ( $pname, $parameter -> Name ) )
+				return ( $parameter -> Value ) ;
+		    }
+		    
+		return ( false ) ;
+	    }
+	
+	function  GetParameters ( $pname = null )
+	   {
+		$result 	=  array ( ) ;
+		
+		foreach (  $this -> Parameters  as  $parameter )
+		   {
+			if  ( $pname  &&  ! strcasecmp ( $pname, $parameter -> Name ) )
+				$result [] 	=  $parameter -> Value ;
+		    }
+		    
+		return ( false ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+		Interfaces implementations.
+	 
+	  ==============================================================================================================*/
+	public function  count ( )
+	   { return ( count ( $this -> Parameters ) ) ; }
+	   
+	public function  offsetExists ( $offset )
+	   { return ( isset ( $this -> Parameters [ $offset ] ) ) ; }
+	   
+	public function  offsetGet ( $offset )
+	   { return ( $this -> Parameters [ $offset ] ) ; }
+	   
+	public function  offsetSet ( $offset, $value )
+	   {
+		if  ( $offset  ===  null )
+			$this -> Parameters [] 		= $value ; 
+		else
+			$this -> Parameters [ $offset ] = $value ; 
+	    }
+	   
+	public function  offsetUnset ( $offset )
+	   { unset ( $this -> Parameters [ $offset ] ) ; }
+	   
+	public function  getIterator ( )
+	  {  return ( new ArrayIterator ( $this -> Parameters ) ) ; }
+    }
+
+
+/*==============================================================================================================
+
+    ReflectionAttributes class -
+        Implements an array of ReflectionAttribute objects.
+
+  ==============================================================================================================*/
+class ReflectionAttributes  	extends  	Object
+				implements	\ArrayAccess, \Countable, \IteratorAggregate
+   {
+	private 	$Attributes 	=  array ( ) ;
+	
+
+	/*==============================================================================================================
+	
+	    Constructor -
+	        Well, does not do too much work.
+	
+	  ==============================================================================================================*/
+	public function  __construct ( )
+	   {}
+	    
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        GetAttribute, GetAttributes - Returns one or more attribute.
+	
+	    PROTOTYPE
+	        $params		=  $attr -> GetAttribute  ( $pname ) ;
+		$params		=  $attr -> GetAttributes ( $pname ) ;
+	
+	    DESCRIPTION
+	        GetAttribute() returns the value (as a ReflectionAttribute object) of the first attribute having the 
+		$pname name.
+	 	GetAttributes() returns all attributes having the specified name $pname. If $pname is not specified,
+		all the attributes will be returned.
+	
+	    AttributeS
+	        $pname (string) -
+	                Attribute name.
+	
+	    RETURN VALUE
+	        GetAttribute() returns the value of the first attribute having the specified name, or false if no 
+		attribute of that name has been found.
+		GetAttributes() returns an array of all the attributes having the specified name.
+		It returns the whole attribute list if $pname is not specified. An empty array will be returned if no 
+		attribute matches the specified name, or if the doc comment has no attribute.
+	 
+	  ==============================================================================================================*/
+	function  GetAttribute ( $aname )
+	   {
+		foreach (  $this -> Attributes  as  $attribute )
+		   {
+			if  ( ! strcasecmp ( $aname, $attribute -> Name ) )
+				return ( $attribute ) ;
+		    }
+		    
+		return ( false ) ;
+	    }
+	
+	function  GetAttributes ( $aname )
+	   {
+		$result 	=  array ( ) ;
+		
+		foreach (  $this -> Attributes  as  $attribute )
+		   {
+			if  ( ! strcasecmp ( $aname, $attribute -> Name ) )
+				$result [] 	=  $attribute ;
+		    }
+		    
+		return ( false ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+		Interfaces implementations.
+	 
+	  ==============================================================================================================*/
+	public function  count ( )
+	   { return ( count ( $this -> Attributes ) ) ; }
+	   
+	public function  offsetExists ( $offset )
+	   { return ( isset ( $this -> Attributes [ $offset ] ) ) ; }
+	   
+	public function  offsetGet ( $offset )
+	   { return ( $this -> Attributes [ $offset ] ) ; }
+	   
+	public function  offsetSet ( $offset, $value )
+	   {
+		if  ( $offset  ===  null )
+			$this -> Attributes [] 		= $value ; 
+		else
+			$this -> Attributes [ $offset ] = $value ; 
+	    }
+	   
+	public function  offsetUnset ( $offset )
+	   { unset ( $this -> Attributes [ $offset ] ) ; }
+	   
+	public function  getIterator ( )
+	  {  return ( new ArrayIterator ( $this -> Attributes ) ) ; }
+    }
+    
+
+/*==============================================================================================================
+
+    ReflectionAttributeHelpers trait -
+        Provides extension methods for attribute management. This trait is used by the ReflectionClass,
+	ReflectionFunction, ReflectionMethod and ReflectionProperty classes.
+
+  ==============================================================================================================*/
+trait  ReflectionAttributeHelpers 
+   {
+	/*==============================================================================================================
+	
+	    NAME
+	        parseAttributes - Parses attributes if the docComment part.
+	
+	    PROTOTYPE
+	        function  parseAttributes ( $str, $attr_name = null ) ;
+	
+	    DESCRIPTION
+	        Takes a docComment string and tries to parse the potential attributes specified in it.
+	
+	    PARAMETERS
+	        $str (string) -
+	                docComment value to be parsed.
+	 
+		$attr_name (string) -
+			Can be used to restrict the parsing only to attributes having the specified name.
+	
+	    RETURN VALUE
+	        Returns a ReflectionAttributes object, which can have zero elements if no attribute has been found in
+		the docComment string.
+	
+	  ==============================================================================================================*/
+	protected function  parseAttributes ( $str, $attr_name = null )
+	   {
+		$result 	=  new ReflectionAttributes ( ) ;
+		
+		// Check if this is really a docComment string
+		if  ( $str  &&  preg_match ( '-/[*][*].*[*]/-imsx', $str ) )
+		   {
+			// Match all "[...]" constructs, without taking care of attribute name and parameters
+			preg_match_all ( '/\[ (?P<attr> [^\]]+) \]/imsx', $str, $matches ) ;
+			
+			// If match found...
+			if  ( isset ( $matches [ 'attr' ] )  &&  count ( $matches [ 'attr' ] ) )
+			   {
+				// Loop through each match
+				foreach  ( $matches [ 'attr' ]  as  $match )
+				   {
+					$match 	=  trim ( $match ) ;
+					
+					// Match attribute name followed by optional parameters.
+					if  ( preg_match ( '/(?P<name> \w+) ( \s+ (?P<rest> .*) )?/imsx', $match, $attr_match )  ===  false )
+						continue ;
+						
+					// Get name and rest of attribute specification
+					$name 	=  $attr_match [ 'name' ] ;
+					$rest 	=  isset ( $attr_match [ 'rest' ] ) ?  $attr_match [ 'rest' ] : '' ;
+					
+					// If an attribute name is specified, check if the attribute found has the same name
+					if  ( $attr_name  &&  strcasecmp ( $attr_name, $name ) )
+						continue ;
+					
+					// Now, match parameter name/value pairs
+					$re 	=  '/
+							(?P<pname> \w+)
+							\s* = \s*
+							(
+								"
+								(?P<pvalue> [^"]*)
+								"
+							 )?
+						    /imsx' ;
+					
+					preg_match_all ( $re, $rest, $parameter_matches ) ;
+					
+					// Create a ReflectionAttribute object for this attribute nme
+					$attr 	=  new ReflectionAttribute ( $name ) ;
+
+					// Then collect each matched value
+					for  ( $i = 0 ; $i < count ( $parameter_matches [ 'pname' ] ) ; $i ++ )
+					   {
+						$param 		=  new ReflectionAttributeParameter ( $parameter_matches [ 'pname' ] [$i], $parameter_matches [ 'pvalue' ] [$i] ) ;
+						$attr []	=  $param ;
+					    }
+					    
+					// Add the ReflectionAttribute object to the Reflectionttributes array
+					$result [] 	=  $attr ;
+				    }
+			    }
+		    }
+
+		// All done, return
+		return ( $result ) ;
+	    }
+
+	    
+	/*==============================================================================================================
+	
+	    NAME
+	        getAttributes - Gets the attributes of the current object.
+	
+	    PROTOTYPE
+	        function  getAttributes ( $attr_name = null ) ;
+	
+	    DESCRIPTION
+	        Gets the attributes of the current object, which can be an instance of the ReflectionClass, ReflectionMethod,
+		ReflectionFunction and ReflectionProperty objects.
+	
+	    PARAMETERS
+	        $attr_name (string) -
+	                If specified, only the attributes having the specified name will be returned.
+	
+	    RETURN VALUE
+	        Returns a ReflectionAttributes object, which can have zero elements if no attribute has been found in
+		the docComment string.	
+	 * 
+	  ==============================================================================================================*/
+	public function  getAttributes ( $attr_name = null )
+	   {
+		return (  $this -> parseAttributes ( $this -> getDocComment ( ), $attr_name ) ) ;
+	    }
+    }

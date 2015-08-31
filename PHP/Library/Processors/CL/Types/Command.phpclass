@@ -1,0 +1,71 @@
+<?php
+/***************************************************************************************************
+
+    NAME
+	Command.phpclass
+
+    DESCRIPTION
+     	Command-output parameter.
+
+    AUTHOR
+     	Christian Vigh, 10/2011.
+
+    HISTORY
+    [Version : 1.0]	[Date : 2011/10/10]	[Author : CV]
+     	Initial version.
+
+    [Version : 2.0]	[Date : 2012/10/06]		[Author : CV]
+	Migrated to the Thrak library version 2.
+
+    [Version : 2.0.1]	[Date : 2015/02/11]		[Author : CV]
+	. Replaced each exception throwing with "error ( new CLException (...) )".
+
+***************************************************************************************************/
+namespace  	Thrak\Processors\CL ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces and classes
+use 	Thrak\Processors\CL\CLException 	as  Exception ;
+
+
+/*==================================================================================================
+
+    CLCommandParameter class -
+	Implements a parameter whose value is the standard output of a command.
+
+  ==================================================================================================*/
+class  CLCommandParameter  extends  \Thrak\Processors\CL\CLAbstractParameter
+   {
+	/*-------------------------------------------------------------------------------------------
+
+		Class constructor.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __construct ( $parent, $tags, $valuetext = "command" )
+	   {
+   		$this -> Help 			=  "Defines a parameter whose value is the standard output of a command." ;
+   		$this -> ReturnValueHelp	=  "Returns the standard output of the specified command as an array of lines." ;
+		parent::__construct ( $parent, $tags, $valuetext ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Process value.
+
+	 --------------------------------------------------------------------------------------------*/
+ 	protected function  ProcessValue ( $name, $value )
+ 	   {
+		$status = exec ( $value, $output, $result ) ;
+
+		if  ( $result )
+			error ( new CLException ( "Command error for parameter '$name'." ) ) ;
+
+		foreach  ( $output  as  &$line )
+			$line = trim ( $line ) ;
+
+		return ( $output ) ;
+ 	    }
+    }

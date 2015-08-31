@@ -1,0 +1,91 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        DatabaseDriver.php
+
+    DESCRIPTION
+        Abstract base class for database drivers.
+
+    AUTHOR
+        Christian Vigh, 08/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/08/05]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Database ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces and objects
+use  	Thrak\System\Object ;
+use  	Thrak\System\Exception ;
+
+
+/*===========================================================================================
+
+    DatabaseDriver class -
+	A database driver must implement this interface.
+
+  ===========================================================================================*/
+abstract class  DatabaseDriver	extends  Object
+   {
+	// Parent Database object
+   	private  	$Parent ;
+	// Last selected database
+	public		$CurrentDatabase		=  null ;
+
+   	// Class constructor
+   	public function  __construct ( $parent )
+   	   {
+		parent::__construct ( ) ;
+   		$this -> Parent  	=  $parent ;
+   	    }
+
+	// Checks if the database driver is installed
+	public abstract function  db_is_driver_installed 	( ) ;
+
+	// Sets the error number and message after a database operation
+	public abstract function  db_set_error 			( ) ;
+
+	// Connects to the database
+	public abstract function  db_connect  			( $user, $password, $hostname, $port ) ;
+
+	// Disconnects from the database
+	public abstract function  db_disconnect			( $resource ) ;
+
+	// Selects the specified database
+	public abstract function  db_select_database		( $resource, $name ) ;
+
+	// Used for adding the LIMIT (or equivalent) clause to a SQL statement
+	public abstract function  db_preprocess_statement	( $resource, $statement ) ;
+
+	// Runs an SQL query
+	public abstract function  db_run_query			( $resource, $statement ) ;
+
+	// Frees the results returned by an SQL query
+	public abstract function  db_free_query 		( $resource, $recordset ) ;
+
+	// Fetches the next result from a recordset
+	public abstract function  db_fetch_next			( $resource, $recordset ) ;
+
+	// Get rows affected by last update statements/rows returned by a query
+	public abstract function  db_get_affected_rows		( $resource ) ;
+	public abstract function  db_get_num_rows		( $resource ) ;
+
+	// Returns the ID of an auto-increment field from the last insert
+	public abstract function  db_get_last_insert_id		( $resource ) ;
+
+	// Get version
+	public abstract function  db_get_version		( $resource ) ;
+
+	// Quotes a string
+	public abstract function  db_escape_value		( $resource, $value ) ;
+
+	// Metadata information
+	public abstract function  db_get_databases		( $resource, $wildcard = null ) ;
+	public abstract function  db_get_tables			( $resource, $database, $wildcard = null ) ;
+    }

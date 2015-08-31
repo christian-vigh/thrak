@@ -1,0 +1,242 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        VariableStore.phpclass
+
+    DESCRIPTION
+        Implements a variable store, which can be accessed either as an object or an associative array.
+
+    AUTHOR
+        Christian Vigh, 07/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/07/15]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace	Thrak\Database\Tables ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces & objects
+use	Thrak\System\Object ;
+use     Thrak\IO\Path ;
+use	Thrak\Types\String ;
+use	Thrak\Database\Table ;
+
+
+/*==============================================================================================================
+
+    VariableStore class -
+        Implements a variable store.
+
+  ==============================================================================================================*/
+class   VariableStore		extends		Table
+				implements	\ArrayAccess, \Countable, \Iterator
+    {
+	public		$NameLength ;
+
+	
+	/*==============================================================================================================
+	
+	    Constructor -
+	        Instanciates a ResolvedDomains object, and creates the underlying tables if necessary.
+	
+	  ==============================================================================================================*/
+	public function  __construct ( $table_name		=  'thrak_variables', 
+				       $comment			=  'Variable store',
+				       $name_length		=  128,
+				       $database		=  null, 
+				       $recreate		=  false )
+	   {
+		parent::__construct ( $table_name, $comment, $database, $recreate ) ;
+		$this -> NameLength	=  $name_length ;
+	    }
+	
+
+	public function  __get ( $member )
+	   {
+		return ( $this -> Get ( $member ) ) ;
+	    }
+
+
+	public function  __set ( $member, $value )
+	   {
+		$this -> Define ( $member, $value ) ;
+	    }
+
+
+	public function  Define ( $name, $value ) 
+	   {
+		$escaped_name	=  $this -> Database -> Escape ( $name ) ;
+		$escaped_value	=  $this -> Database -> Escape ( $value ) ;
+		$query		=  "
+					INSERT INTO {$this -> Name}
+					   ( name, value )
+						VALUES ( '$escaped_name', '$escaped_value' )
+					ON DUPLICATE KEY UPDATE
+						value = '$escaped_value'
+				   " ;
+
+		$this -> Database -> Execute ( $query ) ;
+	    }
+
+
+	public function  IsDefined ( $name )
+	   {
+		$escaped_name	=  $this -> Database -> Escape ( $name ) ;
+		$query		=  "
+					SELECT 1
+					FROM {$this -> Name}
+					WHERE
+						name	=  '$escaped_name' 
+				   " ;
+
+		$value		=  $this -> Database -> LoadValue ( $query ) ;
+
+		if  ( $value  ===  false )
+			return ( false ) ;
+		else
+			return ( true ) ;
+	    }
+
+
+	public function  Undefine ( $name ) 
+	   {
+		$escaped_name	=  $this -> Database -> Escape ( $name ) ;
+		$query		=  "
+					DELETE FROM {$this -> Name}
+					WHERE
+						name	=  '$escaped_name' 
+				   " ;
+
+		$this -> Database -> Execute ( $query ) ;
+	    }
+
+
+	public function  Get ( $name, $default = false )
+	   {
+		$escaped_name	=  $this -> Database -> Escape ( $name ) ;
+		$query		=  "
+					SELECT value 
+					FROM {$this -> Name}
+					WHERE
+						name	=  '$escaped_name' 
+				   " ;
+
+		$value		=  $this -> Database -> LoadValue ( $query ) ;
+
+		if  ( $value  ===  false )
+		   {
+			if  ( $default  !==  false )
+			   {
+				$escaped_value	=  $this -> Database -> Escape ( $default ) ;
+				$query		=  "
+							INSERT INTO {$this -> Name}
+							SET
+								name	=  '$escaped_name',
+								value	=  '$escaped_value' 
+						   " ;
+
+				$this -> Database -> Execute ( $query ) ;
+				$value		=  $default ;
+			    }
+		    }
+
+		return ( $value ) ;
+	    }
+
+
+	public function  Set ( $name, $value ) 
+	   {
+		$this -> Define ( $name, $value ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    Create -
+		Creates the underlying table.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  Create ( )
+	   {
+		$query	=<<<END
+CREATE TABLE IF NOT EXISTS  {$this -> Name}
+   (
+	id		INT UNSIGNED				NOT NULL AUTO_INCREMENT
+								COMMENT 'Unique id for this entry',
+	name		VARCHAR({$this -> NameLength})		NOT NULL DEFAULT ''
+								COMMENT 'Variable name',
+	value		LONGTEXT				NOT NULL
+								COMMENT 'Variable value',
+
+	PRIMARY KEY	( id ),
+	UNIQUE KEY	( name )
+    ) ENGINE = MyISAM CHARSET latin1 COMMENT '{$this -> Comment}' ;
+
+END;
+		
+		$this -> Database -> Execute ( $query ) ;
+	    }
+
+
+	public function  Count ( )
+	   {
+		$query		=  "
+					SELECT 
+						COUNT(name) AS 'count'
+					FROM {$this -> Name}
+				   " ;
+		$this -> Database -> SetQuery ( $query ) ;
+		$value		=  $this -> Database -> LoadValue ( ) ;
+
+		return ( $value ) ;
+	    }
+
+	
+	private		$RowCount		=  false ;
+
+
+	private function  __get_row_count ( )
+	   {
+		if  ( $this -> RowCount  ===  false )
+			$this -> RowCount	=  $this -> Count ( ) ;
+	    }
+	
+
+	public function  offsetExists ( $offset ) 
+	   {
+		if  ( is_numeric ( $offset ) )
+		   {
+			$this -> __get_row_count ( ) ;
+
+			return ( $offset  >=  0  &&  $offset  <  $this -> RowCount ) ;
+		    }
+		else
+		   {
+			$escaped_name	=  $this -> Database -> Escape ( $offset ) ;
+			$query		=  "
+						SELECT 1
+						FROM {$this -> Name}
+						WHERE
+							name	=  '$escaped_name' 
+					   " ;
+			$this -> Database -> SetQuery ( $query ) ;
+			$result		=  $this -> Database -> LoadValue ( ) ;
+
+			return ( ( $result ) ?  true : false ) ;
+		    }
+	    }
+
+
+	public function  offsetGet ( $offset )
+	   {
+		if  ( is_numeric ( $offset ) )
+		   {
+			
+		    }
+	    }
+    }

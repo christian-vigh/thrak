@@ -1,0 +1,483 @@
+<?php
+/***************************************************************************************************
+
+    NAME
+	Measure.phpclass
+
+    DESCRIPTION
+	Measure parameter class.
+
+    AUTHOR
+     	Christian Vigh, 09/2011.
+
+    HISTORY
+    [Version : 1.0]	[Date : 2011/09/08]	[Author : CV]
+     	Initial version.
+
+   [Version : 2.0]	[Date : 2012/10/06]		[Author : CV]
+	Migrated to the Thrak library version 2.
+
+   [Version : 2.0.1]	[Date : 2015/04/11]		[Author : CV]
+	. Replaced each exception throwing with "error ( new CLException (...) )".
+
+ ***************************************************************************************************/
+namespace  	Thrak\Processors\CL ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces and classes
+use 	Thrak\Processors\CL\CLException ;
+use     Thrak\Types\String\Regex ;
+
+
+/*==================================================================================================
+
+    CLMeasureParameter class -
+	Defines an abstract measure value.
+	Derived classes must define an array called 'Units', whose elements are in turn
+	associative arrays defining the various graduations of the considered measurement
+	unit.
+
+	On the command-line, the value must be supplied together with a unit. For example,
+	"1mb" to specify one megabyte. There can be spaces between the value and the supplied
+	unit.
+
+	If the derived class specifies a default unit, then a unit is not mandatory on the
+	command line. If no default unit is defined by the derived class, and no unit has
+	been specified on the command line, then an error is generated.
+
+	Entries in the Units array must be specified from the smallest unit to the greatest
+	one. For example, a computer capacity will start from bits, then bytes, kilobytes,
+	megabytes, etc.
+
+	Each item in the Units array must have the following entries :
+
+	names (string or array of strings) -
+		Name and aliases of the considered unit, which must be specified on the
+		command line immediately after the value.
+
+	value (integer) -
+		Derived classes must associate an different integer value for each declared
+		unit.
+
+	divider-up (numeric) -
+		Divider to be applied to the current unit to convert it to the upper unit.
+		For example, to convert bits to bytes, the divider will be 8.
+
+	multiplier-down (numeric) -
+		Multiplier to be applied to the current unit to convert it to the lower unit.
+		For example, to convert kilobytes into bytes, the multiplier will be 1024.
+
+	The returned value is an array containing an element named 'default', which is an array of
+	three values ; the first one is the specified numeric value, the second one is the name
+	of the specified unit, and the third one the associated constant ( 'value' entry of a
+	Units item). The array also contains associative entries, one for each item defined in
+	the Units array, along with numeric entries whose indexes are the constant associated
+	with the corresponding unit. This allows for accessing a value both by its string name
+	and its associated constant.
+
+	For example, a value of "1.5mb" supplied for a parameter of class CLCapacityParameter
+	will return the following array :
+
+	array (
+	        ["default"] => array
+	           (
+	                [0] => (int) 1.5
+	                [1] => (string[9]) "megabytes"
+	                [2] => (int) 3
+	            )
+	        ["bits"] => (float) 12582912
+	        ["bytes"] => (float) 1572864
+	        ["kilobytes"] => (float) 1536
+	        ["megabytes"] => (int) 1.5
+	        ["gigabytes"] => (float) 0.00146484375
+	        ["terabytes"] => (float) 1.4305114746094E-6
+	        ["petabytes"] => (float) 1.3969838619232E-9
+	        [0] => (float) 12582912
+	        [1] => (float) 1572864
+	        [2] => (float) 1536
+	        [3] => (int) 1.5
+	        [4] => (float) 0.00146484375
+	        [5] => (float) 1.4305114746094E-6
+	        [6] => (float) 1.3969838619232E-9
+              )
+
+  ==================================================================================================*/
+abstract class  CLMeasureParameter  extends  \Thrak\Processors\CL\CLAbstractParameter
+  {
+	// Specific attributes
+   	private		$MeasureDefinitions = array
+   	   (
+	    	array
+	    	   (
+	    	   	'names'		=>  array ( 'default-unit' ),
+	    	   	'type'		=>  self::ATTRIBUTE_TYPE_STRING,
+	    	   	'member'	=>  'DefaultUnit',
+	    	   	'preprocessor'	=>  'DefaultUnitValidator',
+	    	   	'help'		=>  'Specifies the default unit for this parameter when no one is specified.'
+      		    )
+    	    ) ;
+
+	// Default unit
+	public		$DefaultUnit ;
+	// Default unit index
+	public		$DefaultUnitIndex 	=  -1 ;
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Class Constructor.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __construct ( $parent, $tags, $valuetext = "value", $default_unit = null, $new_attributes = null )
+	   {
+	   	static 	$required_keys 		=  array ( 'names', 'value', 'divider-up', 'multiplier-down' ) ;
+
+
+		// Save default unit value
+		$this -> DefaultUnit	=  $default_unit ;
+
+	   	// Perform basic checkings on the unit definitions
+	   	$aliases	=  array ( ) ;
+	   	$values 	=  array ( ) ;
+	   	$current_index 	=  0 ;
+
+		foreach  ( $this -> Units  as  &$Unit )
+		   {
+		   	// Check the Units array specified by the derived class
+		   	foreach  ( $required_keys  as  $key )
+		   	   {
+		   	   	// Check that all required keys are defined
+				if  ( ! array_key_exists ( $key, $Unit ) )
+					error ( new CLException ( __CLASS__ . " class : the required entry '$key' does not exist for entry #$current_index of the Units array." ) ) ;
+
+				// Check that names and aliases are not defined twice
+				foreach  ( $Unit [ 'names' ]  as  $name )
+				   {
+					$name = strtolower ( $name ) ;
+
+					if  ( in_array ( $key, $aliases ) )
+						error ( new CLException ( __CLASS__ . " class : the '$name' unit is defined more than once in entry #$current_index of the Units array." ) ) ;
+
+					$aliases [] = $name ;
+				    }
+		   	    }
+
+			// Check that associated unit values are used only once
+			if  ( in_array ( $Unit [ 'value' ], $values ) )
+				error ( new CLException ( __CLASS__ . " class : the value '{$Unit ['value' ]}' defined in entry #$current_index of the Units array has already been used." ) ) ;
+
+			$values [] = $Unit [ 'value' ] ;
+
+			// Make sure the 'names' entry is an array
+			if  ( ! is_array ( $Unit [ 'names' ] ) )
+				$Unit = array ( $Unit [ 'names' ] ) ;
+
+			$current_index ++ ;
+		    }
+
+	   	// Call parent constructor
+	   	if  ( $new_attributes )
+	   		$new_attributes =  array_merge ( $this -> MeasureDefinitions, $new_attributes ) ;
+   		else
+   			$new_attributes =  $this -> MeasureDefinitions ;
+
+		parent::__construct ( $parent, $tags, $valuetext, $new_attributes ) ;
+
+
+		// Find default unit index if not specified in the 'default-unit' attribute of the
+		if  ( $this -> DefaultUnitIndex  ==  - 1 )
+		   {
+			$default_index 		=  0 ;
+
+			foreach  ( $this -> Units  as  $default_unit )
+			   {
+				if  ( $this -> DefaultUnit  ==  $default_unit [ 'value' ] )
+					break ;
+
+				$default_index ++ ;
+			    }
+
+			$this -> DefaultUnitIndex 	=  $default_index ;
+			$this -> DefaultUnit		=  $default_unit [ 'names' ] [0] ;
+		     }
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Preprocess value.
+
+	 --------------------------------------------------------------------------------------------*/
+  	protected function  ProcessValue ( $name, $value )
+	   {
+	   	$result 	=  array ( ) ;
+		$default_index 	=  0 ;
+		$re 		=  '/^' .
+					'(?P<value> ' . REGEX_FLOAT . ')' .
+					'\s*' .
+					'(?P<unit> \w+)?' .
+				   '$/ix' ;
+
+
+		// Check that the supplied value is correct
+		if  ( preg_match ( $re, $value, $matches )  ===  false )
+			error ( new CLException ( "Invalid {$this -> ValueLabel} value '$value' specified for the '$name' parameter." ) ) ;
+
+		if  ( ! array_key_exists ( 'value', $matches ) )
+			error ( new CLException ( "A numeric value must be supplied for the '$name' parameter." ) ) ;
+
+		// If a unit has been specified with the value, find its corresponding entry in the Units array
+		if  ( array_key_exists ( 'unit', $matches ) )
+		   {
+			$temp 		=  $this -> __find_value_unit ( $name, $matches [ 'unit' ] ) ;
+			$default_index 	=  $temp [0] ;
+		    }
+   		// If no default unit has been specified, complain
+   		else if  ( $this -> DefaultUnitIndex  ==  -1 )
+   			error ( new CLException ( "A unit must be specified for the '$name' parameter." ) ) ;
+   		// Otherwise, use the default one
+   		else
+   			$default_index 	=  $this -> DefaultUnitIndex ;
+
+		$value = $matches [ 'value' ] ;
+
+		// Create the entry in the resulting array corresponding to the supplied unit
+		$unit 		=  $this -> Units [ $default_index ] ;
+		$unit_name 	=  $unit [ 'names' ] [0] ;
+
+		$result [ $unit_name ] 		=  $value ;
+		$result [ 'default' ]		=  array ( $value, $unit_name, $unit [ 'value' ] ) ;
+		$result [ $unit [ 'value' ] ]	=  $value ;
+
+		// Now, convert the value to inferior units
+		$current_value 		=  $value ;
+
+		for  ( $i = $default_index - 1 ; $i  >=  0 ; $i -- )
+		   {
+			$unit		 =  $this -> Units [$i] ;
+			$current_value	*=  $unit [  'multiplier-down' ] ;
+
+			$result [ $unit [ 'names' ] [0] ] 	=  $current_value ;
+			$result [ $unit [ 'value' ] ]		=  $current_value ;
+		    }
+
+
+		// Perform the same for superior unit
+		$current_value 		=  $value ;
+		$count 			=  count ( $this -> Units ) ;
+
+		for  ( $i = $default_index + 1 ; $i  <  $count ; $i ++ )
+		   {
+			$unit		 =  $this -> Units [$i] ;
+			$current_value	/=  $unit [  'divider-up' ] ;
+
+			$result [ $unit [ 'names' ] [0] ] 	=  $current_value ;
+			$result [ $unit [ 'value' ] ]		=  $current_value ;
+		    }
+
+		// Make the resulting array keys to be in the same order as in the Units array
+		$result2		=  array ( ) ;
+		$result2 [ 'default' ]	=  $result [ 'default' ] ;		// Unit and value supplied on the command line
+
+		foreach  ( $this -> Units  as  $Unit )
+		   {
+		   	$name = $Unit [ 'names' ] [0] ;
+		 	$result2 [ $name  ] 		= $result [ $name ] ;
+		    }
+
+		foreach  ( $this -> Units  as  $Unit )
+		 	$result2 [ $Unit [ 'value'] ]   = $result [ $Unit [ 'value' ] ] ;
+
+		// All done, return
+		return ( $result2 ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Validator called when a default unit is specified.
+
+	 --------------------------------------------------------------------------------------------*/
+	protected function  DefaultUnitValidator ( $object, $definition, $tag, $name, $value  )
+	   {
+		$result 	=  $this -> __find_attribute_unit ( $tag, $name, $value ) ;
+
+		$this -> DefaultUnitIndex 	=  $result [0] ;
+		$this -> DefaultUnit		=  $result [1] ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Finds the specified unit. Throws an exception if not found.
+
+	 --------------------------------------------------------------------------------------------*/
+ 	private function  __find_attribute_unit ( $tag, $attribute, $string )
+ 	   {
+		$result =  $this ->  __find_unit ( $string ) ;
+
+		if  ( $result  ===  false )
+			error ( new CLException ( "Invalid unit '$string' specified for the '$attribute' attribute of the <$tag> tag." ) ) ;
+
+		return ( $result ) ;
+	    }
+
+
+	private function  __find_value_unit ( $name, $value )
+	   {
+		$result =  $this ->  __find_unit ( $value ) ;
+
+		if  ( $result  ===  false )
+			error ( new CLException ( "Invalid unit '$value' specified for the '$name' parameter." ) ) ;
+
+		return ( $result ) ;
+	    }
+
+
+	private function  __find_unit ( $string )
+	   {
+		$index  =  0 ;
+
+		foreach  ( $this -> Units  as  $Unit )
+		   {
+			foreach  ( $Unit [ 'names' ]  as  $name )
+			   {
+				if  ( ! strcasecmp ( $name, $string ) )
+				   	return ( array ( $index, $Unit [ 'names' ] [0] ) ) ;
+			    }
+
+			$index ++ ;
+		    }
+
+		return ( false ) ;
+ 	    }
+   }
+
+
+
+/*==================================================================================================
+
+    CLCapacityParameter class -
+	Defines a storage capacity value.
+
+  ==================================================================================================*/
+class  CLCapacityParameter  extends  CLMeasureParameter
+  {
+  	// Unit constants
+  	const		UNIT_BITS		=  0 ;
+  	const 		UNIT_BYTES		=  1 ;
+  	const 		UNIT_KILOBYTES		=  2 ;
+  	const 		UNIT_MEGABYTES 		=  3 ;
+  	const 		UNIT_GIGABYTES 		=  4 ;
+  	const		UNIT_TERABYTES		=  5 ;
+  	const		UNIT_PETABYTES		=  6 ;
+  	const		UNIT_EXABYTES		=  7 ;
+  	const 		UNIT_ZETTABYTES		=  8 ;
+  	const		UNIT_YOTTABYTES		=  9 ;
+
+  	// Units scale
+ 	protected 	$Units 	=  array
+	    (
+	    	array
+	    	   (
+	    	   	'names'			=>  array ( 'bits', 'bit' ),
+	    	   	'value'			=>  self::UNIT_BITS,
+	    	   	'divider-up'		=>  8,
+	    	   	'multiplier-down'       =>  8
+		    ),
+	    	array
+	    	   (
+	    	   	'names'			=>  array ( 'bytes', 'byte', 'b' ),
+	    	   	'value'			=>  self::UNIT_BYTES,
+	    	   	'divider-up'		=>  1024,
+			'multiplier-down'	=>  1024
+		    ),
+   		array
+   		   (
+   		   	'names'			=>  array ( 'kilobytes', 'kilobyte', 'kb', 'ko' ),
+	    	   	'value'			=>  self::UNIT_KILOBYTES,
+   		   	'divider-up'		=>  1024,
+   		   	'multiplier-down'	=>  1024
+		    ),
+   		array
+   		   (
+   		   	'names'			=>  array ( 'megabytes', 'megabyte', 'mb', 'mo' ),
+	    	   	'value'			=>  self::UNIT_MEGABYTES,
+   		   	'divider-up'		=>  1024,
+   		   	'multiplier-down'	=>  1024
+		    ),
+   		array
+   		  (
+		     	'names'			=>  array ( 'gigabytes', 'gigabyte', 'gb', 'go' ),
+	    	   	'value'			=>  self::UNIT_GIGABYTES,
+			'divider-up'		=>  1024,
+			'multiplier-down'	=>  1024
+		   ),
+		array
+		   (
+		   	'names'			=>  array ( 'terabytes', 'terabyte', 'tb', 'to' ),
+	    	   	'value'			=>  self::UNIT_TERABYTES,
+			'divider-up'		=>  1024,
+			'multiplier-down'	=>  1024
+		    ),
+		array
+		   (
+		   	'names'			=>  array ( 'petabytes', 'petabyte', 'pb', 'po' ),
+	    	   	'value'			=>  self::UNIT_PETABYTES,
+			'divider-up'		=>  1024,
+			'multiplier-down'	=>  1024
+		    ),
+		array
+		   (
+		   	'names'			=>  array ( 'exabytes', 'exabyte', 'eb', 'eo' ),
+	    	   	'value'			=>  self::UNIT_EXABYTES,
+			'divider-up'		=>  1024,
+			'multiplier-down'	=>  1024
+		    ),
+		array
+		   (
+		   	'names'			=>  array ( 'zettabytes', 'zettabyte', 'zb', 'zo' ),
+	    	   	'value'			=>  self::UNIT_ZETTABYTES,
+			'divider-up'		=>  1024,
+			'multiplier-down'	=>  1024
+		    ),
+		array
+		   (
+		   	'names'			=>  array ( 'yottabytes', 'yottabyte', 'yb', 'po' ),
+	    	   	'value'			=>  self::UNIT_YOTTABYTES,
+			'divider-up'		=>  1024,
+			'multiplier-down'	=>  1024
+		    )
+	     ) ;
+
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Class Constructor.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __construct ( $parent, $tags, $valuetext = "capacity" )
+	   {
+   		$this -> Help 			=  "Defines a byte capacity parameter." ;
+   		$this -> ReturnValueHelp	=<<<END
+Returns an array containing the following entries :
+
+'default' -
+	Array of three values :
+	- Item 1 : The numeric value specified on the command line.
+	- Item 2 : The name of the specified capacity unit, or of the default unit if none has been specified.
+	- Item 3 : The constant associated with the specified capacity unit (UNIT_BITS, UNIT_BYTES, etc.)
+
+'bits', 'bytes', 'kilobytes', 'megabytes', 'gigabytes', 'terabytes', 'petabytes' -
+	Specified value, converted in the various capacity units.
+
+CLCapacityParameter::UNIT_BITS, UNIT_BYTES, UNIT_KILOBYTES, UNIT_MEGABYTES, UNIT_GIGABYTES, UNIT_TERABYTES, UNIT_PETABYTES -
+	Another way to access the above values, using their associated constants.
+END;
+
+		parent::__construct ( $parent, $tags, $valuetext, self::UNIT_BYTES ) ;
+	    }
+   }

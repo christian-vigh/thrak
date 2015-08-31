@@ -1,0 +1,841 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        IsSet.phpclass
+
+    DESCRIPTION
+        Implements the WhenSet and IsSetAnd classes, which are some kind of syntactic sugar to avoid tedious
+	testings of the presence of an array element.
+	For example, instead of writing :
+  
+ 		$var	=  ( isset ( $_POST [ 'key' ] ) ) ?  $_POST [ 'key' ] : 'some default value' ;
+  
+ 	You may write :
+  
+ 		$var	=  WhenSet::GetValue ( $_POST, 'key', 'some default value' ) ;
+  
+ 	And make further tests like :
+  
+ 		if  ( IsSetAnd::Equals ( $_POST, 'key', 'some value' ) )
+ 			...
+
+    AUTHOR
+        Christian Vigh, 10/2014.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2014/10/12]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace  	Thrak\Types ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use	Thrak\System\Object ;
+
+
+/*==============================================================================================================
+
+    WhenSet class -
+        Implements the GetValue static method to retrieve an array element and provide a default value if not set.
+
+  ==============================================================================================================*/
+class  WhenSet		extends  Object 
+   {
+	// Checks the consistency of supplied array/index arguments.
+	protected static function  Check ( array  $array, $index )	
+	   {
+		if  ( ! is_array ( $array ) )
+			error ( new \Thrak\System\InvalidArgumentException ( "The specified value is not an array" ) ) ;
+		
+		if  ( ! is_scalar ( $index ) )
+			error ( new \Thrak\System\InvalidArgumentException ( "The specified array index is not a scalar value" ) ) ;
+	    }
+
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        GetValue - Gets the value of the specified array element.
+	
+	    PROTOTYPE
+	        $value	=  WhenSet::GetValue ( $array, $index, $default = null ) ;
+	
+	    DESCRIPTION
+	        Gets the value of element $index in array $array ; returns $default if the specified element does not exist.
+	
+	    PARAMETERS
+	        $array (array) -
+	                Input array.
+	  
+	 	$index (scalar) -
+	 		Index of the element to be tested.
+	  
+	 	$default (any) -
+	 		Default value which will be returned if the specified array element does not exist.
+	
+	    RETURN VALUE
+	        Either the value of $array [$index] if it is defined, or the supplied $default value.
+	
+	  ==============================================================================================================*/
+	static function  GetValue ( array  $array, $index, $default = null )
+	   {
+		self::Check ( $array, $index ) ;
+		
+		return ( ( isset ( $array [ $index ] ) ) ?  $array [ $index ] : $default ) ;
+	    }
+    }
+
+
+/*==============================================================================================================
+
+    IsSetAnd class -
+        Allows for testing the value of array elements without having to test if the element is set.
+
+  ==============================================================================================================*/
+class  IsSetAnd		extends  WhenSet 
+   {
+	/*==============================================================================================================
+	
+	    NAME
+	        Equals - Checks if an array item equals to the specified value.
+	
+	    PROTOTYPE
+	        $bool	=  IsSetAnd::Equals ( $array, $index, $cmpvalue ) ;
+	
+	    DESCRIPTION
+	        Checks if the specified array element is equal to a supplied value.
+	
+	    PARAMETERS
+	        $array (array) -
+	                Input array.
+	  
+	 	$index (scalar) -
+	 		Index of the element to be tested.
+	  
+		$cmpvalue (any) -
+	 		Value to be compared to.
+	 
+	    RETURN VALUE
+	        True if the array element exists and is equal to the specified value, false otherwise.
+	
+	    NOTES
+	        A loose comparison is performed.
+	
+	  ==============================================================================================================*/
+	public static function  Equals ( array  $array, $index, $cmpvalue )
+	   {
+		self::Check ( $array, $index ) ;
+		
+		return  ( ( isset ( $array [ $index ] ) ) ?  ( $array [ $index ]  ==  $cmpvalue ) : false ) ;
+	    }
+	
+
+	/*==============================================================================================================
+	
+	    NAME
+	        IsEmpty - Checks if an array element is empty.
+	
+	    PROTOTYPE
+	        $bool	=  IsSetAnd::IsEmpty ( $array, $index ) ;
+	
+	    DESCRIPTION
+	        Checks if the specified array element is empty.
+	
+	    PARAMETERS
+	        $array (array) -
+	                Input array.
+	  
+	 	$index (scalar) -
+	 		Index of the element to be tested.
+	  
+	    RETURN VALUE
+	        True if the array element exists and is empty, false otherwise.
+	
+	  ==============================================================================================================*/		
+	public static function  IsEmpty ( array  $array, $index )
+	   {
+		self::Check ( $array, $index ) ;
+		
+		return  ( ( isset ( $array [ $index ] ) ) ?  isempty ( $array [ $index ] ) : false ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        Iscmpxxx - Implements comparison operators.
+	
+	    PROTOTYPE
+	        $bool	=  IsSetAnd::Isxxx ( $array, $index, $cmpvalue ) ;
+	
+	    DESCRIPTION
+	        Implements comparison operators, like GreaterThan, etc.
+		Note the IsIEqualTo and IsNotEqualTo functions are synonyms to Equals/NotEquals.
+	
+	    PARAMETERS
+	        $array (array) -
+	                Input array.
+	  
+	 	$index (scalar) -
+	 		Index of the element to be tested.
+	  
+	 	$cmpvalue -
+	 		Value to be compared with.
+	 
+	    RETURN VALUE
+	        If the specified array element exists, the return value will be the result of the comparison operator 
+		( <, <=, ==, !=, >, >= ) ; otherwise, the return value will be false.
+	
+	  ==============================================================================================================*/		
+	public static function  IsEqualTo ( array  $array, $index, $cmpvalue )
+	   {
+		self::Check ( $array, $index ) ;
+		
+		return  ( ( isset ( $array [ $index ] ) ) ?  $array [ $index ]  ==  $cmpvalue : false ) ;
+	    }
+	
+	public static function  IsNotEqualTo ( array  $array, $index, $cmpvalue )
+	   {
+		self::Check ( $array, $index ) ;
+		
+		return  ( ( isset ( $array [ $index ] ) ) ?  $array [ $index ]  !=  $cmpvalue : false ) ;
+	    }
+	
+	public static function  IsLessThan ( array  $array, $index, $cmpvalue )
+	   {
+		self::Check ( $array, $index ) ;
+		
+		return  ( ( isset ( $array [ $index ] ) ) ?  $array [ $index ]  <  $cmpvalue : false ) ;
+	    }
+	
+	public static function  IsLessThanOrEqual ( array  $array, $index, $cmpvalue )
+	   {
+		self::Check ( $array, $index ) ;
+		
+		return  ( ( isset ( $array [ $index ] ) ) ?  $array [ $index ]  <=  $cmpvalue : false ) ;
+	    }
+	
+	public static function  IsGreaterThan ( array  $array, $index, $cmpvalue )
+	   {
+		self::Check ( $array, $index ) ;
+		
+		return  ( ( isset ( $array [ $index ] ) ) ?  $array [ $index ]  >  $cmpvalue : false ) ;
+	    }
+	
+	public static function  IsGreaterThanOrEqual ( array  $array, $index, $cmpvalue )
+	   {
+		self::Check ( $array, $index ) ;
+		
+		return  ( ( isset ( $array [ $index ] ) ) ?  $array [ $index ]  >=  $cmpvalue : false ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        IsA - Checks if an array element is of the specified class.
+	
+	    PROTOTYPE
+	        $bool	=  IsSetAnd::IsA ( $array, $index, $class, $allow_string = true ) ;
+	
+	    DESCRIPTION
+	        Checks if an object belongs to the specified class or one of its parents.
+	
+	    PARAMETERS
+	        $array (array) -
+	                Input array.
+	  
+	 	$index (scalar) -
+	 		Index of the element to be tested.
+	 
+		$class (any) -
+			Name of the class to be checked against, or a string representing the name of the class (only
+			allowed when the $allow_string parameter is true).
+	  
+	 	$allow_string (boolean)
+	 		When true, the class name can be specified as a string. This trick prevents the autoloader to
+	 		try to load the class.
+	  
+	    RETURN VALUE
+	        True when the array item exists and is an object that has the specified class or inherits from it, 
+		false otherwise.
+	
+	  ==============================================================================================================*/		
+	public static function  IsA ( array  $array, $index, $class, $allow_string = true )
+	   {
+		self::Check ( $array, $index ) ;
+		
+		return  ( ( isset ( $array [ $index ] ) ) ?  is_a ( $array [ $index ], $class, $allow_string ) : false ) ;
+	    }
+
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        IsCtype - Implements the ctype_xxx() functions.
+	
+	    PROTOTYPE
+	        $bool	=  IsSetAnd::IsCtypexxx ( $array, $index ) ;
+	
+	    DESCRIPTION
+	        Implements the ctype_xxx() functions.
+	
+	    PARAMETERS
+	        $array (array) -
+	                Input array.
+	  
+	 	$index (scalar) -
+	 		Index of the element to be tested.
+	  
+	    RETURN VALUE
+	        If the specified array element exists, the return value will be the one from the corresponding ctype_xxx()
+		function ; otherwise, the return value will be false.
+	
+	  ==============================================================================================================*/		
+	public static function  IsCtypeAlnum ( array  $array, $index )
+	   {
+		self::Check ( $array, $index ) ;
+		
+		return  ( ( isset ( $array [ $index ] ) ) ?  ctype_alnum ( $array [ $index ] ) : false ) ;
+	    }
+
+	public static function  IsCtypeAlpha ( array  $array, $index )
+	   {
+		self::Check ( $array, $index ) ;
+		
+		return  ( ( isset ( $array [ $index ] ) ) ?  ctype_alpha ( $array [ $index ] ) : false ) ;
+	    }
+	
+	public static function  IsCtypeCntrl ( array  $array, $index )
+	   {
+		self::Check ( $array, $index ) ;
+		
+		return  ( ( isset ( $array [ $index ] ) ) ?  ctype_cntrl ( $array [ $index ] ) : false ) ;
+	    }
+	
+	public static function  IsCtypeDigit ( array  $array, $index )
+	   {
+		self::Check ( $array, $index ) ;
+		
+		return  ( ( isset ( $array [ $index ] ) ) ?  ctype_digit ( $array [ $index ] ) : false ) ;
+	    }
+	
+	public static function  IsCtypeGraph ( array  $array, $index )
+	   {
+		self::Check ( $array, $index ) ;
+		
+		return  ( ( isset ( $array [ $index ] ) ) ?  ctype_graph ( $array [ $index ] ) : false ) ;
+	    }
+	
+	public static function  IsCtypeLower ( array  $array, $index )
+	   {
+		self::Check ( $array, $index ) ;
+		
+		return  ( ( isset ( $array [ $index ] ) ) ?  ctype_lower ( $array [ $index ] ) : false ) ;
+	    }
+	
+	public static function  IsCtypePrint ( array  $array, $index )
+	   {
+		self::Check ( $array, $index ) ;
+		
+		return  ( ( isset ( $array [ $index ] ) ) ?  ctype_print ( $array [ $index ] ) : false ) ;
+	    }
+	
+	public static function  IsCtypePunct ( array  $array, $index )
+	   {
+		self::Check ( $array, $index ) ;
+		
+		return  ( ( isset ( $array [ $index ] ) ) ?  ctype_punct ( $array [ $index ] ) : false ) ;
+	    }
+	
+	public static function  IsCtypeSpace ( array  $array, $index )
+	   {
+		self::Check ( $array, $index ) ;
+		
+		return  ( ( isset ( $array [ $index ] ) ) ?  ctype_space ( $array [ $index ] ) : false ) ;
+	    }
+	
+	public static function  IsCtypeUpper ( array  $array, $index )
+	   {
+		self::Check ( $array, $index ) ;
+		
+		return  ( ( isset ( $array [ $index ] ) ) ?  ctype_upper ( $array [ $index ] ) : false ) ;
+	    }
+	
+	public static function  IsCtypexDigit ( array  $array, $index )
+	   {
+		self::Check ( $array, $index ) ;
+		
+		return  ( ( isset ( $array [ $index ] ) ) ?  ctype_xdigit ( $array [ $index ] ) : false ) ;
+	    }
+		
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        Isxxx - Implements the is_xxx() functions.
+	
+	    PROTOTYPE
+	        $bool	=  IsSetAnd::Isxxx ( $array, $index ) ;
+	
+	    DESCRIPTION
+	        Implements the is_xxx() functions.
+	
+	    PARAMETERS
+	        $array (array) -
+	                Input array.
+	  
+	 	$index (scalar) -
+	 		Index of the element to be tested.
+	  
+	    RETURN VALUE
+	        If the specified array element exists, the return value will be the one from the corresponding is_xxx()
+		function ; otherwise, the return value will be false.
+	
+	  ==============================================================================================================*/		
+	public static function  IsArray ( array  $array, $index )
+	   {
+		self::Check ( $array, $index ) ;
+		
+		return  ( ( isset ( $array [ $index ] ) ) ?  is_array ( $array [ $index ] ) : false ) ;
+	    }
+	
+	public static function  IsBool ( array  $array, $index )
+	   {
+		self::Check ( $array, $index ) ;
+		
+		return  ( ( isset ( $array [ $index ] ) ) ?  is_bool ( $array [ $index ] ) : false ) ;
+	    }
+
+	public static function  IsBoolean ( array  $array, $index )
+	   {
+		self::Check ( $array, $index ) ;
+		
+		return  ( ( isset ( $array [ $index ] ) ) ?  is_bool ( $array [ $index ] ) : false ) ;
+	    }
+
+	public static function  IsCallable ( array  $array, $index )
+	   {
+		self::Check ( $array, $index ) ;
+		
+		return  ( ( isset ( $array [ $index ] ) ) ?  is_callable ( $array [ $index ] ) : false ) ;
+	    }
+
+	public static function  IsDouble ( array  $array, $index )
+	   {
+		self::Check ( $array, $index ) ;
+		
+		return  ( ( isset ( $array [ $index ] ) ) ?  is_double ( $array [ $index ] ) : false ) ;
+	    }
+
+	public static function  IsFinite ( array  $array, $index )
+	   {
+		self::Check ( $array, $index ) ;
+		
+		return  ( ( isset ( $array [ $index ] ) ) ?  is_finite ( $array [ $index ] ) : false ) ;
+	    }
+
+	public static function  IsFloat ( array  $array, $index )
+	   {
+		self::Check ( $array, $index ) ;
+		
+		return  ( ( isset ( $array [ $index ] ) ) ?  is_float ( $array [ $index ] ) : false ) ;
+	    }
+
+	public static function  IsInfinite ( array  $array, $index )
+	   {
+		self::Check ( $array, $index ) ;
+		
+		return  ( ( isset ( $array [ $index ] ) ) ?  is_infinite ( $array [ $index ] ) : false ) ;
+	    }
+
+	public static function  IsInt ( array  $array, $index )
+	   {
+		self::Check ( $array, $index ) ;
+		
+		return  ( ( isset ( $array [ $index ] ) ) ?  is_int ( $array [ $index ] ) : false ) ;
+	    }
+
+	public static function  IsInteger ( array  $array, $index )
+	   {
+		self::Check ( $array, $index ) ;
+		
+		return  ( ( isset ( $array [ $index ] ) ) ?  is_integer ( $array [ $index ] ) : false ) ;
+	    }
+
+	public static function  IsLong ( array  $array, $index )
+	   {
+		self::Check ( $array, $index ) ;
+		
+		return  ( ( isset ( $array [ $index ] ) ) ?  is_long ( $array [ $index ] ) : false ) ;
+	    }
+
+	public static function  IsNaN ( array  $array, $index )
+	   {
+		self::Check ( $array, $index ) ;
+		
+		return  ( ( isset ( $array [ $index ] ) ) ?  is_nan ( $array [ $index ] ) : false ) ;
+	    }
+
+	public static function  IsNull ( array  $array, $index )
+	   {
+		self::Check ( $array, $index ) ;
+		
+		return  ( ( isset ( $array [ $index ] ) ) ?  is_null ( $array [ $index ] ) : false ) ;
+	    }
+
+	public static function  IsNumeric ( array  $array, $index )
+	   {
+		self::Check ( $array, $index ) ;
+		
+		return  ( ( isset ( $array [ $index ] ) ) ?  is_numeric ( $array [ $index ] ) : false ) ;
+	    }
+
+	public static function  IsObject ( array  $array, $index )
+	   {
+		self::Check ( $array, $index ) ;
+		
+		return  ( ( isset ( $array [ $index ] ) ) ?  is_object ( $array [ $index ] ) : false ) ;
+	    }
+
+	public static function  IsReal ( array  $array, $index )
+	   {
+		self::Check ( $array, $index ) ;
+		
+		return  ( ( isset ( $array [ $index ] ) ) ?  is_real ( $array [ $index ] ) : false ) ;
+	    }
+
+	public static function  IsResource ( array  $array, $index )
+	   {
+		self::Check ( $array, $index ) ;
+		
+		return  ( ( isset ( $array [ $index ] ) ) ?  is_resource ( $array [ $index ] ) : false ) ;
+	    }
+
+	public static function  IsScalar ( array  $array, $index )
+	   {
+		self::Check ( $array, $index ) ;
+		
+		return  ( ( isset ( $array [ $index ] ) ) ?  is_scalar ( $array [ $index ] ) : false ) ;
+	    }
+
+	public static function  IsString ( array  $array, $index )
+	   {
+		self::Check ( $array, $index ) ;
+		
+		return  ( ( isset ( $array [ $index ] ) ) ?  is_string ( $array [ $index ] ) : false ) ;
+	    }
+
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        IsDate, IsTime, IsDatetime - Checks if a string contains a date/time/datetime value.
+	
+	    PROTOTYPE
+	        $bool	=  IsSetAnd::IsDate ( $array, $index ) ;
+	        $bool	=  IsSetAnd::IsTime ( $array, $index ) ;
+	        $bool	=  IsSetAnd::IsDateTime ( $array, $index ) ;
+	
+	    DESCRIPTION
+	        Checks if a string contains a date/time/datetime value. The supported formats are those used by the 
+		strtotime() function.
+	
+	    PARAMETERS
+	        $array (array) -
+	                Input array.
+	  
+	 	$index (scalar) -
+	 		Index of the element to be tested.
+	  
+	    RETURN VALUE
+	        If the specified array element exists, the return value will be true if the supplied string is a date, time
+		or datetime value, and false otherwise.
+	
+	  ==============================================================================================================*/		
+	public static function  IsDate ( array  $array, $index )
+	   {
+		self::Check ( $array, $index ) ;
+		
+		return  ( ( isset ( $array [ $index ] ) ) ?  is_array ( $array [ $index ] )  &&  String::IsDate ( $array [ $index ] ) : false ) ;
+	    }
+
+	public static function  IsTime ( array  $array, $index )
+	   {
+		self::Check ( $array, $index ) ;
+		
+		return  ( ( isset ( $array [ $index ] ) ) ?  is_array ( $array [ $index ] )  &&  String::IsTime ( $array [ $index ] ) : false ) ;
+	    }
+
+	public static function  IsDateTime ( array  $array, $index )
+	   {
+		self::Check ( $array, $index ) ;
+		
+		return  ( ( isset ( $array [ $index ] ) ) ?  is_array ( $array [ $index ] )  &&  String::IsDateTime ( $array [ $index ] ) : false ) ;
+	    }
+
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        IsEmptyArray - Checks if an array is empty.
+	
+	    PROTOTYPE
+	        $bool	=  IsSetAnd::IsEmptyArray ( $array, $index ) ;
+	
+	    DESCRIPTION
+	        Checks if the specified array item is an empty array.
+	
+	    PARAMETERS
+	        $array (array) -
+	                Input array.
+	  
+	 	$index (scalar) -
+	 		Index of the element to be tested.
+	  
+	    RETURN VALUE
+	        If the specified array element exists, the return value will be the one true if the array is empty and
+		false if not ; otherwise (array element is not defined), the return value will be false.
+	
+	  ==============================================================================================================*/		
+	public static function  IsEmptyArray ( array  $array, $index )
+	   {
+		self::Check ( $array, $index ) ;
+		
+		return  ( ( isset ( $array [ $index ] ) ) ?  is_array ( $array [ $index ] )  &&  ! count ( $array [ $index ] ) : false ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        IsSubclass - Checks if an array element is a subclass of the specified class.
+	
+	    PROTOTYPE
+	        $bool	=  IsSetAnd::InheritsFrom ( $array, $index, $class, $allow_string = true ) ;
+	
+	    DESCRIPTION
+	        Checks if an object belongs to the specified class or one of its parents.
+	
+	    PARAMETERS
+	        $array (array) -
+	                Input array.
+	  
+	 	$index (scalar) -
+	 		Index of the element to be tested.
+	 
+		$class (any) -
+			Name of the class to be checked against, or a string representing the name of the class (only
+			allowed when the $allow_string parameter is true).
+	  
+	 	$allow_string (boolean)
+	 		When true, the class name can be specified as a string. This trick prevents the autoloader to
+	 		try to load the class.
+	  
+	    RETURN VALUE
+	        True when the array item exists and is an object that inherits from the specified class, false otherwise.
+	
+	  ==============================================================================================================*/		
+	public static function  InheritsFrom ( array  $array, $index, $class, $allow_string = true )
+	   {
+		self::Check ( $array, $index ) ;
+		
+		return  ( ( isset ( $array [ $index ] ) ) ?  is_subclass_of ( $array [ $index ], $class, $allow_string ) : false ) ;
+	    }
+
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        IsTrue, IsFalse - Checks if an array element has the required boolean value.
+	
+	    PROTOTYPE
+	        $bool	=  IsSetAnd::IsTrue ( array  $array, $index ) ;
+	        $bool	=  IsSetAnd::IsFalse ( array  $array, $index ) ;
+	
+	    DESCRIPTION
+	        Checks if the specified array element has the boolean value true or false.
+	
+	    PARAMETERS
+	        $array (array) -
+	                Input array.
+	  
+	 	$index (scalar) -
+	 		Index of the element to be tested.
+	  
+	    RETURN VALUE
+	        True when the array item exists and is an object that inherits from the specified class, false otherwise.
+	
+	  ==============================================================================================================*/		
+	public static function  IsTrue ( array  $array, $index )
+	   {
+		self::Check ( $array, $index ) ;
+		
+		return  ( ( isset ( $array [ $index ] ) ) ?  ( $array [ $index ]  ==  true ) : false ) ;
+	    }
+
+	
+	public static function  IsFalse ( array  $array, $index )
+	   {
+		self::Check ( $array, $index ) ;
+		
+		return  ( ( isset ( $array [ $index ] ) ) ?  ( $array [ $index ]  ==  false ) : false ) ;
+	    }
+
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        Matches - Checks if an array element matches a regular expression.
+	
+	    PROTOTYPE
+	        $bool	=  IsSetAnd::Matches ( $array, $index, $re, $flags, $offset, &$matches ) ;
+	
+	    DESCRIPTION
+	        Checks if the specified array element matches the specified regular expression.
+	
+	    PARAMETERS
+	        $array (array) -
+	                Input array.
+	  
+	 	$index (scalar) -
+	 		Index of the element to be tested.
+	  
+		$flags (integer) -
+			One of the following preg flags :
+			- PREG_OFFSET_CAPTURE :
+				Captures the offset of every matches component.
+	 
+		$offset (integer) -
+			Offset where to start from in array element.
+	  
+		$matches (&array) -
+			An optional array that will receive the matched expressions.
+	 
+	    RETURN VALUE
+	        True if the array element is defined and matches the specified regular expression, false otherwise.
+	
+	  ==============================================================================================================*/
+	public static function  Matches ( array  $array, $index, string  $re, integer  $flags, integer  $offset, $matches = null )
+	   {
+		self::Check ( $array, $index ) ;
+		
+		return  ( ( isset ( $array [ $index ] ) ) ?  preg_match ( $array [ $index ], $matches, $flags, $offset ) : false ) ;
+	    }
+
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        StrictlyEquals - Checks if an array item equals to the specified value.
+	
+	    PROTOTYPE
+	        $bool	=  IsSetAnd::StrictlyEquals ( $array, $index, $cmpvalue ) ;
+	
+	    DESCRIPTION
+	        Checks if the specified array element is equal to a supplied value.
+	
+	    PARAMETERS
+	        $array (array) -
+	                Input array.
+	  
+	 	$index (scalar) -
+	 		Index of the element to be tested.
+	  
+		$cmpvalue (any) -
+	 		Value to be compared to.
+	 
+	    RETURN VALUE
+	        True if the array element exists and is equal to the specified value, false otherwise.
+	
+	    NOTES
+	        A strict comparison is performed.
+	
+	  ==============================================================================================================*/
+	public static function  StrictlyEquals ( array  $array, $index, $cmpvalue )
+	   {
+		self::Check ( $array, $index ) ;
+		
+		return  ( ( isset ( $array [ $index ] ) ) ?  ( $array [ $index ]  ===  $cmpvalue ) : false ) ;
+	    }
+
+	/*==============================================================================================================
+	
+	    NAME
+	        StringEquals, StringEqualsNoCase - Checks if an array item equals to the specified strng value.
+	
+	    PROTOTYPE
+	        $bool	=  IsSetAnd::StringEquals ( $array, $index, $cmpvalue ) ;
+	        $bool	=  IsSetAnd::StringEqualsNoCase ( $array, $index, $cmpvalue ) ;
+	
+	    DESCRIPTION
+	        Checks if the specified array element is equal to a supplied value.
+		The StringEquals method is case-sensitive, while the StringEqualsNoCase is not.
+	
+	    PARAMETERS
+	        $array (array) -
+	                Input array.
+	  
+	 	$index (scalar) -
+	 		Index of the element to be tested.
+	  
+		$cmpvalue (any) -
+	 		Value to be compared to.
+	 
+	    RETURN VALUE
+	        True if the array element exists and is equal to the specified value, false otherwise.
+	
+	  ==============================================================================================================*/
+	public static function  StringEquals ( array  $array, $index, $cmpvalue )
+	   {
+		self::Check ( $array, $index ) ;
+		
+		return  ( ( isset ( $array [ $index ] ) ) ?  ( strcmp ( $array [ $index ], $cmpvalue )  ==  0 ) : false ) ;
+	    }
+	
+	public static function  StringEqualsNoCase ( array  $array, $index, $cmpvalue )
+	   {
+		self::Check ( $array, $index ) ;
+		
+		return  ( ( isset ( $array [ $index ] ) ) ?  ( strcasecmp ( $array [ $index ], $cmpvalue )  ==  0 ) : false ) ;
+	    }
+	
+	
+ 	/*==============================================================================================================
+	
+	    NAME
+	        ThisFunctionIsTrue - Returns the supplied function's return value.
+	
+	    PROTOTYPE
+	        $bool	=  IsSetAnd::ThisFunctionIsTrue ( $array, $index, $function, $args = array ( ) ) ;
+	
+	    DESCRIPTION
+	        Calls the specified function if the supplied array element is defined and returns its value.
+	
+	    PARAMETERS
+	        $array (array) -
+	                Input array.
+	  
+	 	$index (scalar) -
+	 		Index of the element to be tested.
+	  
+		$function (callback) -
+			Function to be called on the supplied array element.
+	   
+	  	$args (array) -
+	  		Optional arguments for the specified function.
+	   
+	    RETURN VALUE
+	        The return value of $function if the specified array element is defined, or false otherwise.
+	
+	  ==============================================================================================================*/
+	public static function  ThisFunctionIsTrue ( array  $array, $index, $function, array  $args  =  array ( ) )
+	   {
+		self::Check ( $array, $index ) ;
+		
+		return  ( ( isset ( $array [ $index ] ) ) ?  call_user_func_array ( $function, $args ) : false ) ;
+	    }
+
+   }

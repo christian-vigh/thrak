@@ -1,0 +1,850 @@
+<?php
+/***************************************************************************************************
+
+    NAME
+	DateTime.phpclass
+
+    DESCRIPTION
+	DateTime, Date and Time parameters.
+
+    AUTHOR
+     	Christian Vigh, 07/2011.
+
+    HISTORY
+    [Version : 1.0]	[Date : 2011/07/02]	[Author : CV]
+     	Initial version.
+
+    [Version : 2.0]	[Date : 2012/10/06]		[Author : CV]
+	Migrated to the Thrak library version 2.
+
+    [Version : 2.0.1]	[Date : 2015/02/05]		[Author : CV]
+	. Changed the date format from 'yyyy/mm/dd' to 'yyyy-mm-dd'.
+
+    [Version : 2.0.2]	[Date : 2015/04/11]		[Author : CV]
+	. Replaced each exception throwing with "error ( new CLException (...) )".
+
+    [Version : 2.0.3]	[Date : 2015/06/15]		[Author : CV]
+	. Changed the CLAbstractDateTimeParameter::ProcessValue() method to allow Mysql-like null
+	  dates, which correspond to a unix time of zero.
+	. Changed the GetDateElements() and GetTimeElements() methods to properly cast integer
+ 	  strings to integer values. Exceptions are the 'day' and 'month' elements, which remain a 
+ 	  string (because it may have a leading zero) and the 'leap-year' element, which is converted
+ 	  to a boolean.
+ 	. Added the 'month-of-year' element in the datetime array, which is the 'month' element
+ 	  converted to a string.
+ 
+ ***************************************************************************************************/
+namespace  	Thrak\Processors\CL ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// used namespaces and classes
+use 	Thrak\Processors\CL\CLException ;
+use     Thrak\Types\String ;
+use     Thrak\Types\String\Regex ;
+
+
+/*==================================================================================================
+
+    CLDateTimeAbstractParameter -
+    	Base class for the DateTime, Date and Time options
+
+	Implements a command-line date/time switch.
+	Supplied value can be any value supported by the strtotime() function.
+	The returned value is an array containing the following elements :
+
+	For date options :
+		'date' -
+			Date string, in the format 'yyyy-mm-dd'.
+
+		'unixtime' -
+			Unix timestamp.
+
+		'year' -
+			4-digits year number.
+
+		'month' -
+			2-digits month number.
+
+		'day' -
+			2-digits day number in the month.
+
+		'day-name' -
+			Full day name, in english.
+
+		'day-of-week' -
+			Number of the day in the week.
+
+		'day-of-year' -
+			Number of the day in the year.
+
+		'timezone' -
+			Code number of actual time zone.
+
+		'dst' -
+			Indicates if daylight saving time applies.
+
+		'leap-year' -
+			Non-zero if the specified year is a leap year.
+
+		'gmt' -
+			Time offset from Greenwich mean time.
+
+	For time options :
+		'time' -
+			Time string, in the format 'hh:mm:ss'.
+
+		'hour' -
+			2-digits hour.
+
+		'minute' -
+			2-digits minute.
+
+		'second' -
+			2-digits second.
+
+		'day-seconds' -
+			Number of seconds represented by the supplied hour, minute and second.
+
+	For datetime options :
+		The datetime option returns all the elements of date and time options, plus
+		the following :
+
+		'datetime' -
+			Date and time string, in the format 'yyyy-mm-dd hh:mm:ss'.
+
+ ==================================================================================================*/
+abstract class  CLAbstractDateTimeParameter  extends  \Thrak\Processors\CL\CLAbstractParameter
+   {
+	/*-------------------------------------------------------------------------------------------
+
+		Class constructor.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __construct ( $parent, $tags, $valuetext )
+	   {
+		parent::__construct ( $parent, $tags, $valuetext ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Processes the supplied value and converts it to Unix time.
+
+	 --------------------------------------------------------------------------------------------*/
+  	protected function  ProcessValue ( $name, $value )
+  	   {
+		  if  ( substr ( $value, 0, 10 )  ==  '0000-00-00' )
+			$result	=  0 ;
+		  else
+			$result = strtotime ( $value ) ;
+
+		if  ( $result  ===  false )
+			error ( new CLException ( "Invalid value '$value' for the '$name' parameter." ) ) ;
+
+		return ( $result ) ;
+  	   }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Get date/time elements.
+
+	 --------------------------------------------------------------------------------------------*/
+	// Get Date/time elements
+	protected function  GetDateTimeElements ( $value )
+	   {
+	   	$result = array_merge ( $this -> GetDateElements ( $value ), $this -> GetTimeElements ( $value ) ) ;
+		$result [ 'datetime' ] = date ( 'Y-m-d H:i:s', $value ) ;
+
+		return ( $result ) ;
+	    }
+
+
+  	// Get date elements
+  	protected function  GetDateElements ( $value )
+  	   {
+  	        $result = array ( ) ;
+
+		$result [ 'date' ]  		=  date ( 'Y-m-d', $value ) ;
+		$result [ 'unixtime' ]  	=  $value ;
+		$result [ 'year' ]		=  ( integer ) date ( 'Y', $value ) ;
+		$result [ 'month' ]		=  date ( 'm', $value ) ;
+		$result [ 'month-of-year' ]	=  ( integer ) date ( 'm', $value ) ;
+		$result [ 'day' ]		=  date ( 'd', $value ) ;
+		$result [ 'day-name' ]		=  ( integer ) date ( 'l', $value ) ;
+		$result [ 'day-of-week' ]	=  ( integer ) date ( 'w', $value ) ;
+		$result [ 'day-of-year' ]	=  ( integer ) date ( 'z', $value ) ;
+		$result [ 'leap-year' ]		=  ( ( integer ) date ( 'L', $value ) ) ?  true : false ;
+		$result [ 'timezone' ]	   	=  date ( 'T', $value ) ;
+		$result [ 'dst' ]		=  ( integer ) date ( 'I', $value ) ;
+		$result [ 'gmt' ]		=  date ( 'P', $value ) ;
+
+		return ( $result ) ;
+  	    }
+
+
+	// Get time elements
+  	protected function  GetTimeElements ( $value )
+  	   {
+  	        $result = array ( ) ;
+
+		$result [ 'time' ]  		=  date ( 'H:i:s', $value ) ;
+		$result [ 'hour' ]		=  ( integer ) date ( 'H', $value ) ;
+		$result [ 'minute' ]		=  ( integer ) date ( 'i', $value ) ;
+		$result [ 'second' ]		=  ( integer ) date ( 's', $value ) ;
+		$result [ 'day-seconds' ]	=  ( $result [ 'hour' ]  * 3600 ) + ( $result [ 'minute' ] * 60 ) + $result [ 'second' ] ;
+
+		return ( $result ) ;
+  	    }
+    }
+
+
+/*==================================================================================================
+
+    CLDateTimeParameter class -
+	Implements a datetime parameter.
+
+  ==================================================================================================*/
+class  CLDateTimeParameter  extends  CLAbstractDateTimeParameter
+   {
+	/*-------------------------------------------------------------------------------------------
+
+		Class constructor.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __construct ( $parent, $tags )
+	   {
+	   	$this -> Help			=  "Defines a Date/time parameter, which accepts any string that can be processed by the strtotime() function." ;
+	   	$this -> ReturnValueHelp        =<<<END
+Returns an associative array containing the following entries :
+'datetime' -
+	Date and time, in the format "yyyy-mm-dd hh:mm:ss".
+'date' -
+	Date, in the format 'yyyy-mm-dd'.
+'unixtime' -
+	Time in Unix format, ie the number of elapsed second since January, 1st, 1970.
+'year' -
+	4-digits year.
+'month' -
+	2-digits month.
+'day' -
+	2-digits day.
+'day-name' -
+	Full day name.
+'day-of-week' -
+	Day of week number, from 0 for sunday to 6 for saturday.
+'day-of-year' -
+	Day of year, from 0 to 366.
+'leap-year' -
+	Boolean value indicating if the year is a leap year.
+'timezone' -
+	Abbreviated timezone.
+'dst' -
+	Indicates if daylight saving time is applicable or not.
+'gmt' -
+	Difference with Greenwich Mean Time (GMT).
+'time' -
+	Time, in the format hh:mm:ss.
+'hour' -
+	Two-digits hour.
+'minute' -
+	Two-digits minute.
+'second' -
+	Two digits second.
+'day-seconds' -
+	Number of seconds elapsed since the start of the day.
+END;
+
+		parent::__construct ( $parent, $tags, "datetime" ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Process value.
+
+	 --------------------------------------------------------------------------------------------*/
+	protected function  ProcessValue ( $name, $value )
+	   {
+		$value 		=   parent::ProcessValue ( $name, $value ) ;
+
+		return ( $this -> GetDateTimeElements ( $value ) ) ;
+	    }
+    }
+
+
+/*==================================================================================================
+
+    CLDateParameter class -
+	Implements a date parameter. Potential references to time are silently ignored.
+
+  ==================================================================================================*/
+class  CLDateParameter  extends  CLAbstractDateTimeParameter
+   {
+	/*-------------------------------------------------------------------------------------------
+
+		Class constructor.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __construct ( $parent, $tags )
+	   {
+	        $this -> Help			=  "Defines a Date parameter, which accepts any string that can be processed by the strtotime() function." ;
+	   	$this -> ReturnValueHelp        =<<<END
+Returns an associative array containing the following entries :
+'datetime' -
+	Date and time, in the format "yyyy-mm-dd hh:mm:ss".
+'date' -
+	Date, in the format 'yyyy-mm-dd'.
+'unixtime' -
+	Time in Unix format, ie the number of elapsed second since January, 1st, 1970.
+'year' -
+	4-digits year.
+'month' -
+	2-digits month.
+'day' -
+	2-digits day.
+'day-name' -
+	Full day name.
+'day-of-week' -
+	Day of week number, from 0 for sunday to 6 for saturday.
+'day-of-year' -
+	Day of year, from 0 to 366.
+'leap-year' -
+	Boolean value indicating if the year is a leap year.
+'timezone' -
+	Abbreviated timezone.
+'dst' -
+	Indicates if daylight saving time is applicable or not.
+'gmt' -
+	Difference with Greenwich Mean Time (GMT).
+END;
+
+		parent::__construct ( $parent, $tags, "date" ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Process value.
+
+	 --------------------------------------------------------------------------------------------*/
+	protected function  ProcessValue ( $name, $value )
+	   {
+		$value 		=   parent::ProcessValue ( $name, $value ) ;
+
+		return ( $this -> GetDateElements ( $value ) ) ;
+	    }
+    }
+
+
+/*==================================================================================================
+
+    CLTimeParameter class -
+	Implements a time parameter. Potential references to date are silently ignored.
+
+  ==================================================================================================*/
+class  CLTimeParameter  extends  CLAbstractDateTimeParameter
+   {
+	/*-------------------------------------------------------------------------------------------
+
+		Class constructor.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __construct ( $parent, $tags )
+	   {
+	        $this -> Help			=  "Defines a time parameter, which accepts any string that can be processed by the strtotime() function." ;
+	   	$this -> ReturnValueHelp        =<<<END
+Returns an associative array containing the following entries :
+
+'time' -
+	Time, in the format hh:mm:ss.
+'hour' -
+	Two-digits hour.
+'minute' -
+	Two-digits minute.
+'second' -
+	Two digits second.
+'day-seconds' -
+	Number of seconds elapsed since the start of the day.
+END;
+
+		parent::__construct ( $parent, $tags, "time" ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Process value.
+
+	 --------------------------------------------------------------------------------------------*/
+	protected function  ProcessValue ( $name, $value )
+	   {
+		$value 		=   parent::ProcessValue ( $name, $value ) ;
+
+		return ( $this -> GetTimeElements ( $value ) ) ;
+	    }
+    }
+
+
+/*==================================================================================================
+
+    CLDurationParameter class -
+	Implements a duration parameter.
+	A duration value can be expressed as :
+
+		n1 days n2 hours n3 minutes n4 seconds n5 milliseconds
+
+	Spaces are not significant. The same unit can be specified more than once.
+
+	The returned value is an associative array having the following entries :
+	- milliseconds, seconds, minutes, hours, days :
+		Duration elements, as specified in the command line value.
+	- total-milliseconds, total-seconds, total-minutes, total-hours, total-days :
+		Initial value, converted into milliseconds, seconds, minutes, hours and days.
+
+	For example, the following command-line input :
+
+		2 days 1 hours 7 seconds
+
+	will return the following result :
+
+	   array (
+	        ["days"] => (float) 2
+	        ["hours"] => (float) 1
+	        ["minutes"] => (float) 0
+	        ["seconds"] => (float) 7
+	        ["milliseconds"] => (float) 0
+	        ["total-days"] => (float) 2.0417476851852
+	        ["total-hours"] => (float) 49.001944444444
+	        ["total-minutes"] => (float) 2940.1166666667
+	        ["total-seconds"] => (int) 176407
+	        ["total-milliseconds"] => (int) 176407000
+	    )
+
+  ==================================================================================================*/
+class  CLDurationParameter  extends  CLAbstractDateTimeParameter
+  {
+  	// Duration types
+  	const	DURATION_MILLISECONDS		=  0 ;
+  	const	DURATION_SECONDS		=  1 ;
+  	const	DURATION_MINUTES		=  2 ;
+  	const	DURATION_HOURS			=  3 ;
+  	const 	DURATION_DAYS			=  4 ;
+
+	// Specific attributes
+   	private		$MeasureDefinitions = array
+   	   (
+	    	array
+	    	   (
+	    	   	'names'		=>  array ( 'default-unit' ),
+	    	   	'type'		=>  self::ATTRIBUTE_TYPE_STRING,
+	    	   	'default'	=>  false,
+	    	   	'member'	=>  'DefaultDurationUnit',
+	    	   	'postprocessor'	=>  'DefaultUnitValidator',
+	    	   	'help'		=>  'Specifies the default duration unit when only a numeric value is specified.'
+      		    )
+    	    ) ;
+
+	// Default duration unit
+	public		$DefaultUnit		=  "seconds" ;
+	public 		$DefaultUnitIndex       =  1 ; 		// Seconds
+
+	// Conversion tables ; note that for names and aliases, it is important to start by the longest word up to the shortest one
+	private 	$Units			=  array
+	   (
+	   	array
+	   	   (
+		      	'names'			=>  array ( 'milliseconds', 'millisecond', 'millis', 'milli', 'ms' ),
+			'value'			=>  self::DURATION_MILLISECONDS,
+			'multiplier'	        =>  1,
+			'divider'		=>  1
+     		    ),
+	   	array
+	   	   (
+		      	'names'			=>  array ( 'seconds', 'second', 'secs', 'sec', 's' ),
+			'value'			=>  self::DURATION_SECONDS,
+			'multiplier'        	=>  1000
+     		    ),
+	   	array
+	   	   (
+		      	'names'			=>  array ( 'minutes', 'minute', 'mins', 'min', 'mn', 'm' ),
+			'value'			=>  self::DURATION_MINUTES,
+			'multiplier'	        =>  60000
+     		    ),
+	   	array
+	   	   (
+		      	'names'			=>  array ( 'hours', 'hour', 'hrs', 'hr', 'h' ),
+			'value'			=>  self::DURATION_HOURS,
+			'multiplier' 	       	=>  3600000
+     		    ),
+	   	array
+	   	   (
+		      	'names'			=>  array ( 'days', 'day', 'd' ),
+			'value'			=>  self::DURATION_DAYS,
+			'multiplier'        	=>  86400000
+     		    )
+	    ) ;
+
+	// List of unit names and aliases, into decreasing number of characters and in descending alphabetic order
+	private		$UnitNames		=  array ( ) ;
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Class Constructor.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __construct ( $parent, $tags, $valuetext = "duration" )
+	   {
+   		$this -> Help 			=<<<END
+Defines a duration parameter, which can include the following parts :
+
+	n1 days n2 hours n3 minutes n4 seconds
+
+n1 to n4 are positive integer numbers. Spaces are optional between values. All parts are optional.
+If only a numeric value is specified, then the default unit, either seconds or the one specified
+through the 'default-unit' attribute of the parameter definition will be used.
+The same unit can be specified more than once.
+
+The following are the list of time-unit aliases :
+
+milliseconds 	: millisecond, millis, milli, ms
+seconds		: second, secs, sec, s
+minutes		: minute, mins, min, mn, m
+hours		: hour, hrs, hr, h
+days		: day, d
+END;
+
+   		$this -> ReturnValueHelp	=<<<END
+Returns an array containing the following entries :
+
+'milliseconds', 'seconds', 'minutes', 'hours', 'days' -
+	Specified value, converted in the various duration units.
+
+'total-milliseconds', 'total-seconds', 'total-minutes', 'total-hours', 'total-days' -
+	Initial value, converted respectively into milliseconds, seconds, minutes, hours and days.
+END;
+
+		parent::__construct ( $parent, $tags, $valuetext ) ;
+
+		// Build the array of unit names
+		$unit_names 		=  array ( ) ;
+
+		foreach  ( $this -> Units  as  $Unit )
+			$unit_names = array_merge ( $unit_names, $Unit [ 'names' ] ) ;
+
+		rsort ( $unit_names ) ;
+		$this -> UnitNames	=  $unit_names ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Validator called when a default unit is specified.
+
+	 --------------------------------------------------------------------------------------------*/
+	protected function  DefaultUnitValidator ( $object, $attribute_definition, $tag, $name, $value )
+	   {
+		$result 	=  $this -> __find_attribute_unit ( $tag, $name, $value ) ;
+
+		$this -> DefaultUnitIndex 	=  $result [0] ;
+		$this -> DefaultUnit		=  $result [1] ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Preprocess value.
+
+	 --------------------------------------------------------------------------------------------*/
+  	protected function  ProcessValue ( $name, $value )
+	   {
+	   	$result 		=  array ( ) ;							// Temp result array
+		$total			=  0 ; 								// Total duration in ms
+		$default_multiplier	=  $this -> Units [ $this -> DefaultUnitIndex ] [ 'multiplier' ] ;
+
+
+		// For simple numeric values, use the default unique
+		if  ( is_numeric ( $value ) )
+			$total = $value * $default_multiplier ;
+		// Otherwise, split the supplied command line value
+		else
+		   {
+		   	// First, strip spaces
+		   	$value	=  String::StripSpaces ( $value ) ;
+
+			// This callback function is here to ensure that we don't confuse between 'm' (minutes) and the
+			// start of 'ms' (milliseconds)
+			$callback = function ( $matches )
+			   {
+				$result = $matches [1] . strtolower ( $matches [2] ) . " " . $matches [3] ;
+				return ( $result ) ;
+			    } ;
+
+			// Then, for each unit name or alias specified, add an extra space after it
+			foreach  ( $this -> UnitNames  as  $name )
+			   {
+			   	$name 	=  String::EscapeRegexCharacters ( $name ) ;
+				$value  = preg_replace_callback ( '/([^a-z_]) (' . $name . ') ([^a-z_ \t])/ix', $callback, $value ) ;
+			    }
+
+			// Then explode the string into single elements (numeric value + unit name)
+			$items 	=  explode ( ' ', trim ( $value ) ) ;
+
+			// Loop through command line individual items
+			foreach  ( $items  as  $item )
+			   {
+			   	// Then through each defined unit
+				foreach  ( $this -> UnitNames  as  $name )
+				   {
+					$re  =  '/^ (?P<value>' . REGEX_UNSIGNED_FLOAT . ')' .
+							'(?P<unit> ' .String::EscapeRegexCharacters ( $name ) . ')? $/ix' ;
+
+					// Yes, we have to separate the numeric value from the unit name
+					if  ( preg_match ( $re, $item, $matches ) )
+					   {
+					   	$value 		=  $matches [ 'value' ] ;
+
+					   	// If a unit has been specified, use it
+					   	if  ( array_key_exists ( 'unit', $matches ) )
+					   	   {
+					   		$found 		=  $this -> __find_value_unit ( $name, $matches [ 'unit' ] ) ;
+					   		$multiplier	=  $this -> Units [ $found [0] ] [ 'multiplier' ] ;
+				   		    }
+				   		// Otherwise use the default one
+				   		else
+				   			$found = $default_multiplier ;
+
+						$total 	+=  $value * $multiplier ;
+
+						// Stop the "foreach  ( $this -> Units  as  $Unit )" loop since we have found our way
+			   			break ;
+					    }
+				    }
+			    }
+		    }
+
+		// Build the resulting array
+		$count 		=  count ( $this -> Units ) ;
+		$current_total 	=  $total ;
+
+		for  ( $i = $count - 1 ; $i >= 0 ; $i -- )
+		   {
+		   	$Unit 			=  $this -> Units [$i] ;
+			$name 			=  $Unit [ 'names' ] [0] ;
+			$multiplier 		=  $Unit [ 'multiplier' ] ;
+
+			$value 			=  floor ( $current_total / $multiplier ) ;
+			$current_total 	       %=  $multiplier ;
+
+			$result [ $name ]       =  $value ;
+		    }
+
+		// Do the same, to compute the total number of days, hours, minutes, etc.
+		for  ( $i = $count - 1 ; $i >= 0 ; $i -- )
+		   {
+		   	$Unit 			=  $this -> Units [$i] ;
+			$name 			=  'total-' . $Unit [ 'names' ] [0] ;
+			$multiplier 		=  $Unit [ 'multiplier' ] ;
+
+			$value 			=  $total / $multiplier ;
+			$result [ $name ]	=  $value ;
+		    }
+
+  		// All done, return
+  		return ( $result ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Finds the specified unit. Throws an exception if not found.
+
+	 --------------------------------------------------------------------------------------------*/
+ 	private function  __find_attribute_unit ( $tag, $attribute, $string )
+ 	   {
+		$result =  $this ->  __find_unit ( $string ) ;
+
+		if  ( $result  ===  false )
+			error ( new CLException ( "Invalid unit '$string' specified for the '$attribute' attribute of the <$tag> tag." ) ) ;
+
+		return ( $result ) ;
+	    }
+
+
+	private function  __find_value_unit ( $name, $value )
+	   {
+		$result =  $this ->  __find_unit ( $value ) ;
+
+		if  ( $result  ===  false )
+			error ( new CLException ( "Invalid unit '$value' specified for the '$name' parameter." ) ) ;
+
+		return ( $result ) ;
+	    }
+
+
+	private function  __find_unit ( $string )
+	   {
+		$index  =  0 ;
+
+		foreach  ( $this -> Units  as  $Unit )
+		   {
+			foreach  ( $Unit [ 'names' ]  as  $name )
+			   {
+				if  ( ! strcasecmp ( $name, $string ) )
+				   	return ( array ( $index, $Unit [ 'names' ] [0] ) ) ;
+			    }
+
+			$index ++ ;
+		    }
+
+		return ( false ) ;
+ 	    }
+    }
+
+
+/*==================================================================================================
+
+    CLMonthNameParameter class -
+	Implements a month name parameter.
+	Months are specified in english (january or jan for example) or by their number,
+	between 1 and 12.
+
+  ==================================================================================================*/
+class  CLMonthNameParameter  extends  CLAbstractDateTimeParameter
+   {
+   	// Accepted month names
+   	private 	$MonthNames = array
+   	   (
+   	   	'january'	=>  1,
+   	   	'jan'		=>  1,
+   	   	'february'	=>  2,
+   	   	'feb'		=>  2,
+   	   	'march'		=>  3,
+   	   	'mar'		=>  3,
+   	   	'april'		=>  4,
+   	   	'apr'		=>  4,
+   	   	'may'		=>  5,
+   	   	'june'		=>  6,
+   	   	'jun'		=>  6,
+   	   	'july'		=>  7,
+   	   	'jul'		=>  7,
+   	   	'august'	=>  8,
+   	   	'aug'		=>  8,
+   	   	'september'	=>  9,
+   	   	'sep'		=>  9,
+   	   	'october'	=>  10,
+   	   	'oct'		=>  10,
+   	   	'november'	=>  11,
+   	   	'nov'		=>  11,
+   	   	'december'	=>  12,
+   	   	'dec'		=>  12
+	    ) ;
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Class constructor.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __construct ( $parent, $tags, $valuetext = "month" )
+	   {
+   		$this -> Help 			=  "Defines a month name parameter, which can be specified either textually or by its number (between 1 and 12)." ;
+   		$this -> ReturnValueHelp	=  "Returns the month number." ;
+		parent::__construct ( $parent, $tags, $valuetext ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Preprocess value.
+
+	 --------------------------------------------------------------------------------------------*/
+  	protected function  ProcessValue ( $name, $value )
+  	   {
+  	   	if  ( is_numeric ( $value ) )
+  	   	   {
+			if  ( $value  >=  1  &&  $value  <=  12 )
+				return ( $value ) ;
+
+			error ( new CLException ( "Invalid month number '$value' for parameter '$name'." ) ) ;
+  	   	    }
+
+  		$value = strtolower ( $value ) ;
+
+  		if  ( array_key_exists ( $value, $this -> MonthNames ) )
+  			return ( $this -> MonthNames [ $value ] ) ;
+
+		error ( new CLException ( "Invalid month name '$value' for parameter '$name'." ) ) ;
+  	    }
+    }
+
+
+/*==================================================================================================
+
+    CLDayNameParameter class -
+	Implements a day name parameter.
+	Days are specified in english (monday or mon for example) or by their number,
+	between 1 and 7, the value 1 corresponding to monday..
+
+  ==================================================================================================*/
+class  CLDayNameParameter  extends  CLAbstractDateTimeParameter
+   {
+   	// Accepted day names
+   	private 	$DayNames = array
+   	   (
+		'monday'	=>  1,
+		'mon'		=>  1,
+		'tuesday'	=>  2,
+		'tue'		=>  2,
+		'wednesday'	=>  3,
+		'wed'		=>  3,
+		'thursday'	=>  4,
+		'thu'		=>  4,
+		'friday'	=>  5,
+		'fri'		=>  5,
+		'saturday'	=>  6,
+		'sat'		=>  6,
+		'sunday'	=>  7,
+		'sun'		=>  7
+	    ) ;
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Class constructor.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __construct ( $parent, $tags, $valuetext = "day" )
+	   {
+   		$this -> Help 			=  "Defines a day name parameter, which can be specified either textually or by its number (between 1 and 7)." ;
+   		$this -> ReturnValueHelp	=  "Returns the day number between 1 and 7, the value 1 corresponding to monday." ;
+		parent::__construct ( $parent, $tags, $valuetext ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Preprocess value.
+
+	 --------------------------------------------------------------------------------------------*/
+  	protected function  ProcessValue ( $name, $value )
+  	   {
+  	   	if  ( is_numeric ( $value ) )
+  	   	   {
+			if  ( $value  >=  1  &&  $value  <=  7 )
+				return ( $value ) ;
+
+			error ( new CLException ( "Invalid day number '$value' for parameter '$name'." ) ) ;
+  	   	    }
+
+  		$value = strtolower ( $value ) ;
+
+  		if  ( array_key_exists ( $value, $this -> DayNames ) )
+  			return ( $this -> DayNames [ $value ] ) ;
+
+		error ( new CLException ( "Invalid day name '$value' for parameter '$name'." ) ) ;
+  	    }
+    }

@@ -1,0 +1,1781 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        Regex.phpclass
+
+    DESCRIPTION
+        Regex-related string functions.
+
+    AUTHOR
+        Christian Vigh, 03/2015.
+
+    HISTORY
+    [Version : 1.0]	[Date : 2015/03/31]     [Author : CV]
+        Initial version.
+
+    [Version : 1.0.1]	[Date : 2015/04/01]     [Author : CV]
+ 	. Added the following methods :
+ 		- RenumberNamedCaptures()
+ 		- GroupNamedCaptures()
+ 		- PregMatchEx()
+ 		- PregMatchAllEx()
+
+    [Version : 1.0.2]	[Date : 2015/04/02]     [Author : CV]
+	. Added the following methods :
+		- NormalizeMetaSequence() 
+		- MetaPregMatch()
+ 		- PregMatch(), PregMatchAll() and PregReplace()
+
+    [Version : 1.0.3]	[Date : 2015/04/09]     [Author : CV]
+	. Added cache and cache statistics
+
+    [Version : 1.0.4]	[Date : 2015/04/10]     [Author : CV]
+	. Added the CheckRegex() method.
+	. Added the $return_error parameter to the PregHandleError() method.
+
+    [Version : 1.0.5]	[Date : 2015/05/12]     [Author : CV]
+	. Corrected a bug in the PregMatchAllEx() method, where the level of indirection added by the
+ 	  GroupNamedCaptures() method was not properly removed. Now, numeric indexes in the resulting match
+ 	  array are like those returned by preg_match_*() ; while non-numeric indexes corresponding to named
+ 	  captures are rid of entries equal to a single string or to a two-elements array having an empty string
+ 	  at offset 0 and a -1 value at offset 1.
+
+    [Version : 1.0.6]	[Date : 2015/06/13]     [Author : CV]
+ 	. Corrected a bug in the PregMatchAllEx() method which caused empty results in named sequence matches
+ 	  to be improperly removed, which caused incorrect sub-array element count in the results.
+
+    [Version : 1.0.7]	[Date : 2015/06/16]     [Author : CV]
+	. Corrected a bug in the PregMatchAllEx() method which caused non-empty results to be merged in the
+	  wrong order.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Types\String ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces & objects
+use 		Thrak\System\Object ;
+use		Thrak\Types\ArrayHelpers ;
+use 		Thrak\Types\String ;
+use		Thrak\Types\String\Formatting ;
+
+
+/*==============================================================================================================
+
+        PREG_ additional flags
+
+  ==============================================================================================================*/
+define ( 'PREG_WIPE_MATCHES'		, 0x00010000 ) ;		// Wipes unnamed captures
+
+
+/*==============================================================================================================
+
+    Regex class -
+        Regex-related string functions.
+
+  ==============================================================================================================*/
+class  Regex	extends  Object 
+   {
+	// When true, preg_* function warnings generate errors
+	public static	$GeneratePregErrors			=  true ;
+	
+	// Useful regular expressions
+	const	REGEX_UNSIGNED_INTEGER		=  '[0-9]+' ;
+	const	REGEX_SIGNED_INTEGER		= '[+\-]?[0-9]+' ;
+	const	REGEX_INTEGER			=  REGEX_SIGNED_INTEGER ;
+	const	REGEX_BINARY_INTEGER		=  '0[bB][01]+' ;
+	const	REGEX_OCTAL_INTEGER		=  '0[oO][0-7]+' ;
+	const	REGEX_HEX_INTEGER		=  '0[xX][0-9a-fA-F]+' ;
+	const	REGEX_SIGNED_FLOAT		=  '([+\-]?((\.[0-9]+)|([0-9]+(\.[0-9]*)?))(([eE][+\-]?[0-9]+)?))' ;
+	const	REGEX_UNSIGNED_FLOAT		=  '(((\.[0-9]+)|([0-9]+(\.[0-9]*)?))(([eE][+\-]?[0-9]+)?))' ;
+	const	REGEX_FLOAT			=  REGEX_SIGNED_FLOAT ;
+	const	REGEX_DOMAIN_NAME		=  '([a-zA-Z\-0-9]+(\. [a-zA-Z\-0-9]+)*)' ;
+	const	REGEX_REGEX			=  '/((\\/)|[^/])+/[a-zA-Z]*' ;
+	const	REGEX_IPV4_ADDRESS		=  '(?P<address>(?P<b1>[0-9]+)\.(?P<b2>[0-9]+)\.(?P<b3>[0-9]+)\.(?P<b4>[0-9]+))' ;
+	const	REGEX_EMAIL_ADDRESS		=  '^(?P<user>[a-zA-Z0-9_.+-]+)@(?P<domain>[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)$' ;
+	const	REGEX_IPV4_ADDRESS_MASK		=  '(?P<address>(?P<b1>[0-9]+)(\.(?P<b2>[0-9]+)(\.(?P<b3>[0-9]+)(\.(?P<b4>[0-9]+))?)?)?)(\\/(?P<mask>[0-9]+))?' ;
+
+
+	// Cache options that can be defined through the self::$CacheOptions variable
+	const		CACHE_NORMALIZED_EXPRESSIONS		=  0x0001 ;		// Cache for NormalizeMetaSequence
+	const		CACHE_META_PREG_MATCHES			=  0x0002 ;		// Cache for MetaPregMatchEx
+	const		CACHE_PREG_MATCHES			=  0x0004 ;		// Cache for preg_* functions
+	const		CACHE_RENUMBERED_CAPTURES		=  0x0008 ;		// Cache for renumbered captures
+	const		CACHE_MULTI_SUBSTR			=  0x0010 ;		// Cache for multi-substring substitutions
+	const		CACHE_GROUP_CAPTURES			=  0x0020 ;		// Cache for named capture grouping
+	
+	const		CACHE_ALL				=  0xFFFF ;		// Enable all cache optimizations
+	const		CACHE_NONE				=  0x0000 ;		// Disable all cache optimizations
+	
+	// Cached entries for various Regex methods
+	private static	$NormalizedExpressionsCache		=  [] ;
+	private static  $MetaPregMatchCache			=  [] ;
+	private static  $PregCache				=  [] ;
+	private static  $RenumberedCapturesCache		=  [] ;	
+	private static  $MultiSubstrCache			=  [] ;
+	private static  $GroupCapturesCache			=  [] ;
+	
+	// Cache options
+	public static	$CacheOptions				=  self::CACHE_ALL ;
+	
+	// Cache statistics
+	public static	$CacheStatistics			=  
+	   [
+		'normalized-expressions'	=>  [ 'method' => 'NormalizeMetaSequence'	, 'flag' => self::CACHE_NORMALIZED_EXPRESSIONS  ,
+								'calls' => 0, 'hits' => 0, 'misses' => 0 ],
+		'meta-preg'			=>  [ 'method' => 'MetaPregMatch'		, 'flag' => self::CACHE_META_PREG_MATCHES	,
+								'calls' => 0, 'hits' => 0, 'misses' => 0 ],
+		'preg'				=>  [ 'method' => 'PregMatch'			, 'flag' => self::CACHE_PREG_MATCHES		,
+								'calls' => 0, 'hits' => 0, 'misses' => 0 ],
+		'group-captures'		=>  [ 'method' => 'GroupNamedCaptures'		, 'flag' => self::CACHE_GROUP_CAPTURES		,
+								'calls' => 0, 'hits' => 0, 'misses' => 0 ],
+		'renumber'			=>  [ 'method' => 'RenumberNamedCaptures'	, 'flag' => self::CACHE_RENUMBERED_CAPTURES	,
+								'calls' => 0, 'hits' => 0, 'misses' => 0 ]
+	    ] ;
+	
+	
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		CheckRegex - Checks the validity of a regular expression.
+
+	    PROTOTYPE
+		$status		=  Regex::CheckRegex ( $regex, &$error_message = null ) ;
+	  
+	    DESCRIPTION
+	 	Checks the validity of the specified regular expression, by calling the preg_match()
+	 	function on an empty pattern.
+	  
+	    PARAMETERS
+	 	$regex (string) -
+	 		Regular expression to be checked.
+	  
+	 	$error_message (string ref) -
+			If the specified regular expression is incorrect, then :
+	 		- An exception will be thrown if the $error_message parameter is null
+	 		- The error message will be returned in $error_message otherwise
+	  
+	    RETURN VALUE
+		This method has no return value.
+		
+	 --------------------------------------------------------------------------------------------*/
+	public static function  CheckRegex ( $regex, &$error_message = null )
+	   {
+		$status		=  @preg_match ( $regex, '' ) ;
+		
+		if  ( $status  ===  false )
+		   {
+			if  ( $error_message  ===  null )
+				self::PregHandleError ( false, $regex, false ) ;
+			else
+				$error_message	=  self::PregHandleError ( false, $regex, true ) ;
+		    }
+	    }
+	
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		DevelopExpression - Expands a factorized expression.
+
+	    PROTOTYPE
+		$array	=  Regex::DevelopExpression ( $expression, $limit = 10000 ) ;
+	  
+	    DESCRIPTION
+		Expands (develops) a factorized string expression.
+	 	Sometimes, it is necessary to represent a set of values with a factorized expression,
+	 	such as the shell allows us to match a set of files using a pattern.
+	 	The DevelopExpression() method allows for input strings that can contain "character
+	 	classes" such as :
+	  
+	 		[a-c].somestring
+	  
+	 	which will expand to the following array of values :
+	  
+	 		a.somestring
+	 		b.somestring
+	 		c.somestring
+	  
+	 	Character classes can be either alphabetic or alphanumeric, such as in the following
+	 	example :
+	  
+	 		[a-b][0-1].somestring
+	  
+	 	which will expand to :
+	  
+	 		a0.somestring
+	 		a1.somestring
+	 		b0.somestring
+	 		b1.somestring
+	  
+	 	Numeric values can be zero-padded, using an optional width construct, like in the
+	 	following example :
+	  
+	 		[a-b][0-1]/4.somestring
+	  
+	 	which will expand to :
+	  
+	 		a0000.somestring
+	 		a0001.somestring
+	 		b0000.somestring
+	 		b0001.somestring
+	  
+	 	For alphabetic character classes, the case of the first character determines the case
+	 	of the expanded result ; for example :
+	  
+	 		[A-c].somestring
+	  
+	 	will give :
+	  
+	 		A.somestring
+	 		B.somestring
+	 		C.somestring
+	  
+	 	Finally, brackets can be escaped using the backslash character.
+
+	    PARAMETERS
+	 	$expression (string) -
+	 		Expression to be developed.
+	  
+	 	$limit (integer) -
+	 		Maximum number of developed expressions to be returned. This limit is
+	 		arbitrarily fixed to 10000.
+			When null or negative, no limit is applied.
+
+	    RETURN VALUE
+		An array containing the developed expression results. The returned value always contain
+		at least one element (the supplied input value) when no factorization expression are
+		found.
+	  
+	    TODO
+	 	. Allow for real character classes, such as :
+	 		[A]		(same as [A-A])
+	 		[A-]		(same as [A-Z])
+	 		[-Z]		(same as [A-Z])
+	 		[abc012]	(low/high will cycle through the characters "abc012")
+	 
+	 --------------------------------------------------------------------------------------------*/
+	public static function  DevelopExpression ( $expression, $limit = 10000 )
+	   {
+		// Regular expression that matches :
+		// . Either an escaped bracket 
+		// . Or a factorization expression
+		static $re	=  '#
+					(?P<escape> \\\\ [\[\]] ) 
+					|
+					(?P<range>
+						\[
+							(?P<rangelo> ( [a-z] | [0-9]+ ) )
+							-
+							(?P<rangehi> ( [a-z] | [0-9]+ ) )
+						\]
+						(
+							\/
+							(?P<width> \d+)
+						 )?
+					 ) 
+				    #imsx' ;
+		
+		// First simplication case : the input string contain no factorization expression, return
+		// it as is
+		if  ( ! self::PregMatchAll ( $re, $expression, $matches, PREG_OFFSET_CAPTURE ) )
+			return ( [ $expression ] ) ;
+		
+		// Second elimination case : the input string does not contain any factorization expression,
+		// but escaped brackets are present (thus generating a "match")
+		$found_range	=  false ;
+		
+		foreach  ( $matches [ 'range' ]  as  $match )
+		   {
+			if  ( $match )
+			   {
+				$found_range	=  true ;
+				break ;
+			    }
+		    }
+		
+		if  ( ! $found_range )
+			return ( [ $expression ] ) ;
+		
+		// Initializations
+		$results		=  [] ;				// The results that will be returned
+		$result_count		=  0 ;				// Number of generated results - checked against the $limit parameter
+		$ranges			=  [] ;				// Associative arrays that describe each input string portion, either plain constant or factorization expression
+		$range_indexes		=  [] ;				// Indexes into $ranges of the entries containing a factorization expression
+		$expression_length	=  strlen ( $expression ) ;	// Compute it once and for all
+		
+		/***
+			Loop through the matches found ; upon exit, the $ranges array will contain associative arrays with
+			the following keys :
+			- 'expression' (boolean) :
+				True if the entry is a factorization expression, false otherwise.
+			- 'offset' (integer) :
+				Start character.
+			- 'length' (integer) :
+				Length of the expression or plain substring.
+			- 'capture' (string) :
+		 		Original string (either the plain substring or the factorization expression).
+		  
+		 	For factorization expressions, the following keys are also present :
+		  
+		 	- 'low' (integer) :
+		 		Low value of the factorization expression. 
+		 	- 'high' (integer) :
+		 		High value of the factorization expression.
+		  
+		 	- 'numeric' (boolean) :
+		 		True if the factorization expression relates to numeric values, false for alphabetic values.
+		  
+		 	- 'width' (boolean) :
+		 		False for alphabetic values.
+		 		For numeric values, specifies the zero-pad width.
+		 
+		 	- 'current' (integer or string) :
+		 		Current index in the generation loop. Initialized to the value of the 'low' entry.
+		  
+		 ***/
+		
+		// If first match does not start at string offset zero, create a plain string entry in the $ranges array
+		if  ( $matches [ 'range' ] [0] [1]  !=  0 )
+			$ranges []	=  
+			   [ 
+				'expression'	=>  false, 
+				'offset'	=>  0, 
+				'length'	=>  $matches [ 'range' ] [0] [1],
+				'capture'	=>  substr ( $expression, 0, $matches [ 'range' ] [0] [1] )
+			    ] ;
+			
+		// Loop through the matches
+		for ( $i = 0 ; $i  <  count ( $matches [ 'range' ] ) ; $i ++ )
+		   {
+			// $matches [ 'range' ] [$i] will never be an array if an escaped bracket is met
+			if  ( ! $matches [ 'range' ] [$i] )
+				continue ;
+		
+			// Create the range entry
+			$range	=  
+			   [ 
+				'expression'	=>  true,
+				'low'		=>  $matches [ 'rangelo' ] [$i] [0],
+				'high'		=>  $matches [ 'rangehi' ] [$i] [0],
+				'offset'	=>  $matches [ 'range'   ] [$i] [1],
+				'current'	=>  $matches [ 'rangelo' ] [$i] [0],
+				'length'	=>  strlen ( $matches [ 'range' ] [$i] [0] ),
+				'capture'	=>  $matches [ 'range' ] [$i] [0],
+				'width'		=>  ( $matches [ 'width' ] [$i] ) ?  $matches [ 'width' ] [$i] [0] : false 
+			    ] ;
+				
+			// If low value is alphabetic...
+			if  ( ctype_alpha ( $range [ 'low' ] ) )
+			   {
+				// ... and if high value is also alphabetic
+				if  ( ctype_alpha ( $range [ 'high' ] ) )
+				   {
+					// ... the case of the factorized expressions will be the case of the 'low' value
+					if  ( ctype_lower ( $range [ 'low' ] ) )
+						$range [ 'high' ]	=  strtolower ( $range [ 'high' ] ) ;
+					else
+						$range [ 'high' ]	=  strtoupper ( $range [ 'high' ] ) ;
+				    }
+				// ... but complain if out of alphabetic range
+				else
+					error ( new \Thrak\System\InvalidArgumentException ( "Invalid combination of letters and numbers in factorized expression : " .
+							$matches [ 'range' ] [$i] [0] ) ) ;
+					
+				$range [ 'numeric' ]	=  false ;		// This entry is alphabetic
+			    }
+			// Low value is not alphabetic : due to the regex construct, this must be an integer, so check that the high
+			// value is also an integer
+			else if  ( ! is_numeric ( $range [ 'high' ] ) )
+					error ( new \Thrak\System\InvalidArgumentException ( "Invalid combination of letters and numbers in factorized expression : " .
+							$matches [ 'range' ] [$i] [0] ) ) ;
+			// Both low and high values are numeric
+			else 
+				$range [ 'numeric' ]	=  true ;
+			
+			// Check that low range is not greater than upper range
+			if  ( $range [ 'numeric' ] )
+			   {
+				if  ( ( integer ) $range [ 'low' ]  >  ( integer ) $range [ 'high' ] )
+					error ( new \Thrak\System\InvalidArgumentException ( "Lower numeric value cannot be greater than upper value in factorized expression : " .
+							$matches [ 'range' ] [$i] [0] ) ) ;
+			    }
+			else if  ( $range [ 'low' ]  >  $range [ 'high' ] )
+				error ( new \Thrak\System\InvalidArgumentException ( "Lower alphabetic value cannot be greater than upper value in factorized expression : " .
+						$matches [ 'range' ] [$i] [0] ) ) ;
+				
+			// If there is a plain string between the previous range and this one, then we need to add 
+			// a plain string entry before it
+			$count	=  count ( $ranges ) ;
+				
+			if  ( $count )		// ... but only if we already have found ranges 
+			   {
+				$previous_range	=  $ranges [ $count - 1 ] ;
+				$last_found	=  $previous_range [ 'offset' ] + $previous_range [ 'length' ] ;  
+					
+				if  ( $last_found  <  $range [ 'offset' ] )
+				   {
+					$ranges	[]	=
+					   [
+						'expression'	=>  false,
+						'offset'	=>  $last_found,
+						'length'	=>  $range [ 'offset' ] - $last_found,
+						'capture'	=>  substr ( $expression, $last_found, $range [ 'offset' ] - $last_found )
+					    ] ;
+				    }
+			    }
+			
+			// Since the $ranges array contains both plain strings and factorization expressions, we need an array
+			// to store factorization expression indexes, in order to simplify the generation process
+			$range_indexes []	=  count ( $ranges ) ;
+			
+			// Add this factorization expression to the list
+			$ranges []		=  $range ;
+		    }
+		
+		// If the string does not end with a factorization expression, then we have to add this plain string to
+		// the $ranges array
+		$count	=  count ( $ranges ) ;
+				
+		if  ( $count )
+		   {
+			$previous_range	=  $ranges [ $count - 1 ] ;
+			$last_found	=  $previous_range [ 'offset' ] + $previous_range [ 'length' ] ;  
+					
+			if  ( $last_found  <  $expression_length )
+			   {
+				$ranges	[]	=
+				   [
+					'expression'	=>  false,
+					'offset'	=>  $last_found,
+					'length'	=>  $expression_length - $last_found,
+					'capture'	=>  substr ( $expression, $last_found, $expression_length - $last_found )
+				    ] ;
+			    }
+		    }
+
+		// After all this preparatory stuff, we are finally ready to generate the developed values !
+		$range_index_count	=  count ( $range_indexes ) ;
+		
+		while  ( true ) 
+		   {
+			$current	=  "" ;
+			
+			// Generate the current developed value
+			foreach  ( $ranges  as  $range )
+			   {
+				if  ( $range [ 'expression' ] )
+				   {
+					if  ( $range [ 'width' ] )
+						$current	.=  sprintf ( "%0{$range [ 'width' ]}d", $range [ 'current' ] ) ;
+					else
+						$current	.=  $range [ 'current' ] ;
+				    }
+				else  
+					$current	.=  $range [ 'capture' ] ;
+			    }
+				
+			$results []	=  $current ;
+			$result_count ++ ;
+			
+			// Stop if we reached the limit (if any...)
+			if  ( $limit  >  0  &&  $result_count  ==  $limit )
+				break ;
+			
+			// This loop finds the next increment value, when multiple factorization expressions are specified
+			for  ( $i = $range_index_count - 1 ; $i  >=  0 ; $i -- )
+			   {
+				// Look only the entries in the $range array that are factorization expressions, starting
+				// with the very last one
+				$range_index	=  $range_indexes [$i] ;
+				$current_range	=  &$ranges [ $range_index ] ;
+				
+				// Increment the value
+				if  ( $current_range [ 'numeric' ] )
+					$current_range [ 'current' ]	=  $current_range [ 'current' ] + 1 ;
+				else
+					$current_range [ 'current' ]	=  chr ( ord ( $current_range [ 'current' ] ) + 1 ) ;
+				
+				// When the current (last) value reaches the high-end of the range...
+				if  ( $current_range [ 'current' ]  >  $current_range [ 'high' ] )
+				   {
+					// Just start again with the low-end value
+					if  ( $i )
+						$current_range [ 'current' ]	=  $current_range [ 'low' ] ;
+					// ... but only if there are still values to be incremented
+					else
+						break 2 ;
+				    }
+				// Current value is still within the [low..high] range
+				else
+					break ;
+			    }
+		    }
+		
+		// All done, return
+		return ( $results ) ;
+	    }
+
+	
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		GetCacheStatistics - Returns cache statistics so far.
+
+	    PROTOTYPE
+		$statistics	=  Regex::GetCacheStatistics ( $full_list = false ) ;
+	  
+	    DESCRIPTION
+	 	Returns statistics about various Regex method calls (number of calls, hits and
+	 	misses).
+	  
+	    PARAMETERS
+		$full_list (boolean) -
+	 		When true, all the statistics are returned but disabled cache entries are set
+	 		to N/A.
+	 		When false, only the enabled cache entries are returned.
+	  
+	    RETURN VALUE
+	 	An associative array of associative arrays ; each entry contains the following keys :
+		- 'method' :
+	 		Name of the called method.
+	  
+	 	- 'calls' :
+	 		Number of times the cached function has been called.
+	 	- 'hits' :
+	 		Number of cache hits (ie, results stored from a previous function call).
+	 	- 'misses' :
+	 		Number of cache misses. 
+	 	- 'enabled' :
+	 		True if the associated method caching has been enabled.
+	 	- 'flag' :
+	 		Associated flag value.
+	  
+	 	Each key describes a statistic and can have the following values :
+	 	- 'normalized-expressions' :
+	 		Statistics about the Regex::NormalizeMetaSequence() method.
+	 	- 'meta-preg' :
+	 		Statistics about the Regex::MetaPregMatch() method.
+	 	- 'preg' :
+	 		Statistics about the Regex::PregMatch*() methods.
+	 	- 'renumber' :
+	 		Statistics about the Regex::RenumberNamedCaptures() method.
+		
+	 --------------------------------------------------------------------------------------------*/
+	public static function  GetCacheStatistics ( $full_list = false )
+	   {
+		$result		=  [] ;
+		
+		foreach  ( self::$CacheStatistics  as  $key => $statistics )
+		   {	
+			$enabled			=  ( ( self::$CacheOptions  &  $statistics [ 'flag' ] ) ) ?  true : false ;
+			$statistics [ 'enabled' ]	=  $enabled ;
+			
+			if  ( $full_list  ||  $enabled )
+				$result [ $key ]	=  $statistics ;
+		    }
+		
+		return ( $result ) ;
+	    }
+
+	
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		GroupNamedCaptures - Allows a regex match result to have captures with the same name.
+
+	    PROTOTYPE
+		$new_match	=  Regex::GroupNamedCaptures ( $match, $replacements ) ;
+	  
+	    DESCRIPTION
+		After the result of calling a preg_* function, takes the resulting matches and groups
+	 	them using the specified replacement associative array.
+	 	The $replacement array comes from a possible call to Regex::RenumberNamedCaptures()
+	 	method ; each key defines the renumbered capture names, whereas each value is the
+	 	original name. 
+	 	There is a 1 -> n relationship between the new and old names, allowing a single
+	 	regular expression to contain more than one capture having the same name.
+	  
+	    PARAMETERS
+		$match (array of strings) -
+	 		A match result, as can be returned by the self::PregMatch*() functions.
+	  
+	 	$replacements (associative array) -
+	 		An associative array returned by the Regex::RenumberNamedCaptures() method,
+	 		having the following shape :
+	 		- key   : New capture name
+	 		- value : old capture name
+	  
+	    RETURN VALUE
+	 	A match array where there is an additional level of indirection to represent grouped
+	 	captures (ie, captures having the same name), such as in the following example :
+	  
+			$pattern	=  "/aaa \s* (?P<pat> coucou) \s* zzzz \s* (?P<pat> coucou.*) \s* aaa \s* (?P<pat> zzzz)/imsx";
+			$subject	=  "aaa coucou zzzz coucou2 aaa zzzz";
+	 		$newpattern	=  Regex::RenumberNamedCaptures ( $pattern, $replacements ) ;
+			self::PregMatch ( $newpattern, $subject, $match,PREG_OFFSET_CAPTURE ) ;
+			$new_match	=  Regex::GroupNamedCaptures ( $match, $replacements ) ;
+
+		The $new_match array will have the following contents (note the "pat" entry which 
+		corresponds to the matched (?P<pat> ...) captures :
+	  
+			$new_match = array[5]
+			   {
+				[0] => array[1]
+				   {
+					[0] => array[2]
+					   {
+						[0] => (string[32]) "aaa coucou zzzz coucou2 aaa zzzz"
+						[1] => (int) 0
+					    }
+				    }
+				["pat"] => array[3]
+				   {
+					[0] => array[2]
+					   {
+						[0] => (string[6]) "coucou"
+						[1] => (int) 4
+					    }
+					[1] => array[2]
+					   {
+						[0] => (string[8]) "coucou2 "
+						[1] => (int) 16
+					    }
+					[2] => array[2]
+					   {
+						[0] => (string[4]) "zzzz"
+						[1] => (int) 28
+					    }
+				    }
+				[1] => array[1]
+				   {
+					[0] => array[2]
+					   {
+						[0] => (string[6]) "coucou"
+						[1] => (int) 4
+					    }
+				    }
+				[2] => array[1]
+				   {
+					[0] => array[2]
+					   {
+						[0] => (string[8]) "coucou2 "
+						[1] => (int) 16
+					    }
+				    }
+				[3] => array[1]
+				   {
+					[0] => array[2]
+					   {
+						[0] => (string[4]) "zzzz"
+						[1] => (int) 28
+					    }
+				    }
+			    }
+	 
+	 --------------------------------------------------------------------------------------------*/
+	public static function  GroupNamedCaptures ( $match, $replacements )
+	   {
+		// Cache results management
+		if  ( self::$CacheOptions  &  self::CACHE_GROUP_CAPTURES )
+		   {
+			self::$CacheStatistics [ 'group-captures' ] [ 'calls' ] ++ ;
+
+			$serialized_match	=  md5 ( serialize ( $match ) ) ;
+			
+			if  ( isset ( self::$GroupCapturesCache [ $serialized_match ] ) )
+			   {
+				$serialized_replacements	=  md5 ( serialize ( $replacements ) ) ;
+				
+				if  ( isset ( self::$GroupCapturesCache [ $serialized_match ] [ $serialized_replacements ] ) )
+				   {
+					self::$CacheStatistics [ 'group-captures' ] [ 'hits' ] ++ ;
+					
+					return ( self::$GroupCapturesCache [ $serialized_match ] [ $serialized_replacements ] ) ;
+				    }
+			    }
+		    }
+		
+		$new_match	=  [] ;
+		
+		foreach  ( $match  as  $key => $value )
+		   {
+			// If the key corresponds to one of the matched replacements, group it into an array
+			if  ( isset ( $replacements [ $key ] ) )
+			   {
+				if  ( isset ( $new_match [ $replacements [ $key ] ] ) )
+					$new_match [ $replacements [ $key ] ] []	=  $value ;
+				else
+					$new_match [ $replacements [ $key ] ]		=  [ $value ] ;
+			    }
+			else
+			   {
+				if  ( isset ( $new_match [ $key ] ) )
+					$new_match [ $key ] []	=  $value ;
+				else
+					$new_match [ $key ]	=  [ $value ] ;
+			    }
+		    }
+		
+		// Add this new entry to the cache
+		if  ( self::$CacheOptions  &  self::CACHE_GROUP_CAPTURES )   
+		   {
+			self::$CacheStatistics [ 'group-captures' ] [ 'misses' ] ++ ;
+			$serialized_match		=  md5 ( serialize ( $match ) ) ;
+			$serialized_replacements	=  md5 ( serialize ( $replacements ) ) ;
+			
+			self::$GroupCapturesCache [ $serialized_match ] [ $serialized_replacements ]	=  $new_match ;
+		    }
+		
+		return ( $new_match ) ;
+	    }
+	
+	
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		MetaPregMatchEx - A meta-matching artefact for regular expressions.
+
+	    PROTOTYPE
+	 	$status		=  Regex::MetaPregMatchEx ( $sequence, $regex_list, $subject_array, 
+	 					&$matches = null, $flags = 0, $match_all = false,
+						&$missing_matches = [] )
+
+	    DESCRIPTION
+		Suppose you have to scan a sequence of lines, such as in a log file. You want to
+	 	recognize which sequence follows which pattern. 
+	  
+	 	A sequence in an example log file could be, for example :
+	 	- A line containing "message start"
+	 	- Any number of lines starting with "log:" and followed by any sequence of characters
+	 	- A line containing "message end"
+	  
+	 	The following example gives a layout of such a log file :
+	  
+	 		message start
+	 		log: message 1
+	 		log: message 2
+	 		...
+	 		log: message n
+	 		message end
+	  
+	 	The purpose is to check whether a sequence of lines would match this scheme ; a set
+	 	of regular expressions would be first needeed to match every particular line in a 
+	 	sequence :
+	  
+	 		$regex_list =
+	 		   [
+	 			'1' => '/message start/',
+	 			'2' => 'log: \s* (?P<logmessage> .*),
+	 			'3' => '/message end/'
+	 		    ] ;
+	  
+	 	Then, to match a set of lines containing 'message start', having an unlimited number
+	 	of lines starting with 'log:', then ending with a line containing 'message end', you
+	 	would have to provide a regular expression using a backreference-style syntax 
+	 	referencing the keys of our $regex_list array, which would give :
+	  
+	 		$sequence	=  '\1 \2* \3' ;
+	  
+	 	meaning :
+	 		- The first line must be the one identified by '\1', ie 'message start'
+	 		- There can be any number of lines identified by '\2', ie starting with 'log:'
+	 		- The last line must be 'message end'
+	  
+	 	Note that each $regex_list item is a regular expression which can contain group
+	 	captures, either named or not.
+		If it does not contain re delimiters, then '/ /imsx' is assumed, so do not forget that
+		spaces will not be significant.
+	  
+	 	Thus, checking if a set of lines (in an array) matches the regular expressions 
+	 	specified in $sequence and defined in $regex_list, a simple call will be enough :
+	  
+		 	$status = Regex::MetaPregMatchEx ( $sequence, $regex_list, $lines ) ;
+
+	    PARAMETERS
+	 	$sequence (string) -
+	 		A regular expression containing preg backreference-style constructs that
+	 		refer to array keys in the $regex_list array.
+	  
+	 		The following preg-style backreferences are supported ('x' stands for a 
+	 		sequence of digits, 'name' for a group capture name) :
+			- \x
+			- \gx
+			- \g{x}
+			- (?P=name)
+			- \k<name>
+			- \k'name'
+			- \k{name}
+			- \g{name}
+	  
+	 	$regex_list (array) -
+	 		An associative array whose keys are backreference ids (either the 'x' or the
+	 		'name' string described in the $sequence parameter help) and whose values
+	 		are regular expressions.
+	 		Each entry is meant to match one or more lines of a sequence of lines.
+	 
+		 	If no delimiter encloses the regex, then a default delimiter '/' will be used, 
+		 	and the 'imsx' preg options will be automatically added before performing the 
+	 		match.
+	  
+	 	$subject_array (array) -
+	 		Array of input lines to be matched against the specified sequence.
+	  
+	 	$matches (array) -
+			Reference to an array which will receive the individual matches.
+	 		Each entry is an associative array having the following keys :
+	 		- 'reference' :
+	 			The original string reference.
+	 		- 'regex' :
+	 			The regex that matched the line.
+	 		- 'matches' :
+	 			Array of matches. Note that since the method uses PregMatchEx(),
+	 			an additional level of indirection is added with regards to self::PregMatch,
+	 			since several captures can have the same name.
+	  
+	 	$flags (integer) -
+	 		PREG_* Flags for the self::PregMatch*() function.
+	  
+	 	$missing_matches (array) -
+	 		When specified, the indexes of non-matching lines will be stored in this array.
+	  
+	    RETURN VALUE
+		Returns true if the sequence of lines matches the specified sequence, false otherwise.
+	 
+	 --------------------------------------------------------------------------------------------*/
+	public static function  MetaPregMatchEx ( $sequence, $regex_list, $subject_array, &$matches = null, $flags = 0, $match_all = false, 
+							&$missing_matches = [] )
+	   {
+		// Check for cached entries
+		if  ( self::$CacheOptions  &  self::CACHE_META_PREG_MATCHES )
+		   {
+			self::$CacheStatistics [ 'meta-preg' ] [ 'calls' ] ++ ;
+			
+			// Array dimension 1 : sequences
+			if ( isset ( self::$MetaPregMatchCache [ $sequence ] ) )
+			   {
+				$serialized_regex_list		=  md5 ( serialize ( $regex_list ) ) ;
+			
+				// Array dimension 2 : md5 sum of the regular expression list
+				if  ( isset ( self::$MetaPregMatchCache [ $sequence ] [ $serialized_regex_list ] ) )
+				   {
+					$serialized_subject_array	=  md5 ( serialize ( $subject_array ) ) ;
+			
+					// Array dimension 3 : List of subject strings
+					if  ( isset  ( self::$MetaPregMatchCache [ $sequence ] [ $serialized_regex_list ] [ $serialized_subject_array ] ) )
+					   {
+						self::$CacheStatistics [ 'meta-preg' ] [ 'hits' ] ++ ;
+						$cache_entry	=  self::$MetaPregMatchCache [ $sequence ] [ $serialized_regex_list ] [ $serialized_subject_array ] ;
+			
+						if  ( $cache_entry [ 'flags' ]  ==  $flags  &&  $cache_entry [ 'match-all' ]  ==  $match_all )
+						   {
+							if  ( $cache_entry [ 'status' ] )
+							   {
+								$matches		=  $cache_entry [ 'matches' ] ;
+						
+								return ( true ) ;
+							    }
+							else
+							   {
+								$missing_matches	=  $cache_entry [ 'missing-matches' ] ;
+						
+								return ( false ) ;
+							    }
+						    }
+					    }
+				    }
+			    }
+		    }
+		
+		$match_list		=  [] ;			// List of matched results in $subject_array
+		$match_references	=  [] ;			// List of corresponding match references (keys in regex_list array)
+		
+		// Normalize the sequence
+		$new_sequence		=  self::NormalizeMetaSequence ( $sequence ) ;
+		
+		$subject_index		=  0 ;
+		
+		// Loop through each log line
+		foreach  ( $subject_array  as  $subject )
+		   {
+			$found	=  false ;
+			
+			// Compare with each item in regex list
+			$regex_index	=  0 ;
+			
+			foreach  ( $regex_list  as  $regex_key => $regex_value )
+			   {
+				// Normalize regular expression
+				if  ( ! String::IsRegex ( $regex_value ) )
+					$regex_value	=  '/^ \s* ' . str_replace ( '/', '\\/', $regex_value ) . '/imsx' ;
+
+				// Call either the PregMatchEx or PregMatchAllEx method
+				if  ( $match_all )
+					$status		=  Regex::PregMatchAllEx ( $regex_value, $subject, $match_result, $flags ) ;
+				else
+					$status		=  Regex::PregMatchEx ( $regex_value, $subject, $match_result, $flags ) ;
+				
+				// Match found : add this line to the match list
+				if  ( $status )
+				   {
+					$reference		=  '\\' . $regex_key ;
+					$new_match		=  
+					   [ 
+						'reference'	=>  $regex_key, 
+						'subject'	=>  $subject, 
+						'subject-index' =>  $subject_index,
+						'regex'		=>  $regex_value, 
+						'regex-index'	=>  $regex_index,
+						'matches'	=>  $match_result 
+					    ] ;
+					
+					// Handle the case where several regex match the same string
+					// For example, if both regex indexed by "\4" and "\5" match the same string, we will have
+					// to construct a matching regex having the following contents :
+					//	( (\4) | (\5) )
+					if  ( isset ( $match_list [ $subject_index ] ) )
+					   {
+						$match_list [ $regex_key ] []		=  $new_match ;
+						$match_references [ $subject_index ] []	=  $reference ;
+					    }
+					else
+					   {
+						$match_list [ $regex_key ]		=  [ $new_match ] ;
+						$match_references [ $subject_index ]	=  [ $reference ] ;
+					    }
+					
+					$found			=  true ;
+				    }
+				
+				$regex_index ++ ;
+			    }
+			
+			// If no matching regex has been found, record the index of the current line
+			if  ( ! $found )
+				$missing_matches []	=  $subject_index ;
+			
+			$subject_index ++ ;
+		    }
+
+		// Not all subject lines have a match in the $regex_list array : consider this match has failed
+		$status		=  false ;
+		
+		if  ( ! count ( $missing_matches ) )
+		   {
+			// Since an input string may correspond to several matches, get all the possible combination of matches
+			$key_subjects	=  ArrayHelpers::CombinationsOf ( $match_references ) ;
+		
+			// Make $sequence a regex if not already specified : add delimiters and options
+			if  ( ! String::IsRegex ( $new_sequence ) )
+				$new_sequence	=  '/^ ' . str_replace ( '/', '\\/', $new_sequence ) . ' $/imsx' ;
+
+			// Find a match
+			$status		=  false ;
+		
+			foreach  ( $key_subjects  as  $key_subject )
+			   {
+				$subject_string		=  implode ( '', $key_subject ) ;
+			
+				if  ( self::PregMatchAll ( $new_sequence, $subject_string, $seq_match ) )
+				   {
+					$matches	=  $match_list ;
+					$status		=  true ;
+				    }
+			     }
+		     }
+		
+		// Put this new entry in the cache if needed
+		if  ( self::$CacheOptions  &  self::CACHE_META_PREG_MATCHES )
+		   {
+			$serialized_regex_list		=  md5 ( serialize ( $regex_list ) ) ;
+			$serialized_subject_array	=  md5 ( serialize ( $subject_array ) ) ;
+			$cached_data			=
+			   [
+				'flags'			=>  $flags,
+				'match-all'		=>  $match_all,
+				'matches'		=>  $match_list,
+				'missing-matches'	=>  $missing_matches,
+				'status'		=>  $status
+			    ] ;
+
+			self::$MetaPregMatchCache [ $sequence ] [ $serialized_regex_list ] [ $serialized_subject_array ]	=  $cached_data ;
+			self::$CacheStatistics [ 'meta-preg' ] [ 'misses' ] ++ ;
+		    }
+		
+		// Return match status
+		return ( $status ) ;
+	    }
+
+	
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		MultiSubstrReplace - Performs multiple inline substrings replacements.
+
+	    PROTOTYPE
+		$result		=  Regex::MultiSubstrReplace ( $subject, $replacements ) ;
+
+	    DESCRIPTION
+	    	Replaces multiple substrings within a string.
+
+	    PARAMETERS
+		$subject (string) -
+			String where replacements are to be performed.
+	  
+	 	$replacements (array) -
+	 		Array of arrays, each of them containing 3 elements :
+	 		- Element 1 :
+	 			The string to be replaced in $subject.
+	 		- Element 2 :
+	 			The replacement string.
+	 		- Element 3 :
+	 			The offset, in $subject, of the string to be replaced.
+
+	    RETURN VALUE
+		The input string, with all replacements having taken place. The initial string is
+	 	returned as is if no replacement took place.
+
+	    NOTES
+	    	This function is useful when used in conjunction with self::PregMatchAll(), to perform a
+		replacement on the resulting matches.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  MultiSubstrReplace ( $subject, $replacements )
+	   {
+		// First, sort entries by ascending offset
+		if  ( count ( $replacements )  >  1 )
+			usort ( $replacements, function ( $a, $b ) { return ( $a [2] - $b [2] ) ; } ) ;
+		
+		// Parts that are extracted from the subject
+		$list			=  [] ;
+		
+		// Last seen subject string offset so far
+		$last_seen_offset	=  0 ;
+		$subject_length		=  strlen ( $subject ) ;
+		
+		// Loop through replacement strings
+		foreach  ( $replacements  as  $replacement )
+		   {
+			$length			=  strlen ( $replacement [0] ) ;
+
+			// Delta between current offset and last seen offset : add this substring to the list of items to be joined at the end
+			if  ( $replacement [2]  >  $last_seen_offset )
+			   {
+				$list []		=  substr ( $subject, $last_seen_offset, $replacement [2] - $last_seen_offset ) ;
+				$last_seen_offset       =  $replacement [2] + $length ;
+			    }
+			
+			// Include the replacement string
+			$list []		=  $replacement [1] ;
+			
+			// Update currently last seen offset (= current offset + current string length)
+			$last_seen_offset	=  $replacement [2] + $length ;
+		    }
+		
+		// Don't forget the trailing characters
+		if  ( $last_seen_offset  <  $subject_length )
+			$list []	=  substr ( $subject, $last_seen_offset ) ;
+		
+		// All done, return
+		return ( implode ( '', $list ) ) ;
+	    }
+
+	
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		NormalizeMetaSequence - Normalizes a sequence for the MetaPregMatchEx method.
+
+	    PROTOTYPE
+	 	$new_sequence	=  Regex::NormalizeMetaSequence ( $sequence, $match_definitions = null ) ;
+
+	    DESCRIPTION
+	 	Normalizes a meta-sequence, which uses preg-like backreference syntax to reference 
+	 	regular expressions indexed by the backreference value in the $match_definitions array.
+	 	The method accepts all the backreference syntaxes that are recognized by the preg_replace
+	 	function ('x' stands for a sequence of digits, 'name' for a group capture name) :
+		- \x
+		- \gx
+		- \g{x}
+		- (?P=name)
+		- \k<name>
+		- \k'name'
+		- \k{name}
+		- \g{name}
+	 	All those forms are normalized in the input sequence as :
+	 		(\x)
+	 	or :
+	 		(\name)
+	 	Note the enclosing parentheses to prevent side effects when performing the match.
+
+	    PARAMETERS
+	 	$sequence (string) -
+	 		Sequence to be normalized.
+	  
+	 	$match_definitions (array) -
+	 		Associative array whose keys are sequence references and whose values are
+	 		regular expressions to be matched.
+			When specified, all references specified in the $sequence parameter are checked
+	 		for existence in this array.
+	  
+	    RETURN VALUE
+		Returns the normalized sequence.
+
+	 --------------------------------------------------------------------------------------------*/
+	
+	// A regular expression matching all the possible backreferences allowed in PHP 
+	// ('x' stands for a sequence of digits, 'name' for a group capture name) :
+	// - \x
+	// - \gx
+	// - \g{x}
+	// - (?P=name)
+	// - \k<name>
+	// - \k'name'
+	// - \k{name}
+	// - \g{name}
+	// Because of the (?P=name) form, we cannot unify all the regular expressions matching the
+	// above syntaxes, so we need to split the matching in two groups		
+	const	META_SEQUENCE_MATCH	=  '# [^\\\\]?
+					      (?P<match>
+						(?P<group1>
+							\\\\
+							(
+								(
+									g (?P<number_reference_2> \d+)
+								 )
+								|
+								(
+									g \{ (?P<number_reference_3> \d+) \}
+								 )
+								|
+								(
+									k \< (?P<name_reference_1> [\w.\-]+) \>
+								 )
+								|
+								(
+									k \' (?P<name_reference_2> [\w.\-]+) \'
+								 )
+								|
+								(
+									[kg] \{ (?P<name_reference_3> [\w.\-]+) \}
+								 )
+								|
+								(
+									(?P<name_reference_4> [\w.\-]+)
+								 )
+								|
+								(
+									(?P<number_reference_1> \d+)
+								 )
+							 )
+						 )
+						|
+						(?P<group2>
+							\( \? P = (?P<named_reference> [\w_.\-]+) \)
+						 )
+					      )
+					    #imsx' ;
+						 
+	public static function  NormalizeMetaSequence ( $sequence, &$subsequences = null )
+	   {
+		// Use cache when possible
+		if  ( self::$CacheOptions  &  self::CACHE_NORMALIZED_EXPRESSIONS )
+		    {
+			self::$CacheStatistics [ 'normalized-expressions' ] [ 'calls' ] ++ ;
+			
+			if  ( isset ( self::$NormalizedExpressionsCache [ $sequence ] ) )
+			   {
+				$entry	=  self::$NormalizedExpressionsCache [ $sequence ] ;
+				self::$CacheStatistics [ 'normalized-expressions' ] [ 'hits' ] ++ ;
+				
+				if  ( $subsequences  !==  null )
+					$subsequences	=  $entry [ 'subsequences' ] ;
+			
+				return ( $entry [ 'new-sequence' ] ) ;
+			    }
+		     }
+		
+		// Are there any references to match items in the sequence string ?
+		if  ( preg_match_all ( self::META_SEQUENCE_MATCH, $sequence, $matches, PREG_OFFSET_CAPTURE ) )
+		    {
+			$substrings	=  [] ;
+
+			// Loop through found matches
+			foreach  ( $matches  as  $key => $match )
+			   {
+				// Numeric keys simply indicate unnamed group captures - ignore them
+				if  ( is_numeric ( $key ) )
+					continue ;
+				
+				// In order to obtain the real capture length, we need to determine whether the match comes
+				// from <group1> or <group2>
+				$group		=  false ;
+				
+				if  ( ! strncmp ( $key, 'number', 5 )  ||  ! strncmp ( $key, 'name', 4 ) )
+					$group	=  '1' ;
+				else if  ( ! strncmp ( $key, 'named', 5 ) )
+					$group	=  '2' ;
+				else
+					continue ;
+
+				$groupname	=  "group$group" ;
+				
+				$index		=  0 ;
+
+				// Loop through each match found
+				foreach  ( $matches [ $key ]  as  $value )
+				   {
+					// ... but only if the value is an array and its offset item is not negative
+					if  ( is_array ( $value )  &&  $value [1]  !=  -1 )
+					   {
+						// Add it to the substrings array which will be passed to the Regex::MultiSubstrReplace() method
+						// Note the extra 4th element, not used by Regex::MultiSubstrReplace, which serves to determine
+						// if the reference exists as a key in the $match_definitions array, when specified
+						$substrings []	=  
+						   [ 
+							$matches [ 'match' ] [ $index ] [0], 
+							'(\\\\' . $value [0] . ')', 
+							$matches [ $groupname ] [ $index ] [1], 
+							$matches [ $key ] [ $index ] [0]
+						    ] ;
+					    }
+				    
+					   $index ++ ;
+				    }
+			    }
+
+			// Replace all reference syntaxes allowed with a much simpler "(\reference)" form 
+			$new_sequence	=  Regex::MultiSubstrReplace ( $sequence, $substrings ) ;
+
+			// If matches have been specified, check that all the references found in $sequence have a corresponding entry
+			// in the $match_definitions array
+			if  ( $subsequences  !==  null )
+				$subsequences	=  $substrings ;
+			
+			// Store computed results in the cache
+			if  ( self::$CacheOptions  &  self::CACHE_NORMALIZED_EXPRESSIONS )
+			   {
+				self::$NormalizedExpressionsCache [ $sequence ]		=  [ 'new-sequence' => $new_sequence, 'subsequences' => $substrings ] ;
+				self::$CacheStatistics [ 'normalized-expressions' ] [ 'misses' ] ++ ;
+			    }
+			
+			return ( $new_sequence ) ;
+		     }
+		// Useless sequence, since it contains no reference to a match string
+		else 
+			error ( new \Thrak\System\InvalidArgumentException ( "The following sequence does not contain any reference to match strings :\n" .
+				$sequence ) ) ;
+	    }
+	
+	
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		PregMatchEx, PregMatchAllEx - Extended regular expression matching.
+	 
+	    PROTOTYPE
+		$status		=  Regex::PregMatchEx    ( $pattern, $subject, &$matches = null,
+							   $flags = 0, $offset = 0 ) ;
+		$status		=  Regex::PregMatchAllEx ( $pattern, $subject, &$matches = null,
+							   $flags = 0, $offset = 0 ) ;
+	 
+	    DESCRIPTION
+		An extended version of the self::PregMatch*() functions, that has the following 
+		enhancements :
+	 	- Multiple named captures with the same name can be specified
+	 
+	    PARAMETERS
+	 	$pattern (string) -
+	 		Regular expression. See self::PregMatch().
+	  
+	 	$subject (string) -
+	 		String to be matched against.
+	  
+	 	$matches (array) -
+	 		Strings matched by the captures. Since named captures can be specified more
+	 		than once, each array item will contain an additional level of indirection,
+	 		an array for each matched item. Thus, the elements of a capture named <pat>
+	 		will be accessible through the following expressions :
+	 		- $match [ 'pat' ] [0] will yield to the first capture of a group named 'pat'
+	 		- count ( $match [ 'pat' ] ) will give the number of expressions matched by
+	 		  the named capture 'pat'
+	 		The same applies to unnamed captures.
+	  
+	 	$flags (integer) -
+	 		preg options. See self::PregMatch().
+	  
+	 	$offset (integer) -
+	 		Starting offset in the $subject string. See self::PregMatch().
+
+	    RETURN VALUE
+	 	Returns the number of matched occurrences, or false if the input pattern is incorrect.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  PregMatchEx ( $pattern, $subject, &$matches = null, $flags = 0, $offset = 0 )
+	   {
+		$newpattern	=  self::RenumberNamedCaptures ( $pattern, $replacements ) ;
+		
+		if  ( $status = self::PregMatch ( $newpattern, $subject, $matches, $flags, $offset ) )
+		   {
+			$matches	=  self::GroupNamedCaptures ( $matches, $replacements ) ;
+		    }
+		
+		return ( $status ) ;
+	    }
+
+	
+	public static function  PregMatchAllEx ( $pattern, $subject, &$matches = null, $flags = 0, $offset = 0 )
+	   {
+		$replacements	=  [] ;
+		$newpattern	=  self::RenumberNamedCaptures ( $pattern, $replacements ) ;
+		
+		if  ( $status = self::PregMatchAll ( $newpattern, $subject, $matches, $flags, $offset ) )
+		   {
+			$matches	=  self::GroupNamedCaptures ( $matches, $replacements ) ;
+			
+			// Cancel one level of indirection in the results ; the resulting match array will have
+			// the same shape as the one returned by the PregMatchEx() method
+			foreach  ( $matches  as  $key => $value )
+			   {
+				// Non-numeric keys are named pattern matches : get rid of one indirection level and collect only
+				// the successful matches ; this is a deviation from the normal preg_match_all() function, where the
+				// results could include as well an empty string or a sub-array with an empty string and an offset of -1
+				if  ( ! is_numeric ( $key ) )
+				   {
+					$new_array	=  [] ;
+					
+					foreach  ( $value  as  $subvalue )
+					   {
+						foreach  ( $subvalue  as  $subsubkey => $subsubvalue )
+						   {
+							if  ( isset ( $subsubvalue )  &&  is_array ( $subsubvalue )  &&  $subsubvalue [1]  !=  -1 )
+								$new_array [ $subsubkey ]	=  $subsubvalue ;
+						    } 
+					    }
+					
+					$matches [ $key ]	=  $new_array ;
+				    }
+				// For numeric keys, when the sub-array contains only one element, then this is a normal preg_match result,
+				// so get rid of the level of indirection that has been added by the GroupNamedCaptures() method
+				else if  ( count ( $value )  ==  1 )
+					$matches [ $key ]	=  $value [0] ;
+			    }
+		    }
+		
+		return ( $status ) ;
+	    }
+
+	
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		PregMatch, PregMatchAll, PregReplace - Encapsulation of standard preg functions.
+
+	    PROTOTYPE
+		See preg_match(), preg_match_all(), preg_replace().
+
+	    DESCRIPTION
+		Encapsulates the standard preg functions, generating an error using PregHandleError()
+	 	if an error occurred and the self::$GeneratePregErrors flag is set to true.
+	  
+	 --------------------------------------------------------------------------------------------*/
+	
+	// PregHandleError -
+	//	Issue an error message when a preg_* function fails and pretty-prints it.
+	public static function  PregHandleError ( $status, $pattern, $return_error = false )
+	   {
+		if  ( $status  ===  false )
+		   {
+			$last_error	=  get_last_ignored_error ( ) ;
+			$error_message	=  $last_error [ 'error' ] ;
+			$message	=  false ;
+
+			// Try to recognize message
+			// preg_match(): Compilation failed: missing ) at offset 133
+			if  ( preg_match ( '/^ \w+ \( \): \s+ Compilation \s+ failed : \s+ .*? offset \s+ (?P<offset> \d+) \s* $/imsx', 
+						$error_message, $match ) )
+			   {
+				$offset		=  ( integer ) $match [ 'offset' ] ;
+				$position	=  str_repeat ( '-', $offset + 1 ) . '^' ;
+				
+				// Well, in fact the indications given are not so useful since most group capture names may have been renamed
+				// and that the final result does not seem to point to the right column... but anyway, let's say there is room
+				// for improvement
+				$message	=  "$error_message :\n\t" .
+						   implode ( "\n\t", explode ( "\n", Formatting::InsertTextAtColumn ( $pattern, $position, 0 ) ) ) ;
+			    }
+			// Message not recognized : don't try to use formatting at all
+			else
+				$message	=  $error_message ;
+			
+			// Error message is to be silently returned
+			if  ( $return_error )
+				return ( $message ) ;
+			// Otherwise, either display an error or a warning
+			else
+		   	   {
+				if  ( self::$GeneratePregErrors )
+					error ( $message ) ;
+				else
+					warning ( $message ) ;
+			    }
+		    }
+		// No error : return true to indicate everything is ok
+		else
+			return ( true ) ;
+	    }
+	
+	
+	// PregWipeMatches -
+	//	Removes unnamed captures from a preg_* result.
+	public static function  PregWipeMatches ( &$matches, $flags )
+	   {
+		$new_matches	=  [] ;
+		
+		foreach  ( $matches  as  $key => $value )
+		   {
+			if  ( is_numeric ( $key ) )
+				continue ;
+			
+			if  ( $flags  &  PREG_OFFSET_CAPTURE )
+			   {
+				if  ( ! is_array ( $value ) )
+					continue ;
+			
+				if  ( $value [1]  ==  -1 )
+					continue ;
+			    }
+			
+			$new_matches [ $key ]	=  $value ;
+		    }
+		
+		$matches	=  $new_matches ;
+	    }
+	
+	
+	public static function  PregMatch ( $pattern, $subject, &$matches = null, $flags = 0, $offset = 0 )
+	   {
+		// Fetch entry in cache if already existing
+		if  ( self::$CacheOptions  &  self::CACHE_PREG_MATCHES )
+		   {
+			self::$CacheStatistics [ 'preg' ] [ 'calls' ] ++ ;
+			$subject_key	=  /* crc32 */ ( $subject ) ;
+			
+			if ( isset ( self::$PregCache [ $pattern ] [ $subject_key ] ) )
+			   {
+				$entry	=  self::$PregCache [ $pattern ] [ $subject_key ] ;
+				
+				if  ( $entry [ 'flags' ]  ==  $flags  &&  $entry [ 'offset' ]  ==  $offset )
+				   {
+					self::$CacheStatistics [ 'preg' ] [ 'hits' ] ++ ;
+					$matches	=  $entry [ 'matches' ] ;
+					
+					return ( $entry [ 'status' ] ) ;
+				    }
+			    }
+		    }
+		
+		// Perform the match and handle potential error
+		$status		=  @preg_match ( $pattern, $subject, $matches, $flags, $offset ) ;
+		
+		self::PregHandleError ( $status, $pattern ) ;
+		
+		// If needed, wipe any unnamed captures
+		if  ( $flags  &  PREG_WIPE_MATCHES )
+			self::PregWipeMatches ( $matches, $flags ) ;
+		
+		// Put this entry in the cache
+		if  ( self::$CacheOptions  &  self::CACHE_PREG_MATCHES )
+		   {
+			$subject_key	=  /* crc32 */ ( $subject ) ;
+			
+			self::$PregCache [ $pattern ] [ $subject_key ]	=
+			   [
+				'flags'		=>  $flags,
+				'offset'	=>  $offset,
+				'matches'	=>  $matches,
+				'status'	=>  $status
+			    ] ;
+			
+			self::$CacheStatistics [ 'preg' ] [ 'misses' ] ++ ;
+		    }
+		
+		// All done, return
+		return ( $status ) ;
+	    }
+
+	
+	public static function  PregMatchAll ( $pattern, $subject, &$matches = null, $flags = PREG_PATTERN_ORDER, $offset = 0 )
+	   {
+		// Fetch entry in cache if already existing
+		if  ( self::$CacheOptions  &  self::CACHE_PREG_MATCHES )
+		   {
+			self::$CacheStatistics [ 'preg' ] [ 'calls' ] ++ ;
+			$subject_key	=  /* crc32 */ ( $subject ) ;
+			
+			if ( isset ( self::$PregCache [ $pattern ] [ $subject_key ] ) )
+			   {
+				$entry	=  self::$PregCache [ $pattern ] [ $subject_key ] ;
+				
+				if  ( $entry [ 'flags' ]  ==  $flags  &&  $entry [ 'offset' ]  ==  $offset )
+				   {
+					self::$CacheStatistics [ 'preg' ] [ 'hits' ] ++ ;
+					$matches	=  $entry [ 'matches' ] ;
+					
+					return ( $entry [ 'status' ] ) ;
+				    }
+			    }
+		    }
+		
+		// Perform the match and handle potential error
+		$status		=  @preg_match_all ( $pattern, $subject, $matches, $flags, $offset ) ;
+		
+		self::PregHandleError ( $status, $pattern ) ;
+		
+		// If needed, wipe any unnamed captures
+		if  ( $flags  &  PREG_WIPE_MATCHES )
+			self::PregWipeMatches ( $matches, $flags ) ;
+		
+		// Put this entry in the cache
+		if  ( self::$CacheOptions  &  self::CACHE_PREG_MATCHES )
+		   {
+			$subject_key	=  /* crc32 */ ( $subject ) ;
+			
+			self::$PregCache [ $pattern ] [ $subject_key ]	=
+			   [
+				'flags'		=>  $flags,
+				'offset'	=>  $offset,
+				'matches'	=>  $matches,
+				'status'	=>  $status
+			    ] ;
+			
+			self::$CacheStatistics [ 'preg' ] [ 'misses' ] ++ ;
+		    }
+		
+		// All done, return
+		return ( $status ) ;
+	    }
+
+	
+	public static function  PregReplace ( $pattern, $replacement, $subject, $limit = -1, $count = null )
+	   {
+		$status		=  @preg_replace ( $pattern, $replacement, $subject, $limit, $count ) ;
+		
+		self::PregHandleError ( $status, $pattern ) ;
+		
+		return ( $status ) ;
+	    }
+	
+	
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		RenumberNamedCaptures - Gives a unique id to each named capture within a regex.
+
+	    PROTOTYPE
+		$pattern	=  Regex::RenumberNamedCaptures ( $pattern, &$correspondances = [], 
+						$prefix = 'match_' )
+
+	    DESCRIPTION
+	    	Reassigns unique identifiers to named captures within a regular expression. The new
+	 	identifiers will have the form "prefix_x", where "prefix" is given by the $prefix
+	 	parameter, and "x" a unique identifier starting from 0.
+
+	    PARAMETERS
+		$pattern (string) -
+			Regex pattern containing potential named captures to be renamed.
+	  
+	 	$correspondances (array) -
+	 		On output, will hold an associative array whose keys are the new capture group
+	 		names, and values the old ones.
+	  
+	 	$prefix (string) -
+	 		Prefix string for capture name replacements.
+
+	    RETURN VALUE
+		Returns the input pattern with all named captures replaced by unique identifiers.
+	  
+	    NOTES
+	 	This method, along with the GroupNamedCaptures() one, is used by the Preg*Ex methods
+	 	to allow processing of regular expressions having duplicate named captures.
+	  
+	 --------------------------------------------------------------------------------------------*/
+	public static function  RenumberNamedCaptures ( $pattern, &$correspondances = [], $prefix = 'match_' )
+	   {
+		// Try cache
+		if  ( self::$CacheOptions  &  self::CACHE_RENUMBERED_CAPTURES )
+		   {
+			self::$CacheStatistics [ 'renumber' ] [ 'calls' ] ++ ;
+			
+			if  ( isset ( self::$RenumberedCapturesCache [ $pattern ] ) )
+			   {
+				if  ( isset ( self::$RenumberedCapturesCache [ $pattern ] [ $prefix ] ) ) 
+				   {
+					self::$CacheStatistics [ 'renumber' ] [ 'hits' ] ++ ;
+					
+					$correspondances	=  self::$RenumberedCapturesCache [ $pattern ] [ $prefix ] [ 'correspondances' ] ;
+					return ( self::$RenumberedCapturesCache [ $pattern ] [ $prefix ] [ 'pattern' ] ) ;
+				    }
+			    }
+		    }
+		
+		static	$re	=  '#
+					\( \? P < 
+						(?P<pattern> [^>]+ )
+					>
+				    #imsx' ;
+		
+		// Get named captures
+		if  ( self::PregMatchAll ( $re, $pattern, $matches, PREG_OFFSET_CAPTURE ) )
+		   {
+			$index			=  0 ;
+			$pattern_matches	=  [] ;
+			
+			// Loop through pattern matches
+			foreach  ( $matches [ 'pattern' ]  as  $match ) 
+			   {
+				$pname					=  $match [0] ;
+				$poffset				=  $match [1] ;
+				$newpattern				=  "$prefix$index" ;
+				
+				// Build the correspondance array
+				$correspondances [ $newpattern ]	=  $pname ;
+				
+				// Add this entry (old name, new name, offset) into an array for the Regex::MultiSubsrReplace() method
+				$pattern_matches []			=  [ $pname, $newpattern, $poffset ] ;
+				$index ++ ;
+			    }
+			
+			// Perform the multiple-string replace
+			$new_pattern	=  Regex::MultiSubstrReplace ( $pattern, $pattern_matches ) ;
+		    }
+		else
+			$new_pattern	=  $pattern ;
+		
+		// Put pattern in the cache, if activated
+		if  ( self::$CacheOptions  &  self::CACHE_RENUMBERED_CAPTURES )
+		   {
+			self::$RenumberedCapturesCache [ $pattern ] [ $prefix ]	=  [ 'pattern' => $new_pattern, 'correspondances' => $correspondances ] ;
+			self::$CacheStatistics [ 'renumber' ] [ 'misses' ] ++ ;
+		    }
+
+		// All done, return
+		return ( $new_pattern ) ;
+	    }
+	
+	
+	/*-------------------------------------------------------------------------------------------
+	 
+	    NAME
+		ReplacePatterns - Replaces patterns in a regular expression string.
+
+	    PROTOTYPE
+		$str = Regex::ReplaceNamedPatterns ( $pattern, $subject, $replacements, $options = null ) ;
+
+	    DESCRIPTION
+	 	Replace named patterns in a regular expression string. 
+		This function uses the result of self::PregMatchAll() to match named patterns with the 
+		supplied input array $replacements.
+	  
+	    PARAMETERS
+	 	$pattern (string) -
+	 		A pattern matching subpart(s) of the specified subject string.
+	  
+	 	$subject (string) -
+	 		String to be matched against.
+	  
+	 	$replacements (array) -
+	 		Associative array whose keys are the pattern name (as specified in the 
+	 		(?P<name> re) parts of a regular expression) and whose values are also 
+	 		an associative array. Each entry in the array have the following meaning :
+	  
+	 		- key     : A regular expression specifying the value of the named pattern
+	 			    name. Do not put anchors nor delimiters in this pattern since
+				    they are automatically added.
+	 		- value	  : The replacement value for the named pattern specified by the key
+	 			    value.
+	  
+	    RETURN VALUE
+		Returns the substituted string.
+	 
+	    EXAMPLE
+	 	The following example will replace :
+	 	- every matched pattern named "toto" by one of the string matching this pattern,
+	 	  either 'the new replacement for the pattern string' or 'the replacement of thepattern',
+	 	  for captures matching either 'pattern.*' or 'thepattern', respectively.
+	 	  The (?P<pattern1> ...) or (?P<pattern2> ...) match the first item.
+	 	- Every matched pattern name "aaa" by the string 'replacement of aaa'.
+	  
+		$subject	=  "aaa (?P<pattern1> coucou) zzzz (?P<pattern2> coucou2) aaa (?P<thepattern> zzzz)";
+		$pattern	=  "# ( \( \? P < (?P<toto> [^>]+) > .*? \) ) | (?P<aaa> aaa*) #imsx" ;
+		$replacement	= 
+		   [
+			"toto"	=>  
+			   [
+				'pattern.*'	=>  'the new replacement for the pattern string',
+				'thepattern'	=>  'the replacement of thepattern'
+			    ],
+			"aaa"	=> 
+			   [
+				'aaa'		=>  'replacement of aaa'
+			    ]
+		    ] ;
+		$result		=  String::RegReplaceNamedPatterns ( $pattern, $subject, $replacement ) ) ;
+	  
+	 	The resulting string will be :
+	 		replacement of aaa (?P<the new replacement for the pattern string> coucou) zzzz (?P<the
+			new replacement for the pattern string> coucou2) replacement of aaa (?P<the replacement of thepattern> zzzz)
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  ReplaceNamedPatterns ( $pattern, $subject, $replacements, $options = null )
+	   {
+		// Process the substitutions only if there is a match...
+		if  ( self::PregMatchAll ( $pattern, $subject, $matches, PREG_OFFSET_CAPTURE | $options ) )
+		   {
+			$substitutions	=  [] ;
+			
+			// Loop through matches
+			foreach  ( $matches  as  $match_key => $match_values )
+			   {
+				// ... then through each matched value
+				foreach  ( $match_values  as  $match_value ) 
+				   {
+					// Ignore empty matches
+					if  ( ! $match_value  ||  $match_value [1]  ==  -1 )
+						continue ;
+					
+					// Loop through replacement patterns
+					foreach  ( $replacements  as  $replacement_key => $replacement_values )
+					   {
+						// Skip non-matching ones
+						if  ( strcmp ( $match_key, $replacement_key ) )
+							continue ;
+							
+						// Find the replacement values for each matched pattern
+						foreach  ( $replacement_values  as  $replacement_re => $replacement_value )
+						   {
+							if  ( self::PregMatch ( "/^$replacement_re\$/imsx", $match_value [0] ) )
+							   {
+								$substitutions []	=
+								   [
+									$match_value [0],		// Original value to be replaced
+									$replacement_value,		// Replacement value
+									$match_value [1]		// Original value offset
+								    ] ;
+							    }
+						    }
+					    }
+				    }
+			    }
+			
+			// Replace catched captures
+			$new_subject	=  self::MultiSubstrReplace ( $subject, $substitutions ) ;
+			
+			return ( $new_subject ) ;
+		    }
+		// No match found : return the subject as is
+		else
+			return ( $subject ) ;
+	    }
+    }

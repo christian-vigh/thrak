@@ -1,0 +1,336 @@
+<?php
+/***************************************************************************************************
+
+    NAME
+	Log.phpclass
+
+    DESCRIPTION
+	Classe for logging messages.
+
+    AUTHOR
+	Christian Vigh, 10/2012.
+	
+    CONFIGURATION PARAMETERS
+	The following configuration parameters are used :
+	
+	Runtime/log-level (integer) -
+		Default log level. Messages having a log level above this value will not be logged.
+	   	A negative log level means that all messages will be logged, whatever their log level is.
+		   
+	Runtime/log-enabled (boolean) -
+		Tells if logging is enabled or not.
+		
+	Runtime/log-file (string) -
+		If no log file is specified to the Log object constructor, this one will be used.
+
+    HISTORY
+    [Version : 1.0]		[Date : 2012/10/09]		[Author : CV]
+	Initial release.
+
+    [Version : 2.0]		[Date : 2013/12/12]		[Author : CV]
+	Migrated for the version 2 of the Thrak library.
+
+ ***************************************************************************************************/
+namespace 	Thrak\IO ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces & objects
+use 		Thrak\System\Object 		as  Object ;
+use 		Thrak\Types\String		as  String ;
+use 		Thrak\IO\Path 			as  Path ;
+
+
+/*==================================================================================================
+
+    Log class -
+	A class that provides logging facilities.
+
+  ==================================================================================================*/
+class  Log 		extends  Object
+   {
+   	// Output file
+   	public		$File ;
+   	// Log level ; messages having a log level above this value will not be logged. A negative value means 'all levels'
+   	public		$Level		=  -1 ;
+   	// Tells if logging is enabled or not
+   	public 		$Enabled	=  false ;
+   	// When the log file is locked by other processes, log entries are temporarily kept into this array
+	private		$Data		=  array ( ) ;
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Constructor
+
+	    PROTOTYPE
+		$lf = new Log ( $path, $enabled = null, $level = null ) ;
+
+	    DESCRIPTION
+	    	Creates a log file object that you can later use to log text entries.
+
+	    PARAMETERS
+	    	$path (string) -
+	    		Output log file. If the file cannot be created, the script will exit with an
+    			error message.
+
+		$level (integer) -
+			Default log level. Messages having a log level above this value will not be
+			logged. A negative log level means that all messages will be logged, whatever
+			their log level is.
+			If this parameter is null, the Runtime/log-level configuration parameter will
+			be used instead.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __construct ( $path, $enabled = null, $level = null )
+	   {
+	   	global 			$Configuration ;
+
+		parent::__construct ( ) ;
+		
+	   	// Get real path
+		$path	=  Path::RealPath ( $path ) ;
+
+		// Try to open the file
+		$fp     =  @fopen ( $path, "a" ) ;
+
+		// If the path is invalid, complain
+		if   ( ! $fp )
+			error ( new \Thrak\System\RuntimeException ( "Log file '$path' could not be created." ) ) ;
+
+		// Close the file and save its absolute path
+		fclose ( $fp ) ;
+		$this -> File 		=  $path ;
+
+		// Process log level
+		if  ( $level  ===  null )
+			$level 		= $Configuration -> Get ( 'Runtime/log-level', -1 ) ;
+
+		// Log enabled ?
+		if  ( $enabled  ===  null )
+			$enabled 	= $Configuration -> Get ( 'Runtime/log-enabled', true ) ;
+
+		$this -> Level 		=  $level ;
+		$this -> Enabled 	=  $enabled ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Destructor
+
+	    DESCRIPTION
+		If log messages could not be written due to the fact that the file was locked, the Log
+		object destruction is the last chance to write them to the log file.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __destruct ( )
+	   {
+	   	$this -> __save ( ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		__tostring - Returns a log file's content.
+
+	    PROTOTYPE
+		$content = ( string ) $log ;
+
+	    DESCRIPTION
+	    	Returns the contents of the log file.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __tostring ( )
+	   {
+	   	return ( file_get_contents ( $this -> File ) ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	    	__log - Performs the actual text logging.
+
+	    PROTOTYPE
+	    	$log -> __log ( $header, $text, $level ) ;
+
+	    DESCRIPTION
+	    	Logs a message.
+
+	 --------------------------------------------------------------------------------------------*/
+	private function  __log ( $header, $text, $level )
+	   {
+	   	// Ignore write requests if log is disabled
+	   	if  ( ! $this -> Enabled )
+	   		return ;
+
+	   	// Ignore if current level if less than requested level (negative levels are always logged)
+		if  ( $this -> Level  >=  0  &&  $this -> Level  <  $level )
+			return ;
+
+	   	// Do nothing if text to log is empty
+	   	if  ( ! $text )
+	   		return ;
+
+		// If the logged text contains continuation lines, then subsequent line headers will not include
+		// the header, but rather sufficient number of white spaces
+  		$spaces		=  str_repeat ( " ", strlen ( $header ) ) ;
+
+  		// Get rid of "\r\n" constructs
+		$text 		=  str_replace ( "\r\n", "\n", $text ) ;
+
+		// Split the text to write into individual lines, if needed
+		$lines		=  explode ( "\n", $text ) ;
+
+		// If no lines (paranoia), then exit)
+		if  ( ! $lines )
+			return ;
+
+		// Our array of log messages
+		$text_lines	=  array ( ) ;
+
+		// Foreach logged line...
+		foreach  ( $lines  as  $line )
+		   {
+   			// ... add it to the array of logged messages
+			$text_lines []  =  $header . $line . "\n" ;
+			// and continuation lines will not include the log header (typically a timestamp), but rather spaces
+			$header 	=  $spaces ;
+		    }
+
+		// Add it to our internal array of lines to write
+		$this -> Data += $text_lines ;
+
+		// Then save them
+		$this -> __save ( ) ;
+   	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		__save - Saves the logged messages.
+
+	    PROTOTYPE
+		$log -> __save ( ) ;
+
+	    DESCRIPTION
+	    	Saves the log messages.
+
+    	    NOTES
+    	    	This function is called by the Write() method but if the log file is locked by another
+    	    	process, the logged messages will be temporarily saved into the internal Data array.
+    	    	These lines will be subject to be saved either on the next call to the Write() method
+    	    	(if the log file is not locked), or when the object is destructed.
+
+	 --------------------------------------------------------------------------------------------*/
+	private function  __save ( )
+	   {
+	   	// Don't do anything if we have nothing to log
+		if  ( ! count ( $this -> Data ) )
+			return ;
+
+		// Try to open the log file ; exit on failure
+		if  ( ! $fp = @fopen ( $this -> File, "a" ) )
+			return ;
+
+		// Try to lock the file ; exit on failure
+		if  ( ! @flock ( $fp, LOCK_EX ) )
+		   {
+			fclose ( $fp ) ;
+			return ;
+		    }
+
+		// File successfully opened : save each logged message
+		foreach ( $this -> Data  as  $line )
+			fwrite ( $fp, $line ) ;
+
+		// Unlock the file and close it
+		flock ( $fp, LOCK_UN ) ;
+		fclose ( $fp ) ;
+
+		// And don't forget to reset the Data array, which contained the logged messages.
+		$this -> Data = array ( ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		GetHeading - Gets the heading to put in front of each logged message.
+
+	    PROTOTYPE
+		$heading = $this -> GetHeading ( ) ;
+
+	    DESCRIPTION
+	    	Returns the default heading to put in front of each logged message line. The default
+	    	heading has the following form :
+
+	    	[yyyy/mm/dd hh:mm:ss.ms]
+
+	    	followed by one space.
+	    	Derived classes can override this method to provide a different heading.
+
+	    RETURNS
+	    	The heading to put at the start of a log line.
+
+	 --------------------------------------------------------------------------------------------*/
+	protected function  GetHeading ( )
+	   {
+	   	$now    =  time ( ) ;
+	   	$ms	=  explode ( ' ', microtime ( ) ) ;
+	   	$ms 	=  ( integer ) ( $ms [0] * 1000 ) ;
+	   	$ms	=  sprintf ( "%03d", $ms  ) ;
+		$result =  "[" . date ( "Y/m/d", $now ) . " " . date ( "H:i:s", $now ) . "." . $ms . " (pid=" . getmypid ( ) ;
+
+		if  ( isset ( $_SERVER [ 'REMOTE_ADDR' ] ) )
+			$result .= ", from=" . $_SERVER [ 'REMOTE_ADDR' ] ;
+
+		if  ( isset ( $_SERVER [ 'REMOTE_PORT' ] ) )
+			$result .= ", port=" . $_SERVER [ 'REMOTE_PORT' ] ;
+
+		$result .= ")] " ;
+
+		return ( $result ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Write - Writes a log message.
+
+	    PROTOTYPE
+		$log -> Write ( $message, $level = 0 ) ;
+
+	    DESCRIPTION
+	    	Writes the specified log message, using the header (typically a timestamp) provided
+	    	by the GetHeading() method.
+	    	If the message contains newlines, it will be considered as several lines to write.
+	    	Subsequent line, however, will not include the header, but rather white spaces to align
+	    	the text with the first logged line.
+
+	    PARAMETERS
+	    	$message (string) -
+	    		Message to be logged.
+
+    		$level (integer) -
+    			Log level. If this value is less than or equal to the current log level
+		    	($this -> Level), then the message will be logged. If greater than $this -> Level,
+			the message will not be logged.
+			The message will be unconditionally logged if $this -> Level is negative,
+			whatever the value of the $level parameter is.
+
+	 --------------------------------------------------------------------------------------------*/
+    	public function  Write ( $text, $level = 0 )
+    	   {
+		$heading =  $this -> GetHeading ( ) ;
+
+		$this -> __log ( $heading, $text, $level  ) ;
+    	    }
+
+    }

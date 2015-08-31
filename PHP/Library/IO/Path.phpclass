@@ -1,0 +1,2148 @@
+<?php
+/***************************************************************************************************
+
+    NAME
+	Path.phpclass
+
+    DESCRIPTION
+	Functions related to path & files.
+
+    AUTHOR
+	Christian Vigh, 10/2012.
+
+    HISTORY
+    [Version : 1.0]		[Date : 2012/10/02]		[Author : CV]
+	. Initial release for Thrak library version 2. Most of the code comes from the original
+	  String.phpclass file.
+
+    [Version : 1.0.1]		[Date : 2013/07/17]		[Author : CV]
+      	. Changed RealPath() to handle stream wrappers that define a "root" attribute in their 
+      	  stream properties.
+	      
+    [Version : 1.0.2]		[Date : 2013/10/28]		[Author : CV]
+	. Added the AppendDS function, which appends a directory separator to a path (either slash or
+	  backslash).
+
+    [Version : 1.0.3]		[Date : 2014/10/07]		[Author : CV]
+	. Added the WhereIs function, which searches for an executable in the path.
+ 
+    [Version : 1.0.4]		[Date : 2014/11/22]		[Author : CV]
+	. Corrected the __FindIsSelected method that did not take correctly into account the
+	  FIND_OPTIONS_FILES_ONLY flag.
+	. Corrected the ToUnix() method that issued a warning when the filename length is less than
+	  2 characters.
+	. Added the Equals() method
+ 
+    [Version : 1.0.5]		[Date : 2014/12/14]		[Author : CV]
+ 	. Added the ToCygwin() method to convert a Windows-style path to a cygwin path.
+  
+    [Version : 1.0.6]		[Date : 2014/12/16]		[Author : CV]
+	. Added a test on file existence at the start of the Whereis() function.
+  
+    [Version : 1.0.7]		[Date : 2015/04/10]		[Author : CV]
+	. Moved the Matches() method to the String class. Kept a minimal version here.
+  
+    [Version : 1.0.8]		[Date : 2015/04/17]		[Author : CV]
+ 	. Added the HasExtension() method.
+  
+    [Version : 1.0.9]		[Date : 2015/04/18]		[Author : CV]
+	. Added the ContainsDirectory() and ContainsExtension() methods.
+  
+    [Version : 1.0.10]		[Date : 2015/05/03]		[Author : CV]
+	. Added the MkDir() and MkFile() methods.
+  
+    [Version : 1.0.11]		[Date : 2015/05/12]		[Author : CV]
+	. Added the SamePath() and IsPathInArray() methods.
+ 	. Added a third possibility to the $use_cwd parameter of the RealPath() method : apart from
+ 	  a boolean value, it can also be a string, which will represent the current working
+ 	  directory.
+  
+    [Version : 1.0.12]		[Date : 2015/06/05]		[Author : CV]
+	. Added the IsMimeType() method.
+  
+    [Version : 1.0.13]		[Date : 2015/08/11]		[Author : CV]
+	. Added the GetVolatileTempFilename() method.
+
+ ***************************************************************************************************/
+namespace 	Thrak\IO ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces & objects
+use 	Thrak\System\Object ;
+use	Thrak\Types\String ;
+use	Thrak\IO\Wrappers\GenericWrapper ;
+use	Thrak\Types\FileSpecificationFormatter ;
+use	Thrak\Types\SpecializedFormatterDefinition ;
+
+
+/*===========================================================================================
+
+	File mode constants & macros.
+
+  ===========================================================================================*/
+define ( 'S_IFMT'  , 0170000 ) ; 	// bitmask for the file type bitfields
+define ( 'S_IFSOCK', 0140000 ) ; 	// socket
+define ( 'S_IFLNK' , 0120000 ) ; 	// symbolic link
+define ( 'S_IFREG' , 0100000 ) ; 	// regular file
+define ( 'S_IFBLK' , 0060000 ) ; 	// block device
+define ( 'S_IFDIR' , 0040000 ) ; 	// directory
+define ( 'S_IFCHR' , 0020000 ) ; 	// character device
+define ( 'S_IFIFO' , 0010000 ) ; 	// FIFO
+
+define ( 'S_ISUID' , 0004000 ) ; 	// set UID bit
+define ( 'S_ISGID' , 0002000 ) ; 	// set-group-ID bit (see below)
+define ( 'S_ISVTX' , 0001000 ) ; 	// sticky bit (see below)
+
+define ( 'S_IRWXU' ,   00700 ) ; 	// mask for file owner permissions
+define ( 'S_IRUSR' ,   00400 ) ; 	// owner has read permission
+define ( 'S_IWUSR' ,   00200 ) ; 	// owner has write permission
+define ( 'S_IXUSR' ,   00100 ) ; 	// owner has execute permission
+
+define ( 'S_IRWXG' ,   00070 ) ; 	// mask for group permissions
+define ( 'S_IRGRP' ,   00040 ) ; 	// group has read permission
+define ( 'S_IWGRP' ,   00020 ) ; 	// group has write permission
+define ( 'S_IXGRP' ,   00010 ) ; 	// group has execute permission
+
+define ( 'S_IRWXO' ,   00007 ) ; 	// mask for permissions for others (not in group)
+define ( 'S_IROTH' ,   00004 ) ; 	// others have read permission
+define ( 'S_IWOTH' ,   00002 ) ; 	// others have write permission
+define ( 'S_IXOTH' ,   00001 ) ; 	// others have execute permission
+
+// Checks if entry is a regular file
+function  S_ISREG ( $m )	{ return ( ( $m & S_IFREG )  ==  S_IFREG ) ; }
+
+// Checks if entry is a directory
+function  S_ISDIR ( $m )	{ return ( ( $m & S_IFDIR )  ==  S_IFDIR ) ; }
+
+// Checks if the entry is a character device
+function  S_ISCHR ( $m )	{ return ( ( $m & S_IFCHR )  ==  S_IFCHR ) ; }
+
+// Checks if the entry is a block device
+function  S_ISBLK ( $m ) 	{ return ( ( $m & S_IFBLK )  ==  S_IFBLK ) ; }
+
+// Checks if the entry is a named pipe
+function  S_ISFIFO ( $m )	{ return ( ( $m & S_IFIFO )  ==  S_IFIFO ) ; }
+
+// Checks if the entry is a symbolic link
+function  S_ISLNK ( $m )	{ return ( ( $m & S_IFLNK )  ==  S_IFLNK ) ; }
+
+// Checks if the entry is a socket
+function  S_ISSOCK ( $m )	{ return ( ( $m & S_IFSOCK )  ==  S_IFSOCK ) ; }
+
+
+/*==================================================================================================
+
+	Find options.
+
+  ==================================================================================================*/
+define ( 'FIND_OPTIONS_FILES_ONLY'		, 0x01 ) ;
+define ( 'FIND_OPTIONS_STAT_INFO'		, 0x02 ) ;
+define ( 'FIND_OPTIONS_EXTENDED_STAT_INFO'	, 0x04 ) ;
+define ( 'FIND_OPTIONS_ALL'			, 0xFF ) ;
+define ( 'FIND_OPTIONS_DEFAULT'			, 0x01 ) ;
+define ( 'FIND_OPTIONS_EXTRA_MASK'		, 0xFE ) ;
+
+
+
+/*===========================================================================================
+
+    Path class -
+	Functions related to path & files.
+
+ ===========================================================================================*/
+class  	Path	extends  Object
+   {
+	/*==============================================================================================================
+	
+	    NAME
+	        AppendDS - Appends a directory separator to a path if not present.
+	
+	    PROTOTYPE
+	        $path = Path::AppendDS ( $path ) ;
+	
+	    DESCRIPTION
+	        Appends a directory separator (backslash on Windows, slash on Unix systems) if not already present.
+		This helps ensure that a directory path always end with a slash or backslash.
+	
+	    PARAMETERS
+	        $path (string) -
+	                Path to be DS-terminated.
+	
+	    RETURN VALUE
+	        A directory path that systematically ends with a directory separator.
+	
+	  ==============================================================================================================*/
+	public static function AppendDS  ( $path )
+	   {
+		$last	=  substr ( $path, -1 ) ;
+		
+		if  ( $last  !=  "\\"  &&  $last  !=  "/" )
+			$path	.=  DIRECTORY_SEPARATOR ;
+			
+		return ( $path ) ;
+	    }
+
+	
+	/*==============================================================================================================
+	
+	    NAME
+	 	ContainsDirectory - Checks if a path contains a directory.
+	
+	    PROTOTYPE
+	 	$status		=  Path::ContainsDirectory ( $path, $directory ) ;
+	
+	    DESCRIPTION
+	 	Checks if the specified path contains the specified directory.
+	
+	    PARAMETERS
+	 	$path (string) -
+	 		Path to be checked.
+	  
+	 	$directory (string) -
+	 		Directory to be searched for.
+	
+	    RETURN VALUE
+	 	True if $path has $directory in its path, false otherwise.
+	  
+	    NOTES
+	 	This function takes into account the case-sensitiveness of the host platform for filenames.
+	
+	  ==============================================================================================================*/
+	public static function  ContainsDirectory ( $path, $directory ) 
+	   {
+		$path	=  str_replace ( '\\', '/', $path ) ;
+		$parts	=  explode ( '/', $path ) ;
+		
+		if  ( IS_WINDOWS )
+		   {
+			foreach  ( $parts  as  $part )
+			   {
+				if  ( ! strcasecmp ( $part, $directory ) )
+					return ( true ) ;
+			    }
+		    }
+		else
+		   {
+			foreach  ( $parts  as  $part )
+			   {
+				if  ( ! strcmp ( $part, $directory ) )
+					return ( true ) ;
+			    }
+		    }
+		
+		return ( false ) ;
+	    }
+
+	
+	/*==============================================================================================================
+	
+	    NAME
+	 	ContainsExtension - Checks if a filename contains an extension.
+	
+	    PROTOTYPE
+	 	$status		=  Path::ContainsExtension ( $path, $extension ) ;
+	
+	    DESCRIPTION
+	 	Checks if the specified path contains the specified extension.
+	
+	    PARAMETERS
+	 	$path (string) -
+	 		Path to be checked.
+	  
+	 	$extension (string or array of strings) -
+	 		Extension(s) to be searched for.
+	
+	    RETURN VALUE
+	 	True if $path has $extension in its filename, false otherwise.
+	  
+	    NOTES
+	 	This function takes into account the case-sensitiveness of the host platform for filenames.
+	
+	  ==============================================================================================================*/
+	public static function  ContainsExtension ( $path, $extension ) 
+	   {
+		$parts	=  explode ( '.', basename ( $path ) ) ;
+		
+		if  ( is_array ( $extension ) )
+			$extensions	=  $extension ;
+		else
+			$extensions	=  [ $extension ] ;
+		
+		if  ( IS_WINDOWS )
+		   {
+			foreach  ( $parts  as  $part )
+			   {
+				foreach  ( $extensions  as  $ext )
+				   {
+					if  ( ! strcasecmp ( $part, $ext ) )
+						return ( true ) ;
+				    }
+			    }
+		    }
+		else
+		   {
+			foreach  ( $parts  as  $part )
+			   {
+				foreach  ( $extensions  as  $ext )
+				   {
+					if  ( ! strcmp ( $part, $ext ) )
+						return ( true ) ;
+				    }
+			    }
+		    }
+		
+		return ( false ) ;
+	    }
+
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        Equals - Check if two paths are equal.
+	
+	    PROTOTYPE
+	        $boolean = Path::Equals ( $path1, $path2 ) ;
+	
+	    DESCRIPTION
+	        Checks if two paths are equal, after getting their full path and converting backslashes to slashes.
+		On Windows platform, this function takes into account the case-insensitivity of path names.
+	
+	    PARAMETERS
+	        $path1, $path2 (string) -
+	                Paths to be compared.
+	
+	    RETURN VALUE
+	        True if the two paths are equal, false otherwise.
+	
+	  ==============================================================================================================*/
+	public static function  Equals ( $path1, $path2 )
+	   {
+		$path1	=  self::ToUnix ( self::RealPath ( $path1 ) ) ;
+		$path2	=  self::ToUnix ( self::RealPath ( $path2 ) ) ;
+		
+		if  ( IS_WINDOWS )
+			return ( strcasecmp ( $path1, $path2 )  ==  0 ) ;
+		else
+			return ( strcmp ( $path1, $path2 )  ==  0 ) ;
+	    }
+	
+	
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	  	Extension - Returns a file extension from a path.
+	  	Filename  - Returns the filename part from a path.
+		Dirname   - Returns the directory part of a path.
+		Basename  - Returns the filename part (name + extension) of a path.
+
+	    PROPERTY
+	    	$ext  = Extension ( $path ) ;
+	    	$name = Filename ( $path ) ;
+		$dir  = Dirname ( $path ) ;
+		$file = Basename ( $path ) ;
+
+	    DESCRIPTION
+		Retrieves the extension of the specified file. Returns either the file extension or
+		false if the file does not contain any extension.
+		The returned extension includes a leading dot.
+		Filename gets the filename part of a path. This function is a replacement to the
+		pathinfo() function where the 'filename' element is to be retrieved, which only works
+		on PHP 5.2.0 and later. Filename() works on all PHP versions.
+		Dirname retrieves the directory name of a path.
+		Basename retrieves the filename + extension parts.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function Extension ( $path )
+	   {
+	   	$info = pathinfo ( $path ) ;
+
+		if  ( isset ( $info [ 'extension' ] ) )
+			return ( "." . $info [ 'extension' ] ) ;
+		else
+			return ( "" ) ;
+	    }
+
+	public static function  Filename ( $path )
+	   {
+		$basename = basename ( $path ) ;
+		$filename = preg_replace ( '|\.[^.]*$|', '', $basename ) ;
+
+		return ( $filename ) ;
+	    }
+
+	public static function  Dirname ( $path )
+	   {
+		   $dirname = dirname ( $path ) ;
+		   return ( $dirname ) ;
+	    }
+
+
+	public static function  Basename ( $path )
+	   {
+		$basename = basename ( $path ) ;
+		return ( $basename ) ;
+	    }
+
+
+   	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		FileModeToString - Converts a file-mode to an 'ls -l' style representation.
+
+	    PROTOTYPE
+		$modestr = Path::FileModeToString ( $mode ) ;
+
+	    DESCRIPTION
+		Converts a file mode value to its string representation, like the one provided by
+		the "ls -l" command.
+
+	    RETURN VALUE
+		The string representation of the file mode.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  FileModeToString  ( $mode )
+	   {
+		$mode 	= ( integer ) $mode ;
+		$result = "" ;
+
+		// File type
+		if  ( S_ISDIR ( $mode ) )
+			$result .= 'd' ;
+		else if  ( S_ISCHR ( $mode ) )
+			$result .= 'c' ;
+		else if  ( S_ISBLK ( $mode ) )
+			$result .= 'b' ;
+		else if  ( S_ISFIFO ( $mode ) )
+			$result .= 'p' ;
+		else if  ( S_ISSOCK ( $mode ) )
+			$result .= 's' ;
+		else  // S_ISREG ( $mode )
+			$result .= '-' ;
+
+		// User permissions
+		$result .= ( $mode  &  S_IRUSR ) ? 'r' : '-' ;
+		$result .= ( $mode  &  S_IWUSR ) ? 'w' : '-' ;
+
+		if  ( $mode  &  S_ISUID )
+			$result .= ( $mode  &  S_IXUSR ) ? 'S' : 's' ;
+		else
+			$result .= ( $mode  &  S_IXUSR ) ? 'x' : '-' ;
+
+		// Group permissions
+		$result .= ( $mode  &  S_IRGRP ) ? 'r' : '-' ;
+		$result .= ( $mode  &  S_IWGRP ) ? 'w' : '-' ;
+
+		if  ( $mode  &  S_ISGID )
+			$result .= ( $mode  &  S_IXGRP ) ? 'S' : 's' ;
+		else
+			$result .= ( $mode  &  S_IXGRP ) ? 'x' : '-' ;
+
+		// Other permissions
+		$result .= ( $mode  &  S_IROTH ) ? 'r' : '-' ;
+		$result .= ( $mode  &  S_IWOTH ) ? 'w' : '-' ;
+
+		if  ( $mode  &  S_ISVTX )
+			$result .= ( $mode  &  S_IXOTH ) ? 'T' : 't' ;
+		else
+			$result .= ( $mode  &  S_IXOTH ) ? 'x' : '-' ;
+
+		// All done, return
+		return ( $result ) ;
+    	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		Find - Implements a find-like utility.
+
+	    PROTOTYPE
+	    	$result 	=  Path::Find ( $path, $name = null,
+		    			        $find_options = FIND_OPTIONS_DEFAULT,
+		    			        $options = null,
+		    			        $callback = null ) ;
+
+	    DESCRIPTION
+		Implements a find-like utility for finding files in a heirarchy.
+
+	    PARAMETERS
+		$path (string) -
+			Starting path for the directory tree traversal.
+
+		$name (string or array of string) -
+			File pattern(s) to be searched.
+			If the pattern starts with the string 're:', then it will be considered as
+			a regular expression enclosed with the character immediately after 're' ;
+			otherwise, the normal Unix file pattern matching rules will be applied.
+
+		$find_options (integer) -
+			Can be any combination of the following :
+			- FIND_OPTIONS_FILES_ONLY :
+				Only filenames will be returned.
+
+			- FIND_OPTIONS_STAT_INFO :
+				Returns stat information about the file.
+
+			- FIND_OPTIONS_EXTENDED_STAT_INFO :
+				Returns extended stat information.
+
+			Additional constant exists :
+			- FIND_OPTIONS_DEFAULT :
+				Defaults to FIND_OPTIONS_FILES_ONLY | FIND_OPTIONS_STAT_INFO |
+				FIND_OPTIONS_EXTENDED_STAT_INFO.
+
+			- FIND_OPTIONS_ALL :
+				Defaults to all options.
+
+		$options (string) -
+			Boolean expression representing the file selection criterias.
+			File information fields are enclosed with square brackets, and the values
+			they are compared with must be enclosed with quotes. The following, for
+			example, will search for file greater than 500kb and whose modification
+			time is greater than '2011/12/01' :
+
+				"[size]  >  '500kb'  &&  [mtime]  >  '2011/12/01'"
+
+			Other boolean expressions can be mixed as well.
+			The available file information fields are the following :
+
+			- 'atime' or 'access-time' :
+				Last access time. It can be any value accepted by the strtotime()
+				function.
+
+			- 'blksize' or 'block-size' :
+				File system block size.
+
+			- 'ctime' or 'creation-time' :
+				Creation time. It can be any value accepted by the strtotime()
+				function.
+
+			- 'depth' :
+				Current entry nesting level.
+
+			- 'dev' or 'device' :
+				Block device id.
+
+			- 'fmode' or 'file-mode' :
+				File mode string, like it can be displayed by the "ls -l" command.
+				Example : "-rw-rw-rw-".
+
+			- 'gid' or 'group-id' :
+				Group id.
+
+			- 'ino' or 'inode' :
+				Inode number.
+
+			- 'mode' :
+				File mode. You can use any of the S_xxx constants to apply a mask on
+				this value.
+
+			- 'mtime' or 'modification-time' :
+				Last modification time. It can be any value accepted by the strtotime()
+				function.
+
+			- 'nlink' or 'link-count' :
+				Number of files linked to this file.
+
+			- 'rdev' or 'raw-device' :
+				Raw device id.
+
+			- 'size' :
+				Entry size in bytes.
+
+			- 'type' :
+				Entry type : 'file', 'directory', 'socket', 'block', 'character',
+				'fifo' or 'link'.
+
+			- 'uid' or 'user-id' :
+				User id.
+
+			The following constants evaluate to true if the corresponding file mode bit
+			is set :
+			- S_IFSOCK	: True if entry is a socket
+			- S_IFLNK	: True if entry is a symbolic link
+			- S_IFREG	: True if entry is a regular file
+			- S_IFBLK	: True if entry is a block device
+			- S_IFCHR	: True if entry is a character device
+			- S_IFDIR	: True if entry is a directory
+			- S_IFIFO	: True if entry if a FIFO entry.
+			- S_ISGID	: True if the set-group-id bit is set.
+			- S_ISVTX	: True if the sticky bit is set.
+			- S_IRUSR	: True if the read bit permission is set for the owner.
+			- S_IWUSR	: Same, for write permission.
+			- S_IXUSR	: Same, for execute permission/
+			- S_IRGRP, S_IWGRP, S_IXGRP :
+					  Same permissions, for group users.
+			- S_IROTH, S_IWOTH, S_IXOTH :
+					  Same permissions, for other users.
+
+	  		For example :
+
+	  			"[size] > 300kb  &&  S_IRUSR  &&  S_IXUSR"
+
+		$callback (callback) -
+			Specifies a callback function that will be used to retain an entry
+			or not.
+
+			The callback function must have the following signature :
+
+				boolean  callback ( $fullpath, $filename, $stat_info )
+
+			Where :
+			- $fullpath is the fullpath of the currently processed file
+			  (including the filename part)
+			- $filename is the currently processed filename
+			- $stat_info is the stat information as it can be returned when the
+			  FIND_OPTIONS_STAT_INFO and FIND_OPTIONS_EXTENDED_STAT_INFO flags
+			  are specified.
+
+	    RETURN VALUE
+		When only the FIND_OPTION_FILES_ONLY is specified, returns an array containing the
+		filenames that have been found.
+		Otherwise, returns an associative array whose keys are the filenames and values are
+		informations such as stat info and extended stat info. Each item in the returned
+		array have the following entries :
+
+		- FIND_OPTIONS_STAT_INFO flag specified :
+			- 'atime' (Unix time) :
+				Last access time.
+
+			- 'blksize' (integer) :
+				Block size (-1 on Windows systems).
+
+			- 'blocks' (integer) :
+				Number of file system blocks occupied by this file.
+
+			- 'ctime' (Unix time) :
+				Creation time.
+
+			- 'depth' (integer) :
+				Current nesting level within the filesystem.
+
+			- 'dev' (integer) :
+				Block device id.
+
+			- 'fmode' (string) :
+				String representing the file access modes, as can be showed by the
+				"ls -l" command.
+
+			- 'gid' (integer) :
+				Group ID (0 on Windows systems).
+
+			- 'ino' (integer) :
+				Inode number (0 on Windows systems).
+
+			- 'mode' (integer) !
+				File access mode.
+
+			- 'mtime' (Unix time) :
+				Last modification time.
+
+			- 'nlink' (integer) :
+				Number of links to this file (always 1 on Windows systems).
+
+			- 'rdev' (integer) :
+				Raw device id.
+
+			- 'size' (integer) :
+				Entry size, in bytes.
+
+			- 'type' :
+				Entry type. Can be :
+
+				- 'file' :
+					Regular file.
+
+				- 'directory' :
+					Directory.
+
+				- 'socket' :
+					System socket.
+
+				- 'link' :
+					Symbolic link.
+
+v				- 'block' :
+					Block device.
+
+				- 'character' :
+					Character device.
+
+				- 'fifo' :
+					FIFO file.
+
+			- 'uid' (integer) :
+				Owner id (always 0 on Windows systems).
+
+		- FIND_OPTIONS_EXTENDED_STAT_INFO flag specified :
+			The stat information will contain an extra entry, 'modes', which contains one
+			boolean entry for each S_xx file mode constant defined :
+
+			- S_IFSOCK	: True if entry is a socket
+			- S_IFLNK	: True if entry is a symbolic link
+			- S_IFREG	: True if entry is a regular file
+			- S_IFBLK	: True if entry is a block device
+			- S_IFCHR	: True if entry is a character device
+			- S_IFDIR	: True if entry is a directory
+			- S_IFIFO	: True if entry if a FIFO entry.
+			- S_ISGID	: True if the set-group-id bit is set.
+			- S_ISVTX	: True if the sticky bit is set.
+			- S_IRUSR	: True if the read bit permission is set for the owner.
+			- S_IWUSR	: Same, for write permission.
+			- S_IXUSR	: Same, for execute permission/
+			- S_IRGRP, S_IWGRP, S_IXGRP :
+					  Same permissions, for group users.
+			- S_IROTH, S_IWOTH, S_IXOTH :
+					  Same permissions, for other users.
+
+	 --------------------------------------------------------------------------------------------*/
+
+	// The keys in this array are the authorized keywords between square brackets for the $options
+	// parameter.
+	// For each entry :
+	// - The 'entry' entry specifies the associated entry in the $stat_info structure
+	// - The 'type' entry specifies the parameter type, which can be :
+	//	- 'time' :
+	//		The keyword parameter is a string compatible with the strtotime() function.
+	//	- 'integer' :
+	//		Integer parameter type. The format of the parameter is not checked.
+	//	- 'string' :
+	//		String parameter type.
+	//	- 'type' :
+	//		Entry parameter type ( 'directory', 'file', etc.).
+	//	- 'size' :
+	//		Size parameter type. The supplied value can include a trailing specification
+	//		such as "kb" for "kilobytes".
+	//	- 'modebit' :
+	//		The parameter is one of the S_xxx boolean values.
+	private static 		$__Find_Keywords		=  array
+	   (
+	   	'atime'			=>  array ( 'entry' => 'atime'	, 'type' => 'time' 	),
+	   	'access-time'		=>  array ( 'entry' => 'atime'	, 'type' => 'time' 	),
+	   	'blksize'		=>  array ( 'entry' => 'blksize', 'type' => 'integer' 	),
+	   	'block-size'		=>  array ( 'entry' => 'blksize', 'type' => 'integer'	),
+		'ctime'			=>  array ( 'entry' => 'ctime'	, 'type' => 'time' 	),
+		'creation-time'		=>  array ( 'entry' => 'ctime'	, 'type' => 'time' 	),
+		'depth'			=>  array ( 'entry' => 'depth'	, 'type' => 'integer' 	),
+		'dev'			=>  array ( 'entry' => 'dev'	, 'type' => 'integer' 	),
+		'device'		=>  array ( 'entry' => 'dev'	, 'type' => 'integer'	),
+		'fmode'			=>  array ( 'entry' => 'fmode'	, 'type' => 'string'	),
+		'file-mode'		=>  array ( 'entry' => 'fmode'	, 'type' => 'string'	),
+		'gid'			=>  array ( 'entry' => 'gid'	, 'type' => 'integer'	),
+		'group-id'		=>  array ( 'entry' => 'gid'	, 'type' => 'integer' 	),
+		'ino'			=>  array ( 'entry' => 'ino'	, 'type' => 'integer'	),
+		'inode'			=>  array ( 'entry' => 'inode'	, 'type' => 'integer'	),
+		'mode'			=>  array ( 'entry' => 'mode'	, 'type' => 'integer'	),
+		'mtime'			=>  array ( 'entry' => 'mtime'	, 'type' => 'time'	),
+		'modification-time'	=>  array ( 'entry' => 'mtime'	, 'type' => 'time'	),
+		'nlink'			=>  array ( 'entry' => 'nlink'	, 'type' => 'integer'	),
+		'link-count'		=>  array ( 'entry' => 'nlink'	, 'type' => 'integer'	),
+		'rdev'			=>  array ( 'entry' => 'rdev'	, 'type' => 'integer'	),
+		'raw-device'		=>  array ( 'entry' => 'rdev'	, 'type' => 'integer'	),
+		'size'			=>  array ( 'entry' => 'size'	, 'type' => 'size'	),
+		'type'			=>  array ( 'entry' => 'type'	, 'type' => 'type'	),
+		'uid'			=>  array ( 'entry' => 'uid'	, 'type' => 'integer'	),
+		'user-id'		=>  array ( 'entry' => 'uid'	, 'type' => 'integer'	),
+		'S_IFSOCK'		=>  array ( 'entry' => ''	, 'type' => 'modebit'   ),
+		'S_IFLNK'		=>  array ( 'entry' => ''	, 'type' => 'modebit'   ),
+		'S_IFREG'		=>  array ( 'entry' => ''	, 'type' => 'modebit'   ),
+		'S_IFBLK'		=>  array ( 'entry' => ''	, 'type' => 'modebit'   ),
+		'S_IFDIR'		=>  array ( 'entry' => ''	, 'type' => 'modebit'   ),
+		'S_IFCHR'		=>  array ( 'entry' => ''	, 'type' => 'modebit'   ),
+		'S_IFIFO'		=>  array ( 'entry' => ''	, 'type' => 'modebit'   ),
+		'S_ISGID'		=>  array ( 'entry' => ''	, 'type' => 'modebit'   ),
+		'S_ISVTX'		=>  array ( 'entry' => ''	, 'type' => 'modebit'   ),
+		'S_IRUSR'		=>  array ( 'entry' => ''	, 'type' => 'modebit'   ),
+		'S_IWUSR'		=>  array ( 'entry' => ''	, 'type' => 'modebit'   ),
+		'S_IXUSR'		=>  array ( 'entry' => ''	, 'type' => 'modebit'   ),
+		'S_IRGRP'		=>  array ( 'entry' => ''	, 'type' => 'modebit'   ),
+		'S_IWGRP'		=>  array ( 'entry' => ''	, 'type' => 'modebit'   ),
+		'S_IXGRP'		=>  array ( 'entry' => ''	, 'type' => 'modebit'   ),
+		'S_IROTH'		=>  array ( 'entry' => ''	, 'type' => 'modebit'   ),
+		'S_IWOTH'		=>  array ( 'entry' => ''	, 'type' => 'modebit'   ),
+		'S_IXOTH'		=>  array ( 'entry' => ''	, 'type' => 'modebit'   ),
+	     ) ;
+
+	// Entry types with their aliases
+	private static		$__Found_File_Types		=  array
+	   (
+	   	'socket'		=>  array ( 'id' => S_IFSOCK	, 'name' => 'socket' 	),
+	   	'sock'			=>  array ( 'id' => S_IFSOCK	, 'name' => 'socket' 	),
+	   	's'			=>  array ( 'id' => S_IFSOCK	, 'name' => 'socket' 	),
+	   	'link'			=>  array ( 'id' => S_IFLNK	, 'name' => 'link' 	),
+	   	'lnk'			=>  array ( 'id' => S_IFLNK	, 'name' => 'link' 	),
+	   	'l'			=>  array ( 'id' => S_IFLNK	, 'name' => 'link' 	),
+	   	'regular'		=>  array ( 'id' => S_IFREG	, 'name' => 'file' 	),
+	   	'reg'			=>  array ( 'id' => S_IFREG	, 'name' => 'file' 	),
+	   	'file'			=>  array ( 'id' => S_IFREG	, 'name' => 'file' 	),
+	   	'r'			=>  array ( 'id' => S_IFREG	, 'name' => 'file' 	),
+	   	'f'			=>  array ( 'id' => S_IFREG	, 'name' => 'file' 	),
+	   	'block'			=>  array ( 'id' => S_IFBLK	, 'name' => 'block' 	),
+	   	'blk'			=>  array ( 'id' => S_IFBLK	, 'name' => 'block' 	),
+	   	'b'			=>  array ( 'id' => S_IFBLK	, 'name' => 'block' 	),
+	   	'directory'		=>  array ( 'id' => S_IFDIR	, 'name' => 'directory' ),
+	   	'dir'			=>  array ( 'id' => S_IFDIR	, 'name' => 'directory' ),
+	   	'd'			=>  array ( 'id' => S_IFDIR	, 'name' => 'directory' ),
+	   	'character'		=>  array ( 'id' => S_IFCHR	, 'name' => 'character' ),
+	   	'char'			=>  array ( 'id' => S_IFCHR	, 'name' => 'character' ),
+	   	'chr'			=>  array ( 'id' => S_IFCHR	, 'name' => 'character' ),
+	   	'c'			=>  array ( 'id' => S_IFCHR	, 'name' => 'character' ),
+	   	'fifo'			=>  array ( 'id' => S_IFIFO	, 'name' => 'fifo' 	)
+	    ) ;
+
+
+	// Official find function
+	public static function  Find ( $path, $name = null, $find_options = FIND_OPTIONS_DEFAULT, $options = null, $callback = null )
+	   {
+	   	// Stupid optimization : if the Find() function is called several times with the same $options
+	   	// parameter, then reuse the previous processed result
+	   	static 		$PreviousOptions 		=  "" ;
+	   	static 		$ProcessedOptions		=  "" ;
+
+		// Resulting array
+	   	$result 	=  array ( ) ;
+
+		// Check supplied root path
+	   	$path 	=  Path::RealPath ( $path ) ;
+	   	$path 	=  Path::ToUnix ( $path ) ;
+
+	   	if  ( ! file_exists ( $path )  ||  ! is_dir ( $path ) )
+	   		return ( $result ) ;
+
+		// If no options specified, then set to the empty string
+	   	if  ( $options  ===  null )
+		   	$options = "" ;
+	   	// Otherwise, replace doublequotes with single quotes, to simplify pattern matching
+	   	else
+	   		$options = str_replace ( '"', "'", $options ) ;
+
+		// Normalize searched name
+		if  ( ! $name )
+			$name = null ;
+
+		// If the specified options are different from the preceding ones, then process the new
+		// options ("[name] op 'value'" constructs)
+		if  ( $options  !=  $PreviousOptions )
+		   {
+		   	$PreviousOptions 		=  $options ;
+		   	$ProcessedOptions		=  $options ;
+
+			// Loop through authorized keywords
+			foreach  ( self::$__Find_Keywords  as  $keyword => $item )
+			   {
+			   	$stat_entry 		=  $item [ 'entry' ] ;		// Entry in the stat info array
+				$type 			=  $item [ 'type' ] ;		// Entry type
+
+				// Regular expression for matching "[name] op 'value'" constructs
+				$options_regex 			=  '/(?P<before> \[\s*) (?P<name> ' . $keyword . ' ) (?P<after> \s*\]) ( (?P<extra> [^\'(]*? ) [\'] (?P<value> [^\']*?) [\'] )?/imsx' ;
+
+				// If the expression matches...
+				if  ( preg_match ( $options_regex, $options, $matches ) )
+				   {
+				   	// Make sure that we have an 'extra' and 'value' keys in the match array
+				   	if  ( ! isset ( $matches [ 'extra' ] ) )
+				   	   {
+				   	   	$matches [ 'extra' ]	=  '' ;
+						$matches [ 'value' ]	=  '' ;
+				   	    }
+
+ 	    				// Expression to replace
+					$original_expression 	=  $matches [0] ;
+					// Value name
+					$value_name 		=  $matches [ 'name'  ] ;
+					// Value
+					$value 			=  $matches [ 'value' ] ;
+					// Replacement expression (variable names are those present in the __FindIsSelected method)
+					$new_expression 	=  '$file_stat [ "' . $value_name . '" ]' . $matches [ 'extra' ] ;
+
+					// Handle argument types
+					switch ( $type )
+					   {
+					   	// [parameter of type boolean] -
+					   	//	Leave the expression as is.
+					   	case	'boolean' :
+					   		break ;
+
+						// [parameter of type string] -
+						//	Enclose the expression within quotes.
+						case	'string' :
+							$new_expression .=  "'" . $value . "'" ;
+							break ;
+
+						// [parameter of type integer] -
+						//	Add the parameter value as is.
+						case	'integer' :
+							$new_expression .=  $value ;
+							break ;
+
+						// [parameter of type time] -
+						//	Parameter value is any string accepted by the strtotime() function.
+						case	'time' :
+							$new_expression .=  strtotime ( $value ) ;
+							break ;
+
+						// [parameter of type type] -
+						//	The parameter value is any accepted entry type.
+						//	If invalid, the entry is ignored.
+						case	'type' :
+							$new_expression 	=  "" ;
+
+							foreach  ( self::$__Found_File_Types  as  $key => $item )
+							   {
+								if  ( ! strcasecmp ( $value, $key ) )
+								   {
+								   	$new_expression 	=  '( ( $file_stat [ "mode" ] & ' . $item [ 'id' ] . ' )  ==  ' . $item [ 'id' ] . ') ' ;
+								   	break ;
+								    }
+							    }
+							break ;
+
+						// [parameter of type size] -
+						//	The parameter value is a numeric value followed by an optional size
+						//	specifier, such as "kb" for "kilobytes".
+						case	'size' :
+							$new_expression .=  String::StringToByteCount ( $value ) ;
+							break ;
+
+						// [parameter of type modebit] -
+						//	No value. Parameter name is any of the S_xxx constants.
+						case	'modebit' :
+							$value_name		=  strtoupper ( $value_name ) ;
+							$original_expression	=  $matches [ 'before' ] . $matches [ 'name' ] . $matches [ 'after' ] ;
+							$new_expression 	=  '$file_stat [ "modes" ] [ "' . $value_name . '" ]' ;
+							break ;
+
+						// Default :
+						//	Ignore value. The eval() function will issue an error message if the whole
+						//	expression is incorrect.
+						default :
+							$new_expression  =  "" ;
+					    }
+
+					// Replace original expression if needed
+					if  ( $new_expression )
+				    		$ProcessedOptions =  str_replace ( $original_expression, $new_expression, $ProcessedOptions ) ;
+				    }
+			    }
+		    }
+
+		// Start the tree traversal
+		$parts 		=  explode ( '/', $path ) ;
+		$result 	=  self::__Find ( $result, $path, $name, $ProcessedOptions, count ( $parts ), $find_options, $callback ) ;
+
+		// All done, return
+		return ( $result ) ;
+	    }
+
+
+	// __Find -
+	//	Performs the real tree traversal.
+	private static function  __Find ( &$result, $path, $name, $options, $depth, $find_options, $callback )
+	   {
+	   	// A 'modes' entry is systematically created in the $file_stat array. This variable contains the default values
+	   	static 		$default_modes 	=  array
+	   	   (
+	   	   	'S_IFSOCK'		=>  false,
+	   	   	'S_IFLNK'		=>  false,
+	   	   	'S_IFREG'		=>  false,
+	   	   	'S_IFBLK'		=>  false,
+	   	   	'S_IFDIR'		=>  false,
+	   	   	'S_IFCHR'		=>  false,
+	   	   	'S_IFIFO'		=>  false
+		    ) ;
+
+		// Open the directory
+		$dp	=  opendir ( $path ) ;
+
+		if  ( $dp  ==  null )
+			return ;
+
+		// Loop through directory entries
+		while  ( ( $entry = readdir ( $dp ) )  !==  false )
+		   {
+		   	// Skip '.' and '..'
+			if  ( $entry  ==   '.'  ||  $entry  ==  '..' )
+				continue ;
+
+			// Build the absolute filename and get stat information
+			$file_name			=  $path . '/' . $entry ;
+			
+			if  ( ! file_exists ( $file_name ) )
+			   {
+				warning ( "Skipped non-existing file $file_name." ) ;
+				continue ;
+			    }
+			
+			$file_stat 			=  stat ( $file_name ) ;
+
+			// Add useful information to the $file_stat structure
+			$file_stat [ 'depth' ]		=  $depth + 1 ;
+			$file_stat [ 'fmode' ]		=  self::FileModeToString ( $file_stat [ 'mode' ] ) ;
+
+			$mode 				=  $file_stat [ 'mode' ] ;
+			$file_stat [ 'modes' ]		=  $default_modes ;
+
+			// Process file modes
+			if  ( ( $mode  &  S_IFSOCK )  ==  S_IFSOCK )
+			   {
+				$file_stat [ 'modes' ] [ 'S_IFSOCK' ] 	=  true ;
+				$file_stat [ 'type' ]			=  'socket' ;
+			    }
+			else if  ( ( $mode  &  S_IFLNK )  ==  S_IFLNK )
+			   {
+			   	$file_stat [ 'modes' ] [ 'S_IFLNK' ]	=  true ;
+			   	$file_stat [ 'type' ]			=  'link' ;
+			    }
+			else if  ( ( $mode  &  S_IFREG )  ==  S_IFREG )
+			   {
+			   	$file_stat [ 'modes' ] [ 'S_IFREG' ] 	=  true ;
+			   	$file_stat [ 'type' ]			=  'file' ;
+			    }
+		    	else if  ( ( $mode  &  S_IFBLK )  ==  S_IFBLK )
+		    	   {
+		    	   	$file_stat [ 'modes' ] [ 'S_IFBLK' ]	=  true ;
+				$file_stat [ 'type' ]			=  'block' ;
+		    	    }
+    			else if  ( ( $mode  &  S_IFDIR )  ==  S_IFDIR )
+    			   {
+    			   	$file_stat [ 'modes' ] [ 'S_IFDIR' ]	=  true ;
+				$file_stat [ 'type' ]			=  'directory' ;
+    			    }
+    			else if  ( ( $mode  &  S_IFCHR )  ==  S_IFCHR )
+    			   {
+    			   	$file_stat [ 'modes' ] [ 'S_IFCHR' ]	=  true ;
+				$file_stat [ 'type' ]			=  'character' ;
+    			    }
+    			else if  ( ( $mode  &  S_IFIFO )  ==  S_IFIFO )
+    			   {
+    			   	$file_stat [ 'modes' ] [ 'S_IFIFO' ]	=  true ;
+				$file_stat [ 'type' ]			=  'fifo' ;
+    			    }
+
+			$file_stat [ 'modes' ] [ 'S_ISGID'  ]	=  ( $mode & S_ISGID  ) ?  true : false ;
+			$file_stat [ 'modes' ] [ 'S_ISVTX'  ]	=  ( $mode & S_ISVTX  ) ?  true : false ;
+			$file_stat [ 'modes' ] [ 'S_IRUSR'  ]	=  ( $mode & S_IRUSR  ) ?  true : false ;
+			$file_stat [ 'modes' ] [ 'S_IWUSR'  ]	=  ( $mode & S_IWUSR  ) ?  true : false ;
+			$file_stat [ 'modes' ] [ 'S_IXUSR'  ]	=  ( $mode & S_IXUSR  ) ?  true : false ;
+			$file_stat [ 'modes' ] [ 'S_IRGRP'  ]	=  ( $mode & S_IRGRP  ) ?  true : false ;
+			$file_stat [ 'modes' ] [ 'S_IWGRP'  ]	=  ( $mode & S_IWGRP  ) ?  true : false ;
+			$file_stat [ 'modes' ] [ 'S_IXGRP'  ]	=  ( $mode & S_IXGRP  ) ?  true : false ;
+			$file_stat [ 'modes' ] [ 'S_IROTH'  ]	=  ( $mode & S_IROTH  ) ?  true : false ;
+			$file_stat [ 'modes' ] [ 'S_IWOTH'  ]	=  ( $mode & S_IWOTH  ) ?  true : false ;
+			$file_stat [ 'modes' ] [ 'S_IXOTH'  ]	=  ( $mode & S_IXOTH  ) ?  true : false ;
+
+			// Remove numeric entries from the $file_stat array and sort it based on its keys
+			$new_file_stat 	=  array ( ) ;
+
+			foreach  ( $file_stat  as  $key => $value )
+			   {
+			   	if  ( ! is_numeric ( $key ) )
+				   	$new_file_stat [$key] = $value ;
+			    }
+
+			ksort ( $new_file_stat ) ;
+
+			// Check if the file is selected according to the supplied options
+			if  ( self::__FindIsSelected ( $file_name, $entry, $new_file_stat, $name, $options, $depth, $find_options, $callback ) )
+			   {
+			   	// If extra option flags are specified, then we have to return an associative array whose keys
+			   	// are the absolute file names, and whose values are the stat information
+				if  ( $find_options  &  FIND_OPTIONS_EXTRA_MASK )
+			   		$result [ $file_name ] 		=  $new_file_stat ;
+  				// Otherwise, we will simply return an array of filenames
+  				else
+  					$result []			=  $file_name ;
+		   	    }
+
+			// If current entry is a directory, recursively process it
+			if  ( is_dir ( $file_name ) )
+				self::__Find ( $result, $file_name, $name, $options, $depth + 1, $find_options, $callback ) ;
+		    }
+
+		// Close the current directory and sort the results
+		closedir ( $dp ) ;
+		ksort ( $result ) ;
+
+		// All done, return
+		return ( $result ) ;
+	    }
+
+
+	// __FindIsSelected -
+	//	Checks if the specified file is to be selected or not.
+	private static function  __FindIsSelected ( $fullpath, $file, &$file_stat, $list, $options, $depth, $find_options, $callback )
+	   {
+		// If only files are to be returned...
+		if  ( $find_options  &  FIND_OPTIONS_FILES_ONLY  &&  ! is_file  ( $fullpath ) )
+			return ( false ) ;
+		
+	   	// If a name pattern has been specified, apply it
+	   	if  ( $list  !==  null )
+	   	   {
+	   	   	if  ( ! is_array ( $list ) )
+	   	   		$list 	=  array ( $list ) ;
+
+			foreach  ( $list  as  $name )
+			   {
+			   	if  ( $callback )
+			   	   {
+			   		$status 	=  call_user_func ( $callback, $fullpath, $file, $file_stat ) ;
+			   	    }
+
+			   	if  ( substr ( $name, 0, 3 )  ==  're:' )
+			   	   {
+			   		if  ( preg_match ( substr ( $name, $file ) )  ===  false )
+			   			return ( false ) ;
+			   		else
+			   			break ;
+			   	    }
+			   	else
+			   	   {
+			   		if  ( self::Matches ( $file, $name ) )
+			   			break ;
+			   		else
+			   			return ( false ) ;
+			   	    }
+			    }
+		    }
+
+		// If not selection options specified, then simply select the file
+		if  ( $options  ==  "" )
+			return ( true ) ;
+
+		// Otherwise, evaluate the expression
+		$expression = '$result = ' . $options . ' ;' ;
+		eval ( $expression ) ;
+
+		// Unset the 'modes' entry if the FIND_OPTIONS_EXTENDED_STAT_INFO flag is not specified
+		if  ( ! ( $find_options  &  FIND_OPTIONS_EXTENDED_STAT_INFO ) )
+			unset ( $file_stat [ 'modes' ] ) ;
+
+		// All done, return evaluation result
+	   	return ( $result ) ;
+	    }
+
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		GetTempDirectory - Returns the temp directory.
+
+	    PROTOTYPE
+		$path = Path::GetTempDirectory ( ) ;
+
+	    DESCRIPTION
+		Returns the full path of the current temp directory.
+
+	    RETURN VALUE
+		Returns either one of the following values (in the order below) :
+		- "TMP" environment variable
+		- "TEMP" environment variable
+		- "TMPDIR" environment variable
+		- The value returned by the sys_get_temp_dir ( ) function
+		The returned value is always an absolute path.
+
+	 --------------------------------------------------------------------------------------------*/
+    	public static function  GetTempDirectory ( )
+	   {
+		if  ( $value = getenv ( "TMP" ) )
+			$result 	=  $value ;
+		else if  ( $value = getenv ( "TEMP" ) )
+			$result 	=  $value ;
+		else if  ( $value  = getenv ( "TMPDIR" ) )
+			$result  	=  $value ;
+		else
+			$result 	=  sys_get_temp_dir ( ) ;
+
+		return ( Path::RealPath ( $result ) ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        GetVolatileTempFilename - Gets a volatile temp filename.
+	 
+	    PROTOTYPE
+	        $path	=  Path::GetVolatileTempFilename ( $name, $format = '%f.%s' ) ;
+	 
+	    DESCRIPTION
+	        Returns a temp filename in the volatile space.
+	 
+	    PARAMETERS
+	        $name (string) -
+	                Filename part.
+
+		$format (string) -
+			Format string. Can include the following format specifiers, which will be replaced in the final
+			filename :
+			%f -
+				(a little bit mandatory...) Represents the file name supplied with the $name parameter.
+
+			%s -
+				Sequence number. Substituted by a sequence number that gives a unique filename to the
+				supplied input.
+
+			%p - 
+				Process id.
+
+			%d -
+				Date/time, in the format 'Ymd.His'.
+
+			%t -
+				Unix time.
+	 
+	    RETURN VALUE
+	        Returns a unique filename in the volatile wrapper ('volatile://formatted file name').
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public static function  GetVolatileTempFilename ( $name, $format = '%f.%s' )
+	   {
+		static  $Formatter	=  null ;
+
+		if  ( ! $Formatter )
+			$Formatter	=  new  FileSpecificationFormatter ( [ SpecializedFormatterDefinition::OneArgumentDefinition ( '%', 'f' ) ] ) ;
+
+		$real_path		=  self::RealPath ( "volatile://$name" ) ;
+		$result			=  $Formatter -> Format ( $format, [ $real_path ] ) ;
+		$dirname		=  dirname ( $real_path ) ;
+		$result			=  'volatile://' . substr ( $result, strlen ( $dirname ) + 1 ) ;
+
+		fclose ( fopen ( $result, 'w' ) ) ;
+
+		return ( $result ) ;
+	    }
+
+
+
+	/*==============================================================================================================
+	
+	    NAME
+	        HasExtension - Checks if the specified path has the specified extension(s).
+	
+	    PROTOTYPE
+	        $status		=  Path::HasExtension ( $path, $extension_list, 
+	 					&$found_extension = null, &$original_extension = null ) ;
+	
+	    DESCRIPTION
+	        Checks if a path has one of the extensions specified by $extension_list.
+	
+	    PARAMETERS
+		$path (string) -
+	 		Path to be checked.
+	  
+	 	$extension_list (string or array) -
+	 		List of extensions to be checked against. Extensions must be specified without a dot.
+	  
+	 	&$found_extension (string) -
+	 		Will be set on output to the matched extension.
+	  
+	 	&$original_extension (string) -
+	 		Will be set on output to the original extension.
+	  
+	    RETURN VALUE
+	 	Returns true if the extension of $file matches one of the extensions in $extension_list, false
+	 	otherwise.
+	  
+	    NOTE
+	 	On Windows platforms, extension checking is case-insensitive.
+	
+	  ==============================================================================================================*/
+	public static function  HasExtension ( $path, $extension_list, &$found_extension = null, &$original_extension = null )
+	   {
+		if  ( ! is_array ( $extension_list ) )
+			$extension_list		=  [ $extension_list ] ;
+
+		$original_extension	=  pathinfo ( $path, PATHINFO_EXTENSION ) ;
+		
+		if  ( IS_WINDOWS )
+		   {
+			foreach  ( $extension_list  as  $extension_item )
+			   {
+				if  ( ! strcasecmp ( $original_extension, $extension_item ) )
+				   {
+					$found_extension	=  $extension_item ;
+
+					return ( true ) ;
+				    }
+			    }
+		    }
+		else
+		   {
+			foreach  ( $extension_list  as  $extension_item )
+			   {
+				if  ( ! strcmp ( $original_extension, $extension_item ) )
+				   {
+					$found_extension	=  $extension_item ;
+					
+					return ( true ) ;
+				    }
+			    }
+		    }
+		
+		return ( false ) ;
+	    }
+	
+	
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		IsAbsolute - Checks if a path is absolute.
+
+	    PROTOTYPE
+		$status = Path::IsAbsolute ( $path ) ;
+
+	    DESCRIPTION
+		Checks if a path is absolute.
+
+	    PARAMETERS
+		$path (string) -
+			Path to be checked.
+
+	    RETURN VALUE
+		True if the path is absolute, or false otherwise.
+		On Unix systems, a path is absolute if it starts with the '/' character
+		On Windows systems, a path is absolute if its starts either with :
+		- A '/' or '\' character
+		- Or a drive letter, followed by a semicolon, the by a '/' or '\' character
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  IsAbsolute ( $path )
+	   {
+	   	global		$Runtime ;
+
+
+		$length 	=  strlen ( $path ) ;
+
+		if  ( IS_WINDOWS )
+		   {
+			if  ( $length )
+			   {
+				if  ( $path [0]  ==  '/'  ||  $path [0]  ==  "\\" )
+					return ( true ) ;
+
+				if  ( $length  >=  3 )
+				   {
+					$a	=  strtolower ( $path [0] ) ;
+					$b	=  $path [1] ;
+					$c 	=  $path [2] ;
+
+					if  ( $a  >=  'a'  &&  $a  <=  'z'  &&  $b  ==  ':'  &&  ( $c  ==  '/'  ||  $c  ==  "\\" ) )
+						return ( true ) ;
+				    }
+			    }
+		    }
+		else
+		   {
+		   	if  ( $length )
+		   	   {
+	   			if  ( $path [0]  ==  '/' )
+	   				return ( true ) ;
+			    }
+		    }
+
+		return ( false ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		IsMimeType - Checks if a path belongs to one of the specified Mime types.
+
+	    PROTOTYPE
+		$status = Path::IsMimeType ( $path, $mime_types ) ;
+
+	    DESCRIPTION
+		Checks if a path belongs to one of the specified Mime types.
+
+	    PARAMETERS
+		$path (string) -
+			File to be checked.
+	  
+	 	$mime_types (string or array of strings) -
+	 		Mime types to be checked. Every entry can contain wilcard characters such as :
+	 		'image/*'.
+
+	    RETURN VALUE
+		True if the file belongs to one of the specified mime types, false otherwise or if it
+		does not exist.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  IsMimeType ( $path, $mime_types )
+	   {
+		if  ( ! file_exists ( $path ) )
+			return ( false ) ;
+		
+		if  ( ! is_array ( $mime_types ) )
+			$mime_types	=  [ $mime_types ] ;
+		
+		$command	=  'file --mime-type -N' ;
+		
+		if  ( IS_WINDOWS )
+		   {
+			$command	.=  ' -m ' . self::ToCygwin ( getenv ( 'CYGWIN_ROOT' ) . '/etc/magic.mgc' ) ;
+			$path		 =  self::ToCygwin ( $path ) ;
+		    }
+		
+		$command	.=  " \"$path\" 2>&1" ;
+		$output		 =  [] ;
+		exec ( $command, $output ) ;
+		
+		$parts		 =  explode ( ':', $output [0] ) ;
+		$mime		 =  trim ( $parts [1] ) ;
+		
+		foreach  ( $mime_types  as  $mime_type )
+		   {
+			if  ( self::Matches ( $mime, $mime_type ) )
+				return ( true ) ;
+		    }
+		
+		return ( false ) ;
+	    }
+	
+	
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		IsPathInArray - Checks if a path is in the specified array.
+
+	    PROTOTYPE
+		$status = Path::IsPathInArray ( $path, $array, $use_cwd = false ) ;
+
+	    DESCRIPTION
+		Checks if a path is in the specified array.
+	 	Relative paths are converted to absolute paths before comparison.
+	 	On Windows systems, comparisons are case-insensitive.
+
+	    PARAMETERS
+		$path (string) -
+			Path to be checked.
+	  
+	 	$array (array of strings) -
+	 		List of paths to be compared to.
+
+	    	$use_cwd (boolean or string) -
+	    		When true, the current working directory will be used for building the
+	    		absolute path.
+	    		When false, it will be the directory of the currently running script.
+	 		When specified as a string, it will be considered as the current working
+	 		directory for relative paths.
+
+	    RETURN VALUE
+		True if $path is in $array, false otherwise.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  IsPathInArray ( $path, $array, $use_cwd = false )
+	   {
+		$real_path	=  self::ToHost ( self::RealPath ( $path, $use_cwd ) ) ;
+		
+		foreach  ( $array  as  $array_item )
+		   {
+			$real_item	=  self::ToHost ( self::RealPath ( $array_item, $use_cwd ) ) ;
+			
+			if  ( IS_WINDOWS )
+				$status		=  strcasecmp ( $real_item, $real_path ) ;
+			else
+				$status		=  strcmp ( $real_item, $real_path ) ;
+			
+			if  ( ! $status )
+				return ( true ) ;
+		    }
+		
+		return ( false ) ;
+	    }
+	
+	
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		IsValidFilename - Checks if the specified path is a valid filename.
+
+	    PROTOTYPE
+		$status = Path::IsValidFilename ( $filename, $is_dir = false ) ;
+
+	    DESCRIPTION
+		Checks if the specified filename is a valid filename. The type of validation depends
+		on whether we are running on a Unix or Windows system.
+
+	    PARAMETERS
+		$filename (string) -
+			Filename to be checked.
+
+		$is_dir (boolean) -
+			When true, the check will succeed even if the path ends with a directory
+			separator or the traditional '.' and '..' items.
+
+	    RETURN VALUE
+		true if the filename is valid, false otherwise.
+
+	    NOTES
+	    	This function only checks that the specified path is sintactically correct.
+	    	Checking for a directory is only performed on a syntax basis ; no filesystem checking
+	    	is performed.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  IsValidFilename ( $filename, $is_dir = false )
+	   {
+		if  ( IS_WINDOWS )
+			return ( Path::IsValidWindowsFilename ( $filename, $is_dir ) ) ;
+		else
+			return ( Path::IsValidUnixFilename ( $filename, $is_dir ) ) ;
+	   }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		IsValidUnixFilename - Checks if the specified path is a valid Unix filename.
+
+	    PROTOTYPE
+		$status = Path::IsValidUnixFilename ( $filename, $is_dir = false ) ;
+
+	    DESCRIPTION
+		Checks if the specified filename is a valid Unix filename.
+
+	    PARAMETERS
+		$filename (string) -
+			Filename to be checked.
+
+		$is_dir (boolean) -
+			When true, the check will succeed even if the path ends with a directory
+			separator or the traditional '.' and '..' items.
+
+	    RETURN VALUE
+		true if the filename is valid, false otherwise.
+
+	    NOTES
+	    	This function only checks that the specified path is sintactically correct.
+	    	Checking for a directory is only performed on a syntax basis ; no filesystem checking
+	    	is performed.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  IsValidUnixFilename ( $filename, $is_dir = false )
+	   {
+	   	// Basic checkings
+	   	if  ( $is_dir )
+	   	   {
+			if  ( preg_match ( '-/[.]*$-', $filename )  ||  preg_match ( '-^[/]*[.]+$-', $filename ) )
+				return ( false ) ;
+		    }
+
+		// Re for a Unix path
+		$re	=  '-^' .
+				'[/]?' .
+				'( ( [^/]+ [/] )+ )?' .
+				'( [^/]+ )' .
+			   '$-imsx' ;
+
+		if  ( preg_match ( $re, $filename )  ===  false )
+			return ( false ) ;
+		else
+			return ( true ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		IsValidWindowsFilename - Checks if the specified path is a valid Windows filename.
+
+	    PROTOTYPE
+		$status = Path::IsValidWindowsFilename ( $filename, $is_dir = false ) ;
+
+	    DESCRIPTION
+		Checks if the specified filename is a valid Unix filename.
+
+	    PARAMETERS
+		$filename (string) -
+			Filename to be checked.
+
+		$is_dir (boolean) -
+			When true, the check will succeed even if the path ends with a directory
+			separator or the traditional '.' and '..' items.
+
+	    RETURN VALUE
+		true if the filename is valid, false otherwise.
+
+	    NOTES
+	    	This function only checks that the specified path is sintactically correct.
+	    	Checking for a directory is only performed on a syntax basis ; no filesystem checking
+	    	is performed.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  IsValidWindowsFilename ( $filename, $is_dir = false )
+	   {
+	   	// Simplify the problem : replace backslashes with slashes, otherwise it will complexify the regular expressions
+	   	$filename = str_replace ( "\\", "/", $filename ) ;
+
+	   	// Consecutive directory separators are not allowed on Windows
+	   	if  ( preg_match ( '-[/]{2,}-', $filename ) )
+	   		return ( false ) ;
+
+		// Basic checkings
+		if  ( preg_match ( '-[/][.]*$-', $filename )  ||  preg_match ( '-^[/]*[.]+$-', $filename ) )
+			return ( false ) ;
+
+		// Re for a Windows path
+		$re	=  '|^' .
+				'([a-z][:])?' .
+				'[/]?' .
+				'( ( [^/]+ [/] )+ )?' .
+				'( [^/]+ )' .
+			   '$|imsx' ;
+
+		if  ( preg_match ( $re, $filename )  ===  false )
+			return ( false ) ;
+		else
+			return ( true ) ;
+	    }
+
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	  	Matches - Checks if a filename corresponds to a filemask.
+
+	    PROPERTY
+	    	$status = Path::Matches ( $file, $pattern, $case_sensitive = false ) ;
+
+	    DESCRIPTION
+		Checks if the specified file matches the supplied file pattern.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  Matches ( $file, $pattern, $case_sensitive = false )
+	   {
+		return ( String::Matches ( $file, $pattern, $case_sensitive ) ) ;
+	    }
+
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        MkDir - Creates a directory.
+	
+	    PROTOTYPE
+	        $status		=  Path::MkDir ( $path, $mode = 0755, $recursive = false, $user = false, $group = false ) ;
+	
+	    DESCRIPTION
+	        Creates a directory using the specified access mode, user and group names.
+	
+	    PARAMETERS
+	        $path (string) -
+	                Path to be created.
+	  
+	 	$mode (integer) -
+	 		Access modes.
+	  
+	 	$recursive (boolean) -
+	 		When true, subdirectories are created as needed.
+	 		When false, only the last directory will be created ; other directories in the path must already
+	 		exist.
+	  
+	 	$user (string) -
+	 		When not null, created subdirectories will be owned by the specified user.
+	  
+	 	$group (string) -
+	 		When not null, created subdirectories will belong to the specified group.
+	
+	    RETURN VALUE
+	        True in case of success, false otherwise.
+	
+	  ==============================================================================================================*/
+	public static function  MkDir ( $path, $mode = 0755, $recursive = false, $user = false, $group = false )
+	   {
+		if  ( $recursive )
+		   {
+			$realpath	=  self::ToUnix ( self::RealPath ( $path, true ) ) ;
+			$parts	   	=  explode ( '/', $realpath ) ;
+			$count		=  count ( $parts ) ;
+		
+			if  ( $parts [0]  ==  '' )
+			   {
+				$current_path	=  '' ;
+				$start_index	=  1 ;
+			    }
+			else if ( strlen ( $parts [0] )  >  1  &&  $parts [0] [1]  ==  ':' )
+			   {
+				$current_path	=  $parts [0] ;
+				$start_index	=  1 ;
+			    }
+			else
+			   {
+				$current_path	=  '' ;
+				$start_index	=  0 ;
+			    }
+		
+			for  ( $i = $start_index ; $i  <  $count ; $i ++ )
+			   {
+				if  ( $current_path )
+					$current_path	.=  '/' ;
+			
+				$current_path	.=  $parts [$i] ;
+			
+				output ( "CUR = $current_path" ) ;
+				if  ( ! file_exists ( $current_path ) )
+				   {
+				output ( "CREATED $current_path" ) ;
+					if  ( ! mkdir ( $current_path, $mode ) )
+						return ( false ) ;
+					
+					if  ( $user )
+						chown ( $current_path, $user ) ;
+					
+					if  ( $group )
+						chgrp ( $current_path, $group ) ;
+				    }
+			    }
+		    }
+		else
+		   {
+			if  ( ! mkdir ( $path, $mode ) )
+				return ( false ) ;
+					
+			if  ( $user )
+				chown ( $path, $user ) ;
+					
+			if  ( $group )
+				chgrp ( $path, $group ) ;
+		    }
+		
+		return ( true ) ;
+	    }
+	
+
+	/*==============================================================================================================
+	
+	    NAME
+	        MkFile - Creates a file.
+	
+	    PROTOTYPE
+	        $status		=  Path::MkFile ( $file, $mode = 0755, $recursive = false, $user = false, $group = false ) ;
+	
+	    DESCRIPTION
+	        Creates a file using the specified access mode, user and group names.
+	
+	    PARAMETERS
+	        $file (string) -
+	                File path to be created.
+	  
+	 	$mode (integer) -
+	 		Access modes.
+	  
+	 	$recursive (boolean) -
+	 		When true, subdirectories are created as needed.
+	 		When false, only the last directory will be created ; other directories in the path must already
+	 		exist.
+	  
+	 	$user (string) -
+	 		When not null, created subdirectories and file will be owned by the specified user.
+	  
+	 	$group (string) -
+	 		When not null, created subdirectories and file will belong to the specified group.
+	
+	    RETURN VALUE
+	        True in case of success, false otherwise.
+	
+	    NOTE 
+	 	This function is not intended to preserve any existing file.
+	  
+	  ==============================================================================================================*/
+	public static function  MkFile ( $file, $mode = 0755, $recursive = false, $user = false, $group = false )
+	   {
+		$dirname	=  dirname ( $file ) ;
+		
+		if  ( $recursive )
+		   {
+			if  ( ! self::MkDir ( $dirname, $mode, true, $user, $group ) )
+				return ( false ) ;
+		    }
+		
+		if  ( ( $fp = fopen ( $file, "w" ) )  ===  false )
+			return ( false ) ;
+		
+		fclose ( $fp ) ;
+		
+		chmod ( $file, $mode ) ;
+		
+		if  ( $user )
+			chown ( $file, $user ) ;
+		
+		if  ( $group )
+			chgrp ( $file, $group ) ;
+		
+		return ( true ) ;
+	    }
+	
+	
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		RealPath - A realpath() alternative when the file does not exist.
+
+	    PROPERTY
+		$path = Path::RealPath ( $path, $use_cwd = false ) ;
+
+	    DESCRIPTION
+		Works like the native realpath() function, excepts that it works even if the file does
+		not exist.
+
+	    PARAMETERS
+	    	$path (string) -
+	    		Path to be converted.
+
+	    	$use_cwd (boolean or string) -
+	    		When true, the current working directory will be used for building the
+	    		absolute path.
+	    		When false, it will be the directory of the currently running script.
+	 		When specified as a string, it will be considered as the current working
+	 		directory for relative paths.
+
+	    RETURN VALUE
+	    	Full path name, or null if supplied path is empty.
+
+  	    NOTES
+  	    	Don't try to get the absolute path of a relative path within a specified drive on
+  	    	Windows : PHP does not provide any support for that.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  RealPath ( $path, $use_cwd = false )
+	   {
+	   	// Paranoia
+	   	if  ( ! $path )
+	   		return ( false ) ;
+
+		$path	=  str_replace ( "\\", '/', $path ) ;
+
+	   	// If the file is an url, check if it could be an IO wrapper
+		$index	=  strpos ( $path, "://" ) ;
+
+	   	if  ( $index  !==  false )
+		   {
+			$root	=  GenericWrapper::GetStreamOption ( substr ( $path, 0, $index ), "root" ) ;
+			$root	=  String::SetEOS ( $root, '/' ) ;
+
+			if  ( ! $root )
+	   			return ( $path ) ;
+
+			$path	=  $root . substr ( $path, $index + 3 ) ;
+		    }
+
+	   	// If the file exists, simply return its real path
+	   	if  ( file_exists ( $path ) )
+	   		return ( realpath ( $path ) ) ;
+
+	   	// Otherwise, manually compute the real path
+		$length 		=  strlen ( $path ) ;
+
+   		// Relative path : use the current script filename or current directory to get the current directory
+		if  ( is_bool ( $use_cwd ) )
+		   {
+   			if  ( $use_cwd )
+   				$cwd 	=  getcwd ( ) ;
+   			else
+   				$cwd 	=  dirname ( $_SERVER [ 'SCRIPT_FILENAME' ] ) ;
+		    }
+		else
+			$cwd	=  $use_cwd ;
+
+   		if  ( ! String::EndsWith ( $cwd, '/' )  &&  ! String::EndsWith ( $cwd, "\\" ) )
+   			$cwd  .=  '/' ;
+
+   		if  ( $path [0]  !=  '/'  &&  ( $length  >  1  &&  $path [1]  !=  ':' ) )
+   			$path = $cwd . $path ;
+
+   		// We work on unix-style path
+		$path	=  str_replace ( "\\", '/', $path ) ;
+		$output =  array ( ) ;
+
+		// Absolute unix path : 1st path component will be unix root
+		if  ( $path [0]  ==  '/' )
+		   {
+			$output [] = '' ;
+			$path      = substr ( $path, 1 ) ;
+		    }
+   		// Windows path with drive letter : keep the drive letter with semicolon as path root
+   		// Note : the local directory of each drive cannot be processed, since PHP does not provide
+   		// any way to retrieve the current directory of a specified drive.
+   		// We will always consider that a path starting with a driver letter is absolute.
+		else if (  $length  >  1  &&  $path [1]  ==  ':' )
+		    {
+		   	$output [] = substr ( $path, 0, 2 ) ;
+
+		   	if  ( $path [2]  ==  '/' )
+		   		$start = 3 ;
+	   		else
+	   			$start = 2 ;
+
+			$path      = substr ( $path, $start ) ;
+		     }
+
+		// Split non-root elements of the input path
+		$input = explode ( '/', $path ) ;
+
+		// Then process them individually
+		foreach  ( $input  as  $item )
+		   {
+		   	// If current path element is ".", we have nothing to do
+			if  ( $item  ==   '.' )
+				continue ;
+			// If it's "..", then suppress last pushed directory (but only if we did not reach the root item)
+			else if  ( $item  ==  '..'  &&  count ( $output )  >  1 )
+				array_pop ( $output ) ;
+			// Otherwise add the current path element to our list
+			else
+				$output [] = $item ;
+		    }
+
+		// Build the absolute path from our list
+		$result = implode ( '/', $output ) ;
+
+		// All done return result
+		return ( $result ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	  	ReplaceExtension - Replaces the extension for a file.
+
+	    PROPERTY
+	    	$newfile = Path::ReplaceExtension ( $file, $newext ) ;
+
+	    DESCRIPTION
+		Replaces the extension of $file with $newext. If $newext is null or equal to ".",
+		the file extension will be removed.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function ReplaceExtension ( $file, $newext )
+	   {
+		$info   = pathinfo ( $file ) ;
+		$result = $info [ 'dirname' ] . "/" . Path::Filename ( $file ) ;
+
+		if  ( $newext  !=  '.'  &&  $newext  !=  '' )
+		   {
+			if  ( $newext [0]  !=  '.' )
+			        $result .= '.' ;
+		        $result .= $newext ;
+		    }
+
+		return ( $result ) ;
+	    }
+
+	
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	  	SamePath - Checks if two paths are identical.
+
+	    PROPERTY
+	    	$status		=  Path::SamePath ( $path_a, $path_b ) ;
+
+	    DESCRIPTION
+		Checks if both paths are the same. Before comparison, the real path of each path is
+	 	computed.
+	 	Under Windows systems, comparison is case insensitive.
+	  
+	    PARAMETERS
+	 	$path_a, $path_b (string) -
+	 		Paths to be compared.
+	 
+	    	$use_cwd (boolean or string) -
+	    		When true, the current working directory will be used for building the
+	    		absolute path.
+	    		When false, it will be the directory of the currently running script.
+	 		When specified as a string, it will be considered as the current working
+	 		directory for relative paths.
+
+	    RETURN VALUE
+	 	True if both paths match, false otherwise.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  SamePath ( $path_a, $path_b, $use_cwd = false )
+	   {
+		$path_a		=  self::ToHost ( self::RealPath ( $path_a, $use_cwd ) ) ;
+		$path_b		=  self::ToHost ( self::RealPath ( $path_b, $use_cwd ) ) ;
+		
+		if  ( IS_WINDOWS )
+			$status		=  strcasecmp ( $path_a, $path_b ) ;
+		else
+			$status		=  strcmp ( $path_a, $path_b ) ;
+		
+		return ( ( $status ) ?  false : true ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        ToCygwin - Converts a path to a cygwin-compatible one.
+	
+	    PROTOTYPE
+	        $path	=  Path::ToCygWin ( $path ) ;
+	
+	    DESCRIPTION
+	        Converts a Windows path to a Cygwin-compatible one ; for example :
+	 
+	 		C:\Temp\sample.txt
+	  
+	 	will be converted to :
+	  
+	 		/cygdrive/c/temp/sample.txt
+	  
+	 	On Unix platforms, the supplied path will be returned unchanged.
+	
+	    PARAMETERS
+	        $path (string) -
+	                Path to be converted.
+	
+	    RETURN VALUE
+	        Either the Cygwin-compatible path (Windows platforms) or the path as is (Unix platforms).
+	
+	  ==============================================================================================================*/
+	public static function  ToCygwin ( $path ) 
+	   {
+		if  ( IS_WINDOWS )
+		   {
+			if  ( strlen ( $path )  <  2  ||  $path [1]  !=  ':' )
+				return ( $path ) ;
+			
+			$remaining	=  str_replace ( '\\', '/', substr ( $path, 2 ) ) ;
+			return  ( '/cygdrive/' . strtolower ( $path [0] ) . $remaining ) ;
+		    }
+		else
+			return ( $path ) ;
+	    }
+	
+	
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		ToUnix 	  - Converts a Windows-style path to unix.
+		ToWIndows - Converts a Unix-style path to Windows.
+		ToHost    - Converts a path to the current host naming convention.
+
+	    PROPERTY
+		$path = ToUnix ( $path, $strip_drive_letter = false ) ;
+		$path = ToWindows ( $path ) ;
+
+	    DESCRIPTION
+		ToUnix() converts a windows-style path to unix ; backslashes are replaced by slashes,
+		and the drive letter (along with the following semicolon) is removed from the string if
+		the $strip_drive_letter parameter is true.
+		ToWindows() performs the reverse transformation. It does not process any drive letter.
+		ToHost() performs the correct conversion, whatever the running host is (Unix or
+		Windows).
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  ToUnix ( $path, $strip_drive_letter = false )
+	   {
+		$path = str_replace ( "\\", "/", $path ) ;
+
+		if  ( $path  &&  ( isset ( $path [1] ) &&  $path [1]  ==  ':' ) &&  $strip_drive_letter )
+		        $path = substr ( $path, 2 ) ;
+
+		return ( $path ) ;
+	    }
+
+
+	public static function  ToWindows ( $path )
+	   {
+	   	$path  =  str_replace ( '/', '\\', $path ) ;
+
+		return ( $path ) ;
+	    }
+
+
+	public static function  ToHost ( $path, $append_trailing_separator = false )
+	   {
+		if  ( IS_WINDOWS )
+			$result = Path::ToWindows ( $path ) ;
+		else
+			$result = Path::ToUnix ( $path ) ;
+
+		if  ( $append_trailing_separator  &&  substr ( $result, -1, 1 )  !=  DIRECTORY_SEPARATOR )
+			$result .= DIRECTORY_SEPARATOR ;
+
+		return ( $result ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        WhereIs - Locates an executable.
+	
+	    PROTOTYPE
+	        $realpath	=  Path::WhereIs ( $command ) ;
+	
+	    DESCRIPTION
+	        Tries to locate the real path of a command, by using the PATH environment variable.
+		On Windows systems, the PATHEXT environment variable is used to determine which extensions are for
+		executables, in case the supplied command name does not contain any valid one.
+	
+	    PARAMETERS
+	        $command (string) -
+	                Command to be searched. On Windows systems, if the command does not include a suffix, then the
+			search will be made included all the suffixes listed in the PATHEXT environment variable.
+	
+	    RETURN VALUE
+	        Returns the full path of the command, or null if command was not found.
+	
+	  ==============================================================================================================*/
+	public static function  WhereIs ( $command )
+	   {
+		if  ( file_exists ( $command ) )
+			return ( $command ) ;
+		
+		$path	=  getenv ( "PATH" ) ;
+		
+		// Special handling for Windows systems
+		if  ( IS_WINDOWS )
+		   {
+			// First, get the authorized executable extensions
+			// (this does not include any possible file type listed by the ASSOC command)
+			$pathext	=  strtolower ( getenv ( "PATHEXT" ) ) ;
+			
+			if  ( $pathext )
+				$extensions	=  explode ( PATH_SEPARATOR, $pathext ) ;
+			else
+				$extensions	=  array ( "" ) ;
+			
+			// If a real executable extension has been provided, forget PATHEXT
+			$extension	=  strtolower ( pathinfo ( $command, PATHINFO_EXTENSION ) ) ;
+			
+			if  ( in_array ( ".$extension", $extensions ) )
+				$extensions	=  array ( "" ) ;
+			
+			// But don't forget to add the current directory in the include path
+			$path		=  "." . PATH_SEPARATOR . $path ;
+		    }
+		else
+			$extensions	=  array ( "" ) ;
+		
+		// Search for every directory in PATH (on Windows systems, it also systematically include the current path)
+		$paths	=  explode ( PATH_SEPARATOR, $path ) ;
+		
+		foreach  ( $paths  as  $prefix )
+		   {
+			if ( ! $prefix )
+				continue ;
+			
+			foreach  ( $extensions  as  $ext )
+			   {
+				$realpath	=  Path::AppendDS ( $prefix ) . $command . $ext ;
+
+				// Executable found, return its real path
+				if  ( file_exists ( $realpath ) )
+					return ( $realpath ) ;
+			    }
+		    }
+		
+		return ( null ) ;
+	    }
+   }

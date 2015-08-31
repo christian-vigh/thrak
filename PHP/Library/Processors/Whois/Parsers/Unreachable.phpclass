@@ -1,0 +1,47 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        WhoisUnreachableInformation.phpclass
+
+    DESCRIPTION
+        A parser for whois unreachable server data. Does not parse anything.
+
+    AUTHOR
+        Christian Vigh, 07/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/07/31]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace  Thrak\Processors\Whois ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces and classes
+use  	Thrak\System\Object ;
+use	Thrak\IO\Path ;
+use	Thrak\Types\String ;
+use	Thrak\Processors\Whois\WhoisProviderInformation ;
+
+
+/*==============================================================================================================
+
+    WhoisNullInformation -
+        A class for handling unreachable whois data.
+
+  ==============================================================================================================*/
+class  WhoisUnreachableInformation		extends  WhoisProviderInformation
+   {
+	protected static		$Definitions	=  [] ;
+
+
+	public function  __construct ( $queried_ip, $contents )
+	   {
+		$this -> Flags		|=  self::WHOIS_FLAGS_SERVER_REFUSED_QUERY ;
+
+		parent::__construct ( $queried_ip, $contents, false ) ;
+	    }
+    }

@@ -1,0 +1,278 @@
+<!--
+	International calling codes.
+ -->
+
+<calling-codes>
+	<calling-code country="United Kingdom" country-code="uk" code="+44" default="true"/>
+	<calling-code country="Abkhazia" country-code="ab" code="+7840, +7940, +99544"/>
+	<calling-code country="Afghanistan" country-code="af" code="+93"/>
+	<calling-code country="Aland Islands" country-code="fi" code="+358"/>
+	<calling-code country="Albania" country-code="al" code="+355"/>
+	<calling-code country="Algeria" country-code="dz" code="+213"/>
+	<calling-code country="American Samoa" country-code="as" code="+1684"/>
+	<calling-code country="ANAC Satellite" code="+857, +858"/>
+	<calling-code country="Andorra" country-code="ad" code="+376"/>
+	<calling-code country="Angola" country-code="ao" code="+244"/>
+	<calling-code country="Anguilla" country-code="ai" code="+1264"/>
+	<calling-code country="Antigua and Barbuda" country-code="ag" code="+1268"/>
+	<calling-code country="Argentina" country-code="ar" code="+54"/>
+	<calling-code country="Armenia" country-code="am" code="+374"/>
+	<calling-code country="Aruba" country-code="aw" code="+297"/>
+	<calling-code country="Ascension" country-code="sh" code="+247"/>
+	<calling-code country="Australia" country-code="au" code="+61"/>
+	<calling-code country="Australian External Territories" country-code="tf" code="+672"/>
+	<calling-code country="Austria" country-code="at" code="+43"/>
+	<calling-code country="Azerbaijan" country-code="az" code="+994"/>
+	<calling-code country="Bahamas" country-code="bs" code="+1242"/>
+	<calling-code country="Bahrain" country-code="bh" code="+973"/>
+	<calling-code country="Bangladesh" country-code="bd" code="+880"/>
+	<calling-code country="Barbados" country-code="bb" code="+1246"/>
+	<calling-code country="Barbuda" country-code="bb" code="+1268"/>
+	<calling-code country="Belarus" country-code="by" code="+375"/>
+	<calling-code country="Belgium" country-code="be" code="+32"/>
+	<calling-code country="Belize" country-code="bz" code="+501"/>
+	<calling-code country="Benin" country-code="bj" code="+229"/>
+	<calling-code country="Bermuda" country-code="bm" code="+1441"/>
+	<calling-code country="Bhutan" country-code="bt" code="+975"/>
+	<calling-code country="Bolivia" country-code="bo" code="+591"/>
+	<calling-code country="Bonaire" country-code="bq" code="+5997"/>
+	<calling-code country="Bosnia and Herzegovina" country-code="ba" code="+387"/>
+	<calling-code country="Botswana" country-code="bw" code="+267"/>
+	<calling-code country="Brazil" country-code="br" code="+55"/>
+	<calling-code country="British Indian Ocean Territory" country-code="bq" code="+246"/>
+	<calling-code country="British Virgin Islands" country-code="vg" code="+1284"/>
+	<calling-code country="Brunei Darussalam" country-code="bn" code="+673"/>
+	<calling-code country="Bulgaria" country-code="bg" code="+359"/>
+	<calling-code country="Burkina Faso" country-code="bf" code="+226"/>
+	<calling-code country="Burundi" country-code="bi" code="+257"/>
+	<calling-code country="Cambodia" country-code="kh" code="+855"/>
+	<calling-code country="Cameroon" country-code="cm" code="+237"/>
+	<calling-code country="Canada" country-code="ca" code="+1"/>
+	<calling-code country="Cape Verde" country-code="cv" code="+238"/>
+	<calling-code country="Caribbean Netherlands" country-code="bq" code="+5993, +5994, +5997"/>
+	<calling-code country="Cayman Islands" country-code="ky" code="+1345"/>
+	<calling-code country="Central African Republic" country-code="cf" code="+236"/>
+	<calling-code country="Tchad" country-code="td" code="+235"/>
+	<calling-code country="Chatham Island (New Zealand)" country-code="nz" code="+64"/>
+	<calling-code country="Chile" country-code="cl" code="+56"/>
+	<calling-code country="China" country-code="cn" code="+86"/>
+	<calling-code country="Christmas Island" country-code="cx" code="+61"/>
+	<calling-code country="Cocos (Keeling) Islands" country-code="cc" code="+61"/>
+	<calling-code country="Colombia" country-code="co" code="+57"/>
+	<calling-code country="Comoros" country-code="km" code="+269"/>
+	<calling-code country="Congo (Brazzaville)" country-code="cg" code="+242"/>
+	<calling-code country="Congo, The Democratic Republic of the (Zaire)" country-code="cd" code="+243"/>
+	<calling-code country="Cook Islands" country-code="ck" code="+682"/>
+	<calling-code country="Costa Rica" country-code="cr" code="+506"/>
+	<calling-code country="Cote d'Ivoire" country-code="ci" code="+225"/>
+	<calling-code country="Croatia" country-code="hr" code="+385"/>
+	<calling-code country="Cuba" country-code="cu" code="+53"/>
+	<calling-code country="Cuba (Guantanamo Bay)" country-code="cu" code="+5399"/>
+	<calling-code country="Curacao" country-code="cw" code="+5999"/>
+	<calling-code country="Cyprus" country-code="cy" code="+357"/>
+	<calling-code country="Czech Republic" country-code="cz" code="+420"/>
+	<calling-code country="Denmark" country-code="dk" code="+45"/>
+	<calling-code country="Diego Garcia" country-code="dg" code="+246"/>
+	<calling-code country="Djibouti" country-code="dj" code="+253"/>
+	<calling-code country="Dominica" country-code="dm" code="+1767"/>
+	<calling-code country="Dominican Republic" country-code="do" code="+1809, +1829, +1849"/>
+	<calling-code country="East Timor" country-code="tl" code="+670"/>
+	<calling-code country="Easter Island" country-code="cl" code="+56"/>
+	<calling-code country="Ecuador" country-code="ec" code="+593"/>
+	<calling-code country="Egypt" country-code="eg" code="+20"/>
+	<calling-code country="El Salvador" country-code="sv" code="+503"/>
+	<calling-code country="Ellipso (Mobile Satellite service)" code="+8812, +8813"/>
+	<calling-code country="EMSAT (Mobile Satellite service)" code="+88213"/>
+	<calling-code country="Equatorial Guinea" country-code="gq" code="+240"/>
+	<calling-code country="Eritrea" country-code="er" code="+291"/>
+	<calling-code country="Estonia" country-code="ee" code="+372"/>
+	<calling-code country="Ethiopia" country-code="et" code="+251"/>
+	<calling-code country="Falkland Islands (Malvinas)" country-code="fk" code="+500"/>
+	<calling-code country="Faroe Islands" country-code="fo" code="+298"/>
+	<calling-code country="Fiji" country-code="fj" code="+679"/>
+	<calling-code country="Finland" country-code="fi" code="+358"/>
+	<calling-code country="France" country-code="fr" code="+33" format="%[0-1].%[2-3].%[4-5].%[6-7].%[8-9]" international-format="%c (%[0])%[1].%[2-3].%[4-5].%[6-7].%[8-9]" length="10"/>
+	<calling-code country="French Antilles" country-code="bl" code="+596"/>
+	<calling-code country="French Guiana" country-code="gf" code="+594"/>
+	<calling-code country="French Polynesia" country-code="pf" code="+689"/>
+	<calling-code country="Gabon" country-code="ga" code="+241"/>
+	<calling-code country="Gambia" country-code="gm" code="+220"/>
+	<calling-code country="Georgia" country-code="ge" code="+995"/>
+	<calling-code country="Germany" country-code="de" code="+49"/>
+	<calling-code country="Ghana" country-code="ga" code="+233"/>
+	<calling-code country="Gibraltar" country-code="gi" code="+350"/>
+	<calling-code country="Global Mobile Satellite System (GMSS)" code="+881"/>
+	<calling-code country="Globalstar (Mobile Satellite Service)" code="+8818, +8819"/>
+	<calling-code country="Greece" country-code="gr" code="+30"/>
+	<calling-code country="Greenland" country-code="gl" code="+299"/>
+	<calling-code country="Grenada" country-code="gd" code="+1473"/>
+	<calling-code country="Guadeloupe" country-code="gp" code="+590"/>
+	<calling-code country="Guam" country-code="gu" code="+1671"/>
+	<calling-code country="Guatemala" country-code="gt" code="+502"/>
+	<calling-code country="Guernsey" country-code="gg" code="+44"/>
+	<calling-code country="Guinea" country-code="gn" code="+224"/>
+	<calling-code country="Guinea-Bissau" country-code="gw" code="+245"/>
+	<calling-code country="Guyana" country-code="gy" code="+592"/>
+	<calling-code country="Haiti" country-code="ht" code="+509"/>
+	<calling-code country="Holy See (Vatican City State)" country-code="va" code="+39066, +379"/>
+	<calling-code country="Honduras" country-code="hn" code="+504"/>
+	<calling-code country="Hong Kong" country-code="hk" code="+852"/>
+	<calling-code country="Hungary" country-code="hu" code="+36"/>
+	<calling-code country="Iceland" country-code="is" code="+354"/>
+	<calling-code country="ICO Global (Mobile Satellite Service)" code="+8810, +8811"/>
+	<calling-code country="India" country-code="in" code="+91"/>
+	<calling-code country="Indonesia" country-code="id" code="+62"/>
+	<calling-code country="Inmarsat SNAC" code="+870"/>
+	<calling-code country="International Freephone Service" code="+800"/>
+	<calling-code country="International Shared Cost Service (ISCS)" code="+808"/>
+	<calling-code country="Iran" country-code="ir" code="+98"/>
+	<calling-code country="Iraq" country-code="iq" code="+964"/>
+	<calling-code country="Ireland" country-code="ie" code="+353"/>
+	<calling-code country="Iridium (Mobile Satellite service)" code="+8816, +8817"/>
+	<calling-code country="Isle of Man" country-code="im" code="+44"/>
+	<calling-code country="Israel" country-code="il" code="+972"/>
+	<calling-code country="Italy" country-code="it" code="+39"/>
+	<calling-code country="Jamaica" country-code="jm" code="+1876"/>
+	<calling-code country="Japan" country-code="jp" code="+81"/>
+	<calling-code country="Jersey" country-code="je" code="+44"/>
+	<calling-code country="Jordany" country-code="jo" code="+962"/>
+	<calling-code country="Kazakhstan" country-code="kz" code="+76, +77"/>
+	<calling-code country="Kenya" country-code="ke" code="+254"/>
+	<calling-code country="Kiribati" country-code="ki" code="+686"/>
+	<calling-code country="North Korea" country-code="kp" code="+850"/>
+	<calling-code country="South Korea" country-code="kr" code="+82"/>
+	<calling-code country="Kuwait" country-code="kw" code="+965"/>
+	<calling-code country="Kyrgyzstan" country-code="kg" code="+996"/>
+	<calling-code country="Laos" country-code="la" code="+856"/>
+	<calling-code country="Latvia" country-code="lv" code="+371"/>
+	<calling-code country="Lebanon" country-code="lb" code="+961"/>
+	<calling-code country="Lesotho" country-code="ls" code="+266"/>
+	<calling-code country="Liberia" country-code="lr" code="+231"/>
+	<calling-code country="Libya" country-code="ly" code="+218"/>
+	<calling-code country="Liechtenstein" country-code="li" code="+423"/>
+	<calling-code country="Lithuania" country-code="lt" code="+370"/>
+	<calling-code country="Luxembourg" country-code="lu" code="+352"/>
+	<calling-code country="Macau" country-code="mo" code="+853"/>
+	<calling-code country="Macedonia" country-code="mk" code="+389"/>
+	<calling-code country="Madagascar" country-code="mg" code="+261"/>
+	<calling-code country="Malawi" country-code="mw" code="+265"/>
+	<calling-code country="Malaysia" country-code="my" code="+60"/>
+	<calling-code country="Maldives" country-code="mv" code="+960"/>
+	<calling-code country="Mali" country-code="ml" code="+223"/>
+	<calling-code country="Malta" country-code="mt" code="+356"/>
+	<calling-code country="Marshall Islands" country-code="mh" code="+692"/>
+	<calling-code country="Martinique" country-code="mq" code="+596"/>
+	<calling-code country="Mauritania" country-code="mr" code="+222"/>
+	<calling-code country="Mauritius" country-code="mu" code="+230"/>
+	<calling-code country="Mayotte" country-code="yt" code="+262"/>
+	<calling-code country="Mexico" country-code="mx" code="+52"/>
+	<calling-code country="Micronesia, Federated States of" country-code="fm" code="+691"/>
+	<calling-code country="Midway Island" country-code="um" code="+1808"/>
+	<calling-code country="Moldova" country-code="md" code="+373"/>
+	<calling-code country="Monaco" country-code="mc" code="+377"/>
+	<calling-code country="Mongolia" country-code="mn" code="+976"/>
+	<calling-code country="Montenegro" country-code="me" code="+382"/>
+	<calling-code country="Montserrat" country-code="ms" code="+1664"/>
+	<calling-code country="Morocco" country-code="ma" code="+212"/>
+	<calling-code country="Mozambique" country-code="mz" code="+258"/>
+	<calling-code country="Myanmar" country-code="mm" code="+95"/>
+	<calling-code country="Namibia" country-code="na" code="+264"/>
+	<calling-code country="Nauru" country-code="nr" code="+674"/>
+	<calling-code country="Nepal" country-code="np" code="+977"/>
+	<calling-code country="Netherlands" country-code="nl" code="+31"/>
+	<calling-code country="Nevis" country-code="kn" code="+1869"/>
+	<calling-code country="New Caledonia" country-code="nc" code="+687"/>
+	<calling-code country="New Zealand" country-code="nz" code="+64"/>
+	<calling-code country="Nicaragua" country-code="ni" code="+505"/>
+	<calling-code country="Niger" country-code="ne" code="+227"/>
+	<calling-code country="Nigeria" country-code="ng" code="+234"/>
+	<calling-code country="Niue" country-code="nu" code="+683"/>
+	<calling-code country="Norfolk Island" country-code="nf" code="+672"/>
+	<calling-code country="Northern Mariana Islands" country-code="mp" code="+1670"/>
+	<calling-code country="Norway" country-code="no" code="+47"/>
+	<calling-code country="Oman" country-code="om" code="+968"/>
+	<calling-code country="Pakistan" country-code="pk" code="+92"/>
+	<calling-code country="Palau" country-code="pw" code="+680"/>
+	<calling-code country="Palestinian territories" country-code="ps" code="+970"/>
+	<calling-code country="Panama" country-code="pa" code="+507"/>
+	<calling-code country="Papua New Guinea" country-code="pg" code="+675"/>
+	<calling-code country="Paraguay" country-code="py" code="+595"/>
+	<calling-code country="Peru" country-code="pe" code="+51"/>
+	<calling-code country="Philippines" country-code="ph" code="+63"/>
+	<calling-code country="Poland" country-code="pl" code="+48"/>
+	<calling-code country="Portugal" country-code="pt" code="+351"/>
+	<calling-code country="Puerto Rico" country-code="pr" code="+1787, +1939"/>
+	<calling-code country="Qatar" country-code="qa" code="+974"/>
+	<calling-code country="Reunion" country-code="re" code="+262"/>
+	<calling-code country="Romania" country-code="ro" code="+40"/>
+	<calling-code country="Russia" country-code="ru" code="+7"/>
+	<calling-code country="Rwanda" country-code="rw" code="+250"/>
+	<calling-code country="Saba" country-code="bq" code="+5994"/>
+	<calling-code country="Saint Barthelemy" country-code="bl" code="+590"/>
+	<calling-code country="Saint Helena, Ascension and Tristan da Cunha" country-code="sh" code="+290"/>
+	<calling-code country="Saint Kitts and Nevis" country-code="kn" code="+1869"/>
+	<calling-code country="Saint Lucia" country-code="lc" code="+1758"/>
+	<calling-code country="Saint Martin (French)" country-code="mf" code="+590"/>
+	<calling-code country="Saint Pierre and Miquelon" country-code="pm" code="+508"/>
+	<calling-code country="Saint Vincent and the Grenadines" country-code="vc" code="+1784"/>
+	<calling-code country="Samoa" country-code="as" code="+685"/>
+	<calling-code country="San Marino" country-code="sm" code="+378"/>
+	<calling-code country="Sao Tome and Principe" country-code="st" code="+239"/>
+	<calling-code country="Saudi Arabia" country-code="sa" code="+966"/>
+	<calling-code country="Senegal" country-code="sn" code="+221"/>
+	<calling-code country="Serbia" country-code="rs" code="+381"/>
+	<calling-code country="Seychelles" country-code="sc" code="+248"/>
+	<calling-code country="Sierra Leone" country-code="sl" code="+232"/>
+	<calling-code country="Singapore" country-code="sg" code="+65"/>
+	<calling-code country="Sint Eustatius" country-code="bq" code="+5993"/>
+	<calling-code country="Sint Maarten (Dutch)" country-code="mf" code="+1721"/>
+	<calling-code country="Slovakia" country-code="sk" code="+421"/>
+	<calling-code country="Slovenia" country-code="si" code="+386"/>
+	<calling-code country="Solomon Islands" country-code="sb" code="+677"/>
+	<calling-code country="Somalia" country-code="so" code="+252"/>
+	<calling-code country="South Africa" country-code="za" code="+27"/>
+	<calling-code country="South Georgia and the South Sandwich Islands" country-code="gs" code="+500"/>
+	<calling-code country="South Sudan" country-code="sd" code="+211"/>
+	<calling-code country="Spain" country-code="es" code="+34"/>
+	<calling-code country="Sri Lanka" country-code="lk" code="+94"/>
+	<calling-code country="Sudan" country-code="sd" code="+249"/>
+	<calling-code country="Suriname" country-code="sr" code="+597"/>
+	<calling-code country="Svalbard and Jan Mayen" country-code="sj" code="+47"/>
+	<calling-code country="Swaziland" country-code="sz" code="+268"/>
+	<calling-code country="Sweden" country-code="se" code="+46"/>
+	<calling-code country="Switzerland" country-code="ch" code="+41"/>
+	<calling-code country="Syria" country-code="sy" code="+963"/>
+	<calling-code country="Taiwan" country-code="tw" code="+886"/>
+	<calling-code country="Tajikistan" country-code="tj" code="+992"/>
+	<calling-code country="Tanzania" country-code="tz" code="+255"/>
+	<calling-code country="Thailand" country-code="th" code="+66"/>
+	<calling-code country="Thuraya (Mobile Satellite service)" code="+88216"/>
+	<calling-code country="Togo" country-code="tg" code="+228"/>
+	<calling-code country="Tokelau" country-code="tk" code="+690"/>
+	<calling-code country="Tonga" country-code="to" code="+676"/>
+	<calling-code country="Trinidad and Tobago" country-code="tt" code="+1868"/>
+	<calling-code country="Tunisia" country-code="tn" code="+216"/>
+	<calling-code country="Turkey" country-code="tr" code="+90"/>
+	<calling-code country="Turkmenistan" country-code="tm" code="+993"/>
+	<calling-code country="Turks and Caicos Islands" country-code="tc" code="+1649"/>
+	<calling-code country="Tuvalu" country-code="tv" code="+688"/>
+	<calling-code country="Uganda" country-code="ug" code="+256"/>
+	<calling-code country="Ukraine" country-code="ua" code="+380"/>
+	<calling-code country="United Arab Emirates" country-code="ae" code="+971"/>
+	<calling-code country="United States" country-code="us" code="+1"/>
+	<calling-code country="Universal Personal Telecommunications (UPT)" code="+878"/>
+	<calling-code country="Uruguay" country-code="uy" code="+598"/>
+	<calling-code country="Uzbekistan" country-code="uz" code="+998"/>
+	<calling-code country="Vanuatu" country-code="vu" code="+678"/>
+	<calling-code country="Venezuela" country-code="ve" code="+58"/>
+	<calling-code country="Vatican City State (Holy See)" country-code="va" code="+39066, +379"/>
+	<calling-code country="Vietnam" country-code="vn" code="+84"/>
+	<calling-code country="Virgin Islands, British" country-code="vg" code="+1284"/>
+	<calling-code country="Virgin Islands, US" country-code="vi" code="+1340"/>
+	<calling-code country="Wake Island" country-code="wk" code="+1808"/>
+	<calling-code country="Wallis and Futuna" country-code="wf" code="+681"/>
+	<calling-code country="Yemen" country-code="ye" code="+967"/>
+	<calling-code country="Zambia" country-code="zm" code="+260"/>
+	<calling-code country="Zanzibar" country-code="tz" code="+255"/>
+	<calling-code country="Zimbabwe" country-code="zw" code="+263"/>
+</calling-codes>

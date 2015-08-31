@@ -1,0 +1,95 @@
+/**************************************************************************************************************
+
+    NAME
+        thrak.ui.stickyfooter-1.0.0.js
+
+    DESCRIPTION
+        A jQuery plugin that makes an item, such as a <div> element, stick to the bottom of the screen if the
+	page is smaller that screen height.
+	
+    USAGE
+	$. stickyFooter ( item, options ) ;
+
+    PARAMETERS
+	item -
+		Html element holding the footer (typically, a <div> element).
+
+	options -
+		Options for the stickyFooter object. It can have the following elements :
+
+		"css" -
+			A structure mentioning CSS attributes to be applied to the footer.
+
+    AUTHOR
+        Christian Vigh, 11/2013.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2013/11/09]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+
+( function ( $ )
+   {
+	$. prototype. stickyFooter	=  function ( options )
+	   {
+		var	settings	=  $.extend ( {}, options ) ;
+		var	them		=  this ;
+
+		
+		// The function them does the real sticky job...
+		function  stick ( $this )     
+		   {
+			// Where are we ?
+			var  document_height	=  $(window). height ( ) ;
+			var  footer_height	=  $this. height ( ) ;
+			var  footer_top		=  $this. position ( ). top + footer_height ;
+
+			// If page height is less than screen height, we need to make some adjustments
+			if  ( footer_top  <  document_height )
+			   {
+				var	delta		=  0 ;
+				var	margin_top	=  document_height - footer_top ;  
+			
+				// The question here is : why ?
+				// Moreover, if you display a real javascript alert() message, the footer will even be shifted by a few pixels !
+				if  ( $. browser. chrome  ||  $. browser. opera )
+					delta	=  -1 ;
+
+				margin_top += delta ;
+
+				$this. css ( 'margin-top', margin_top + 'px' ) ;				
+			    }
+		     }
+
+		
+		// Apply stickyness to the selected objects
+		function  apply ( them )
+		   {
+			them. each
+			   (
+				function ( )
+				   {
+					stick ( $(this) ) ;
+				    }
+			    ) ;
+		    }
+
+
+		// The sticky footer needs to be repositioned when the window is resized...
+		$(window). resize
+		   (
+			function ( )
+			   {
+				apply ( them ) ;
+			    }
+		    ) ;
+		    
+
+		// Initialization code. Stick all selected elements
+		apply ( them ) ;
+	
+		return ( them ) ;
+	    }
+    } ( jQuery ) ) ;
+

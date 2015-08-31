@@ -1,0 +1,1736 @@
+<!-- List of available networking protocols for URIs -->
+
+<schemes>
+
+	<scheme name="aaa" description="Diameter Protocol" official="true" ports="1812,1813,1645,1646">
+		<references>
+			<reference name="Diameter Protocol" link="http://en.wikipedia.org/wiki/Diameter_(protocol)"/>
+			<reference name="RFC 3588" link="http://tools.ietf.org/html/rfc3588"/>
+		</references>
+
+		<example>
+			aaa://&lt;host&gt;[:&lt;port&gt;][;transport=&lt;transport&gt;][;protocol=&lt;scheme&gt;]
+			example:
+			aaa://host.example.com:1813;transport=udp;protocol=radius
+		</example>
+	</scheme>
+
+	<scheme name="aaas" description="Secure equivalent of the aaa Diameter protocol" official="true" ports="680">
+		<references>
+			<reference name="RFC 3588" link="http://tools.ietf.org/html/rfc3588"/>
+		</references>
+		<example>
+			aaas://&lt;host&gt;[:&lt;port&gt;][;transport=&lt;transport&gt;][;protocol=&lt;scheme&gt;]
+ 		</example>
+	</scheme>
+
+	<scheme name="acap" description="Application Configuration Access Protocol" official="true" ports="674">
+		<references>
+			<reference name="Application Configuration Access Protocol" link="http://en.wikipedia.org/wiki/Application_Configuration_Access_Protocol"/>
+			<reference name="RFC2244" link="http://tools.ietf.org/html/rfc2244"/>
+		</references>
+
+		<example>
+			acap://[&lt;user&gt;[;AUTH=&lt;type&gt;]@]&lt;host&gt;[:&lt;port&gt;]/&lt;entry&gt;
+		</example>
+
+		<notes>
+			URL scheme used within the ACAP protocol for the "subdataset" attribute, referrals and inheritance
+		</notes>
+	</scheme>
+
+	<scheme name="cap" description="Calendar Access Protocol" official="true" ports="1026">
+		<references>
+			<reference name="RFC 4324" link="http://tools.ietf.org/html/rfc4324"/>
+		</references>
+
+		<example>
+			Generic URI syntax.
+		</example>
+
+		<notes>
+			URL scheme used to designate both calendar stores and calendars accessible using the CAP protocol
+		</notes>
+	</scheme>
+
+	<scheme name="cid" description="Referencing individual parts of an SMTP/MIME message" official="true" ports="8085">
+		<references>
+			<reference name="SMTP" link="http://en.wikipedia.org/wiki/MIME"/>
+			<reference name="RFC 2111" link="http://tools.ietf.org/html/rfc2111"/>
+			<reference name="RFC2392" link="http://tools.ietf.org/html/rfc2392"/>
+		</references>
+
+		<example>
+			cid:&lt;content-id&gt;
+		</example>
+
+		<notes>
+			e.g. referencing an attached image within a formatted e-mail. (See also mid:)
+		</notes>
+	</scheme>
+
+	<scheme name="crid" description="TV-Anytime Content Reference Identifier" official="true">
+		<references>
+			<reference name="TV-Anytime" link="http://en.wikipedia.org/wiki/TV-Anytime"/>
+			<reference name="RFC 4078" link="http://tools.ietf.org/html/rfc4078"/>
+		</references>
+
+		<example>
+			crid://&lt;host&gt;/&lt;data&gt;
+		</example>
+
+		<notes>
+			Allow references to scheduled publications of broadcast media content.
+		</notes>
+	</scheme>
+
+	<scheme name="data" description="Inclusion of small data items inline" official="true">
+		<references>
+			<reference name="data" link="http://en.wikipedia.org/wiki/Data_URI_scheme"/>
+			<reference name="RFC 2397" link="http://tools.ietf.org/html/rfc2397"/>
+		</references>
+
+		<example>
+			data:&lt;mediatype&gt;[;base64],&lt;data&gt;
+		</example>
+	</scheme>
+
+	<scheme name="dav" description="HTTP Extensions for Distributed Authoring (WebDAV)" official="true" ports="750">
+		<references>
+			<reference name="WebDAV" link="http://en.wikipedia.org/wiki/WebDAV"/>
+			<reference name="RFC 2518" link="http://tools.ietf.org/html/rfc2518"/>
+			<reference name="RFC 4918" link="http://tools.ietf.org/html/rfc4918"/>
+		</references>
+
+		<example>
+			dav:
+		</example>
+
+		<notes>
+			Used for internal identifiers only; WebDAV itself addresses resources using the http: and https: schemes
+		</notes>
+	</scheme>
+
+	<scheme name="dict" description="Dictionary Service Protocol" official="true" ports="2289">
+		<references>
+			<reference name="Dictionary Service Protocol" link="http://en.wikipedia.org/wiki/DICT"/>
+			<reference name="RFC 2229" link="http://tools.ietf.org/html/rfc2229"/>
+		</references>
+
+		<example>
+			dict://&lt;user&gt;;&lt;auth&gt;@&lt;host&gt;:&lt;port&gt;/d:&lt;word&gt;:&lt;database&gt;:&lt;n&gt;
+			dict://&lt;user&gt;;&lt;auth&gt;@&lt;host&gt;:&lt;port&gt;/m:&lt;word&gt;:&lt;database&gt;:&lt;strat&gt;:&lt;n&gt;
+		</example>
+
+		<notes>
+			refer to definitions or word lists available using the DICT protocol
+		</notes>
+	</scheme>
+
+	<scheme name="dns" description="Domain Name System" official="true" ports="53">
+		<references>
+			<reference name="Domain Name System" link="http://en.wikipedia.org/wiki/Domain_Name_System"/>
+			<reference name="RFC 4501" link="http://tools.ietf.org/html/rfc4501"/>
+		</references>
+
+		<example>
+			dns:[//&lt;host&gt;[:&lt;port&gt;]/]&lt;dnsname&gt;[?&lt;dnsquery&gt;]
+			examples:
+		 	dns:example?TYPE=A;CLASS=IN
+			dns://192.168.1.1/ftp.example.org?type=A
+		</example>
+
+		<notes>
+			designates a DNS resource record set, referenced by domain name, class, type, and, optionally, the authority
+		</notes>
+	</scheme>
+
+	<scheme name="fax" description="Used for telefacsimile numbers" official="true" ports="1620">
+		<references>
+			<reference name="telefacsimile" link="http://en.wikipedia.org/wiki/Fax"/>
+			<reference name="RFC 2806" link="http://tools.ietf.org/html/rfc2806"/>
+			<reference name="RFC 3966" link="http://tools.ietf.org/html/rfc3966"/>
+		</references>
+
+		<example>
+		   	fax:&lt;phonenumber&gt;
+		</example>
+
+		<notes>
+		   	Seems to be deprecated in RFC 3966 in favour of tel:
+		</notes>
+	</scheme>
+
+	<scheme name="file" description="Addressing files on local or network file systems" official="true" ports="59">
+		<references>
+			<reference name="File systems" link="http://en.wikipedia.org/wiki/File_system"/>
+			<reference name="RFC 1738" link="http://tools.ietf.org/html/rfc1738"/>
+			<reference name="RFC 3986" link="http://tools.ietf.org/html/rfc3986"/>
+		</references>
+
+		<example>
+			file://[host]/path or (RFC 3986) file:[//host]/path
+		</example>
+
+		<notes>
+			Since this usually used for local files the host from RFC 1738 is often empty leading to a starting triple /. RFC 3986 allows an absolute path with no host part.
+		</notes>
+	</scheme>
+
+	<scheme name="ftp" description="FTP resources" official="true" ports="21,20">
+		<references>
+			<reference name="FTP" link="http://en.wikipedia.org/wiki/File_Transfer_Protocol"/>
+			<reference name="RFC 1738" link="http://tools.ietf.org/html/rfc1738"/>
+			<reference name="IETF Draft" link="http://tools.ietf.org/html/draft-yevstifeyev-ftp-uri-scheme"/>
+			<reference name="Old IETF Draft" link="http://tools.ietf.org/html/draft-hoffman-ftp-uri"/>
+		</references>
+
+		<example>
+			Generic syntax.
+		</example>
+	</scheme>
+
+	<scheme name="geo" description="A Uniform Resource Identifier for Geographic Locations" official="true">
+		<references>
+			<reference name="RFC 5870" link="http://tools.ietf.org/html/rfc5870"/>
+			<reference name="WGS-84" link="http://en.wikipedia.org/wiki/World_Geodetic_System"/>
+		</references>
+
+		<example>
+			geo:&lt;lat&gt;,&lt;lon&gt;[,&lt;alt&gt;][;u=&lt;uncertainty&gt;] (for WGS-84)
+		</example>
+
+		<notes>
+		 	Other coordinate reference systems (including those for non-terrestrial globes, such as The Moon and Mars) will be supported, once registered.
+		</notes>
+	</scheme>
+
+	<scheme name="go" description="Common Name Resolution Protocol" official="true">
+		<references>
+			<reference name="RFC 3368" link="http://tools.ietf.org/html/rfc3368"/>
+		</references>
+
+		<example>
+			go://[&lt;host&gt;]?[&lt;common-name&gt;]*[;&lt;attribute&gt;=[&lt;type&gt;,]&lt;value&gt;] or
+ 			go:&lt;common-name&gt;*[;&lt;attribute&gt;=[&lt;type&gt;,]&lt;value&gt;]
+		</example>
+	</scheme>
+
+	<scheme name="gopher" description="Gopher protocol" official="true" ports="70">
+		<references>
+			<reference name="Gopher protocol" link="http://en.wikipedia.org/wiki/Gopher_(protocol)"/>
+			<reference name="RFC 4266" link="http://tools.ietf.org/html/rfc4266"/>
+		</references>
+
+		<example>
+			gopher://&lt;host&gt;:&lt;port&gt;/&lt;item type&gt;/&lt;path&gt;
+		</example>
+	</scheme>
+
+	<scheme name="h323" description="Used with H.323 multimedia comunications" official="true" ports="1270">
+		<references>
+			<reference name="H.323" link="http://en.wikipedia.org/wiki/H.323"/>
+			<reference name="RFC 3508" link="http://tools.ietf.org/html/rfc3508"/>
+		</references>
+
+		<example>
+		    	h323:[&lt;user&gt;@]&lt;host&gt;[:&lt;port&gt;][;&lt;parameters&gt;]
+		</example>
+	</scheme>
+
+	<scheme name="http" description="HTTP resources" official="true" ports="80,591">
+		<references>
+			<reference name="HTTP resources" link="http://en.wikipedia.org/wiki/HyperText_Transfer_Protocol"/>
+			<reference name="RFC 1738" link="http://tools.ietf.org/html/rfc1738"/>
+			<reference name="RFC 2616" link="http://tools.ietf.org/html/rfc2616"/>
+			<reference name="RFC 2068" link="http://tools.ietf.org/html/rfc2068"/>
+		</references>
+
+		<example>
+			Generic syntax
+		</example>
+
+		<notes>
+			RFC 2616 makes RFC 2068 obsolete.
+		</notes>
+	</scheme>
+
+	<scheme name="https" description="Secured HTTP connections using SSL/TLS" official="true" ports="443">
+		<references>
+			<reference name="SSL/TLS" link="http://en.wikipedia.org/wiki/Transport_Layer_Security"/>
+			<reference name="RFC 2817" link="http://tools.ietf.org/html/rfc2817"/>
+		</references>
+
+		<example>
+			Generic syntax
+		</example>
+	</scheme>
+
+	<scheme name="iax" description="Inter-Asterisk eXchange protocol version 2" official="true" port="4569">
+		<references>
+			<reference name="Inter-Asterisk eXchange protocol version 2" link="http://en.wikipedia.org/wiki/Inter-Asterisk_eXchange"/>
+			<reference name="RFC 5456" link="http://tools.ietf.org/html/rfc5456"/>
+		</references>
+
+		<example>
+			iax:[&lt;username&gt;@]&lt;host&gt;[:&lt;port&gt;][/&lt;number&gt;[?&lt;context&gt;]]
+			examples :
+				iax:[2001:db8::1]:4569/alice?friends
+				iax:johnQ@example.com/12022561414
+		</example>
+	</scheme>
+
+	<scheme name="icap" description="Internet Content Adaptation Protocol" official="true" ports="1344">
+		<references>
+			<reference name="Internet Content Adaptation Protocol" link="http://en.wikipedia.org/wiki/Internet_Content_Adaptation_Protocol"/>
+			<reference name="RFC 3507" link="http://tools.ietf.org/html/rfc3507"/>
+		</references>
+	</scheme>
+
+	<scheme name="im" description="Instant Messaging protocol" official="true" ports="220,993,1863,531,5190,9119">
+		<references>
+			<reference name="Instant Messaging protocol" link="http://en.wikipedia.org/wiki/Instant_messaging"/>
+			<reference name="RFC 3860" link="http://tools.ietf.org/html/rfc3860"/>
+		</references>
+
+		<example>
+		      	im:&lt;username&gt;@&lt;host&gt;
+		</example>
+
+		<notes>
+		    	Works as xmpp: URI for single user chat sessions.
+		</notes>
+	</scheme>
+
+	<scheme name="imap" description="Accessing e-mail resources through IMAP" official="true" ports="143">
+		<references>
+			<reference name="IMAP" link="http://en.wikipedia.org/wiki/IMAP"/>
+			<reference name="RFC 2192" link="http://tools.ietf.org/html/rfc2192"/>
+			<reference name="RFC 5092" link="http://tools.ietf.org/html/rfc5092"/>
+		</references>
+
+		<example>
+			imap://[&lt;user&gt;[;AUTH=&lt;type&gt;]@]&lt;host&gt;[:&lt;port&gt;]/&lt;command&gt;
+		</example>
+	</scheme>
+
+	<scheme name="info" description="Information assets with identifiers in public namespaces" official="true" >
+		<references>
+			<reference name="INFO" link="http://en.wikipedia.org/wiki/Info"/>
+			<reference name="RFC 4452" link="http://tools.ietf.org/html/rfc4452"/>
+		</references>
+	</scheme>
+
+	<scheme name="ipp" description="Internet Printing Protocol" official="true" ports="631">
+		<references>
+			<reference name="Internet Printing Protocol" link="http://en.wikipedia.org/wiki/Internet_Printing_Protocol"/>
+			<reference name="RFC 3510" link="http://tools.ietf.org/html/rfc3510"/>
+		</references>
+	</scheme>
+
+	<scheme name="iris" description="Internet Registry Information Service" official="true" ports="702">
+		<references>
+			<reference name="RFC 3981" link="http://tools.ietf.org/html/rfc3981"/>
+		</references>
+	</scheme>
+
+	<scheme name="iris.beep" description="Internet Registry Information Service" official="true">
+		<references>
+			<reference name="RFC 3983" link="http://tools.ietf.org/html/rfc3983"/>
+		</references>
+	</scheme>
+
+	<scheme name="iris.xpc" description="Internet Registry Information Service" official="true">
+		<references>
+			<reference name="RFC 4992" link="http://tools.ietf.org/html/rfc4992"/>
+		</references>
+	</scheme>
+
+	<scheme name="iris.xpcs" description="Internet Registry Information Service" official="true">
+		<references>
+			<reference name="RFC 4992" link="http://tools.ietf.org/html/rfc4992"/>
+		</references>
+	</scheme>
+
+	<scheme name="iris.lws" description="Internet Registry Information Service" official="true">
+		<references>
+			<reference name="RFC 4993" link="http://tools.ietf.org/html/rfc4993"/>
+		</references>
+	</scheme>
+
+	<scheme name="ldap" description="LDAP directory request" official="true" ports="389,636">
+		<references>
+			<reference name="LDAP" link="http://en.wikipedia.org/wiki/Lightweight_Directory_Access_Protocol"/>
+			<reference name="RFC 2225" link="http://tools.ietf.org/html/rfc2255"/>
+			<reference name="RFC 4516" link="http://tools.ietf.org/html/rfc4516"/>
+		</references>
+
+		<example>
+			ldap://[&lt;host&gt;[:&lt;port&gt;]][/&lt;dn&gt; [?[&lt;attributes&gt;][?[&lt;scope&gt;][?[&lt;filter&gt;][?&lt;extensions&gt;]]]]]
+			example :
+ 			ldap://ldap1.example.net:6666/o=University%20of%20Michigan, c=US??sub?(cn=Babs%20Jensen)
+		</example>
+	</scheme>
+
+	<scheme name="lsid" description="Life Science Identifier" official="true">
+		<references>
+			<reference name="Life Science Identifier" link="http://en.wikipedia.org/wiki/LSID"/>
+			<reference name="omg.org" link="http://www.omg.org/cgi-bin/doc?dtc/04-10-08"/>
+		</references>
+
+		<example>
+ 			URN:LSID:&lt;Authority&gt;:&lt;Namespace&gt;:&lt;ObjectID&gt;[:&lt;Version&gt;]
+			example :
+ 			urn:lsid:ubio.org:namebank:11815
+		</example>
+	</scheme>
+
+	<scheme name="mailto" description="SMTP e-mail addresses and default content" official="true" ports="25,465,587,2525,3535">
+		<references>
+			<reference name="SMTP" link="http://en.wikipedia.org/wiki/Simple_Mail_Transfer_Protocol"/>
+			<reference name="e-mail" link="http://en.wikipedia.org/wiki/E-mail"/>
+			<reference name="RFC 1738" link="http://tools.ietf.org/html/rfc1738"/>
+			<reference name="RFC 2368" link="http://tools.ietf.org/html/rfc2368"/>
+			<reference name="IETF Draft" link="http://tools.ietf.org/html/draft-duerst-mailto-bis"/>
+		</references>
+
+		<example>
+  			mailto:&lt;address&gt;[?&lt;header1&gt;=&lt;value1&gt;[&amp;&lt;header2&gt;=&lt;value2&gt;]]
+			example :
+ 			mailto:jsmith@example.com?subject=A%20Test&amp;body=My%20idea%20is%3A%20%0A
+		</example>
+
+		<notes>
+			Headers are optional, but often include subject=; body= can be used to pre-fill the body of the message.
+		</notes>
+	</scheme>
+
+	<scheme name="mid" description="Referencing SMTP/MIME messages, or parts of messages" official="true">
+		<references>
+			<reference name="SMTP" link="http://en.wikipedia.org/wiki/SMTP"/>
+			<reference name="MIME" link="http://en.wikipedia.org/wiki/MIME"/>
+			<reference name="RFC 2111" link="http://tools.ietf.org/html/rfc2111"/>
+			<reference name="RFC 2392" link="http://tools.ietf.org/html/rfc2392"/>
+		</references>
+
+		<example>
+		   	mid:&lt;message-id&gt;[/&lt;content-id&gt;]
+		</example>
+
+		<notes>
+			See also cid:
+		</notes>
+	</scheme>
+
+	<scheme name="modem" description="Modem" official="true" ports="379,380">
+		<references>
+			<reference name="RFC 2806" link="http://tools.ietf.org/html/rfc2806"/>
+			<reference name="RFC 3966" link="http://tools.ietf.org/html/rfc3966"/>
+		</references>
+
+		<notes>
+			Seems to be deprecated in RFC 3966 in favour of tel:
+		</notes>
+	</scheme>
+
+	<scheme name="msrp" description="Message Session Relay Protocol" official="true" ports="2855">
+		<references>
+			<reference name="Message Session Relay Protocol" link="http://en.wikipedia.org/wiki/Message_Session_Relay_Protocol"/>
+			<reference name="RFC 4975" link="http://tools.ietf.org/html/rfc4975"/>
+		</references>
+	</scheme>
+
+	<scheme name="msrps" description="Secured Message Session Relay Protocol" official="true">
+		<references>
+			<reference name="Message Session Relay Protocol" link="http://en.wikipedia.org/wiki/Message_Session_Relay_Protocol"/>
+			<reference name="RFC 4975" link="http://tools.ietf.org/html/rfc4975"/>
+		</references>
+	</scheme>
+
+	<scheme name="mtqp" description="Message Tracking Query Protocol" official="true" ports="1038,1036">
+		<references>
+			<reference name="RFC 3887" link="http://tools.ietf.org/html/rfc3887"/>
+		</references>
+	</scheme>
+
+	<scheme name="mupdate" description="Mailbox Update Protocol" official="true" ports="3905">
+		<references>
+			<reference name="RFC 3656" link="http://tools.ietf.org/html/rfc3656"/>
+		</references>
+	</scheme>
+
+	<scheme name="news" description="(Usernet) Newsgroups and postings" official="true" ports="98">
+		<references>
+			<reference name="usenet" link="http://en.wikipedia.org/wiki/Usenet"/>
+			<reference name="RFC 1738" link="http://tools.ietf.org/html/rfc1738"/>
+			<reference name="RFC 5538" link="http://tools.ietf.org/html/rfc5538"/>
+		</references>
+
+		<example>
+		 	news:&lt;newsgroupname&gt; or
+ 			news:&lt;message-id&gt;
+		</example>
+
+		<notes>
+		   	References a particular resource, regardless of location.
+		</notes>
+	</scheme>
+
+	<scheme name="nfs" description="Network File System resources" official="true" ports="2049">
+		<references>
+			<reference name="Network File System" link="http://en.wikipedia.org/wiki/Network_File_System_(protocol)"/>
+			<reference name="RFC 2224" link="http://tools.ietf.org/html/rfc2224"/>
+		</references>
+
+		<example>
+			Generic syntax.
+		</example>
+	</scheme>
+
+	<scheme name="nntp" description="Usenet NNTP" official="true" ports="119">
+		<references>
+			<reference name="NNTP" link="http://en.wikipedia.org/wiki/Network_News_Transfer_Protocol"/>
+			<reference name="RFC 1738" link="http://tools.ietf.org/html/rfc1738"/>
+			<reference name="RFC 5538" link="http://tools.ietf.org/html/rfc5538"/>
+		</references>
+
+		<example>
+		   	nntp://&lt;host&gt;:&lt;port&gt;/&lt;newsgroup-name&gt;/&lt;article-number&gt;
+		</example>
+
+		<notes>
+		 	Referencing a specific host is often less useful than referencing the resource generically, as NNTP servers are not always publicly accessible
+		</notes>
+	</scheme>
+
+	<scheme name="opaquelocktoken" description="Opaque Lock Token" official="true">
+		<references>
+			<reference name="RFC 2518" link="http://tools.ietf.org/html/rfc2518"/>
+			<reference name="RFC 4918" link="http://tools.ietf.org/html/rfc4918"/>
+		</references>
+	</scheme>
+
+	<scheme name="pop" description="Accessing mailbox through POP3" official="true" ports="110,995">
+		<references>
+			<reference name="POP3" link="http://en.wikipedia.org/wiki/POP3"/>
+			<reference name="RFC 2384" link="http://tools.ietf.org/html/rfc2384"/>
+		</references>
+
+		<example>
+		  	pop://[&lt;user&gt;[;AUTH=&lt;auth&gt;]@]&lt;host&gt;[:&lt;port&gt;]
+		</example>
+	</scheme>
+
+	<scheme name="pres" description="Used in Common Profile for Presence (CPP) to identify presence" official="true">
+		<references>
+			<reference name="RFC 3859" link="http://tools.ietf.org/html/rfc3859"/>
+		</references>
+
+		<example>
+		 	pres:&lt;address&gt;[?&lt;header1&gt;=&lt;value1&gt;[&amp;&lt;header2&gt;=&lt;value2&gt;]]
+		</example>
+
+		<notes>
+			Similar to mailto:
+		</notes>
+	</scheme>
+
+	<scheme name="prospero" description="Prospero Directory Service" official="true" ports="191,344,409,1402,1403,1525,1526">
+		<references>
+			<reference name="RFC 1738" link="http://tools.ietf.org/html/rfc1738"/>
+			<reference name="RFC 4157" link="http://tools.ietf.org/html/rfc4157"/>
+		</references>
+
+		<notes>
+			Listed as "historical" by IANA.
+		</notes>
+	</scheme>
+
+	<scheme name="rsync" description="rsync protocol" official="true" ports="873">
+		<references>
+			<reference name="rsync" link="http://en.wikipedia.org/wiki/Rsync"/>
+			<reference name="RFC 5781" link="http://tools.ietf.org/html/rfc5781"/>
+		</references>
+
+		<example>
+		     	rsync://&lt;host&gt;[:&lt;port&gt;]/&lt;path&gt;
+		</example>
+	</scheme>
+
+	<scheme name="rtsp" description="Real Time Streaming Protocol" official="true" ports="322,554,8554">
+		<references>
+			<reference name="Real Time Streaming Protocol" link="http://en.wikipedia.org/wiki/Real_Time_Streaming_Protocol"/>
+			<reference name="RFC 2326" link="http://tools.ietf.org/html/rfc2326"/>
+		</references>
+	</scheme>
+
+	<scheme name="service" description="Service protocol" official="true">
+		<references>
+			<reference name="RFC 2609" link="http://tools.ietf.org/html/rfc2609"/>
+		</references>
+	</scheme>
+
+	<scheme name="shttp" description="Secure HTTP" official="true">
+		<references>
+			<reference name="Secure HTTP" link="http://en.wikipedia.org/wiki/Secure_Hypertext_Transfer_Protocol"/>
+			<reference name="RFC 2660" link="http://tools.ietf.org/html/rfc2660"/>
+		</references>
+
+		<notes>
+			Largely superseded by HTTPS.
+		</notes>
+	</scheme>
+
+	<scheme name="sieve" description="ManageSieve protocol" official="true" ports="4190">
+		<references>
+			<reference name="ManageSieve protocol" link="http://en.wikipedia.org/w/index.php?title=ManageSieve&amp;action=edit&amp;redlink=1"/>
+			<reference name="RFC 5804" link="http://tools.ietf.org/html/rfc5804"/>
+		</references>
+	</scheme>
+
+	<scheme name="sip" description="Session Initiation Protocol" official="true" ports="5059">
+		<references>
+			<reference name="Session initiation Protocol" link="http://en.wikipedia.org/wiki/Session_Initiation_Protocol"/>
+			<reference name="RFC 2543" link="http://tools.ietf.org/html/rfc2543"/>
+			<reference name="RFC 3969" link="http://tools.ietf.org/html/rfc3969"/>
+			<reference name="RFC 3261" link="http://tools.ietf.org/html/rfc3261"/>
+		</references>
+
+		<example>
+			sip:&lt;user&gt;[:&lt;password&gt;]@&lt;host&gt;[:&lt;port&gt;][;&lt;uri-parameters&gt;][?&lt;headers&gt;]
+			examples :
+ 				sip:alice@atlanta.com?subject=project%20x&amp;priority=urgent
+ 				sip:+1-212-555-1212:1234@gateway.com;user=phone
+		</example>
+	</scheme>
+
+	<scheme name="sips" description="Secure equivalent of SIP" official="true">
+		<references>
+			<reference name="RFC 3969" link="http://tools.ietf.org/html/rfc3969"/>
+			<reference name="RFC 3261" link="http://tools.ietf.org/html/rfc3261"/>
+		</references>
+
+		<example>
+		 	sips:&lt;user&gt;[:&lt;password&gt;]@&lt;host&gt;[:&lt;port&gt;][;&lt;uri-parameters&gt;][?&lt;headers&gt;]
+		</example>
+	</scheme>
+
+	<scheme name="sms" description="Interact with SMS capable devices for composing and sending messages" official="true" ports="2701,2702,2703,2704">
+		<references>
+			<reference name="SMS" link="http://en.wikipedia.org/wiki/SMS"/>
+			<reference name="RFC 5724" link="http://tools.ietf.org/html/rfc5724"/>
+		</references>
+
+		<example>
+		  	sms:&lt;phone number&gt;?&lt;action&gt;
+			examples :
+ 				sms:+15105550101?body=hello%20there
+ 				sms:+15105550101,+15105550102?body=hello%20there
+		</example>
+
+		<notes>
+			Should be used as a subset of the tel: schema.
+		</notes>
+	</scheme>
+
+	<scheme name="snmp" description="Simple Network Management Protocol" official="true" ports="161">
+		<references>
+			<reference name="Simple Network Management Protocol" link="http://en.wikipedia.org/wiki/Simple_Network_Management_Protocol"/>
+			<reference name="RFC 4088" link="http://tools.ietf.org/html/rfc4088"/>
+		</references>
+
+		<example>
+		   	snmp://[user@]host[:port][/[&lt;context&gt;[;&lt;contextEngineID&gt;]][/&lt;oid&gt;]]
+			examples :
+ 				snmp://example.com//1.3.6.1.2.1.1.3+
+ 				snmp://tester5@example.com:8161/bridge1;800002b804616263
+		</example>
+	</scheme>
+
+	<scheme name="soap.beep" description="soap.beep" official="true" ports="605">
+		<references>
+			<reference name="RFC 3288" link="http://tools.ietf.org/html/rfc3288"/>
+			<reference name="RFC 4227" link="http://tools.ietf.org/html/rfc4227"/>
+		</references>
+	</scheme>
+
+	<scheme name="soap.beeps" description="soap.beeps" official="true">
+		<references>
+			<reference name="RFC 3288" link="http://tools.ietf.org/html/rfc3288"/>
+			<reference name="RFC 4227" link="http://tools.ietf.org/html/rfc4227"/>
+		</references>
+	</scheme>
+
+	<scheme name="tag" description="Tag URI" official="true" ports="4110">
+		<references>
+			<reference name="Tag URI" link="http://en.wikipedia.org/wiki/Tag_URI"/>
+			<reference name="RFC 4151" link="http://tools.ietf.org/html/rfc4151"/>
+		</references>
+
+		<example>
+		    	tag:&lt;email/domainname&gt;,&lt;date&gt;:&lt;Item&gt;
+		</example>
+
+		<notes>
+		   	Represented entities do not necessarily have to be accessible electronically.
+		</notes>
+	</scheme>
+
+	<scheme name="tel" description="Used for telephone numbers" official="true">
+		<references>
+			<reference name="RFC 5341" link="http://tools.ietf.org/html/rfc5341"/>
+			<reference name="RFC 3966" link="http://tools.ietf.org/html/rfc3966"/>
+			<reference name="RFC 2806" link="http://tools.ietf.org/html/rfc2806"/>
+		</references>
+
+		<example>
+		    	tel:&lt;phonenumber&gt;
+		</example>
+	</scheme>
+
+	<scheme name="telnet" description="Used with telnet" official="true" ports="23,992,107">
+		<references>
+			<reference name="telnet" link="http://en.wikipedia.org/wiki/Telnet"/>
+			<reference name="RFC 1738" link="http://tools.ietf.org/html/rfc1738"/>
+			<reference name="RFC 4248" link="http://tools.ietf.org/html/rfc4248"/>
+		</references>
+
+		<example>
+		   	telnet://&lt;user&gt;:&lt;password&gt;@&lt;host&gt;[:&lt;port&gt;/]
+		</example>
+	</scheme>
+
+	<scheme name="tftp" description="Trivial File Transfer Protocol" official="true" ports="69,3713">
+		<references>
+			<reference name="Trivial File Transfer Protocol" link="http://en.wikipedia.org/wiki/Trivial_File_Transfer_Protocol"/>
+			<reference name="RFC 3617" link="http://tools.ietf.org/html/rfc3617"/>
+		</references>
+	</scheme>
+
+	<scheme name="thismessage" description="Multipart/relative reference resolution" official="true">
+		<references>
+			<reference name="RFC 2557" link="http://tools.ietf.org/html/rfc2557"/>
+		</references>
+	</scheme>
+
+	<scheme name="tip" description="Transaction Internet Protocol" official="true" ports="3160,3372,3459">
+		<references>
+			<reference name="RFC 2371" link="http://tools.ietf.org/html/rfc2371"/>
+		</references>
+	</scheme>
+
+	<scheme name="tv" description="TV Broadcasts" official="true">
+		<references>
+			<reference name="RFC 2838" link="http://tools.ietf.org/html/rfc2838"/>
+		</references>
+	</scheme>
+
+	<scheme name="urn" description="Uniform Resource Names" official="true">
+		<references>
+			<reference name="Uniform Resource Names" link="http://en.wikipedia.org/wiki/Uniform_Resource_Name"/>
+			<reference name="RFC 2141" link="http://tools.ietf.org/html/rfc2141"/>
+		</references>
+
+		<example>
+			urn:&lt;namespace&gt;:&lt;specificpart&gt;
+		</example>
+	</scheme>
+
+	<scheme name="vemmi" description="Versatile Multimedia Interface" official="true" ports="575">
+		<references>
+			<reference name="RFC 2122" link="http://tools.ietf.org/html/rfc2122"/>
+		</references>
+	</scheme>
+
+	<scheme name="wais" description="Used with Wide area information server (WAIS)" official="true">
+		<references>
+			<reference name="Wide Area Information Server" link="http://en.wikipedia.org/wiki/Wide_area_information_server"/>
+			<reference name="RFC 1738" link="http://tools.ietf.org/html/rfc1738"/>
+			<reference name="RFC 4156" link="http://tools.ietf.org/html/rfc4156"/>
+		</references>
+
+		<example>
+			wais://&lt;host&gt;:&lt;port&gt;/&lt;database&gt;[?&lt;search&gt;] or
+			wais://&lt;host&gt;:&lt;port&gt;/&lt;database&gt;/&lt;wtype&gt;/&lt;wpath&gt;
+		</example>
+
+		<notes>
+			Listed as "historical" by IANA.
+		</notes>
+	</scheme>
+
+	<scheme name="xmlrpc.beep" description="xmlrpc.beep" official="true" ports="602">
+		<references>
+			<reference name="RFC 3529" link="http://tools.ietf.org/html/rfc3529"/>
+		</references>
+	</scheme>
+
+	<scheme name="xmlrpc.beeps" description="xmlrpc.beeps" official="true">
+		<references>
+			<reference name="RFC 3529" link="http://tools.ietf.org/html/rfc3529"/>
+		</references>
+	</scheme>
+
+	<scheme name="xmpp" description="XMPP" official="true" ports="5222,5269,5280,5298">
+		<references>
+			<reference name="XMPP" link="http://en.wikipedia.org/wiki/Extensible_Messaging_and_Presence_Protocol"/>
+			<reference name="RFC 4622" link="http://tools.ietf.org/html/rfc4622"/>
+			<reference name="RFC 5122" link="http://tools.ietf.org/html/rfc5122"/>
+		</references>
+
+		<example>
+			xmpp:&lt;user&gt;@&lt;host&gt;[:&lt;port&gt;]/[&lt;resource&gt;][?&lt;query&gt;]
+		</example>
+	</scheme>
+
+	<scheme name="z39.50r" description="Z39.50 Retrieval" official="true">
+		<references>
+			<reference name="Z39.50" link="http://en.wikipedia.org/wiki/Z39.50"/>
+			<reference name="RFC 2056" link="http://tools.ietf.org/html/rfc2056"/>
+		</references>
+
+		<example>
+		   	z39.50r://&lt;host&gt;[:&lt;port&gt;]/&lt;database&gt;?&lt;docid&gt;[;esn=&lt;elementset&gt;][;rs=&lt;recordsyntax&gt;]
+		</example>
+	</scheme>
+
+	<scheme name="z39.50s" description="Z39.50 Session" official="true">
+		<references>
+			<reference name="Z39.50" link="http://en.wikipedia.org/wiki/Z39.50"/>
+			<reference name="RFC 2056" link="http://tools.ietf.org/html/rfc2056"/>
+		</references>
+
+		<example>
+		   	z39.50s://&lt;host&gt;[:&lt;port&gt;]/[&lt;database&gt;][?&lt;docid&gt;][;esn=&lt;elementset&gt;][;rs=&lt;recordsyntax&gt;]
+		</example>
+	</scheme>
+
+	<scheme name="about" description="Display product information and internal information" official="false" ports="2019">
+		<references>
+			<reference name="IETF Drft" link="http://tools.ietf.org/html/draft-holsten-about-uri-scheme"/>
+			<reference name="About URI scheme" link="http://en.wikipedia.org/wiki/About_URI_scheme"/>
+		</references>
+
+		<example>
+			See about URI scheme for more details.
+		</example>
+
+		<notes>
+			Widely used by web browsers, sometimes even providing interactive resources. The Opera web browser uses opera: instead.
+		</notes>
+	</scheme>
+
+	<scheme name="aim" description="Controlling AOL Instant Messenger" official="false" ports="2846,2847">
+		<references>
+			<reference name="AOL Instant Messenger" link="http://en.wikipedia.org/wiki/AOL_Instant_Messenger"/>
+			<reference name="AOL" link="http://en.wikipedia.org/wiki/AOL"/>
+		</references>
+
+		<example>
+			aim:&lt;function&gt;?&lt;parameters&gt;
+		</example>
+
+		<notes>
+			Functions include goim, addbuddy, and buddyicon
+		</notes>
+	</scheme>
+
+	<scheme name="apt" description="Experimental method of installing software using APT" official="false">
+		<references>
+			<reference name="APT" link="http://en.wikipedia.org/wiki/Advanced_Packaging_Tool"/>
+		</references>
+
+		<example>
+			apt:&lt;package name&gt;
+		</example>
+
+		<notes>
+		   	Commonly found on websites which contain Debian software repositories.
+		</notes>
+	</scheme>
+
+	<scheme name="afp" description="Accessing Apple Filing Protocol shares" official="false">
+		<references>
+			<reference name="Apple Filing Protocol" link="http://en.wikipedia.org/wiki/Apple_Filing_Protocol"/>
+			<reference name="IETF Draft" link="http://tools.ietf.org/html/draft-ietf-svrloc-afp-service"/>
+		</references>
+
+		<example>
+  			over TCP/IP: afp://[&lt;user&gt;@]&lt;host&gt;[:&lt;port&gt;][/[&lt;path&gt;]]
+ 			over AppleTalk: afp:/at/[&lt;user&gt;@]&lt;host&gt;[:&lt;zone&gt;][/]
+		</example>
+	</scheme>
+
+	<scheme name="aw" description="Link to an Active Worlds world" official="false">
+		<references>
+			<reference name="ActiveWorld" link="http://en.wikipedia.org/wiki/Activeworlds_Inc."/>
+			<reference name="ActiveWorld protocol" link="http://en.wikipedia.org/wiki/Active_Worlds"/>
+		</references>
+
+		<example>
+			aw://&lt;worldserver host&gt;:&lt;worldserver port&gt;/&lt;worldname&gt;
+		</example>
+
+		<notes>
+			Mostly found in HTTP referers when users open a website from within a Active Worlds world.
+		</notes>
+	</scheme>
+
+	<scheme name="bitcoin" description="Send money to a bitcoin address" official="false" ports="8332,8333,18333">
+		<references>
+			<reference name="bitcoin" link="http://en.wikipedia.org/wiki/Bitcoin"/>
+			<reference name="Bitcoin URI Scheme" link="https://en.bitcoin.it/wiki/URI_Scheme"/>
+		</references>
+
+		<example>
+			bitcoin:&lt;address&gt;[?[amount=&lt;size&gt;][&amp;][label=&lt;label&gt;][&amp;][message=&lt;message&gt;]]
+		</example>
+	</scheme>
+
+	<scheme name="bolo" description="Join an existing bolo game" official="false">
+		<references>
+			<reference name="bolo" link="http://en.wikipedia.org/wiki/Bolo_(computer_game)"/>
+		</references>
+
+		<example>
+			bolo://&lt;hostname&gt;/
+		</example>
+
+		<notes>
+			Mostly passed via IRC or via tracker servers.
+		</notes>
+	</scheme>
+
+	<scheme name="callto" description="Launching Skype" official="false">
+		<references>
+			<reference name="Skype" link="http://en.wikipedia.org/wiki/Skype"/>
+			<reference name="Skype URI Schem" link="http://en.wikipedia.org/wiki/URI_scheme#skype:"/>
+		</references>
+
+		<example>
+			callto:&lt;screenname&gt; or
+ 			callto:&lt;phonenumber&gt;
+		</example>
+
+		<notes>
+			Introduced with Microsoft NetMeeting. Works with current version of Skype with Firefox, Internet Explorer and Safari
+		</notes>
+	</scheme>
+
+	<scheme name="chrome" description="Specifies user interfaces built using XUL in Mozilla-based browsers" official="false">
+		<references>
+			<reference name="Mozilla" link="https://developer.mozilla.org/en/XUL_Tutorial/The_Chrome_URL"/>
+		</references>
+
+		<example>
+			chrome://&lt;package&gt;/&lt;section&gt;/&lt;path&gt; (Where &lt;section&gt; is either &quot;content&quot;, &quot;skin&quot; or &quot;locale&quot;)
+		</example>
+
+		<notes>
+			Works only in Mozilla-based browsers such as Firefox, SeaMonkey and Netscape. Not related to the Google Chrome browser.
+		</notes>
+	</scheme>
+
+	<scheme name="coap" description="Accessing Constrained Application Protocol (CoAP) resources" official="false" ports="5683">
+		<references>
+			<reference name="IETF Draft" link="http://tools.ietf.org/html/draft-ietf-core-coap-04#section-6"/>
+		</references>
+
+		<example>
+			coap://&lt;host&gt;[:&lt;port&gt;]/&lt;path&gt;[?&lt;query&gt;]
+		</example>
+
+		<notes>
+			Identify CoAP resources and provide a means of locating the resource.
+		</notes>
+	</scheme>
+
+	<scheme name="content" description="Accessing an Android content provider" official="false">
+		<references>
+			<reference name="Android" link="http://en.wikipedia.org/wiki/Android_(operating_system)"/>
+			<reference name="Open Handset Alliance" link="http://en.wikipedia.org/wiki/Open_Handset_Alliance"/>
+			<reference name="Content provider" link="http://developer.android.com/guide/topics/providers/content-providers.html"/>
+		</references>
+
+		<example>
+			content://provider/&lt;path&gt;
+		</example>
+
+		<notes>
+			Performs a query on an Android Content Provider
+		</notes>
+	</scheme>
+
+	<scheme name="cvs" description="Provides a link to a Concurrent Versions System (CVS) repository" official="false" ports="2401,5999">
+		<references>
+			<reference name="Concurrent Versions System" link="http://en.wikipedia.org/wiki/Concurrent_Versions_System"/>
+		</references>
+
+		<example>
+			cvs://&lt;method:logindetails&gt;@&lt;repository&gt;/&lt;modulepath&gt;;[date=date to retrieve | tag=tag to retrieve]
+		</example>
+	</scheme>
+
+	<scheme name="doi" description="Digital object identifier, for any object of intellectual property" official="false" ports="848">
+		<references>
+			<reference name="Digital Object Identifier" link="http://en.wikipedia.org/wiki/Digital_object_identifier"/>
+			<reference name="IETF Draft" link="http://tools.ietf.org/html/draft-paskin-doi-uri"/>
+		</references>
+
+		<example>
+			doi:10.&lt;publisher number&gt;/&lt;suffix&gt;
+ 			Example: doi:10.1000/182
+		</example>
+
+		<notes>
+			Used e.g. for most scientific publications.
+ 			Can be resolved via HTTP (transormed into an URL) by prepending http://dx.doi.org/ or http://hdl.handle.net/ in front
+		</notes>
+	</scheme>
+
+	<scheme name="ed2k" description="Resources available using the eDonkey2000 network" official="false">
+		<references>
+			<reference name="ed2k URI scheme" link="http://en.wikipedia.org/wiki/Ed2k_URI_scheme"/>
+			<reference name="eDonkey2000 network" link="http://en.wikipedia.org/wiki/EDonkey2000"/>
+			<reference name="eDonkey2000 website" link="http://web.archive.org/*/http://www.edonkey2000.com/documentation/distro.html"/>
+			<reference name="Wayback machine" link="http://en.wikipedia.org/wiki/Wayback_Machine"/>
+		</references>
+
+		<example>
+			ed2k://|file|&lt;filename&gt;|&lt;size of file&gt;|&lt;hash of file&gt;|/ or
+ 			ed2k://|server|&lt;host&gt;|&lt;port&gt;|/
+		</example>
+
+		<notes>
+			Links to servers are also possible, as are additional parameters. Official documentation from eDonkey2000 website at the Wayback Machine.
+		</notes>
+	</scheme>
+
+	<scheme name="Facetime" description="Video conferencing software for iPhone 4" official="false">
+		<references>
+			<reference name="Facetime" link="http://en.wikipedia.org/wiki/Facetime"/>
+			<reference name="Apple" link="http://en.wikipedia.org/wiki/Apple_Inc."/>
+		</references>
+
+		<example>
+			facetime://&lt;address&gt;|&lt;MSISDN&gt;|&lt;mobile number&gt;
+			example :
+ 			facetime://+19995551234
+		</example>
+
+		<notes>
+			FaceTime is a video conferencing software developed by Apple for iPhone 4, the fourth generation iPod Touch, and computers running Mac OS X.
+			Apple has not published documentation on this protocol yet.
+		</notes>
+	</scheme>
+
+	<scheme name="feed" description="Web feed subscription" official="false">
+		<references>
+			<reference name="Web feed" link="http://en.wikipedia.org/wiki/Web_feed"/>
+			<reference name="Web feed URI scheme" link="http://en.wikipedia.org/wiki/Feed_URI_scheme"/>
+		</references>
+
+		<example>
+	 		feed://&lt;hierarchical part&gt;
+			examples :
+				feed://example.com/rss.xml
+				feed:https://example.com/rss.xml
+		</example>
+
+		<notes>
+			See Feed URI scheme for a detailed overview of common implementations, supported software, and critics.
+		</notes>
+	</scheme>
+
+	<scheme name="finger" description="Querying user information using the finger protocol" official="false" ports="79">
+		<references>
+			<reference name="Finger protocol" link="http://en.wikipedia.org/wiki/Finger_protocol"/>
+			<reference name="IETF Draft" link="http://tools.ietf.org/html/draft-ietf-uri-url-finger"/>
+		</references>
+
+		<example>
+			finger://host[:port][/&lt;request&gt;]
+		</example>
+	</scheme>
+
+	<scheme name="fish" description="Accessing another computer's files using the SSH protocol" official="false">
+		<references>
+			<reference name="SSH" link="http://en.wikipedia.org/wiki/Secure_Shell"/>
+			<reference name="Fish KDE kioslave" link="http://docs.kde.org/stable/en/kdebase/kioslave/fish.html"/>
+			<reference name="Files transferred over shell protocol" link="http://en.wikipedia.org/wiki/Files_transferred_over_shell_protocol"/>
+		</references>
+
+		<example>
+			fish://[&lt;username&gt;[:&lt;password&gt;]@]&lt;hostname&gt;[:&lt;port&gt;]
+		</example>
+
+		<notes>
+			See Files transferred over shell protocol for details about the protocol.
+		</notes>
+	</scheme>
+
+	<scheme name="git" description="Provides a link to a GIT repository" official="false" ports="9418">
+		<references>
+			<reference name="GIT" link="http://en.wikipedia.org/wiki/Git_(software)"/>
+		</references>
+
+		<example>
+			Github example: git://github.com/user/project-name.git
+		</example>
+	</scheme>
+
+	<scheme name="gg" description="Starting chat with Gadu-Gadu server" official="false">
+		<references>
+			<reference name="Gadu-Gadu" link="http://en.wikipedia.org/wiki/Gadu-Gadu"/>
+		</references>
+
+		<example>
+			gg:&lt;userid&gt;
+		</example>
+	</scheme>
+
+	<scheme name="gizmoproject" description="Gizmo5 calling link" official="false">
+		<references>
+			<reference name="Gizmo5" link="http://en.wikipedia.org/wiki/Gizmo5"/>
+		</references>
+
+		<example>
+			gizmoproject://call?id=&lt;gizmo_id&gt;
+		</example>
+
+		<notes>
+			May use sip:// instead of gizmoproject:// in recent versions of Gizmo5.
+		</notes>
+	</scheme>
+
+	<scheme name="gtalk" description="Starts a chat with a Google Talk user" official="false">
+		<references>
+			<reference name="Google Talk" link="http://en.wikipedia.org/wiki/Google_Talk"/>
+			<reference name="XMPP" link="http://en.wikipedia.org/wiki/Extensible_Messaging_and_Presence_Protocol"/>
+			<reference name="More info" link="http://juberti.blogspot.com/2006/11/gtalk-uri.html"/>
+		</references>
+
+		<example>
+			gtalk:chat?jid=example@gmail.com
+		</example>
+	</scheme>
+
+	<scheme name="irc" description="Connecting to an Internet Relay Chat server to join a channel" official="false" ports="194,529,2218,6665,6666,6667,6668,6669">
+		<references>
+			<reference name="Internet Relay Chat" link="http://en.wikipedia.org/wiki/Internet_Relay_Chat"/>
+			<reference name="IETF Draft" link="http://tools.ietf.org/html/draft-butcher-irc-url"/>
+			<reference name="Old IETF Draft" link="http://tools.ietf.org/html/draft-mirashi-url-irc-01"/>
+		</references>
+
+		<example>
+			irc://&lt;host&gt;[:&lt;port&gt;]/[&lt;channel&gt;[?&lt;password&gt;]]
+		</example>
+
+		<notes>
+			Assuming the client knows a server associated with the name, "host" may optionally be an IRC network name.
+		</notes>
+	</scheme>
+
+
+	<scheme name="ircs" description="Connecting to a Secured Internet Relay Chat server to join a channel" official="false">
+		<references>
+			<reference name="Internet Relay Chat" link="http://en.wikipedia.org/wiki/Internet_Relay_Chat"/>
+			<reference name="IETF Draft" link="http://tools.ietf.org/html/draft-butcher-irc-url"/>
+			<reference name="Old IETF Draft" link="http://tools.ietf.org/html/draft-mirashi-url-irc-01"/>
+		</references>
+
+		<example>
+			ircs://&lt;host&gt;[:&lt;port&gt;]/[&lt;channel&gt;[?&lt;password&gt;]]
+		</example>
+
+		<notes>
+			Assuming the client knows a server associated with the name, "host" may optionally be an IRC network name.
+		</notes>
+	</scheme>
+
+	<scheme name="irc6" description="Connecting to an IPV6 Internet Relay Chat server to join a channel" official="false">
+		<references>
+			<reference name="Internet Relay Chat" link="http://en.wikipedia.org/wiki/Internet_Relay_Chat"/>
+			<reference name="IETF Draft" link="http://tools.ietf.org/html/draft-butcher-irc-url"/>
+			<reference name="Old IETF Draft" link="http://tools.ietf.org/html/draft-mirashi-url-irc-01"/>
+		</references>
+
+		<example>
+			irc6://&lt;host&gt;[:&lt;port&gt;]/[&lt;channel&gt;[?&lt;password&gt;]]
+		</example>
+
+		<notes>
+			Assuming the client knows a server associated with the name, "host" may optionally be an IRC network name.
+		</notes>
+	</scheme>
+
+	<scheme name="itms" description="Used for connecting to the iTunes Music Store" official="false">
+		<references>
+			<reference name="iTunes Music Store" link="http://en.wikipedia.org/wiki/ITunes_Music_Store"/>
+		</references>
+	</scheme>
+
+	<scheme name="jar" description="Compressed archive member" official="false">
+		<references>
+			<reference name="JAR archive" link="http://en.wikipedia.org/wiki/JAR_(file_format)"/>
+			<reference name="Java API" link="http://java.sun.com/javase/6/docs/api/java/net/JarURLConnection.html"/>
+		</references>
+
+		<notes>
+			Works for any ZIP-based file.
+		</notes>
+	</scheme>
+
+	<scheme name="javascript" description="Execute Javascript code" official="false">
+		<references>
+			<reference name="Javascript" link="http://en.wikipedia.org/wiki/JavaScript"/>
+			<reference name="IETF Draft" link="http://tools.ietf.org/html/draft-hoehrmann-javascript-scheme"/>
+		</references>
+
+		<example>
+			javascript:&lt;javascript to execute&gt;
+		</example>
+
+		<notes>
+			Works in any modern browser.
+		</notes>
+	</scheme>
+
+	<scheme name="keyparc" description="Keyparc encrypt/decrypt resource" official="false">
+		<references>
+			<reference name="Bloombase" link="http://en.wikipedia.org/wiki/Bloombase"/>
+		</references>
+
+		<example>
+			keyparc://encrypt/&lt;username&gt;/&lt;uri&gt; or
+			keyparc://decrypt/&lt;username&gt;/&lt;uri&gt;
+		</example>
+	</scheme>
+
+	<scheme name="lastfm" description="Connecting to a radio stream from Last FM" official="false">
+		<references>
+			<reference name="Radio Stream" link="http://en.wikipedia.org/w/index.php?title=Radio_stream&amp;action=edit&amp;redlink=1"/>
+			<reference name="Last FM" link="http://en.wikipedia.org/wiki/Last.fm"/>
+		</references>
+
+		<example>
+			lastfm://&lt;radio_stream&gt; or lastfm://globaltags/&lt;genre&gt; or
+ 			lastfm://user/&lt;username&gt;/&lt;stuff&gt;
+		</example>
+	</scheme>
+
+	<scheme name="ldaps" description="Secure equivalent of LDAP" official="false" ports="636">
+		<references>
+			<reference name="Old IETF Draft" link="http://tools.ietf.org/html/draft-ietf-asid-ldapv3-url-02"/>
+		</references>
+
+		<example>
+			ldaps://[&lt;host&gt;[:&lt;port&gt;]][/&lt;dn&gt; [?[&lt;attributes&gt;][?[&lt;scope&gt;][?[&lt;filter&gt;][?&lt;extensions&gt;]]]]]
+		</example>
+
+		<notes>
+			Not an IETF standard, but commonly used in applications.
+		</notes>
+	</scheme>
+
+	<scheme name="magnet" description="Magnet links" official="false">
+		<references>
+			<reference name="Magnet URI scheme" link="http://en.wikipedia.org/wiki/Magnet_URI_scheme"/>
+			<reference name="Magnet URI project" link="http://magnet-uri.sourceforge.net/"/>
+		</references>
+
+		<example>
+			magnet:?xt=urn:sha1:&lt;hash of file&gt;&amp;dn=&lt;display name&gt;
+ 			(other parameters are also possible)
+		</example>
+
+		<notes>
+			Used by various peer-to-peer clients, usually providing the hash of a file to be located on the network.
+		</notes>
+	</scheme>
+
+	<scheme name="maps" description="Map links" official="false">
+		<references>
+			<reference name="RFC 5870" link="http://tools.ietf.org/html/rfc5870"/>
+		</references>
+
+		<example>
+			maps:q=&lt;physical location&gt;
+		</example>
+
+		<notes>
+			Some mobile web browsers will launch a dedicated mapping application. See also "geo:" (RFC 5870)
+		</notes>
+	</scheme>
+
+	<scheme name="market" description="Opens Android Market" official="false">
+		<references>
+			<reference name="Android" link="http://en.wikipedia.org/wiki/Android_(operating_system)"/>
+		</references>
+
+		<example>
+			market://details?id=Package_name or market://search?q=Search_Query or
+			market://search?q=pub:Publisher_Name
+		</example>
+
+		<notes>
+			Supported by Android devices.
+		</notes>
+	</scheme>
+
+	<scheme name="message" description="Direct link to specific email message" official="false">
+		<example>
+			message:&lt;MESSAGE-ID&gt;
+			message://&lt;MESSAGE-ID&gt;
+		</example>
+
+		<notes>
+			Supported by Mail since OS X 10.5
+		</notes>
+	</scheme>
+
+	<scheme name="mms" description="Windows streaming media" official="false" ports="651">
+		<references>
+			<reference name="Microsoft Media Server" link="http://en.wikipedia.org/wiki/Microsoft_Media_Server"/>
+		</references>
+
+		<example>
+			mms://&lt;host&gt;:&lt;port&gt;/&lt;path&gt;
+		</example>
+
+		<notes>
+			Used by Windows Media Player to stream audio and/or video.
+		</notes>
+	</scheme>
+
+	<scheme name="msnim" description="Adding a contact or starting a conversation in Windows Live Messenger" official="false">
+		<references>
+			<reference name="Windows Live Messenger" link="http://en.wikipedia.org/wiki/Windows_Live_Messenger"/>
+		</references>
+
+		<example>
+			Add a contact to the buddy list
+				msnim:add?contact=nada@example.com
+			Start a conversation with a contact
+				msnim:chat?contact=nada@example.com
+			Start a voice conversation with a contact
+				msnim:voice?contact=nada@example.com
+			Start a video conversation with a contact
+				msnim:video?contact=nada@example.com
+		</example>
+
+		<notes>
+			Can be invoked from a web page or via a run command or an Internet Explorer browser URL (won't work with Firefox 2.0.0.8).
+			For web pages use this HTML: <a href="chat?contact=nada@example.com">Click to chat!</a>
+		</notes>
+	</scheme>
+
+	<scheme name="mumble" description="Joining a mumble server" official="false">
+		<references>
+			<reference name="Mumble" link="http://en.wikipedia.org/wiki/Mumble_(software)"/>
+			<reference name="Official documentation" link="http://mumble.sourceforge.net/Mumble_URL"/>
+		</references>
+
+		<example>
+			mumble://[username[:password]@]&lt;address&gt;[:port]/[channelpath]?version=&lt;serverversion&gt;[&amp;title=&lt;servername&gt;][&amp;url=&lt;serverurl&gt;]
+		</example>
+	</scheme>
+
+	<scheme name="mvn" description="Access Apache Maven repository artifacts" official="false">
+		<references>
+			<reference name="Apache Maven" link="http://en.wikipedia.org/wiki/Apache_Maven"/>
+			<reference name="OPS4J" link="http://en.wikipedia.org/w/index.php?title=OPS4J&amp;action=edit&amp;redlink=1"/>
+		</references>
+
+		<example>
+			mvn:org.ops4j.pax.web.bundles/service/0.2.0-SNAPSHOT
+ 			mvn:http://user:password@repository.ops4j.org/maven2!org.ops4j.pax.web.bundles/service/0.2.0
+		</example>
+	</scheme>
+
+	<scheme name="notes" description="Opens a Lotus Notes document or database" official="false" ports="1352">
+		<references>
+			<reference name="Lotus Notes" link="http://en.wikipedia.org/wiki/Lotus_Notes"/>
+		</references>
+
+		<example>
+			notes://&lt;address&gt;
+		</example>
+
+		<notes>
+			Used by IBM Lotus Notes to refer to documents and databases stored within the Lotus Notes system.
+			When clicked in a browser on a computer with Lotus Notes client installed, Notes will open
+			the document link as if a Notes DocLink were clicked within Notes.
+		</notes>
+	</scheme>
+
+	<scheme name="palm" description="Access system services in HP webOS applications" official="false">
+		<references>
+		  	<reference name="HP webOS" link="http://developer.palm.com/"/>
+		  	<reference name="HP webOS services overview" link="http://developer.palm.com/index.php?option=com_content&amp;view=article&amp;id=1649&amp;Itemid=20"/>
+		</references>
+
+		<example>
+			palm:&lt;servicename&gt;[/&lt;method&gt;]]/
+		</example>
+	</scheme>
+
+	<scheme name="paparazzi" description="Launches and takes a screen shot using the Mac Paparazzi! application" official="false">
+		<references>
+			<reference name="Paparazzi FAQ" link="http://www.derailer.org/paparazzi/faq"/>
+		</references>
+
+		<example>
+			paparazzi:[&lt;options&gt;]http:[//&lt;host&gt;[:[&lt;port&gt;][&lt;transport&gt;]]/
+		</example>
+	</scheme>
+
+	<scheme name="psyc" description="Identify/locate a person, group, place or service and specify its ability to communicate" official="false">
+		<example>
+			psyc:[//&lt;host&gt;[:[&lt;port&gt;][&lt;transport&gt;]]/[&lt;object-name&gt;][#&lt;channel-name&gt;]
+		</example>
+	</scheme>
+
+	<scheme name="rmi" description="Look up a Java object in an RMI registry" official="false" ports="1098,1099">
+		<references>
+			<reference name="Sun Microsystems" link="http://en.wikipedia.org/wiki/Sun_Microsystems"/>
+			<reference name="JNDI" link="http://en.wikipedia.org/wiki/Jndi"/>
+			<reference name="RMI" link="http://en.wikipedia.org/wiki/Java_remote_method_invocation"/>
+			<reference name="rmiregistry process" link="http://java.sun.com/javase/6/docs/technotes/tools/solaris/rmiregistry.html"/>
+		</references>
+
+		<example>
+			rmi://&lt;host&gt;[:&lt;port&gt;]/&lt;object-name&gt;
+		</example>
+
+		<notes>
+		  	URI scheme understood by JNDI.
+			Can be used to lookup a remote Java object within an RMI registry (typically for the purposes of RMI on that object).
+			Host/port in the URI are of the rmiregistry process, not the remote object.
+		</notes>
+	</scheme>
+
+	<scheme name="rtmp" description="Real Time Messaging Protocol" official="false" ports="1935">
+		<references>
+			<reference name="Real Time Messaging Protocol" link="http://en.wikipedia.org/wiki/Real_Time_Messaging_Protocol"/>
+		</references>
+
+		<example>
+			rtmp://&lt;host&gt;/&lt;application&gt;/&lt;media&gt;
+		</example>
+
+		<notes>
+			URI schema used to connect to Adobe Flash Media Server.
+		</notes>
+	</scheme>
+
+	<scheme name="secondlife" description="Open the Map floater in Second Life application to teleport the resident to the location" official="false">
+		<references>
+			<reference name="Linden Lab" link="http://en.wikipedia.org/wiki/Linden_Lab"/>
+			<reference name="SLurl.com" link="http://slurl.com/"/>
+			<reference name="Knowledge Base article" link="http://wiki.secondlife.com/wiki/How_do_I_Log_in_using_the_secondlife://_web_protocol"/>
+		</references>
+
+		<example>
+			secondlife://&lt;region name&gt;/&lt;x position&gt;/&lt;y position&gt;/&lt;z position&gt;
+		</example>
+
+		<notes>
+			Used by SLurl.com.
+		</notes>
+	</scheme>
+
+	<scheme name="sgn" description="Social Graph Node Mapper" official="false">
+		<references>
+			<reference name="Google" link="http://en.wikipedia.org/wiki/Google"/>
+			<reference name="sgnodemapper project official documentation" link="http://code.google.com/p/google-sgnodemapper/"/>
+		</references>
+
+		<example>
+			sgn://social-network.example.com/?ident=bob
+		</example>
+	</scheme>
+
+	<scheme name="skype" description="Launching Skype call" official="false" ports="23399">
+		<references>
+			<reference name="Skype" link="http://en.wikipedia.org/wiki/Skype"/>
+			<reference name="Skype documentation" link="http://www.skype.com/share/buttons/advanced.html"/>
+		</references>
+
+		<example>
+		   	skype:&lt;username|phonenumber&gt;[?[add|call|chat|sendfile|userinfo]]
+		</example>
+
+		<notes>
+			Unofficial scheme. See also callto:
+		</notes>
+	</scheme>
+
+	<scheme name="spotify" description="Load a track, album, artist, search or playlist in Spotify" official="false">
+		<references>
+			<reference name="Spotify" link="http://en.wikipedia.org/wiki/Spotify"/>
+			<reference name="Blog post" link="http://www.spotify.com/uk/blog/archives/2008/01/14/linking-to-spotify/"/>
+		</references>
+
+		<example>
+			spotify:&lt;artist|album|track&gt;:&lt;id&gt; or
+			spotify:search:&lt;text&gt; or
+ 			spotify:user:&lt;username&gt;:playlist:&lt;id&gt;
+
+			example :
+ 				spotify:track:2jCnn1QPQ3E8ExtLe6INsx
+		</example>
+	</scheme>
+
+	<scheme name="ssh" description="SSH connections (like telnet:)" official="false" ports="22,911">
+		<references>
+			<reference name="SSH" link="http://en.wikipedia.org/wiki/Secure_Shell"/>
+			<reference name="IETF Draft" link="http://tools.ietf.org/html/draft-ietf-secsh-scp-sftp-ssh-uri"/>
+		</references>
+
+		<example>
+			ssh://[&lt;user&gt;[;fingerprint=&lt;host-key fingerprint&gt;]@]&lt;host&gt;[:&lt;port&gt;]
+		</example>
+	</scheme>
+
+	<scheme name="sftp" description="SFTP file transfers" official="false" ports="22,911">
+		<references>
+			<reference name="SFTP" link="http://en.wikipedia.org/wiki/SSH_file_transfer_protocol"/>
+			<reference name="FTPS" link="http://en.wikipedia.org/wiki/FTPS"/>
+			<reference name="IETF Draft" link="http://tools.ietf.org/html/draft-ietf-secsh-scp-sftp-ssh-uri"/>
+		</references>
+
+		<example>
+			sftp://[&lt;user&gt;[;fingerprint=&lt;host-key fingerprint&gt;]@]&lt;host&gt;[:&lt;port&gt;]/&lt;path&gt;/&lt;file&gt;
+		</example>
+
+		<notes>
+			The SFTP file transfer protocol is not to be confused with FTPS (FTP/SSL).
+		</notes>
+	</scheme>
+
+	<scheme name="smb" description="Accessing SMB/CIFS shares" official="false" ports="445">
+		<references>
+			<reference name="SMB" link="http://en.wikipedia.org/wiki/Server_Message_Block"/>
+			<reference name="IETF Draft" link="http://tools.ietf.org/html/draft-crhertel-smb-url"/>
+		</references>
+
+		<example>
+			smb://[&lt;user&gt;@]&lt;host&gt;[:&lt;port&gt;][/[&lt;path&gt;]][?&lt;param1&gt;=&lt;value1&gt;[;&lt;param2&gt;=&lt;value2&gt;]] or
+ 			smb://[&lt;user&gt;@]&lt;workgroup&gt;[:&lt;port&gt;][/]
+		</example>
+	</scheme>
+
+	<scheme name="soldat" description="Joining servers" official="false">
+		<references>
+			<reference name="Soldat" link="http://en.wikipedia.org/wiki/Soldat"/>
+			<reference name="Soldat Manual" link="http://www.soldat.pl/man/manual-en.html"/>
+		</references>
+
+		<example>
+		 	soldat://&lt;host&gt;:&lt;port&gt;/[password]
+			example :
+ 				soldat://127.0.0.1:23073/thatssecret!
+		</example>
+	</scheme>
+
+	<scheme name="steam" description="Interacts with Steam ; install applications, purchase/run games, etc." official="false" ports="1200,1725">
+		<references>
+			<reference name="Steam" link="http://en.wikipedia.org/wiki/Steam_(software)"/>
+			<reference name="Valve Corporation" link="http://en.wikipedia.org/wiki/Valve_Corporation"/>
+			<reference name="Valve Developer Community Website" link="http://developer.valvesoftware.com/wiki/Steam_browser_protocol"/>
+		</references>
+
+		<example>
+			steam:&lt;command line arguments&gt; or
+ 			steam://&lt;action&gt;/&lt;id, addon, IP, hostname, etc.&gt;
+		</example>
+	</scheme>
+
+	<scheme name="svn" description="Provides a link to a Subversion source control repository" official="false" ports="3690">
+		<references>
+			<reference name="Subversion source control" link="http://en.wikipedia.org/wiki/Subversion_(software)"/>
+		</references>
+
+		<example>
+			svn[+ssh]://&lt;logindetails&gt;@&lt;repository&gt;&lt;:port&gt;/&lt;modulepath&gt;
+		</example>
+	</scheme>
+
+	<scheme name="teamspeak" description="Joining a server" official="false" ports="8767,8768,9987">
+		<references>
+			<reference name="TeamSpeak" link="http://en.wikipedia.org/wiki/TeamSpeak"/>
+			<reference name="TeamSpeak Website" link="http://www.goteamspeak.com/?page=faq&amp;cat=client&amp;rate=46#howto_connect_via_browser"/>
+		</references>
+
+		<example>
+			teamspeak://&lt;server&gt;[:&lt;port&gt;]/[?&lt;parameter1&gt;=&lt;value1&gt;[&amp;&lt;parameter2&gt;=&lt;value2&gt;]]
+		</example>
+	</scheme>
+
+	<scheme name="things" description="Send a to-do things" official="false">
+		<references>
+			<reference name="Things" link="http://culturedcode.com/"/>
+			<reference name="Cultured Code" link="http://en.wikipedia.org/wiki/Cultured_Code"/>
+		</references>
+
+		<example>
+			things:add?title=Buy%20milk&amp;notes=Low%20fat&amp;dueDate=2011-12-24
+		</example>
+
+		<notes>
+			Provided that the Things software from Cultured Code is installed.
+		</notes>
+	</scheme>
+
+	<scheme name="udp" description="BitTorrent tracker protocol based on UDP" official="false" ports="2710,6969">
+		<references>
+			<reference name="BitTorrent" link="http://en.wikipedia.org/wiki/UDP_tracker"/>
+			<reference name="UDP tracker protocol" link="http://xbtt.sourceforge.net/udp_tracker_protocol.html"/>
+		</references>
+
+		<example>
+ 			udp://&lt;server&gt;[:&lt;port&gt;]/
+		</example>
+	</scheme>
+
+	<scheme name="unreal" description="Joining servers" official="false" port="7777,7778,7779,7780,7781,7782,7783,7784,7785,7786,7787,7788">
+		<references>
+			<reference name="Unreal" link="http://en.wikipedia.org/wiki/Unreal"/>
+		</references>
+
+		<example>
+			unreal://&lt;server&gt;[:&lt;port&gt;]/
+		</example>
+
+		<notes>
+			Unreal legacy protocol.
+		</notes>
+	</scheme>
+
+	<scheme name="ut2004" description="Joining servers" official="false">
+		<references>
+			<reference name="Unreal Tournament 2004" link="http://en.wikipedia.org/wiki/Unreal_Tournament_2004"/>
+			<reference name="Unreal Developer Network" link="http://udn.epicgames.com/Two/IniFilesTutorial"/>
+		</references>
+
+		<example>
+			ut2004://&lt;server&gt;[:&lt;port&gt;][/&lt;map&gt;?&lt;options&gt;]
+		</example>
+	</scheme>
+
+	<scheme name="ventrilo" description="Joining a server" official="false" ports="3784,3785,6100">
+		<references>
+			<reference name="Ventrilo" link="http://en.wikipedia.org/wiki/Ventrilo"/>
+			<reference name="Ventrilo Website" link="http://www.ventrilo.com/setup.php#Web_Links"/>
+		</references>
+
+		<example>
+			ventrilo://&lt;server&gt;[:&lt;port&gt;]/[?&lt;parameter1&gt;=&lt;value1&gt;[&amp;&lt;parameter2&gt;=&lt;value2&gt;]]
+		</example>
+	</scheme>
+
+	<scheme name="view-source" description="Shows a web page as code 'in the raw'" official="false">
+		<references>
+			<reference name="view-source URI scheme" link="http://en.wikipedia.org/wiki/View-source_URI_scheme"/>
+			<reference name="IANA Registration template" link="http://www.iana.org/assignments/uri-schemes/prov/view-source"/>
+			<reference name="RFC 3986" link="http://tools.ietf.org/html/rfc3986"/>
+		</references>
+
+		<example>
+			view-source:&lt;absolute-URI&gt;
+				where &lt;absolute-URI&gt; is specified in RFC 3986.
+
+			Example:
+ 				view-source:http://en.wikipedia.org/wiki/URI_scheme
+		</example>
+	</scheme>
+
+	<scheme name="webcal" description="Subscribing to calendars in iCalendar format" official="false">
+		<references>
+			<reference name="Webcal" link="http://en.wikipedia.org/wiki/Webcal"/>
+			<reference name="iCalendar" link="http://en.wikipedia.org/wiki/ICalendar"/>
+		</references>
+
+		<example>
+			webcal://&lt;hierarchical part&gt;
+			example :
+ 				webcal://example.com/calendar.ics
+		</example>
+	</scheme>
+
+	<scheme name="ws" description="WebSocket protocol" official="false">
+		<references>
+			<reference name="WebSocket protocol" link="http://en.wikipedia.org/wiki/WebSocket"/>
+			<reference name="IETF Draft" link="http://tools.ietf.org/html/draft-ietf-hybi-thewebsocketprotocol"/>
+		</references>
+
+		<example>
+			ws:&lt;hierarchical part&gt;
+		</example>
+	</scheme>
+
+	<scheme name="wss" description="WebSocket protocol" official="false">
+		<references>
+			<reference name="WebSocket protocol" link="http://en.wikipedia.org/wiki/WebSocket"/>
+			<reference name="IETF Draft" link="http://tools.ietf.org/html/draft-ietf-hybi-thewebsocketprotocol"/>
+		</references>
+
+		<example>
+			ws:&lt;hierarchical part&gt;
+		</example>
+	</scheme>
+
+	<scheme name="wtai" description="Wireless Telephony Application Interface" official="false">
+		<references>
+			<reference name="WAP forum" link="http://en.wikipedia.org/wiki/WAP_Forum"/>
+			<reference name="WAP Environment specification" link="http://www.wapforum.org/what/technical/SPEC-WAESpec-19990524.pdf#Wireless"/>
+		</references>
+
+		<example>
+			wtai://wp/mc/+18165551212
+		</example>
+	</scheme>
+
+	<scheme name="wyciwig" description="What You Cache Is What You Get" official="false">
+		<references>
+			<reference name="WYCIWIG" link="http://en.wikipedia.org/wiki/WYCIWYG"/>
+		</references>
+
+		<example>
+			wyciwyg://&lt;URI&gt;
+		</example>
+	</scheme>
+
+	<scheme name="xfire" description="Adding friends and servers, joining servers, changing status text." official="false" ports="25888">
+		<references>
+			<reference name="XFire" link="http://en.wikipedia.org/wiki/Xfire"/>
+			<reference name="XFire Website" link="http://www.xfire.com/xfire_urls/?name=XFire&amp;file=xfireurls"/>
+		</references>
+
+		<example>
+			xfire:&lt;function&gt;[?&lt;parameter1&gt;=&lt;value1&gt;[&amp;&lt;parameter2&gt;=&lt;value2&gt;]]
+		</example>
+	</scheme>
+
+	<scheme name="xri" description="eXtensible Resource Identifier" official="false">
+		<references>
+			<reference name="XRI" link="http://en.wikipedia.org/wiki/XRI"/>
+			<reference name="OASIS XRI Technical Committee" link="http://www.oasis-open.org/committees/xri"/>
+		</references>
+
+		<example>
+			xri://&lt;authority&gt;[/[&lt;path&gt;]][?&lt;query&gt;][#fragment]
+		</example>
+	</scheme>
+
+	<scheme name="ymsgr" description="Sending an instant message to a Yahoo Contact" official="false">
+		<references>
+			<reference name="Yahoo! Messenger" link="http://en.wikipedia.org/wiki/Yahoo!_Messenger"/>
+		</references>
+
+		<example>
+			ymsgr:sendIM?&lt;screenname&gt;
+		</example>
+	</scheme>
+</schemes>

@@ -1,0 +1,178 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        Cookie.phpclass
+
+    DESCRIPTION
+        Encapsulates the $_COOKIE array.
+
+    AUTHOR
+        Christian Vigh, 06/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/06/06]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Web ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces & objects
+use	Thrak\System\Object ;
+use	Thrak\Types\AssociativeArray ;
+use	Thrak\IO\Path ;
+use     Thrak\Types\String ;
+
+
+/*==============================================================================================================
+
+    Cookies -
+        A wrapper class for cookies.
+
+  ==============================================================================================================*/
+class  Cookies		extends		Object 
+			implements	\ArrayAccess, \Countable, \IteratorAggregate
+   {
+	// Options for defining cookies
+	const		COOKIE_SECURE		=  0x0001 ;			// Cookie can only be used on secured (https) connections
+	const		COOKIE_HTTP_ONLY	=  0x0002 ;			// Cookie can only be used on http requests
+	const		COOKIE_RAW		=  0x0004 ;			// Cookie value is encoded raw
+	
+	// Defined cookies
+	protected	$Cookies	=  [] ;
+	
+	
+	/*==============================================================================================================
+	
+	    Constructor -
+	        Creates a Cookies object with the specified cookie array, an associative array of key/value pairs.
+		The default array is $_COOKIE.
+	
+	  ==============================================================================================================*/
+	public function  __construct ( $cookie_array = null )
+	   {
+		if  ( $cookie_array  ==  null )
+			$cookie_array	=  $_COOKIE ;
+		
+		foreach  ( $cookie_array  as  $name => $value )
+			$this -> Cookies [ $name ]	=  $value ;
+	    }
+	
+
+	/*==============================================================================================================
+	
+	    NAME
+	        Define - Defines a cookie.
+	
+	    PROTOTYPE
+	        $cookies -> Define ( $name, $value, $expires = 0, $path = '/', $domain = null, 
+					$flags = self::COOKIE_HTTP_ONLY ) ;
+	
+	    DESCRIPTION
+	        Defines a cookie.
+	
+	    PARAMETERS
+	        $name (string) -
+	                Cookie name.
+	  
+	 	$value (string) -
+	 		Cookie value.
+	  
+	 	$expires (integer or string) -
+	 		When specified as an integer, indicates a Unix timestamp ; when defined as a string, specifies
+	 		a date value that can be understood by the strtotime() function.
+	  
+	 	$path (string) -
+	 		Path onto which the cookie applies.
+	  
+	 	$domain (string) -
+	 		Domain to which the cookie applies.
+	  
+	 	$flags (integer) -
+	 		Cookie options ; can be any combination of the following flags :
+	  
+	 		- COOKIE_SECURE :
+	 			Cookie will only be sent over secured https connections.
+	  
+	 		- COOKIE_HTTP_ONLY :
+	 			Cookie will only be sent over http connections.
+	  
+	 		- COOKIE_RAW :
+	 			The value of the cookie will not be url-encoded.
+	
+	  ==============================================================================================================*/
+	public function  Define ( $name, $value, $expires = 0, $path = '/', $domain = null, $flags = self::COOKIE_HTTP_ONLY ) 
+	   {
+		if  ( is_string ( $expires ) )
+		   {
+			if  ( ! ( $expires = String::IsDateString ( $expires ) ) )
+				$expires	=  0 ;
+		    }
+		
+		$raw		=  $flags & self::COOKIE_RAW ;
+		$secure		=  $flags & self::COOKIE_SECURE ;
+		$http_only	=  $flags & self::COOKIE_HTTP_ONLY ;
+		
+		if  ( $raw )
+			setrawcookie ( $name, $value, $expires, $path, $domain, $secure, $http_only ) ;
+		else
+			setcookie ( $name, $value, $expires, $path, $domain, $secure, $http_only ) ;
+		
+		$this -> Cookies [ $name ]	=  $value ;
+	    }
+	
+
+	/*==============================================================================================================
+	
+	    NAME
+	        Undefine - Undefines a cookie.
+	
+	    PROTOTYPE
+	        $cookies -> Undefine ( $name ) ;
+	
+	    DESCRIPTION
+	        Undefines a cookie ; within headers, a cookie with the same name, an empty value and a negative expiration
+		time is sent.
+	
+	    PARAMETERS
+	        $name (string) -
+	                Name of the cookie to be removed.
+	
+	  ==============================================================================================================*/
+	public function  Undefine ( $name )
+	   {
+		setcookie ( $name,  null, -1, '/' ) ;
+		unset ( $this -> Cookies [ $name ] ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	        Interfaces implementations.
+	
+	  ==============================================================================================================*/
+	public function  Count ( )
+	   { return ( count ( $this -> Cookies ) ) ; }
+	
+	
+	public function  getIterator ( )
+	   { return ( new \ArrayIterator ( $this -> Cookies ) ) ; }
+	
+	
+	public function  offsetExists ( $offset )
+	   { return ( isset ( $this -> Cookies [ $offset ] ) ) ; }
+	
+	
+	public function  offsetGet ( $offset )
+	   { return ( $this -> Cookies [ $offset ] ) ; }
+	
+	
+	public function  offsetSet ( $offset, $value )
+	   { $this -> Define ( $offset, $value ) ; }
+	
+	
+	public function  offsetUnset ( $offset )
+	   { $this -> Undefine ( $offset ) ; }
+    }

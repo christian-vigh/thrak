@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<httperrors url="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html">
+	<class id="1" error="false" section="sec10.1" description="Informational">
+		<class id="100" section="sec.10.1.1" description="100 continue"/>
+		<class id="101" section="sec.10.1.2" description="101 Switching protocols"/>
+	</class>
+	<class id="2" error="false" section="sec10.2" description="Successful">
+		<class id="200" section="sec.10.2.1" description="200 OK"/>
+		<class id="201" section="sec.10.2.2" description="201 Created"/>
+		<class id="202" section="sec.10.2.3" description="202 Accepted"/>
+		
+	</class>
+</httperrors>

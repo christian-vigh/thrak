@@ -1,0 +1,704 @@
+<?php
+/************************************************************************************************************
+
+    FILE
+	StringFormatter.phpclass
+	
+    DESCRIPTION 
+	The StringFormatter class provides a general mechanism for decoding formatted strings in an sprintf()
+	way.
+	The problem arose when you need to have special modifiers in a string, that will never be handled by
+	the sprintf() function ; take the following output file specification :
+	
+		myoutput.%p.%d.%s.log
+		
+	You want %p to be replaced with the current process id, %d with the current date, and %s by a sequence
+	number that guarantees the filename to be unique in its directory.
+	
+	This is where the StringFormatter class becomes useful : provide it with the definitions of the formats
+	you want to support, call its Format() method specifying the model (myoutput.%p.%d.%s.log in this 
+	example) and optional arguments that could be consumed by the various format handlers and that's all !
+	
+	To try it, in short :
+	
+		$fmt 	=  new FileSpecificationFormatter ( ) ;
+		$value	=  $fmt -> Format ( "myfile.%d.%s.txt" ) ;
+		echo "VALUE = $value\n" ;	
+
+	which should output, on the 13th november, 2014, in a directory which has no files matching the wildcard
+	"myfile.20141013.*.txt" :
+	
+		VALUE = myfile.20141013.1.txt
+	
+	The FileSpecificationFormatter class is a specialization of the StringFormatter class, and provides
+	default substitution services when you need to process a file specification coming from a .INI file,
+	for example.
+	
+	Its definition is very simple :
+	
+	class  FileSpecificationFormatter 	extends  StringFormatter
+	   {
+		public function  __construct ( array  $additional_definitions  =  array ( ) ) 
+		   {
+			$definitions	=  array
+			   (
+				SpecializedFormatterDefinition::ProcessIdFormatterDefinition  		( '%', 'p' ),
+				SpecializedFormatterDefinition::DateFormatterDefinition			( '%', 'd' ),
+				SpecializedFormatterDefinition::TimeFormatterDefinition 		( '%', 't' ),
+				SpecializedFormatterDefinition::FormattedDateFormatterDefinition	( '%', 'D' ),
+				SpecializedFormatterDefinition::TimestampFormatterDefinition		( '%', 'T' )
+			    ) ;
+			$definitions 	=  array_merge ( $definitions, $additional_definitions ) ;
+			
+			parent::__construct ( $definitions ) ;
+		    }
+	    }  
+
+	It uses "shortcut" StringFormatterDefinition methods, defined in the SpecializedFormatterDefinition 
+	class.
+	
+	The first instanciation, ProcessIdFormatterDefinition, instantiates a StringFormatterDefinition which
+	is prefixed by "%" and followed by "p". Thus, the StringFormatter object will look for constructs like
+	"%p".
+	
+	More generally, the StringFormatterDefinition constructor takes 4 parameters :
+	- A prefix. But if you want alternative notations such as "{p}" instead of "%p", you can ; simply
+	  give an array of two items instead of a string, such as : array ( '{', '}' )
+	- A string representing the sequence to be matched ; if you want to specify a regular expression,
+	  simply pass an array of one to two items : array ( 'p.*p', 'imsx' ).
+	  The first item is the regular expression itself (without delimiters) and the optional second item
+	  is the RE modifiers.
+	- An expected argument count. This is for string formatters that have a callback and needs one or more
+	  parameters. This is the case of the FormattedDateFormatterDefinition class, which expects a string
+	  to be passed to the date() function. The string is passed when calling the Format() method of the
+	  StringFormatter object :
+	  
+			$value	=  $fmt -> Format ( "myfile.%D.%s.txt", array ( 'Y-m-d' ) ) ;
+ 
+	- A value, which can be a single value or more often, a callback function (or a closure, well,
+	  everything that can be called).
+	  Callbacks are given 5 parameters :
+	  - The StringFormatter object whose Format() method has been called
+	  - The StringFormatterDefinition object holding the current definition
+	  - The "model" string (the one that has been passed to the Format() function)
+	  - The remaining, unprocessed arguments (also passed to the format() function). The callback does
+	    not have to care about unstacking them once processed, it will be done by the calling function.
+	  - In case of a regular expression, the results of the call to the preg_match_all() function
+	
+    AUTHOR
+	Christian Vigh, 10/2014.
+	
+    HISTORY
+    [Version : 1.0]    [Date : 2014/10/13]     [Author : CV]
+        Initial version.
+
+ ************************************************************************************************************/
+namespace 	Thrak\Types ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use  	Thrak\System\Object ;
+
+
+/*===========================================================================================================
+
+    Class StringFormatterDefinition -
+	Implements a definition for a string format.
+	
+ *===========================================================================================================*/ 
+class  StringFormatterDefinition	extends Object
+   {
+	const 	RE_NAME 	=  "__RE__" ;
+	
+	// Prefix and optional suffix
+	public 		$Prefix,
+			$Suffix 	=  null ;
+	// Format definition ; either a string or a array of 2 elements :
+	// - The 1st element contains a regular expression without its delimiters
+	// - The 2nd optional element is the regular expression modifiers
+	public 		$Format ;
+	// Number of arguments
+	public 		$ArgumentCount ;
+	// Either a constant value or a callback
+	public 		$Callback ;
+
+	
+	/*===================================================================================================
+	
+	    NAME
+		Constructor - Creates a string formatter definition.
+		
+	    PROTOTYPE
+		$def 	=  new  StringFormatterDefinition ( $prefix_and_suffix, $format, $argument_count = 0,
+								$callback = null ) ;
+								
+	    DESCRIPTION
+		Creates a StringFormatterDefinition object that is used by the StringFormatter class to 
+		analyze a supplied input string and process the various format specifiers defined in it.
+	    
+	    PARAMETERS
+		- prefix_and_suffix (string or array) :
+			Specifies a prefix (either in the form of a string or a 1-element array), or a prefix
+			and a suffix (by passing an array of two elements).
+		- $format (string or array) :
+			Either a string or an array of two elements. The latter case is a way to specify that
+			we look for format specifiers by searching with a regular expression.
+			The two elements to supply in this array are :
+			- A regular expression, without its enclosing delimiters
+			- An optional string consisting of regular expression modifiers.
+		- $callback (callback or value) -
+			A callback function that will be called to retrieve the value for a format specifier.
+			The callback function has the following signature :
+			
+				function callback ( $formatter, $definition, $model, $arguments, $matches ) ;
+			
+			The parameters are the following :
+			
+			- $formatter :
+				A StringFormatter object, whose Format() method has been called.
+				
+			- $definition :
+				The calling StringFormatterDefinition object.
+				
+			- $model :
+				The input string supplied as the first argument of the StringFormatter::Format()
+				method.
+				
+			- $arguments :
+				The optional argument array supplied as the second parameter of the
+				StringFormatter::Format() function.
+				
+			- $matches :
+				The match results of the preg_match_all() function.
+				
+			The return value can be scalar. In this case, if multiple different occurrences of the
+			format specifier have been found, they will all be replaced with the same value.
+			If the function returns an array with a value to be used for each occurrence, they will
+			be correctly replaced.
+			
+			In case of an array is returned, the following rules apply if its size is different from
+			the number of matches (keep in mind that occurrences are replaced starting from the last
+			one down to the first) :
+			- If size < matches#, item 0 will be duplicated in the first ( matches# - size ) items
+			- If size > matches#, only the top matches# items will be substituted.
+			
+	  ===================================================================================================*/
+	public function  __construct ( $prefix_and_suffix, $format, $argument_count = 0, $callback = null )
+	   {
+		if (  is_array  ( $prefix_and_suffix ) )
+		   {
+			if  ( count ( $prefix_and_suffix )  ==  1 )
+				$this -> Prefix 	=  $prefix_and_suffix [0] ;
+			else if (  count ( $prefix_and_suffix )  ==  2 )
+			   {
+				$this -> Prefix 	=  $prefix_and_suffix [0] ;
+				$this -> Suffix 	=  $prefix_and_suffix [1] ;
+			    }
+			else
+				error ( new \Thrak\System\InvalidArgumentException ( "The prefix/suffix parameter should be either a string value or an array with 1 or 2 elements." ) ) ;
+		    }
+		else
+			$this -> Prefix		=  $prefix_and_suffix ;
+		
+		if  ( is_array ( $format ) )	// Regular expression + modifiers
+		   {
+			if  ( count ( $format )  ==  1 )
+				$format []	=  '' ;		// Modifiers
+			else if  ( count ( $format )  !=  2 )
+				error ( new \Thrak\System\InvalidArgumentException ( "When specifying a regular expression, an array with 1 to 2 values must be supplied, " .
+					"one for the regular expression itself (without delimiters) and an optional one for the modifiers." ) ) ;
+		    }
+		
+		$this -> Format 	=  $format ;
+		$this -> ArgumentCount	=  $argument_count ;
+		$this -> Callback 	=  $callback ;
+	    }
+
+
+	/*===================================================================================================
+	
+	    NAME
+		GetRegex - Builds a Regex to match this format specifier definition.
+		
+	    PROTOTYPE
+		$result 	=  $definition -> GetRegex ( ) ;
+		
+	    DESCRIPTION
+		Builds a regex matching the definition of this format specifier. 
+		A named capture (constant RE_NAME) is automatically inserted.
+		
+	    RETURN VALUE
+		A regex that can be used with the preg_xxx() functions.
+	
+	  ===================================================================================================*/
+	public function  GetRegex ( )
+	   {
+		$search 	=  '/(?P<' . self::RE_NAME . '>' . $this -> RegexEscape ( $this -> Prefix ) ;
+		$extra 		=  '' ;
+		
+		// Build the regular expression matching the current definition
+		if  ( is_array ( $this -> Format ) )
+		   {
+			$search 	.=  $this -> Format [0] ;
+			$extra 		 =  $this -> Format [1] ;
+		    }
+		else
+		   {
+			$search 	.=  $this -> RegexEscape ( $this -> Format ) ;
+		    }
+		    
+		if  ( $this -> Suffix )
+			$search 	.=  $this -> RegexEscape ( $this -> Suffix ) ;
+			
+		$search  	.=  ")/$extra" ;
+
+		return ( $search ) ;
+	    }
+	    
+	    
+	/*===================================================================================================
+	
+	    NAME
+		GetValue - Gets the value to substitute to a format specifier.
+		
+	    PROTOTYPE
+		$result 	=  $definition -> GetValue ( $formatter, $model, &$arguments, $matches = null ) ;
+		
+	    DESCRIPTION
+		Retrieves a value to substitute for one or more occurrence of a format specifier in the supplied
+		input string $model.
+		
+	    PARAMETERS
+		- $formatter (object) :
+			An instance of the calling StringFormatter class.
+			
+		- $model (string) :
+			The input string supplied as the first argument of the StringFormatter::Format()
+			method.
+			
+		- $arguments (array) :
+			Optional arguments supplied as the second parameter of the StringFormatter::Format()
+			method.
+			
+		- $matches (array) :
+			The result of the preg_match_all() function, giving all the format specifier
+			occurrences in $model and their corresponding offset.
+	    
+	    RETURN VALUE
+		The return value is the one returned by the callback for this format class.
+	
+	  ===================================================================================================*/
+	public function  GetValue ( $formatter, $model, &$arguments, $matches = null )
+	   {
+		if  ( $this -> ArgumentCount  &&  $this -> ArgumentCount  >  count ( $arguments ) )
+			error ( new \Thrak\System\RuntimeException ( "Not enough remaining arguments to process the \"" . ( ( string ) $this  ) . "\" format " .
+				"which requires {$this -> ArgumentCount} argument(s)." ) ) ;
+			
+		if  ( is_callable ( $this -> Callback ) )
+		   {
+			$function 	=  $this -> Callback ;
+			$value 		=  $function ( $formatter, $this, $model, $arguments, $matches ) ;
+		    }
+		else if  ( $this -> ArgumentCount )
+		   {
+			$value		=  array ( ) ;
+			
+			for  ( $i = 0 ; $i  <  $this -> ArgumentCount ; $i ++ )
+				$value []	=  $arguments [$i] ;
+		    }
+		else
+			$value 		=  $this -> Callback ;
+			
+		for  ( $i = 0 ; $i < $this -> ArgumentCount ; $i ++ )
+			array_pop ( $arguments ) ;
+			
+		return ( $value ) ;
+	    }
+	    
+	    
+	/*===================================================================================================
+	
+	    NAME
+		RegExEscape - Helper function to escape regex special characters.
+	
+	  ===================================================================================================*/
+	protected function  RegexEscape ( $value )
+	   {
+		$result 	=  "" ;
+		$length 	=  strlen ( $value ) ;
+		
+		for  ( $i = 0 ; $i  <  $length ; $i ++ )
+		   {
+			if  ( ctype_alnum ( $value [$i] ) )
+				$result 	.=  $value [$i] ;
+			else
+				$result 	.=  "\\" . $value [$i] ;
+		    }
+		    
+		return ( $result ) ;
+	    }
+	    
+	    
+	/*===================================================================================================
+	
+	    NAME
+		__tostring - Returns a string representation of this format specifier.
+		
+	  ===================================================================================================*/
+	public function  __tostring ( )
+	   {
+		$result 	=  $this -> Prefix ;
+		
+		if  ( is_array ( $this -> Format ) )
+			$result .=  $this -> Format [0] ;
+		else
+			$result .=  $this -> Format ;
+		
+		if ( $this -> Suffix )
+			$result 	.=  $this -> Suffix ;
+			
+		return ( $result ) ;
+	    }
+    }
+
+    
+    
+/*===========================================================================================================
+
+    Class SpecializedFormatterDefinition -
+	Implements specialized formatter definitions, which are to be considered as shortcuts.
+	Each method is static and returns a StringFormatterDefinition object.
+	Generally, the caller only has to specify a prefix/suffix and a format.
+	
+ *===========================================================================================================*/ 
+class  SpecializedFormatterDefinition	extends  StringFormatterDefinition
+   {
+	/*===================================================================================================
+	
+	    ProcessIdFormatterDefinition -
+		Substitutes a format specifier with the current process id.
+	
+	  ===================================================================================================*/
+	public static function  ProcessIdFormatterDefinition ( $prefix_and_suffix, $format )
+	   {
+		return  
+		   ( 
+			new  StringFormatterDefinition 
+			   ( 
+				$prefix_and_suffix, $format, 0, 
+				function  ( $formatter, $definition, $model, $arguments )
+				   { return ( getmypid ( ) ) ; } 
+			    ) 
+		    ) ;
+	    }
+
+	/*===================================================================================================
+	
+	    DateFormatterDefinition -
+		Substitutes a format specifier with the current date, in the format yyyymmdd.
+	
+	  ===================================================================================================*/
+	public static function  DateFormatterDefinition ( $prefix_and_suffix, $format )
+	   {
+		return  
+		   ( 
+			new  StringFormatterDefinition 
+			   ( 
+				$prefix_and_suffix, $format, 0, 
+				function  ( $formatter, $definition, $model, $arguments )
+				   { return ( date ( 'Ymd' ) ) ; } 
+			    ) 
+		    ) ;
+	    }
+
+	/*===================================================================================================
+	
+	    TimeFormatterDefinition -
+		Substitutes a format specifier with the current time, in the format hhmmss.
+	
+	  ===================================================================================================*/
+	public static function  TimeFormatterDefinition ( $prefix_and_suffix, $format )
+	   {
+		return  
+		   ( 
+			new  StringFormatterDefinition 
+			   ( 
+				$prefix_and_suffix, $format, 0, 
+				function  ( $formatter, $definition, $model, $arguments )
+				   { return ( date ( 'His' ) ) ; } 
+			    ) 
+		    ) ;
+	    }
+
+	/*===================================================================================================
+	
+	    DateTimeFormatterDefinition -
+		Substitutes a format specifier with the current date, in the format yyyymmdd.hhmmss.
+	
+	  ===================================================================================================*/
+	public static function  DateTimeFormatterDefinition ( $prefix_and_suffix, $format )
+	   {
+		return  
+		   ( 
+			new  StringFormatterDefinition 
+			   ( 
+				$prefix_and_suffix, $format, 0, 
+				function  ( $formatter, $definition, $model, $arguments )
+				   { return ( date ( 'Ymd.His' ) ) ; } 
+			    ) 
+		    ) ;
+	    }
+
+	/*===================================================================================================
+	
+	    FormattedDateFormatterDefinition -
+		Substitutes a format specifier with the current date, in the supplied format, which must be
+		passed in the $arguments array which is the second parameter of the StringFormatter::Format()
+		method.
+	
+	  ===================================================================================================*/
+	public static function  FormattedDateFormatterDefinition ( $prefix_and_suffix, $format )
+	   {
+		return  
+		   ( 
+			new  StringFormatterDefinition 
+			   ( 
+				$prefix_and_suffix, $format, 1, 
+				function  ( $formatter, $definition, $model, $arguments )
+				   { return ( date ( $arguments [0] ) ) ; } 
+			    ) 
+		    ) ;
+	    }
+
+	/*===================================================================================================
+	
+	    OneArgumentFormatterDefinition -
+		Substitutes a format specifier with an argument which will be passed through the second parameter
+		of the Format() method.
+	
+	  ===================================================================================================*/
+	public static function  OneArgumentDefinition ( $prefix_and_suffix, $format )
+	   {
+		return  
+		   ( 
+			new  StringFormatterDefinition 
+			   ( 
+				$prefix_and_suffix, $format, 1
+			    ) 
+		    ) ;
+	    }
+
+	/*===================================================================================================
+	
+	    TimestampFormatterDefinition -
+		Substitutes a format specifier with the current Unix timestamp.
+	
+	  ===================================================================================================*/
+	public static function  TimestampFormatterDefinition ( $prefix_and_suffix, $format )
+	   {
+		return  
+		   ( 
+			new  StringFormatterDefinition 
+			   ( 
+				$prefix_and_suffix, $format, 0, 
+				function  ( $formatter, $definition, $model, $arguments )
+				   { return ( time ( ) ) ; } 
+			    ) 
+		    ) ;
+	    }
+	    
+	    
+	/*===================================================================================================
+	
+	    SequenceFormatterDefinition -
+		Substitutes a format specifier with a sequence number. This applies to file specifications,
+		where the caller wants to have a unique sequence number to guarantee that the filename is 
+		unique.
+		For example, a template like "myfile.%s.txt" will yield a result of "myfile.1.txt" if there
+		is no file matching the wildcard "myfile.*.txt", and "myfile.6.txt" if there are several files
+		matching this wildcard, and the last one is "myfile.5.txt".
+	
+	  ===================================================================================================*/
+	public static function  SequenceFormatterDefinition ( $prefix_and_suffix, $format )
+	   {
+		return  
+		   ( 
+			new  StringFormatterDefinition 
+			   ( 
+				$prefix_and_suffix, $format, 0, 
+				function  ( $formatter, $definition, $model, $arguments, $matches )
+				   { 
+					// Since we could have a wildcard as a format for this definition, use the results of
+					// the preg_match_all() functions to locate the offset of the first matched occurrence
+					// and its length, because we will substitute this substring with the "*" wildcard character
+				   	$offset 	=  $matches [ StringFormatterDefinition::RE_NAME ] [0] [1] ;
+				   	$length 	=  strlen ( $matches [ StringFormatterDefinition::RE_NAME ] [0] [0] ) ;
+					
+					// Build a wildcard string and search for this specification
+					$wildcard 	=  substr ( $model, 0, $offset ) . "*" . substr ( $model, $offset + $length ) ;
+					$files 		=  glob ( $wildcard ) ;
+					$sequence 	=  0 ;
+					
+					// If a result has been found...
+					if  ( $files  !==  false  &&  count ( $files ) )
+					   {
+						// ... then we need to loop through all the files found, since the lexicographical order
+						// is not numeric : we will have "myfile.1", then "myfile.10", then "myfile.11"...
+						foreach  ( $files  as  $file )
+						   {
+							if  ( preg_match ( '/(?P<num>\d+)/', $file, $match, 0, $offset )  !==  false )
+							   {
+								$number 	=  $match [ 'num' ] ;
+								
+								// Remember the highest sequence number seen so far
+								if (  $number  >  $sequence )
+									$sequence 	=  $number ;
+							    }
+						    }
+					    }
+					
+					// All done, return
+					return ( $sequence + 1 ) ;
+				    } 
+			    ) 
+		    ) ;
+	    }
+    }
+    
+    
+/*===========================================================================================================
+
+    Class StringFormatter -
+	Implements a string formatter, based on format specifier definitions.
+	
+ *===========================================================================================================*/ 
+class  StringFormatter 			extends  Object 
+   {
+	// Formatter definitions added so far
+	public 	$Definitions ;
+	
+	
+	/*===================================================================================================
+	
+	    NAME
+		Constructor - Builds a StringFormatter object.
+	
+	  ===================================================================================================*/
+	public function  __construct ( array  $definitions =  array ( ) )
+	   {
+		parent::__construct ( ) ;
+		$this -> Definitions 	=  $definitions ;
+	    }
+	    
+	    
+	/*===================================================================================================
+	
+	    NAME
+		Format - Formats a string using the supplied definitions.
+		
+	    PROTOTYPE
+		$value 	=  $formatter -> Format ( $model, $arguments = array ( ) ) ;
+		
+	    DESCRIPTION
+		Formats the supplied template ($model), using if necessary the arguments specified in the
+		optional $arguments array for use by string formatter definitions, and returns the input 
+		string with all recognized format specifiers substituted.
+		
+	    PARAMETERS
+		- $model (string) :
+			Input value whose format specifiers are to be processed.
+			
+		- $arguments (array) :
+			Optional arguments to be passed to the StringFormatterDefinition objects.
+	    
+	    RETURN VALUE
+		The formatted input string.
+		
+	  ===================================================================================================*/
+	public function  Format ( $model, array  $arguments  =  array ( ) )
+	   {
+		$output_value		=  $model ;
+		
+		// Loop through definitions
+		foreach  ( $this -> Definitions  as  $definition )
+		   {
+			// All searches will use a regular expression, whatever the initially supplied format
+			// (string or re)
+			$search 	=  $definition -> GetRegex ( ) ;
+
+			// Search all occurrences
+			if  ( preg_match_all ( $search, $output_value, $matches, PREG_OFFSET_CAPTURE )  !==  false  &&
+				count ( $matches [ StringFormatterDefinition::RE_NAME ] ) ) 
+			   {			
+				$value 		=  $definition -> GetValue ( $this, $output_value, $arguments, $matches ) ;
+				$re_matches	=  $matches [ StringFormatterDefinition::RE_NAME ] ;
+				
+				// The formatter definition callback can return either a single value or an array of values,
+				// one for each occurrence to be replaced. Unify this processing by systematically transforming
+				// this return value into an array
+				if  ( ! is_array ( $value ) )
+					$value 	=  array ( $value ) ;
+					
+				// We replace every occurrence starting from the last one down to the first.
+				// Start with the last element of the callback return value
+				$j 	=  count ( $value ) - 1 ;
+					
+				// Loop through the matches
+				for  ( $i = count ( $re_matches ) - 1 ; $i  >=  0 ; $i -- )
+				   {
+					$offset 	=  $re_matches [$i] [1] ;
+					$length 	=  strlen ( $re_matches [$i] [0] ) ;
+					
+					// Replace the occurrence with the current element of the array returned by the callback
+					$output_value 	=  substr ( $output_value, 0, $offset ) .
+							   $value [$j] .
+							   substr ( $output_value, $offset + $length ) ;
+							
+					// Go to the next substitution value.
+					// If the array returned by the callback is greater than the number of occurrences,
+					// the first elements will never be processed.
+					// If it is smaller, then element 0 will appear several times in the first occurrences.
+					if  ( $j )
+						$j -- ;
+				    }
+			    }
+		    }
+		    
+		return (  $output_value ) ;
+	    }
+    }
+
+ 
+/*===========================================================================================================
+
+    Class FileSpecificationFormatter -
+	Specialized string formatter, aimed at handling the format specifiers that can be used to specify
+	output file specifications, such as those that can be met in .ini files for example.
+	
+ *===========================================================================================================*/ 
+class  FileSpecificationFormatter 	extends  StringFormatter
+   {
+	/*===================================================================================================
+	
+	    NAME
+		Constructor - Instantiates a FileSpecificationFormatter object.
+	
+	  ===================================================================================================*/
+	public function  __construct ( array  $additional_definitions  =  array ( ) ) 
+	   {
+		$definitions		=  array
+		   (
+			SpecializedFormatterDefinition::ProcessIdFormatterDefinition  		( '%', 'p' ),
+			SpecializedFormatterDefinition::DateFormatterDefinition			( '%', 'd' ),
+			SpecializedFormatterDefinition::TimeFormatterDefinition 		( '%', 't' ),
+			SpecializedFormatterDefinition::FormattedDateFormatterDefinition	( '%', 'D' ),
+			SpecializedFormatterDefinition::TimestampFormatterDefinition		( '%', 'T' ),
+		    ) ;
+		$post_definitions	=  array ( SpecializedFormatterDefinition::SequenceFormatterDefinition ( '%', 's' ) ) ;
+		
+		$definitions 		=  array_merge ( $definitions, $additional_definitions, $post_definitions ) ;
+		
+		parent::__construct ( $definitions ) ;
+	    }
+    }  
+

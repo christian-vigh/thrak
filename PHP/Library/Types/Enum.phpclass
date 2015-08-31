@@ -1,0 +1,264 @@
+<?php
+/************************************************************************************************************
+
+    FILE
+	Enum.phpclass
+	
+    DESCRIPTION 
+	Implements an enumeration type.
+	Usage :
+	
+	- Type declaration :
+		class NotificationType extends Enum
+		   {
+			const Notification 	= 1;
+			const Warning 		= 2;
+			const Error 		= 3;
+		    }
+	- Variable initialization (note the function call "()" after the constant name in the 1st construct) :
+		$a = NotificationType::Warning ( ) ;
+	  or :
+		$a = new NotificationType ( NotificationType::Warning ) ;
+	- Test for equality/inequality (the following outputs : EQUALS) :
+		if  ( $a  ==  NotificationType::Warning() )
+			echo "EQUALS\n" ;
+		else
+			echo "NOT EQUALS\n" ;
+	- Looping through constants :
+		foreach ( $a as $key => $value )
+			echo "$key = $value\n" ;
+	  or :
+		for  ( $i = 0 ; $i < count ( $a ) ; $i ++ )
+			echo "value = " . $a[$i] . "\n" ;
+		
+    AUTHOR
+	Christian Vigh, 10/2014.
+	
+    HISTORY
+    [Version : 1.0]    [Date : 2014/10/13]     [Author : CV]
+        Initial version.
+
+ ************************************************************************************************************/
+namespace 	Thrak\Types ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use 	Thrak\System\Object ;
+
+ 
+/*===========================================================================================================
+
+    Class Enum -
+	Implementation of an enumeration type.
+	
+ *===========================================================================================================*/ 
+class Enum	extends		Object
+		implements 	ArrayAccess, Countable, IteratorAggregate
+   {
+	// The ReflectionClass objects of all enumerations are stored in a static array, to avoid instantiating
+	// one each time an Enum object type is constructed.
+	private static	$Reflectors	=  array ( ) ;
+	// Constant name of the current value, with its value
+	private 	$ValueName ;
+	private 	$Value ;
+	// Constants and constant names (this is for the ArrayAccess, Countable and IteratorAggregate implementations)
+	private 	$Constants ;
+	private 	$ConstantNames ;
+	
+	
+	/*===================================================================================================
+	
+	    NAME
+		Constructor - Builds an enumeration instance.
+		
+	    PROTOTYPE
+		$value 	=  new EnumType ( $value_name ) ;
+		
+	    DESCRIPTION
+		Creates a variable having an enumeration type derived from the Enum class.
+		
+	    NOTES
+		The constructor should not be public, but I needed it to be compatible with the Object class
+		constructor.
+	
+	  ===================================================================================================*/
+	public function  __construct ( $value_name )
+	   {
+		// Add a ReflectionClass for this class if not already done
+		$class_name 		=  self::__add_reflector ( ) ;
+		
+		// Prevent instanciating anything from the Enum class
+		if  ( $class_name  ==  'Enum' )
+			error ( new \Thrak\System\RuntimeException ( "Cannot instanciate objects of type Enum." ) ) ;
+			
+		// Save value name
+		$this -> ValueName 	=  $value_name;
+		
+		// Save constants and constant names for array & iterator access
+		$this -> Constants 	=  Enum::$Reflectors [ $class_name ] -> getConstants ( ) ;
+		$this -> ConstantNames 	=  array_keys ( $this -> Constants ) ;
+		
+		// Check that the constant is valid
+		if  ( ! isset ( $this -> Constants [ $value_name ] ) )
+			error ( new \Thrak\System\BadPropertyException ( "The $class_name Enum does not contain a constant called $method_name" ) ) ;
+			
+		// Save constant value
+		$this -> Value 	=  $this -> Constants [ $value_name ] ;
+	    }
+
+	    
+	/*===================================================================================================
+	
+	    __add_reflector -
+		Adds a ReflectionClass object for the global $Reflectors array if not already done.
+		
+	  ===================================================================================================*/
+	private static function   __add_reflector ( )
+	   {
+		$class_name 	=  get_called_class ( ) ;
+		
+		if  ( ! isset ( Enum::$Reflectors [ $class_name ] ) )
+			Enum::$Reflectors [ $class_name ] 	=  new ReflectionClass ( $class_name ) ;
+			
+		return ( $class_name ) ;
+	    }
+	    
+	    
+	/*===================================================================================================
+	
+	    NAME
+		__callstatic - Creates an enum value based on the called function name.
+		
+	    PROTOTYPE
+		$value 	=  EnumType::ConstantName() ;
+		
+	    DESCRIPTION
+		Creates an enum value based on the called function name, which should be the same as one of
+		the constants defined in the enumeration.
+		
+	    RETURN VALUE
+		An EnumType object, which must be the name of a class inheriting from Enum.
+	
+	  ===================================================================================================*/
+	public static function  __callStatic  ( $method_name, $arguments )
+	   {
+		$class_name 	=  self::__add_reflector ( ) ;
+		$constant 	=  Enum::$Reflectors [ $class_name ] -> getConstant ( $method_name ) ;
+		
+		if  ( ! $constant )
+			error ( new \Thrak\System\BadPropertyException ( "The $class_name Enum does not contain a constant called $method_name" ) ) ;
+			
+		return ( new $class_name ( $method_name ) ) ;
+	    }
+
+	
+	/*===================================================================================================
+	
+	    NAME
+		GetValue - Retrieves the current constant value.
+		
+	    PROTOTYPE
+		$value 	=  $enum -> GetValue ( ) ;
+		
+	    DESCRIPTION
+		Retrieves the real value of the enumeration constant stored in the enum variable.
+		
+	  ===================================================================================================*/
+	public function  GetValue ( )
+	   {
+		return ( $this -> Value ) ;
+	    }
+	    
+	  
+	/*===================================================================================================
+	
+	    NAME
+		GetConstants, GetNames, GetValues - Get enum type info.
+		
+	    PROTOTYPE
+		$result 	=  $definition -> GetConstants ( ) ;
+		$result 	=  $definition -> GetNames ( ) ;
+		$result 	=  $definition -> GetValues ( ) ;
+		
+	    DESCRIPTION
+		GetConstants() returns an associative array whose keys are the constant names and values the
+		constants values.
+		GetNames() returns only the constant names, and GetValues() only the constant values.
+		
+	  ===================================================================================================*/
+	public static function  GetConstants ( )
+	   {
+		$reflector 	=  new ReflectionClass ( get_called_class ( ) ) ;
+		
+		return ( $reflector -> getConstants ( ) ) ;
+	    }
+
+	    
+	public static function  GetNames ( )
+	   {
+		$reflector 	=  new ReflectionClass ( get_called_class ( ) ) ;
+		
+		return ( array_keys ( $reflector -> getConstants ( ) ) ) ;
+	    }
+
+	    
+	public static function  GetValues ( )
+	   {
+		$reflector 	=  new ReflectionClass ( get_called_class ( ) ) ;
+		
+		return ( array_values ( $reflector -> getConstants ( ) ) ) ;
+	    }
+	    
+	    
+	/*===================================================================================================
+	
+	    __tostring -
+		Returns the string representation of the constant (ie, the constant name).
+		
+	  ===================================================================================================*/
+	public function  __toString()
+	   { return ( $this -> ValueName ) ; }
+	   
+	 	 
+	/*===================================================================================================
+	
+		Interfaces implementation.
+		
+	  ===================================================================================================*/
+	  
+	// Countable interface
+	public function  count ( )
+	   {
+		return ( count ( $this -> Constants ) ) ;
+	    }
+	    
+	// IteratorAggregate interface
+	public function  getIterator ( )
+	   {
+		return ( new ArrayIterator ( $this -> Constants ) ) ;
+	    }
+	    
+	// ArrayAccess interface. 
+	// Note that element indexing can be both performed using an integer index or a string representing a constant name.
+	public function  offsetGet ( $offset )
+	   {
+		if  ( is_numeric ( $offset ) )
+			return ( $this -> Constants [ $this -> ConstantNames [ $offset ] ] ) ;
+		else
+			return ( $this -> Constants [ $offset ] ) ; 
+	    }
+	   
+	public function  offsetExists ( $offset )
+	   {
+		if  ( is_numeric ( $offset ) )
+			return ( isset ( $this -> ConstantNames [ $offset ] ) ) ;
+		else
+			return ( isset ( $this -> Constants [ $offset ] ) ) ; 
+	    }
+	   
+	public function  offsetSet ( $offset, $value )
+	   { error ( new \Thrak\System\UnsupportedOperationException ( ) ) ; }
+	   
+	public function  offsetUnset ( $offset )
+	   { error ( new \Thrak\System\UnsupportedOperationException ( ) ) ; }
+     }

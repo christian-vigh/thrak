@@ -1,0 +1,310 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        ReflectionClassSourcer.php
+
+    DESCRIPTION
+        A sourcer for the ReflectionClass class.
+
+    AUTHOR
+        Christian Vigh, 10/2014.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2014/10/23]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Reflection\Sourcers ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use  	Thrak\System\Object ;
+use	Thrak\Reflection\ReflectionClass ;
+
+
+/*==============================================================================================================
+
+    ReflectionClassSourcer -
+        A sourcer for the ReflectionClass class.
+
+  ==============================================================================================================*/
+class  ReflectionClassSourcer 	extends  ReflectionSourcer 
+   {
+
+	
+	/*==============================================================================================================
+	
+	    Constructor -
+	        Builds an instance of a ReflectionClassSourcer object, using the specified ReflectionClass object.
+	
+	  ==============================================================================================================*/
+	public function  __construct  ( $reflector, $get_source = false )
+	   {
+		parent::__construct ( $reflector, $get_source ) ;
+	    }
+	 
+
+	/*==============================================================================================================
+
+	    __get_class_definition -
+		Returns the textual definition for the specified class.
+
+	  ==============================================================================================================*/
+	private function  __get_class_definition ( $class )
+	   {
+		// Get doc comment
+		$docComment 	=  $this -> Reflector -> getDocComment ( ) ;
+		
+		if  ( $docComment )
+			$docComment 	.=  PHP_EOL ;
+		
+		// Get class modifiers
+		$modifiers 	=  array ( ) ;
+
+		if  ( $this -> Reflector -> isAbstract ( ) )
+			$modifiers []	=  "abstract" ;
+		
+		if  ( $this -> Reflector -> isFinal ( ) )
+			$modifiers []	=  "final" ;
+			
+		// Get class type (class, interface or trait)
+		if  ( $this -> Reflector -> isTrait ( ) )
+			$class_type	=  "trait" ;
+		else if  ( $this -> Reflector -> isInterface ( ) )
+			$class_type 	=  "interface" ;
+		else
+			$class_type	=  "class" ;
+			
+		// Start of class definition
+		if  ( $modifiers )
+			$result 	=  implode ( " ", $modifiers ) . " $class_type  $class  " ;
+		else
+			$result 	=  "$class_type  $class  " ;
+		
+		$parent 	=  $this -> Reflector -> getParentClass ( ) ;
+		
+		// If class has a parent, put it on the same line (interfaces will be put on a second line)
+		if  ( $parent )
+		   {
+			$pos		=  strlen ( $result ) ;
+			$parent_class	=  $this -> Reflector -> getShortName ( ) ;
+			$result        .=  "extends     {$parent_class}" ;
+		    }
+		// No parent : possible interfaces will be put on the same line
+		else 
+			$pos 		=  false ;
+		
+		// Get interfaces
+		$interfaces 	=  $this -> Reflector -> getInterfaces ( ) ;
+		
+		if  ( $interfaces )
+		   {
+			$names 	=  array ( ) ;
+			
+			foreach  ( $interfaces  as  $interface )
+				$names []	=  $this -> Reflector -> getShortName ( ) ;
+				
+			$implements 	=  "implements  " . implode ( ", ", $names ) ;
+			
+			// If class has a parent, align the "extends" and "implements" keyword on two lines
+			if  ( $pos  !==  false )
+				$implements 	=  PHP_EOL . str_repeat ( " ", $pos ) . $implements ;
+				
+			$result 	.=  $implements ;
+		    }
+		
+		return ( "{$docComment}{$result}" ) ;
+	    }
+
+	    
+	/*==============================================================================================================
+	
+	    __get_class_methods -
+	        Returns the textual definition of class methods.
+	
+	  ==============================================================================================================*/
+	private function  __get_class_methods ( $include_source )
+	   {
+		$result 	=  "" ;
+		
+		// Get class properties.
+		$methods 		=  $this -> Reflector -> getMethods ( ReflectionClass::IS_DEFAULT | ReflectionClass::IS_LOCAL ) ;
+
+		if  ( ! $methods )
+			return ( "" ) ;
+		
+		foreach  ( $methods  as  $method )
+		   {
+			$sourcer	 =  new ReflectionMethodSourcer ( $method, $include_source ) ;
+			$text		 =  $sourcer -> getText ( $include_source ) ;
+			$result		.=  "\t" . str_replace ( "\n", "\n\t", $text ) . PHP_EOL ;
+			
+			if  ( $method  !=  end ( $methods ) )
+				$result		.=  PHP_EOL . PHP_EOL ;
+		    }
+		
+		return ( $result ) ;
+	    }
+
+	
+	/*==============================================================================================================
+	
+	    __get_class_properties -
+	        Returns the textual definition of class properties.
+		A comprehensive effort has been made to align variable names and their initialization values on the 
+		same columns.
+	
+	  ==============================================================================================================*/
+	private function  __get_class_properties ( )
+	   {
+		$result 	=  "" ;
+		
+		// Get class properties.
+		$properties 		=  $this -> Reflector -> getProperties ( ReflectionClass::IS_DEFAULT | ReflectionClass::IS_LOCAL ) ;
+
+		if  ( ! $properties )
+			return ( "" ) ;
+
+		$default_properties		=  $this -> Reflector -> getDefaultProperties ( ) ;
+		$propdata			=  [] ;
+		$max_modifiers_length		=  -1 ;
+		$max_property_name_length	=  -1 ;
+
+		// First pass : align comments, and calculate the character positions to align property names
+		// and default values
+		foreach  ( $properties  as  $property )
+		   {
+			$data			=  [] ;
+			$data [ 'comment' ]	=  $this -> Reflector -> formatDocComment ( $property -> getDocComment ( ), "\t" ) ;
+			
+			if  ( $data [ 'comment' ] )
+				$data [ 'comment' ]	.=  PHP_EOL ;
+			
+			// Modifiers
+			$modifiers		=  [] ;
+			$propmodifiers		=  $property -> getModifiers ( ) ;
+				
+			if  ( $propmodifiers  &  ReflectionClass::IS_STATIC )
+				$modifiers []	=  "static" ;
+				
+			if  ( $propmodifiers  &  ReflectionClass::IS_PROTECTED )
+				$modifiers []	=  "protected" ;
+			else if  ( $propmodifiers  &  ReflectionClass::IS_PRIVATE )
+				$modifiers []	=  "private" ;
+			else	// Public properties do not seem to have the IS_PUBLIC bit set
+				$modifiers []	=  "public" ;
+			
+			$data [ 'modifiers' ]	=  implode ( ' ', $modifiers ) ;
+			$length			=  strlen ( $data [ 'modifiers' ] ) ;
+				
+			if  ( $length  >  $max_modifiers_length )
+				$max_modifiers_length	=  $length ;
+				
+			// Property name
+			$data [ 'name' ]	=  $property -> getName ( ) ;
+			$length			=  strlen ( $data [ 'name' ] ) ;
+			
+			if  ( $length  >  $max_property_name_length )
+				$max_property_name_length	=  $length ;
+			
+			// Property default value ; Uninitialized values and values initialized with null will have a default property
+			// value of null : there is no way to distinguish between them
+			if  ( isset ( $default_properties [ $data [ 'name' ] ] ) ) 
+			   {
+				$default	=  $default_properties [ $data [ 'name' ] ] ;
+				
+				if  ( is_string ( $default ) )
+					$value	=  '"' . str_replace ( '"', "\\\"", $default )  . '"' ;
+				else if  ( is_bool ( $default ) )
+					$value	=  ( $default ) ?  "true" : "false" ;
+				else
+					$value	=  ( string ) $default ;
+				
+				$data [ 'default' ]		=  "=  " . $value ;
+			    }
+			
+			// Add this entry to the list of property data
+			$propdata []	=  $data ;
+		    }
+			
+		// Second pass : build the text result
+		foreach  ( $propdata  as  $data )
+		   {
+			$result		.=  $data [ 'comment' ] .
+					    "\t" .
+					    $data [ 'modifiers' ] .
+					    str_repeat ( " ", $max_modifiers_length - strlen ( $data [ 'modifiers' ] ) ) .
+					    "  " .
+					    $data [ 'name' ] ;
+			
+			if  ( isset ( $data [ 'default' ] ) )
+				$result		.=  str_repeat ( " ", $max_property_name_length - strlen ( $data [ 'name' ] ) ) .
+						    "  " .
+						    $data [ 'default' ] ;
+			
+			$result	.=  " ;\n" ;
+		    }
+		
+		$result 	.=  PHP_EOL . PHP_EOL . PHP_EOL ;
+			
+		// All done, return
+		return ( $result ) ;
+	    }
+	    
+	    
+	/*==============================================================================================================
+	
+	    __get_used_traits -
+	        Returns the textual definition of traits usage.
+	
+	  ==============================================================================================================*/
+	private function  __get_used_traits ( )
+	   {
+		return ( "" ) ;
+	    }
+	
+		
+	/*==============================================================================================================
+	
+	    __get_contents -
+	        Returns the whole class definition, including its source if the $include_source parameter is true.
+	
+	  ==============================================================================================================*/
+	private function  __get_contents ( $include_source )
+	   {
+		$class 		=  $this -> Reflector -> GetShortName ( ) ;
+		$namespace 	=  $this -> Reflector -> getNamespaceName ( ) ;
+		
+		// File header
+		$result 	=  "/*** Definition for class : {$class} ***/" . PHP_EOL . PHP_EOL ;
+		
+		if  ( $namespace )
+			$result 	.=  "namespace  $namespace ;" . PHP_EOL . PHP_EOL . PHP_EOL ;
+		
+		// Class header
+		$result 	.=  $this -> __get_class_definition ( $class ) .PHP_EOL . "   {" . PHP_EOL ;
+		
+		// Used traits
+		$result		.=  $this -> __get_used_traits ( ) ;
+		    
+		// Properties
+		$result		.=  $this -> __get_class_properties ( ) ;
+
+		// Methods 
+		$result		.=  $this -> __get_class_methods ( $include_source ) ;
+		
+		// File footer
+		$result 	.=  "    }" . PHP_EOL . PHP_EOL . "/*** End of definition for class : {$class} ***/" . PHP_EOL . PHP_EOL ;
+		return ( $result ) ;
+	    }
+
+	    
+	/*==============================================================================================================
+	
+	        Implementation of the RefelectionSourcerInterface interface.
+	
+	  ==============================================================================================================*/
+	public function  getText ( $include_source = false )
+	   { return ( $this -> __get_contents ( $include_source ) ) ; }
+    }

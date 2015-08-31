@@ -1,0 +1,202 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        Report.phpclass
+
+    DESCRIPTION
+        A replacement for IO\AsciiReport, with enhanced features. The report definition is based on an Xml 
+	string that have the following structure :
+
+	<report [attributes]>
+		<column [attributes]
+	</report>
+
+	The <report> tag (who can also be specified by <rpt> or <r>) may contain the following attributes :
+
+	- column-expand or expand (boolean) :
+		Column contents won't be expanded to fit the integer report width. This option is implied when 
+		the width="auto" attribute is specified.
+
+	- column-wrap or wrap (boolean) :
+		When true, column contents won't be wrapped if the report width exceeds the maximum size. 
+
+	- name (string) :
+		Report name. If not specified, a default report name of the form 'Report#x', where 'x' is a 
+		sequential number will be generated. For informational purpose only.
+
+	- width (mixed) :
+		Can be any of the following values :
+		- An integer value :
+			Specifies the maximum wi
+		
+
+    AUTHOR
+        Christian Vigh, 07/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/07/04]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Processors\Report ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces & objects
+use 		Thrak\System\Object ;
+use		Thrak\Types\String ;
+use		Thrak\Processors\Xml\XmlStringDocument ;
+
+
+/*==============================================================================================================
+
+    Report class -
+        Base class for reporting.
+
+  ==============================================================================================================*/
+abstract class  Report		extends  Object
+   {
+	// Sequence number of the next instanciated report object
+	private static		$ReportSequenceNumber		=  1 ;
+
+
+	// Report width specification constants ("width" attribute)
+	const	REPORT_WIDTH_CONSTANT		=  0 ;			// Width specified as an integer value
+	const   REPORT_WIDTH_PERCENTAGE		=  1 ;			// Width specified as a percentage of the Console/line-width entry of 
+									// the site configuration file
+	const   REPORT_WIDTH_AUTO		=  2 ;			// Report width will be dependent on individual column widths.
+	const   REPORT_WIDTH_DEFAULT		=  3 ;			// Report width is provided by the Console/line-width entry of the site
+									// configuration file
+
+	// Additional constants for width specifications
+	const   REPORT_WIDTH_NOWRAP		=  0x8000 ;		// Column contents won't be wrapped if the report width exceeds the maximum size
+									// This flag is set if the "wrap" attribute is set to false. Note that the resulting
+									// width may be greater than the maximum console width, depending on columns contents.
+	const   REPORT_WIDTH_NOEXPAND		=  0x4000 ;		// Column contents won't be expanded to fit the integer report width.
+
+	// Input Xml definition
+	public		$XmlDefinition ;
+	// Xml document tree
+	public		$XmlTree ;
+
+	// Report name
+	public		$ReportName		=  null ;
+
+	// Variables related to report width
+	public		$ConsoleWidth ;						// Console width, as defined in the configuration file
+	public		$WidthSpecification	=  self::REPORT_WIDTH_AUTO ;	// Width specification (one of the REPORT_WIDTH_* constants)
+	public		$Width ;						// Integer width (may be 0 depending on the value of $WidthSpecification)
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        Constructor
+	 
+	    PROTOTYPE
+	        $report		=  new Report ( $xml_definition ) ;
+	 
+	    DESCRIPTION
+	        Builds a Report object based on the specified xml definition.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( $xml_definition )
+	   {
+		global		$Configuration ;
+
+		parent::__construct ( ) ;
+
+		$this -> XmlDefinition		=  $xml_definition ;
+		$this -> XmlTree		=  new XmlStringDocument ( $xml_definition ) ;
+		$this -> ConsoleWidth		=  $Configuration -> Get ( 'Console/line-width', 80 ) ;
+
+		$this -> __parse_tree ( $this -> XmlTree ) ;
+	    }
+	
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    __parse_tree -
+		Parses the supplied XmlDocument tree.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	private function  __parse_tree ( $tree )
+	   {
+		// Ensure that root tag is <report>
+		if  ( strcasecmp ( $tree -> Document -> Name, "report" )  &&  strcasecmp ( $tree -> Document -> Name, "rpt" )  &&  
+		      strcasecmp ( $tree -> Document -> Name, "r" ) )
+			error ( new \Thrak\Processors\Report\ReportTagException ( $tree -> Document -> Name, 
+					"root tag of report definition must be <report>" ) ) ;
+
+		// Loop through document attributes
+		foreach  ( $tree -> Document -> Attributes  as  $name => $value )
+		   {
+			$value		=  ( string ) $value ;
+			$lowname	=  strtolower ( $name ) ;
+			$lowvalue	=  strtolower ( $value ) ;
+			
+
+			switch ( $lowname )
+			   {
+				// name (string) :
+				//	Provides a (useless) name to the report.
+				case  'name' :
+					$this -> ReportName	=  $value ;
+					break ;
+
+				// column-expand or expand (boolean) :
+				//	Indicates if columns are to be expanded to fit the report width.
+				case	'column-expand' :
+				case	'expand' :
+					$bool	=  self::ParseBooleanAttribute ( 'report', $name, $value ) ;
+
+					if  ( $bool )
+						$this -> WidthSpecification &=  ~self::REPORT_WIDTH_NOEXPAND ;
+					else
+						$this -> WidthSpecification |=  self::REPORT_WIDTH_NOEXPAND ;
+
+					break ;
+
+				// column-wrap or wrap (boolean) :
+				//	Indicates if columns are to be wrapped when their width makes the report width to be exceeded.
+				case	'column-wrap' :
+				case	'wrap' :
+					$bool	=  self::ParseBooleanAttribute ( 'report', $name, $value ) ;
+
+					if  ( $bool )
+						$this -> WidthSpecification &=  ~self::REPORT_WIDTH_NOWRAP ;
+					else
+						$this -> WidthSpecification |=  self::REPORT_WIDTH_NOWRAP ;
+
+					break ;
+
+			    }
+		    }
+
+		// Generate a default report name if none specified
+		if  ( ! $this -> ReportName )
+		   {
+			$this -> ReportName	=  'Report#' . self::$ReportSequenceNumber ;
+			self::$ReportSequenceNumber ;
+		    }
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    __dump_debuginfo -
+		Customizes dump() output.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public static function  __dump_debuginfo ( )
+	   { return ( [ 'hidden' => [ 'XmlTree', 'XmlDefinition' ] ] ) ; }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+		Attribute value parsing functions.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+
+    }

@@ -1,0 +1,660 @@
+<?php
+/***************************************************************************************************
+
+    NAME
+	URI.phpclass
+
+    DESCRIPTION
+	Provides support for URI encoding/decoding, along with a list of available protocols.
+
+    AUTHOR
+     	Christian Vigh, 09/2011.
+
+    HISTORY
+    [Version : 1.0]	[Date : 2011/09/18]	[Author : CV]
+     	Initial version.
+
+   [Version : 2.0]	[Date : 2012/10/06]		[Author : CV]
+	Migrated to the Thrak library version 2.
+
+ ***************************************************************************************************/
+namespace  	Thrak\Internet ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces and classes
+use     Thrak\System\Object 		as  Object ;
+use 	Thrak\System\Exception 		as  Exception ;
+use 	Thrak\Internet\Xml\SimpleXML	as  SimpleXML ;
+use     Thrak\Internet\IP 		as  IP ;
+use  	Thrak\Types\String  		as  String ;
+use	Thrak\IO\Path 			as  Path ;
+
+
+/*==================================================================================================
+
+     URI class -
+	URI-related utilities.
+
+   ==================================================================================================*/
+class  URI  extends  Object
+   {
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		DecodeUrl - Splits an URL.
+
+	    PROTOTYPE
+		$result = DecodeUrl ( $url, $default_scheme = "http" ) ;
+
+	    DESCRIPTION
+		Splits an URL into individual elements.
+
+		The syntax of an url is the following :
+
+		scheme://[username [:password] @ ] (hostname | ip) [:port] [/path [/]] [?query] [#anchor]
+
+	    PARAMETERS
+	    	$url (string) -
+	    		URL to be splitted.
+
+    		$default_scheme (string) -
+    			Default scheme to be applied. It can contain the trailing "://" characters.
+
+	    RETURN VALUE
+	    	The return value is either false if the url is incorrect, or an associative array
+	    	containing the following entries :
+
+	    	'url' (string) -
+	    		The supplied input url. The string 'http://' is added if not supplied.
+
+		'scheme' (string) -
+			Scheme part of the url. If none specified, "http://" is assumed.
+
+		'scheme-name' (string) -
+			Scheme name, without the '://' part.
+
+		'username' (string) -
+			User name, or null if none specified.
+
+		'password' (string) -
+			Password, or null if none specified.
+
+		'hostname' (string) -
+			Host name.
+
+		'top-level-domain' (string) -
+			Top level domain name (eg, ".fr", ".uk", etc.).
+
+		'ip-address' (string) -
+			IP address, if the specified hostname is an IP address, or null.
+
+		'ip-version' (string) -
+			Either 'v4' or 'v6', or null if hostname is not an ip address.
+
+		'ip-values' (array) -
+			Array of IP bytes (for V4 addresses) or words (for V6 addresses).
+			If the hostname is not an IP address, this entry is set to an empty array.
+
+		'ip-version' (integer) -
+			Either 0 when no IP address has been specified, or 4 for IPV4 or 6 for IPV6.
+
+		'port' (integer) -
+			Port number, if one was specified.
+
+		'full-path' (string) -
+			Full path, including domain name and path.
+
+		'path' (string) -
+			Path, if one specified after the hostname part, or null otherwise.
+
+		'query' (string) -
+			Query string without the leading '?', or null if none specified.
+
+		'query-parameters' (string) -
+			Associative array containing name/value pairs specified in the query string.
+			If no query string is specified, this entry is set to an empty array.
+
+		'anchor' (string) -
+			Anchor without the leading '#', if specified, or null otherwise.
+
+	    NOTES
+	    	All the entries in the returned array are guaranteed to be defined. If the corresponding
+		item is not specified in the input url, the entry will be set to false.
+		When not specified, the default scheme is "http://".
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  DecodeUrl ( $url, $default_scheme = "http" )
+	   {
+	   	// Initialize return value
+	   	$result 	=  array ( ) ;
+
+	   	// First, extract the scheme part because the parse_url() PHP function does not support
+	   	// all naming schemes
+	   	$re = '/^ (?P<scheme> (?P<schemename> [^:]+ ) \:\/\/ )/imsx' ;
+
+	   	if  ( preg_match ( $re, $url, $matches ) )
+	   	   {
+	   	   	$result [ 'scheme' ] 		=  $matches [ 'scheme' ] ;
+			$result [ 'scheme-name' ]	=  $matches [ 'schemename' ] ;
+			$result [ 'url' ]		=  $url ;
+
+			$url =  $result [ 'scheme' ] . substr ( $url, strlen ( $result [ 'scheme' ] ) ) ;
+	   	    }
+ 		else
+   		   {
+   		   	if  (  String::EndsWith ( $default_scheme, "://" ) )
+		 	   {
+		 	   	$scheme 	=  $default_scheme ;
+				$scheme_name 	=  substr ( $default_scheme, 0, strlen ( $default_scheme ) - 3 ) ;
+		 	    }
+    			else
+    			   {
+    			   	$scheme 	=  $default_scheme . "://" ;
+				$scheme_name 	=  $default_scheme ;
+    			    }
+
+	   	   	$result [ 'scheme' ] 		=  $scheme ;
+			$result [ 'scheme-name' ]	=  $scheme_name ;
+
+			$url  				=  $result [ 'scheme' ] . $url ;
+			$result [ 'url' ]		=  $url ;
+   		    }
+
+   		// Parse url
+   		$parse_result = parse_url ( $url ) ;
+
+   		// Simple items : username, password, port and anchor
+		if  ( isset ( $parse_result [ 'user' ] ) )
+			$result [ 'username' ] =  $parse_result [ 'user' ] ;
+		else
+			$result [ 'username' ] =  false ;
+
+		if  ( isset ( $parse_result [ 'pass' ] ) )
+			$result [ 'password' ] =  $parse_result [ 'pass' ] ;
+		else
+			$result [ 'password' ] =  false ;
+
+		if  ( isset ( $parse_result [ 'port' ] ) )
+			$result [ 'port' ] =  $parse_result [ 'port' ] ;
+		else
+			$result [ 'port' ] =  false ;
+
+		if  ( isset ( $parse_result [ 'fragment' ] ) )
+			$result [ 'anchor' ] =  $parse_result [ 'fragment' ] ;
+		else
+			$result [ 'anchor' ] =  false ;
+
+		if  ( isset ( $parse_result [ 'path' ] ) )
+		   {
+			$result [ 'full-path' ] =  $parse_result [ 'host' ] . '/' . trim ( $parse_result [ 'path' ], '/' ) ;
+			$result [ 'path' ]	=  $parse_result [ 'path' ] ;
+
+			if  ( $result [ 'path'] [0]  ==  '/' )
+				$result [ 'path' ] = substr ( $result [ 'path' ], 1 ) ;
+	 	    }
+		else
+		   {
+			$result [ 'full-path' ] =  $parse_result [ 'host' ] ;
+			$result [ 'path' ]	=  false ;
+		    }
+
+		// Hostname
+		if  ( isset ( $parse_result [ 'host' ] ) )
+		   {
+			$result [ 'hostname' ]    	=  $parse_result [ 'host' ] ;
+			$result [ 'top-level-domain' ]  =  false ;
+
+			if  ( ( $values = IP::StringToIPV4Address ( $result [ 'hostname' ] ) )  !==  false )
+			   {
+				$result [ 'ip-address' ] =  $result [ 'hostname' ] ;
+				$result [ 'ip-values'  ] =  $values ;
+				$result [ 'ip-version' ] =  4 ;
+			    }
+			else if  ( ( $values = IP::StringToIPV6Address ( $result [ 'hostname'] ) )  !==  false )
+			   {
+				$result [ 'ip-address' ] =  $result [ 'hostname' ] ;
+				$result [ 'ip-values'  ] =  $values ;
+				$result [ 'ip-version' ] =  6 ;
+			    }
+			else
+			   {
+				$result [ 'ip-address' ] =  false ;
+				$result [ 'ip-values'  ] =  array ( ) ;
+				$result [ 'ip-version' ] =  0 ;
+
+				$index  =  strrpos( $result [ 'hostname' ],  '.' ) ;
+
+				if  ( $index  >=  0 )
+					$result [ 'top-level-domain' ] 	=  substr ( $result [ 'hostname' ], $index ) ;
+			   }
+		    }
+   		else
+   		   {
+			$result [ 'hostname'   ]  =  "" ;
+			$result [ 'ip-address' ]  =  false ;
+			$result [ 'ip-values'  ]  =  false ;
+			$result [ 'ip-version' ] =  0 ;
+		    }
+
+   		// Query string
+   		if  ( isset  ( $parse_result [ 'query' ] ) )
+   		   {
+	   		$result [ 'query' ] 		=  $parse_result [ 'query' ] ;
+	   		parse_str ( $result [ 'query' ], $array ) ;
+	   		$result [ 'query-parameters' ]  =  $array ;
+		    }
+		else
+		   {
+	   		$result [ 'query' ] 		=  false ;
+	   		$result [ 'query-parameters' ]  =  false ;
+		    }
+
+		// Error conditions
+		if  ( $result [ 'hostname' ]  ===  false  &&  $result [ 'path' ]  ===  false )
+			return ( false ) ;
+
+		// All done, return
+		ksort ( $result ) ;
+		return ( $result ) ;
+	    }
+    }
+
+
+/*==================================================================================================
+
+     URIProtocol class -
+	Holds information about a particular protocol.
+
+   ==================================================================================================*/
+class  URIProtocol  extends  Object
+   {
+   	// Protocol name
+	public		$Name ;
+	// Brief description
+	public		$Description ;
+	// Associative array whose keys are the definition names and values are link to a document describing the protocol
+	public 		$References	=  array ( ) ;
+	// Explanations about URI format
+	public		$Example ;
+	// Additional notes about the protocol
+	public 		$Notes ;
+	// When true, the protocol is an official IANA-registered scheme
+	public		$Official ;
+	// Port numbers
+	public		$Ports ;
+
+	// Constructor
+	public function  __construct ( $name, $description, $references, $example, $notes, $official, $ports =  null )
+	   {
+		$this -> Name		=  $name ;
+		$this -> Description	=  $description ;
+		$this -> References	=  $references ;
+		$this -> Example	=  $example ;
+		$this -> Notes		=  $notes ;
+		$this -> Official	=  $official ;
+		$this -> Ports		=  ( count ( $ports ) ) ?  $ports : array ( ) ;
+	    }
+
+
+	// Returns the default port
+	public function  GetDefaultPort ( )
+	   {
+		if  ( count ( $this -> Ports ) )
+			return ( $this -> Ports [0] ) ;
+		else
+			return ( false ) ;
+	    }
+    }
+
+
+ /*==================================================================================================
+
+     URIProtocols class -
+	Handles a list of available protocols, defined in the Data/URISchemes.txt file of the
+	Thrak library root.
+
+   ==================================================================================================*/
+class  URIProtocols  extends  Object
+			    implements  \ArrayAccess, \Countable, \Iterator
+   {
+   	public		$Protocols ;
+   	public	 	$ProtocolNames 	=  array ( ) ;
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Class constructor.
+
+	 --------------------------------------------------------------------------------------------*/
+   	public function  __construct  ( $file = "thrak://Data/URISchemes.xml" )
+   	   {
+   	   	$file 	=  Path::RealPath ( $file ) ;
+
+		if  ( ! file_exists ( $file ) )
+			throw new Exception ( "URIProtocols class : protocols definition file '$file' does not exist." ) ;
+
+		$contents 	=  file_get_contents ( $file ) ;
+		$xml 		=  SimpleXML::LoadFromString ( $contents ) ;
+		$xml_array 	=  $xml -> AsArray ( ) ;
+
+		$this -> __process_xml_array ( $xml_array, $file ) ;
+   	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Processes XML data converted to an array.
+
+	 --------------------------------------------------------------------------------------------*/
+	private function  __process_xml_array ( $data, $file )
+	   {
+	   	// Check that the root tag is '<schemes>' and that no attribute has been specified.
+	   	$root 		=  $data [ 'tag' ] ;
+	   	$children       =  $data [ 'children' ] ;
+
+		if  ( strcasecmp ( $root, 'schemes' ) )
+			throw new Exception ( "URIProtocols class : The root tag defined in the definition file '$file' must be '<schemes>'. '<$root>' was found instead." ) ;
+
+		if  ( count ( $data [ 'attributes' ] ) )
+			throw new Exception ( "URIProtocols class : The root tag defined in the procotols file '$file' cannot have attributes." ) ;
+
+		if  ( ! count ( $children ) )
+			throw new Exception ( "URIProtocols class : The root tag in the procotols file '$file' has no entries." ) ;
+
+
+		// Process children
+		$scheme_index = 0 ;
+
+		foreach  ( $children  as  $child )
+		   {
+		   	$scheme_index ++ ;
+
+		   	// Only '<scheme>' tags are allowed inside the root tag.
+		   	$tag 		=  $child [ 'tag' ] ;
+
+		   	if  ( strcasecmp ( $tag, "scheme" ) )
+				throw new Exception ( "URIProtocols class : The <schemes> tag defined in the procotols file '$file' can only contain <scheme> tags." ) ;
+
+			// Attributes and other information
+			$name  		=  null ;
+			$description 	=  null ;
+			$references	=  array ( ) ;
+			$example 	=  "" ;
+			$notes		=  "" ;
+			$official 	=  null ;
+			$ports 		=  null ;
+
+			// Get attribute definitions
+			foreach  ( $child [ 'attributes' ]  as  $attribute )
+			   {
+				$attr_name 	=  strtolower ( $attribute [ 'name' ] ) ;
+				$attr_value 	=  trim ( $attribute [ 'value' ] ) ;
+
+				switch  ( $attr_name )
+				   {
+				   	// Scheme name
+					case	'name' :
+						$name 	= strtolower ( $attr_value ) ;
+						break ;
+
+					// Scheme description
+					case	'description' :
+						$description = $attr_value ;
+						break ;
+
+					// Official scheme or not ?
+					case	'official' :
+						if  ( String::IsTrue ( $attr_value ) )
+							$official = true ;
+						else if  ( String::IsFalse ( $attr_value ) )
+							$official = false ;
+						else
+							throw new Exception ( "URIProtocols class : The 'official' attribute of the '<scheme>' tag defined in the procotols file '$file' must be a boolean value." ) ;
+						break ;
+
+					// Optional associated port(s)
+					case 	'ports' :
+					case	'port' :
+						$list 	=  String::ExplodeAndTrim ( ',', $attr_value ) ;
+
+						foreach  ( $list  as  $item )
+						   {
+							if  ( ! is_numeric ( $item )  ||  $item  <  1  ||  $item  >  65535 )
+								throw new Exception ( "URIProtocols class : The specified port number ($item) in the '<scheme>' tag defined in the procotols file '$file' must be a positive integer value." ) ;
+						    }
+
+						$ports = $list ;
+						break ;
+
+					// Other attributes are banished
+					default :
+						throw new Exception ( "URIProtocols class : Invalid attribute '$attr_name' in the <scheme> tag defined in the procotols file '$file'." ) ;
+				    }
+			    }
+
+			// Check that required attributes has been specified
+			if  ( ! $name )
+				throw new Exception ( "URIProtocols class : The 'name' attribute of the <scheme> tag entry #$scheme_index defined in the procotols file '$file' is mandatory." ) ;
+
+			$err 	=  null ;
+
+			if  ( ! $description )
+				$err = "description" ;
+
+			if  ( $official  ===  null )
+				$err = "official" ;
+
+			if  ( $err )
+				throw new Exception ( "URIProtocols class : The '$err' attribute of the <scheme> tag '$name' defined in the procotols file '$file' is mandatory." ) ;
+
+			// Process <references>, <notes> and <example> subtags for this <scheme> tag
+			$this -> __process_scheme ( $file, $name, $child [ 'children' ], $references, $example, $notes ) ;
+
+			// Create the new protocol entry object
+			$protocol = new URIProtocol ( $name, $description, $references, $example, $notes, $official, $ports ) ;
+			$this -> Protocols [ $name ]	=  $protocol ;
+			$this -> ProtocolNames []	=  $name ;
+		    }
+
+		// Sort protocols by name
+		uksort ( $this -> Protocols, "strcmp" ) ;
+		sort ( $this -> ProtocolNames ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Processes subtags defined within a <scheme> tag.
+
+	 --------------------------------------------------------------------------------------------*/
+	private function  __process_scheme ( $file, $scheme_name, $children, &$references, &$example, &$notes )
+	   {
+	   	// Loop through scheme children
+		foreach  ( $children  as  $child )
+		   {
+			$tag = strtolower ( $child [ 'tag' ] ) ;
+
+			// No subtag can have attributes
+			if  ( count ( $child [ 'attributes' ] ) )
+				throw new Exception ( "URIProtocols class : The <$tag> subtag of the <scheme> tag '$name' defined in the procotols file '$file' cannot have attributes." ) ;
+
+			// Only <references>, <notes> and <example> sub-tags are allowed
+			switch ( $tag )
+			   {
+				case	'references' :
+					$this -> __process_scheme_references ( $file, $scheme_name, $child [ 'children' ], $references ) ;
+					break ;
+
+				case 	'notes' :
+					$notes = htmlspecialchars_decode ( rtrim ( $child [ 'contents' ] ) ) ;
+					break ;
+
+				case	'example' :
+					$example = htmlspecialchars_decode ( rtrim ( $child [ 'contents' ] ) ) ;
+					break ;
+
+				default :
+					throw new Exception ( "URIProtocols class : The  <$tag> subtag of the <scheme> tag '$scheme_name' defined in the procotols file '$file' is incorrect." ) ;
+			    }
+		    }
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Processes subtags defined within a <references> tag.
+
+	 --------------------------------------------------------------------------------------------*/
+ 	private function  __process_scheme_references ( $file, $scheme_name, $children, &$references )
+ 	   {
+		// Loop through <references> children
+		foreach  ( $children  as  $child )
+		   {
+			$tag = strtolower ( $child [ 'tag' ] ) ;
+
+			// Only <reference> tags are allowed inside a <references> one
+			if  ( strcmp ( $tag, "reference" ) )
+				throw new Exception ( "URIProtocols class : The  <references> subtag of the <scheme> tag '$scheme_name' defined in the procotols file '$file' can only contain <reference> subtags." ) ;
+
+			// Process references
+			$name 	=  null ;
+			$link 	=  null ;
+
+			foreach  ( $child [ 'attributes']  as  $attribute )
+			   {
+				$attr_name 	=  strtolower ( trim ( $attribute [ 'name' ] ) ) ;
+				$attr_value 	=  strtolower ( trim ( $attribute [ 'value' ] ) ) ;
+
+				// Only 'name' and 'link' attributes are authorized in a <reference> tag
+				switch  ( $attr_name )
+				   {
+					case	'name' :
+						$name = $attr_value ;
+						break ;
+
+					case	'link' :
+						$link = $attr_value ;
+						break ;
+
+					default :
+						throw new Exception ( "URIProtocols class : Invalid attribute '$attr_name' in <reference> entry of the <scheme> tag '$scheme_name' defined in the procotols file '$file'." ) ;
+
+				    }
+			    }
+
+			// Check that the 'name' and 'link' attributes have been specified
+			$err = null ;
+
+			if  ( $name  ===  null )
+				$err = 'name' ;
+
+			if  ( $link  ===  null )
+				$err = 'link' ;
+
+			if  ( $err )
+				throw new Exception ( "URIProtocols class : The '$err' attributes of the <reference> tag in the <scheme> tag '$scheme_name' defined in the procotols file '$file' is mandatory." ) ;
+
+			// Add the reference
+			$references [ $name ] = $link ;
+		    }
+ 	    }
+
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/******                                                                               ******/
+	/******                         INTERFACES IMPLEMENTATION                             ******/
+	/******                                                                               ******/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+	/*******************************************************************************************/
+
+	/*-------------------------------------------------------------------------------------------
+
+		ArrayAccess interface implementation.
+			Used for accessing protocol entries.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  offsetSet ( $offset, $value )
+	   {
+		throw new CLException ( "Protocol entries are read-only and cannot be set." ) ;
+	    }
+
+    	public function  offsetExists ( $offset )
+    	   {
+    	   	if  ( is_numeric ( $offset ) )
+    	   		$offset = $this -> ProtocolNames [ $offset ] ;
+
+	   	return ( isset ( $this -> Protocols [ $offset ] ) ) ;
+	    }
+
+    	public function offsetUnset ( $offset )
+	   {
+		throw new CLException ( "Protocol entries are read-only and cannot be unset." ) ;
+	    }
+
+        public function offsetGet ( $offset )
+           {
+    	   	if  ( is_numeric ( $offset ) )
+    	   		$offset = $this -> ProtocolNames [ $offset ] ;
+
+	   	return ( $this -> Protocols [ $offset ] ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Countable interface implementation.
+			Counts the number of protocol definitions.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  count ( )
+	   { return ( count ( $this -> Protocols ) ) ; }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Iterator interface implementation.
+			Allows for looping through each protocol entry using a foreach() construct.
+
+	 --------------------------------------------------------------------------------------------*/
+	private  	$ProtocolIndex		=  0 ;
+
+	function  current ( )
+	   {
+		$key		=  $this -> key ( ) ;
+
+		return ( $this -> Protocols [ $key ] ) ;
+	    }
+
+	function  key ( )
+	   {
+		return ( $this -> ProtocolNames [ $this -> ProtocolIndex ] ) ;
+	    }
+
+	function  next ( )
+	   {
+		$key		=  $this -> key ( ) ;
+		$this -> ProtocolIndex ++ ;
+
+		return ( $this -> Protocols [ $key ] ) ;
+	    }
+
+	function  rewind ( )
+	   {
+	   	$this -> ProtocolIndex = 0 ;
+	    }
+
+	function  valid ( )
+	   {
+	   	return ( $this -> ProtocolIndex  <  count ( $this -> Protocols ) ) ;
+	    }
+
+	function  length ( )
+	   { return ( count ( $this -> Protocols ) ) ; }
+
+	function  getIterator ( )
+	   { return ( $this ) ; }
+    }
+

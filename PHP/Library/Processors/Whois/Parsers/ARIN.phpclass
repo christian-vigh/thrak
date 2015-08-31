@@ -1,0 +1,713 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        WhoisARINInformation.phpclass
+
+    DESCRIPTION
+        A parser for whois data coming from ARIN servers.
+
+    AUTHOR
+        Christian Vigh, 07/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/07/31]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace  Thrak\Processors\Whois ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces and classes
+use  	Thrak\System\Object ;
+use	Thrak\IO\Path ;
+use	Thrak\Types\String ;
+use	Thrak\Processors\Whois\WhoisProviderInformation ;
+
+
+/*==============================================================================================================
+
+    WhoisARINInformation -
+        A class for handling whois data coming from ARIN servers.
+	Example input :
+
+		#
+		# ARIN WHOIS data and services are subject to the Terms of Use
+		# available at: https://www.arin.net/whois_tou.html
+		#
+		# If you see inaccuracies in the results, please report at
+		# http://www.arin.net/public/whoisinaccuracy/index.xhtml
+		#
+
+
+		#
+		# The following results may also be obtained via:
+		# http://whois.arin.net/rest/nets;q=209.128.92.206?showDetails=true&showARIN=false&showNonArinTopLevelNet=false&ext=netref2
+		#
+
+
+		# start
+
+		NetRange:       209.128.92.192 - 209.128.92.255
+		CIDR:           209.128.92.192/26
+		NetName:        BAYA-209-128-92-192
+		NetHandle:      NET-209-128-92-192-1
+		Parent:         BAYAREA-BLK-1 (NET-209-128-64-0-1)
+		NetType:        Reassigned
+		OriginAS:       
+		Customer:       VisiStat (C03318585)
+		RegDate:        2013-02-14
+		Updated:        2013-02-14
+		Ref:            http://whois.arin.net/rest/net/NET-209-128-92-192-1
+
+
+		CustName:       VisiStat
+		Address:        2050 Martin Ave
+		City:           Santa Clara
+		StateProv:      CA
+		PostalCode:     95050
+		Country:        US
+		RegDate:        2013-02-14
+		Updated:        2013-02-14
+		Ref:            http://whois.arin.net/rest/customer/C03318585
+
+		OrgAbuseHandle: ZB23-ARIN
+		OrgAbuseName:   Bay Area Internet Solutions
+		OrgAbusePhone:  +1-408-545-0500 
+		OrgAbuseEmail:  abuse@bayarea.net
+		OrgAbuseRef:    http://whois.arin.net/rest/poc/ZB23-ARIN
+
+		OrgTechHandle: HOSTM1783-ARIN
+		OrgTechName:   Hostmaster
+		OrgTechPhone:  +1-408-545-0500 
+		OrgTechEmail:  hostmaster@bayarea.net
+		OrgTechRef:    http://whois.arin.net/rest/poc/HOSTM1783-ARIN
+
+		RTechHandle: ZB23-ARIN
+		RTechName:   Bay Area Internet Solutions
+		RTechPhone:  +1-408-545-0500 
+		RTechEmail:  abuse@bayarea.net
+		RTechRef:    http://whois.arin.net/rest/poc/ZB23-ARIN
+
+		# end
+
+
+		# start
+
+		NetRange:       209.128.64.0 - 209.128.127.255
+		CIDR:           209.128.64.0/18
+		NetName:        BAYAREA-BLK-1
+		NetHandle:      NET-209-128-64-0-1
+		Parent:         NET209 (NET-209-0-0-0-0)
+		NetType:        Direct Allocation
+		OriginAS:       
+		Organization:   Bay Area Internet Solutions (BAYA)
+		RegDate:        1999-03-29
+		Updated:        2012-02-24
+		Comment:        ADDRESSES WITHIN THIS BLOCK ARE NON-PORTABLE
+		Ref:            http://whois.arin.net/rest/net/NET-209-128-64-0-1
+
+
+		OrgName:        Bay Area Internet Solutions
+		OrgId:          BAYA
+		Address:        2050 Martin Ave
+		City:           Santa Clara
+		StateProv:      CA
+		PostalCode:     95050
+		Country:        US
+		RegDate:        1996-11-13
+		Updated:        2012-05-11
+		Ref:            http://whois.arin.net/rest/org/BAYA
+
+
+		OrgAbuseHandle: ZB23-ARIN
+		OrgAbuseName:   Bay Area Internet Solutions
+		OrgAbusePhone:  +1-408-545-0500 
+		OrgAbuseEmail:  abuse@bayarea.net
+		OrgAbuseRef:    http://whois.arin.net/rest/poc/ZB23-ARIN
+
+		OrgTechHandle: HOSTM1783-ARIN
+		OrgTechName:   Hostmaster
+		OrgTechPhone:  +1-408-545-0500 
+		OrgTechEmail:  hostmaster@bayarea.net
+		OrgTechRef:    http://whois.arin.net/rest/poc/HOSTM1783-ARIN
+
+		RTechHandle: ZB23-ARIN
+		RTechName:   Bay Area Internet Solutions
+		RTechPhone:  +1-408-545-0500 
+		RTechEmail:  abuse@bayarea.net
+		RTechRef:    http://whois.arin.net/rest/poc/ZB23-ARIN
+
+		# end
+
+
+
+		#
+		# ARIN WHOIS data and services are subject to the Terms of Use
+		# available at: https://www.arin.net/whois_tou.html
+		#
+		# If you see inaccuracies in the results, please report at
+		# http://www.arin.net/public/whoisinaccuracy/index.xhtml
+		#
+
+  ==============================================================================================================*/
+class  WhoisARINInformation		extends  WhoisProviderInformation
+   {
+	protected static		$Definitions		=
+	   [
+		'range-definition'		=>
+		   [
+			'start'			=>  'NetRange:'
+		    ],
+		'comments'			=>  [ '\#', '%' ],
+		'keyword-match'			=>  '/^(Network:)? (?P<keyword> [^\s:]+) \s* : \s* (?P<value> .*) \s*$/imsx',
+		'line-breaks'			=>  true,
+		'ignore'			=>  
+		   [
+			'ResourceLink:',
+			'ReferralServer:',
+			'connect: Connection timed out',
+			'connect: Connection refused',
+			'fgets: Connection reset by peer', 
+			'/Host \s+ [^\s] \s+ not \s+ found/imsx'
+		    ],
+		'data-blocks'			=>
+		   [
+			self::BLOCK_PROVIDER  =>
+			   [
+				'start-keywords'		=>  [ 'NetRange' ],
+				'required'			=>  true,
+				'multiple'			=>  false,
+				'keywords'			=>
+				   [
+					self::TYPE_PROVIDER_NETRANGE		=>
+					[ 
+						'name'			=>  [ 'NetRange' ],
+						'type'			=>  self::TYPE_PROVIDER_NETRANGE,
+						'value-type'		=>  self::VALUE_TYPE_NETRANGE,
+						'required'		=>  true
+					 ],
+					self::TYPE_PROVIDER_NETMASK		=>
+					[
+						'name'			=>  [ 'CIDR' ],
+						'type'			=>  self::TYPE_PROVIDER_NETMASK,
+						'value-type'		=>  self::VALUE_TYPE_NETMASK,
+						'list'			=>  true
+					 ],
+					self::TYPE_PROVIDER_NETNAME		=>
+					[ 
+						'name'			=>  [ 'NetName' ],
+						'type'			=>  self::TYPE_PROVIDER_NETNAME,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'required'		=>  true
+					 ],
+					self::TYPE_PROVIDER_NETHANDLE		=>
+					[ 
+						'name'			=>  [ 'NetHandle' ],
+						'type'			=>  self::TYPE_PROVIDER_NETHANDLE,
+						'value-type'		=>  self::VALUE_TYPE_STRING
+					 ],
+					self::TYPE_PROVIDER_NETPARENT		=>
+					[ 
+						'name'			=>  [ 'Parent' ],
+						'type'			=>  self::TYPE_PROVIDER_NETPARENT,
+						'value-type'		=>  self::VALUE_TYPE_STRING
+					 ],
+					self::TYPE_PROVIDER_NETTYPE		=>
+					[ 
+						'name'			=>  [ 'NetType' ],
+						'type'			=>  self::TYPE_PROVIDER_NETTYPE,
+						'value-type'		=>  self::VALUE_TYPE_INTEGER,
+						'matches'		=>  
+						   [
+							self::NETTYPE_DIRECT_ALLOCATION		=>
+							  [
+								'direct allocation',
+								'direct assignment'
+							   ],
+							self::NETTYPE_TRANSFERRED		=> 
+							  [
+								'/Maintained \s+ by/imsx',
+								'/Transferred \s+ to/imsx'
+							   ],
+							self::NETTYPE_PORTABLE			=> 
+							  [
+								'/portable/imsx'
+							   ],
+							self::NETTYPE_IANA_SPECIAL_USE		=> 
+							  [
+								'/IANA \s+ Special \s+ use/imsx',
+								'/IANA \s+ reserved/imsx'
+							   ],
+							self::NETTYPE_REALLOCATED		=> 
+							   [
+								'reallocated',
+								'reassigned'
+							    ]
+						    ]
+					 ],
+					self::TYPE_PROVIDER_ORIGIN_AS		=>
+					[ 
+						'name'			=>  [ 'OriginAS' ],
+						'type'			=>  self::TYPE_PROVIDER_ORIGIN_AS,
+						'value-type'		=>  self::VALUE_TYPE_STRING
+					 ],
+					self::TYPE_PROVIDER_ORGANIZATION	=>
+					[ 
+						'name'			=>  [ 'Organization' ],
+						'type'			=>  self::TYPE_PROVIDER_ORGANIZATION,
+						'value-type'		=>  self::VALUE_TYPE_STRING
+					 ],
+					self::TYPE_PROVIDER_CUSTOMER		=>
+					[ 
+						'name'			=>  [ 'Customer' ],
+						'type'			=>  self::TYPE_PROVIDER_CUSTOMER,
+						'value-type'		=>  self::VALUE_TYPE_STRING
+					 ],
+					self::TYPE_PROVIDER_REGISTRATION_DATE	=>
+					[ 
+						'name'			=>  [ 'RegDate' ],
+						'type'			=>  self::TYPE_PROVIDER_REGISTRATION_DATE,
+						'value-type'		=>  self::VALUE_TYPE_DATE
+					 ],
+					self::TYPE_PROVIDER_UPDATE_DATE		=>
+					[ 
+						'name'			=>  [ 'Updated' ],
+						'type'			=>  self::TYPE_PROVIDER_UPDATE_DATE,
+						'value-type'		=>  self::VALUE_TYPE_DATE
+					 ],
+					self::TYPE_PROVIDER_COMMENT		=>
+					[ 
+						'name'			=>  [ 'Comment' ],
+						'type'			=>  self::TYPE_PROVIDER_COMMENT,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_PROVIDER_ADDRESS		=>
+					[ 
+						'name'			=>  [ 'Address' ],
+						'type'			=>  self::TYPE_PROVIDER_ADDRESS,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_PROVIDER_PHONE		=>
+					[ 
+						'name'			=>  [ 'Phone' ],
+						'type'			=>  self::TYPE_PROVIDER_PHONE,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_PROVIDER_FAX		=>
+					[ 
+						'name'			=>  [ 'Fax' ],
+						'type'			=>  self::TYPE_PROVIDER_FAX,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_PROVIDER_REFERENCE		=>
+					[ 
+						'name'			=>  [ 'Ref', 'Reference' ],
+						'type'			=>  self::TYPE_PROVIDER_REFERENCE,
+						'value-type'		=>  self::VALUE_TYPE_STRING
+					 ]
+				    ]
+			    ],
+			self::BLOCK_CUSTOMER  =>
+			   [
+				'start-keywords'		=>  [ 'CustName' ],
+				'keywords'			=>
+				    [
+					self::TYPE_CUSTOMER_NAME		=>
+					[ 
+						'name'			=>  [ 'CustName' ],
+						'type'			=>  self::TYPE_CUSTOMER_NAME,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'required'		=>  true
+					 ],
+					self::TYPE_CUSTOMER_ADDRESS		=> 
+					[ 
+						'name'			=>  [ 'Address' ],
+						'type'			=>  self::TYPE_CUSTOMER_ADDRESS,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'required'		=>  false,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_CUSTOMER_CITY		=>
+					[ 
+						'name'			=>  [ 'City' ],
+						'type'			=>  self::TYPE_CUSTOMER_CITY,
+						'value-type'		=>  self::VALUE_TYPE_STRING
+					 ],
+					self::TYPE_CUSTOMER_STATE		=>
+					[ 
+						'name'			=>  [ 'StateProv' ],
+						'type'			=>  self::TYPE_CUSTOMER_STATE,
+						'value-type'		=>  self::VALUE_TYPE_STRING
+					 ],
+					self::TYPE_CUSTOMER_ZIPCODE		=>
+					[ 
+						'name'			=>  [ 'PostalCode' ],
+						'type'			=>  self::TYPE_CUSTOMER_ZIPCODE,
+						'value-type'		=>  self::VALUE_TYPE_STRING
+					 ],
+					self::TYPE_CUSTOMER_COUNTRY		=>
+					[ 
+						'name'			=>  [ 'Country' ],
+						'type'			=>  self::TYPE_CUSTOMER_COUNTRY,
+						'value-type'		=>  self::VALUE_TYPE_COUNTRY
+					 ],
+					self::TYPE_CUSTOMER_REGISTRATION_DATE	=>
+					[ 
+						'name'			=>  [ 'RegDate' ],
+						'type'			=>  self::TYPE_CUSTOMER_REGISTRATION_DATE,
+						'value-type'		=>  self::VALUE_TYPE_DATE
+					 ],
+					self::TYPE_CUSTOMER_UPDATE_DATE		=>
+					[ 
+						'name'			=>  [ 'Updated' ],
+						'type'			=>  self::TYPE_CUSTOMER_UPDATE_DATE,
+						'value-type'		=>  self::VALUE_TYPE_DATE
+					 ],
+					self::TYPE_CUSTOMER_REFERENCE		=>
+					[ 
+						'name'			=>  [ 'Reference', 'Ref' ],
+						'type'			=>  self::TYPE_CUSTOMER_REFERENCE,
+						'value-type'		=>  self::VALUE_TYPE_STRING
+					 ]
+				     ]
+			    ],
+			self::BLOCK_ORGANIZATION  =>
+			   [
+				'start-keywords'		=>  [ 'OrgName' ],
+				'keywords'			=>
+				    [
+					self::TYPE_ORGANIZATION_NAME		=>
+					[ 
+						'name'			=>  [ 'OrgName' ],
+						'type'			=>  self::TYPE_ORGANIZATION_NAME,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'required'		=>  true
+					 ],
+					self::TYPE_ORGANIZATION_ID		=>
+					[ 
+						'name'			=>  [ 'OrgID' ],
+						'type'			=>  self::TYPE_ORGANIZATION_ID,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'required'		=>  true
+					 ],
+					self::TYPE_ORGANIZATION_ADDRESS		=>
+					[ 
+						'name'			=>  [ 'Address' ],
+						'type'			=>  self::TYPE_ORGANIZATION_ADDRESS,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'required'		=>  false,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_ORGANIZATION_CITY		=>
+					[ 
+						'name'			=>  [ 'City' ],
+						'type'			=>  self::TYPE_ORGANIZATION_CITY,
+						'value-type'		=>  self::VALUE_TYPE_STRING
+					 ],
+					self::TYPE_ORGANIZATION_STATE		=>
+					[ 
+						'name'			=>  [ 'StateProv' ],
+						'type'			=>  self::TYPE_ORGANIZATION_STATE,
+						'value-type'		=>  self::VALUE_TYPE_STRING
+					 ],
+					self::TYPE_ORGANIZATION_ZIPCODE		=> 
+					[ 
+						'name'			=>  [ 'PostalCode' ],
+						'type'			=>  self::TYPE_ORGANIZATION_ZIPCODE,
+						'value-type'		=>  self::VALUE_TYPE_STRING
+					 ],
+					self::TYPE_ORGANIZATION_COUNTRY		=>
+					[ 
+						'name'			=>  [ 'Country' ],
+						'type'			=>  self::TYPE_ORGANIZATION_COUNTRY,
+						'value-type'		=>  self::VALUE_TYPE_COUNTRY
+					 ],
+					self::TYPE_ORGANIZATION_REGISTRATION_DATE =>
+					[ 
+						'name'			=>  [ 'RegDate' ],
+						'type'			=>  self::TYPE_ORGANIZATION_REGISTRATION_DATE,
+						'value-type'		=>  self::VALUE_TYPE_DATE
+					 ],
+					self::TYPE_ORGANIZATION_UPDATE_DATE	=>
+					[ 
+						'name'			=>  [ 'Updated' ],
+						'type'			=>  self::TYPE_ORGANIZATION_UPDATE_DATE,
+						'value-type'		=>  self::VALUE_TYPE_DATE
+					 ],
+					self::TYPE_ORGANIZATION_COMMENT		=>
+					[ 
+						'name'			=>  [ 'Comment' ],
+						'type'			=>  self::TYPE_ORGANIZATION_COMMENT,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_ORGANIZATION_REFERENCE	=>
+					[ 
+						'name'			=>  [ 'Reference', 'Ref' ],
+						'type'			=>  self::TYPE_ORGANIZATION_REFERENCE,
+						'value-type'		=>  self::VALUE_TYPE_STRING
+					 ]
+				     ]
+			    ],
+			self::BLOCK_ABUSE_CONTACT  =>
+			   [
+				'start-keywords'		=>  [ 'OrgAbuseHandle' ],
+				'multiple'			=>  true,
+				'keywords'			=>
+				   [
+					self::TYPE_ABUSE_HANDLE			=>
+					[ 
+						'name'			=>  [ 'OrgAbuseHandle' ],
+						'type'			=>  self::TYPE_ABUSE_HANDLE,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'required'		=>  true
+					 ],
+					self::TYPE_ABUSE_NAME			=>
+					[ 
+						'name'			=>  [ 'OrgAbuseName' ],
+						'type'			=>  self::TYPE_ABUSE_NAME,
+						'value-type'		=>  self::VALUE_TYPE_STRING
+					 ],
+					self::TYPE_ABUSE_PHONE			=>
+					[ 
+						'name'			=>  [ 'OrgAbusePhone' ],
+						'type'			=>  self::TYPE_ABUSE_PHONE,
+						'value-type'		=>  self::VALUE_TYPE_STRING
+					 ],
+					self::TYPE_ABUSE_EMAIL			=>
+					[ 
+						'name'			=>  [ 'OrgAbuseEmail' ],
+						'type'			=>  self::TYPE_ABUSE_EMAIL,
+						'value-type'		=>  self::VALUE_TYPE_EMAIL
+					 ],
+					self::TYPE_ABUSE_REFERENCE		=>
+					[ 
+						'name'			=>  [ 'OrgAbuseRef' ],
+						'type'			=>  self::TYPE_ABUSE_REFERENCE,
+						'value-type'		=>  self::VALUE_TYPE_STRING
+					 ]
+				    ]
+			    ],
+			self::BLOCK_TECHNICAL_CONTACT  =>
+			   [
+				'start-keywords'		=>  [ 'OrgTechHandle', 'OrgTechName', 'OrgTechOrg' ],
+				'multiple'			=>  true,
+				'keywords'			=>
+				   [
+					self::TYPE_TECHNICAL_HANDLE		=>
+					[ 
+						'name'			=>  [ 'OrgTechHandle' ],
+						'type'			=>  self::TYPE_TECHNICAL_HANDLE,
+						'value-type'		=>  self::VALUE_TYPE_STRING
+					 ],
+					self::TYPE_TECHNICAL_NAME		=>
+					[ 
+						'name'			=>  [ 'OrgTechName' ],
+						'type'			=>  self::TYPE_TECHNICAL_NAME,
+						'value-type'		=>  self::VALUE_TYPE_STRING
+					 ],
+					self::TYPE_TECHNICAL_PHONE		=>
+					[ 
+						'name'			=>  [ 'OrgTechPhone' ],
+						'type'			=>  self::TYPE_TECHNICAL_PHONE,
+						'value-type'		=>  self::VALUE_TYPE_STRING
+					 ],
+					self::TYPE_TECHNICAL_EMAIL		=>
+					[ 
+						'name'			=>  [ 'OrgTechEmail' ],
+						'type'			=>  self::TYPE_TECHNICAL_EMAIL,
+						'value-type'		=>  self::VALUE_TYPE_EMAIL
+					 ],
+					self::TYPE_TECHNICAL_ORGANIZATION	=>
+					[ 
+						'name'			=>  [ 'OrgTechOrg' ],
+						'type'			=>  self::TYPE_TECHNICAL_ORGANIZATION,
+						'value-type'		=>  self::VALUE_TYPE_STRING
+					 ],
+					self::TYPE_TECHNICAL_ADDRESS		=>
+					[ 
+						'name'			=>  [ 'OrgTechAddress' ],
+						'type'			=>  self::TYPE_TECHNICAL_ADDRESS,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_TECHNICAL_REFERENCE		=>
+					[ 
+						'name'			=>  [ 'OrgTechRef' ],
+						'type'			=>  self::TYPE_TECHNICAL_REFERENCE,
+						'value-type'		=>  self::VALUE_TYPE_STRING
+					 ]
+				    ]
+			    ],
+			self::BLOCK_REGIONAL_ABUSE_CONTACT  =>
+			   [
+				'start-keywords'		=>  [ 'RAbuseHandle' ],
+				'multiple'			=>  true,
+				'keywords'			=>
+				   [
+					self::TYPE_REGIONAL_ABUSE_HANDLE		=>
+					[ 
+						'name'			=>  [ 'RAbuseHandle' ],
+						'type'			=>  self::TYPE_REGIONAL_ABUSE_HANDLE,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'required'		=>  true
+					 ],
+					self::TYPE_REGIONAL_ABUSE_NAME		=>
+					[ 
+						'name'			=>  [ 'RAbuseName' ],
+						'type'			=>  self::TYPE_REGIONAL_ABUSE_NAME,
+						'value-type'		=>  self::VALUE_TYPE_STRING
+					 ],
+					self::TYPE_REGIONAL_ABUSE_PHONE		=>
+					[ 
+						'name'			=>  [ 'RAbusePhone' ],
+						'type'			=>  self::TYPE_REGIONAL_ABUSE_PHONE,
+						'value-type'		=>  self::VALUE_TYPE_STRING
+					 ],
+					self::TYPE_REGIONAL_ABUSE_EMAIL		=>
+					[ 
+						'name'			=>  [ 'RAbuseEmail' ],
+						'type'			=>  self::TYPE_REGIONAL_ABUSE_EMAIL,
+						'value-type'		=>  self::VALUE_TYPE_EMAIL
+					 ],
+					self::TYPE_REGIONAL_ABUSE_REFERENCE		=>
+					[ 
+						'name'			=>  [ 'RAbuseRef' ],
+						'type'			=>  self::TYPE_REGIONAL_ABUSE_REFERENCE,
+						'value-type'		=>  self::VALUE_TYPE_STRING
+					 ]
+				    ]
+			    ],
+			self::BLOCK_NOC_CONTACT  =>
+			   [
+				'start-keywords'		=>  [ 'OrgNOCHandle' ],
+				'multiple'			=>  true,
+				'keywords'			=>
+				   [
+					self::TYPE_NOC_HANDLE		=>
+					[ 
+						'name'			=>  [ 'OrgNOCHandle' ],
+						'type'			=>  self::TYPE_NOC_HANDLE,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'required'		=>  true
+					 ],
+					self::TYPE_NOC_NAME		=>
+					[ 
+						'name'			=>  [ 'OrgNOCName' ],
+						'type'			=>  self::TYPE_NOC_NAME,
+						'value-type'		=>  self::VALUE_TYPE_STRING
+					 ],
+					self::TYPE_NOC_PHONE		=>
+					[ 
+						'name'			=>  [ 'OrgNOCPhone' ],
+						'type'			=>  self::TYPE_NOC_PHONE,
+						'value-type'		=>  self::VALUE_TYPE_STRING
+					 ],
+					self::TYPE_NOC_EMAIL		=>
+					[ 
+						'name'			=>  [ 'OrgNOCEmail' ],
+						'type'			=>  self::TYPE_NOC_EMAIL,
+						'value-type'		=>  self::VALUE_TYPE_EMAIL
+					 ],
+					self::TYPE_NOC_REFERENCE		=>
+					[ 
+						'name'			=>  [ 'OrgNOCRef' ],
+						'type'			=>  self::TYPE_NOC_REFERENCE,
+						'value-type'		=>  self::VALUE_TYPE_STRING
+					 ]
+				    ]
+			    ],
+			self::BLOCK_REGIONAL_NOC_CONTACT  =>
+			   [
+				'start-keywords'		=>  [ 'RNOCHandle' ],
+				'multiple'			=>  true, 
+				'keywords'			=>
+				   [
+					self::TYPE_REGIONAL_NOC_HANDLE		=>
+					[ 
+						'name'			=>  [ 'RNOCHandle' ],
+						'type'			=>  self::TYPE_REGIONAL_NOC_HANDLE,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'required'		=>  true
+					 ],
+					self::TYPE_REGIONAL_NOC_NAME		=>
+					[ 
+						'name'			=>  [ 'RNOCName' ],
+						'type'			=>  self::TYPE_REGIONAL_NOC_NAME,
+						'value-type'		=>  self::VALUE_TYPE_STRING
+					 ],
+					self::TYPE_REGIONAL_NOC_PHONE		=>
+					[ 
+						'name'			=>  [ 'RNOCPhone' ],
+						'type'			=>  self::TYPE_REGIONAL_NOC_PHONE,
+						'value-type'		=>  self::VALUE_TYPE_STRING
+					 ],
+					self::TYPE_REGIONAL_NOC_EMAIL		=>
+					[ 
+						'name'			=>  [ 'RNOCEmail' ],
+						'type'			=>  self::TYPE_REGIONAL_NOC_EMAIL,
+						'value-type'		=>  self::VALUE_TYPE_EMAIL
+					 ],
+					self::TYPE_REGIONAL_NOC_REFERENCE		=>
+					[ 
+						'name'			=>  [ 'RNOCRef' ],
+						'type'			=>  self::TYPE_REGIONAL_NOC_REFERENCE,
+						'value-type'		=>  self::VALUE_TYPE_STRING
+					 ]
+				    ]
+			    ],
+			self::BLOCK_REGIONAL_TECHNICAL_CONTACT  =>
+			   [
+				'start-keywords'		=>  [ 'RTechHandle' ],
+				'multiple'			=>  true,
+				'keywords'			=>
+				   [
+					self::TYPE_REGIONAL_TECHNICAL_HANDLE	=>
+					[ 
+						'name'			=>  [ 'RTechHandle' ],
+						'type'			=>  self::TYPE_REGIONAL_TECHNICAL_HANDLE,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'required'		=>  true
+					 ],
+					self::TYPE_REGIONAL_TECHNICAL_NAME	=>
+					[ 
+						'name'			=>  [ 'RTechName' ],
+						'type'			=>  self::TYPE_REGIONAL_TECHNICAL_NAME,
+						'value-type'		=>  self::VALUE_TYPE_STRING
+					 ],
+					self::TYPE_REGIONAL_TECHNICAL_PHONE	=>
+					[ 
+						'name'			=>  [ 'RTechPhone' ],
+						'type'			=>  self::TYPE_REGIONAL_TECHNICAL_PHONE,
+						'value-type'		=>  self::VALUE_TYPE_STRING
+					 ],
+					self::TYPE_REGIONAL_TECHNICAL_EMAIL	=>
+					[ 
+						'name'			=>  [ 'RTechEmail' ],
+						'type'			=>  self::TYPE_REGIONAL_TECHNICAL_EMAIL,
+						'value-type'		=>  self::VALUE_TYPE_EMAIL
+					 ],
+					self::TYPE_TECHNICAL_REFERENCE		=>
+					[ 
+						'name'			=>  [ 'RTechRef' ],
+						'type'			=>  self::TYPE_TECHNICAL_REFERENCE,
+						'value-type'		=>  self::VALUE_TYPE_STRING
+					 ]
+				    ]
+			    ]
+		    ]
+
+	    ] ;
+
+	public function  __construct ( $queried_ip, $contents )
+	   {
+		parent::__construct ( $queried_ip, $contents ) ;
+	    }
+    }

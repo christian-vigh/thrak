@@ -1,0 +1,185 @@
+<?php
+/***************************************************************************************************
+
+    NAME
+	VolatileFileWrapper.phpclass
+
+    DESCRIPTION
+	A file stream wrapper for files and directories that will be removed upon program termination.
+
+    AUTHOR
+	Christian Vigh, 11/2014.
+
+    HISTORY
+    [Version : 1.0]		[Date : 2014/11/11]		[Author : CV]
+	Initial release.
+
+ ***************************************************************************************************/
+namespace 	Thrak\IO\Wrappers ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces & objects
+use 		Thrak\System\Object 			as  Object ;
+use 		Thrak\System\Exception 			as  Exception ;
+use 		Thrak\Types\String			as  String ;
+use		Thrak\IO\Path				as  Path ;
+use 		Thrak\IO\Wrappers\File ;
+
+
+/*==================================================================================================
+
+    VolatileFileWrapper class -
+	Implements a file wrapper for temporary files that will be suppressed upon script
+	termination.
+
+  ==================================================================================================*/
+class  VolatileFileWrapper	extends  FileWrapper
+   {
+	// Used to keep track of volatile directories and files created
+	private static		$CreatedDirectories	=  [] ;
+	private static		$CreatedFiles		=  [] ;
+	
+	
+   	// Class constructor
+   	public function  __construct ( )
+   	   {
+		parent::__construct ( ) ;
+   	   	$this -> Features 	=  SW_SUPPORT_MASK_ALL ;
+   	    }
+
+	   
+	// __cleanup -
+	//	Called upon script termination to clean up created directories and files
+	public static function  __cleanup ( )
+	   {
+		foreach  ( array_keys ( self::$CreatedFiles )  as  $file )
+		   {
+			@unlink ( $file ) ;
+		    }
+		
+		foreach  ( array_keys ( self::$CreatedDirectories )  as  $directory ) 
+		   {
+			@rmdir ( $directory ) ;
+		    }
+	    }
+
+	
+   	// Register -
+   	//	Adds the following parameters (if not present) before registering the class :
+   	//	- 'read-buffer-size' :
+   	//		Size of the read buffer in bytes.
+   	//	- 'write-buffer-size' :
+   	//		Size of the write buffer in bytes.
+   	public static function  Register ( $wrapper_name, $parameters = null, $flags = 0 )
+   	   {
+   		if  ( $parameters  ==  null )
+   			$parameters = [] ;
+
+		// The 'root' option is optional and defaults to system's temp directory
+		if  ( ! isset ( $parameters [ 'root' ] ) )
+			$parameters [ 'root' ]	=  Path::ToUnix ( sys_get_temp_dir ( ) . "/volatile" ) ;
+		else
+			$parameters [ 'root' ]  =  Path::RealPath ( $parameters [ 'root' ] ) ;
+		
+		if  ( file_exists ( $parameters [ 'root' ] ) )
+		   {
+			if  ( ! is_dir ( $parameters [ 'root' ] ) )
+			   {
+				$status		=  @unlink ( $parameters [ 'root' ] ) ;
+				
+				if  ( ! $status ) 
+					throw new Exception ( "Unable to create volatile directory {$parameters [ 'root' ]} ; " .
+						"A file with the same name exists and could not be removed." ) ;
+				
+				mkdir ( $parameters [ 'root' ] ) ;
+			    }
+		    }
+		else
+			mkdir ( $parameters [ 'root' ] ) ;
+		
+   		$parameters = array_merge ( $parameters, array ( 'read-buffer-size' => 16384, 'write-buffer-size' => 16384 ) ) ;
+   		parent::Register ( $wrapper_name, $parameters, $flags ) ;
+		   
+		register_shutdown_function ( [ __CLASS__, '__cleanup' ] ) ;
+   	    }
+
+	   
+   	// DirectoryCreate -
+   	//	Creates a directory.
+   	public function  DirectoryCreate  ( $path, $mode, $options )
+   	   {
+   		$url 		=  $this -> ParseUrl ( $path ) ;
+   		$filename 	=  $this -> GetRealPath ( $url ) ;
+		$status		=  mkdir ( $filename, $mode, ( ( $options  &  STREAM_MKDIR_RECURSIVE )  !=  0 ) ) ;
+		
+		if  ( $status )
+			self::$CreatedDirectories [ $filename ]		=  true ;
+		
+		return ( $status ) ;
+   	    }
+
+
+   	// DirectoryRemove -
+   	//	Removes a directory.
+   	public function  DirectoryRemove  ( $path, $options )
+   	   {
+   		$url 		=  $this -> ParseUrl ( $path ) ;
+   		$filename 	=  $this -> GetRealPath ( $url ) ;
+		$status		=  rmdir ( $filename, ( ( $options  &  STREAM_MKDIR_RECURSIVE )  !=  0 ) ) ;
+		
+		if  ( $status ) 
+			unset ( self::$CreatedDirectories [ $filename ] ) ;
+		
+		return ( status ) ;
+   	    }
+
+
+   	// FileRename -
+   	//	Renames a file.
+   	public function  FileRename  ( $from_path, $to_path )
+   	   {
+   		$from_url 		=  $this -> ParseUrl ( $from_path ) ;
+   		$to_url			=  $this -> ParseUrl ( $to_path ) ;
+   		$from_filename		=  $this -> GetRealPath ( $from_url ) ;
+   		$to_filename 		=  $this -> GetRealPath ( $to_url ) ;
+
+   		$status			=  rename ( $from_filename, $to_filename ) ;
+		   
+		if  ( $status )
+		   {
+			unset ( self::$CreatedFiles [ $from_filename ] ) ;
+			self::$CreatedFiles [ $to_filename ]	=  true ;
+		    }
+		
+		return ( $status ) ;
+   	    }
+
+
+   	// FileUnlink -
+   	//	Deletes a file.
+   	public function  FileUnlink  ( $path )
+   	   {
+   		$url 		=  $this -> ParseUrl ( $path ) ;
+   		$filename 	=  $this -> GetRealPath ( $url ) ;
+
+   		$status		=  unlink ( $filename ) ;
+		   
+		if  ( $status ) 
+			unset ( self::$CreatedFiles [ $filename ] ) ;
+   	    }
+
+
+   	// StreamOpen -
+   	//	Opens a stream.
+   	public function  StreamOpen  ( $path, $mode, $options, &$opened_path )
+   	   {
+		$status		=  parent::StreamOpen ( $path, $mode, $options, $opened_path ) ;
+		
+		if  ( $status )
+			self::$CreatedFiles [ $this -> OpenedPath ]	=  true ;
+
+		return ( $status ) ;
+   	    }
+
+   }

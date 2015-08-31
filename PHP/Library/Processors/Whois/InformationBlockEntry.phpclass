@@ -1,0 +1,81 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        WhoisInformationBlockEntry.phpclass
+
+    DESCRIPTION
+        Holds a whois information block. 
+	Objects of this class MUST be instanciated by a WhoisInformationRange object.
+
+    AUTHOR
+        Christian Vigh, 08/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/08/07]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace  Thrak\Processors\Whois ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces and classes
+use  	Thrak\System\Object ;
+use	Thrak\IO\Path ;
+use	Thrak\Types\String ;
+use	Thrak\Types\AssociativeArray ;
+use	Thrak\Processors\WhoisInformation ;
+use	Thrak\Processors\WhoisInformationBase ;
+
+
+/*==============================================================================================================
+
+    WhoisInformationBlockEntry -
+        Holds information about a block entry.
+
+  ==============================================================================================================*/
+class  WhoisInformationBlockEntry		extends WhoisInformationBase
+   {
+	// Parent WhoisInformation object
+	protected		$Parent ;
+	// Entry type - one of the WhoisInformation::TYPE_* constants
+	public		$Type ;
+	// Entry common type - one of the WhoisInformation::COMMON_TYPE_* constants
+	public		$CommonType		=  0 ;
+	// Entry keyword (eg, "NetRange", "country", "org", etc.)
+	public		$Keyword ;
+	// Value text, as found in whois data
+	public		$Text ;
+	// Value interpreted from the value text - may yield to an array of parsed values
+	public		$Value ;
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    Constructor -
+		Builds a WhoisInformationBlockEntry object.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( $parent, $entry )
+	   {
+		$this -> Parent		=  $parent ;
+		$this -> Type		=  $entry [ 'type' ] ;
+		$this -> Keyword	=  $entry [ 'keyword' ] ;
+		$this -> Text		=  $entry [ 'text' ] ;
+		$this -> Value		=  $entry [ 'value' ] ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    __tostring -
+		Rebuilds the original entry string.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __tostring ( )
+	   {
+		return ( $this -> Keyword . ":\t" . $this -> Text ) ;
+	    }
+    }

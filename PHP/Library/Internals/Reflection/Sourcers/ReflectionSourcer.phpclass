@@ -1,0 +1,73 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        ReflectionSourcer.phpclass
+
+    DESCRIPTION
+        description.
+
+    AUTHOR
+        Christian Vigh, 10/2014.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2014/10/23]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Reflection\Sourcers ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use  	Thrak\System\Object ;
+
+
+/*==============================================================================================================
+
+    ReflectionSourceInterface -
+        Interface for Reflection object that are capable of publishing a source code containing either their
+	skeleton or full source code, if available.
+
+  ==============================================================================================================*/
+interface  ReflectionSourcerInterface
+   {
+	// Get either a skeleton or the full source code
+	function  getText	( $include_source = false ) ;
+    }
+
+
+/*==============================================================================================================
+
+    ReflectionSourcer -
+        An abstract class implementing basic sourcer behavior.
+
+  ==============================================================================================================*/
+abstract class  ReflectionSourcer 	extends		Object
+					implements 	ReflectionSourcerInterface
+   {
+	// The Reflection object meant to be able to provide its source code
+	protected 	$Reflector ;
+	// When true, the sourcer must include the source code, if available
+	protected	$IncludeSourceCode ;
+	
+	
+	/*==============================================================================================================
+	
+	    Constructor -
+	        Builds a ReflectionSourcer instance. The $reflector parameter can be any Reflection class :
+		ReflectionClass, ReflectionMethod, ReflectionProperty, etc.
+	
+	  ==============================================================================================================*/
+	public function  __construct ( $reflector, $get_source = false )
+	   {
+		parent::__construct ( ) ;
+		$this -> Reflector		=  $reflector ;
+		$this -> IncludeSourceCode	=  $get_source ;
+	    }
+	    
+	
+	    
+	abstract function  getText 	( $include_source = false ) ;
+    }
+
+    

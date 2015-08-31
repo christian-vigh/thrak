@@ -1,0 +1,196 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        Browser.phpclass
+
+    DESCRIPTION
+        Provides with browser information.
+
+    AUTHOR
+        Christian Vigh, 01/2014.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2014/01/22]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Internet ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces & objects
+use 		Thrak\System\Object 		as  Object ;
+use		Thrak\IO\Path			as  Path ;
+use		Thrak\Types\String		as  String ;
+use		Thrak\Types\VersionNumber	as  VersionNumber ;
+
+ 
+ 
+/*==============================================================================================================
+
+    Class Browser -
+        Provides information about a requester browser.
+	
+	Examples of Browser strings :
+	IE11		"Mozilla/5.0 (Windows NT 6.1; WOW64; Trident/7.0; rv:11.0) like Gecko"	
+	IE10		"Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/7.0)"
+	IE9		"Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0)"
+	IE8		"Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1; WOW64; Trident/4.0; GTB7.5; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0; .NET4.0C; .NET4.0E; InfoPath.1)"
+	IE7		"Mozilla/4.0 (compatible; MSIE 7.0; Window NT 6.1; WOW64; GTB7.5;SLCC2;.NET CLR 2.0.50727;.NET CLR 3.5.30729;Media Center PC 6.0;.NET4.0C;.NET4.0E;InfoPath.1)"
+	Firefox		"Mozilla/5.0 (Windows NT 6.1; WOW64; rv:25.0) Gecko/20100101 Firefox/25.0"
+	Chrome		"Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1700.76 Safari/537.36"
+	Safari		"Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/534.57.2 (KHTML, like Gecko) Version/5.1.7 Safari/534.57.2"
+	Opera		"Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.57 Safari/537.36 OPR/18.0.1284.63"
+
+  ==============================================================================================================*/
+ class	Browser		extends  Object
+    {
+	public	$Name			=  "unknown" ;
+	public	$Version		=  0 ;
+	public	$BaseName		=  "unknown" ;	
+	public  $BaseVersion		=  "" ;
+	public	$PlatformItems		=  array ( ) ;
+	public  $UserAgentItems		=  array ( ) ;
+	public	$UserAgentNotes		=  array ( ) ;
+	public	$UserAgentString ;
+
+	
+	public function  __construct ( )
+	   {
+		parent::__construct ( ) ;
+		$useragent			=  $_SERVER [ 'HTTP_USER_AGENT' ] ;
+		$this -> UserAgentString	=  $useragent ;
+		
+		// IE11 : the "like Gecko" string is not enclosed with parentheses. Fix it.
+		if  ( preg_match ( '/[)] [^(]* like [ \s] gecko/imsx', $useragent ) )
+			$useragent	=  str_ireplace ( "like gecko", "(like Gecko)", $useragent ) ;
+
+		// RE that splits the browser agent string
+		$re	=  "/
+				(?P<ptext>
+				   (
+					[(]
+						(?P<parentheses> [^)]+)
+					[)]
+				    )
+				 ) |
+				 (?P<text> [^ \t()]*)
+			    /imsx" ;
+			    
+		if  ( ! preg_match_all ( $re, $useragent, $matches, PREG_SET_ORDER ) ) 
+			return ;
+			
+		// Process the matches
+		$ItemsSeen		=  false ;
+		$PlatformSeen		=  false ;
+		$PlatformItemsSeen	=  false ;
+		
+		foreach  ( $matches  as  $match )
+		   {
+			// Text : can either be the "Mozilla/x.y" string, or additional version information
+			if  ( isset ( $match [ 'text' ] )  &&  $match [ 'text' ] )
+			   {
+				list ( $key, $value )	=  $this -> __get_name_and_version ( $match [ 'text' ] ) ;
+				
+				// We have not seen the base platform : this really often is "Mozilla/x.y"
+				if  ( ! $PlatformSeen )
+				   {
+					$this -> BaseName	=  $key ;
+					$this -> BaseVersion	=  $value ;
+					$PlatformSeen		=  true ;
+				    }
+				// Otherwise add it to the user agent items
+				else
+				   {
+					$this -> UserAgentItems [ strtolower ( $key ) ]	=  array
+					   (
+						'name'			=>  $key,
+						'version'		=>  $value 
+					    ) ;
+				    }
+			    }
+			// Text enclosed with parentheses :
+			// - Either the first one, which describes user agent platform options, such as Windows version, word size, etc.
+			// - Either (well, it seems to) additional notes, such as "(... like Gecko)"
+			else if  ( $match [ 'parentheses' ] )
+			   {
+				if  ( ! $PlatformItemsSeen )
+				   {
+					$this -> PlatformItems	=  explode ( ';', $match [ 'parentheses' ] ) ;
+					$PlatformItemsSeen	=  true ;
+				    }
+				else
+				   {
+					$this -> UserAgentNotes []	=  $match [ 'parentheses' ] ;
+				    }
+			    }
+		    }
+		    
+		// Now its time to determine the browser name. Go from the more specific to the less easily parsable agent string
+		$ie_re	=  "/ ( ( MSIE \s+ ) | rv: ) (?P<version> [^;)]+ ) [;)] /imsx" ;
+		
+		if  ( stripos  ( $useragent, "OPR/" )  !==  false )				// Opera
+		   {
+			$this -> Name		=  "opera" ;
+			$this -> Version	=  $this -> UserAgentItems [ 'opr' ] [ 'version' ] ;
+		    }
+		else if  ( stripos ( $useragent, "Firefox/" )  !==  false )			// Firefox
+		   {
+			$this -> Name		=  "firefox" ;
+			$this -> Version	=  $this -> UserAgentItems [ 'firefox' ] [ 'version' ] ;
+		    }
+		else if  ( stripos ( $useragent, "Chrome/" )  !==  false )			// Chrome
+		   {
+			$this -> Name		=  "chrome" ;
+			$this -> Version	=  $this -> UserAgentItems [ 'chrome' ] [ 'version' ] ;
+		    }
+		else if  ( stripos ( $useragent, "Version/" )  !==  false )			// Safari
+		   {
+			$this -> Name		=  "safari" ;
+			$this -> Version	=  $this -> UserAgentItems [ 'safari' ] [ 'version' ] ;
+		    }
+		else if  ( stripos ( $useragent, "MSIE 7" )  !==  false )		// IE 7
+		   {
+			preg_match ( $ie_re, $useragent, $match ) ;
+	
+			$this -> Name		=  "ie" ;
+			$this -> Version	=  new VersionNumber ( $match [ 'version' ] ) ;
+		    }
+		
+		else if  ( stripos ( $useragent, "MSIE 8" )  !==  false )		// IE 8
+		   {
+			preg_match ( $ie_re, $useragent, $match ) ;
+			
+			$this -> Name		=  "ie" ;
+			$this -> Version	=  new VersionNumber ( $match [ 'version' ] ) ;
+		    }
+		else if  ( stripos ( $useragent, "MSIE 9" )  !==  false )		// IE 9 or 10 : they're both categorized as "MSIE 9"
+		   {
+			$this -> Name		=  "ie" ;
+			
+			// Apparently, the only way to distinguish IE9 from IE10 is by the version after the "Trident/" string :
+			// 7.0 for IE10, 5.0 for IE9.
+			if  ( stripos ( $useragent, "Trident/7" )  !==  false )
+				$this -> Version	=  new VersionNumber ( "10.0" ) ;
+			else
+				$this -> Version	=  new VersionNumber ( "9.0" ) ;
+		    }
+		else if  ( stripos ( $useragent, "rv:" )   !==  false )			// IE11
+		   {
+			preg_match ( $ie_re, $useragent, $match ) ;
+			
+			$this -> Name		=  "ie" ;
+			$this -> Version	=  new VersionNumber ( $match [ 'version' ] ) ;
+		    }
+	    }
+	    
+	    
+	 private function  __get_name_and_version  ( $value )
+	    {
+		list ( $name, $version_text )	=  explode ( '/', $value ) ;
+		$version			=  new  VersionNumber ( $version_text ) ;
+		
+		return ( array ( $name, $version ) ) ;
+	     }
+     }

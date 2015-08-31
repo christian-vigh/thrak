@@ -1,0 +1,422 @@
+<?php
+/***************************************************************************************************
+
+    NAME
+	CLListParameter.phpclass
+
+    DESCRIPTION
+	Generic list parameter type.
+
+    AUTHOR
+     	Christian Vigh, 06/2011.
+
+    HISTORY
+    [Version : 1.0]	[Date : 2011/06/12]	[Author : CV]
+     	Initial version.
+
+   [Version : 2.0]	[Date : 2012/10/06]		[Author : CV]
+	Migrated to the Thrak library version 2.
+
+   [Version : 2.0.1]	[Date : 2015/04/11]		[Author : CV]
+	. Replaced each exception throwing with "error ( new CLException (...) )".
+
+ ***************************************************************************************************/
+namespace  	Thrak\Processors\CL ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces and classes
+use 	Thrak\Processors\CL\CLException as  CLException ;
+use     Thrak\Types\String  		as  String ;
+
+
+/*==================================================================================================
+
+    CLArrayParameter class -
+	Handles an array parameter.
+	The syntax for specifying an array is the following :
+
+		[a,b,c]
+
+	Nested arrays are also permitted :
+
+		[a, [1,2,3], b, c]
+
+	And, as for PHP, associative arrays are supported :
+
+		[a, [1,2,3], b, c, 'key' => 'value']
+
+	Non-numeric values will be automatically quoted.
+
+  ==================================================================================================*/
+
+// Array types
+define ( 'ARRAY_TYPE_STANDARD'		, 0x01 ) ;		// Standard array (no associative entry)
+define ( 'ARRAY_TYPE_ASSOCIATIVE'	, 0x02 ) ;		// Associative array
+define ( 'ARRAY_TYPE_BOTH'		, 0x03 ) ;		// Allow both standard and associative array entries
+
+
+class  CLArrayParameter  extends  \Thrak\Processors\CL\CLAbstractParameter
+   {
+   	// Specific attributes
+   	private 	$ArrayParameters 	=  array
+   	   (
+    		array
+    		   (
+    		   	'names'		=>  array ( 'nesting-level' ),
+    		   	'type'		=>  self::ATTRIBUTE_TYPE_UNSIGNED_INTEGER,
+    		   	'default'	=>  PHP_INT_MAX,
+    		   	'member'	=>  "NestingLevel",
+    		   	'help'		=>  "Maximum array nesting level. Specify 0 for unlimited number of nesting levels (which is equivalent to PHP_INT_MAX)."
+		    ),
+    		array
+    		   (
+    		   	'names'		=>  array ( 'type' ),
+    		   	'type'		=>  self::ATTRIBUTE_TYPE_KEYWORD,
+    		   	'default'	=>  'both',
+    		   	'member'	=>  'ArrayType',
+    		   	'keywords'	=>  array
+    		   	   (
+    		   	   	'standard'	=>  ARRAY_TYPE_STANDARD,
+    		   	   	'std'		=>  ARRAY_TYPE_STANDARD,
+    		   	   	'normal'	=>  ARRAY_TYPE_STANDARD,
+    		   	   	'mixed'		=>  ARRAY_TYPE_BOTH,
+    		   	   	'both'		=>  ARRAY_TYPE_BOTH,
+    		   	   	'associative'	=>  ARRAY_TYPE_ASSOCIATIVE,
+    		   	   	'assoc'		=>  ARRAY_TYPE_ASSOCIATIVE
+		  	    ),
+ 	    		'help'		=>  array
+ 	    		   (
+ 	    		   	"Array type. It can be any of the following keywords :\n",
+ 	    		   	"standard, std, normal -\n",
+ 	    		   	"\tThe array must not contain associative entries.\n",
+ 	    		   	"associative, assoc -\n",
+ 	    		   	"\tThe array must contain only associative entries.\n",
+ 	    		   	"mixed, both -\n",
+ 	    		   	"\tThe array can contain both classic and associative entries."
+			    )
+      		    )
+	    ) ;
+
+	// Nesting level
+	public 		$NestingLevel ;
+	// Array type
+	public 		$ArrayType ;
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Class constructor.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __construct ( $parent, $tags )
+	   {
+		// Build the object
+	   	$this -> Help 			=<<<END
+Defines an array parameter. The syntax for specifying an array is the following :
+	[a,b,c]
+Nested arrays are also permitted :
+	[a, [1,2,3], b, c]
+And, as for PHP, associative arrays are supported :
+	[a, [1,2,3], b, c, 'key' => 'value']
+Non-numeric values will be automatically quoted.
+Arithmetic expressions are automatically evaluated, unless they are enclosed with single- or double- quotes.
+The following special functions are supported :
+for(x;y;s) -
+	Generates values from x to y using step s. Each value is equal to its preceding value + step s.
+END;
+	   	$this -> ReturnValueHelp	=  "Returns a PHP array." ;
+
+		parent::__construct ( $parent, $tags, "array", $this -> ArrayParameters ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Process command-line value.
+
+	 --------------------------------------------------------------------------------------------*/
+	protected function  ProcessValue ( $name, $value )
+	   {
+	   	// Tokens used for array specifications
+	   	static 		$tokens 	=  array ( '[', ']', ',', '=>' ) ;
+
+		// Get the array elements, a token being one array element
+		$items 		=  String::ExplodeWithQuotedStrings ( $value, true, $tokens, true ) ;
+
+		if  ( $items [0]  !=  '[' )
+			$items 	=  array_merge ( array ( '[' ), $items, array ( ']' ) ) ;
+
+		// An array specification must start with an opening bracket
+		if  ( $items  ===  false  ||  ! count ( $items ) )
+			error ( new CLException ( "Invalid array specification '$value' for parameter '$name'." ) ) ;
+
+		// Initializations
+		$level 		=  0 ;			// Current level
+		$level_indexes	=  array ( 0 ) ;	// For associative item specifications (=>) without a key, holds current array item index for the current nesting level
+		$current_item 	=  0 ;			// Current item index
+		$result 	=  array ( ) ;		// Resulting array
+
+		// Loop through each array item. An array definition expression will be built and the following transformations
+		// will be applied to each item :
+		// - Opening brackets will be replaced with 'array ('
+		// - Closing brackets will be replaced with ')'
+		// - When an associative entry is specified (=>) without a key, an artificial key will be inserted in the result.
+		//   This key will be the index of the current item.
+		$got_assoc 	=  false ;
+
+		foreach  ( $items  as  $item )
+		   {
+		   	switch  ( $item )
+		   	   {
+		   	   	// Opening bracket :
+		   	   	//	Update nesting level.
+		   	   	case	'[' ;
+		   	   		// Check that current nesting level does not exceed the specified one
+		   	   		if  ( $level  >  $this -> NestingLevel )
+		   	   			error ( new CLException ( "Too many nesting levels for parameter '$name' ; maximum allowed nesting level is {$this -> NestingLevel}." ) ) ;
+
+		   	   		$level ++ ;				// Update nesting level
+		   	   		$level_indexes [ $level - 1 ] = 0 ;	// Start a new array item counter for this nesting level
+					$item = 'array (' ;			// Replace the opening bracket with an array definition
+					break ;
+
+				// Closing bracket :
+				//	Update nesting level and replace the bracket with a closing parenthesis.
+				case	']' ;
+					$got_assoc 	=  false ;
+					$level -- ;
+					$item = ')' ;
+					break ;
+
+				// Comma :
+				//	Update item counter for the current level
+				case	',' :
+					$got_assoc 	=  false ;
+					$level_indexes [ $level - 1 ] ++ ;
+					break ;
+
+				// '=>' associative item specification :
+				case	'=>' :
+					// Check that associative array are authorized in parameter definition
+					if  ( ! ( $this -> ArrayType  &  ARRAY_TYPE_ASSOCIATIVE ) )
+						error ( new  CLException ( "Associative arrays are not allowed for parameter '$name'." ) ) ;
+
+					$got_assoc = true ;
+
+					// If the previous item was an array token, then artificially add an item key, corresponding to
+					// the current item index in the array
+					if  ( in_array ( $items [ $current_item - 1 ], $tokens ) )
+						$result [] = $level_indexes [ $level - 1 ] ;
+					break ;
+
+				// Default case :
+				//	Either an array key or value.
+				default :
+					// Check that non-associative entries are authorized
+					if  ( ! $got_assoc  &&  $this -> ArrayType  ==  ARRAY_TYPE_ASSOCIATIVE )
+						error ( new  CLException ( "Only associative arrays are allowed for parameter '$name'." ) ) ;
+
+					// If the item is a string, then surround it with double quotes
+					if  ( ! is_numeric ( $item ) )
+						$item = '"' . str_replace ( '"', "\\\"", $item ) . '"' ;
+
+		    			if  ( $got_assoc )
+		    				$got_assoc = false ;
+		   	    }
+
+			// Add the current item to the result
+	   		$result [] = $item ; ;
+	    		$current_item ++ ;
+		    }
+
+		// Check that square brackets are correctly balanced
+		if  ( $level )
+			error ( new CLException ( "Unbalanced brackets for the array parameter '$name'." ) ) ;
+
+		// Build an expression for defining the array and evaluate it ; result will be in $return_value
+		$expression 	=  implode ( ' ', $result ) ;
+		$return_value 	=  null ;
+
+		@eval ( '$return_value = ' . $expression . ';' ) ;
+
+		// Check that array definition is correct
+		if  ( $return_value  ===  null )
+			error ( new CLException ( "Invalid array specification '$value' for parameter '$name'." ) ) ;
+
+		// Interpret functions
+		$final_result 	=  array ( ) ;
+		CLNumericParameter::InterpretArrayFunctions ( $name, $return_value, $final_result ) ;
+
+		// All done, return
+		return ( $final_result ) ;
+	    }
+    }
+
+
+/*==================================================================================================
+
+    CLListParameter class -
+	Handles a list parameter.
+
+  ==================================================================================================*/
+class  CLListParameter  extends  \Thrak\Processors\CL\CLAbstractSimpleCompoundParameter
+   {
+	// List-specific definitions
+   	private		$ListDefinitions = array
+   	   (
+	    	array
+	    	   (
+	    	   	'names'		=>  array ( 'min-length', 'min-len', 'minlength', 'min-len' ),
+	    	   	'type'		=>  self::ATTRIBUTE_TYPE_UNSIGNED_INTEGER,
+	    	   	'default'	=>  null,
+	    	   	'member'	=>  'MinItemCount',
+	    	   	'limit'		=>  'min',
+	    	   	'help'		=>  'Specifies if the list must have a minimum number of items'
+      		    ),
+	    	array
+	    	   (
+	    	   	'names'		=>  array ( 'max-length', 'max-len', 'maxlength', 'maxlen' ),
+	    	   	'type'		=>  self::ATTRIBUTE_TYPE_UNSIGNED_INTEGER,
+	    	   	'default'	=>  null,
+	    	   	'member'	=>  'MaxItemCount',
+	    	   	'limit'		=>  'max',
+	    	   	'preprocessor'	=>  'MinMaxValidator',
+	    	   	'help'		=>  'Specifies if the list must have a maximum number of items'
+      		    ),
+	    	array
+	    	   (
+	    	   	'names'		=>  array ( 'length', 'len' ),
+	    	   	'type'		=>  self::ATTRIBUTE_TYPE_RANGE,
+	    	   	'attributes'	=>  array ( 'min-length', 'max-length' ),
+	    	   	'limit'		=>  'minmax',
+	    	   	'preprocessor'	=>  'MinMaxValidator',
+	    	   	'help'		=>  'Specifies the minimum and maximum list length'
+      		    ),
+	    	array
+	    	   (
+	    	   	'names'		=>  array ( 'separator', 'sep' ),
+	    	   	'type'		=>  self::ATTRIBUTE_TYPE_STRING,
+	    	   	'default'	=>  ',',
+	    	   	'member'	=>  'ItemSeparator',
+	    	   	'help'		=>  'List item separator'
+      		    )
+	    ) ;
+
+    	// Min/Max list items
+    	public		$MinItemCount	=  0 ;
+	public 		$MaxItemCount	=  PHP_INT_MAX ;
+	// List item separator
+	public		$ItemSeparator	=  ',' ;
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Class constructor.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __construct ( $parent, $tags, $valuetext = "list" )
+	   {
+	   	$this -> Help 			=  "Defines a parameter specified as a list of values." ;
+	   	$this -> ReturnValueHelp        =  "Returns the supplied list as an array of values. An empty list is returned as an empty array." ;
+		parent::__construct ( $parent, $tags, $valuetext, $this -> ListDefinitions ) ;
+		$this -> DefaultValue		=  "" ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Validates the supplied attribute min/max value.
+
+	 --------------------------------------------------------------------------------------------*/
+	private function  __min ( $pname, $tag, $name, $value )
+	   {
+		if  ( ! strcmp ( $value, '*' ) )
+			$value  	=  $this -> $member ;
+
+		if  ( ( float ) $value  <  0 )
+			error ( new CLException ( "'$name' attribute of the '$pname' parameter : the minimum list length cannot be below zero." ) ) ;
+
+    		return ( $value ) ;
+	    }
+
+
+	private function  __max ( $pname, $tag, $name, $value )
+	   {
+		if  ( ! strcmp ( $value, '*' ) )
+			$value  	=  $this -> $member ;
+
+		if  ( ( float ) $value  >  PHP_INT_MAX )
+			error ( new CLException ( "'$name' attribute of the '$pname' parameter : the maximum list length cannot be greater than " . PHP_INT_MAX . "." ) ) ;
+
+    		return ( $value ) ;
+	    }
+
+
+	public function  MinMaxValidator ( $object, $definition, $tag, $name, $value )
+	   {
+	   	$limit		=  strtolower ( $definition [ 'limit' ] ) ;
+		$pname 		=  $object -> Names [0] ;
+
+	   	switch ( $limit )
+	   	   {
+			case	'min' :
+				$result = $this -> __min ( $pname, $tag, $name, $value ) ;
+				break ;
+
+			case	'max' :
+				$result = $this -> __max ( $pname, $tag, $name, $value ) ;
+				break ;
+
+			case	'minmax' :
+				$array 	=  explode ( '..', $value ) ;
+
+				if  ( ! $array )
+					$array 	=  array ( '*', '*' ) ;
+				else if  ( count ( $array )  ==  1 )
+					$array []  =  '*' ;
+				else if  ( $array [0]  ===  "" )
+					$array [0] =  '*' ;
+				else if  ( $array [1]  ===  "" )
+					$array [1] =  '*' ;
+
+				$min 	=  $this -> __min ( $pname, $tag, $name, $value ) ;
+				$max 	=  $this -> __max ( $pname, $tag, $name, $value ) ;
+
+				$result =  array ( $min, $max ) ;
+				break ;
+	   	    }
+
+		return ( $result ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Preprocess value.
+
+	 --------------------------------------------------------------------------------------------*/
+  	protected function  ProcessValue ( $name, $value )
+  	   {
+  	   	if  ( $value  ==  "" )
+  	   		$data 	=  array ( ) ;
+ 		else
+			$data 	=  String::ExplodeAndTrim ( $this -> ItemSeparator, $value ) ;
+
+		$count 	=  count ( $data ) ;
+
+		if  ( $count  <  $this -> MinItemCount )
+			error ( new  CLException ( "The specified list item count ($count) for the '$name' parameter cannot be less than the defined value '{$this -> MinItemCount}' for the 'min-length' attribute." ) ) ;
+
+		if  ( $count  >  $this -> MaxItemCount )
+			error ( new  CLException ( "The specified list item count ($count) for the '$name' parameter cannot be greater than the defined value '{$this -> MaxItemCount}' for the 'max-length' attribute." ) ) ;
+
+		// Interpret functions
+		$final_result 	=  array ( ) ;
+		CLNumericParameter::InterpretArrayFunctions ( $name, $data, $final_result ) ;
+		$this -> VerifyValues ( $final_result ) ;
+
+		return ( $final_result ) ;
+    	    }
+    }

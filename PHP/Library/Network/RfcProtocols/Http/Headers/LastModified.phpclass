@@ -1,0 +1,48 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        LastModified.phpclass
+
+    DESCRIPTION
+        Http LastModified: header.
+
+    AUTHOR
+        Christian Vigh, 05/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/05/27]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace  	Thrak\Network\RfcProtocols\Http ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces and classes
+use     Thrak\System\Object ;
+use	Thrak\Types\String ;
+use	Thrak\Network\RfcProtocols\Http\HttpStandardHeader ;
+use	Thrak\Network\RfcProtocols\Http\Traits\HttpDate ;
+
+
+/*==============================================================================================================
+
+    HttpLastModifiedHeader class -
+        Http LastModified header implementation (http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.21).
+
+ 	Examples :
+ 		LastModified: Tue, 15 Nov 1994 08:12:31 GMT
+
+  ==============================================================================================================*/
+class	HttpLastModifiedHeader		extends  HttpStandardHeader
+   {
+	use	HttpDate ;	
+
+	
+	public function  __construct ( $header )
+	   {
+		parent::__construct ( 'Last-Modified', $header ) ;
+	    }
+    }

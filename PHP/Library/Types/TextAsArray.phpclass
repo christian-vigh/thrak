@@ -1,0 +1,1050 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        TextAsArray.phpclass
+
+    DESCRIPTION
+        A class to consider text separated with a specific delimiter as an array.
+	Can be used to index lines of file contents without having to create an expensive array.
+	TextAsArray objects can be declared to be sorted. In this case, searches will be significantly faster.
+	This is useful for example for logfiles, which are sequential by nature due to their timestamp part.
+	Derived classes can implement the Compare() function, which can be used to perform comparisons on a
+	subpart of the line. 
+
+    PERFORMANCES
+	This section concerns only sorted contents.
+	On sorted contents with unique lines, a search requires at most ceil ( ln2 ( count ) ) comparisons,
+	where 'count' is the number of text items (typically lines). As an example, searching a value in a
+	100000-lines text contents will require at most 17 comparisons.
+	Of course, if the text contents contain identical lines, additional comparisons will be needed to find
+	the correct value.
+
+    AUTHOR
+        Christian Vigh, 06/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/06/27]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Types ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces & objects
+use 	Thrak\System\Object ;
+use	Thrak\Types\String ;
+use	Thrak\IO\BinaryFile ;
+
+
+interface  ITextAsArray		extends		\ArrayAccess, \Countable, \Iterator 
+   {
+	public function		GetContents		( ) ;
+	public function		GetDelimiter		( ) ;
+	public function		SetDelimiter		( $delimiter ) ;
+	public function		GetItem			( $index ) ;
+    }
+
+
+abstract class  TextAsArray	extends		Object 
+				implements	ITextAsArray 
+   {
+	// Text delimiter
+	protected	$Delimiter ;
+	protected	$DelimiterLength ;
+	// Content length
+	protected	$Length ;
+	// Number of strings in the whole contents
+	protected	$Count			=  false ;
+	// Indicates whether the string array is initially sorted or not
+	protected	$Sorted	;
+
+	// Private variables
+	protected	$LastUsedOffset ;			// Last used string start offset
+	protected	$LastUsedIndex ;			// Last used string index
+	protected	$ForeachIndex		=  0 ;		// Current index used in foreach() constructs
+	protected	$LastLineOffset ;			// Offset of last line
+	protected	$FirstLine		=  null,	// First and last line contents
+			$LastLine		=  null ; 
+
+	// Holds the number of tryings performed during last search result
+	public		$LastSearchIterations	=  0 ;
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    Constructor -
+		Builds a TextAsArray object.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( $sorted = false, $delimiter = "\n" ) 
+	   {
+		$this -> SetDelimiter ( $delimiter ) ;
+
+		$this -> Count		=  false ;
+		$this -> LastUsedIndex  =  false ;
+		$this -> LastUsedOffset =  false ;
+		$this -> Sorted		=  $sorted ;
+		$this -> LastLineOffset	=  $this -> GetStartOffset ( $this -> Length - 1 ) ;
+
+		$this -> SetDelimiter ( $delimiter ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+
+	    Compare -
+		Compare between two values. Can be redefined by derived classes to focus on specific string parts.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  Compare ( $value1, $value2 )
+	   {
+		return ( strcmp ( $value1, $value2 ) ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    GetDelimiter/SetDelimiter -
+		Gets/sets the delimiter used to separate strings within contents.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  GetDelimiter ( )
+	   { return ( $this -> Delimiter ) ; }
+
+
+	public function  SetDelimiter ( $delimiter )
+	   {
+		$this -> Count			=  false ;
+		$this -> Delimiter		=  $delimiter ;
+		$this -> DelimiterLength	=  strlen ( $delimiter ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        GetItem - Returns a string item at the specified index.
+	 
+	    PROTOTYPE
+	        $offset		=  $this -> GetItem ( $index ) ;
+	 
+	    DESCRIPTION
+	        Returns the string at the specified index, using $this -> Delimiter as a separator to compute array
+		indexes.
+	 
+	    PARAMETERS
+	        $index (integer) -
+	                Index of the string to be returned.
+	 
+	    RETURN VALUE
+	        Returns the offset of the string start, or false if index is out of range.
+	 
+	    NOTES
+	        The LastUsedIndex and LastUsedOffset properties are used to store the value of the last index and last
+		retrieved offset, respectively. This has significant perfomance improvements in loops such as :
+		
+			$taa = new TextAsArray ( $data, '::' ) ;
+
+			for  ( $i = 0 ; $i  <  count ( $taa ) ; $i ++ )
+				output ( "$i: " . $taa [$i] ) ;
+		
+		When $data contains 10000 values separated by the '::' delimiter, the loop takes 6mn30 without this
+		optimization ; it takes less than 3 seconds with this optimization. Doing it in reverse order takes one
+		more second on the same data set.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  GetItem ( $index )
+ 	   {
+		// Ignore negative indexes or indexes greater than the number of items in this array
+		if  ( $index  <  0 )
+			return ( false ) ;
+
+		// A forward loop is starting or has been initiated
+		if  ( $this -> LastUsedIndex  ===  false  ||  $index  >  $this -> LastUsedIndex )
+		   {
+			// No loop initiated so far ; maybe a direct access to an array item
+			if  ( $this -> LastUsedIndex  ===  false )
+			   {
+				$current_index		=  $index  ;
+
+				if  ( $index ) 
+				   {
+					$offset			=  0 ;
+
+					for  ( $i = 0 ; $i  <  $current_index ; $i ++ )
+						$offset		=  $this -> FindNextDelimiter ( $offset ) + $this -> DelimiterLength ;
+				     }
+				else
+					$offset			=  0 ;
+			    }
+			// Loop continuation ; start search from previous offset
+			else
+			   {
+				$current_index		=  $index - $this -> LastUsedIndex ;
+				$offset			=  $this -> LastUsedOffset ;
+			    }
+
+			// While more array indexes need to be scanned, update their starting offset accordingly
+			while  ( $current_index -- )
+			   {
+				$current_offset	=  $this -> FindNextDelimiter ( $offset ) ;
+
+				if  ( $current_offset  ===  false )
+					break ;
+				else
+					$offset		=  $current_offset + $this -> DelimiterLength ;
+			    }
+		    }
+		// Backward loop
+		else if ( $index  <  $this -> LastUsedIndex )
+		   {
+			$current_index		=  $this -> LastUsedIndex - $index ;
+			$offset			=  $this -> LastUsedOffset - $this -> DelimiterLength ;
+
+			// Care must be taken not to go before the start of the contents
+			if  ( $offset  <  0 )
+			   {
+				$offset		=  $this -> Length - 1 ;
+
+				if (  ! strcmp ( $this -> GetSubstring ( $offset - $this -> DelimiterLength, $this -> DelimiterLength ), $this -> Delimiter ) )
+					$offset  -=  $this -> DelimiterLength ;
+
+				if  ( $offset  <  0 )
+					$offset		=  0 ;
+			     }
+
+			// Positive offset : search either the start of the string or the previous string index
+			if  ( $offset )
+			   {
+				while  ( $offset  &&  $current_index -- )
+				   {
+					while  ( -- $offset  >=  0 )
+					   {
+						if  ( $this -> SubstringEquals ( $this -> Delimiter, $offset, $this -> DelimiterLength ) )
+						   {
+							$offset	+=  $this -> DelimiterLength ;
+							break ;
+						    }
+					    }
+
+					if  ( $offset  <=  0 )
+					   {
+						$offset =  0 ;
+						break ;
+					    }
+				    }
+			    }
+		    }
+
+		// Remember last used index and offset
+		$this -> LastUsedOffset		=  $offset ;
+		$this -> LastUsedIndex		=  $index ;
+
+		// All done, return
+		return ( $offset ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+
+	    IsSorted -
+		Indicates if the string array is sorted or not.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  IsSorted ( )
+	   { return ( $this -> Sorted ) ; }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+		
+	    __tostring -
+		Returns the string contents of the underlying data.
+		
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __tostring ( )
+	   {
+		return ( $this -> GetContents ( ) ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    GetStartOffset -
+		Returns the starting offset of a line which contains the specified offset.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/	
+	public function  GetStartOffset ( $offset )
+	   {
+		if  ( $offset  ===  false  ||  $offset  ===  null  ||  $offset  <  0  ||  $offset  >=  $this -> Length )
+			return ( false ) ;
+
+		if  ( $this -> SubstringEquals ( $this -> Delimiter, $offset, $this -> DelimiterLength ) )
+			$offset -=	$this -> DelimiterLength ;
+			
+		while  ( $offset  >=  0 )
+		   {
+			if  ( $this -> SubstringEquals ( $this -> Delimiter, $offset, $this -> DelimiterLength )  !==  false )
+			   {
+				$offset		+=  $this -> DelimiterLength ;
+				break ;
+			    }
+
+			$offset -- ;
+		    }
+
+		if  ( $offset  <  0 )
+			return ( 0 ) ;
+
+		$this -> LastUsedOffset =  $offset ;
+
+		return ( $offset ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    GetPreviousStartOffset -
+		Gets the offset of the line preceding the one identified by the specified offset.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/	
+	public function  GetPreviousStartOffset ( $offset, $count = 1 )
+	   {
+		$offset		=  $this -> GetStartOffset ( $offset ) ;
+
+		if  ( $offset  ===  false )
+			return ( false ) ;
+
+		while  ( $count -- )
+		   {
+			$offset		=  $this -> GetStartOffset ( $offset - $this -> DelimiterLength ) ;
+
+			if  ( $offset  ===  false )
+				break ;
+		    }
+
+		return ( $offset ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    GetNextStartOffset -
+		Gets the offset of the line following the one identified by the specified offset.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/	
+	public function  GetNextStartOffset ( $offset, $count = 1 )
+	   {
+		$offset		=  $this -> GetStartOffset ( $offset ) ;
+
+		if  ( $offset  ===  false )
+			return ( false ) ;
+
+		while  ( $count -- )
+		   {
+			$eol		=  $this -> FindNextDelimiter ( $offset ) ;
+
+			if  ( $eol  ===  false )
+				return ( false ) ;
+
+			$offset		=  $this -> GetStartOffset ( $eol + $this -> DelimiterLength ) ;
+
+			if  ( $offset  ===  false ) 
+				break ;
+		    }
+
+		return ( $offset ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    GetAdjacentStartOffset -
+		Gets the offset of the line preceding the one identified by the specified offset.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/	
+	public function  GetAdjacentStartOffset ( $offset, $count = 1 ) 
+	   {
+		if  ( $count  <  0 )
+			return ( $this -> GetPreviousStartOffset ( $offset, abs ( $count ) ) ) ;
+		else
+			return ( $this -> GetNextStartOffset ( $offset, $count ) ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    GetLineByOffset -
+		Returns a line contents according to the specified offset, which is somewhere between line start and
+		line end.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/	
+	public function  GetLineByOffset ( $offset )
+	   {
+		if  ( $offset  ===  false  ||  $offset  ===  null  ||  $offset  <  0  ||  $offset  >  $this -> Length ) 
+			return ( $offset ) ;
+
+		$offset			=  $this -> GetStartOffset ( $offset ) ;
+		$delimiter_offset	=  $this -> FindNextDelimiter ( $offset ) ;
+		$result			=  $this -> GetSubstring ( $offset, $delimiter_offset - $offset ) ;
+
+		return ( $result ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        Find - Returns the offset of the line having the specified value.
+	 
+	    PROTOTYPE
+	        $offset		=  $taa -> Find ( $value ) ;
+	 
+	    DESCRIPTION
+	        Returns the byte offset of the line having the specified value.
+	 
+	    PARAMETERS
+	        $value (string) -
+	                Value to be searched.
+	 
+	    RETURN VALUE
+	        Returns the byte offset of the found line, or false if it does not exist.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  Find ( $value )
+	   {
+		$this -> LastSearchIterations	=  0 ;
+
+		if  ( $this -> Sorted )
+			$result		=  $this -> __find_sorted ( $value ) ;
+		else
+			$result		=  $this -> __find_unsorted ( $value ) ;
+
+		return ( $result ) ;
+	    }
+
+
+	private function  __find_unsorted ( $value )
+	   {
+		// Brute search
+		foreach  ( $this  as  $line )
+		   {
+			$this -> LastSearchIterations ++ ;
+
+			if  ( ! $this -> Compare ( $line, $value ) )
+				return ( $this -> LastUsedOffset ) ;
+		    }
+
+		return ( false ) ;
+	    }
+
+
+	private function  __find_sorted ( $value, &$offset = false )
+	   {
+		$low			=  0 ;				// Low and high offsets for dichotomic search
+		$high			=  $this -> Length - 1 ;
+		$middle			=  false ;			// The dichotomic 'middle' value
+		$cmpstatus		=  false ;			// Comparison result between 'middle' value and $value
+
+		// Perform dichotomic search
+		while  ( $low  <=  $high )
+		   {
+			$this -> LastSearchIterations ++ ;
+
+			// Get next value
+			$middle		=  ( integer ) ( $low + ( ( $high - $low ) / 2 ) ) ;
+
+			$current	=  $this -> GetLineByOffset ( $middle ) ;
+			$cmpstatus	=  $this -> Compare ( $current, $value ) ;
+
+			if  ( $cmpstatus  <  0 ) 
+				$low	=  $middle + 1 ;
+			else if  ( $cmpstatus  >  0 )
+				$high	=  $middle - 1 ;
+			// A line that is equal to the searched one has been found ; since the Compare() method can be
+			// overridden by derived classes and operate on substrings, this can yield to multiple equal results
+			// The loop below is intended to find the first line that matches the searched value
+			else
+			   {
+				$result		=  $middle ;
+				$current_result	=  $this -> GetStartOffset ( $result - 1 ) ;
+				$current	=  $this -> GetLineByOffset ( $current_result ) ;
+				$cmpstatus	=  $this -> Compare ( $current, $value ) ;
+
+				while  ( ! $cmpstatus )
+				   {
+					$this -> LastSearchIterations ++ ;
+
+					$result		=  $current_result ;
+					$current_result	=  $this -> GetStartOffset ( $current_result - 1 ) ;
+					$current	=  $this -> GetLineByOffset ( $current_result ) ;
+					$cmpstatus	=  $this -> Compare ( $current, $value ) ;
+				    }
+
+				return ( $result ) ;
+			    }
+		    }
+
+		return ( false ) ;
+	    }
+
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        FindLT - Returns the offset of the first line having a value less than the specified one.
+	 
+	    PROTOTYPE
+	        $offset		=  $taa -> FindLT ( $value ) ;
+	 
+	    DESCRIPTION
+	        Returns the offset of the first line having a value less than the specified one.
+	 
+	    PARAMETERS
+	        $value (string) -
+	                Value to be searched.
+	 
+	    RETURN VALUE
+	        Returns the byte offset of the found line, or false if it does not exist.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	const		FIND_LT			=  0 ;
+	const		FIND_LE			=  1 ;
+	const		FIND_GT			=  2 ;
+	const		FIND_GE			=  3 ;
+
+
+	public function  FindLT ( $value )
+	   { return ( $this ->  __logical_find_by_operator ( $value, self::FIND_LT ) ) ; }
+
+	public function  FindLE ( $value )
+	   { return ( $this ->  __logical_find_by_operator ( $value, self::FIND_LE ) ) ; }
+
+	public function  FindGT ( $value )
+	   { return ( $this ->  __logical_find_by_operator ( $value, self::FIND_GT ) ) ; }
+
+	public function  FindGE ( $value )
+	   { return ( $this ->  __logical_find_by_operator ( $value, self::FIND_GE ) ) ; }
+
+
+	public function  __logical_find_by_operator ( $value, $operator ) 
+	   {
+		$this -> LastSearchIterations	=  0 ;
+
+		if  ( $this -> Sorted )
+			$result		=  $this -> __logical_find ( $value, $operator ) ;
+		else
+			error ( new \Thrak\System\RuntimeException ( "Cannot perform a logical search on an unsorted text array." ) ) ;
+
+		return ( $result ) ;
+	    }
+
+
+	private function  __logical_find ( $value, $operation )
+	   {
+		$low			=  0 ;				// Low and high offsets for dichotomic search
+		$high			=  $this -> Length - 1 ;
+
+		// Avoid unnecessary searches if the searched value is out of range, so check against both the first and last lines
+		// of the searched contents
+		if  ( $this -> FirstLine  ===  null )
+			$this -> FirstLine			=  $this -> GetLineByOffset ( 0 ) ;
+
+		if  ( $this -> LastLine  ===  null ) 
+			$this -> LastLine		=  $this -> GetLineByOffset ( $this -> LastLineOffset ) ;
+
+		switch  ( $operation )
+		   {
+			case	self::FIND_LT :
+				$this -> LastSearchIterations ++ ;
+				
+				if  ( $this -> Compare ( $this -> FirstLine, $value )  >=  0 )
+					return ( false ) ;
+
+				$this -> LastSearchIterations ++ ;
+
+				if  ( $this -> Compare ( $this -> LastLine, $value )  <  0 )
+					return ( $this -> LastLineOffset ) ;
+
+				break ;
+
+			case	self::FIND_LE :
+				$this -> LastSearchIterations ++ ;
+				$cmpstatus	=  $this -> Compare ( $this -> FirstLine, $value ) ;
+
+				if  ( $cmpstatus  >  0 )
+					return ( false ) ;
+				else if  ( $cmpstatus  ==  0 ) 
+					return ( 0 ) ;
+
+				$this -> LastSearchIterations ++ ;
+				$cmpstatus	=  $this -> Compare ( $this -> LastLine, $value ) ;
+
+				if  ( $cmpstatus  <=  0 )
+					return ( $this -> LastLineOffset ) ;
+
+				break ;
+
+			// Greater than operation :
+			//	If the first line is greater than the searched value, then return its offset (0).
+			//	If the last line is less than or equal to the searched value, then return the last line offset.
+			case	self::FIND_GT :
+				$this -> LastSearchIterations ++ ;
+			
+				if  ( $this -> Compare ( $this -> FirstLine, $value )  >  0 )
+					return ( 0 ) ;
+
+				$this -> LastSearchIterations ++ ;
+				$cmpstatus	=  $this -> Compare ( $this -> LastLine, $value ) ;
+
+				if  ( $cmpstatus  <=  0 )
+					return ( false ) ;
+
+				break ;
+
+			// Greater or equal operation :
+			//	If the first line is greater than the searched value, then return its offset (0).
+			//	If the last line is stricly less than the searched value, then return false to indicate that
+			//	the searched contents do not contain any line greater than the searched value.
+			//	If the last line is equal to the searched value, then return its offset.
+			case	self::FIND_GE :
+				$this -> LastSearchIterations ++ ;
+
+				if  ( $this -> Compare ( $this -> FirstLine, $value )  >=  0 )
+					return ( 0 ) ;
+
+				$this -> LastSearchIterations ++ ;
+				$cmpstatus	=  $this -> Compare ( $this -> LastLine, $value ) ;
+
+				if  ( $cmpstatus  <  0 )
+					return ( false ) ;
+				else if  ( ! $cmpstatus )
+					return ( $this -> LastLineOffset ) ;
+
+				break ;
+
+			// Paranoia
+			default :
+				error ( new \Thrak\System\InvalidArgumentException ( "The requested operation is not a valid FIND_ constant" ) ) ;
+		    }
+
+		// Other variables
+		$middle			=  false ;			// The dichotomic 'middle' value
+		$cmpstatus		=  false ;			// Comparison result between 'middle' value and $value
+		$current_line		=  '' ;
+		$current_offset		=  0 ;
+
+		// Perform dichotomic search
+		// Since derived classes can implement a Compare() method that can return the same result for multiple
+		// consecutive records, we have first to locate the nearest record within that range
+		// Starting from that record, we will have to locate the one that matches according to the requested operation
+		// The nearest record is located using a dichotomic search, but the number of iterations is fixed to the maximum
+		// number of iterations required to locate a value within a sorted array, which is given by the following formula :
+		//	max_iterations = ceil ( ln2 ( byte_count ) ) 
+		// Note that take the floor of the ln2() value, not the ceiling, since it does not bring better approximation.
+		$max_iterations		=  ( integer ) log ( $this -> Length, 2 ) ;
+
+		while  ( $max_iterations --  &&  $low  <=  $high )
+		   {
+			$this -> LastSearchIterations ++ ;
+
+			// Get next value
+			$middle		=  ( integer ) ( $low + ( ( $high - $low ) / 2 ) ) ;
+			$current_offset	=  $this -> GetStartOffset ( $middle ) ;
+
+			// Compare value with current line
+			$current_line	=  $this -> GetLineByOffset ( $current_offset ) ;
+			$cmpstatus	=  $this -> Compare ( $current_line, $value ) ;
+
+			// Dichotomic search
+			if  ( $cmpstatus  <  0 ) 
+				$low	=  $middle + 1 ;
+			else if  ( $cmpstatus  >  0 )
+				$high	=  $middle - 1 ;
+			// Break loop if we found a line equal to the searched one 
+			else
+				break ;
+		    }
+
+		// Paranoia
+		if  ( $current_offset  ===  false )
+			return ( false ) ;
+
+		// Call the appropriate search function
+		switch  ( $operation ) 
+		   {
+			case	self::FIND_GT :
+				return ( $this -> __find_gt ( $value, $cmpstatus, $current_offset ) ) ;
+
+			case	self::FIND_GE :
+				return ( $this -> __find_ge ( $value, $cmpstatus, $current_offset ) ) ;
+
+			case	self::FIND_LT :
+				return ( $this -> __find_lt ( $value, $cmpstatus, $current_offset ) ) ;
+
+			case	self::FIND_LE :
+				return ( $this -> __find_le ( $value, $cmpstatus, $current_offset ) ) ;
+		    }
+	    }
+
+
+	// __find_next -
+	//	Finds the next line in either the forward or backward direction.
+	private function  __find_next ( $value, $offset, $increment ) 
+	   {
+		$result		=  false ;
+		$this -> LastSearchIterations ++ ;
+
+		$new_offset	=  $this -> GetAdjacentStartOffset ( $offset, $increment ) ;
+
+		if  ( $new_offset  !==  false )
+		   {
+			$new_line	=  $this -> GetLineByOffset ( $new_offset ) ;
+			$cmpstatus	=  $this -> Compare ( $new_line, $value ) ;
+
+			$result		=  [ 'cmpstatus' => $cmpstatus, 'offset' => $new_offset ] ;
+		    }
+
+		return ( $result ) ;
+	    }
+
+
+	// __find_gt :
+	//	Finds the first line stricly greater than the specified value.
+	private function  __find_gt ( $value, $cmpstatus, $current_offset )
+	   {
+		// Last comparison showed that the current line was less than or equal to the searched value.
+		// We thus need to find the first value greater than the searched one, in the forward direction
+		if  ( $cmpstatus  <=  0 )
+		   {
+			while  ( ( $result = $this -> __find_next ( $value, $current_offset, 1 ) )  !==  false )
+			   {
+				if  ( $result [ 'cmpstatus' ]  >  0 )
+					return ( $result [ 'offset' ] ) ;
+
+				$current_offset		=  $result [ 'offset' ] ;
+			    }
+
+			return ( false ) ;
+		    }
+		// Otherwise, search for the first value less than or equal to the searched one, then move forward one line
+		else
+		   {
+			while  ( ( $result = $this -> __find_next ( $value, $current_offset, -1 ) )  !==  false )
+			   {
+				if  ( $result [ 'cmpstatus' ]  ==  0 )
+				   {
+					$offset		=  $this -> GetAdjacentStartOffset ( $result [ 'offset' ], 1 ) ;
+					$this -> LastSearchIterations ++ ;
+
+					return ( $offset ) ;
+				    }
+				else if  ( $result [ 'cmptstatus' ]  <  0 )
+					return ( $result [ 'offset' ] ) ;
+
+				$current_offset		=  $result [ 'offset' ] ;
+			    }
+
+			return ( false ) ;
+		    }
+	    }
+
+
+	// __find_ge -
+	//	Finds the first line greater than or equal to the specified value.
+	private function  __find_ge ( $value, $cmpstatus, $current_offset )
+	   {
+		// Last comparison showed that the current line was less than the searched value.
+		// We thus need to find the first value greater than or equal to the searched one, in the forward direction
+		if  ( $cmpstatus  <  0 )
+		   {
+			while  ( ( $result = $this -> __find_next ( $value, $current_offset, 1 ) )  !==  false )
+			   {
+				if  ( $result [ 'cmpstatus' ]  >=  0 )
+					return ( $result [ 'offset' ] ) ;
+
+				$current_offset		=  $result [ 'offset' ] ;
+			    }
+
+			return ( false ) ;
+		    }
+		// Otherwise, search backward for the first value less than or equal to the searched one, then move forward one line
+		else
+		   {
+			while  ( ( $result = $this -> __find_next ( $value, $current_offset, -1 ) )  !==  false )
+			   {
+				if  ( $result [ 'cmpstatus' ]  <  0 )
+				   {
+					$offset		=  $this -> GetAdjacentStartOffset ( $result [ 'offset' ], 1 ) ;
+					$this -> LastSearchIterations ++ ;
+
+					return ( $offset ) ;
+				    }
+
+				$current_offset		=  $result [ 'offset' ] ;
+			    }
+
+			return ( false ) ;
+		    }
+	    }
+
+
+	// __find_lt -
+	//	Finds the first line strictly less than the specified value.
+	private function  __find_lt ( $value, $cmpstatus, $current_offset )
+	   {
+		// Last comparison showed that the current line was greater than or equal to the searched value.
+		// We thus need to find the first value greater than the searched one, in the backward direction
+		if  ( $cmpstatus  >=  0 )
+		   {
+			while  ( ( $result = $this -> __find_next ( $value, $current_offset, -1 ) )  !==  false )
+			   {
+				if  ( $result [ 'cmpstatus' ]  <  0 )
+					return ( $result [ 'offset' ] ) ;
+
+				$current_offset		=  $result [ 'offset' ] ;
+			    }
+
+			return ( false ) ;
+		    }
+		// Otherwise, search for the first value greater than the searched one
+		else
+		   {
+			while  ( ( $result = $this -> __find_next ( $value, $current_offset, 1 ) )  !==  false )
+			   {
+				if  ( $result [ 'cmptstatus' ]  <  0 )
+					return ( $result [ 'offset' ] ) ;
+
+				$current_offset		=  $result [ 'offset' ] ;
+			    }
+
+			return ( false ) ;
+		    }
+	    }
+
+
+	// __find_le -
+	//	Finds the first line less than or equal to the specified value.
+	private function  __find_le ( $value, $cmpstatus, $current_offset )
+	   {
+		// Last comparison showed that the current line was greater than or equal to the searched value.
+		// We thus need to find the first value less than the searched one, in the backward direction,
+		// If found, we have to check the value after the found one to check for equality
+		if  ( $cmpstatus  >=  0 )
+		   {
+			while  ( ( $result = $this -> __find_next ( $value, $current_offset, -1 ) )  !==  false )
+			   {
+				if  ( $result [ 'cmpstatus' ]  <  0 )
+				   {
+					$next_result	=  $this -> __find_next ( $value, $result [ 'offset' ], 1 ) ;
+
+					if  ( $next_result  !==  false  &&  $next_result [ 'cmpstatus' ]  ==  0 )
+						return ( $next_result [ 'offset' ] ) ;
+					else
+						return ( $result [ 'offset' ] ) ;
+				    }
+
+				$current_offset		=  $result [ 'offset' ] ;
+			    }
+
+			return ( false ) ;
+		    }
+		// Otherwise, search for the first value greater than or equal the searched one
+		else
+		   {
+			while  ( ( $result = $this -> __find_next ( $value, $current_offset, 1 ) )  !==  false )
+			   {
+				if  ( $result [ 'cmptstatus' ]  <=  0 )
+					return ( $result [ 'offset' ] ) ;
+
+				$current_offset		=  $result [ 'offset' ] ;
+			    }
+
+			return ( false ) ;
+		    }
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+		
+		Abstract functions.
+		
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected abstract function		FindNextDelimiter	( $offset ) ;
+	public    abstract function		GetContents		( ) ;
+	protected abstract function		GetSubstring		( $offset, $length = null ) ;
+	protected abstract function		SubstringEquals		( $value, $offset, $length ) ;
+	protected abstract function		SubstringFind		( $value, $offset ) ;
+		
+
+	/*--------------------------------------------------------------------------------------------------------------
+		
+		Interfaces implementations.
+		
+	 *-------------------------------------------------------------------------------------------------------------*/
+
+	// SetIteratorStart -
+	// Countable interface
+	abstract public function  Count ( ) ;
+
+	   
+	// ArrayAccess interface :
+	//	Allow only isset() and array indexing operations.
+	//	Disable unset() and array member setting operations.
+	public function  offsetExists ( $index )
+	   { return ( $index  >=  0  &&  $index  <  $this -> Count ( ) ) ; }
+
+
+	public function  offsetGet ( $index )
+	   { 
+		$offset			=  $this -> GetItem ( $index ) ; 
+		$delimiter_offset	=  $this -> SubstringFind ( $this -> Delimiter, $offset ) ;
+
+		if  ( $delimiter_offset  ===  false )
+			return ( $this -> GetSubstring ( $offset ) ) ;
+		else
+			return ( $this -> GetSubstring ( $offset, $delimiter_offset - $offset ) ) ;
+	    }
+
+
+	public function  offsetSet ( $index, $value )
+	   { error ( new \Thrak\System\UnsupportedOperationException ( ) ) ; }
+
+
+	public function  offsetUnset ( $index )
+	   { error ( new \Thrak\System\UnsupportedOperationException ( ) ) ; }
+
+
+	// Iterator interface
+	public function  current ( )
+	   { return ( $this -> offsetGet ( $this -> ForeachIndex ) ) ; }
+
+
+	public function  next ( )
+	   { $this -> ForeachIndex ++ ; }
+
+
+	public function  key ( )
+	   { return ( $this -> ForeachIndex ) ; }
+
+
+	public function  valid ( )
+	   { return ( $this -> ForeachIndex  >=  0  &&  $this -> ForeachIndex  <  $this -> Count ( ) ) ; }
+
+
+	public function  rewind ( )
+	   { $this -> ForeachIndex = 0 ; }
+    }
+
+
+/*==============================================================================================================
+
+    TextStringAsArray -
+        Implements a string that can be accessed as an array. Each array item is delimited by a substring.
+
+  ==============================================================================================================*/
+class  TextStringAsArray	extends		TextAsArray
+   {
+	// Text contents
+	protected	$Contents ;
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    Constructor -
+		Builds a StringAsArray object.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( $contents, $sorted = false, $delimiter = "\n" ) 
+	   {
+		$this -> SetContents ( $contents ) ;
+		parent::__construct ( $sorted, $delimiter ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    GetContents/SetContents -
+		Sets the text contents of this object.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  GetContents ( )
+	   { return ( $this -> Contents ) ; }
+
+
+	public function  SetContents ( $contents )
+	   {
+		$this -> Contents	=  $contents ;
+		$this -> Length		=  strlen ( $contents ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    FindNextDelimiter -
+		Returns the offset of the next delimiter.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  FindNextDelimiter ( $offset )
+	   {
+		return ( strpos ( $this -> Contents, $this -> Delimiter, $offset ) ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    GetSubstring -
+		Returns $length bytes starting from $offset.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  GetSubstring ( $offset, $length = null )
+	   {
+		return ( substr ( $this -> Contents, $offset, $length ) ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    SubstringEquals -
+		Checks if the substring at the specified offset is equal to the specified value.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  SubstringEquals ( $value, $offset, $length )
+	   {
+		return ( ! substr_compare ( $this -> Contents, $value, $offset, $length ) ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    SubstringFind -
+		Finds a substring starting from the specified offset.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  SubstringFind ( $value, $offset )
+	   {
+		return ( strpos ( $this -> Contents, $value, $offset ) ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+		Interfaces impplementations.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	
+	// Countable interface
+	public function  Count ( )
+	   {
+		if  ( $this -> Count  ===  false )
+		   {
+			$this -> Count	=  substr_count ( $this -> Contents, $this -> Delimiter ) + 1 ;
+
+			if  ( String::EndsWith ( $this -> Contents, $this -> Delimiter ) )
+				$this -> Count -- ;
+		    }
+
+		return ( $this -> Count ) ;
+	    }
+    }

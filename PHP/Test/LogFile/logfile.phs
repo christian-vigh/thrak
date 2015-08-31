@@ -1,0 +1,304 @@
+<?php
+	/**************************************************************************************************************
+	
+	    NAME
+	        logfile.phs
+	
+	    DESCRIPTION
+	        Tests the LogFile and TextAsArray classes, for string search.
+	
+	 **************************************************************************************************************/
+	require ( getenv ( "THRAK_PHPTOOLS" ) . "/bin/tools.phpinclude" ) ;
+
+	use  Thrak\Processors\CL\CLParser ;
+	use  Thrak\Types\String ;
+	use  Thrak\IO\Console ;
+	use  Thrak\IO\Path ;
+	use  Thrak\IO\AsciiReport ;
+	use  Thrak\Processors\IniFile ;
+	use  Thrak\IO\LogFile ;
+
+
+	/*==============================================================================================================
+	
+	        Test data, for each TextAsArray search function.
+	
+	  ==============================================================================================================*/
+	$test_data	=
+	   [
+		'Find'		=> 
+		   [ 
+			[
+				'date'		=>  '2015-01-01',
+				'expected'	=>  false
+			 ],
+			[
+				'date'		=>  '2015-06-26 06:13:31',
+				'expected'	=>  'Jun 26 06:13:31 vps179002 postfix/smtpd[20057]: connect from unknown[89.248.167.225] ************** FIRST LINE for 06:13:31'
+			 ]
+		    ],
+		'FindLT'		=> 
+		   [ 
+			[
+				'date'		=>  '2015-01-01',
+				'expected'	=>  false
+			 ],
+			[
+				'date'		=>  '2015-06-21 02:01:27',
+				'expected'	=>  false
+			 ],
+			[
+				'date'		=>  '2015-06-21 02:33:00',
+				'expected'	=>  'Jun 21 02:31:07 vps179002 postfix/smtpd[9987]: disconnect from unknown[unknown]'
+			 ],
+			[
+				'date'		=>  '2015-06-26 06:13:30',
+				'expected'	=>  'Jun 26 06:13:29 vps179002 postfix/smtpd[20056]: disconnect from unknown[89.248.167.225] ********************** LAST LINE FOR 06:13:29'
+			 ],
+			[
+				'date'		=>  '2015-06-26 06:13:31',
+				'expected'	=>  'Jun 26 06:13:30 vps179002 postfix/smtpd[20057]: disconnect from unknown[89.248.167.225] *************** LAST LINE for 06:13:30'
+			 ],
+			[
+				'date'		=>  '2015-06-26 17:04:31',
+				'expected'	=>  'Jun 26 17:01:10 vps179002 postfix/smtpd[21088]: disconnect from unknown[unknown]'
+			 ],
+			[
+				'date'		=>  '2016-01-01',
+				'expected'	=>  'Jun 26 17:04:31 vps179002 postfix/anvil[21090]: statistics: max cache size 1 at Jun 26 17:01:10 ********** VERY LAST LINE'
+			 ]
+		    ],
+		'FindLE'		=> 
+		   [ 
+			[
+				'date'		=>  '2015-01-01',
+				'expected'	=>  false
+			 ],
+			[
+				'date'		=>  '2015-06-21 02:01:27',
+				'expected'	=>  'Jun 21 02:01:27 vps179002 postfix/smtpd[9955]: connect from unknown[unknown] *********** VERY FIRST LINE'
+			 ],
+			[
+				'date'		=>  '2015-06-21 02:33:00',
+				'expected'	=>  'Jun 21 02:31:07 vps179002 postfix/smtpd[9987]: disconnect from unknown[unknown]'
+			 ],
+			[
+				'date'		=>  '2015-06-26 06:13:30',
+				'expected'	=>  'Jun 26 06:13:30 vps179002 postfix/smtpd[20056]: connect from unknown[89.248.167.225] *********************** FIRST LINE FOR 06:13:30'
+			 ],
+			[
+				'date'		=>  '2015-06-26 06:13:31',
+				'expected'	=>  'Jun 26 06:13:31 vps179002 postfix/smtpd[20057]: connect from unknown[89.248.167.225] ************** FIRST LINE for 06:13:31'
+			 ],
+			[
+				'date'		=>  '2015-06-26 17:04:31',
+				'expected'	=>  'Jun 26 17:04:31 vps179002 postfix/anvil[21090]: statistics: max cache size 1 at Jun 26 17:01:10 ********** VERY LAST LINE'
+			 ],
+			[
+				'date'		=>  '2016-01-01',
+				'expected'	=>  'Jun 26 17:04:31 vps179002 postfix/anvil[21090]: statistics: max cache size 1 at Jun 26 17:01:10 ********** VERY LAST LINE'
+			 ]
+		    ],
+		'FindGT'		=> 
+		   [ 
+			[
+				'date'		=>  '2015-01-01',
+				'expected'	=>  'Jun 21 02:01:27 vps179002 postfix/smtpd[9955]: connect from unknown[unknown] *********** VERY FIRST LINE'
+			 ],
+			[
+				'date'		=>  '2015-06-21 02:01:27',
+				'expected'	=>  'Jun 21 02:04:47 vps179002 postfix/anvil[9957]: statistics: max connection rate 1/60s for (smtp:unknown) at Jun 21 02:01:27'
+			 ],
+			[
+				'date'		=>  '2015-06-26 06:13:29',
+				'expected'	=>  'Jun 26 06:13:30 vps179002 postfix/smtpd[20056]: connect from unknown[89.248.167.225] *********************** FIRST LINE FOR 06:13:30'
+			 ],
+			[
+				'date'		=>  '2015-06-26 06:13:30',
+				'expected'	=>  'Jun 26 06:13:31 vps179002 postfix/smtpd[20057]: connect from unknown[89.248.167.225] ************** FIRST LINE for 06:13:31'
+			 ],
+			[
+				'date'		=>  '2015-06-26 17:04:31',
+				'expected'	=>  false
+			 ],
+			[
+				'date'		=>  '2016-01-01',
+				'expected'	=>  false
+			 ]
+		    ],
+		'FindGE'		=> 
+		   [ 
+			[
+				'date'		=>  '2015-01-01',
+				'expected'	=>  'Jun 21 02:01:27 vps179002 postfix/smtpd[9955]: connect from unknown[unknown] *********** VERY FIRST LINE'
+			 ],
+			[
+				'date'		=>  '2015-06-21 02:01:27',
+				'expected'	=>  'Jun 21 02:01:27 vps179002 postfix/smtpd[9955]: connect from unknown[unknown] *********** VERY FIRST LINE'
+			 ],
+			[
+				'date'		=>  '2015-06-26 06:13:30',
+				'expected'	=>  'Jun 26 06:13:30 vps179002 postfix/smtpd[20056]: connect from unknown[89.248.167.225] *********************** FIRST LINE FOR 06:13:30'
+			 ],
+			[
+				'date'		=>  '2015-06-26 06:13:31',
+				'expected'	=>  'Jun 26 06:13:31 vps179002 postfix/smtpd[20057]: connect from unknown[89.248.167.225] ************** FIRST LINE for 06:13:31'
+			 ],
+			[
+				'date'		=>  '2015-06-26 17:04:31',
+				'expected'	=>  'Jun 26 17:04:31 vps179002 postfix/anvil[21090]: statistics: max cache size 1 at Jun 26 17:01:10 ********** VERY LAST LINE'
+			 ],
+			[
+				'date'		=>  '2016-01-01',
+				'expected'	=>  false
+			 ]
+		    ]
+	    ] ;
+
+
+	/*==============================================================================================================
+	
+	        Command-line parameter definitions.
+	
+	  ==============================================================================================================*/
+	$Definitions = <<<END
+<command name="logfile" allow-files="false">
+
+	<usage>
+		Tests logfile searching.
+	</usage>
+
+	<keyword name="function, f" default="Find" arguments="0..*">
+		Specifies the function to be tested.
+
+		<case name="find, eq" value="Find">
+			Find() function.
+		</case>
+
+		<case name="findge, ge" value="FindGE">
+			FindGE() function.
+		</case>
+
+		<case name="findgt, gt" value="FindGT">
+			FindGT() function.
+		</case>
+
+		<case name="findle, le" value="FindLE">
+			FindLE() function.
+		</case>
+
+		<case name="findlt, lt" value="FindLT">
+			FindLT() function.
+		</case>
+	</keyword>
+
+	<file name="logfile, lf" default="mail.log" disposition="existing">
+		Test logfile.
+	</file>
+
+	<string name="value, v">
+		Value to be tested.
+	</string>
+
+	<unsigned name="start_column, sc" default="0">
+		Start column of logfile timestamp. Starts from zero.
+	</unsigned>
+
+	<unsigned name="length, l" default="15">
+		Length in characters of the logfile timestamp.
+	</unsigned>
+</command>
+END;
+
+
+	/*==============================================================================================================
+	
+	        Get command-line parameters + global variables.
+	
+	  ==============================================================================================================*/
+	$CL		=  new CLParser ( $Definitions ) ;
+	$File		=  $CL -> logfile ;
+	$Start		=  $CL -> start_column ;
+	$Length		=  $CL -> length ;
+	$Functions	=  $CL -> function ;
+	$Value		=  $CL -> value ;
+
+	$report		=  new AsciiReport 
+	   (
+		[ 'member' => 'search'		, 'title' => 'Search'							],
+		[ 'member' => 'expected'	, 'title' => 'Expected/Found'	, 'width' => 80, 'overflow' => 'wrap'	],
+		[ 'member' => 'offset'		, 'title' => 'Offset'							],
+		[ 'member' => 'match'		, 'title' => 'Ok?'		, 'align' => 'center'			],
+		[ 'member' => 'comparisons'	, 'title' => 'Count'							]
+	    ) ;
+	$data		=  [] ;
+
+
+	/*==============================================================================================================
+	
+	        Main program.
+	
+	  ==============================================================================================================*/
+	if  ( $Value )
+	   {
+		$function	=  $Functions [0] ;
+		$logfile	=  new LogFile ( $File, $Start, $Length ) ;
+		$offset		=  $logfile -> $function ( $Value ) ;
+		$line		=  ( $offset  ===  false ) ?  '*** FALSE ***' : $logfile -> GetLineByOffset ( $offset ) ;
+
+		output ( "Offset     : $offset" ) ;
+		output ( "Line       : $line" ) ;
+		output ( "Iterations : " . $logfile -> LastSearchIterations ) ;
+		exit ;
+	    }
+
+	foreach  ( $Functions  as  $function_name )
+	   {
+		foreach  ( $test_data  as  $function => $function_data )
+		   {
+			if  ( strcasecmp ( $function_name, $function ) )
+				continue ;
+
+			foreach  ( $function_data  as  $data_item )
+			   {
+				$searched_date		=  $data_item [ 'date' ] ;
+				$expected_value		=  $data_item [ 'expected' ] ;
+
+				$logfile	=  new LogFile ( $File, $Start, $Length ) ;
+				$offset		=  $logfile -> $function ( $searched_date ) ;
+
+				if  ( $offset  ===  false )
+					$found_value	=  '*** NOT FOUND ***' ;
+				else
+					$found_value	=  $logfile -> GetLineByOffset ( $offset ) ;
+
+				if  ( $offset  ===  false )
+				   {
+					if  ( $expected_value  ===  false )
+						$match  =  '*' ;
+					else
+						$match	=  '' ;
+				    }
+				else
+				   {
+					if  ( strcasecmp ( $found_value, $expected_value ) )
+						$match	=  '' ;
+					else
+						$match  =  '*' ;
+				    }
+
+				$data []	=  
+				   [
+					'function'	=>  $function,
+					'search'	=>  $searched_date,
+					'expected'	=>  'E: ' . $expected_value . "\nF: " . $found_value,
+					'offset'	=>  $offset,
+					'match'		=>  $match,
+					'comparisons'	=>  $logfile -> LastSearchIterations
+				    ] ;
+			    }
+
+			output ( "Results for the \"$function\" function :" ) ;
+			echo $report -> Generate ( $data ) ;
+		    }
+	    }

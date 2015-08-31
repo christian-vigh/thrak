@@ -1,0 +1,52 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        AcceptRanges.phpclass
+
+    DESCRIPTION
+        Http Accept-Ranges header.
+
+    AUTHOR
+        Christian Vigh, 05/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/05/27]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace  	Thrak\Network\RfcProtocols\Http ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces and classes
+use     Thrak\System\Object ;
+use	Thrak\Network\RfcProtocols\Http\HttpStandardHeader ;
+
+
+/*==============================================================================================================
+
+    HttpAcceptRangesHeader class -
+        Http Accept-Ranges header implementation (http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.5).
+  
+	Examples :
+ 		Accept-Ranges: bytes
+		Accept-Ranges: none
+
+  ==============================================================================================================*/
+class	HttpAcceptRangesHeader		extends  HttpStandardHeader
+   {
+	public function  __construct ( $header )
+	   {
+		parent::__construct ( 'Accept-Ranges', $header ) ;
+	    }
+	
+	
+	// Disabled -
+	//	Returns true if the Accept-Ranges feature is disabled (ie, equal to "none").
+	public function  Disabled ( )
+	   {
+		return ( ! strcasecmp ( $this -> Name, 'none' ) ) ;
+	    }
+    }
