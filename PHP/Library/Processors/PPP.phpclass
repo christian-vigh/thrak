@@ -689,7 +689,7 @@ class	PPP  extends  Object
 						break ;
 
 					case	self::DIRECTIVE_ELSEIF_DEFINED :
-						// A #elseifdef directive can only happen #ifxxx or #elseifxxx directives.
+						// A #elseifdef directive can only happen after #ifxxx or #elseifxxx directives.
 						switch ( $if_conditions [ $if_last ] [ 'state' ] )
 						   {
 						   	case	self::STATE_IF_IF :

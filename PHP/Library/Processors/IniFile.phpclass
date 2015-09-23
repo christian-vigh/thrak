@@ -76,7 +76,7 @@ defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." 
 
 
 // Used namespaces and classes
-use  	Thrak\System\Object ;
+use  	Thrak\System\Object ;    
 use	Thrak\IO\Path ;
 use	Thrak\Types\String ;
 use	Thrak\Processors\VariableStore ;
@@ -501,8 +501,6 @@ class  IniFile  extends  Object
 	    			// Neither multiline, nor single-line : complain
 	    			else
 				   {
-				   output ( $single_re ) ;
-				   dump ( $entry ) ;
 					$this -> __SetPosition ( $file, '', $line+1, $char, $errhead ) ;
 	    				error ( new \Thrak\System\RuntimeException ( "$errhead Invalid entry :\n\t$entry." ) ) ;
 				    }
