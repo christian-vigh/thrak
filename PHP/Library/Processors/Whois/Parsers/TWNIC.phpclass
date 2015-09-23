@@ -29,7 +29,7 @@ use	Thrak\Processors\Whois\WhoisProviderInformation ;
 
 /*==============================================================================================================
 
-    WhoisFantomTWNICInformation -
+    WhoisTWNICInformation -
         A parser for whois data coming from Taiwan servers but not recognized by TWNIC.
 	Example input :
 		Netname: HINET-NET
@@ -42,7 +42,7 @@ use	Thrak\Processors\Whois\WhoisProviderInformation ;
 		network-adm@hinet.net
 
   ==============================================================================================================*/
-class  WhoisFantomTWNICInformation		extends  WhoisProviderInformation
+class  WhoisTWNICInformation		extends  WhoisProviderInformation
    {
 	protected static		$Definitions		=
 	   [

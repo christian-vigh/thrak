@@ -752,9 +752,12 @@ abstract class  WhoisInformation		extends		WhoisInformationBase
 			else if  ( ( $offset = stripos ( $contents, 'ARIN WHOIS data and services are subject' ) )  !==  false ) 
 			   {
 				$offset2	=  stripos ( $contents, 'This is the RIPE Database query service' ) ;
+				$offset3	=  stripos ( $contents, "LACNIC resource:" ) ;
 
-				if  ( $offset2  !==  false  &&  $offset2  <  $offset )
-					$class		=  '\Thrak\Processors\Whois\WhoisRIPEInformation' ;
+				if  ( $offset3  !==  false )
+					$class	=  '\Thrak\Processors\Whois\WhoisLACNICInformation' ;
+				else if  ( $offset2  !==  false  &&  $offset2  <  $offset )
+					$class	=  '\Thrak\Processors\Whois\WhoisRIPEInformation' ;
 				else
 					$class	=  '\Thrak\Processors\Whois\WhoisARINInformation' ;
 			    }
@@ -790,7 +793,7 @@ abstract class  WhoisInformation		extends		WhoisInformationBase
 					if  ( strpos ( $new_contents, 'The IP address not belong to TWNIC' )  !==  false )
 					   {
 						$contents	=  preg_replace ( '/: [ \t\r]* \n \s*/imsx', ': ', $contents ) ;
-						$class		=  '\Thrak\Processors\Whois\WhoisFantomTWNICInformation' ;
+						$class		=  '\Thrak\Processors\Whois\WhoisTWNICInformation' ;
 					    }
 				    }
 			    }

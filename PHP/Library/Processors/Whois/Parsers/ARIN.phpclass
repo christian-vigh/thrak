@@ -171,7 +171,8 @@ class  WhoisARINInformation		extends  WhoisProviderInformation
 			'connect: Connection timed out',
 			'connect: Connection refused',
 			'fgets: Connection reset by peer', 
-			'/Host \s+ [^\s] \s+ not \s+ found/imsx'
+			'/Host \s+ [^\s] \s+ not \s+ found/imsx',
+			'Name or service not known'
 		    ],
 		'data-blocks'			=>
 		   [
@@ -245,6 +246,10 @@ class  WhoisARINInformation		extends  WhoisProviderInformation
 							   [
 								'reallocated',
 								'reassigned'
+							    ],
+							self::NETTYPE_ALLOCATED_UNSPECIFIED	=> 
+							   [
+								'Allocated to APNIC'
 							    ]
 						    ]
 					 ],
