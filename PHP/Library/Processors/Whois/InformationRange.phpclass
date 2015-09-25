@@ -13,8 +13,11 @@
         Christian Vigh, 08/2015.
 
     HISTORY
-    [Version : 1.0]    [Date : 2015/08/07]     [Author : CV]
+    [Version : 1.0]	[Date : 2015/08/07]     [Author : CV]
         Initial version.
+
+    [Version : 1.0.1]	[Date : 2015/09/24]     [Author : CV]
+	. Added the SetIpRange() method.
 
  **************************************************************************************************************/
 namespace  Thrak\Processors\Whois ;
@@ -235,6 +238,19 @@ class  WhoisInformationRange		extends		WhoisInformationBase
 		return ( [ $this -> IpLow, $this -> IpHigh ] ) ;
 	    }
 
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    SetIpRange -
+		Allows to override the ip range detected in the whois information data. To be used for example on
+		whois information coming from AFRINIC, where the address range is 0.0.0.0 - 255.255.255.255.
+  
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  SetIpRange ( $low, $high )
+	   {
+		$this -> IpLow	=  $low ;
+		$this -> IpHigh =  $high ;
+	    }
 
 	/*--------------------------------------------------------------------------------------------------------------
 	 
