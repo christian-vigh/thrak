@@ -44,7 +44,13 @@
 
     [Version : 2.0.7]	[Date : 2015/06/18]		[Author : CV]
 	. Added the GetDefaultValue() method, which interprets PHP tags.
- 
+
+    [Version : 2.0.8]	[Date : 2015/09/24]		[Author : CV]
+	. Changed the ProcessValues() method so that parameter types ending with a delimiter (such
+	  as the <command-line> tag) call the derived ProcessValue() method directly with the array
+	  of values found on the script command line.
+	. Added the PreprocessAttributeValue() and PostprocessAttributeValue() methods.
+
 ***************************************************************************************************/
 namespace 	Thrak\Processors\CL ;
 
@@ -113,7 +119,7 @@ use		Thrak\Types\String\Convert ;
 
 	arguments, argument, args or arg (2-value list) -
 		A notational shortcut for specifying the min and max number of arguments as
-		a list of 2 values.
+		a range of 2 values.
 
 	validation-regex, validation-expression or validation-expr (string) -
 		Validation string expressed as a regular expression. If not delimiter has
@@ -339,6 +345,8 @@ class  CLAbstractParameter  extends Object
 	public		$ReturnValueHelp		=  null ;
 	// Return value type
 	public		$ReturnValueType		=  self::RETURN_VALUE_SINGLE ;
+	// Delimiter - used for parameters that accept multiple arguments until a delimiter has been found
+	public		$Delimiter			=  null ;
 
 
 	/*******************************************************************************************/
@@ -938,6 +946,9 @@ class  CLAbstractParameter  extends Object
 		$preprocessor 		=  $attribute_definition [ 'preprocessor' ] ;
 		$postprocessor		=  $attribute_definition [ 'postprocessor' ] ;
 
+		// Give a chance to derived classes to preprocess attribute value
+		$value			=  $this -> PreprocessAttributeValue ( $name, $value ) ;
+
 		// Preprocess the value
 		$value 			=  $this ->__run_callback ( $preprocessor, $this, $attribute_definition, $tag, $name, $value ) ;
 
@@ -1080,6 +1091,9 @@ class  CLAbstractParameter  extends Object
 
 		// Postprocess the value
 		$attribute_value 		=  $this ->__run_callback ( $postprocessor, $this, $attribute_definition, $tag, $name, $attribute_value ) ;
+
+		// Give a chance to derived classes to postprocess attribute value
+		$attribute_value		=  $this -> PostprocessAttributeValue ( $name, $attribute_value ) ;
 
 		// Save the attribute value to this class member
 		// In the case multiple class members are in the definition, check that the returned values is an array
@@ -1299,6 +1313,17 @@ class  CLAbstractParameter  extends Object
 			return ( array ( ) ) ;
 		    }
 
+
+		// Another small kludge for parameters whose value must end with a delimiter ; they can have in
+		// fact multiple arguments
+		if  ( $this -> Delimiter )
+		   {
+			$result		=  $this -> ProcessValue ( $name, $values ) ;
+
+			return ( $result ) ;
+		    }
+
+
 		// Loop through values
 	   	foreach  ( $values  as  $value )
 	   	   {
@@ -1344,6 +1369,41 @@ class  CLAbstractParameter  extends Object
 		return ( $value ) ;
 	    }
 
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		PreprocessAttributeValue, PostprocessAttributeValue
+
+	    PROTOTYPE
+		$value	=  $this -> PreprocessAttributeValue  ( $name, $value ) ;
+		$value  =  $this -> PostprocessAttributeValue ( $name, $value ) ;
+
+	    DESCRIPTION
+		Give a chance to derived classes to process and modify attribute values before the 
+		very first operation is on them applied and after the very last one (ie, just before 
+		the final value is added to the value store).
+		This is also the preferred functions to implement when the derived class must
+		initialize its internal variables based on the supplied value contents.
+
+	    PARAMETERS
+	    	$name (string) -
+	    		Attribute name.
+
+    		$value (string) -
+    			Attribute value.
+
+	 --------------------------------------------------------------------------------------------*/
+	protected function  PreprocessAttributeValue ( $name, $value )
+	   {
+		return ( $value ) ;
+	    }
+
+
+	protected function  PostprocessAttributeValue ( $name, $value )
+	   {
+		return ( $value ) ;
+	    }
 
 	/*-------------------------------------------------------------------------------------------
 
