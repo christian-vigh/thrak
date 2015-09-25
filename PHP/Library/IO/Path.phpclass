@@ -2127,7 +2127,7 @@ v				- 'block' :
 		
 		// Search for every directory in PATH (on Windows systems, it also systematically include the current path)
 		$paths	=  explode ( PATH_SEPARATOR, $path ) ;
-		
+
 		foreach  ( $paths  as  $prefix )
 		   {
 			if ( ! $prefix )
