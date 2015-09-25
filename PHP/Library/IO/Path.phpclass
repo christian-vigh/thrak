@@ -663,7 +663,7 @@ class  	Path	extends  Object
 				- 'link' :
 					Symbolic link.
 
-v				- 'block' :
+				- 'block' :
 					Block device.
 
 				- 'character' :
