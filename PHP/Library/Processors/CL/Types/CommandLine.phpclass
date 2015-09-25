@@ -1,0 +1,223 @@
+<?php
+/***************************************************************************************************
+
+    NAME
+	CommandLine.phpclass
+
+    DESCRIPTION
+     	A parameter that accepts a command and its arguments.
+	A command-line parameter can be specified in the following way :
+
+		cmd opt1 [ ... optn ] ;
+
+	Where "cmd" is the command and the "opt1 ... optn" are its optional arguments (that can 
+	include the switch character). 
+	The command line parameter must be terminated by a semicolon, unless "optn" is the very last 
+	option of the script command line.
+
+    AUTHOR
+     	Christian Vigh, 09/2015.
+
+    HISTORY
+    [Version : 1.0]	[Date : 2015/09/24]	[Author : CV]
+     	Initial version.
+
+***************************************************************************************************/
+namespace  	Thrak\Processors\CL ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces and classes
+use 	Thrak\Processors\CL\CLException ;
+use	Thrak\IO\Path ;
+
+
+/*==================================================================================================
+
+    CLCommandLineParameter class -
+	Implements a parameter whose value is a command line with its options, separated by spaces,
+	and terminated by a semicolon delimiter.
+
+  ==================================================================================================*/
+class  CLCommandLineParameter  extends  \Thrak\Processors\CL\CLAbstractParameter
+   {
+	// Command disposition constants
+	const		DISPOSITION_ANY			=  0 ;		// Command existence is not checked
+	const		DISPOSITION_EXISTING		=  1 ;		// The command must already exist.
+
+	// Disposition for the command
+	public		$Disposition			=  self::DISPOSITION_ANY ;
+	// List of supported extensions (Windows platforms only)
+	public		$Extensions			=  null ;
+	protected	$ExtensionList			=  [] ;
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Class constructor.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __construct ( $parent, $tags, $valuetext = "command [options] ;" )
+	   {
+		
+
+		$this -> Help 			=  "Defines a command-line parameter, ie a command with optional arguments, terminated by a semicolon" ;
+   		$this -> ReturnValueHelp	=  "Returns an associative array containing the following elements :\n" .
+						   "\t- 'name' :\n" .
+						   "\t\tThe initial command name.\n" .
+						   "\t- 'path' :\n" .
+						   "\t\tFull path of the command (if exists) or the original command name.\n" .
+						   "\t- 'argv' :\n" .
+						   "\t\tAn array containing the command arguments.\n" .
+						   "\t- 'command' :\n" .
+						   "\t\tThe full command, where all items containing spaces are enclosed with double quotes." .
+						   "\t- 'full-command' :\n" .
+						   "\t\tThe same full command, with an absolute path." ;
+		$this -> Delimiter		=  ';' ;
+
+	   	$definitions  =  
+		   [
+			   [
+		   		'names'		=>  'disposition',
+		   		'type'		=>  self::ATTRIBUTE_TYPE_KEYWORD,
+		   		'member' 	=>  'Disposition',
+		   		'help'		=>  
+		   		   [
+		   		   	"Disposition for the specified command ; can be any one of the following :\n\n",
+		   		   	"existing or exists -\n",
+		   		   	"\tThe command must already exists. An error will occur if it does not exists.\n",
+		   		   	"any -\n",
+		   		   	"\tCommand existence is not checked.\n"
+	   		   	    ],
+		   	    	'keywords' 	=>  
+		   	    	   [
+		   	    	   	'existing'		=>  self::DISPOSITION_EXISTING,
+		   	    	   	'exists'		=>  self::DISPOSITION_EXISTING,
+		   	    	   	'any'			=>  self::DISPOSITION_ANY
+				    ]
+		    	    ],
+			   [
+		   		'names'		=>  [ 'delimiter', 'delim' ],
+		   		'type'		=>  self::ATTRIBUTE_TYPE_STRING,
+		   		'member' 	=>  'Delimiter',
+		   		'help'		=>  'Delimiter string, that signals the end of the command' 
+		    	    ],
+			   [
+		   		'names'		=>  [ 'extensions', 'ext' ],
+		   		'type'		=>  self::ATTRIBUTE_TYPE_STRING,
+		   		'member' 	=>  'Extensions',
+		   		'help'		=>  'Supported extensions (Windows only, this parameter is ignored on Unix platforms)' 
+		    	    ]
+   		    ] ;
+
+	   	$removed_attributes	=  [ "min-arguments", "max-arguments", "arguments" ] ;
+
+
+		parent::__construct ( $parent, $tags, $valuetext, $definitions, null, $removed_attributes ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Process value.
+
+	 --------------------------------------------------------------------------------------------*/
+ 	protected function  ProcessValue ( $name, $values )
+ 	   {
+		$cmdname	=  Path::ToUnix ( $values [0] ) ;
+		$path		=  Path::ToUnix ( Path::WhereIs ( $cmdname ) ) ;
+		$argc		=  count ( $values ) ;
+		$escaped_args	=  [] ;
+
+
+		// Complain if the command must exist but has not been found
+		if  ( ! $path )
+		   {
+			if  ( $this -> Disposition  ==  self::DISPOSITION_EXISTING )
+				error ( new CLException ( "Command \"$cmdname\" not found for parameter \"$name\"." ) ) ;
+			else
+				$path	=  $cmdname ;
+		    }
+
+		// Windows-specifics
+		if  ( IS_WINDOWS )
+		   {
+			// If an extension list has been specified, verify that the file extension exists in this list
+			if  ( $this -> ExtensionList )
+			   {
+				$path_extension	=  pathinfo ( $path, PATHINFO_EXTENSION ) ;
+				$found		=  false ;
+
+				foreach  ( $this -> ExtensionList  as  $extension )
+				   {
+					if  ( ! strcasecmp ( $path_extension, $extension ) )
+					   {
+						$found	=  true ;
+						break ;
+					    }
+				    }
+
+				if  ( ! $found )
+					error ( new CLException ( "The specified command (\"$cmdname.$path_extension\") does not have one of the required extensions (" .
+							implode ( ', ', $this -> ExtensionList ) . ")" ) ) ;
+			    }
+		    }
+		
+		// Build an escaped command line
+		array_shift ( $values ) ;
+
+		foreach  ( $values  as  $value )
+		   {
+			if  ( strpos ( $value, ' ' )  ===  false )
+				$escaped_args []	=  $value ;
+			else
+				$escaped_args []	=  '"' . str_replace ( '"', "\\\"", $value ) . '"' ;
+		    }
+
+		$result		=
+		   [
+			'name'		=>  $cmdname,
+			'path'		=>  $path,
+			'argv'		=>  $values,
+			'command'	=>  implode ( ' ', array_merge ( [ $cmdname ], $escaped_args ) ),
+			'full-command'	=>  implode ( ' ', array_merge ( [ $path ], $escaped_args ) )
+		    ] ;
+
+		// We must return the associative array $result in an array otherwise its keys would be interpreted as
+		// an array of results
+		return ( [ $result ] ) ;
+ 	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Post-process attribute value. This is where we initialize the $ExtensionList member.
+
+	 --------------------------------------------------------------------------------------------*/
+	protected function  PostprocessAttributeValue ( $name, $value ) 
+	   {
+		if  ( ! strcasecmp ( $name, "extensions" ) )
+		   {
+			$list		=  explode ( ',', $value ) ;
+			$extensions	=  [] ;
+
+			foreach  ( $list  as  $item )
+			   {
+				$item	=  trim ( $item ) ;
+
+				if  ( ! $item )
+					continue ;
+
+				if  ( $item [0]  ==  '.' )
+					$item	=  substr ( $item, 1 ) ;
+
+				$extensions []	=  $item ;
+			    }
+
+			$this -> ExtensionList	=  $extensions ;
+		    }
+
+		return ( $value ) ;
+	    }
+   }

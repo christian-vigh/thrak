@@ -79,7 +79,12 @@
 	  of the related parameter cannot be limited (minimum occurrences are 0 or 1, depending on
 	  the value of the "required" and "min-arguments" attributes ; maximum occurrence count is
 	  unlimited).
-	 
+ 
+   [Version : 2.0.11]	[Date : 2015/09/24]		[Author : CV]
+	. Added the $Delimiter property ; the idea is to allow any arbitrary data after a command
+	  switch (such as <command-line>) : individual parameters are captured until the delimiter
+	  has been found or the last command-line argument has been processed.
+
  ***************************************************************************************************/
 namespace 	Thrak\Processors\CL ;
 
@@ -1002,7 +1007,7 @@ END;
 						$array			=  &$unnamed_parameters ;
 
 						if  ( ! $unnamed_count )
-							error ( new CLException ( "Unnamed parameters are not allowed on the command-line." ) ) ;
+							error ( new CLException ( "Unnamed parameters are not allowed on the command-line (\"$arg\")." ) ) ;
 
 						$current_unnamed_parameter 	=  $this -> UnnamedParameters [ $current_unnamed_index ] ;
 
@@ -1117,6 +1122,38 @@ END;
 				   			error ( new CLException ( "At most {$current_parameter -> MaxArguments} $msg, $argcount were supplied." ) ) ;
 				   	    }
 
+					// If a delimiter string is defined for this parameter, then we have to collect all the 
+					// following arguments until one is found that ends with this delimiter string
+					if  ( $current_parameter -> Delimiter )
+					   {
+						$count	=  count ( $args ) ;
+
+						if  ( $count  !=  1 )
+							error ( new CLException ( "Logic error in CLParser : parameter has a delimiter (\"{$this -> Delimiter}\") " .
+									"and $count arguments have been collected instead of 1." ) ) ;
+
+						$args	=  [] ;
+
+						for  ( $j  =  $i ; $j  <  $argc ; $j ++ )
+						   {
+							$temp_arg	=  rtrim ( $argv [$j] ) ;
+
+							if  ( String::EndsWith ( $temp_arg, $current_parameter -> Delimiter ) )
+							   {
+								$temp_arg	=  substr ( $temp_arg, 0, strrpos ( $temp_arg, $current_parameter -> Delimiter ) ) ;
+
+								if  ( strlen ( $temp_arg ) )
+									$args []	=  $temp_arg ;
+
+								break ;
+							    }
+							else
+								$args []	=  $argv [$j] ;
+						    }
+
+						$i	=  $j ; 
+					    }
+
 					// We have collected the parameter name and its arguments ; save them, together with the
 					// corresponding parameter object
 					$array [] =  array
@@ -1170,7 +1207,7 @@ END;
 						if  ( $argcount  <  $Parameter -> MinArguments )
 							error ( new CLException ( "At least {$Parameter -> MinArguments} $msg, $argcount were supplied." ) ) ;
 
-						if  ( ! $Parameter -> MultipleAllowed )
+						if  ( ! $Parameter -> Delimiter  &&  ! $Parameter -> MultipleAllowed )
 						   {
 							if  (  $argcount  >  $Parameter -> MaxArguments )
 							   {

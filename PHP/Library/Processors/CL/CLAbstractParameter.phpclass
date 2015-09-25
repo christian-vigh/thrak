@@ -50,6 +50,8 @@
 	  as the <command-line> tag) call the derived ProcessValue() method directly with the array
 	  of values found on the script command line.
 	. Added the PreprocessAttributeValue() and PostprocessAttributeValue() methods.
+	. Corrected a bug where the attribute name specified in the xml definition was passed to
+	  the GetAttributeValue() method, instead of the first item of attribute name and aliases.
 
 ***************************************************************************************************/
 namespace 	Thrak\Processors\CL ;
@@ -1829,6 +1831,7 @@ class  CLAbstractParameter  extends Object
 
 			// Get the attribute definition
 			$attribute_definition	=  $this -> AttributeDefinitions [ $index ] ;
+			$main_name		=  $attribute_definition [ 'names'] [0] ;
 
 			// If the attribute is a range, then we need to make special processing
 			if  ( $attribute_definition [ 'type' ]  ==  self::ATTRIBUTE_TYPE_RANGE )
@@ -1857,8 +1860,8 @@ class  CLAbstractParameter  extends Object
 				$highattr 	=  $attrdata [1] ;
 
 				// Then the processed values
-				$low_value	=  $this -> GetAttributeValue ( $lowattr , $tag, $name, $values [0] ) ;
-				$high_value 	=  $this -> GetAttributeValue ( $highattr, $tag, $name, $values [1] ) ;
+				$low_value	=  $this -> GetAttributeValue ( $lowattr , $tag, $main_name, $values [0] ) ;
+				$high_value 	=  $this -> GetAttributeValue ( $highattr, $tag, $main_name, $values [1] ) ;
 
 				// And, finally, save the values
 				$lowattr	=  $low_value ;
@@ -1867,7 +1870,7 @@ class  CLAbstractParameter  extends Object
 			// Otherwise get the single attribute value
 			else
 			   {
-				$attribute_value 	=  $this -> GetAttributeValue ( $attribute_definition, $tag, $name, $value ) ;
+				$attribute_value 	=  $this -> GetAttributeValue ( $attribute_definition, $tag, $main_name, $value ) ;
 
 	   	   		// Save the value
 	   	   		$this -> AttributeDefinitions [ $index ] [ 'value' ] = $attribute_value ;
