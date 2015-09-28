@@ -417,6 +417,9 @@ abstract class  WhoisInformation		extends		WhoisInformationBase
 		// Merge global and local definitions
 		$definitions		=  static::$Definitions ;
 
+		if  ( ! count ( $definitions ) )
+			return ( [] ) ;
+
 		if  ( isset ( static::$LocalDefinitions ) )
 			$definitions	=  ArrayHelpers::MergeAssocRecursive ( $definitions, static::$LocalDefinitions ) ;
 
@@ -708,7 +711,7 @@ abstract class  WhoisInformation		extends		WhoisInformationBase
 
 		// Ignore everything after "Found a referral to"
 		// This is a temporary kludge for whois information that mix ARIN and RIPE data output
-		if  ( ( $index  =  stristr ( $contents, 'Found a referral to' ) )  !==  false )
+		if  ( ( $index  =  stripos ( $contents, 'Found a referral to' ) )  !==  false )
 			$contents	=  substr ( $contents, 0, $index ) ;
 
 		$contents	=  trim ( $contents ) ;
@@ -788,6 +791,14 @@ abstract class  WhoisInformation		extends		WhoisInformationBase
 			   {
 				$class	=  '\Thrak\Processors\Whois\WhoisJPNICInformation' ;
 			    }
+			else if  ( \Thrak\Processors\Whois\WhoisUnclassifiedInformation::IsCandidate ( $contents ) )
+			   {
+				$class	=  '\Thrak\Processors\Whois\WhoisUnclassifiedInformation' ;
+			    }
+			else if  ( stripos ( $contents, 'The IP address not belong to TWNIC' )  !==  false )
+			   {
+				$class	=  '\Thrak\Processors\Whois\WhoisFantomTWNICInformation' ;
+			    }
 			// Non standard whois output or error - try to search a little bit further
 			else
 			   {
@@ -805,8 +816,23 @@ abstract class  WhoisInformation		extends		WhoisInformationBase
 			    }
 		     }
 
+		// Check that we found a valid class
+		$object		=  null ;
+
 		if  ( $class )
-			return ( new $class ( $ip_or_domain, $contents ) ) ;
+		   {
+			$object		=  new $class ( $ip_or_domain, $contents ) ;
+
+			// Some unclassified data may look like ARIN data, but no information block is returned
+			if  ( ! count ( $object )  &&  \Thrak\Processors\Whois\WhoisUnclassifiedInformation::IsCandidate ( $contents ) ) 
+			   {
+				$object		=  new \Thrak\Processors\Whois\WhoisUnclassifiedInformation ( $ip_or_domain, $contents ) ;
+			    }
+		    }
+
+		// All done, return the instanciated object or complain because no
+		if  ( $object )
+			return ( $object ) ;
 		else
 			error ( new WhoisInformationException ( "Cannot determine Whois data class for $ip_or_domain with the contents listed below :\n$contents" ) ) ;
 	    }

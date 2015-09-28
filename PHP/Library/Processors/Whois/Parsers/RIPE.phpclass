@@ -104,7 +104,7 @@ class  WhoisRIPEInformation		extends  WhoisProviderInformation
 			'start'		=>  '^\s*inetnum:'
 		    ],
 		'comments'			=>  [ '\#', '%' ],
-		'keyword-match'			=>  '/^(?P<keyword> [^\s:]+) \s* : \s* (?P<value> .*) \s*$/imsx',
+		'keyword-match'			=>  '/^(?P<keyword> [^:]+?) \s* : \s+ (?P<value> .*) \s*$/imsx',
 		'line-breaks'			=>  true,
 		'ignore'			=>  
 		   [
@@ -334,7 +334,7 @@ class  WhoisRIPEInformation		extends  WhoisProviderInformation
 					 ],
 					self::TYPE_PROVIDER_ABUSE_CONTACT	=>
 					[ 
-						'name'			=>  [ 'abuse-c' ],
+						'name'			=>  [ 'abuse-c', 'abuse-email' ],
 						'type'			=>  self::TYPE_PROVIDER_ABUSE_CONTACT,
 						'value-type'		=>  self::VALUE_TYPE_STRING,
 						'multiple'		=>  true
@@ -862,7 +862,7 @@ class  WhoisRIPEInformation		extends  WhoisProviderInformation
 		Handles some exceptions in whois output.
 
 	 *-------------------------------------------------------------------------------------------------------------*/
-	public function  Parse ( $contents )
+	protected function  Parse ( $contents )
 	   {
 		// List of replacement strings for whois output
 		static		$replacements  =

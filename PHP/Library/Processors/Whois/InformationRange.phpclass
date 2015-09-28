@@ -139,7 +139,10 @@ class  WhoisInformationRange		extends		WhoisInformationBase
 			return ( $this -> Country ) ;
 		    }
 
-		// All solutions have been explored : bail out
+		// All solutions have been explored : bail out, but only if we do not have really unstructured informated
+		if  ( get_class ( $this -> Parent )  ==  'Thrak\Processors\Whois\WhoisUnclassifiedInformation' )
+			return ( '' ) ;
+
 		error ( new WhoisInformationException ( "Could not find country information in class " . get_class ( $this -> Parent ), 
 								$this -> Parent -> Contents ) ) ;
 	    }

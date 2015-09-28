@@ -1,0 +1,247 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        Generic.phpclass
+
+    DESCRIPTION
+        A parser for unclassified whois information such as :
+
+	---------------------------------------------------------------------------------------------------
+	#
+	# ARIN WHOIS data and services are subject to the Terms of Use
+	# available at: https://www.arin.net/whois_tou.html
+	#
+	# If you see inaccuracies in the results, please report at
+	# http://www.arin.net/public/whoisinaccuracy/index.xhtml
+	#
+
+
+	#
+	# The following results may also be obtained via:
+	# http://whois.arin.net/rest/nets;q=200.62.0.0?showDetails=true&showARIN=false&showNonArinTopLevelNet=false&ext=netref2
+	#
+
+	IFX Corporation IFX-CORE-LOOPBACKS (NET-200-62-0-0-2) 200.62.0.0 - 200.62.0.255
+	IFX Corporation IFXCORP-NET (NET-200-62-0-0-1) 200.62.0.0 - 200.62.63.255
+
+
+
+	#
+	# ARIN WHOIS data and services are subject to the Terms of Use
+	# available at: https://www.arin.net/whois_tou.html
+	#
+	# If you see inaccuracies in the results, please report at
+	# http://www.arin.net/public/whoisinaccuracy/index.xhtml
+	#
+	---------------------------------------------------------------------------------------------------
+
+	or as :
+
+	---------------------------------------------------------------------------------------------------
+	NTT America - Dallas/Fort Worth (NETBLK-VRIO-A048-VERIOTXDFW1) VRIO-A048-VERIOTXDFW1								       204.0.0.0 - 204.0.0.255
+	NTT America - Dallas/Fort Worth (NETBLK-ONRT-DED-0) ONRT-DED-0 204.0.0.0 - 204.0.63.255
+	NTT America, Inc. (NETBLK-VRIO-204-000) VRIO-204-000 204.0.0.0 - 204.3.255.255
+
+	To single out one record, look it up with "xxx", where xxx is the
+	handle, shown in parenthesis following the name, which comes first.
+
+	This database contains ONLY records under the administrative control of
+	NTT America, Inc.  No portion of this data may be used for anything other
+	than Internet operational purposes.
+	---------------------------------------------------------------------------------------------------
+
+    AUTHOR
+        Christian Vigh, 09/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/09/28]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace  Thrak\Processors\Whois ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces and classes
+use  	Thrak\System\Object ;
+use	Thrak\IO\Path ;
+use	Thrak\Types\String ;
+use	Thrak\Processors\Whois\WhoisRIPEInformation ;
+
+
+/*==============================================================================================================
+
+    WhoisUnclassifiedInformation -
+        A class for handling unclassified whois data.
+
+  ==============================================================================================================*/
+class  WhoisUnclassifiedInformation		extends  WhoisRIPEInformation
+   {
+	static private  $DataMatch1	=  '/
+						(?P<description>
+							.*?
+							)
+						\s+
+						(?P<name>
+							[A-Za-z0-9\-]+
+						 )
+						\s+
+						\(
+							(?P<name2> [^)]+)
+						\)
+						\s+
+						(?P<iplow> \d+ \. \d+ \. \d+ \. \d+)
+						\s+ - \s+
+						(?P<iphigh> \d+ \. \d+ \. \d+ \. \d+)
+						/imsx' ;
+
+	static private  $DataMatch2	=  '/
+						(?P<description>
+							.*?
+							)
+						\s+
+						\(
+							(?P<name2> [^)]+)
+						\)
+						\s+
+						(?P<name>
+							[A-Za-z0-9\-]+
+						 )
+						\s+
+						(?P<iplow> \d+ \. \d+ \. \d+ \. \d+)
+						\s+ - \s+
+						(?P<iphigh> \d+ \. \d+ \. \d+ \. \d+)
+						/imsx' ;
+
+
+	public function  __construct ( $queried_ip, $contents )
+	   {
+		parent::__construct ( $queried_ip, $contents ) ;
+	    }
+
+
+	// IsCandidate -
+	//	Checks if the supplied data contains that sort of denormalized whois information.
+	public static function  IsCandidate ( $contents )
+	   {
+		$lines			=  explode ( "\n", $contents ) ;
+
+		// Loop through input lines
+		foreach  ( $lines  as  $line )
+		   {
+			$line	=  trim ( $line ) ;
+
+			if  ( ! $line  ||  $line [0]  ==  '#' )
+				continue ;
+
+			if  ( self::IsUnclassifiedDataLine ( $line ) )
+				return ( true ) ;
+		    }
+
+		// No matching line found
+		return ( false ) ;
+	    }
+
+
+	// IsUnclassifiedDataLine -
+	//	Checks if the specified line contains unstructured whois information.
+	private static function  IsUnclassifiedDataLine ( $line, &$match = null )
+	   {
+		if  ( preg_match ( self::$DataMatch1, $line, $match ) )
+			return ( true ) ;
+		else if  ( preg_match ( self::$DataMatch2, $line, $match ) )
+			return ( true ) ;
+		else 
+			return ( false ) ;
+	    }
+
+
+	// Parse -
+	//	Transforms the supplied contents into RIPE contents before calling the real parsing function.
+	protected function  Parse ( $contents )
+	   {
+		static	$countries	= 
+		   [
+			'brazil'		=>  'BR',
+			'america'		=>  'US'
+		    ] ;
+
+		$matching_entries	=  [] ;
+		$lines			=  explode ( "\n", $contents ) ;
+		$last_country		=  '' ;
+
+		// Loop through input lines
+		foreach  ( $lines  as  $line )
+		   {
+			$line	=  trim ( $line ) ;
+
+			if  ( ! $line  ||  $line [0]  ==  '#' )
+				continue ;
+
+			$match	=  null ;
+
+			if  ( self::IsUnclassifiedDataLine ( $line, $match ) )
+			   {
+				$entry 	=
+				   [
+					'description'	=>  $match [ 'description' ],
+					'netname'	=>  $match [ 'name' ],
+					'netname2'	=>  $match [ 'name2' ],
+					'netrange'	=>  $match [ 'iplow' ] . ' - ' . $match [ 'iphigh' ] 
+				    ] ;
+
+				// Search for something that could help us guess the country
+				$country	=  '' ;
+
+				foreach  ( $countries  as  $country_name => $country_code )
+				   {
+					if  ( stripos ( $line, $country_name )  !==  false )
+					   {
+						$country =  $country_code ;
+						break ;
+					    }
+				    }
+
+				// A country has been found
+				if  ( $country )
+				   {
+					$entry [ 'country' ]	=  $country ;
+					$last_country		=  $country ;
+				    }
+				// If several whois data lines exist and some of them do not have something that could indicate
+				// a country, then assume it is the same as the last one encountered so far
+				else if  ( $last_country )		
+					$entry [ 'country' ]	=  $last_country ;
+
+				$matching_entries []	=  $entry ;
+			    }
+		    }
+
+		// If nothing found, return null
+		if  ( ! count ( $matching_entries ) )
+			return ( null ) ;
+
+		// Convert found data to RIPE format
+		$new_contents	=  '' ;
+
+		foreach  ( $matching_entries  as  $entry )
+		   {
+			if  ( $new_contents )
+				$new_contents	.=  "\n" ;
+
+			$new_contents	.=  
+				"inetnum:     {$entry [ 'netrange' ]}\n" .
+				"status:      allocated\n" .
+				"netname:     {$entry [ 'netname' ]}\n" .
+				"owner:       {$entry [ 'netname2' ]}\n" .
+				"descr:       {$entry [ 'description' ]}\n" ;
+				
+			if  ( isset ( $entry [ 'country' ] ) )
+				$new_contents	.=  "country:     {$entry [ 'country' ]}\n" ;
+		    }
+
+		parent::Parse ( $new_contents ) ;
+	    }
+    }
