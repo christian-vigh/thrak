@@ -24,6 +24,7 @@ use  	Thrak\System\Object ;
 use	Thrak\IO\Path ;
 use	Thrak\Types\String ;
 use	Thrak\Processors\WhoisInformationException ;
+use	Thrak\Processors\WhoisInformation ;
 use	Thrak\Processors\Whois\WhoisRIPEInformation ;
 use     Thrak\Processors\IniFile ;
 
@@ -297,8 +298,12 @@ class  WhoisKRNICInformation		extends  WhoisARINInformation
 
 					// Section does not exist
 					default :
-						error ( new WhoisInformationException ( "No section '$section' is authorized for " .
-								"class {$this -> MyClass}.", $contents ) ) ;
+						if  ( $section )
+							error ( new WhoisInformationException ( "No section '$section' is authorized for " .
+									"class {$this -> MyClass}.", $contents ) ) ;
+						// When $section is empty, this means that KRNIC output does not contain any whois server information at all
+						else
+							$this -> Flags	|=  WhoisInformation::WHOIS_FLAGS_SERVER_NOT_FOUND ;
 				    }
 
 				$text	.=  "\n" ;
