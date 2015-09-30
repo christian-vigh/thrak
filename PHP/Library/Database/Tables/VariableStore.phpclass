@@ -2,7 +2,7 @@
 /**************************************************************************************************************
 
     NAME
-        KeyValueStore.phpclass
+        VariableStore.phpclass
 
     DESCRIPTION
         Implements a variable store, which can be accessed either as an object or an associative array.
@@ -113,7 +113,7 @@ class   VariableStore		extends		Table
 			database.
 	 
 	    RETURN VALUE
-	        Returns true if everything went ok, false otherwise.
+	        Returns true if the variable has been created, false if it has been updated.
 	 
 	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  Define ( $name, $value, $type = self::TYPE_STRING )
@@ -135,7 +135,8 @@ class   VariableStore		extends		Table
 						WHERE
 							id = {$row [ 'id' ]}
 				   " ;
-		    }
+			$status		=  false ;
+		   }
 		else
 		   {
 			$escaped_name	=  $this -> Database -> Escape ( $name ) ;
@@ -148,11 +149,12 @@ class   VariableStore		extends		Table
 							creation_time	=  NOW(),
 							update_time	=  NOW()
 					   " ;
-		    }
+			$status		=  true ;
+		   }
 
 		$this -> Database -> Execute ( $query ) ;
 		
-		return ( ( $this -> Database -> LastErrorNumber ) ?  false : true ) ;
+		return ( $status ) ;
 	    }
 
 
