@@ -18,7 +18,7 @@
 
     [Version : 1.0.1]	[Date : 2015/07/07]     [Author : CV]
 	. Changed the md5 field to "checksum", which now holds a CRC32 value (index was bigger than data size
-	  when using an md5 value).
+	  when using an md5 value and the number of collisions not big enough to justify the difference).
 	. Added the $comment parameter to the class constructor
 
     [Version : 1.0.2]	[Date : 2015/07/23]     [Author : CV]
