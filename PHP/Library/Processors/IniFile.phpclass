@@ -69,6 +69,10 @@
 		  value.
 		. Authorize spaces in key names
  
+	[Version : 1.0.11]		[Date : 2015/06/12]	[Author : CV]
+		. $this -> EOL and $this -> CRLF were handled inconsistently.
+		. Spaces before the equal sign for single-line entries where not preserved
+
  ***************************************************************************************************/
 namespace  Thrak\Processors ;
 
@@ -176,7 +180,7 @@ class  IniFile  extends  Object
 	   {
 	   	// Determine the current EOL string, depending on OS type.
 	   	// This setting may be overriden if .INI file contents coming from a different OS are loaded.
-	   	if  ( IS_STANDALONE )
+	   	if  ( IS_WINDOWS )
 	   	   {
 			$this -> CRLF	=  true ;
                         $this -> EOL    =  "\r\n" ;
@@ -314,9 +318,9 @@ class  IniFile  extends  Object
 		$key_value_separator	=  $this -> Separator ;
 
  	   	$single_re		=  '/^
-   						(?P<name> [^' . $key_value_separator . ']+)
+   						(?P<name> [^ \t' . $key_value_separator . ']+)
 							(
- 	   							(?P<sep>  ' . $key_value_separator . '\s*)
+ 	   							(?P<sep>  \s*' . $key_value_separator . '\s*)
  	   							(?P<value> .*)
 							 )?
 			 		     $/isx' ;
@@ -469,7 +473,7 @@ class  IniFile  extends  Object
 				if  ( preg_match ( $multi_re, $entry, $matches ) )
    				   {
 					$name		=  trim ( $matches [ 'name' ] ) ;
-					$separator	=  trim ( $matches [ 'sep' ] ) ;
+					$separator	=  $matches [ 'sep' ] ;
 					$word 		=  trim ( $matches [ 'word' ] ) ;
 					$multiline 	=  true ;
 
@@ -735,13 +739,8 @@ class  IniFile  extends  Object
 	 --------------------------------------------------------------------------------------------*/
 	public function  AppendFromArray ( $array )
 	   {
-		if  ( IS_STANDALONE )
-			$eol = "\r\n" ;
-		else
-			$eol = "\n" ;
-
 		$this -> Dirty = true ;
-		return ( $this -> __Load ( implode ( $eol, $array ), null, $this -> Separator ) ) ;
+		return ( $this -> __Load ( implode ( $this -> EOL, $array ), null, $this -> Separator ) ) ;
 	     }
 
 
@@ -1556,13 +1555,8 @@ class  IniFile  extends  Object
 	 --------------------------------------------------------------------------------------------*/
 	public static function  LoadFromArray ( $array, $separator = '=' )
 	   {
-		if  ( IS_STANDALONE )
-			$eol = "\r\n" ;
-		else
-			$eol = "\n" ;
-
 		$object = new IniFile ( $separator ) ;
-		$object -> __Load ( implode ( $eol, $array ) ) ;
+		$object -> __Load ( implode ( $this -> EOL, $array ) ) ;
 
 		return ( $object ) ;
 	    }
