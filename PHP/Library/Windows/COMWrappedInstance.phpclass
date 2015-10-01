@@ -154,8 +154,6 @@ abstract class  COMWrappedInstance  extends  Object
 		// Count one instance less
 		self::$____created_instances____ -- ;
 		
-		//echo ( "Destruct {$this -> ____com_class____}\n" ) ;
-
 		$index		=  0 ;
 		$com_object	=  &$this -> ____com_object____ ;
 		
@@ -164,8 +162,6 @@ abstract class  COMWrappedInstance  extends  Object
 			if  ( $object  ==  $com_object )
 			   {
 				unset ( self::$____printr_seen_objects____ [ $index ] ) ;
-				//$count = count ( self::$____printr_seen_objects____ ) ;
-				//echo ( "***************** UNSET at $index !!!! COUNT = $count\n" ) ;
 			    }
 			
 			$index ++ ;
