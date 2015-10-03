@@ -259,9 +259,11 @@ class	ArrayWrapper		extends		Wrapper
 		   {
 			$scalar_class				=  self::$WrapperClasses [ 'scalar' ] ;
 			$this -> WrappedValue [ $member ]	=  new $scalar_class ( null ) ;
+
+			return ( $this -> WrappedValue [ $member ] ) ;
 		    }
-		
-		return ( $this -> offsetGet ( $member ) ) ; 
+		else
+			return ( $this -> WrappedValue [ $member ] ) ;
 	    }
 	
 	
@@ -286,7 +288,7 @@ class	ArrayWrapper		extends		Wrapper
 	
 	
 	public function  offsetGet ( $offset )
-	   { return ( $this -> WrappedValue [ $offset ] ) ; }
+	   { return ( $this -> $offset ) ; }
 	
 	
 	public function  offsetSet ( $offset, $value )
