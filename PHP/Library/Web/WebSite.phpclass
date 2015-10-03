@@ -28,6 +28,7 @@ use	Thrak\Network\RfcProtocols\Http ;
 use	Thrak\Web\Sanitizer ;
 use	Thrak\Web\UploadedFiles ;
 use	Thrak\Web\Cookies ;
+use	Thrak\Web\ConditionalHtml ;
 use	Thrak\Security\Session ;
 
 
@@ -44,6 +45,9 @@ class  WebSite			extends	Object
 	const		SITE_MODE_MAINTENANCE		=  1 ;		// Displays a maintenance message, unless the "debug" GET parameter is set
 	const		SITE_MODE_DEBUG			=  2 ;		// Like "Production", with debug messages enabled
 
+	// Common session variables for site settings
+	const		SITE_VAR_LANGUAGE		=  '__SITE_LANGUAGE__' ;
+
 	// Site root
 	public		$Root ;
 	// Email contacts
@@ -56,19 +60,24 @@ class  WebSite			extends	Object
 	public		$MaintenancePage ;
 	// Default page
 	public		$DefaultPage ;
+	// Error page
+	public		$ErrorPage ;
 	// Client language
-	public		$ClientLanguage ;
+	public		$Language ;
 	// User and group 
 	public		$User ;
 	public		$Group ;
+	// Page and scripts roots
+	public		$PageRoot ;
+	public		$ScriptRoot ;
 	
-	
-	/*==============================================================================================================
-	
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
 	    Constructor -
 	        Initializes a WebSite object.
 	
-	  ==============================================================================================================*/
+	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  __construct ( )
 	   {
 		global		$SITE_ROOT, $Configuration ;
@@ -78,6 +87,16 @@ class  WebSite			extends	Object
 		
 		if  ( ! is_dir ( $root ) )
 			error ( new \Thrak\System\FileNotDirectoryException ( "Site root \"$root\" is not a valid directory." ) ) ;
+
+		$this -> Root	=  Path::ToUnix ( Path::AppendDS ( $root ) ) ;
+
+		// Configuration : Site/page-root -
+		//	Page root.
+		$this -> PageRoot		=  Path::ToUnix ( Path::AppendDS ( $Configuration -> Get ( 'Site/page-root', '/' ) ) ) ;
+
+		// Configuration : Site/script-root -
+		//	Page root.
+		$this -> ScriptRoot		=  Path::ToUnix ( Path::AppendDS ( $Configuration -> Get ( 'Site/script-root', '/' ) ) ) ;
 
 		// Configuration : Site/Emails -
 		//	List of available mail contacts.
@@ -125,9 +144,14 @@ class  WebSite			extends	Object
 		
 		// Configuration : Site/default-page -
 		//	Default page to be displayed.
-		$this -> DefaultPage		=  $Configuration -> Get ( 'Site/default-page', '/index.html' ) ;
+		$this -> DefaultPage		=  $Configuration -> Get ( 'Site/default-page', '/index.php' ) ;
+		
+		// Configuration : Site/error-page -
+		//	Default error page to be displayed when an invalid page was specified.
+		$this -> ErrorPage		=  $Configuration -> Get ( 'Site/error-page', '/error.php' ) ;
 		
 		// Client language - don't use local variants
+		// If the '
 		$language_header		=  new Http\HttpAcceptLanguageHeader ( $_SERVER [ 'HTTP_ACCEPT_LANGUAGE' ] ) ;
 		$language			=  $language_header -> GetHighestPriorityValue ( ) ;
 		
@@ -143,9 +167,14 @@ class  WebSite			extends	Object
 		
 		switch ( strtolower ( $language_value ) )
 		   {
-			case	'fr'	:  $this -> ClientLanguage	=  'fr' ; break ;
-			default		:  $this -> ClientLanguage	=  'en' ;
+			case	'fr'	:  $this -> Language	=  'fr' ; break ;
+			default		:  $this -> Language	=  'en' ;
 		    }
+
+		// Create a global variable that will allow to use the "conditional html" syntax
+		global	$Locale ;
+
+		$Locale		=  new ConditionalHtml ( $this -> Language ) ;
 		
 		// User and group
 		$this -> User		=  $Configuration -> Get ( 'Site/user', 'www-data' ) ;
@@ -158,6 +187,12 @@ class  WebSite			extends	Object
 		global		$Session ;
 		
 		$Session	=  new Session ( ) ;
+
+		// Session settings that may override existing ones
+		if  ( isset ( $Session [ self::SITE_VAR_LANGUAGE ] ) )				// Current language
+		   {
+			$Locale -> Value	=  $Session [ self::SITE_VAR_LANGUAGE ] ;
+		    }
 		
 		// Wrap superglobals
 		$_GET		=  Sanitizer::Wrap ( $_GET ) ;
@@ -168,5 +203,54 @@ class  WebSite			extends	Object
 		
 		// Cookies
 		$_COOKIE	=  new Cookies ( ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        GetPagePath, GetScriptPath - Returns the path to a site page or script.
+	 
+	    PROTOTYPE
+	       $path	=  $website -> GetPagePath ( $path, $filesystem_path = false ) ;
+	       $path	=  $website -> GetScriptPath ( $path, $filesystem_path = false ) ;
+	 
+	    DESCRIPTION
+	        Returns the absolute path of the specified page withing the site.
+	 
+	    PARAMETERS
+	        $path (string) -
+	                Path to be converted to absolute. The "Site/Root" entry in the configuration file is used to 
+			build the full path.
+
+		$filesystem_path (boolean) -
+			When true, the returned path is the absolute path in the host filesystem.
+			When false, the absolute path will be relative to the site root.
+	 
+	    RETURN VALUE
+	        The absolute path of $path.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __get_path ( $path, $root, $filesystem_path = false )
+	   {
+		if  ( $path [0]  !=  '/' )
+			$path	=  $root . $path ;
+
+		if  ( $filesystem_path )
+			$path	=  Path::RealPath ( $this -> Root . substr ( $path, 1 ) ) ;
+
+		return ( $path ) ;
+	    }
+
+
+	public function  GetPagePath ( $path, $filesystem_path = false )
+	   {
+		return ( $this -> __get_path ( $path, $this -> PageRoot, $filesystem_path ) ) ;
+	    }
+
+
+	public function  GetScriptPath ( $path, $filesystem_path = false )
+	   {
+		return ( $this -> __get_path ( $path, $this -> ScriptRoot, $filesystem_path ) ) ;
 	    }
     }

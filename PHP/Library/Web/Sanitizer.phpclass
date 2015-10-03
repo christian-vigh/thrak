@@ -182,7 +182,7 @@ class  ScalarSanitizer	extends  ScalarWrapper
 	public function  __call ( $method, $args )
 	   {
 		// Global default values may be specified here - not sure it is useful
-		$global_defaults	=  
+		static	$global_defaults	=  
 		   [
 		    ] ;
 
@@ -229,6 +229,12 @@ class  ScalarSanitizer	extends  ScalarWrapper
 				break ;
 		    }
 		
+		// If an array member was created using ArrayWrapper::__get(), its value will be null
+		// In this case, check if the arguments contain a default value that could be used to initialize the underlying value
+		if  ( $this -> WrappedValue  ===  null  &&  isset ( $args [0] [ 'default' ] ) )
+			$this -> WrappedValue =  $value ;
+
+		// All done, return
 		return ( $value ) ;
 	    }
 	
@@ -490,7 +496,60 @@ class  ArraySanitizer	extends  ArrayWrapper
 		
 		return ( $items ) ;
 	    }
-    }
+
+
+	/*==============================================================================================================
+	
+	    UrlEncode, RawUrlEncode -
+	        Converts array contents to url encoding format.
+	
+	  ==============================================================================================================*/
+	public function  UrlEncode ( $include_question_mark = false )
+	   {
+		$parameters		=  array ( ) ;
+	
+		foreach  ( $this  as  $name => $value )
+			$parameters []	=  $name . '=' . urlencode ( $value ) ;
+	
+		if  ( count ( $parameters ) )
+		   {
+			$result		=  '' ;
+
+			if  ( $include_question_mark )
+				$result .=  '?' ;
+
+			$result		.=  implode ( '&', $parameters ) ;
+		    }
+		else
+			$result		 =  '' ;
+		
+		return ( $result ) ;
+	   }
+
+
+	public function  RawUrlEncode ( $include_question_mark = false )
+	   {
+		$parameters		=  array ( ) ;
+	
+		foreach  ( $this  as  $name => $value )
+			$parameters []	=  $name . '=' . rawurlencode ( $value ) ;
+	
+		if  ( count ( $parameters ) )
+		   {
+			$result		=  '' ;
+
+			if  ( $include_question_mark )
+				$result .=  '?' ;
+
+			$result		.=  implode ( '&', $parameters ) ;
+		    }
+		else
+			$result		 =  '' ;
+		
+		return ( $result ) ;
+	   }
+
+   }
 
 
 /*==============================================================================================================

@@ -1,0 +1,123 @@
+<?php
+/**************************************************************************************************
+
+    NOM
+	Form.php
+
+    DESCRIPTION
+	Helper class for Html code generation.
+
+    AUTHOR
+    	Christian Vigh, 04/2013.
+
+    HISTORIQUE
+    [Version : 1.0.0]	[Date : 2013/04/14]	[Author : CV]
+	Initial version.
+
+ **************************************************************************************************/
+namespace  Thrak\Html ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+/*===========================================================================================
+
+    Form static class -
+	Classe statique pour l'affichage de données dans un formulaire.
+
+  ===========================================================================================*/
+class Form
+   {
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	  	SelectFrom - Returns HTML code to display a <select> field.
+
+	    PROTOTYPE
+		echo Form::Select ( $options ) ;
+
+	    DESCRIPTION
+		Generates and returns the HTML code needed to display a combobox whose contents are
+		based on a table or on the supplied options.
+
+	    PARAMETERS
+		$options (array) -
+			Array who can contain the following members :
+
+			'attributes' (string) -
+				Optional additional HTML attributes to be included in the <select> tag.
+
+			'class' (string) -
+				Optional class name(s).
+
+			'style' (string) -
+				Optional styles to be applied.
+
+			'name', 'id' (string) -
+				Control name or id. Either one of both MUST be specified. If one is
+				missing, it will take the name of the other. For example, if 'name'
+				is 'myfield' and 'id' is missing, then 'id' will be 'myfield' too.
+				Conversely, if 'id' is 'myfield' and 'name' is missing, then 'name'
+				will be 'myfield' too.
+				Either 'name' or 'id' are mandatory.
+
+			'source' (string) -
+				Either the keyword 'table' to specify that the data comes from a
+				table, or 'list' to indicate they come from a list.
+				In the first case, you must define an associative array named 'table'
+				that specify table options ; in the second case, you must have an
+				associative array named 'list'.
+
+			'default' (string) -
+				<option> value to be set as the default one.
+
+			'null-value' (array) -
+				When specified, this entry must be defined with the following entries  :
+
+				'value' (string) -
+					Value corresponding to the null value.
+
+				'text' (string) -
+					Text to be displayed when the <select> control is positioned
+					on the null value.
+
+			'list' (array) -
+				When the 'source' key is set to 'list', specifies an array of
+				associative array containing 'value'/'text' pairs.
+
+			'table' (array) -
+				When the 'source' key is set to 'table', specifies an associative
+				array containing the following fields :
+
+				'query' (string) -
+					An SQL query that returns an row set containing fields named
+					'value' and 'text'.
+
+	 --------------------------------------------------------------------------------------------*/
+   	/*
+   	public static function  SelectFromTable ( $table, $fieldname, $default = 0, $empty_value = '',
+   							$table_field_id = "numero", $table_field_value = "valeur", $class = "" )
+   	   {
+   		$html 	=  "<select name=\"$fieldname\" id=\"$fieldname\" class=\"$class\">" ;
+
+   		if  ( $empty_value  !==  null )
+   			$html .= "<option value=\"0\">$empty_value</option>" ;
+
+   		$rs	=  mysql_query ( "SELECT * FROM $table ORDER BY $table_field_value" ) ;
+
+   		while  ( $row = mysql_fetch_assoc ( $rs ) )
+   		   {
+   			if  ( $row [ $table_field_id ]  ==  $default )
+   				$selected = 'selected="selected"' ;
+   			else
+   				$selected = '' ;
+
+   			$html .= "<option value=\"{$row [ $table_field_id ]}\" $selected >{$row [ $table_field_value ]}</option>" ;
+   		    }
+
+   		$html .= "</select>" ;
+
+   		return ( $html ) ;
+   	    }
+   	    */
+    }

@@ -1,0 +1,254 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        HtmlCleaner.phpclass
+
+    DESCRIPTION
+        A class for cleaning html input.
+
+    AUTHOR
+        Christian Vigh, 06/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/06/03]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Html ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces & objects
+use	Thrak\System\Object ;
+
+
+
+/*==============================================================================================================
+
+    HtmlCleaner class -
+        A class for cleaning html input.
+
+  ==============================================================================================================*/
+class	HtmlCleaner		extends  Object
+   {
+	// Unsafe tag attributes, ie the ones that can call javascript code
+	static protected   $UnsafeAttributes	=
+	   [
+		'onabort'		, 'onafterprint'	, 'onbeforeprint'	, 'onbeforeunload'	, 'onblur'		,
+		'oncanplay'		, 'oncanplaythrough'	, 'onchange'		, 'onclick'		, 'oncontextmenu'	,
+		'oncopy'		, 'oncuechange'		, 'oncut'		, 'ondblclick'		, 'ondrag'		,
+		'ondragend'		, 'ondragenter'		, 'ondragleave'		, 'ondragover'		, 'ondragstart'		,
+		'ondrop'		, 'ondurationchange'	, 'onemptied'		, 'onended'		, 'onerror'		,
+		'onfocus'		, 'onhashchange'	, 'oninput'		, 'oninvalid'		, 'onkeydown'		,
+		'onkeypress'		, 'onkeyup'		, 'onload'		, 'onloadeddata'	, 'onloadedmetadata'	,
+		'onloadstart'		, 'onmessage'		, 'onmousedown'		, 'onmousemove'		, 'onmouseout'		,
+		'onmouseover'		, 'onmouseup'		, 'onmousewheel'	, 'onoffline'		, 'ononline'		,
+		'onpagehide'		, 'onpageshow'		, 'onpaste'		, 'onpause'		, 'onplay'		,
+		'onplaying'		, 'onpopstate'		, 'onprogress'		, 'onratechange'	, 'onreset'		,
+		'onresize'		, 'onscroll'		, 'onsearch'		, 'onseeked'		, 'onseeking'		,
+		'onselect'		, 'onshow'		, 'onstalled'		, 'onstorage'		, 'onsubmit'		,
+		'onsuspend'		, 'ontimeupdate'	, 'ontoggle'		, 'onunload'		, 'onvolumechange'	,
+		'onwaiting'		, 'onwheel'
+	    ] ;
+	// Unsafe tags - for security reasons, they also include all the tags used by forms
+	static protected	$UnsafeTags	=
+	   [
+		'applet'		, 'audio'		, 'button'		, 'dialog'		, 'embed'		,
+		'form'			, 'frame'		, 'frameset'		, 'iframe'		, 'input'		,
+		'keygen'		, 'menu'		, 'menuitem'		, 'meta'		, 'object'		,
+		'optgroup'		, 'option'		, 'param'		, 'script'		, 'select'		,
+		'source'		, 'textarea'		, 'track'		, 'var'			, 'video'
+	    ] ;
+
+	// Cleanup options
+	const	CLEAN_NONE			=  0x00000000 ;			// No cleanup to be performed
+	const	CLEAN_ALL			=  0xFFFFFFFF ;			// Default cleanup options, plus additional ones that may come in the future
+	const   CLEAN_DEFAULT			=  0x0000FFFF ;			// Default cleanup options
+	const	CLEAN_COMMENTS			=  0x00000001 ;			// Cleanup html comments
+	const	CLEAN_PAGE_TAGS			=  0x00000002 ;			// Cleanup <!DOCTYPE>, <head> contents and <body> tags
+	const   CLEAN_UNSAFE_TAGS		=  0x00000004 ;			// Cleanup unsafe tags, that may embed or execute code
+	const	CLEAN_UNSAFE_ATTRIBUTES		=  0x00000008 ;			// Cleanup unsafe attributes, that may call javascript code
+	const   CLEAN_UNSAFE_HREF		=  0x00000010 ;			// Cleanup unsafe href attributes that may call javascript code
+	
+	
+	/*==============================================================================================================
+	
+	    NAME
+	        Clean - Cleans up html elements from potentially unsafe constructs.
+	
+	    PROTOTYPE
+	        $value	=  HtmlCleaner::Clean ( $value, $options = self::CLEAN_DEFAULT ) ;
+	
+	    DESCRIPTION
+	        Cleans up html elements from potentially unsafe constructs.
+	
+	    PARAMETERS
+	        $value (string) -
+	                Value to be cleaned up.
+	  
+	 	$options (integer) -
+	 		A combination of CLEAN_* flags.
+	
+	    RETURN VALUE
+	        Returns the cleaned-up input value.
+	
+	  ==============================================================================================================*/
+	public static function  Clean ( $content, $options = self::CLEAN_DEFAULT )
+	   {
+		if  ( $options  ==  self::CLEAN_ALL )
+		   {
+			$content	=  strip_tags ( $content ) ;
+			
+			return ( $content ) ;
+		    }
+		
+		if  ( $options  &  self::CLEAN_COMMENTS )
+			$content	=  self::CleanComments ( $content ) ;
+
+		if  ( $options  &  self::CLEAN_PAGE_TAGS )
+			$content	=  self::CleanPageTags ( $content ) ;
+		
+		if  ( $options  &  self::CLEAN_UNSAFE_TAGS )
+			$content	=  self::CleanUnsafeTags ( $content ) ;
+		
+		if  ( $options  &  self::CLEAN_UNSAFE_ATTRIBUTES )
+			$content	=  self::CleanUnsafeAttributes ( $content ) ;
+		
+		if  ( $options  &  self::CLEAN_UNSAFE_HREF )
+			$content	=  self::CleanUnsafeHref ( $content ) ;
+		
+		return ( $content ) ;
+	    }
+	
+
+	/*==============================================================================================================
+	
+	    CleanComments -
+	        Removes html comments from input string.
+	
+	  ==============================================================================================================*/
+	public static function  CleanComments ( $content ) 
+	   {
+		$content	=  preg_replace ( '/<!-- .*? -->/imsx', '', $content ) ;
+		
+		return ( $content ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    CleanPageTags -
+	        Cleans up top-level tags such as <!DOCTYPE>, <head> and <body>. While <body> tags are simply removed
+		without affecting their inner contents, <head> tags are removed together with their contents.
+	
+	  ==============================================================================================================*/
+	public static function  CleanPageTags ( $content )
+	   {
+		static $re	=  
+		   [
+			'#<?xml.*?>#',
+			'#<!DOCTYPE .*? >#imsx',
+			'#<head> .*? </head>#imsx',
+			'#<html>#',
+			'#</html>#',
+			'#<body>#',
+			'#</body>#'
+		    ] ;
+			
+		$content	=  preg_replace ( $re, '', $content ) ;
+		
+		return ( $content ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    CleanUnsafeAttributes -
+	        Removes all html attributes that could call javascript code.
+	
+	  ==============================================================================================================*/
+	public static function  CleanUnsafeAttributes ( $content )
+	   {
+		static	$attributes_re	=  null ;
+		
+		
+		if  ( $attributes_re  ===  null )
+		   {
+			$items	=  [] ;
+			
+			foreach  ( self::$UnsafeAttributes  as  $attr )
+				$items []	=  '(' . $attr . ')' ;
+			
+			$attributes_re		=  '#( 
+							\s*
+							(' . implode ( '|', $items ) . ')
+							=
+							(
+								(" .*? " )
+								|
+								(\' .*? \')
+							 )
+						   )#imsx' ;
+		    }
+		
+		$content	=  preg_replace ( $attributes_re, '', $content ) ;
+		
+		return ( $content ) ;
+	    }
+	
+	
+	/*==============================================================================================================
+	
+	    CleanUnsafeHref -
+	        Removes href attributes that include a "javascript:" value.
+	
+	  ==============================================================================================================*/
+	public static function  CleanUnsafeHref ( $content )
+	   {
+		$re	=  '#(
+				\s*
+				href=
+				(
+					( " javascript: .*? " ) 
+					|
+					( \' javascript: .*? \' )
+				 )
+			    )#imsx' ;
+		
+		$content	=  preg_replace ( $re, '', $content ) ;
+		
+		return ( $content ) ;
+	    }
+	
+	
+	
+	/*==============================================================================================================
+	
+	    CleanUnsafeTags -
+	        Removes tags (and their inner contents) that may lead to embed potentially dangerous content.
+	
+	  ==============================================================================================================*/
+	public static function  CleanUnsafeTags ( $content )
+	   {
+		static		$tag_re		=  null ;
+		
+		
+		if  ( $tag_re  ===  null )
+		   {
+			$items	=  [] ;
+			
+			foreach  ( self::$UnsafeTags  as  $tag )
+			   {
+				$items []	=  '(<' . $tag . ' .*?> .*? </' . $tag . '>)' ;
+				$items []	=  '(<' . $tag . ' .*? />)' ;
+			    }
+			
+			$tag_re		=  '#(' . implode ( '|', $items ) . ')#imsx' ;
+		    }
+		
+		$content	=  preg_replace ( $tag_re, '', $content ) ;
+		
+		return ( $content ) ;
+	    }
+    }

@@ -1,0 +1,87 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        Dictionary.php
+
+    DESCRIPTION
+        Implementation of a dictionary with key/value pair objects.
+
+    AUTHOR
+        Christian Vigh, 05/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/05/30]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace  	Thrak\Types ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces and classes
+use     Thrak\System\Object ;
+use	Thrak\Types\AssociativeArray ;
+
+
+/*==============================================================================================================
+
+    Dictionary class -
+        Implements a dictionary with key/value pair objects.
+
+  ==============================================================================================================*/
+class  Dictionary		extends  AssociativeArray
+   {
+    }
+
+
+/*==============================================================================================================
+
+    DictionaryEntry class -
+        Implements a dictionary entry.
+
+  ==============================================================================================================*/
+class  DictionaryEntry		extends  Object
+   {
+	public		$Key ;
+	public		$Value ;
+	public		$Separator	=  '=' ;
+	
+	
+	// Constructor -
+	//	Builds an http header parameter. Note that if $value is null, then $key will be assumed to have 
+	//	the form :
+	//		name=value
+	//	and will be parsed accordingly.
+	public function  __construct ( $key, $value = null, $separator = null )
+	   {
+		if  ( $value  ===  null )
+		   {
+			$parts	=  explode ( '=', $key ) ;
+			
+			if  ( count ( $parts )  ==  1 )
+			   {
+				$key	=  $parts [0] ;
+				$value	=  '' ;
+			    }
+			else
+			   {
+				$key	=  $parts [0] ;
+				$value	=  $parts [1] ;
+			    }
+		    }
+		
+		$this -> Key	=  trim ( $key ) ;
+		$this -> Value	=  trim ( $value ) ;
+		
+		if  ( $separator )
+			$this -> Separator	=  $separator ;
+	    }
+	
+	
+	public function  __tostring ( )
+	   {
+		return ( $this -> Key . $this -> Separator . $this -> Value ) ;
+	    }
+    }

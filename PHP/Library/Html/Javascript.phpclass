@@ -1,0 +1,215 @@
+<?php
+/***************************************************************************************************
+
+    NAME
+	Javascript.phpclass
+
+    DESCRIPTION
+	Javascript generation helper class.
+
+    AUTHOR
+	Christian Vigh, 04/2013.
+
+    HISTORY
+    [Version : 1.0]		[Date : 2013/04/14]		[Author : CV]
+	Initial release.
+
+ ***************************************************************************************************/
+namespace  Thrak\Html ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+use 	Thrak\System\Object 	as  Object ;
+
+
+/*=================================================================================================
+
+    Javascript class -
+    	Javascript generation helper class.
+
+  =================================================================================================*/
+class  Javascript  extends  Object
+   {
+   	private static 	$IncludePath		=  array ( "." => array ( 'path' => ".", 'exists' => true ) ) ;
+
+
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	  	IncludeCSS - Includes a .css file.
+
+	    PROTOTYPE
+	    	Javascript::IncludeCSS ( $name, $root = "" ) ;
+
+	    DESCRIPTION
+	    	Includes a CSS file.
+
+	    PARAMETERS
+	    	$name (string) -
+	    		Full path name of the CSSfile to be included.
+
+	    	$use_root (string or boolean) -
+	    		Specifies a root path to be prepended to the specified file name.
+	    		When a boolean is specified, and if true, the $THRAK_JAVASCRIPT_ROOT path
+	    		is prepended to the specified filename.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  IncludeCSS ( $name, $root = false )
+	   {
+	   	global 		$THRAK_JAVASCRIPT_ROOT ;
+
+	   	if  ( $root  ===  true )
+	   		$name 	=  "$THRAK_JAVASCRIPT_ROOT/$name" ;
+	   	else if  ( $root )
+	   		$name 	=  "$root/$name" ;
+
+		echo '<link rel="stylesheet" type="text/css" href="' .
+				$name . '"/>' . "\n" ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	  	JQuery - Includes JQuery of the specified version.
+
+	    PROTOTYPE
+	    	Javascript::JQuery ( $version = null, $min = null ) ;
+
+	    DESCRIPTION
+	    	Includes a JQuery file of the specified version.
+
+	    PARAMETERS
+	    	$version (string) -
+	    		A JQuery version, typically of the form "x.y.z". If null, the value is taken
+	    		from the Javascript/jquery/version configuration entry.
+
+	    	$min (boolean) -
+	    		When true (the default), the minified version of JQuery is used.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  JQuery ( $version = null, $min = null )
+	   {
+	   	global		$Configuration, $THRAK_JAVASCRIPT_ROOT ;
+
+	   	if  ( $version  ===  null )
+	   		$version	=  $Configuration -> Get ( 'Javascript/jquery/version' ) ;
+
+	   	if  ( $min  ===  null )
+	   		$min 		=  $Configuration -> Get ( 'Javascript/jquery/minified' ) ;
+
+		if  ( $min )
+			$extra 	=  ".min" ;
+		else
+			$extra 	=  "" ;
+
+		Javascript::IncludeScript ( 'contribs/jquery/jquery-' . $version . $extra . '.js', $THRAK_JAVASCRIPT_ROOT ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	  	JQueryUI - Includes JQuery UI of the specified version.
+
+	    PROTOTYPE
+	    	Javascript::JQueryUI ( $theme =  null, $version = null, $min = null ) ;
+
+	    DESCRIPTION
+	    	Includes a JQuery UI file of the specified version.
+
+	    PARAMETERS
+	    	$theme (string) -
+	    		Default theme to be used. If null, the value is taken from the
+	    		Javascript/jquery/theme entry.
+
+	    	$version (string) -
+	    		A JQuery version, typically of the form "x.y.z". If null, the value is taken
+	    		from the Javascript/jquery/version configuration entry.
+
+	    	$min (boolean) -
+	    		When true (the default), the minified version of JQuery is used.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  JQueryUI ( $theme = null, $version = null, $min = null )
+	   {
+	   	global 		$Configuration, $THRAK_JAVASCRIPT_ROOT ;
+
+	   	if  ( $theme  ===  null )
+	   		$theme 		=  $Configuration -> Get ( 'Javascript/jquery/theme' ) ;
+
+	   	if  ( $version  ===  null )
+	   		$version	=  $Configuration -> Get ( 'Javascript/jquery/ui-version' ) ;
+
+	   	if  ( $min  ===  null )
+	   		$min 		=  $Configuration -> Get ( 'Javascript/jquery/minified' ) ;
+
+		if  ( $min )
+			$extra 	=  ".min" ;
+		else
+			$extra 	=  "" ;
+
+		Javascript::IncludeCSS ( 'contribs/jquery/css/' . $theme . '/jquery-ui-' . $version . '.custom' . $extra . '.css',
+						$THRAK_JAVASCRIPT_ROOT ) ;
+		Javascript::IncludeScript ( 'contribs/jquery/jquery-ui-' . $version . '.custom' . $extra . '.js',
+						$THRAK_JAVASCRIPT_ROOT ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	  	IncludeScript - Includes a .js script.
+
+	    PROTOTYPE
+	    	Javascript::IncludeScript ( $name, $root = "" ) ;
+
+	    DESCRIPTION
+	    	Includes a Javascript file.
+
+	    PARAMETERS
+	    	$name (string) -
+	    		Full path name of the Javascript file to be included.
+
+	    	$use_root (string) -
+	    		Specifies a root path to be prepended to the specified file name.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  IncludeScript ( $name  )
+	   {
+	   	global 		$THRAK_JAVASCRIPT_ROOT ;
+
+	   	if  ( $root )
+	   		$name 	=  $THRAK_JAVASCRIPT_ROOT . $name ;
+
+	   	echo '<script type="text/javascript" language="javascript" src="' .
+			$name . '"></script>' . "\n" ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+	  	IncludePhpJs - Includes a PHPJS function.
+
+	    PROTOTYPE
+	    	Javascript::IncludePhpJs ( $name ) ;
+
+	    DESCRIPTION
+	    	Includes a PHPJS function file.
+
+	    PARAMETERS
+	    	$name (string) -
+	    		Full path name of the PHPJS file to be included.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  IncludePhpJs ( $name )
+	   {
+	   	global 		$THRAK_JAVASCRIPT_ROOT ;
+
+		Javascript::IncludeScript ( 'contribs/phpjs/functions/'  . $name, $THRAK_JAVASCRIPT_ROOT ) ;
+	    }
+   }

@@ -1,0 +1,34 @@
+<?php
+/***************************************************************************************************
+
+    NAME
+	AbstractHtmlObject.phpclass
+
+    DESCRIPTION
+	Base abstract object for Html objects.
+
+    AUTHOR
+	Christian Vigh, 04/2013.
+
+    HISTORY
+    [Version : 1.0]		[Date : 2013/04/18]		[Author : CV]
+	Initial release.
+
+ ***************************************************************************************************/
+namespace  Thrak\Html ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+use 	Thrak\System\Object 	as  Object ;
+
+/*=================================================================================================
+
+    AbstractHtmlObject class -
+    	Base abstract class for any object dealing with HTML/CSS/Javascript.
+
+  =================================================================================================*/
+abstract class  AbstractHtmlObject  extends  Object
+   {
+
+    }

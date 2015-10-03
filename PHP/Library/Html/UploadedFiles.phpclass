@@ -1,0 +1,71 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        UploadedFiles.phpclass
+
+    DESCRIPTION
+        Encapsulates uploaded files management.
+
+    AUTHOR
+        Christian Vigh, 06/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/06/04]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Html ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces & objects
+use	Thrak\System\Object ;
+use	Thrak\Types\AssociativeArray ;
+
+
+class  UploadedFiles		extends		Object
+				implements	\ArrayAccess, \Countable, \IteratorAggregate
+   {
+	public			$Files ;
+	
+	
+	public function  __construct ( )
+	   {
+		parent::__construct ( ) ;
+		$this -> Files	=  new AssociativeArray ( ) ;
+	    }
+	
+	
+	public function  Count ( )
+	   { return ( count ( $this -> Files ) ) ; }
+		
+	
+	public function  getIterator ( )
+	   { return ( $this -> Files -> getIterator ( ) ) ; }
+	
+	
+	public function  offsetExists ( $offset )
+	   { return ( isset ( $this -> Files [ $offset ] ) ) ; }
+	
+	
+	public function  offsetGet ( $offset )
+	   { return ( $this -> Files [ $offset ] ) ; }
+	
+	
+	public function  offsetSet ( $offset, $value )
+	   { error ( new \Thrak\System\UnsupportedOperationException ( ) ) ; }
+	
+	
+	public function  offsetUnset ( $offset )
+	   { error ( new \Thrak\System\UnsupportedOperationException ( ) ) ; }
+    }
+
+
+class  UploadedFile		extends		Object 
+   {
+	public function  __construct ( )
+	   {
+		parent::__construct ( ) ;
+	    }
+    }
