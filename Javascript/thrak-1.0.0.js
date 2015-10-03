@@ -110,8 +110,8 @@
 		   ({ 
 			showEffect	:  "fadeIn", 
 			hideEffect	:  "fadeOut", 
-			margin		:  10,
-			showDelay	:  0.6,
+			margin		:  60,
+			showDelay	:  1.6,
 			showCallback	:  function ( target )
 			   {
 				// Correct the simpletooltip bug that can display another tooltip when one is already visible

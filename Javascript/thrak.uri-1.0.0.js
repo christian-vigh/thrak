@@ -105,8 +105,11 @@
         Christian Vigh, 04/2015.
 
     HISTORY
-    [Version : 1.0]    [Date : 2015/04/24]     [Author : CV]
+    [Version : 1.0]	[Date : 2015/04/24]     [Author : CV]
         Initial version.
+
+    [Version : 1.0.1]	[Date : 2015/10/03]     [Author : CV]
+	. Modified the path() function, which did not return the page name.
 
  **************************************************************************************************************/
  
@@ -723,8 +726,8 @@
 			if  ( this. __components. directory  !==  undefined )
 				result	+=  this. __components. directory ;
 
-			if  ( this. __components. path  !==  undefined )
-				result	+=  this. __components. path ;
+			if  ( this. __components. page  !==  undefined )
+				result	+=  this. __components. page ;
 
 			return ( result ) ;
 		    }
