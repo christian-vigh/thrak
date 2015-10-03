@@ -56,7 +56,11 @@
     [Version : 1.1.4]	[Date : 2015/08/07]	[Author : CV]
 	. Changed the AutoloadCallback() method so that an error message is displayed ("File xxx not
 	  found") when the file meant to declare the searched class does not exist.
- 
+
+    [Version : 1.1.5]	[Date : 2015/10/02]	[Author : CV]
+	. Added a $locate boolean parameter to the GetClassPath() method to locate (or not) the real
+	  class path, because it did not work for uncached classes.
+
  ***************************************************************************************************/
 namespace  	Thrak\System ;
 
@@ -388,12 +392,15 @@ class	Autoloader
 	        Returns the source class path based on the specified class name, or false if the file does not exist.
 	
 	  ==============================================================================================================*/
-	protected function  GetClassPath ( $class )
+	protected function  GetClassPath ( $class, $locate = true )
 	   {
 		// First, search through specific class -> file associations
 		if  ( isset ( $this -> AutoloadClasses [ $class ] ) ) 
 		   {
-			$path	=  $this -> AutoloadClasses [ $class ] ;
+			if  ( $locate )
+				$path	=  $this -> LocatePath ( $this -> AutoloadClasses [ $class ] ) ;
+			else
+				$path	=  $this -> AutoloadClasses [ $class ] ;
 
 			return  ( $path ) ;
 		    }
@@ -583,7 +590,7 @@ class	Autoloader
 			if  ( $this -> UseCache )
 			   {
 				// Source file containing the desired class
-				$uncached_path		=  $this -> GetClassPath ( $class ) ;
+				$uncached_path		=  $this -> GetClassPath ( $class, false ) ;
 				
 				// Source file containing the cached source
 				$cached_path		=  $this -> GetCachedClassPath ( $uncached_path ) ;
@@ -709,7 +716,7 @@ class	Autoloader
 					    }
 				    }
 				else
-					echo "*** Autoloader error *** File $cached_file does not exist.\n" ;
+					echo "*** Autoloader error *** File $cached_path does not exist.\n" ;
 			    }
 			else
 			   {
