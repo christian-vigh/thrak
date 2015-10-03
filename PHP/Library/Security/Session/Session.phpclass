@@ -35,22 +35,40 @@ class  SessionException			extends  \Thrak\System\RuntimeException		{} ;
 
   ==============================================================================================================*/
 class	Session		extends		Object
-			//implements	\ArrayAccess, \Countable, \Iterator
+			implements	\ArrayAccess, \Countable, \Iterator
    {
-	const		SESSION_INITIAL_START	=  '__________SIS' ;
-	const		SESSION_TIME_START	=  '__________STS' ;
+	// Variables related to session creation
+	const		SESSION_INITIAL_START	=  '__SIS__' ;		// Set to true if the current session has just be created
+	const		SESSION_START_TIME	=  '__STS__' ;		// Session start time
 	
-	// Session started ?
+	// Is session started ?
 	protected	$Started		=  false ;
 	// Session ID
 	protected	$SessionId		=  null ;
 	// Session data
-	protected	$SessionData		=  [] ;
+	protected	$SessionData ;
 	// Session start/stop time
 	protected	$StartTime		=  0 ;
 	protected	$EndTime		=  0 ;
 	
 	
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        Constructor - Creates a Session object.
+	 
+	    PROTOTYPE
+	        $Session	=  new  Session ( $start = null ) ;
+	 
+	    DESCRIPTION
+	        Creates a session object.
+	 
+	    PARAMETERS
+	        $start (boolean) -
+	                When specified, indicates whether the session should be opened or not. If not specified, then
+			the Session/autostart parameter of the site configuration file will be used.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  __construct ( $start = null )
 	   {
 		global		$Configuration ;
@@ -58,36 +76,64 @@ class	Session		extends		Object
 		
 		parent::__construct ( ) ;
 		
-		$start_value	=  $Configuration -> Get ( 'Session/autostart' ) ;
+		if  ( $start  ===  null )
+		   {
+			$start_value	=  $Configuration -> Get ( 'Session/autostart' ) ;
 		
-		if  ( $start_value  !==  null )
-			$start	=  $start_value ;
+			if  ( $start_value  !==  null )
+				$start	=  $start_value ;
+		    }
 		
 		if  ( $start )
 			$this -> Open ( ) ;
 	    }
 	
-	
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        Open - Opens a session.
+	 
+	    PROTOTYPE
+	        $Session -> Open ( ) ;
+	 
+	    DESCRIPTION
+	        Opens the Session object. The $_SESSION array can later be accessed either using array keys or object
+		properties.
+
+		For example :
+
+			$Session [ 'language' ] 
+
+		is equivalent to :
+
+			$Session -> language ;
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  Open ( )
 	   {
+		// Warn if session already started
 		if  ( $this -> Started )
 		   {
 			warning ( new SessionException ( "Session already started" ) ) ;
 			return ;
 		    }
-		
+
+		// Start the session and make an internal reference to the $_SESSION array
 		session_start ( ) ;
 		$this -> SessionData	=  &$_SESSION ;
 		
+		// A little bit of processing to determine whether the session has been started for the first time,
+		// or if it has been reopened since the last http request
 		if  ( isset ( $this -> SessionData [ self::SESSION_INITIAL_START ] ) )
 		   {
 			$this -> SessionData [ self::SESSION_INITIAL_START ]	=  false ;
-			$this -> StartTime					=  $this -> SessionData [ self::SESSION_TIME_START ] ;
+			$this -> StartTime					=  $this -> SessionData [ self::SESSION_START_TIME ] ;
 		    }
 		else
 		   {
 			$this -> SessionData [ self::SESSION_INITIAL_START ]	=  true ;
-			$this -> SessionData [ self::SESSION_TIME_START    ]	=
+			$this -> SessionData [ self::SESSION_START_TIME    ]	=
 			$this -> StartTime					=  microtime ( true ) ;
 		     }
 			
@@ -96,6 +142,22 @@ class	Session		extends		Object
 	    }
 	
 	
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        Close - Closes a session.
+	 
+	    PROTOTYPE
+	        $Session -> Close ( $redirect_to = null ) ;
+	 
+	    DESCRIPTION
+	        Closes a session and reset all the superglobals.
+	 
+	    PARAMETERS
+	        $redirect_to (string) -
+	                If specified, the user will be redirected to the specified url after session closing.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  Close ( $redirect_to = null )
 	   {
 		// Safety checks : a session must be started in order to close it...
@@ -134,6 +196,12 @@ class	Session		extends		Object
 	    }
 	
 	
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    GetDuration -
+		Retrieves the current session opening duration.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  GetDuration ( $as_float = false )
 	   {
 		if  ( $this -> StartTime )
@@ -151,27 +219,147 @@ class	Session		extends		Object
 	    }
 	
 	
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    GetEndTime -
+		Returns the session end time, if it has been previously closed.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  GetEndTime ( )
 	   { return ( $this -> EndTime ) ; }
 	
 	
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    GetSessionId -
+		Returns the current session id.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  GetSessionId ( )
 	   { return ( $this -> SessionId ) ; }
 	
 	
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    GetStartTime -
+		Returns the current session starting time.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  GetStartTime ( )
 	   { return ( $this -> StartTime ) ; }
 	
 	
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    IsNew -
+		Checks if the session has just been created or if it simply was an existing session reopening.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  IsNew ( )
 	   { 
 		return ( isset ( $this -> SessionData )  &&  
 			 isset ( $this -> SessionData [ self::SESSION_INITIAL_START ] )  &&  
 			 $this -> SessionData [ self::SESSION_INITIAL_START ] ) ; 
 	    }
-		
-		
+	
+ 
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    IsStarted -
+		Indicates if the current session is opened.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  IsStarted ( )
 	   { return ( $this -> Started ) ; }
-		
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+		Magic functions that allow accessing $_SESSION array items as object variables.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __get ( $member )
+	   { return ( $this -> offsetGet ( $member ) ) ; }
+
+
+	public function  __set ( $member, $value )
+	   { $this -> offsetSet ( $member, $value ) ; }
+
+
+
+	/**************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 ******                                  INTERFACES IMPLEMENTATIONS                                      ******
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************/
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+		Countable interface.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  Count ( )
+	   {
+		return ( count ( $this -> SessionData ) ) ;
+	    }
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+		ArrayAccess interface.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  offsetExists ( $offset )
+	   { return ( isset ( $this -> SessionData [ $offset ] ) ) ; }
+
+
+	public function  offsetGet ( $offset )
+	   { return ( $this -> SessionData [ $offset ] ) ; }
+
+
+	public function  offsetSet ( $offset, $member ) 
+	   { $this -> SessionData [ $offset ] = $member ; }
+
+
+	public function  offsetUnset ( $offset )
+	   { unset ( $this -> SessionData [ $offset ] ) ; }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+		Iterator interface.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	private		$IteratorKeys ;
+	private		$IteratorIndex ;
+
+
+	public function  rewind ( )
+	   { 
+		$this -> IteratorKeys	=  array_keys ( $this -> SessionData ) ;
+		$this -> IteratorIndex	=  0 ;
+	    }
+
+
+	public function  key ( )
+	   { return ( $this -> IteratorKeys [ $this -> IteratorIndex ] ) ; }
+
+
+	public function  valid ( )
+	   { return ( isset ( $this -> IteratorKeys [ $this -> IteratorIndex ] ) ) ; }
+
+
+	public function  next ( )
+	   { $this -> IteratorIndex ++ ; }
+
+
+	public function  current ( )
+	   { return ( $this -> IteratorKeys [ $this -> IteratorIndex ] ) ; }
+
     }
