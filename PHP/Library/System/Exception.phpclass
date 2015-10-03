@@ -63,6 +63,10 @@
     [Version : 2.0.10] 	[Date : 2015/06/26]	[Author : CV]
 	. Changed the __DisplayHtmlMessage() and DisplayTextMessage() in order not to display an
 	  ending dot if the last character is one of the following : '.', '';', ':', "\n".
+
+    [Version : 2.0.11] 	[Date : 2015/10/03]	[Author : CV]
+	. Changed the __GetExceptionParameters() method to handle the case where the $Configuration
+	  variable is null, which is the case when an exception is thrown from within a destructor.
  
  ***************************************************************************************************/
 namespace	Thrak\System ;
@@ -177,33 +181,42 @@ class  Exception 	extends  \Exception
 	   	global  	$Configuration ;
 
 
-	   	// Error reporting mode
-		if  ( self::$ErrorMode  ==  ERROR_MODE_UNDEFINED )
+		// $Configuration may be null if an exception is thrown from within a destructor
+		if  ( $Configuration )
 		   {
-			$mode	=  strtolower ( $Configuration -> Get ( "Runtime/error-mode" ) ) ;
-
-			switch ( $mode )
+	   		// Error reporting mode
+			if  ( self::$ErrorMode  ==  ERROR_MODE_UNDEFINED )
 			   {
-			   	case  	'verbose' :
-			   		self::$ErrorMode	=  ERROR_MODE_VERBOSE ;
-			   		break ;
+				$mode	=  strtolower ( $Configuration -> Get ( "Runtime/error-mode" ) ) ;
 
-			   	case 	'stacktrace' :
-			   		self::$ErrorMode	=  ERROR_MODE_STACKTRACE ;
-			   		break ;
+				switch ( $mode )
+				   {
+			   		case  	'verbose' :
+			   			self::$ErrorMode	=  ERROR_MODE_VERBOSE ;
+			   			break ;
 
-			   	case 	'normal' :
-			   	default :
-			   		self::$ErrorMode 	=  ERROR_MODE_NORMAL ;
-			   		break ;
+			   		case 	'stacktrace' :
+			   			self::$ErrorMode	=  ERROR_MODE_STACKTRACE ;
+			   			break ;
+
+			   		case 	'normal' :
+			   		default :
+			   			self::$ErrorMode 	=  ERROR_MODE_NORMAL ;
+			   			break ;
+				    }
 			    }
+
+			// Console line width
+			self::$LineWidth	=  $Configuration -> Get ( 'console/line-width' ) ;
+
+			if   ( self::$LineWidth  <  40 )		// Arbitrary decision
+				self::$LineWidth = 80 ;
 		    }
-
-		// Console line width
-		self::$LineWidth	=  $Configuration -> Get ( 'console/line-width' ) ;
-
-		if   ( self::$LineWidth  <  40 )		// Arbitrary decision
-			self::$LineWidth = 80 ;
+		else
+		   {
+			self::$ErrorMode	=  ERROR_MODE_NORMAL ;
+			self::$LineWidth	=  80 ;
+		    }
 	    }
 
 
@@ -467,7 +480,8 @@ class  Exception 	extends  \Exception
 		if  ( $errno )
 			$errstr		=  "[errno=$errno] $errstr" ;
 		
-	   	if  ( ! in_array ( $last, [ '.', ':', ';', "\n" ] ) )
+		$last	=  substr ( $errstr, 0, -1 ) ;
+	   	if  ( ! in_array ( $last, [ '.', ':', ';', '!', '?', "\n" ] ) )
 	   		$errstr .= "." ;
 
 		if  ( self::$ErrorMode  ==  ERROR_MODE_VERBOSE )
