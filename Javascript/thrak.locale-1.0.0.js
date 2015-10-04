@@ -4,14 +4,20 @@
         thrak.locale-1.0.0.js
 
     DESCRIPTION
-        Internationalization class.
+        Internationalization class for jquery/thrak UI components.
 	
     AUTHOR
         Christian Vigh, 12/2013.
 
     HISTORY
-    [Version : 1.0]    [Date : 2013/12/01]     [Author : CV]
+    [Version : 1.0]	[Date : 2013/12/01]     [Author : CV]
         Initial version.
+
+    [Version : 1.0.1]	[Date : 2015/10/04]     [Author : CV]
+	. Corrected the __getLanguage() and __defineLanguage() functions, which did almost anything except 
+	  giving a good result ! Moreover, __defineLanguage() was not preserving the defined language, so the
+	  only language returned by $.locale() was "default".
+	. Language definitions where not added to the internal store.
 
  **************************************************************************************************************/
 
@@ -127,9 +133,9 @@
 		The function returns the language string that can be used to index the locales[] array.
 	
 	  ==============================================================================================================*/
-	function  __getLanguage ( language )
+	function  __getLanguage ( lang )
 	   {
-		var	items		=  language. split ( /-/ ) ;
+		var	items		=  lang. split ( /-/ ) ;
 		var	code		=  undefined ;
 		var	variant		=  undefined ;
 
@@ -187,6 +193,19 @@
 		var	locale		=  $. extend ( {}, default_options ) ;
 
 
+		// Language string does not specify a variant
+		if   ( items. length  ===  1 )
+			code	=  items [0] ;
+		// A variant is specified
+		else if  ( items. length  ===  2 )
+		   {
+			code	=  items [0] ;
+			variant	=  items [1] ;
+		    }
+		// Other case : consider this is a hardware developer failure, simply return the default locale
+		else
+			code	=  "default" ;
+
 		if  ( code  !==  undefined )
 		   {
 			if  ( variant  !==  undefined )
@@ -220,9 +239,12 @@
 	        Sets the default locale to be the specified one (one argument version).
 	
 	  ==============================================================================================================*/
-	function  __setLocale ( language )
+	function  __setLocale ( lang )
 	   {
-		var	this_language	=  __getLanguage ( language ) ;
+		var	this_language	=  __getLanguage ( lang ) ;
+
+		if  ( this_language  !=  undefined )
+			language	=  lang ;
 
 		return ( locales [ language ] ) ;
 	    }
