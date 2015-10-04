@@ -34,6 +34,10 @@
     [Version : 1.0]    [Date : 2013/12/05]     [Author : CV]
         Initial version.
 
+    [Version : 1.1]    [Date : 2015/10/04]     [Author : CV]
+	. Corrected the __show_alert() function which removed any buttons in the dialog box if object settings 
+	  were specified through the alert/confirm/error functions.
+
  **************************************************************************************************************/
 
 ( function ( $ )
@@ -127,16 +131,16 @@
 	    {
 		messagebox_type	=  boxtype ;
 		
-		// Add default options to each message type
+		// Add default options to each message type - do each for each call, because the locale could have been changed
+		// since the last one
 		var	alert_title	=  ( $. locale  &&  $. locale (). options. msgbox. alert  . title )  ||  "Message" ;
 		var	confirm_title	=  ( $. locale  &&  $. locale (). options. msgbox. confirm. title )  ||  "Confirmation" ;
 		var	error_title	=  ( $. locale  &&  $. locale (). options. msgbox. error  . title )  ||  "Erreur" ;
 	
-		$. alert  . options	=  $. extend ( { title : alert_title   }, default_options ) ;
-		$. confirm. options	=  $. extend ( { title : confirm_title }, default_options ) ;
-		$. error  . options	=  $. extend ( { title : error_title   }, default_options ) ;
+		$. alert  . options	=  $. extend ( $. alert .  options, default_options, { title : alert_title   } ) ;
+		$. confirm. options	=  $. extend ( $. confirm. options, default_options, { title : confirm_title } ) ;
+		$. error  . options	=  $. extend ( $. error .  options, default_options, { title : error_title   } ) ;
 	 
-	   
 		// Dialog buttons will depend on the message box type
 		var	dialog_buttons ;
 		// Dialog options
@@ -232,7 +236,7 @@
 				// Object type -
 				//	This is a structure specifying dialog options to be merged with the default ones.
 				case	'object' :
-					more_options	=  argument ;
+					more_options	=  $. extend ( more_options, argument ) ;
 					break ;
 					
 				// Other type : panic !
