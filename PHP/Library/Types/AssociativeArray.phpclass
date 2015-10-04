@@ -34,8 +34,18 @@
 	  been initialized.
  
     [Version : 1.0.6]  [Date : 2015/07/20]     [Author : CV]
-	. Changed the offsetSet() method which uselessly called __rebuild_key_list() when an existing array
+	. Changed the offsetSet() method which uselessly called __rebuild_keys() when an existing array
 	  item was assigned a value.
+ 
+    [Version : 2.0]	[Date : 2015/10/03]     [Author : CV]
+	. Completely restructured the stuff since it was developed "à la va-vite" to address an urgent need :
+	  - Renamed several internal properties
+	  - Removed the useless ReadOnly property : the original goal was not to enhance array management, but
+	    simply give associative array case-insensitiveness on their keys without affecting too much
+	    performance, so ReadOnly was useless in that scope.
+	  - To access array elements using case-insensitive keys, a separate array (now named "ArrayKeys") is 
+	    managed ; the new version only rebuilds it when needed (for example, when several new elements have
+	    been added THEN the value of one of them is retrieved).
   
  **************************************************************************************************************/
 namespace 	Thrak\Types ;
@@ -55,18 +65,11 @@ class  AssociativeArray		extends		Object
 				implements	\ArrayAccess, \Countable, \IteratorAggregate
    {
 	// Associative array whose items are to be accessed in a case-insensitive way
-	protected	$associative_array ;
+	protected	$Data ;
 	// Lowercase version of associative array keys. Values are the case-sensitive original key.
-	private		$array_keys_lc ;
-	// Interface implementations of the supplied input array
-	protected	$implements_array_access	=  true,
-			$implements_countable		=  true,
-			$implements_iterator		=  true ;
-	// Strict mode : once set, not more insertions are authorized
-	// This can be used to build associative arrays with restricted values ; while initializing the array, strict mode
-	// is false, which allows to insert any values needed ; then set ReadOnly to true to prevent the caller from
-	// inserting new values
-	public		$ReadOnly			=  false ;
+	protected	$DataKeys ;
+	// Set to true when $Datakeys needs to be rebuilt upon next read access
+	protected	$RebuildKeys		=  false ;	
 	
 	
 	/*==============================================================================================================
@@ -87,41 +90,31 @@ class  AssociativeArray		extends		Object
 	  ==============================================================================================================*/
 	public function  __construct ( $array = [] )
 	   {
-		if (  is_object ( $array ) )
-		   {
-			$this -> implements_array_access	=  class_implements ( $array, 'ArrayAccess' ) ;
-			$this -> implements_countable		=  class_implements ( $array, 'Countable' ) ;
-			$this -> implements_iterator		=  class_implements ( $array, 'Iterator' ) ;
-		    }
-		else if  ( ! is_array ( $array ) )
-		   {
-			$this -> implements_array_access	=  false ;
-			$this -> implements_countable		=  false ;
-			$this -> implements_iterator		=  false ;
-		    }
-		
-		if  ( ! $this -> implements_array_access )
-			error ( new \Thrak\System\InvalidArgumentException ( "The supplied argument must be either an array or an object implementing at least the ArrayAccess interface." ) ) ;
-		
-		$this -> associative_array	=  $array ;
-		$this -> __rebuild_key_list ( ) ;
+		$this -> Data		=  $array ;
+		$this -> RebuildKeys	=  true ;
+
+		$this -> __rebuild_keys ( ) ;
 	    }
 	
 	
 	/*==============================================================================================================
 	
-	    __rebuild_key_list -
+	    __rebuild_keys -
 	        Rebuilds the list of lowercase array keys after a modification has occurred.
 	
 	  ==============================================================================================================*/
-	private function  __rebuild_key_list ( )
-	   {
-		$keys		=  [] ;
-				
-		foreach  ( $this -> associative_array  as  $key => $value )
-			$keys [ strtolower ( $key ) ]	=  $key ;
-		
-		$this -> array_keys_lc	=  $keys ;
+	private function  __rebuild_keys ( )
+	   {	
+		if  ( $this -> RebuildKeys )
+		   {
+			$keys			=  [] ;
+
+			foreach  ( array_keys ( $this -> Data )  as  $key )
+				$keys [ strtolower ( $key ) ]	=  $key ;
+
+			$this -> DataKeys	=  $keys ;
+			$this -> RebuildKeys	=  false ;
+		    }
 	    }
 	
 	
@@ -133,12 +126,14 @@ class  AssociativeArray		extends		Object
 	  ==============================================================================================================*/
 	public function  __get ( $member )
 	   {
+		$this -> __rebuild_keys ( ) ;
+
 		$lcmember	=  strtolower ( $member ) ;
 		
-		if  ( isset ( $this -> array_keys_lc [ $lcmember ] ) )
-			return ( $this -> associative_array [ $this -> array_keys_lc [ $lcmember ] ] ) ;
+		if  ( isset ( $this -> DataKeys [ $lcmember ] ) )
+			return ( $this -> Data [ $this -> DataKeys [ $lcmember ] ] ) ;
 		else
-			error ( new \Thrak\System\BadPropertyException ( "Undefined property " . __CLASS__ . "::$member." ) ) ;
+			error ( new \Thrak\System\BadPropertyException ( "Undefined property " . get_called_class ( ) . "::$member." ) ) ;
 	    }
 	
 	
@@ -146,10 +141,13 @@ class  AssociativeArray		extends		Object
 	   {
 		$lcmember	=  strtolower ( $member ) ;
 		
-		if  ( isset ( $this -> array_keys_lc [ $member ] ) )
-			$this -> associative_array [ $this -> array_keys_lc [ $lcmember ] ]	=  $value ;
+		if  ( isset ( $this -> DataKeys [ $member ] ) )
+		   {
+			$this -> Data [ $this -> DataKeys [ $lcmember ] ]	=  $value ;
+			$this -> RebuildKeys					=  true ;
+		    }
 		else
-			error ( new \Thrak\System\BadPropertyException ( "Undefined property " . __CLASS__ . "::$member." ) ) ;
+			error ( new \Thrak\System\BadPropertyException ( "Undefined property " . get_called_class ( ) . "::$member." ) ) ;
 	    }
 	
 
@@ -163,13 +161,14 @@ class  AssociativeArray		extends		Object
 	  ==============================================================================================================*/
 	public function  ensure_exists ( $required_keys, $default_keys )
 	   {
+		$this -> __rebuild_keys ( ) ;
 		$missing_keys	=  [] ;
 		
 		foreach  ( $required_keys  as  $required_key )
 		   {
 			$required_lc_key	=  strtolower ( $required_key ) ;
 			
-			if  ( ! isset  ( $this -> array_keys_lc [ $required_lc_key ] ) )
+			if  ( ! isset  ( $this -> DataKeys [ $required_lc_key ] ) )
 			   {
 				$found	=  false ;
 					
@@ -177,7 +176,7 @@ class  AssociativeArray		extends		Object
 				   {
 					$default_lc_key		=  strtolower ( $default_key ) ;
 					
-					if  ( isset ( $this -> array_keys_lc [ $default_lc_key ] ) )
+					if  ( isset ( $this -> DataKeys [ $default_lc_key ] ) )
 					   {
 						$this [ $required_key ]		=  $this [ $default_key ] ;
 						$found				=  true ;
@@ -202,9 +201,11 @@ class  AssociativeArray		extends		Object
 	  ==============================================================================================================*/
 	public function  keyname ( $index ) 
 	   {
-		if  ( is_numeric ( $index )  &&  $index  >=  0  &&  $index  <  count ( $this -> associative_array ) )
+		$this -> __rebuild_keys ( ) ;
+
+		if  ( is_numeric ( $index )  &&  $index  >=  0  &&  $index  <  count ( $this -> Data ) )
 		   {
-			$array	=  array_keys ( $this -> associative_array ) ;
+			$array	=  array_keys ( $this -> Data ) ;
 			
 			return  ( $array [ $index ] ) ;
 		    }
@@ -223,13 +224,16 @@ class  AssociativeArray		extends		Object
 	  ==============================================================================================================*/
 	public function  in_array ( $value )
 	   {
-		return  ( in_array ( $value, $this -> associative_array ) ) ;
+		$this -> __rebuild_keys ( ) ;
+		return  ( in_array ( $value, $this -> Data ) ) ;
 	    }
 	
 	
 	public function  iin_array ( $value )
 	   {
-		foreach  ( $this -> associative_array  as  $item )
+		$this -> __rebuild_keys ( ) ;
+
+		foreach  ( $this -> Data  as  $item )
 		   {
 			if  ( is_scalar ( $item )  &&  ! strcasecmp ( $item, $value ) )
 				return ( true ) ;
@@ -241,7 +245,9 @@ class  AssociativeArray		extends		Object
 	
 	public function  in_subarray ( $key, $value )
 	   {
-		foreach  ( $this -> associative_array  as  $index => $item )
+		$this -> __rebuild_keys ( ) ;
+
+		foreach  ( $this -> Data  as  $index => $item )
 		   {
 			if  ( isset  ( $item [ $key ] )  &&  is_array ( $item [ $key ] ) )
 			   {
@@ -256,9 +262,10 @@ class  AssociativeArray		extends		Object
 	
 	public function  iin_subarray ( $key, $value )
 	   {
+		$this -> __rebuild_keys ( ) ;
 		$index	=  0 ;
 		
-		foreach  ( $this -> associative_array  as  $index => $item )
+		foreach  ( $this -> Data  as  $index => $item )
 		   {
 			if  ( isset ( $item [ $key ] )  &&  is_array ( $item [ $key ] ) )
 			   {
@@ -284,7 +291,7 @@ class  AssociativeArray		extends		Object
 	  ==============================================================================================================*/
 	public function  ksort ( )
 	   {
-		ksort ( $this -> associative_array ) ;
+		ksort ( $this -> Data ) ;
 	    }
 	
 	
@@ -296,8 +303,8 @@ class  AssociativeArray		extends		Object
 	  ==============================================================================================================*/
 	public function  pop ( )
 	   {
-		array_pop ( $this -> array_keys_lc ) ;
-		array_pop ( $this -> associative_array ) ;
+		array_pop ( $this -> DataKeys ) ;
+		array_pop ( $this -> Data ) ;
 	    }
 	
 	
@@ -308,7 +315,7 @@ class  AssociativeArray		extends		Object
 	
 	  ==============================================================================================================*/
 	public function  &ToArray ( )
-	   { return $this -> associative_array ; }
+	   { return $this -> Data ; }
 	
 	
 	/*==============================================================================================================
@@ -318,10 +325,7 @@ class  AssociativeArray		extends		Object
 	  ==============================================================================================================*/
 	public function  count ( )
 	   {
-		if  ( $this -> implements_countable )
-			return ( count ( $this -> associative_array ) ) ; 
-		else
-			error ( new \Thrak\System\RuntimeException ( "Unsupported operation." ) ) ;
+		return ( count ( $this -> Data ) ) ; 
 	    }
 	
 	
@@ -332,10 +336,7 @@ class  AssociativeArray		extends		Object
 	  ==============================================================================================================*/
 	public function  getIterator ( )
 	   {
-		if  ( $this -> implements_iterator )
-			return ( new \ArrayIterator ( $this -> associative_array ) ) ; 
-		else 
-			error ( new \Thrak\System\RuntimeException ( "Unsupported operation." ) ) ;
+		return ( new \ArrayIterator ( $this -> Data ) ) ; 
 	    }
 		
 	
@@ -348,20 +349,25 @@ class  AssociativeArray		extends		Object
 	// offsetExists -
 	//	Checks if the specified offset exists.
 	public function  offsetExists ( $member )
-	   { return ( isset ( $this -> array_keys_lc [ strtolower ( $member ) ] ) ) ; }
+	   {
+  		$this -> __rebuild_keys ( ) ;
+
+		return ( isset ( $this -> DataKeys [ strtolower ( $member ) ] ) ) ; 
+	    }
 	
 	
 	// offsetGet -
 	//	Return the value at the specified offset or key.
 	public function  offsetGet ( $member )
 	   {
+		$this -> __rebuild_keys ( ) ;
 		$lcmember	=  strtolower ( $member ) ;
 		
-		if  ( isset ( $this -> array_keys_lc [ $lcmember ] ) )
+		if  ( isset ( $this -> DataKeys [ $lcmember ] ) )
 		   {
-			$index		=  $this -> array_keys_lc [ $lcmember ] ;
+			$index		=  $this -> DataKeys [ $lcmember ] ;
 			
-			return ( $this -> associative_array [ $index ] ) ;
+			return ( $this -> Data [ $index ] ) ;
 		    }
 		else
 			error ( new \Thrak\System\OutOfRangeException ( "Undefined offset $member." ) ) ;
@@ -374,27 +380,24 @@ class  AssociativeArray		extends		Object
 	   {
 		$lcmember	=  strtolower ( $member ) ;
 		
-		if  ( $this -> ReadOnly  &&  ! isset ( $this -> array_keys_lc [ $lcmember ] ) )
-			error ( new \Thrak\System\UnauthorizedOperationException ( 'Cannot add value : array is read-only.' ) ) ;
-		
 		// $array [] = value construct : append the specified value to the existing array.
 		if  ( $member  ===  null )
 		   {
-			$this -> associative_array []	=  $value ;
-			$this -> __rebuild_key_list ( ) ;
+			$this -> Data []	=  $value ;
+			$this -> RebuildKeys	=  true ;
 		    }
 		// Assignment to an existing array key : preserve its original case
-		else if  ( isset ( $this -> array_keys_lc [ $lcmember ] ) )
+		else if  ( isset ( $this -> DataKeys [ $lcmember ] ) )
 		   {
-			$index		=  $this -> array_keys_lc [ $lcmember ] ;
+			$index		=  $this -> DataKeys [ $lcmember ] ;
 			
-			$this -> associative_array [ $index ]	=  $value ;
+			$this -> Data [ $index ]	=  $value ;
 		    }
 		// Assignment to a new key
 		else 
 		   {
-			$this -> associative_array [ $member ]	=  $value ;
-			$this -> __rebuild_key_list ( ) ;
+			$this -> Data [ $member ]	=  $value ;
+			$this -> RebuildKeys		=  true ;
 		    }
 	    }
 	
@@ -403,17 +406,13 @@ class  AssociativeArray		extends		Object
 	//	Unsets the specified array key.
 	public function  offsetUnset ( $member )
 	   {
-		if  ( $this -> ReadOnly )
-			error ( new \Thrak\System\UnauthorizedOperationException ( 'Cannot unset value : array is read-only.' ) ) ;
-		
 		$lcmember	=  strtolower ( $member ) ;
 		
-		if  ( isset ( $this -> array_keys_lc [ $lcmember ] ) )
+		if  ( isset ( $this -> DataKeys [ $lcmember ] ) )
 		   {
-			$index		=  $this -> array_keys_lc [ $lcmember ] ;
-			
-			unset ( $this -> associative_array [ $index ] ) ;
-			$this -> __rebuild_key_list ( ) ;
+			$index			=  $this -> DataKeys [ $lcmember ] ;
+			unset ( $this -> Data [ $index ] ) ;
+			$this -> RebuildKeys	=  true ;
 		    }
 	    }
 	
@@ -428,11 +427,10 @@ class  AssociativeArray		extends		Object
 		return 
 		   ( 
 			[
-				'hidden'	=>  [ 'array_keys_lc', 'implements_array_access', 'implements_countable', 'implements_iterator' ],
-				'renamed'	=>  [ 'associative_array' => '[]' ]
+				'hidden'	=>  [  ],
+				'renamed'	=>  [ 'Data' => '[]' ]
 			 ]
 		     ) ;
 
 	    }
-	
     }
