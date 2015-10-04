@@ -3,5 +3,3 @@
 	Deny from all
 </FilesMatch>
 
-ErrorDocument 403 http://www.wuthering-bytes.home/index.php
-ErrorDocument 404 http://www.wuthering-bytes.home/index.php
