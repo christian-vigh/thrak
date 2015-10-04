@@ -1,0 +1,418 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        ConditionalHtml.phpclass
+
+    DESCRIPTION
+        Implements a shortcut notation that use output buffering functions to determine which html output will
+	be sent to the client. The initial intent was to simplify readability.
+
+	For example, suppose you have a $Locale variable, which contains the current language code ; normally,
+	to display a text depending on the current language value, you could write :
+
+	<?php if  ( $Locale  ==  'fr' ) { ?>
+		Accueil
+	<?php } else if ( $Locale  ==  'en ) { ?>
+		Home
+	<?php } ?>
+
+	With the ConditionalHtml class, you can write :
+
+	$Locale		=  new ConditionalHtml ( $language_value ) ;
+
+	...
+
+	<?php $Locale -> When ( 'fr' ) ?>
+		Accueil
+	<?php $Locale -> When ( 'en', 'us' ) ?>
+		Home
+	<?php $Locale -> Otherwise ( ) ?>
+		Haus
+	<?php $Locale -> WhenEnd ( ) ?>	
+
+	Ok, this is only syntactic sugar but I still find this improves readability.
+	Output buffers are used to "catch" the right condition that evaluates to true.
+	Moreover, on the same test, you can specify multiple values.
+
+    AUTHOR
+        Christian Vigh, 10/2015.
+
+    NOTES
+	The original idea of this class came from the will to have several localized versions of html text in
+	the same php page, and send only the adequate localized text.
+	It is not aimed at evaluating complex conditional expressions, but just to provide an readable way to
+	separate different linguistic versions. Maybe useless, but who knows ?
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/10/03]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Web ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces & objects
+use 	Thrak\System\Object ;
+use	Thrak\IO\Path ;
+use	Thrak\Types\String ;
+
+
+/*==============================================================================================================
+
+    ConditionalHtml -
+        Conditional Html output.
+
+  ==============================================================================================================*/
+class  ConditionalHtml		extends		Object
+   {
+	// Constants defining the current states of conditions "parsing"
+	// Note that there is no "COND_WHENEND" or "COND_IFEND" constants, since reaching this state means
+	// going back to "COND_NONE".
+	const		COND_NONE		=  0 ;			// No condition encountered so far
+	const		COND_WHEN		=  1 ;			// When() construct
+	const		COND_IF			=  3 ;			// Ifxxx() construct
+	const		COND_ELSEIF		=  4 ;			// Elseifxxx() construct
+	const		COND_OTHERWISE		=  5 ;			// Otherwise() construct 
+
+	// Condition names, as strings, for error messages
+	protected static  $ConditionNames		=
+	   [
+		self::COND_WHEN		=>  'When',
+		self::COND_IF		=>  'If',
+		self::COND_ELSEIF	=>  'ElseIf',
+		self::COND_OTHERWISE	=>  'Otherwise'
+	    ] ;
+
+	// Wrapped value
+	public		$Value ;
+
+	// Compare function - the default is strcasecmp()
+	protected	$CompareCallback ;
+
+	// Holds current output buffer data collected so far
+	protected	$Buffer ;
+
+	// True when a When() or Ifxxx() condition has been matched - this means that the output following it should
+	// be captured in $this -> Buffer whenever another When(), Elseifxxx(), Otherwise() or Whenend()/IfEnd() has
+	// been found
+	protected	$GatherNextOutput ;
+
+	// Set to true when a match has been found ; the last output is collected if $GatherNextOutput is set to true,
+	// but subsequent outputs will be later ignored since they did not match the condition
+	protected	$FoundMatch ;
+
+	// Last conditional value seen so far
+	protected	$LastConditional ;
+
+	// File name and line of the last conditional
+	protected	$LastConditionalFileName ;
+	protected	$LastConditionalFileLine ;
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        Constructor - Instanciates a ConditionalHtml object.
+	 
+	    PROTOTYPE
+	        $var	=  new ConditionalHtml ( $value, $cmpfunc = 'strcasecmp' ) ;
+	 
+	    DESCRIPTION
+	        Instanciates a ConditionalHtml object, that can be later used for conditional output buffering.
+	 
+	    PARAMETERS
+	        $value (mixed) -
+	                Value to be checked.
+
+		$cmpfunc (callback) -
+			Function to be called for comparing the ConditionalHtml value with one specified in a 
+			conditional expression.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( $value, $cmpfunc = 'strcasecmp' )
+	   {
+		if  ( ! is_callable ( $cmpfunc ) )
+			error ( new \Thrak\System\InvalidArgumentException ( "The second argument of the " . get_called_class ( ) . " constructor " .
+					"must be a callable function." ) ) ;
+
+		$this -> Value			=  $value ;
+		$this -> CompareCallback	=  $cmpfunc ;
+
+		// Reset the object initial values
+		$this -> obcond_reset ( ) ;
+
+		// Get the contents of what has been put into the output buffer so far
+		$this -> Buffer			=  ob_get_clean ( ) ;
+
+		// Start a new output buffer
+		ob_start ( ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    Destructor -
+		Throws an exception if a conditional construct  is unterminated.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+
+	public function  __destruct ( )
+	   {
+		if  ( $this -> LastConditional  !=  self::COND_NONE )
+		   {
+			$last_condition		=  self::$ConditionNames [ $this -> LastConditional ] ;
+
+			error ( new \Thrak\System\LogicException ( "Unterminated '$last_condition' alternative , " .
+					" started at " .
+					"{$this -> LastConditionalFileName}#{$this -> LastConditionalFileLine}." ) ) ;
+		    }
+	    }
+
+
+	/**************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 ******                                     PROTECTED FUNCTIONS                                          ******
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************/
+
+	/*--------------------------------------------------------------------------------------------------------------
+
+	    ensure -
+		Ensures that a conditional construct is allowed in the current sequence of conditionals.
+		For example, an Otherwise() statement must either follow a When() or Ifxxx() statement ; a WhenEnd()
+		must follow a When() or Otherwise() statement.
+		This method ensures the consistency of the conditionals flow, and issues an exception if a conditional
+		has been found in an incorrect place.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  ensure ( $cond, $required_previous )
+	   {
+		if  ( ! in_array ( $this -> LastConditional, $required_previous ) )
+		   {
+			$last_condition		=  self::$ConditionNames [ $this -> LastConditional ] ;
+			$current_condition	=  self::$ConditionNames [ $cond ] ;
+
+			error ( new \Thrak\System\LogicException ( "Unexpected '$current_condition' alternative found after " .
+					"'$last_condition', started at " .
+					"{$this -> LastConditionalFileName}#{$this -> LastConditionalFileLine}." ) ) ;
+		    }
+
+		$stacktrace				=  debug_backtrace ( 0, 2 ) ;
+
+		$this -> LastConditional		=  $cond ;
+		$this -> LastConditionalFileName	=  $stacktrace [1] [ 'file' ] ;
+		$this -> LastConditionalFileLine	=  $stacktrace [1] [ 'line' ] ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    obcond_start -
+		Called on new conditionals starting points (When() and Ifxxx()). Backs up the output sent to the output
+		buffer so far.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  obcond_start ( )
+	   {
+		if  ( $this -> LastConditional  ==  self::COND_NONE ) 
+		   {
+			$this -> Buffer		.=  ob_get_clean ( ) ;
+			ob_start ( ) ;
+		    }
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    obcond_gather -
+		Capturing buffered output when a condition has been met requires you to wait on the next step. Suppose
+		you have the following sequence, and that the current value of $locale is 'fr' :
+
+		initial contents
+		<?php $locale -> When ( 'fr' ) ?>
+			french contents
+		<?php $locale -> When ( 'en' ) ?>
+			english contents
+		<?php $locale -> WhenEnd ( ) ?>
+
+		Since $locale->When('fr') is the starting point of a new conditional in the above example, it will take
+		care of saving the contents of the output buffer ("initial contents") before doing anything, by calling
+		the obcond_start() method.
+
+		Then since, the string "fr" matches the underlying value of $locale, it will set two flags :
+		- $GatherNextOutput, to say that the next time a When() or WhenEnd() conditional is found, it has to 
+		  catenate current output buffer contents to the internal backup buffer.
+		- $FoundMatch, to tell that a match has been found.
+
+		Later on, all subsequent calls to When() / Otherwise() / WhenEnd() will do the following :
+		- if the $GatherNextOutput flag is true, then current output buffer contents will be catenated to the
+		  internal output buffer.
+		- If not true and the $FoundMatch flag is true, then current output buffer contents will be discarded,
+		  because they belong to a conditional that evaluated to false.
+		
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  obcond_gather ( )
+	   {
+		if  ( $this -> GatherNextOutput )
+		   {
+			$this -> Buffer			.=  ob_get_clean ( ) ;
+			$this -> GatherNextOutput	 =  false ;
+			ob_start ( ) ;
+
+			return ( true ) ;
+		    }
+		else if  ( $this -> FoundMatch )
+		   {
+			ob_get_clean ( ) ;
+			ob_start ( ) ;
+
+			return ( true ) ;
+		    }
+
+		return ( false ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    obcond_foundmatch -
+		Called by the conditional expression evaluators to tell :
+		- That the next output buffer contents must be captured
+		- That a match has been found so all other output buffer contents after the next one need to be
+		  discarded
+		Then closes the current output buffer and creates a new one.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+
+	protected function  obcond_foundmatch ( )
+	   {
+		$this -> GatherNextOutput	=  true ;
+		$this -> FoundMatch		=  true ;
+		ob_clean ( ) ;
+		ob_start ( ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    obcond_end -
+		Called by the terminating statements When() and IfEnd() to :
+		- Either get current output buffer contents if the previous conditional was a match ($GatherNextOutput =
+		  true) ; or discard them
+		- Start a new output buffer and put the contents of the internal buffer into it
+		- Reset internal variables for the current object, so that the next conditional start statement will find
+		  a freshly initialized object.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  obcond_end ( )
+	   {
+		if  ( $this -> GatherNextOutput )
+			$this -> Buffer			.=  ob_get_clean ( ) ;
+		else
+			ob_end_clean ( ) ;
+
+		ob_start ( ) ;
+		echo ( $this -> Buffer ) ;
+
+		$this -> obcond_reset ( ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    obcond_reset -
+		Reinitializes the current object so that it is ready for the next conditional.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  obcond_reset ( )
+	   {
+		$this -> Buffer				=  '' ;
+		$this -> GatherNextOutput		=  false ;
+		$this -> FoundMatch			=  false ;
+		$this -> LastConditional		=  self::COND_NONE ;
+		$this -> LastConditionalFileName	=  null ;
+		$this -> LastConditionalFileLine	=  0 ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    obcond_compare -
+		Compares the object value with the specified one, using the compare function given when instanciating
+		the object.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  obcond_compare ( $a, $b )
+	   {
+		$status		=  call_user_func ( $this -> CompareCallback, $a, $b ) ;
+
+		return ( $status ) ;
+	    }
+
+
+	/**************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 ******                                     PUBLIC FUNCTIONS					         ******
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************/
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+		When / Otherwise / WhenEnd constructs.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  When ( )
+	   {
+		$this -> obcond_start ( ) ;
+		$this -> ensure ( self::COND_WHEN, [ self::COND_NONE, self::COND_WHEN ] ) ;
+
+		if  ( $this -> obcond_gather ( ) )
+			return ;
+
+		$argv	=  func_get_args ( ) ;
+
+		foreach  ( $argv  as  $arg )
+		   {
+			$status		=  $this -> obcond_compare ( $arg, $this -> Value ) ;
+
+			if  ( ! $status )
+			   {
+				$this -> obcond_foundmatch ( ) ;
+				return ;
+			    }
+		    }
+	    }
+
+
+	public function  Otherwise ( )
+	   {
+		$this -> obcond_start ( ) ;
+		$this -> ensure ( self::COND_OTHERWISE, [ self::COND_WHEN, self::COND_IF, self::COND_ELSEIF ] ) ;
+
+		if  ( $this -> obcond_gather ( ) )
+			return ;
+
+		$this -> obcond_foundmatch ( ) ;
+	    }
+
+
+	public function  WhenEnd ( )
+	   {
+		$this -> ensure ( self::COND_NONE, [ self::COND_WHEN, self::COND_OTHERWISE ] ) ;
+		$this -> obcond_end ( ) ;
+	    }
+    }
