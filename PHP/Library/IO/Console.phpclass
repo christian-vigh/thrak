@@ -30,6 +30,10 @@
  	  missing when used in non-cli mode. Note that STDIN maps to null and STDOUT/STDERR map to
  	  "php://stdout".
 
+    [Version : 1.0.5]		[Date : 2015/10/05]		[Author : CV]
+	. Changed the __Output() function so that on Windows, in CLI mode, characters are converted
+	  to codepage 437.
+
  ***************************************************************************************************/
 namespace 	Thrak\IO ;
 
@@ -374,6 +378,9 @@ class  Console 		extends  Object
 
         		   	if  ( substr ( $message, -1, 1 )  !=  "\n" )
         		   		$message .= $newline ;
+
+				if  ( IS_WINDOWS  &&  IS_CLI )
+					$message		=  iconv ( 'ISO-8859-1', 'CP437', $message ) ;
 
 				if  ( IS_STANDALONE )
         		   		fputs ( $fp, $message ) ;
