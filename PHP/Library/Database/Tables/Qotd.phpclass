@@ -1,0 +1,210 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        Qotd.phpclass
+
+    DESCRIPTION
+        description.
+
+    AUTHOR
+        Christian Vigh, 10/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/10/05]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace	Thrak\Database\Tables ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces and objects
+use 	Thrak\System\Object ;
+
+
+class  Qotd	extends		Object
+   {
+	// Name of the table that holds the quotes
+	public			$QuotesTable ;
+	// ... and of the table that holds the last selected quote
+	public			$QuotesSelectionTable ;
+
+	// Current quote & author
+	public			$Author ;
+	public			$Quote ;
+
+	// Last selection data
+	protected		$Interval ;			// Current interval between last selected quote and the next one
+	protected		$LastSelectionTime ;		// Last selection time
+	protected		$LastSelectionId ;		// Last selection id
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        Constructor - Instanciates a Qotd object
+	 
+	    PROTOTYPE
+	        $qotd	=  new Qotd ( $interval			=  false, 
+				      $quotes_table		=  'quotes', 
+				      $quotes_selection_table	=  'quotes_selection' ) ;
+	 
+	    DESCRIPTION
+	        Instanciates a Qotd object and retrieves the currently selected quote, which is renewed when the specified
+		interval expires.
+		Data about the last selected quote in stored in the table specified by the $quotes_selection_table, which
+		contains only one record, storing the current interval, the last selected quote id and its last selection
+		time.
+	 
+	    PARAMETERS
+	        $interval (integer) -
+	                Time in seconds between two quote selections. If not specified, the interval defined in the quotes
+			selection table will be used.
+			If specified, the quotes selection table will be updated accordingly.
+			If the new interval is such that the last selected quote has expired, then a new quote will be 
+			selected.
+	 
+		$quotes_table (string) -
+			Name of the table containing quotes.
+
+		$quotes_selection_table (string) -
+			Name of the table containing data about current interval and last selected quote.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( $interval = false, $quotes_table = 'quotes', $quotes_selection_table = 'quotes_selection' )
+	   {
+		global		$Database ;
+
+
+		parent::__construct ( ) ;
+
+		$this -> QuotesTable		=  $quotes_table ;
+		$this -> QuotesSelectionTable	=  $quotes_selection_table ;
+
+		// Get last selection data
+		$Database -> SetQuery ( "SELECT * FROM $quotes_selection_table WHERE quos_id = 1" ) ;
+		$row	=  $Database -> LoadRow ( ) ;
+
+		$this -> LastSelectionTime	=  $row [ 'quos_selection_time' ] ;
+		$this -> LastSelectionId	=  $row [ 'quos_selection_id' ] ;
+
+		// If an interval has been specified and differs from the interval stored in the selection data table,
+		// update it
+		if  ( $interval  !==  false  &&  $interval  !=  $row [ 'quos_interval' ] )
+		   {
+			$Database -> Execute ( "UPDATE $quotes_selection_table SET quos_interval = $interval WHERE quos_id = 1" ) ;
+			$this -> Interval	=  $interval ;
+		    }
+		else
+			$this -> Interval	=  $row [ 'quos_interval' ] ;
+
+		// Check if a new quote needs to be selected, given the current interval and the time of the last selection
+		$now	=  time ( ) ;
+
+		if  ( ! $this -> LastSelectionId  ||  $this -> LastSelectionId + $this -> Interval  <  $now )
+			$this -> Next ( ) ;
+		else
+			$this -> __select_current ( ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+
+	    __select_current -
+		Selects the current quote.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	private function  __select_current ( )
+	   {
+		global		$Database ;
+
+		$query	=  "
+				SELECT *
+				FROM {$this -> QuotesTable}
+				WHERE
+					quo_id	=  {$this -> LastSelectionId}
+			   " ;
+
+		$Database -> SetQuery ( $query ) ;
+		$row	=  $Database -> LoadRow ( ) ;
+
+		$this -> Author		=  $row [ 'quo_author' ] ;
+		$this -> Quote		=  $row [ 'quo_text' ] ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        Next - Selects a next quote.
+	 
+	    PROTOTYPE
+	        $qotd -> Next ( ) ;
+	 
+	    DESCRIPTION
+	        Selects the next quote in the database. The Author and Quote properties will be updated accordingly.
+	 	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	private function  Next ( )
+	   {
+		global		$Database ;
+
+
+		// This query randomly choses the next quote, after eliminating all the quotes having the
+		// same id or author than the previous one.
+		// Since a selection count is updated for each quotes, only the quotes with the lowest selection count
+		// will be retained.
+		$query	=  "
+				SELECT *
+				FROM {$this -> QuotesTable}
+				WHERE
+					quo_id		<>  {$this -> LastSelectionId}  AND
+					quo_selections	=
+					  (
+						SELECT MIN( quo_selections ) 
+						FROM {$this -> QuotesTable}
+					   ) AND
+					quo_author		NOT IN
+					   (
+						SELECT quo_author
+						FROM {$this -> QuotesTable}
+						WHERE
+							quo_id = {$this -> LastSelectionId}
+					    )
+				ORDER BY RAND()
+				LIMIT 1
+			   " ;
+
+		$Database -> SetQuery ( $query ) ;
+		$row	=  $Database -> LoadRow ( ) ;
+
+		// Save author and quote text
+		$this -> Author		=  $row [ 'quo_author' ] ;
+		$this -> Quote		=  $row [ 'quo_text' ] ;
+
+		// Update the selection table with current time and quote id
+		$now	=  time ( ) ;
+		$query	=  "
+				UPDATE {$this -> QuotesSelectionTable}
+				SET
+					quos_selection_time	=  FROM_UNIXTIME( $now ),
+					quos_selection_id	=  {$row [ 'quo_id' ]}
+				WHERE
+					quos_id = 1 
+			   " ;
+
+		$Database -> Execute ( $query ) ;
+
+		// Update this quote's selection count
+		$query	=  "
+				UPDATE {$this -> QuotesTable}
+				SET
+					quo_selections = quo_selections + 1
+				WHERE
+					quo_id = {$row [ 'quo_id' ]}
+			   " ;
+
+		$Database -> Execute ( $query ) ;
+	    }
+    }
