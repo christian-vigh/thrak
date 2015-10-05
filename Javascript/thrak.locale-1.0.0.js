@@ -215,6 +215,7 @@
 		    }
 
 		locales [ name ]		=  locale ;
+		locales [ name ]. language	=  name ;
 		locales [ name ]. options	=  options ;
 
 		return ( locales [ name ] ) ;
