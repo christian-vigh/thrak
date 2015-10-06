@@ -60,6 +60,8 @@ class  WebSite			extends	Object
 	public		$MaintenancePage ;
 	// Default page
 	public		$DefaultPage ;
+	// "Under construction" page
+	public		$UnderConstructionPage ;
 	// Error page
 	public		$ErrorPage ;
 	// Client language
@@ -133,14 +135,15 @@ class  WebSite			extends	Object
 		//		Reopening date. Default is not specified.
 		//	- 'page' :
 		//		Page to be displayed.
-		$this -> MaintenanceMessage	=  $Configuration -> Get ( 'Site/maintenance/message', "Site is under construction." ) ;
+		$default_message		=
+		   [
+			'fr'	=>  'Une op&eacute;ration de maintenance est en cours',
+			'en'	=>  'A maintenance operation is currently running'
+		    ] ;
+
+		$this -> MaintenanceMessage	=  $Configuration -> Get ( 'Site/maintenance/message', $default_message ) ;
 		$this -> MaintenanceUntil	=  $Configuration -> Get ( 'Site/maintenance/until', false ) ;
-		$page				=  $Configuration -> Get ( 'Site/maintenance/page', false ) ;
-		
-		if  ( $page )
-			$page	=  Path::RealPath ( $SITE_ROOT . $page ) ;
-		
-		$this -> MaintenancePage	=  $page ;
+		$this -> MaintenancePage	=  $Configuration -> Get ( 'Site/maintenance/page', false ) ;
 		
 		// Configuration : Site/default-page -
 		//	Default page to be displayed.
@@ -149,6 +152,10 @@ class  WebSite			extends	Object
 		// Configuration : Site/error-page -
 		//	Default error page to be displayed when an invalid page was specified.
 		$this -> ErrorPage		=  $Configuration -> Get ( 'Site/error-page', '/error.php' ) ;
+		
+		// Configuration : Site/under-construction-page -
+		//	Default page to be displayed for pages that are under construction.
+		$this -> UnderConstructionPage		=  $Configuration -> Get ( 'Site/under-construction-page', '/error.php' ) ;
 		
 		// Client language - don't use local variants
 		// If the '
@@ -203,6 +210,12 @@ class  WebSite			extends	Object
 		
 		// Cookies
 		$_COOKIE	=  new Cookies ( ) ;
+
+		// If the debug GET parameter has been specified, then switch site to debug mode
+		if  ( isset ( $_GET [ 'debug' ] ) )
+		   {
+			$this -> Mode	=  self::SITE_MODE_DEBUG ;
+		    }
 	    }
 
 
@@ -252,5 +265,20 @@ class  WebSite			extends	Object
 	public function  GetScriptPath ( $path, $filesystem_path = false )
 	   {
 		return ( $this -> __get_path ( $path, $this -> ScriptRoot, $filesystem_path ) ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        PageUnderConstruction - Displays the "Under construction" page.
+	 
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  PageUnderConstruction ( )
+	   {
+		global		$Locale ;
+
+		require ( $this -> UnderConstructionPage ) ;
 	    }
     }
