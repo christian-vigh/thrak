@@ -73,6 +73,10 @@
 		. $this -> EOL and $this -> CRLF were handled inconsistently.
 		. Spaces before the equal sign for single-line entries where not preserved
 
+	[Version : 1.0.12]		[Date : 2015/10/07]	[Author : CV]
+		. Corrected the __Load() method, which did not recognize key definitions preceded
+		  by spaces or tabs.
+
  ***************************************************************************************************/
 namespace  Thrak\Processors ;
 
