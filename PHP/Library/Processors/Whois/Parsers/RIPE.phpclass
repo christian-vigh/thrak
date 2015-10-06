@@ -149,7 +149,8 @@ class  WhoisRIPEInformation		extends  WhoisProviderInformation
 						'name'			=>  [ 'remarks' ],
 						'type'			=>  self::TYPE_PROVIDER_COMMENT,
 						'value-type'		=>  self::VALUE_TYPE_STRING,
-						'multiple'		=>  true
+						'multiple'		=>  true,
+						'multiline'		=>  true
 					 ],
 					self::TYPE_PROVIDER_DESCRIPTION		=>
 					[ 
@@ -441,13 +442,13 @@ class  WhoisRIPEInformation		extends  WhoisProviderInformation
 			    ],
 			self::BLOCK_ORGANIZATION  =>
 			   [
-				'start-keywords'		=>  [ 'role', 'organisation', 'irt' ],
+				'start-keywords'		=>  [ 'role', 'organisation', 'irt', 'person' ],
 				'multiple'			=>  true,
 				'keywords'			=>
 				    [
 					self::TYPE_ORGANIZATION_NAME		=>
 					[ 
-						'name'			=>  [ 'role', 'org-name', 'irt' ],
+						'name'			=>  [ 'role', 'org-name', 'irt', 'person' ],
 						'type'			=>  self::TYPE_ORGANIZATION_NAME,
 						'value-type'		=>  self::VALUE_TYPE_STRING,
 						'required'		=>  true
@@ -572,7 +573,8 @@ class  WhoisRIPEInformation		extends  WhoisProviderInformation
 						'name'			=>  [ 'remarks' ],
 						'type'			=>  self::TYPE_ORGANIZATION_COMMENT,
 						'value-type'		=>  self::VALUE_TYPE_STRING,
-						'multiple'		=>  true
+						'multiple'		=>  true,
+						'multiline'		=>  true
 					 ],
 					self::TYPE_ORGANIZATION_DESCRIPTION		=>
 					[ 
@@ -621,7 +623,8 @@ class  WhoisRIPEInformation		extends  WhoisProviderInformation
 						'name'			=>  [ 'remarks' ],
 						'type'			=>  self::TYPE_ROUTE_COMMENT,
 						'value-type'		=>  self::VALUE_TYPE_STRING,
-						'multiple'		=>  true
+						'multiple'		=>  true,
+						'multiline'		=>  true
 					 ],
 					self::TYPE_ROUTE_MEMBER_OF		=>
 					[ 
@@ -836,7 +839,8 @@ class  WhoisRIPEInformation		extends  WhoisProviderInformation
 						'name'			=>  [ 'comment', 'remarks' ],
 						'type'			=>  self::TYPE_PERSON_COMMENT,
 						'value-type'		=>  self::VALUE_TYPE_STRING,
-						'multiple'		=>  true
+						'multiple'		=>  true,
+						'multiline'		=>  true
 					 ],
 					self::TYPE_PERSON_SOURCE	=>
 					[ 

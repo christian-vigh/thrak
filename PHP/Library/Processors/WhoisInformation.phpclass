@@ -11,8 +11,12 @@
         Christian Vigh, 07/2015.
 
     HISTORY
-    [Version : 1.0]    [Date : 2015/07/31]     [Author : CV]
+    [Version : 1.0]	[Date : 2015/07/31]     [Author : CV]
         Initial version.
+
+    [Version : 1.0.1]	[Date : 2015/10/06]     [Author : CV]
+	. Added the LookaheadMultilines() method, to process entries that span several lines without repeating
+	  the start-of-line keyword.
 
  **************************************************************************************************************/
 namespace  Thrak\Processors ;
@@ -544,6 +548,10 @@ abstract class  WhoisInformation		extends		WhoisInformationBase
 				// 'list' entry defaults to false
 				if  ( ! isset ( $keyword_entry [ 'list' ] ) )
 					$keyword_entry [ 'list' ]	=  false ;
+
+				// 'multiline' entry defaults to false
+				if  ( ! isset ( $keyword_entry [ 'multiline' ] ) )
+					$keyword_entry [ 'multiline' ]	=  false ;
 
 				// 'list' entries are duplicated for each list item ; when true, this implies that the 'multiple'
 				// attribute is set to true
@@ -1409,6 +1417,49 @@ abstract class  WhoisInformation		extends		WhoisInformationBase
 
 	/*--------------------------------------------------------------------------------------------------------------
 	 
+	    LookaheadMultilines -
+		When a keyword is defined as "multiple", such as the "remarks:" keyword, it is usually specified like
+		this :
+
+			remarks: remark 1
+			remarks: remark 2 
+			...
+			remarks: remark n
+
+		However, whois information can also be returned like this by some servers :
+
+			remarks: remark 1
+				 remark 2
+				 ...
+				 remark n
+
+		This function tries to collect subsequent lines until either an empty line or a line starting with a 
+		keyword followed by a semicolon has been found.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  LookaheadMultilines ( &$text, $lines, &$index )
+	   {
+		$count	=  count ( $lines ) ;
+		$found	=  false ;
+
+		for  ( $i = $index + 1 ; $i  <  $count ; $i ++ )
+		   {
+			$line	=  $lines [$i] ;
+			$found  =  true ;
+
+			if  ( ! trim ( $line )  ||  preg_match ( '/^[\w\-]+:/', $line ) )
+				break ;
+
+			$text	.=  "\n$line" ;
+		    }
+
+		if  ( $found )
+			$index	=  $i - 1 ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
 	    Parse -
 		This function is called to categorize whois data into data blocks and individual keyword/value pairs.
 
@@ -1431,22 +1482,17 @@ abstract class  WhoisInformation		extends		WhoisInformationBase
 		// Loops through whois data lines
 		for  ( $i = 0 ; $i  <  $line_count ; $i ++ )
 		   {
-			$line	=  trim ( $lines [$i] ) ;
+			$line	=  rtrim ( $lines [$i] ) ;
 
-			// Ignore empty lines
-			if  ( ! $line )
+			// If the 'line-breaks' entry is set to true, this means that an empty line ends a data block
+			if  ( ! $line  &&  $this -> ClassDefinitions [ 'line-breaks' ] )
 			   {
-				// If the 'line-breaks' entry is set to true, this means that an empty line ends a data block
-				if  ( $this -> ClassDefinitions [ 'line-breaks' ] )
-				   {
-					if  ( $current_block_type )
-						$current_range []	=  [ 'type' => $current_block_type, 'data' => $current_block ] ;
+				if  ( $current_block_type )
+					$current_range []	=  [ 'type' => $current_block_type, 'data' => $current_block ] ;
 
-					$current_block			=  [] ;
-					$current_block_type		=  false ;
-					$current_block_keyword_id	=  false ;
-				    }
-
+				$current_block			=  [] ;
+				$current_block_type		=  false ;
+				$current_block_keyword_id	=  false ;
 				continue ;
 			    }
 
@@ -1489,9 +1535,8 @@ abstract class  WhoisInformation		extends		WhoisInformationBase
 
 			// Well, ignore anything that is not a data line
 			if  ( ! ( $match = $this -> IsDataLine ( $line ) ) )
-			   {
 				continue ;
-			    }
+
 		
 			// Get keyword and value from current data line
 			$keyword	=  $match [ 'keyword' ] ;
@@ -1502,6 +1547,12 @@ abstract class  WhoisInformation		extends		WhoisInformationBase
 			   {
 				$block_info		=  $this -> FindBlockType ( $keyword, $contents ) ;
 				$is_disjoint		=  $this -> ClassDefinitions [ 'data-blocks' ] [ $block_info [0] ] [ 'disjoint' ] ;
+
+				// Look for entries that may span multiple lines
+				$definition	=  $this -> GetDefinition ( $block_info [0], $block_info [1] ) ;
+				
+				if  ( $definition [ 'multiline' ] ) 
+					$this -> LookaheadMultilines ( $line, $lines, $i ) ;
 
 				// Disjoint block : collect information in the disjoint array
 				if  ( $is_disjoint )
@@ -1568,6 +1619,12 @@ abstract class  WhoisInformation		extends		WhoisInformationBase
 						$block_info	=  $this -> FindBlockType ( $keyword, $contents ) ;
 					    }
 				     }
+
+				// Look for entries that may span multiple lines
+				$definition	=  $this -> GetDefinition ( $current_block_type, $current_block_keyword_id ) ;
+				
+				if  ( $definition [ 'multiline' ] ) 
+					$this -> LookaheadMultilines ( $line, $lines, $i ) ;
 
 				// Disjoint block : continue collecting
 				if  ( $is_disjoint )
