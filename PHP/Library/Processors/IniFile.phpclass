@@ -318,7 +318,7 @@ class  IniFile  extends  Object
 		$key_value_separator	=  $this -> Separator ;
 
  	   	$single_re		=  '/^
-   						(?P<name> [^ \t' . $key_value_separator . ']+)
+   						(?P<name> [^' . $key_value_separator . ']+)
 							(
  	   							(?P<sep>  \s*' . $key_value_separator . '\s*)
  	   							(?P<value> .*)
