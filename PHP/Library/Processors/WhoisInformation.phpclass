@@ -17,6 +17,8 @@
     [Version : 1.0.1]	[Date : 2015/10/06]     [Author : CV]
 	. Added the LookaheadMultilines() method, to process entries that span several lines without repeating
 	  the start-of-line keyword.
+	. Added the PreprocessLine() method (some whois data require leading spaces to be removed, some other 
+	  not).
 
  **************************************************************************************************************/
 namespace  Thrak\Processors ;
@@ -1460,6 +1462,18 @@ abstract class  WhoisInformation		extends		WhoisInformationBase
 
 	/*--------------------------------------------------------------------------------------------------------------
 	 
+	    PreprocessLine -
+		Preprocesses a line (removes extra spaces, for example).
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  PreprocessLine ( $line )
+	   {
+		return ( rtrim ( $line ) ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
 	    Parse -
 		This function is called to categorize whois data into data blocks and individual keyword/value pairs.
 
@@ -1482,7 +1496,7 @@ abstract class  WhoisInformation		extends		WhoisInformationBase
 		// Loops through whois data lines
 		for  ( $i = 0 ; $i  <  $line_count ; $i ++ )
 		   {
-			$line	=  rtrim ( $lines [$i] ) ;
+			$line	=  $this -> PreprocessLine ( $lines [$i] ) ;
 
 			// If the 'line-breaks' entry is set to true, this means that an empty line ends a data block
 			if  ( ! $line  &&  $this -> ClassDefinitions [ 'line-breaks' ] )
@@ -1615,6 +1629,7 @@ abstract class  WhoisInformation		extends		WhoisInformationBase
 					// Otherwise, scanning will be a little bit more fuzzy...
 					else
 					   {
+						dump ( $line ) ;
 						error ( "TODO: implement scanning without line breaks" ) ;
 						$block_info	=  $this -> FindBlockType ( $keyword, $contents ) ;
 					    }

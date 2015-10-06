@@ -100,6 +100,12 @@ class  WhoisTWNICInformation		extends  WhoisProviderInformation
 	   {
 		parent::__construct ( $queried_ip, $contents ) ;
 	    }
+
+
+	protected function  PreprocessLine ( $line )
+	   {
+		return ( trim ( $line ) ) ;
+	    }
     }
 
 
@@ -109,7 +115,7 @@ class  WhoisTWNICInformation		extends  WhoisProviderInformation
         "fantom" TWNIC data that TWNIC denies property of. 
 
   ==============================================================================================================*/
-class  WhoisFantomTWNICInformation		extends  WhoisProviderInformation
+class  WhoisFantomTWNICInformation		extends  WhoisTWNICInformation
    {
 	protected static	$Definitions		=  [] ;
 	public			$DefaultCountry		=  "TW" ;
