@@ -74,3 +74,31 @@
    	color				:  #DD0909 ;
    	font-weight			:  bold ;
     }
+
+
+.labelled-checkbox:hover
+   {
+   	cursor				:  pointer ;
+    }
+    
+/**************************************************************************************************
+
+	UI: Custom checkbox styling
+
+ **************************************************************************************************/
+.checkbox-ticker			
+   {
+   	float				:  left ;
+    }
+ 
+ .checkbox-ticker-input:hover
+    {
+   	cursor				:  pointer ;
+     }
+         
+.checkbox-label			
+   {
+   	float				:  left ;
+   	padding-left			:  4px ;
+   	padding-top			:  3px ;
+    }
