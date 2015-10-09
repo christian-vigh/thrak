@@ -24,6 +24,7 @@
  ( function ( $ )
    {
 	var	language		=  "default" ;		// Current language
+	var	variant			=  undefined ;		// Optional language variant 
 	var	default_options		=			// Default options for new languages
 	   {
 		language		:  "default",
@@ -33,7 +34,7 @@
 		   {
 			var	s	=  language ;
 
-			if  ( variant )
+			if  ( variant  !==  undefined )
 				s  +=  "-" + variant ;
 
 			return ( s ) ;
