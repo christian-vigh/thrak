@@ -118,12 +118,29 @@
 		   {
 			// Call the callback if one specified, providing the return value of the message box (ok, cancel, etc...).
 			// For the $.alert() and $.error functions, this parameter will always be set to 1.
+			alert ( "MSGBOX CLOSE" ) ;
 			user_callback  &&  user_callback ( $(this). data ( 'status' ) ) ;
 				
 			// Since we're closing, we can remove our definition from the body of the document
 			$(this). remove ( ) ;
 		     }
 	     } ;
+
+	// __close_me -
+	//	Ensures the current message box is destroyed after calling the optional user callback.
+	//	Calls the 'destroy' method insted of 'close', since the latter does not prevent event bubbling :
+	//	This means that if you have multiple stacked dialogs, the close() method of each dialog will be
+	//	called...
+	function  __close_me ( $this, status )
+	   {
+		// Call the callback if one specified, providing the return value of the message box (ok, cancel, etc...).
+		// For the $.alert() and $.error functions, this parameter will always be set to 1.
+		user_callback  &&  user_callback ( status ) ;
+				
+		// Since we're closing, we can remove our definition from the body of the document
+		$this. dialog ( 'destroy' ) ;
+		$this. remove ( ) ;
+	    }
 	     
 	// __show_alert -
 	//	Main entry point for displaying message boxes.
@@ -158,13 +175,11 @@
 				   {
 					Ok	:  function ( )
 					   {
-						$(this). data ( 'status', 1 ) ;
-						$(this). dialog ( 'close' ) ;
+						__close_me ( $(this), 1 ) ;
 					    },
 					Annuler	:  function ( ) 
 					   {
-						$(this). data ( 'status', 0 ) ;
-						$(this). dialog ( 'close' ) ;
+						__close_me ( $(this), 0 ) ;
 					    }
 				    } ;
 				dialog_options	=  $. confirm. options ;
@@ -174,10 +189,9 @@
 			case	"error" :
 				dialog_buttons	=
 				   {
-					Ok	:  function ( )
+					Ok	:  function ( e )
 					   {
-						$(this). data ( 'status', 1 ) ;
-						$(this). dialog ( 'close' ) ;
+						__close_me ( $(this), 1 ) ;
 					    }
 				    } ;
 				dialog_options	=  $. error. options ;
@@ -190,8 +204,7 @@
 				   {
 					Ok	:  function ( )
 					   {
-						$(this). data ( 'status', 1 ) ;
-						$(this). dialog ( 'close' ) ;
+						__close_me ( $(this), 1 ) ;
 					    }
 				    } ;
 				dialog_options	=  $. alert. options ;
