@@ -176,14 +176,14 @@ $Configuration =  array
 	   	'jquery'			=>  array
 	   	    (
 		        'location'		=>  "//ajax.googleapis.com/ajax/libs/jquery/%v/jquery.%m.js",
-			'version'		=>  "1.10.2",
+			'version'		=>  "2.1.4",
 			'minified'		=>  true
 	   	     ),
 		// JQuery UI
 	   	'jquery-ui'			=>  array
 	   	    (
 		        'location'		=>  "//ajax.googleapis.com/ajax/libs/jqueryui/%v/jquery-ui.%m.js",
-			'version'		=>  "1.10.3",
+			'version'		=>  "1.11.4",
 			'minified'		=>  true
 	   	     ),
 		// JQuery UI themes
