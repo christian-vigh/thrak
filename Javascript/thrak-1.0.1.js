@@ -75,7 +75,7 @@
 				else if  ( typeof ( arguments [0] )  ==  'object' )
 					context		=  arguments [0] ;
 				else
-					throw ( "You must specify either a language string or a context object when call the thrak() function " +
+					throw ( "You must specify either a language string or a context object when calling the thrak() function " +
 						"with one argument." ) ;
 				break ;
 
@@ -252,7 +252,6 @@
 				checkbox. prop ( 'checked', ! checkbox. prop ( 'checked' ) ) ;
 			    }
 		    ) ;
-
 
 		return ( this ) ;
 	    }
