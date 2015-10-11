@@ -72,6 +72,9 @@ class  WebSite			extends	Object
 	// Page and scripts roots
 	public		$PageRoot ;
 	public		$ScriptRoot ;
+	// Character set and additional headers
+	public		$CharacterSet ;
+	public		$Headers ;
 	
 
 	/*--------------------------------------------------------------------------------------------------------------
@@ -157,6 +160,13 @@ class  WebSite			extends	Object
 		//	Default page to be displayed for pages that are under construction.
 		$this -> UnderConstructionPage		=  $Configuration -> Get ( 'Site/under-construction-page', '/error.php' ) ;
 		
+		// Headers
+		$this -> Headers			=  $Configuration -> Get ( 'Site/headers', [] ) ;
+
+		// Character set 
+		$this -> CharacterSet			=  $Configuration -> Get ( 'Site/character-set', 'ISO-8859-1' ) ;
+		$this -> Headers []			=  "Content-type: text/html; charset={$this -> CharacterSet}" ;
+
 		// Client language - don't use local variants
 		// If the '
 		$language_header		=  new Http\HttpAcceptLanguageHeader ( $_SERVER [ 'HTTP_ACCEPT_LANGUAGE' ] ) ;
@@ -270,9 +280,21 @@ class  WebSite			extends	Object
 
 	/*--------------------------------------------------------------------------------------------------------------
 	 
-	    NAME
-	        PageUnderConstruction - Displays the "Under construction" page.
+	    SendHeaders -
+	        Sends the headers defined into the configuration file, including the one containing the character set.
 	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  SendHeaders ( )
+	   {
+		foreach  ( $this -> Headers  as  $header )
+			header ( $header ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    PageUnderConstruction - 
+		Displays the "Under construction" page.	 
 	 
 	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  PageUnderConstruction ( )
