@@ -193,6 +193,8 @@
 			    }
 		    ) ;
 
+		// Repeatable fields
+		$('.repeatable'). repeatable ( ) ;
 
 		// Special masks
 		$('.phone-number'	, context). mask ( $. locale ( ). options. masks [ "phone-number"	] ) ;

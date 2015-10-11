@@ -70,7 +70,7 @@ $Configuration =  array
 		'css-include-path'		=>  array 
 		   (
 			".",
-			"thrak://CSS", 
+			"thrak://Css", 
 			"thrak://Javascript/contribs/jquery/css", 
 			"thrak://Javascript/contribs"
 		    ),
@@ -118,7 +118,7 @@ $Configuration =  array
 		// 'debug'	:  all warnings and notices will be displayed.
 		// 'production' :  No messages will be displayed.
 		// 'default'	:  Use current PHP parameters
-		'error-reporting'	=>  'default'
+		'error-reporting'	=>  'debug'
 	   ),
 
 

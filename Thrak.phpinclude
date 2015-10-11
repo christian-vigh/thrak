@@ -300,8 +300,8 @@ $BootFinalize		=  function ( $debug )
 	$Autoloader	=  new Thrak\System\Autoloader ( $Configuration ) ;
 	
 	// Get the autoloadable classes defined in Configuration/autoload.php, for both Thrak and site roots
-	$autoloads	=  [ "{$GLOBALS [ 'THRAK_ROOT' ]}/Configuration/autoload.ini", 
-			     "{$GLOBALS [ 'SITE_ROOT'  ]}/Configuration/autoload.ini" ] ;
+	$autoloads	=  [ "{$GLOBALS [ 'THRAK_ROOT' ]}Configuration/Autoload.ini", 
+			     "{$GLOBALS [ 'SITE_ROOT'  ]}Configuration/Autoload.ini" ] ;
 	
 	foreach  ( $autoloads  as  $autofile )
 	   {
