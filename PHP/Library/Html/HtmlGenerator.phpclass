@@ -1,0 +1,229 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        HtmlGenerator.php
+
+    DESCRIPTION
+        A list of static methods aimed at facilitating the generation of html components.
+
+    AUTHOR
+        Christian Vigh, 10/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/10/09]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Html ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces & objects
+use 	Thrak\System\Object ;
+
+
+/*==============================================================================================================
+
+    HtmlGenerator -
+        Utility functions to generate html.
+
+  ==============================================================================================================*/
+class  HtmlGenerator		extends		Object
+   {
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        GetAttributesAsString - Convertes an array to an attribute string.
+	 
+	    PROTOTYPE
+	        $str	=  HtmlGenerator::GetAttributesAsString ( $array ) ;
+	 
+	    DESCRIPTION
+	        Converts an associative array, whose keys give attribute names, into a string. For example :
+
+			[ 'id' => 'myid', 'class' => 'myclass' ]
+
+		will return the following string :
+
+			id="myid" class="myclass"
+
+		Arrays are also accepted as values :
+
+			[ 'id' => 'myid', 'class' => [ 'myclass', 'myclass2' ]
+
+		will return :
+
+			id="myid" class="myclass myclass2"
+
+	    PARAMETERS
+	        $array (associative array) -
+	                Array of attribute names (keys) with their values.
+	 
+	    RETURN VALUE
+	        Returns a string that can be embedded into a html tag.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public static function  GetAttributesAsString ( $array )
+	   {
+		$result		=  [] ;
+
+		foreach  ( $array  as  $key => $value )
+		   {
+			if  ( is_array ( $value ) )
+				$value	=  implode ( ' ', $value ) ;
+
+			$value		=  self::QuoteAttributeValue ( $value ) ;
+			$result []	=  "$key=$value" ;
+		    }
+
+		return ( implode ( ' ', $result ) ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        QuoteAttributeValue - Quotes a value to be used for an html attribute.
+	 
+	    PROTOTYPE
+	        $result		=  HtmlGenerator::QuoteAttributeValue ( $value ) ;
+	 
+	    DESCRIPTION
+	        Quotes a value so that it can be directly used after the equal (=) sign of an html attribute.
+	 
+	    PARAMETERS
+	        $value (string) -
+	                Value to be quoted.
+	 
+	    RETURN VALUE
+	        Returns the quoted value ; the rules are the following :
+		- If $value contains no double quotes, or simply contains single quotes, then the value will be returned 
+		  enclosed in double quotes
+		- If $value contains no single quotes but has double quotes, the returned value will be enclose in
+		  single quotes.
+		- If $value contains both single and double quotes, then, as a last resort, double quotes will be 
+		  replaced with the html entity &quot;, and the resulting string will be enclosed in double quotes.
+	 
+	    NOTES
+	        description
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public static function  QuoteAttributeValue ( $value )
+	   {
+		$single		=  strpos ( $value, "'" ) ;
+		$double		=  strpos ( $value, '"' ) ;
+
+		// No double quote in value - simply enclose the string with double quotes
+		if  ( $double  ===  false )
+			$result		=  '"' . $value . '"' ;
+		// Double quotes present but no single quote found : enclose the string with single quotes
+		else if  ( $single  ===  false )
+			$result		=  "'" . $value . "'" ;
+		// Both double- and single- quotes are present ; as a last resort, substitute double quotes with
+		// the &quot; litteral, and enclose the result with double quotes
+		else
+		   {
+			$value		=  str_replace ( '"', '&quot;', $value ) ;
+			$result		=  '"' . $value . '"' ;
+		    }
+
+		// All done, return
+		return ( $result ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        Select - Generates a <select> tag.
+	 
+	    PROTOTYPE
+	        echo HtmlGenerator::Select ( $values, $attributes, $default = null, $include_empty = false ) ;
+	 
+	    DESCRIPTION
+	        Generates a configurable <select> tag.
+	 
+	    PARAMETERS
+	        $values (associative array) -
+	                An array whose keys are the <select> tag <option> values, and whose values are the display text.
+			Note that values can also be specified as array of values, such as in :
+
+				[ 'class' => [ 'myclass1', 'myclass2' ] ]
+
+		$attributes (associative array) -
+			Array of attribute name/value pairs that will be put in the <select> tag.
+
+		$default (string) -
+			Default selected value. Must be one of the keys defined in the $values array.
+
+		$include_empty (mixed) -
+			Can be either :
+			- true :
+				An empty item will be inserted as the first element of the <select> tag.
+				Its value in the <option> tag will be set to the empty string.
+			- false :
+				No empty value will be present in the <select> options.
+			- array of two items :
+				An initial value will be inserted at the top of the <select> list. Item #0 will represent
+				the <option> value, and item #1 the <option> display text.
+			- string :
+				The specified initial value will be inserted at the top of the <select> list. The
+				value attribute of the <option> tag will be an empty string.
+					 
+	    RETURN VALUE
+	        Returns the html code to be displayed.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public static function  Select ( $values, $attributes, $default = null, $include_empty = false )
+	   {
+		$attr_string	=  self::GetAttributesAsString ( $attributes ) ;
+
+		if  ( $include_empty  ===  true )
+			$values		=  array_merge ( [ '' => '' ], $values ) ;
+		else if  ( is_string ( $include_empty ) )
+			$values		=  array_merge ( [ '' => $include_empty ], $values ) ;
+		else if  ( is_array ( $include_empty )  &&  count ( $include_empty )  ==  2 )
+			$values		=  array_merge ( [ $include_empty [0] => $include_empty [1] ], $values ) ;
+
+		$result		=  "<select $attr_string>\n" ;
+		$first		=  true ;
+		$optselect	=  'selected="selected"' ;
+		$selected	=  '' ;
+		$found		=  false ;
+
+		// Loop through values to be included in the <select> tag
+		foreach  ( $values  as  $key => $value )
+		   {
+			$quoted_key	=  self::QuoteAttributeValue ( $key ) ;
+			$htmlvalue	=  htmlentities ( $value ) ;
+
+			// Always set the default option to the first element, if no default has been specified
+			if  ( $default  ===  null )
+			   {
+				if  ( $first )
+				   {
+					$selected	=  $optselect ;
+					$first		=  false ;
+				    }
+				else
+					$selected	=  '' ;
+			    }
+			// Otherwise, perform a case-insensitive comparison of both key and value
+			// ... but do it only if a previous match has not been found
+			else if  ( ! $found  &&  ( ! strcasecmp ( $key, $default )  ||  ! strcasecmp ( $value, $default ) ) )
+			   {
+				$found		=  true ;
+				$selected	=  $optselect ;
+			    }
+			else
+				$selected	=  '' ;
+
+			$result		.=  "\n\t<option value=$quoted_key $selected>$htmlvalue</value>"  ;
+		    }
+
+		$result		.=  "\n</select>\n" ;
+
+		return ( $result ) ;
+	    }
+    }
