@@ -61,7 +61,7 @@ class  UploadedFiles		extends		Object
 	public function  __construct ( $files )
 	   {
 		parent::__construct ( ) ;
-	
+
 		// Loop through $_FILES array
 		foreach  ( $files  as  $name => $data )
 		   {
