@@ -18,6 +18,11 @@
 	. Changed the Execute() method so that commands longer than SSH_MAX_COMMAND_LENGTH bytes are first put 
 	  in a remote temporary shell script before execution.
 
+    [Version : 1.0.2]	[Date : 2015/10/12]     [Author : CV]
+	. Added the Reconnect() method : not only the libssh2 bug on Windows prevents two commands to be executed
+	  using ssh2_exec() without disconnecting then reconnecting/authenticating ; but it also prevents 
+	  further SFTP file transfers.
+
  **************************************************************************************************************/
 namespace	Thrak\Network\Ssh ;
 
@@ -300,9 +305,7 @@ class  SshSession		extends  Object
 		
 		if  ( LIBSSH2_EXEC_BUG  &&  $execution_count )
 		   {
-			$this -> Disconnect ( ) ;
-			$this -> Connect ( ) ;
-			$this -> Connection -> Authenticate ( ) ;
+			$this -> Reconnect ( ) ;
 		    }
 		
 		// Execute the command
@@ -421,7 +424,30 @@ class  SshSession		extends  Object
 			
 		return ( $this -> FileSystem ) ;
 	    }
+
+
+	/*==============================================================================================================
 	
+	    NAME
+	        Reconnect - reconnects a session.
+	
+	    PROTOTYPE
+	        $server -> Reconnect ( ) ;
+	
+	    DESCRIPTION
+	        Disconnects, reconnects then re-authenticates.
+		Added mainly as a workaround for the libssh2 bug which prevents ANYTHING to be executed or transferred
+		after a command has been executed (apparently, it concerns only Windows implementations). 
+		Thanks for this bug dating from 2010...
+	
+	  ==============================================================================================================*/
+	function  Reconnect ( )
+	   {
+		$this -> Disconnect ( ) ;
+		$this -> Connect ( ) ;
+		$this -> Connection -> Authenticate ( ) ;
+		$this -> FileSystem	=  null ;
+	    }
 	
 	
 	/*==============================================================================================================
