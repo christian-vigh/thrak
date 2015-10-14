@@ -81,25 +81,29 @@
    	cursor				:  pointer ;
     }
     
+    
 /**************************************************************************************************
 
-	UI: Custom checkbox styling
+	UI: repeatable styling
 
  **************************************************************************************************/
-.checkbox-ticker			
+.repeatable
    {
-   	float				:  left ;
+   	padding-bottom			:  2px ;
     }
- 
- .checkbox-ticker-input:hover
-    {
-   	cursor				:  pointer ;
-     }
-         
-.checkbox-label			
+    
+    
+/**************************************************************************************************
+
+	Misc ui styling
+
+ **************************************************************************************************/
+.unselectable 
    {
-   	float				:  left ;
-   	padding-left			:  4px ;
-   	padding-top			:  3px ;
-    }
-   
+	-webkit-touch-callout		:  none ;
+	-webkit-user-select		:  none ;
+	-khtml-user-select		:  none ;
+	-moz-user-select		:  none ;
+	-ms-user-select			:  none ;
+	user-select			:  none ;
+    }    
