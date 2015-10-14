@@ -13,9 +13,10 @@
     [Version : 1.0]	[Date : 2013/12/01]     [Author : CV]
         Initial version.
 
-    [Version : 1.0.1]	[Date : 2015/10/08]     [Author : CV]
-	. Checkboxes are remapped so that the checkbox text becomes clickable. The "label=" attribute must be
-	  specified to define the checkbox text, as well as the "checkbox" type.
+    [Version : 1.0.1]	[Date : 2015/10/14]     [Author : CV]
+	. Checkboxes are remapped so that the checkbox text becomes clickable.
+	. Added the $.repeatable() initialization
+	. Added the outerHtml() function for JQuery elements.
 
  **************************************************************************************************************/
 
@@ -194,7 +195,7 @@
 		    ) ;
 
 		// Repeatable fields
-		$('.repeatable'). repeatable ( ) ;
+		$('.repeatable'		, context). repeatable ( ) ;
 
 		// Special masks
 		$('.phone-number'	, context). mask ( $. locale ( ). options. masks [ "phone-number"	] ) ;
@@ -207,55 +208,27 @@
 		$(".positive-numeric"	, context). numeric ( { negative: false } ) ;
 		$(".positive-integer"	, context). numeric ( { decimal: false, negative: false } ) ;
 
-		// Custom checkbox, where the label can also be clicked - you have to define a "label=" attribute in your 
-		// <input type="checkbox"> html element, as well as "class=checkbox"
-		// Each checkbox input :
-		//
-		//	<input type="checkbox" class="checkbox" label="I am the checkbox label">
-		//
-		// is wrapped this way :
-		//
-		//	<div class="labelled-checkbox">
-		//		<div class="checkbox-ticker">
-		//			<input type="checkbox" class="checkbox-ticker-input">
-		//		</div>
-		//		<div class="checkbox-label">I am the checkbox label</div>
-		//	</div>
-		//
-		// Note that the "label=" attribute is removed, as well as the initial "checkbox" class.
-		$('.checkbox', context). each
+		// Checkboxes - allow associated labels to be clickable
+		$('.checkbox'). each
 		   (
 			function  ( index, obj )
 			   {
-				var	$this	=  $(obj) ;
-				var	label	=  $this. attr ( 'label' ) ;
-				var	html ;
+				var	$this		=  $(obj) ;
+				var	$this_label	=  $('label[for="' + $this. attr ( 'id' ) + '"]') ;
 
-				$this 
-					.removeAttr ( 'label' )
-					.removeClass ( 'checkbox' ) 
-					.addClass ( 'checkbox-ticker-input') ;
-
-				html		=  '<div class="labelled-checkbox">' +
-							'<div class="checkbox-ticker">' + $this [0]. outerHTML + '</div>' +
-							'<div class="checkbox-label">' + label + '</div>' +
-						   '</div>' ;
 				
-				$this. replaceWith ( html ) ;
+				if  ( $this_label. length  == 0 )
+					return ;
+
+				$this_label
+					.css ( 'cursor', 'pointer' )
+					.addClass ( 'unselectable' ) ;
 			    }
 		    ) ;
 
-		$('.checkbox-label', context). unbind ( 'click' ). click
-		   (
-			function  ( e ) 
-			   {
-				var	checkbox	=  $('.checkbox-ticker-input', $(this). parent ( ) ) ;
-
-				checkbox. prop ( 'checked', ! checkbox. prop ( 'checked' ) ) ;
-			    }
-		    ) ;
-
-		return ( this ) ;
+		// A few additions to JQuery objects...
+		$. fn. outerHtml	=  function ( )
+		   { return ( this [0]. outerHTML ) ; }
 	    }
 
 
