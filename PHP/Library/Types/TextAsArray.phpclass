@@ -17,8 +17,8 @@
 	On sorted contents with unique lines, a search requires at most ceil ( ln2 ( count ) ) comparisons,
 	where 'count' is the number of text items (typically lines). As an example, searching a value in a
 	100000-lines text contents will require at most 17 comparisons.
-	Of course, if the text contents contain identical lines, additional comparisons will be needed to find
-	the correct value.
+	Of course, if the text  contain identical lines, additional comparisons will be needed to find the
+	correct value.
 
     AUTHOR
         Christian Vigh, 06/2015.
