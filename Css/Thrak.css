@@ -91,7 +91,71 @@
    {
    	padding-bottom			:  2px ;
     }
+
+.repeatable-button
+   {
+   	display				:  inline ;
+    }
+ 
+.repeatable-buttonset
+   {
+   	display				:  inline ;
+   	cursor				:  pointer ;
+    }
+
+.repeatable-buttonset.repeatable-buttonset-first
+   {
+    }
+
+.repeatable-buttonset.repeatable-buttonset-last
+   {
+   	padding-left			:  4px ;
+    }
+ 
+.repeatable-button-disabled
+   {
+   	cursor				:  default ;
+   	color				:  gray ;
+    }
+
+.repeatable-button-none
+   {
+	visibility			:  hidden ;
+    }        
+ 
+.repeatable-buttonset-default	
+   {
+   	height				:  16px ;
+   	display				:  inline-block ;
+    }
     
+.repeatable-buttonset-default .repeatable-button
+   {
+   	height				:  12px ;
+   	width				:  12px ;
+   	display				:  inline-block ;
+    }
+    
+.repeatable-buttonset-default .repeatable-button-plus
+   {
+   	background-image		:  url(images/add-small-enabled.png) ;
+    }
+
+.repeatable-buttonset-default .repeatable-button-minus
+   {
+   	background-image		:  url(images/delete-small-enabled.png) ;
+    }
+    
+.repeatable-buttonset-default .repeatable-button-plus.repeatable-button-disabled
+   {
+   	background-image		:  url(images/add-small-disabled.png) ;
+    }
+
+.repeatable-buttonset-default .repeatable-button-minus.repeatable-button-disabled
+   {
+   	background-image		:  url(images/delete-small-disabled.png) ;
+    }
+
     
 /**************************************************************************************************
 
