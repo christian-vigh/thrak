@@ -102,7 +102,7 @@
 				dialog_options	=  $. extend ( dialog_options, arg ) ;
 		    }
 
-		dialog_options. formOptions	=  $. extend ( default_form_options, dialog_options. formOptions ) ;
+		dialog_options. formOptions	=  $. extend ( default_form_options, dialog_options. formOptions, { id : id } ) ;
 
 		// Default value for template
 		if  ( template  ===  undefined )
@@ -685,7 +685,7 @@
 	//	Wraps a <form> construct around a form template.
 	function  wrapform ( form_id, form_options )
 	   {
-		var	has_files	=  $('[type="file"]'). filter ( filter_field ). length  >  0 ;
+		var	has_files	=  $('[type="file"]'). length  >  0 ;
 		var	encoding	=  ( has_files ) ?  '' : 'enctype="multipart/form-data"' ;
 		var	form_html	=  '<form id="' + form_id + '" method="' + form_options. method + '" ' + encoding + ' ' + 
 					   'action="' + form_options. url + '"' ;
@@ -732,13 +732,50 @@
 
 	function  send_regular_form ( form, form_options ) 
 	   {
+		form_options. beforeSubmit && form_options. beforeSubmit ( ) ;
 		transform_form ( form, form_options ) ;
 		form. submit ( ) ;
 	    }
 
 
-	function  send_ajax_form ( $this, form_options )
+	function  send_ajax_form ( form, form_options )
 	   {
+		form_options. beforeSubmit && form_options. beforeSubmit ( ) ;
+		transform_form ( form, form_options ) ;
+
+		var	form_data	=  new FormData ( $('#' + form_options. id) [0] ) ;
+		var	request_data	= 
+		   {
+			url		:  form_options. url,
+			cache		:  false,
+			contentType	:  false,
+			processData	:  false
+		    } ;
+		var	ajax_data	=  $. extend ( request_data, form_options. ajax, { data : form_data } ) ;
+
+		$. ajax ( ajax_data ) ;
 	    }
     } ( jQuery ) ) ;
 
+/*
+   $.ajax({
+        url: 'upload.php',  //Server script to process data
+        type: 'POST',
+        xhr: function() {  // Custom XMLHttpRequest
+            var myXhr = $.ajaxSettings.xhr();
+            if(myXhr.upload){ // Check if upload property exists
+                myXhr.upload.addEventListener('progress',progressHandlingFunction, false); // For handling the progress of the upload
+            }
+            return myXhr;
+        },
+        //Ajax events
+        beforeSend: beforeSendHandler,
+        success: completeHandler,
+        error: errorHandler,
+        // Form data
+        data: formData,
+        //Options to tell jQuery not to process data or worry about content-type.
+        cache: false,
+        contentType: false,
+        processData: false
+*/
