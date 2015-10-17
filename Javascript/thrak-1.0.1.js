@@ -227,8 +227,13 @@
 		    ) ;
 
 		// A few additions to JQuery objects...
-		$. fn. outerHtml	=  function ( )
-		   { return ( this [0]. outerHTML ) ; }
+		$. fn. outerHtml	=  function ( html )
+		   { 
+			if  ( html  ===  undefined )
+				return ( this [0]. outerHTML ) ; 
+			else
+				this. replaceWith ( html ) ;
+		    }
 	    }
 
 
