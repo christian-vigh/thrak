@@ -193,7 +193,24 @@ $Configuration =  array
 			'version'		=>  "1.10.3",
 			'minified'		=>  true,
 			'custom'		=>  true
-		    )
+		    ),
+		// Compression mode for .jss and .css files
+		// Can be one of the following values :
+		// - 'none' or boolean false :
+		//	The normal file inclusion process applies. An http request will be issued on every included
+		//	source file.
+		// - 'minify' or boolean true :
+		//	A minified version of the original source file will be generated if needed. An http request
+		//	will be issued on every minified file.
+		// - 'advanced' :
+		//	All js/css files will be grouped and minified into a single file. At most two http requests
+		//	will be issued, one for the file containing the minified/grouped version of included javascript
+		//	files, one for the css files.
+		'compression'		=>
+		   [
+			'js'			=>  false,
+			'css'			=>  false
+		    ]
 	    ),
 	// Security
 	'Security'				=>  array
