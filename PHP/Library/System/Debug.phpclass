@@ -57,6 +57,11 @@
 	  because no source file was available to scan the arguments passed to the dump() function.
 	  Corrected the Dump() method to provide standard parameter names of the form "arg#x".
  
+    [Version : 1.0.10]		[Date : 2015/10/17]		[Author : CV]
+	. Added the __escape() method to escape characters for display.
+	. Changed the __DumpThis() method to use __escape() instead of str_replace(), and escaped
+	  array keys.
+ 
  ***************************************************************************************************/
 namespace 	Thrak\System ;
 
@@ -168,17 +173,41 @@ class  Debug		extends  Object
 
 	/*-------------------------------------------------------------------------------------------
 
+	    __Escape -
+	    	Escapes the specified string for display.
+
+	 --------------------------------------------------------------------------------------------*/
+	private static function  __Escape ( $str )
+	   {
+		static 	$string_searches	=  array ( "\\"  , "\""  , "\n" , "\r" , "\t" , "\\v"  ) ;
+		static  $string_replacements 	=  array ( "\\\\", "\\\"", "\\n", "\\r", "\\t", "\\v" ) ;
+
+		$str	=  str_replace ( $string_searches, $string_replacements, $str ) ;
+		$result =  '' ;
+		$length =  strlen ( $str ) ;
+
+		for  ( $i = 0 ; $i  <  $length ; $i ++ )
+		   {
+			$ch	=  ord ( $str [$i] ) ;
+
+			if  ( $ch  <  32  ||  $ch  >  127 )
+				$result .=  '\\x' . sprintf ( "%02X", $ch ) ;
+			else
+				$result .=  $str [$i] ;
+		    }
+
+		return ( $result ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
 	    __DumpThis -
 	    	Recursively dumps a variable contents.
 
 	 --------------------------------------------------------------------------------------------*/
 	private static function  __DumpThis ( &$output, $var, $references, $indent_level )
    	   {
-   	   	// Search and replacements strings used to properly display text strings.
-		static 	$string_searches	=  array ( "\\"  , "\""  , "\n" , "\r" , "\t"  ) ;
-		static  $string_replacements 	=  array ( "\\\\", "\\\"", "\\n", "\\r", "\\t" ) ;
-
-
 		// Boolean value
    		if  ( is_bool ( $var ) )
    		   {
@@ -221,7 +250,7 @@ class  Debug		extends  Object
 					$var	=  $str ;
 			    }
 			
-   		   	$var = str_replace ( $string_searches, $string_replacements, $var ) ;
+   		   	$var = self::__Escape ( $var ) ;
 			$length = strlen ( $var ) ;
 
    			$output [] = array ( "type-start" ) ;
@@ -275,6 +304,8 @@ class  Debug		extends  Object
    			// Loop through each array item to recursively display its contents
    			foreach  ( $var  as  $key => $value )
    			   {
+				$key	=  self::__Escape ( $key ) ;
+
 				if  ( is_numeric ( $key ) )
 					$output [] = array ( "string", "[$key] => " ) ;
 				else
