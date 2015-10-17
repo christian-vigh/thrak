@@ -1,0 +1,93 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        CssMinifier.phpclass
+
+    DESCRIPTION
+        Minifier for css sources.
+
+    AUTHOR
+        Christian Vigh, 10/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/10/16]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Processors\Minifiers ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use 	Thrak\System\Object ;
+use     Thrak\Types\String ;
+use	Thrak\Processors\Minifiers\Minifier ;
+
+
+/*==============================================================================================================
+
+    CssMinifier class -
+        Minifier for javascript sources.
+
+  ==============================================================================================================*/
+class	CssMinifier	extends  Minifier 
+   {
+	public function  __construct ( )
+	   {
+		static	$single_comments	= [] ;
+		static  $multi_comments		=  
+		   [
+			   [
+				'start'		=>  '/*',
+				'end'		=>  '*/',
+				'nested'	=>  false 
+			    ]
+		    ] ;
+
+		static	$quoted_strings		=
+		   [
+			   [
+				'quote'		=>  '"'
+			    ],
+			   [
+				'quote'		=>  "'"
+			    ]
+		    ] ;
+
+		static  $tokens			=
+		   [
+			':', ';'
+		    ] ;
+
+		$this -> SetComments		( $single_comments, $multi_comments ) ;
+		$this -> SetQuotedStrings	( $quoted_strings ) ;
+		$this -> SetContinuation	( "\\" ) ;
+		$this -> SetIdentifierRegex	( '[a-z_\-\$][a-z0-9_\-\$]*' ) ;
+		$this -> SetTokens		( $tokens ) ;
+
+		parent::__construct ( ) ;
+	    }
+
+
+	protected function  MinifyData ( )
+	   {
+		$data		=  '' ;
+		$offset		=  0 ;
+		$token		=  null ;
+
+		while ( $this -> GetNextToken ( $offset, $token, $data ) )
+		   {
+			switch ( $token )
+			   {
+				case	"\n" :
+					break ;
+
+				default :
+					$data	.=  $token ;
+			    }
+		    }
+
+		return ( $data ) ;
+	    }
+
+    }

@@ -1,0 +1,811 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        Minifier.phpclass
+
+    DESCRIPTION
+        Abstract base class for code minifiers.
+	A source file is considered as a flow of comments (either single- or multi-line), strings enquoted by
+	some sequence(s), spaces, newlines and tokens.
+
+	By default, the minifier base class treats single characters as tokens. If the derived class wants to
+	perform more detailed syntax analysis, it will have to override the ProcessToken() method.
+
+    AUTHOR
+        Christian Vigh, 10/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/10/16]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Processors\Minifiers ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use 	Thrak\System\Object ;
+use     Thrak\Types\String ;
+
+
+class	MinifierException	extends \Thrak\System\ParseException	{} ;
+
+
+/*==============================================================================================================
+
+    Minifier class -
+        Abstract base class for code minifiers.
+
+  ==============================================================================================================*/
+abstract class  Minifier		extends  Object
+   {
+	// Definitions provided by derived classes
+	protected	$SingleLineComments		=  [] ;
+	protected	$MultiLineComments		=  [] ;
+	protected	$QuotedStrings			=  [] ;
+	protected	$Continuation			=  false ;
+	protected	$Spaces				=  [ " " => " ", "\t" => "\t", "\v" => "\v", "\r" => "\r", "\xA0" => "\xA0" ] ;
+	protected	$IdentifierRegex		=  false ;
+	protected	$Tokens				=  [] ;
+
+	// Internal data
+	private 	$ContinuationLength ;				// Continuation string length - avoid repeated calls to strlen
+
+	// The call table is here for optimization purposes ; it holds pointer to internal functions that will
+	// be called when
+	// - The first character of a comment start or string start is encountered in the input flow
+	// - A space or a newline is found
+	// This table is built by the class constructor
+	private		$CallTable			=  [] ;	
+
+	// Contents to be minified
+	protected	$Content ;
+	protected	$ContentLength ;
+	// Current line in the input flow - mainly used for error messages
+	protected	$CurrentLine ;
+	// Last token
+	protected	$LastToken ;
+	protected	$LastTokenType ;
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        Constructor
+	 
+	    PROTOTYPE
+	        $minifier	=  new Minifier ( ) ;
+	 
+	    DESCRIPTION
+	        Instanciates a Minifier class.
+	 
+	    NOTES
+		The constructor must be called by derived classes AFTER any call to the SetXXX functions.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( )
+	   {
+		parent::__construct ( ) ;
+
+		if  ( ! $this -> Spaces )
+			$this -> SetSpaces ( " \t\v\r" . chr ( 160 ) ) ;
+
+		// Build the call table for the GetNextToken() method
+		$this -> Finalize ( ) ;
+
+		// Initialize input-dependent members
+		$this -> Reset ( ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        Finalize - Finalizes the object instance.
+	 
+	    PROTOTYPE
+	        $minifier -> Finalize ( ) ;
+	 
+	    DESCRIPTION
+	        Finalizes the object instance, by rebuilding the call table that is used by the GetNextToken() method.
+	 
+	    NOTES
+	        This function MUST be called if one or more of the Setxxx methods have been called after the class
+		constructor.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  Finalize ( )
+	   {
+		foreach  ( array_keys ( $this -> Spaces )  as  $space )
+			$this -> CallTable [ $space ] []	=  [ 'callback' => [ $this, 'ProcessSpaces' ], 'return' => true ] ;
+
+		$this -> CallTables [ "\n" ] []		=  [ 'callback' => [ $this, 'ProcessNewlines' ], 'return' => true ] ;
+
+		if  ( $this -> Continuation )
+			$this -> CallTables [ $this -> Continuation [0] ] []	=  [ 'callback' => [ $this, 'ProcessContinuation' ], 'return' => false ] ;
+
+		foreach  ( $this -> SingleLineComments  as  $def )
+			$this -> CallTable [ $def [ 'value' ] [0] ] []	=  [ 'callback' => [ $this, 'ProcessSingleLineComments' ], 'return' => false ] ;
+
+		foreach  ( $this -> MultiLineComments  as  $def )
+			$this -> CallTable [ $def [ 'start' ] [0] ] []	=  [ 'callback' => [ $this, 'ProcessMultiLineComments' ], 'return' => false ] ;
+
+		foreach  ( $this -> QuotedStrings  as  $def )
+			$this -> CallTable [ $def [ 'left-quote' ] ] []	=  [ 'callback' => [ $this, 'ProcessString' ], 'return' => true ] ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        SetComments - Sets the single- and multi-line comment definitions.
+	 
+	    PROTOTYPE
+	        $minifier -> SetComments ( $single_comments, $multi_comments ) ;
+	 
+	    DESCRIPTION
+	        Defines the comment style for the derived class.
+	 
+	    PARAMETERS
+	        $single_comments (array of strings) -
+	                An array specifying the sequences starting single-line comments. An example definition for
+			PHP sources would be : [ '#', '//' ].
+
+		$multi_comments (array of associative arrays) -
+			Array of multiline comment definitions, which contains the following entries :
+			- 'start' :
+				Multi-line comment start sequence.
+			- 'end' :
+				Multi-line comment end sequence.
+			- 'nested' :
+				A boolean indicating whether multi-line comments can be nested.
+				The default value is false if not specified.
+
+			An example definition for PHP sources would be :
+
+				[ [ 'start' => '/*', 'end' => '* /' ] ]
+
+	    NOTES
+		This function must be called by the derived class BEFORE the Minifier constructor.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  SetComments ( $single_comments, $multi_comments )
+	   {
+		$this -> SingleLineComments	=  [] ;
+		$this -> MultiLineComments	=  [] ;
+
+		foreach  ( $single_comments  as  $single_comment )
+			$this -> SingleLineComments []	=  [ 'value' => $single_comment, 'length' => strlen ( $single_comment ) ] ;
+
+		$index	=  0 ;
+
+		foreach  ( $multi_comments  as  $comment_def )
+		   {
+			if  ( ! isset ( $comment_def [ 'start' ] ) )
+				error ( new MinifierException ( "Missing 'start' entry for multiline comment definition #$index." ) ) ;
+
+			if  ( ! isset ( $comment_def [ 'end' ] ) )
+				error ( new MinifierException ( "Missing 'end' entry for multiline comment definition #$index." ) ) ;
+
+			if  ( ! isset ( $comment_def [ 'nested' ] )  ||  ! $comment_def [ 'nested' ] )
+				$comment_def [ 'nested' ]	=  false ;
+
+			$comment_def [ 'start-length' ]	=  strlen ( $comment_def [ 'start' ] ) ;
+			$comment_def [ 'end-length' ]	=  strlen ( $comment_def [ 'end' ] ) ;
+
+			$this -> MultiLineComments []	=  $comment_def ;
+			$index ++ ;
+		    }
+
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        SetQuotedStrings - Sets the quoted string definitions.
+	 
+	    PROTOTYPE
+	        $minifier -> SetQuotedStrings ( $strings ) ;
+	 
+	    DESCRIPTION
+	        Defines the string style for the derived class.
+	 
+	    PARAMETERS
+		$strings (array of associative arrays) -
+			Arrays of string definitions, which contain the following entries :
+			- 'left-quote', 'right-quote' :
+				Starting and ending quote sequence (the minifier can handle string quotes of
+				more than one character).
+				If only 'left-quote' is defined, 'right-quote' will be set to its value.
+			- 'quote' :
+				Specifies both the 'left-quote' and 'right-quote' entries.
+			- 'escape' :
+				Either boolean false to indicate that the language does not support escape
+				sequences within a string token, or a string specifying an escape character
+				that cancel any meaning of the next one.
+				When not specified, the default value is false.
+
+			- 'continuation' :
+				Some languages, such as PHP, allow multiline strings ; some not, like 
+				Javascript ; but Javascript allows for continuation lines (lines terminated by '\').
+				Spaces are not authorized after a continuation sequence ; a continuation line is 
+				recognized by having a newline character after the continuation sequence (note that
+				carriage returns are ignored).
+				When not specified or set to boolean false, the default value is false, which means that 
+				the language does not support continuation lines.
+
+	    NOTES
+		This function must be called by the derived class BEFORE the Minifier constructor.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  SetQuotedStrings ( $strings )
+	   {
+		$index	=  0 ;
+		$this -> QuotedStrings	=  [] ;
+
+		foreach  ( $strings  as  $quoted_def )
+		   {
+			if  ( ! isset ( $quoted_def [ 'quote' ] )  &&  ! isset ( $quoted_def [ 'left-quote' ] ) )
+				error ( new MinifierException ( "Either the 'quote' or 'left-quote' entry is required for string definition #$index." ) ) ;
+				
+			if  ( ! isset ( $quoted_def [ 'left-quote' ] ) )
+				$quoted_def [ 'left-quote' ]	=  $quoted_def [ 'quote' ] ;
+
+			if (  ! isset ( $quoted_def [ 'right-quote' ] ) )
+				$quoted_def [ 'right-quote' ]	=  $quoted_def [ 'left-quote' ] ;
+
+			if  ( ! isset ( $quoted_def [ 'escape' ] )  ||  ! $quoted_def [ 'escape' ] )
+				$quoted_def [ 'escape' ]	=  false ;
+
+			if  ( ! isset ( $quoted_def [ 'continuation' ] )  ||  ! $quoted_def [ 'continuation' ] )
+				$quoted_def [ 'continuation' ]	=  false ;
+
+			$quoted_def [ 'left-quote-length' ]	=  strlen ( $quoted_def [ 'left-quote' ] ) ;
+			$quoted_def [ 'right-quote-length' ]	=  strlen ( $quoted_def [ 'right-quote' ] ) ;
+			$quoted_def [ 'escape-length' ]		=  ( $quoted_def [ 'escape' ] ) ?  strlen ( $quoted_def [ 'escape' ] ) : 0 ;
+
+			$this -> QuotedStrings []	=  $quoted_def ;
+			$index ++ ;
+		    }
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        SetContinuation - Defines the continuation line.
+	 
+	    PROTOTYPE
+	        $minify -> SetContinuation ( $string ) ;
+	 
+	    DESCRIPTION
+	        Defines the continuation line construct, which must be foollowed either by crlf or lf.
+	 
+	    PARAMETERS
+	        $string (string) -
+	                Continuation line sequence.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  SetContinuation ( $string )
+	   {
+		$this -> Continuation		=  $string ;
+		$this -> ContinuationLength	=  strlen ( $string ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        SetSpaces - Defines the spaces recognized by the minifier.
+	 
+	    PROTOTYPE
+	        $minifier -> SetSpaces ( $string ) ;
+	 
+	    DESCRIPTION
+	        Defines the space characters recognized by the minifier.
+	 
+	    PARAMETERS
+	        $string (string) -
+	                String of characters to be considered as spaces.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  SetSpaces ( $spaces )
+	   {
+		$length		=  strlen ( $spaces ) ;
+		$this -> Spaces =  [] ;
+		
+		for  ( $i = 0 ; $i  <  $length ; $i ++ )
+			$this -> Spaces [ $spaces [$i] ]	=  $spaces [$i] ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        SetIdentifierRegex - Sets the regex to be used for identifier matching.
+	 
+	    PROTOTYPE
+	        $minifier -> SetIdentifierRegex ( $re ) ;
+	 
+	    DESCRIPTION
+	        Sets the regex to be used for identifier matching.
+	 
+	    PARAMETERS
+	        $re (string) -
+	                Regular expression to be used for matching an identifier. The regex options '/imsx' are
+			automatically added. The supplied regular expression must not contain any delimiter.
+
+	    NOTES
+		If this method is not called by the derived class, no identifier will be recognized and characters will
+		be scanned one by one by the ProcessToken() method.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  SetIdentifierRegex ( $re )
+	   {
+		$new_re		=  '/(?P<capture> (?P<name> ' . $re . ') [ \t\r]*)/ix' ;
+
+		$this -> IdentifierRegex	= $new_re ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        SetTokens - Sets the tokens around which spaces are to be eaten up.
+	 
+	    PROTOTYPE
+	        $minifier -> SetTokens ( $tokens ) ;
+	 
+	    DESCRIPTION
+	        Sets the tokens around which spaces are to be eaten up ; this is the case for example for the 
+		relational operators, parentheses, etc.
+	 
+	    PARAMETERS
+	        $tokens (array of strings) -
+	                Tokens around which spaces should be eaten.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  SetTokens ( $tokens ) 
+	   {
+		$this -> Tokens		=  [] ;
+
+		foreach  ( $tokens  as  $token )
+		   {
+			$ch	=  $token [0] ;
+
+			$this -> Tokens [ $ch ] []	=  [ 'value' => $token, 'length' => strlen ( $token ) ] ;
+		    }
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    Reset -	 
+		Resets this instance so that a new file can be minified.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  Reset ( $data = null )
+	   {
+		$this -> Content	=  $data ;
+		$this -> ContentLength	=  strlen ( $data ) ;
+		$this -> CurrentLine	=  0 ;
+		$this -> LastToken	=  null ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    MinifyData -	 
+		To be implemented by derived classes for minifying data.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	abstract protected function	MinifyData ( ) ;
+
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    Minify, MinifyFile -	 
+		Minifies a string/file.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  Minify ( $contents )
+	   {
+		$this -> Reset ( $contents ) ;
+		return ( $this-> MinifyData ( ) ) ;
+	    }
+
+
+	protected function  MinifyTo ( $output, $contents ) 
+	   {
+		$data	=  $this -> Minify ( $contents ) ;
+		file_put_contents ( $output, $data ) ;
+	    }
+
+
+	public function  MinifyFileTo ( $output, $input )
+	   {
+		if  ( ! file_exists ( $input ) )
+			error ( new \Thrak\System\FileNotFoundException ( "File \"$input\" not found." ) ) ;
+
+		$this -> MinifyTo ( $output, file_get_contents ( $input ) ) ;
+	    }
+
+
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    GetNextToken -	 
+		Retrieves the next token, either a newline, a string or a token returned by the ProcessToken() method.
+		Returns false if no more tokens are available.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  GetNextToken ( &$offset, &$token, &$data )
+	   {
+		$contents	=  $this -> Content ;
+		$length		=  $this -> ContentLength ;
+		$token		=  null ;
+
+		$this -> LastToken =  $token ;
+
+ShootAgain :
+		// Stop if no more characters are available
+		if  ( ! isset ( $contents [ $offset ] ) )
+			return ( false ) ;
+
+		$ch	=  $contents [ $offset ] ;
+
+		// To avoid unnecessary calls to the Processxxx() methods, a call table is built by the Finalize method
+		// It is an array of callbacks whose keys are a character : when we find such a character in the input
+		// flow, then it means that the corresponding Processxxx() method is a good candidate for processing next
+		// input.
+		if  ( isset ( $this -> CallTable [ $ch ] ) )
+		   {
+			foreach  ( $this -> CallTable [ $ch ]  as  $entry )
+			   {
+				$callback	=  $entry [ 'callback' ] ;
+				$return_result	=  $entry [ 'return' ] ;
+
+				$status		=  $callback ( $contents, $length, $offset, $token ) ;
+
+				if  ( $status )
+				   {
+					if  ( $return_result )
+						return ( true ) ;
+					else 
+						goto  ShootAgain ;
+				    }
+			    }
+		    }
+
+		// Other cases : return the character (or the token) as is
+		return ( $this -> ProcessToken ( $contents, $length, $offset, $token, $data ) ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    ProcessContinuation -	 
+		Checks if the current position specifies a continuation line (ie, a continuation sequence followed by
+		"\r\n" or "\n"). Returns true if yes (and set the $offset argument to point to the next character after
+		the newline), or false otherwise.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  ProcessContinuation ( $contents, $length, &$offset, $continuation )
+	   {
+		if  ( $continuation )
+		   {
+			$continuation_length	=  $this -> ContinuationLength ;
+
+			if  ( ! substr_compare ( $contents, "$continuation\r\n", $offset, $continuation_length + 2 ) )
+			   {
+				$offset		+=  $continuation_length + 2 ;
+				$this-> CurrentLine ++ ;
+
+				return ( true ) ;
+			    }
+			else if  ( ! substr_compare ( $contents, "$continuation\n", $offset, $continuation_length + 2 ) )
+			   {
+				$offset		+=  $continuation_length + 1 ;
+				$this-> CurrentLine ++ ;
+
+				return ( true ) ;
+			    }
+		    }
+
+		return ( false ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    ProcessSingleLineComment -	 
+		Checks if the current position starts a single-line comment. Returns true if yes (and sets the $offset 
+		argument to point to the next character after the end of line), or false otherwise.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  ProcessSingleLineComments ( $contents, $length, &$offset )
+	   {
+		foreach  ( $this -> SingleLineComments  as  $def )
+		   {
+			if  ( ! substr_compare ( $contents, $def [ 'value' ], $offset, $def [ 'length' ] ) )
+			   {
+				$nlpos	=  strpos ( $contents, "\n", $offset ) ;
+
+				if  ( $nlpos  !==  false )
+				   {
+					$this -> CurrentLine ++ ;
+					$offset		=  $nlpos + 1 ;
+
+					$this -> EatSpaces ( $contents, $length, $offset ) ;
+				    }
+				else
+					$offset		=  $length ;
+
+				return ( true ) ;
+			    }
+		    }
+
+		return ( false ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    ProcessSpaces -	 
+		Checks if the current position starts a sequence of spaces. Returns true if yes (and sets the $offset 
+		argument to point to the next character after the very last space), or false otherwise.
+		Spaces characters are : space, tab, vertical tab and carriage return. Line feed are not counted as
+		spaces.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  ProcessSpaces ( $contents, $length, &$offset, &$token )
+	   {
+		$found_space	=  false ;
+
+		while  ( isset ( $contents [ $offset ] )  &&  isset ( $this -> Spaces [ $contents [ $offset ] ] ) )
+		   {
+			$found_space	=  true ;
+			$token		=  ' ' ;
+			$offset ++ ;
+		    }
+
+		return ( $found_space ) ;
+	    }	
+
+
+	protected function  EatSpaces ( $contents, $length, &$offset )
+	   {
+		$count 		=  0 ;
+
+		while  ( isset ( $contents [ $offset ] )  &&  ( isset ( $this -> Spaces [ $contents [ $offset ] ] )  ||  $contents [ $offset ]  ==  "\n" ) )
+		   {
+			if  ( $contents [ $offset ]  ==  "\n" )
+				$this -> CurrentLine ++ ;
+
+			$offset ++ ;
+			$count ++ ;
+		    }
+
+		return ( $count ) ;
+	    }
+
+
+	protected function  ProcessNewlines ( $contents, $length, &$offset, &$token )
+	   {
+		$found_newline	=  false ;
+
+		while  ( isset ( $contents [ $offset ] )  &&  $contents [ $offset ]  ==  "\n" )
+		   {
+			$found_newline	=  true ;
+			$token		=  "\n" ;
+			$offset ++ ;
+			$this -> CurrentLine ++ ;
+		    }
+
+		return ( $found_newline ) ;
+	    }	
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    ProcessMultiLineComment -	 
+		Checks if the current position starts a single-line comment. Returns true if yes (and sets the $offset 
+		argument to point to the next character after the comment terminator), or false otherwise.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  ProcessMultiLineComments ( $contents, $length, &$offset )
+	   {
+		foreach  ( $this -> MultiLineComments  as  $def )
+		   {
+			$comment_start		=  $def [ 'start' ] ;
+			$comment_end		=  $def [ 'end' ] ;
+			$nested			=  $def [ 'nested' ] ;
+			$comment_start_length	=  $def [ 'start-length' ] ;
+			$comment_end_length	=  $def [ 'end-length' ] ;
+
+			if  ( ! substr_compare ( $contents, $comment_start, $offset, $comment_start_length ) )
+			   {
+				$found_end_comment	=  false ;
+
+				// When the language accepts nested multiline comments, we only have the solution of 
+				// checking one character after another
+				if  ( $nested )
+				   {
+					$offset		       +=  $comment_start_length ;
+					$nesting_level		=  1 ;
+
+					while  ( $nesting_level  &&  isset ( $contents [ $offset ] ) )
+					   {
+						if  ( ! substr_compare ( $contents, $comment_start, $offset, $comment_start_length ) )
+						   {
+							$nesting_level ++ ;
+							$offset		+=  $comment_start_length ;
+						    }
+						else if  ( ! substr_compare ( $contents, $comment_end, $offset, $comment_end_length ) )
+						   {
+							$nesting_level -- ;
+							$offset		+=  $comment_end_length ;
+						    }
+					    }
+
+					if  ( ! $nesting_level )
+						$found_end_comment	=  true ;
+				    }
+				// ... but when not allowed, we can use builtin functions to go faster
+				else
+				   {
+					$endpos		=  strpos ( $contents, $comment_end, $offset ) ;
+
+					if  ( $endpos  !==  false )
+					   {
+						$this -> CurrentLine	+=  substr_count ( $contents, "\n", $offset, $endpos - $offset ) ;
+						$offset			 =  $endpos + $comment_end_length ;
+						$found_end_comment	 =  true ;
+
+						$this -> EatSpaces ( $contents, $length, $offset ) ;
+					    }
+				    }
+
+				if  ( ! $found_end_comment )
+					error ( new MinifierException ( "Unterminated comment started at line #{$this -> CurrentLine}." ) ) ;
+
+				return ( true ) ;
+			    }
+		    }
+
+		return ( false ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    ProcessString -	 
+		Checks if the current position starts a string. Returns true if yes (and sets the $offset argument to 
+		point to the next character after the end of the string), or false otherwise.
+		The $token parameter will be set to the found string, if any.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  ProcessString ( $contents, $length, &$offset, &$token )
+	   {
+		foreach ( $this -> QuotedStrings  as  $def )
+		   {
+			$left			=  $def [ 'left-quote' ] ;
+			$right			=  $def [ 'right-quote' ] ;
+			$escape			=  $def [ 'escape' ] ;
+			$continuation		=  $def [ 'continuation' ] ;
+
+			$left_length		=  $def [ 'left-quote-length' ] ;
+			$right_length		=  $def [ 'right-quote-length' ] ;
+			$escape_length		=  $def [ 'escape-length' ] ;
+
+			if  ( $contents [ $offset ]  ==  $left [0]  &&  ! substr_compare ( $contents, $left, $offset, $left_length ) )
+			   {
+				$offset		+=  $left_length ;
+				$found_eos	 =  false ;
+				$token		 =  $left ;
+
+				// Find the terminating quoted string sequence
+				while  ( isset ( $contents [ $offset ] ) )
+				   {
+					if  ( $this -> Continuation  &&  $this -> Continuation [0]  ==  $contents [ $offset ]  &&
+							$this -> ProcessContinuation ( $contents, $length, $offset, $continuation ) )
+					   {
+						if  ( ! isset ( $contents [ $offset ] ) )
+							break ;
+					    }
+
+					// Escape within the string
+					if  ( $escape  &&  ! substr_compare ( $contents, $escape, $offset, $escape_length ) )
+					   {
+						$token		.=  $escape ;
+						$offset		+=  $escape_length ;
+
+						// String with an escape sequence not terminated
+						if  ( ! isset ( $contents [ $offset ] ) )
+							break ;
+
+						$token  .=  $contents [ $offset ++ ] ;
+					    }
+					// String termination sequence
+					else if  ( ! substr_compare ( $contents, $right, $offset, $right_length ) )
+					   {
+						$token		.=  $right ;
+						$offset		+=  $right_length ;
+						$found_eos	 =  true ;
+
+						break ;
+					    }
+					else 
+						$token		.=  $contents [ $offset ++ ] ;
+				    }
+
+				if  ( ! $found_eos )
+					error ( new MinifierException ( "Unterminated string started at line #{$this -> CurrentLine}." ) ) ;
+
+				return ( true ) ;
+
+			    }
+		    }
+
+		return ( false ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    ProcessToken-	 
+		Processes the next token that is neither a string, a comment, a group of spaces or a newline.
+		The default implementation processes one character at a time.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  ProcessToken ( $contents, $length, &$offset, &$token, &$data )
+	   {
+		$ch	=  $contents [ $offset ] ;
+
+		if  ( $ch  <=  '~' )
+		   {
+			if  ( isset ( $this -> Tokens [ $ch ] ) )
+			   {
+				foreach  ( $this -> Tokens [ $ch ]  as  $item )
+				   {
+					$value		=  $item [ 'value' ] ;
+					$value_length	=  $item [ 'length' ] ;
+
+					if  ( ! substr_compare ( $contents, $value, $offset, $value_length ) )
+					   {
+						$token		 =  $value ;
+						$offset		+=  $value_length ;
+						$this -> EatSpaces ( $contents, $length, $offset ) ;
+
+						$data		 =  rtrim ( $data ) ;
+
+						return ( true ) ;
+					    }
+				    }
+			    }
+
+			if  ( $this -> IdentifierRegex  &&  preg_match ( $this -> IdentifierRegex, $contents, $match, PREG_OFFSET_CAPTURE, $offset ) )
+			   {
+				if  ( $match [ 'name' ] [1]  ==  $offset )
+				   {
+					$token		 =  $match [ 'name' ] [0] . ' ' ;
+					$offset		+=  strlen ( $match [ 'capture' ] [0] ) ;
+					
+					if  ( $this -> EatSpaces ( $contents, $length, $offset )  &&
+							isset ( $contents [ $offset ] )  &&  
+							! isset ( $this -> Tokens [ $contents [ $offset ] ] ) )
+						$offset -- ;
+
+					return ( true ) ;
+				    }
+			    }
+		    }
+
+		$token	=  $contents [ $offset ++ ] ;
+
+		return ( true ) ;
+	    }
+    }
