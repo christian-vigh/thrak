@@ -32,6 +32,12 @@ use	Thrak\Processors\Minifiers\Minifier ;
   ==============================================================================================================*/
 class	CssMinifier	extends  Minifier 
    {
+	/*--------------------------------------------------------------------------------------------------------------
+
+	   Constructor -
+		Initializes the parent minifier class.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  __construct ( )
 	   {
 		static	$single_comments	= [] ;
@@ -56,26 +62,33 @@ class	CssMinifier	extends  Minifier
 
 		static  $tokens			=
 		   [
-			':', ';'
+			':', ';', '{', '}', ','
 		    ] ;
 
 		$this -> SetComments		( $single_comments, $multi_comments ) ;
 		$this -> SetQuotedStrings	( $quoted_strings ) ;
 		$this -> SetContinuation	( "\\" ) ;
-		$this -> SetIdentifierRegex	( '[a-z_\-\$][a-z0-9_\-\$]*' ) ;
+		$this -> SetIdentifierRegex	( '[a-z_.#\-\$][a-z0-9_.#\-\$]*' ) ;
 		$this -> SetTokens		( $tokens ) ;
 
 		parent::__construct ( ) ;
 	    }
 
 
+	/*--------------------------------------------------------------------------------------------------------------
+
+	   MinifyData -
+		Process the input stream.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
 	protected function  MinifyData ( )
 	   {
 		$data		=  '' ;
 		$offset		=  0 ;
 		$token		=  null ;
+		$token_type	=  self::TOKEN_NONE ;
 
-		while ( $this -> GetNextToken ( $offset, $token, $data ) )
+		while ( $this -> GetNextToken ( $offset, $token, $token_type ) )
 		   {
 			switch ( $token )
 			   {
@@ -83,6 +96,11 @@ class	CssMinifier	extends  Minifier
 					break ;
 
 				default :
+					if  ( $token_type  ==  self::TOKEN_IDENTIFIER ) 
+						$token	.=  ' ' ;
+					else if  ( $token_type  ==  self::TOKEN_ELEMENT )
+						$data    =  rtrim ( $data ) ;
+
 					$data	.=  $token ;
 			    }
 		    }

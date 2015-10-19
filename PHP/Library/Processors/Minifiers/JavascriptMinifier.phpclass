@@ -32,6 +32,22 @@ use	Thrak\Processors\Minifiers\Minifier ;
   ==============================================================================================================*/
 class	JavascriptMinifier	extends  Minifier
    {
+	// Token type for regular expressions
+	const	TOKEN_REGEX		=  100 ;
+
+	// Expected characters before a regular expression - Note that '' corresponds to type TOKEN_NONE
+	// It appears as the last element since it needs to be tested only once
+	private static	$SymbolsBeforeRegex	=  [ '(', '=', ';', '' ] ;
+	// List of symbols for which it is safer to prepend a newline
+	private static  $ForceNewlineBefore	=  [] ;
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+
+	   Constructor -
+		Initializes the parent minifier class.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  __construct ( )
 	   {
 		static	$single_comments	= [ '//' ] ;
@@ -75,25 +91,88 @@ class	JavascriptMinifier	extends  Minifier
 	    }
 
 
+	/*--------------------------------------------------------------------------------------------------------------
+
+	   MinifyData -
+		Process the input stream.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
 	protected function  MinifyData ( )
 	   {
-		$data		=  '' ;
-		$offset		=  0 ;
-		$token		=  null ;
+		$data			=  '' ;
+		$offset			=  0 ;
+		$token			=  null ;
+		$token_type		=  self::TOKEN_NONE ;
+		$last_token		=  '' ;
 
-		while ( $this -> GetNextToken ( $offset, $token, $data ) )
+
+		// Process every token of the input stream
+		while ( $this -> GetNextToken ( $offset, $token, $token_type ) )
 		   {
+			// Check if we need to prepend a newline
+			if  ( in_array ( $token, self::$ForceNewlineBefore ) )
+				$token	=  "\n$token" ;
+
 			switch ( $token )
 			   {
+				// Ignore newlines
 				case	"\n" :
 					break ;
 
+				// Other token types
 				default :
+					// Append a space after each identifier
+					if  ( $token_type  ==  self::TOKEN_IDENTIFIER ) 
+						$token	.=  ' ' ;
+					// Detect regular expressions
+					else if  ( $token  ==  '/'  &&  in_array ( $last_token, self::$SymbolsBeforeRegex ) )
+					   {
+						$this -> ProcessRegex ( $this -> Content, $offset, $token, '/' ) ;
+						$token_type	=  self::TOKEN_REGEX ;
+					    }
+					// Remove any previous trailing space if the current element is not numeric
+					else if  ( $token_type  ==  self::TOKEN_ELEMENT  &&  ! is_numeric ( $token ) )
+						$data    =  rtrim ( $data ) ;
+
 					$data	.=  $token ;
 			    }
+
+			// Remember last non-space token
+			if  ( $token_type  !=  self::TOKEN_SPACE  &&  $token_type  !=  self::TOKEN_NEWLINE )
+				$last_token		=  trim ( $token ) ;
 		    }
 
 		return ( $data ) ;
 	    }
 
+
+	/*--------------------------------------------------------------------------------------------------------------
+
+	   ProcessRegex -
+		Captures a whole regular expression.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  ProcessRegex ( $content, &$offset, &$token, $stop_char )
+	   {
+		while  ( isset ( $content [ $offset ] )  &&  $content [ $offset ]  !=  $stop_char )
+		   {
+			if  ( $content [ $offset ]  ==  '\\' )
+			   {
+				if  ( ! isset ( $content [ ++ $offset ] ) )
+					error ( new MinifierException ( "Unterminated escape in regular expression at line #{$this -> CurrentLine}." ) ) ;
+
+				$token	.=  '\\' ;
+			    }
+
+			$token .=  $content [ $offset ] ;
+			$offset ++ ;
+		    }
+
+		if  ( ! isset ( $content [ $offset ] ) )
+			error ( new MinifierException ( "Unterminated regular expression at line #{$this -> CurrentLine}." ) ) ;
+
+		$this -> CurrentLine	+=  substr_count ( $token, "\n" ) ;
+		$token			.=  $stop_char ;
+		$offset ++ ;
+	    }
     }

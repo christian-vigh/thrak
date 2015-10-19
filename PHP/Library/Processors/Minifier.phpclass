@@ -39,6 +39,14 @@ class	MinifierException	extends \Thrak\System\ParseException	{} ;
   ==============================================================================================================*/
 abstract class  Minifier		extends  Object
    {
+	// Token types
+	const		TOKEN_NONE			=  0 ;
+	const		TOKEN_SPACE			=  1 ;
+	const		TOKEN_NEWLINE			=  2 ;
+	const		TOKEN_STRING			=  3 ;
+	const		TOKEN_ELEMENT			=  4 ;
+	const		TOKEN_IDENTIFIER		=  5 ;
+
 	// Definitions provided by derived classes
 	protected	$SingleLineComments		=  [] ;
 	protected	$MultiLineComments		=  [] ;
@@ -343,7 +351,7 @@ abstract class  Minifier		extends  Object
 	 *-------------------------------------------------------------------------------------------------------------*/
 	protected function  SetIdentifierRegex ( $re )
 	   {
-		$new_re		=  '/(?P<capture> (?P<name> ' . $re . ') [ \t\r]*)/ix' ;
+		$new_re		=  '/(?P<capture> (?P<name> ' . $re . ') [ \t\r\n]*)/ix' ;
 
 		$this -> IdentifierRegex	= $new_re ;
 	    }
@@ -390,7 +398,8 @@ abstract class  Minifier		extends  Object
 		$this -> Content	=  $data ;
 		$this -> ContentLength	=  strlen ( $data ) ;
 		$this -> CurrentLine	=  0 ;
-		$this -> LastToken	=  null ;
+		$this -> LastToken	=  '' ;
+		$this -> LastTokenType	=  self::TOKEN_NONE ;
 	    }
 
 
@@ -417,7 +426,16 @@ abstract class  Minifier		extends  Object
 	    }
 
 
-	protected function  MinifyTo ( $output, $contents ) 
+	public function  MinifyFrom ( $input )
+	   {
+		if  ( ! file_exists ( $input ) )
+			error ( new \Thrak\System\FileNotFoundException ( "File \"$input\" not found." ) ) ;
+
+		return ( $this -> Minify ( file_get_contents ( $input ) ) ) ;
+	    }
+
+
+	public function  MinifyTo ( $output, $contents ) 
 	   {
 		$data	=  $this -> Minify ( $contents ) ;
 		file_put_contents ( $output, $data ) ;
@@ -442,13 +460,14 @@ abstract class  Minifier		extends  Object
 		Returns false if no more tokens are available.
 
 	 *-------------------------------------------------------------------------------------------------------------*/
-	protected function  GetNextToken ( &$offset, &$token, &$data )
+	protected function  GetNextToken ( &$offset, &$token, &$token_type )
 	   {
 		$contents	=  $this -> Content ;
 		$length		=  $this -> ContentLength ;
 		$token		=  null ;
 
-		$this -> LastToken =  $token ;
+		$this -> LastToken	=  $token ;
+		$this -> LastTokenType  =  $token_type ;
 
 ShootAgain :
 		// Stop if no more characters are available
@@ -468,7 +487,7 @@ ShootAgain :
 				$callback	=  $entry [ 'callback' ] ;
 				$return_result	=  $entry [ 'return' ] ;
 
-				$status		=  $callback ( $contents, $length, $offset, $token ) ;
+				$status		=  $callback ( $contents, $length, $offset, $token, $token_type ) ;
 
 				if  ( $status )
 				   {
@@ -481,7 +500,7 @@ ShootAgain :
 		    }
 
 		// Other cases : return the character (or the token) as is
-		return ( $this -> ProcessToken ( $contents, $length, $offset, $token, $data ) ) ;
+		return ( $this -> ProcessToken ( $contents, $length, $offset, $token, $token_type ) ) ;
 	    }
 
 
@@ -561,7 +580,7 @@ ShootAgain :
 		spaces.
 
 	 *-------------------------------------------------------------------------------------------------------------*/
-	protected function  ProcessSpaces ( $contents, $length, &$offset, &$token )
+	protected function  ProcessSpaces ( $contents, $length, &$offset, &$token, &$token_type )
 	   {
 		$found_space	=  false ;
 
@@ -569,6 +588,7 @@ ShootAgain :
 		   {
 			$found_space	=  true ;
 			$token		=  ' ' ;
+			$token_type	=  self::TOKEN_SPACE ;
 			$offset ++ ;
 		    }
 
@@ -593,7 +613,7 @@ ShootAgain :
 	    }
 
 
-	protected function  ProcessNewlines ( $contents, $length, &$offset, &$token )
+	protected function  ProcessNewlines ( $contents, $length, &$offset, &$token, &$token_type )
 	   {
 		$found_newline	=  false ;
 
@@ -601,6 +621,7 @@ ShootAgain :
 		   {
 			$found_newline	=  true ;
 			$token		=  "\n" ;
+			$token_type	=  self::TOKEN_NEWLINE ;
 			$offset ++ ;
 			$this -> CurrentLine ++ ;
 		    }
@@ -688,7 +709,7 @@ ShootAgain :
 		The $token parameter will be set to the found string, if any.
 
 	 *-------------------------------------------------------------------------------------------------------------*/
-	protected function  ProcessString ( $contents, $length, &$offset, &$token )
+	protected function  ProcessString ( $contents, $length, &$offset, &$token, &$token_type )
 	   {
 		foreach ( $this -> QuotedStrings  as  $def )
 		   {
@@ -745,6 +766,9 @@ ShootAgain :
 				if  ( ! $found_eos )
 					error ( new MinifierException ( "Unterminated string started at line #{$this -> CurrentLine}." ) ) ;
 
+				$token_type		=  self::TOKEN_STRING ;
+				$this -> CurrentLine   +=  substr_count ( $token, "\n" ) ;
+
 				return ( true ) ;
 
 			    }
@@ -761,7 +785,7 @@ ShootAgain :
 		The default implementation processes one character at a time.
 
 	 *-------------------------------------------------------------------------------------------------------------*/
-	protected function  ProcessToken ( $contents, $length, &$offset, &$token, &$data )
+	protected function  ProcessToken ( $contents, $length, &$offset, &$token, &$token_type )
 	   {
 		$ch	=  $contents [ $offset ] ;
 
@@ -777,10 +801,9 @@ ShootAgain :
 					if  ( ! substr_compare ( $contents, $value, $offset, $value_length ) )
 					   {
 						$token		 =  $value ;
+						$token_type	 =  self::TOKEN_ELEMENT ;
 						$offset		+=  $value_length ;
 						$this -> EatSpaces ( $contents, $length, $offset ) ;
-
-						$data		 =  rtrim ( $data ) ;
 
 						return ( true ) ;
 					    }
@@ -791,20 +814,19 @@ ShootAgain :
 			   {
 				if  ( $match [ 'name' ] [1]  ==  $offset )
 				   {
-					$token		 =  $match [ 'name' ] [0] . ' ' ;
+					$token		 =  $match [ 'name' ] [0] ;
+					$token_type	 =  self::TOKEN_IDENTIFIER ;
 					$offset		+=  strlen ( $match [ 'capture' ] [0] ) ;
-					
-					if  ( $this -> EatSpaces ( $contents, $length, $offset )  &&
-							isset ( $contents [ $offset ] )  &&  
-							! isset ( $this -> Tokens [ $contents [ $offset ] ] ) )
-						$offset -- ;
+
+					$this -> CurrentLine	+=  substr_count ( $match [ 'capture' ] [0], "\n" ) ;
 
 					return ( true ) ;
 				    }
 			    }
 		    }
 
-		$token	=  $contents [ $offset ++ ] ;
+		$token		=  $contents [ $offset ++ ] ;
+		$token_type	=  self::TOKEN_ELEMENT ;
 
 		return ( true ) ;
 	    }
