@@ -14,6 +14,9 @@
     [Version : 1.0]	[Date : 2012/10/01]	[Author : CV]
      	Initial version.
 
+    [Version : 1.0.1]	[Date : 2015/10/19]	[Author : CV]
+	. Renamed wrapper "usrtmp://" to "site.tmp://".
+
  ***************************************************************************************************/
 ! defined ( '__THRAK_SETUP__' ) or die ( "Stopped." ) ;
 
@@ -400,7 +403,7 @@ $BootFinalize		=  function ( $debug )
 		error ( "Unable to locate the site temp directory." ) ;
 
 	$GLOBALS [ 'SITE_TEMP' ] 	=  $temp_dir ;
-	\Thrak\IO\Wrappers\FileWrapper::Register ( "usrtmp"   	, array ( 'root' => $GLOBALS [ 'SITE_TEMP'  ] ) ) ;
+	\Thrak\IO\Wrappers\FileWrapper::Register ( "site.tmp"   , array ( 'root' => $GLOBALS [ 'SITE_TEMP'  ] ) ) ;
 
 	// Get log directory
 	$log_dir 	=  \Thrak\IO\Path::ToUnix ( $Configuration -> GetExistingDirectory ( true, 0700, "Environment/log-dir", $GLOBALS [ 'SITE_TEMP' ] . "logs" ) ) ;
