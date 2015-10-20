@@ -62,6 +62,9 @@
   
     [Version : 1.0.13]		[Date : 2015/08/11]		[Author : CV]
 	. Added the GetVolatileTempFilename() method.
+  
+    [Version : 1.0.14]		[Date : 2015/10/20]		[Author : CV]
+	. Added the PrependExtension() method
 
  ***************************************************************************************************/
 namespace 	Thrak\IO ;
@@ -1777,6 +1780,51 @@ class  	Path	extends  Object
 		return ( true ) ;
 	    }
 	
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        PrependExtension - Prepends an extension to the specified path.
+	 
+	    PROTOTYPE
+	        $path	=  Path::PrependExtension ( $path, $extension ) ;
+	 
+	    DESCRIPTION
+	        Prepends an extension before the specified path extension. If the path does not contain any extension,
+		it will simply be appended.
+	 
+	    PARAMETERS
+	        $path (string) -
+	                Path on which an extension is to be prepended.
+
+		$extension (string) -
+			Extension to be prepended. The extension does not need to include a leading dot.
+	 
+	    RETURN VALUE
+	        Returns the original path, containing the specified extension before the path's one.
+	 
+	    EXAMPLE
+	        The following :
+
+			echo Path::PrependExtension ( 'myscript.js', 'min' ) ;
+
+		will output :
+
+			myscript.min.js
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public static function  PrependExtension ( $path, $extension )
+	   {
+		$pathinfo	=  pathinfo ( $path ) ;
+
+		if  ( $extension [0]  ==  '.' )
+			$extension	=  substr ( $extension, 1 ) ;
+
+		$new_path	=  Path::ToUnix ( $pathinfo [ 'dirname' ] . '/' . $pathinfo [ 'filename' ] . '.' . $extension . '.' . $pathinfo [ 'extension' ] ) ;
+
+		return ( $new_path ) ;
+	    }
+
 	
 	/*-------------------------------------------------------------------------------------------
 
