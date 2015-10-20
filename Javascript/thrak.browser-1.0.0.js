@@ -1,4 +1,4 @@
-﻿/**************************************************************************************************************
+/**************************************************************************************************************
 
     NAME
         thrak.browser-1.0.0.js
@@ -378,7 +378,7 @@
 				
 			switch  ( items. length )
 			   {
-				// Paranoïa : maybe there will be no minor version number ?
+				// Parano�a : maybe there will be no minor version number ?
 				case	1 : 
 					item1	=  items [0] ;
 					item2	=  "0" ;

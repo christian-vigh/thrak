@@ -1,4 +1,4 @@
-ï»¿/*==============================================================================================================
+/*==============================================================================================================
 
     Locale for fr, fr-FR.
 
@@ -12,16 +12,16 @@
 		   {
 			altFormat		:  "dd/mm/yy",
 			dateFormat		:  "dd/mm/yy",
-			buttonText		:  "SÃ©lectionner",
+			buttonText		:  "Sélectionner",
 			closeText		:  "Fermer",
 			currentText		:  "Aujourd'hui",
 			dayNames		:  [ "Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi" ],
 			dayNamesMin		:  [ "Di", "Lu", "Ma", "Me", "Je", "Ve", "Sa" ],
 			dayNamesShort		:  [ "Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam" ],
-			monthNames		:  [ "Janvier", "FÃ©vrier", "Mars", "Avril", "Mai", "Juin", "Juillet", "AoÃ»t", "Septembre", "Octobre", "Novembre", "Decembre" ],
+			monthNames		:  [ "Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Decembre" ],
 			monthNamesShort		:  [ "Jan", "Fev", "Mar", "Avr", "Mai", "Jun", "Jul", "Aou", "Sep", "Oct", "Nov", "Dec" ],
 			nextText		:  "Mois suivant",
-			prevText		:  "Mois prÃ©cÃ©dent",
+			prevText		:  "Mois précédent",
 			showMonthAfterYear	:  true,
 			weekHeader		:  "S",
 			yearSuffix		:  ""
@@ -30,16 +30,16 @@
 		   {
 			altFormat		:  "dd/mm/yy",
 			dateFormat		:  "dd/mm/yy",
-			buttonText		:  "SÃ©lectionner",
+			buttonText		:  "Sélectionner",
 			closeText		:  "Fermer",
 			currentText		:  "Aujourd'hui",
 			dayNames		:  [ "Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi" ],
 			dayNamesMin		:  [ "Di", "Lu", "Ma", "Me", "Je", "Ve", "Sa" ],
 			dayNamesShort		:  [ "Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam" ],
-			monthNames		:  [ "Janvier", "FÃ©vrier", "Mars", "Avril", "Mai", "Juin", "Juillet", "AoÃ»t", "Septembre", "Octobre", "Novembre", "Decembre" ],
+			monthNames		:  [ "Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Decembre" ],
 			monthNamesShort		:  [ "Jan", "Fev", "Mar", "Avr", "Mai", "Jun", "Jul", "Aou", "Sep", "Oct", "Nov", "Dec" ],
 			nextText		:  "Mois suivant",
-			prevText		:  "Mois prÃ©cÃ©dent",
+			prevText		:  "Mois précédent",
 			showMonthAfterYear	:  true,
 			weekHeader		:  "S",
 			yearSuffix		:  ""
