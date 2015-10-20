@@ -37,7 +37,7 @@ class	JavascriptMinifier	extends  Minifier
 
 	// Expected characters before a regular expression - Note that '' corresponds to type TOKEN_NONE
 	// It appears as the last element since it needs to be tested only once
-	private static	$SymbolsBeforeRegex	=  [ '(', '=', ';', '' ] ;
+	private static	$SymbolsBeforeRegex	=  [ '(', '=', ';', '!', '>', '<', '' ] ;
 	// List of symbols for which it is safer to prepend a newline
 	private static  $ForceNewlineBefore	=  [] ;
 
@@ -77,7 +77,7 @@ class	JavascriptMinifier	extends  Minifier
 		static  $tokens			=
 		   [
 			'===', '==', '=', '!==', '!=', '<=', '>=', '<', '>', '(', ')', '{', '}', '[', ']',
-			'+=', '-=', '*=', '/=', '%=', '+', '-', '*', '/', '%', '~', '!',
+			'++', '--', '+=', '-=', '*=', '/=', '%=', '+', '-', '*', '/', '%', '~', '!',
 			'.', ',', ';', '||', '&&', ':'
 		    ] ;
 
@@ -104,7 +104,8 @@ class	JavascriptMinifier	extends  Minifier
 		$token			=  null ;
 		$token_type		=  self::TOKEN_NONE ;
 		$last_token		=  '' ;
-
+		$last_token_type	=  self::TOKEN_NONE ;
+		$last_real_token	=  '' ;
 
 		// Process every token of the input stream
 		while ( $this -> GetNextToken ( $offset, $token, $token_type ) )
@@ -122,24 +123,47 @@ class	JavascriptMinifier	extends  Minifier
 				// Other token types
 				default :
 					// Append a space after each identifier
-					if  ( $token_type  ==  self::TOKEN_IDENTIFIER ) 
+					if  ( $token_type  ==  self::TOKEN_IDENTIFIER )
+					   {
 						$token	.=  ' ' ;
+
+						if  ( $last_token  ==  '}' )
+							$data .= "\n" ;
+					    }
 					// Detect regular expressions
-					else if  ( $token  ==  '/'  &&  in_array ( $last_token, self::$SymbolsBeforeRegex ) )
+					else if  ( $token  ==  '/'  &&  
+							( in_array ( $last_token, self::$SymbolsBeforeRegex )  ||
+							  $last_token  ==  'return' ) )
 					   {
 						$this -> ProcessRegex ( $this -> Content, $offset, $token, '/' ) ;
 						$token_type	=  self::TOKEN_REGEX ;
 					    }
+					// '+' followed by '++' (or '++' followed by '+') : we need to keep a space between both
+					else if  ( ( $last_token  ==  '+'   &&  $token  ==  '++' )  ||
+						   ( $last_token  ==  '++'  &&  $token  ==  '+'  )  ||
+						   ( $last_token  ==  '-'   &&  $token  ==  '--' )  ||
+						   ( $last_token  ==  '--'  &&  $token  ==  '-'  ) )
+					   {
+						$data .= ' ' ;
+					    }
 					// Remove any previous trailing space if the current element is not numeric
 					else if  ( $token_type  ==  self::TOKEN_ELEMENT  &&  ! is_numeric ( $token ) )
 						$data    =  rtrim ( $data ) ;
+
+					if  ( $last_real_token  ==  "\n"  &&  $last_token  !=  '}'  &&  $last_token  !=  ';' )
+						$data .=  "\n" ;
 
 					$data	.=  $token ;
 			    }
 
 			// Remember last non-space token
 			if  ( $token_type  !=  self::TOKEN_SPACE  &&  $token_type  !=  self::TOKEN_NEWLINE )
+			   {
 				$last_token		=  trim ( $token ) ;
+				$last_token_type	=  $token_type ;
+			    }
+
+			$last_real_token	=  $token ;
 		    }
 
 		return ( $data ) ;
