@@ -293,6 +293,23 @@ class  WebSite			extends	Object
 
 	/*--------------------------------------------------------------------------------------------------------------
 	 
+	    Flush -
+	        Flushes JS and CSS includes, and sends the headers defined in the configuration file.
+		This method must be called in the <head> tag.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  Flush ( )
+	   {
+		global	$JSIncluder, $CSSIncluder ;
+
+		$JSIncluder -> Flush ( ) ;
+		$CSSIncluder -> Flush ( ) ;
+		$this -> SendHeaders ( ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
 	    PageUnderConstruction - 
 		Displays the "Under construction" page.	 
 	 

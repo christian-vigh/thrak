@@ -17,14 +17,18 @@
     [Version : 1.0.1]	[Date : 2015/10/07]     [Author : CV]
 	. Added support for url parameters to file inclusions.
 
+    [Version : 1.0.2]	[Date : 2015/10/19]     [Author : CV]
+	. Added support for Javascript and Css on-the-fly minification.
+
  **************************************************************************************************************/
 namespace 	Thrak\Javascript ;
 
 defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
 
 // Used namespaces & objects
-use 		Thrak\System\Object 		as  Object ;
-use		Thrak\IO\Path			as  Path ;
+use 	Thrak\System\Object ;
+use	Thrak\IO\Path ;
+use	Thrak\Types\String ;
 
 
 /*==============================================================================================================
@@ -35,6 +39,12 @@ use		Thrak\IO\Path			as  Path ;
   ==============================================================================================================*/
 abstract class  ClientSideIncluder  extends Object
    {
+	// Minification types
+	const		COMPRESSION_NONE		=  0 ;			// No minification occurs
+	const		COMPRESSION_FILE		=  1 ;			// Files are minified on-the-fly if modified
+	const		COMPRESSION_GROUP		=  2 ;			// Groups of files are minified into a single file, if modified
+
+
 	// Include paths, provided to the class constructor.
 	// When a file is included using the methods of this class, the following happens :
 	// - If the file name starts with '#', the path will be evaluated relatively to $THRAK_ROOT. No include path
@@ -52,7 +62,17 @@ abstract class  ClientSideIncluder  extends Object
 	
 	// Files included so far.
 	protected	$IncludedFiles		=  array ( ) ;
-	
+
+	// Minification type and class
+	protected	$CompressionType ;
+
+	// To be set by derived classes 
+	protected	$CompressionClass ;				// Minifier class
+	protected	$CompressionExtension ;				// Output extension
+
+	// Buffered include files
+	protected	$BufferedIncludes	=  [] ;
+
 	
 	/*==============================================================================================================
 
@@ -70,44 +90,73 @@ abstract class  ClientSideIncluder  extends Object
 			List of directories to add to the include path.
 
 	  ==============================================================================================================*/
-	public function  __construct ( array  $include_paths = array ( ) )
+	public function  __construct ( array  $include_paths = array ( ), $compression )
 	   {
 		parent::__construct ( ) ;
 		
 		foreach  ( $include_paths  as  $include_path )
 			$this -> AddIncludePath ( $include_path ) ;
+
+		// Determine compression type
+		switch  ( strtolower ( $compression ) )
+		   {
+			case	'minify' :
+			case	'file' :
+			case	'1' :
+				$this -> CompressionType	=  self::COMPRESSION_FILE ;
+				break ;
+
+			case	'group' :
+				$this -> CompressionType	=  self::COMPRESSION_GROUP ;
+				break ;
+				
+			case	'none' :
+			default :
+				$this -> CompressionType	=  self::COMPRESSION_NONE ;
+		    }
 	    }
 
 	    
 	/*==============================================================================================================
 	
-	    __get_server_side_path -
-	        Returns the absolute server-side path for a specified file.
+	    __get_client_side_path -
+	        Returns the absolute client-side path for a specified file.
 	
 	  ==============================================================================================================*/
-	private function  __get_server_side_path ( $path )
+	private function  __get_client_side_path ( $path, &$real_file, &$query )
 	   {
-		global		$THRAK_ROOT, $SITE_ROOT ;
-		
-
 		// If the path is an URL, return it as is
 		if  ( strpos ( $path, "://" )  !==  false  ||  substr ( $path, 0, 2 )  ==  '//' )
-			return ( $path ) ;
+		   {
+			$real_file	=  $path ;
+			$query		=  '' ;
+			
+			return ( true ) ;
+		    }
 
 		// Remove any url parameters
 		$parts		=  parse_url ( $path ) ;
 		$file		=  $parts [ 'path' ] ;
+		$real_file	=  false ;
 		$query		=  ( isset ( $parts [ 'query' ] ) ) ?  '?' . $parts [ 'query' ] : '' ;
 
 		// If file exists, nothing to do...
 		if  ( file_exists ( $file ) )
-			return ( $path ) ;
+		   {
+			$real_file	=  $file ;
+			
+			return ( true ) ;
+		    }
 			
 		// Try to locate the file locally
 		$absfile	=  Path::RealPath ( $file ) ;
 
 		if  ( file_exists ( $absfile ) ) 
-			return ( $absfile . $query ) ;
+		   {
+			$real_file	=  $absfile ;
+
+			return ( true ) ;
+		    }
 		
 		// Other cases : we need to go through the include path list
 		foreach  ( $this -> RealIncludePaths  as  $directory )
@@ -116,8 +165,9 @@ abstract class  ClientSideIncluder  extends Object
 			
 			if  ( file_exists ( $test_file ) )
 			   {
-				$test_file	=  Path::ToUnix ( substr ( $test_file, strlen ( $_SERVER [ 'DOCUMENT_ROOT' ] ) ) ) ;
-				return ( $test_file . $query ) ;
+				$real_file	=  Path::ToUnix ( substr ( $test_file, strlen ( $_SERVER [ 'DOCUMENT_ROOT' ] ) ) ) ;
+
+				return ( true ) ;
 			    }
 		    }
 		    
@@ -128,35 +178,63 @@ abstract class  ClientSideIncluder  extends Object
 	    
 	/*==============================================================================================================
 	
-	    __do_preinclude -
-	        Tries to locate an include file. Fails if the file could not be located or has already been included.
-		Returns the real path, relative to $_SERVER [ 'DOCUMENT_ROOT' ].
+	    __is_remote, __is_minified -
+	        Checks if a file is compressable (ie, resides on the local file system and do not have the .min 
+		extension.
 	
 	  ==============================================================================================================*/
-	private function  __do_preinclude ( $file, $error, $once )
+	private function  __is_remote ( $file )
 	   {
-		$errfunc	=  ( $error ) ?  'error' : 'warning' ;
-		$test_file	=  $this -> __get_server_side_path ( $file ) ;
+		if  ( strpos ( $file, "://" )  !==  false  ||  substr ( $file, 0, 2 )  ==  '//' )
+			return ( true ) ;
 
-		if  ( $test_file  ===  false )
-		   {
-			$errfunc ( "Unable to locate include file \"$file\"." ) ;
-			return ( false ) ;		// If $error is false, a warning will be issued, so we need to return an error condition
-		    }
-		    
-		if  ( in_array ( $test_file, $this -> IncludedFiles ) )
-		   {
-			if  ( $once )
-				return ( $test_file ) ;
-				
-			$errfunc ( "File \"$file\" has already been included." ) ;
-			return ( false ) ;
-		    }
-		    
-		return ( $test_file ) ;
+		return ( false ) ;
 	    }
-	    
-	    
+
+
+	private function  __is_minified ( $file )
+	   {
+		if  ( String::EndsWith ( $file, ".min." . pathinfo ( $file, PATHINFO_EXTENSION ) ) )
+			return ( true ) ;
+
+		return ( false ) ;
+	    }
+
+
+	/*==============================================================================================================
+	
+	    __compress_file -
+	        Returns the path to the minified version of the specified file, minifies it if needed.
+	
+	  ==============================================================================================================*/
+	private function  __compress_file ( $file )
+	   {
+		if  ( $this -> __is_remote ( $file )  ||  $this -> __is_minified ( $file ) )
+			return ( $file ) ;
+
+		$input		=  $_SERVER [ 'DOCUMENT_ROOT' ] . $file ;
+		$output		=  Path::PrependExtension ( $input, "min" ) ;
+		$create		=  true ;
+
+		if  ( file_exists ( $output ) )
+		   {
+			if  ( filemtime ( $output )  >=  filemtime ( $input ) )
+				$create		=  false ;
+		    }
+
+		if  ( $create )
+		   {
+			$class		=  $this -> CompressionClass ;
+			$minifier	=  new  $class ( ) ;
+			$minifier -> MinifyFileTo ( $output, $input ) ;
+		    }
+
+		$output	=  Path::ToUnix ( substr ( $output, strlen ( $_SERVER [ 'DOCUMENT_ROOT' ] ) ) ) ;
+
+		return ( $output ) ;
+	    }
+
+
 	/*==============================================================================================================
 	
 	    NAME
@@ -266,8 +344,31 @@ abstract class  ClientSideIncluder  extends Object
 	
 	private function  __do_include ( $file, $error, $once, $return )
 	   {
-		$include	=  $this -> __do_preinclude ( $file, $error, $once ) ;
-		
+		$errfunc	=  ( $error ) ?  'error' : 'warning' ;
+		$status 	=  $this -> __get_client_side_path ( $file, $include, $query ) ;
+
+		if  ( ! $status )
+		   {
+			$errfunc ( "Unable to locate include file \"$file\"." ) ;
+			return ( false ) ;		// If $error is false, a warning will be issued, so we need to return an error condition
+		    }
+		    
+		// Check if this file has not already been included
+		if  ( in_array ( $include, $this -> IncludedFiles ) )
+		   {
+			if  ( ! $once )
+			   {
+				$errfunc ( "File \"$file\" has already been included." ) ;
+				return ( false ) ;
+			    }
+		    }
+
+		// Check if minified version is needed
+		if  ( $this -> CompressionType  !=  self::COMPRESSION_NONE )
+			$include	=  $this -> __compress_file ( $include ) ;
+
+		// If inclusion failed for some reason (either file missing or already included), then insert a comment
+		// documenting that
 		if  ( $include  ===  false )
 		   {
 			$error	=  "<!-- FAILED TO INCLUDE FILE : $file -->\n" ;
@@ -281,7 +382,19 @@ abstract class  ClientSideIncluder  extends Object
 			    }
 		    }
 
-		if  ( $return )
+		// If group compression is active, buffer the filename until the Flush() method is called
+		if  ( $this -> CompressionType  ==  self::COMPRESSION_GROUP  &  ! $this -> __is_remote ( $include ) )
+		   {
+			$dir	=  dirname ( $include ) ;
+
+			$this -> BufferedIncludes [ $dir ] []	=  
+			   [ 
+				'file'		=>  substr ( $include, strlen ( $dir ) + 1 ), 
+				'query'		=>  $query 
+			    ] ;
+		    }
+		// Otherwise, perform the inclusion
+		else if  ( $return )
 			return ( $this -> DoInclude ( $include, true ) ) ;
 		else
 			$this -> DoInclude ( $include, false ) ;
@@ -301,7 +414,102 @@ abstract class  ClientSideIncluder  extends Object
 	   { $this -> __do_include ( $file, true, true, $return ) ; }
 	   
 	   
+	/*==============================================================================================================
 	
+	    NAME
+	        Flush - Flushes include commands.
+	
+	    PROTOTYPE
+	        $includer -> Flush ( ) ;
+	
+	    DESCRIPTION
+		When the configuration key Javascript/compression contains the keyword 'group', all files residing in 
+		the same directory and having the same type (css or js) will be minified and catenated into the same file.
+		The http request will reference only this "grouped" file.
+		If the javascript/compression key does not contain the keyword group, nothing will happen.	
+		
+	  ==============================================================================================================*/
+	public function  Flush ( )
+	   {
+		if  ( $this -> CompressionType  !=  self::COMPRESSION_GROUP ) 
+			return ;
+
+		$inclusions	=  [] ;
+
+		// The __do_include() function, which is used for every file inclusion, has buffered included file list
+		// until this Flush() method is called
+		foreach  ( $this -> BufferedIncludes  as  $base_path => $entries )
+		   {
+			// Separate inclusions with and without query parameters
+			// Inclusions with queries will be declared last, even if they belong to the first included files
+			// Conclusion : reserve you query parameters for your site's files, because they won't be able to
+			// rely on previously included files without query parameters
+			$no_query_entries	=  [] ;
+			$entries_with_queries	=  [] ;
+
+			foreach  ( $entries  as  $entry )
+			   {
+				if (  $entry [ 'query' ] )
+					$entries_with_queries []	=  $base_path . '/' . $entry [ 'file' ] . $entry [ 'query' ] ;
+				else
+					$no_query_entries []		=  $base_path . '/' . $entry [ 'file' ] ;
+			    }
+
+			/*** Process query with no parameters ***/
+			// Only one entry for this base path : don't bother creating a ".*-group*" file
+			if  ( count  ( $no_query_entries )  ==  1 )
+				$inclusions []	=  $this -> DoInclude ( $no_query_entries [0], true ) ;
+			// Otherwise, create it
+			else
+			    {
+				$output_file	=  $base_path . '/.' . $this -> CompressionExtension . '-group.' .
+							md5 ( implode ( '!', $no_query_entries ) ) . '.' . $this -> CompressionExtension ;
+				$abs_output	=  $_SERVER [ 'DOCUMENT_ROOT' ] . $output_file ;
+				$create		=  false ;
+
+				// Group file exists : check if it is newer than any involved source file
+				if (  file_exists ( $abs_output ) )
+				   {
+					$output_mtime	=  filemtime ( $abs_output ) ;
+
+					foreach  ( $no_query_entries  as  $entry )
+					   {
+						if  ( filemtime ( $_SERVER [ 'DOCUMENT_ROOT' ] . $entry )  >  $output_mtime )
+						   {
+							$create		=  true ;
+							break ;
+						    }
+					    }
+				    }
+				else
+					$create		=  true ;
+
+				// Group file does not exist or is out of date : regenerate it 
+				if  ( $create )
+				   {
+					$contents	=  '' ;
+
+					foreach  ( $no_query_entries  as  $entry )
+					   {
+						$contents	.=  '<!-- ' . $entry . ' -->' . "\n" .
+									rtrim ( file_get_contents ( $_SERVER [ 'DOCUMENT_ROOT' ] . $entry ) ) . "\n" ;
+					    }
+
+					file_put_contents ( $abs_output, $contents ) ;
+				    }
+
+				// Then include it
+				$inclusions []	=  $this -> DoInclude ( $output_file, true ) ;
+			    }
+
+			/*** Process queries with parameters ***/
+			foreach  ( $entries_with_queries  as  $entry )
+				$inclusions []	=  $this -> DoInclude ( $entry, true ) ;
+		    }
+
+		// All done, we can echo the html code
+		echo ( implode ( '', $inclusions ) ) ;
+	    }
     }    
     
     
@@ -323,7 +531,14 @@ class  CSSIncluder	extends ClientSideIncluder
 	   {
 		global		$Configuration ;
 		
-		parent::__construct ( $Configuration -> Get ( 'Environment/css-include-path' ) ) ;
+		$this -> CompressionClass	=  '\Thrak\Processors\Minifiers\CssMinifier' ;
+		$this -> CompressionExtension	=  'css' ;
+
+		parent::__construct 
+		   ( 
+			$Configuration -> Get ( 'Environment/css-include-path' ),
+			$Configuration -> Get ( 'Javascript/compression/css' ) 
+		    ) ;
 	    }
 	    
 
@@ -435,7 +650,15 @@ class  JSIncluder	extends ClientSideIncluder
 	   {
 		global		$Configuration ;
 		
-		parent::__construct ( $Configuration -> Get ( 'Environment/js-include-path' ) ) ;
+
+		$this -> CompressionClass	=  '\Thrak\Processors\Minifiers\JavascriptMinifier' ;
+		$this -> CompressionExtension	=  'js' ;
+
+		parent::__construct 
+		   ( 
+			$Configuration -> Get ( 'Environment/js-include-path' ),
+			$Configuration -> Get ( 'Javascript/compression/js' ) 
+		    ) ;
 	    }
 	    
 	    
