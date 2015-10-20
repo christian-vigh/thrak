@@ -68,7 +68,7 @@ class	CssMinifier	extends  Minifier
 		$this -> SetComments		( $single_comments, $multi_comments ) ;
 		$this -> SetQuotedStrings	( $quoted_strings ) ;
 		$this -> SetContinuation	( "\\" ) ;
-		$this -> SetIdentifierRegex	( '[a-z_.#\-\$][a-z0-9_.#\-\$]*' ) ;
+		$this -> SetIdentifierRegex	( '[a-z0-9_.#\-\$][a-z0-9_.#\-\$]*' ) ;
 		$this -> SetTokens		( $tokens ) ;
 
 		parent::__construct ( ) ;
