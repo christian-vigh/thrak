@@ -62,6 +62,11 @@
 	. Changed the __DumpThis() method to use __escape() instead of str_replace(), and escaped
 	  array keys.
  
+    [Version : 1.0.11]		[Date : 2015/10/21]		[Author : CV]
+	. Replaced call to iconv() with mb_convert_encoding() for CLI mode on Windows platforms :
+	  iconv() couldn't help displaying a notice when encountering invalid characters, even if
+	  preceded by the "silent" flag (@).
+ 
  ***************************************************************************************************/
 namespace 	Thrak\System ;
 
@@ -244,8 +249,9 @@ class  Debug		extends  Object
    		   {
 			if  ( IS_WINDOWS  &&  IS_CLI )
 			   {
-				$str = @iconv ( 'ISO-8859-1', 'CP437', $var ) ;
-				
+				//$str = @iconv ( 'ISO-8859-1', 'CP437', $var ) ;
+				$str = @mb_convert_encoding ( $var, 'ISO-8859-1', 'CP437' ) ;
+
 				if  ( $str  !==  false )
 					$var	=  $str ;
 			    }
