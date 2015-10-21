@@ -217,7 +217,8 @@ class  WhoisRIPEInformation		extends  WhoisProviderInformation
 						'name'			=>  [ 'address' ],
 						'type'			=>  self::TYPE_PROVIDER_ADDRESS,
 						'value-type'		=>  self::VALUE_TYPE_STRING,
-						'multiple'		=>  true
+						'multiple'		=>  true,
+						'multiline'		=>  true
 					 ],
 					self::TYPE_PROVIDER_PHONE		=>
 					[ 
@@ -472,7 +473,8 @@ class  WhoisRIPEInformation		extends  WhoisProviderInformation
 						'type'			=>  self::TYPE_ORGANIZATION_ADDRESS,
 						'value-type'		=>  self::VALUE_TYPE_STRING,
 						'required'		=>  false,
-						'multiple'		=>  true
+						'multiple'		=>  true,
+						'multiline'		=>  true
 					 ],
 					self::TYPE_ORGANIZATION_REGISTRATION_DATE =>
 					[ 
