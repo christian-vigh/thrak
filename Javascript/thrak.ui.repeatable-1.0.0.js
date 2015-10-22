@@ -36,8 +36,8 @@
 				buttonsetTemplate		:  null,	// Buttonset template
 				repeatableButtonset		:  null,	// True if the buttonset template is located inside a template
 				defaultButtonsetTemplate	:  '<div class="repeatable-buttonset repeatable-buttonset-default" target="#target">' +
-								   '	<div class="repeatable-button repeatable-button-minus" title="#add"></div>' +
-								   '	<div class="repeatable-button repeatable-button-plus" title="#delete"></div>' +
+								   '	<div class="repeatable-button repeatable-button-minus" title="#delete"></div>' +
+								   '	<div class="repeatable-button repeatable-button-plus" title="#add"></div>' +
 								   '</div>',
 				defaultButtonsetPosition	:  'last'	// Button set position in the template
 			    },
