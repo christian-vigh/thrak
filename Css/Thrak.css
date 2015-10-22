@@ -47,9 +47,18 @@
 	Message boxes
 
  **************************************************************************************************/
-.ui-msgbox-dialog-button
+.ui-popup-dialog-button
    {
    	width				:  80px !important; 
+    }
+
+.ui-popup-dialog-message
+   {
+    }
+
+.ui-msgbox-dialog-button
+   {
+   	width				:  120px !important; 
     }
 
 .ui-error-dialog-title
@@ -75,13 +84,19 @@
    	font-weight			:  bold ;
     }
 
-
-.labelled-checkbox:hover
+.ui-msgbox-dialog-icon-cell
    {
-   	cursor				:  pointer ;
+   	width				:  58px ;
+   	text-align			:  left ;
+   	vertical-align			:  middle ;
     }
-    
-    
+
+.ui-msgbox-dialog-message-cell
+   {
+   	text-align			:  left ;
+   	vertical-align			:  middle ;
+    }
+
 /**************************************************************************************************
 
 	UI: repeatable styling
@@ -171,3 +186,12 @@
 	-ms-user-select			:  none ;
 	user-select			:  none ;
     }    
+    
+    
+.labelled-checkbox:hover
+   {
+   	cursor				:  pointer ;
+    }
+    
+    
+    
