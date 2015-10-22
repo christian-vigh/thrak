@@ -16,7 +16,7 @@
     [Version : 1.0.1]	[Date : 2015/10/14]     [Author : CV]
 	. Checkboxes are remapped so that the checkbox text becomes clickable.
 	. Added the $.repeatable() initialization
-	. Added the outerHtml() function for JQuery elements.
+	. Added the outerHtml() and killEvent() functions for JQuery elements.
 
  **************************************************************************************************************/
 
@@ -226,7 +226,10 @@
 			    }
 		    ) ;
 
-		// A few additions to JQuery objects...
+		/*** A few additions to JQuery objects... ***/
+
+		// outerHtml -
+		//	Same as html(), but for outer html
 		$. fn. outerHtml	=  function ( html )
 		   { 
 			if  ( html  ===  undefined )
@@ -234,35 +237,18 @@
 			else
 				this. replaceWith ( html ) ;
 		    }
-	    }
-	     
 
-	/*==============================================================================================================
-	 *
-	 *   NAME
-	 *	debug - Used for activating the debugging tools.
-	 *
-	 *   PROTOTYPE
-	 *	$.debug ( activate ) ;
-	 *
-	 *   DESCRIPTION
-	 *	Activates the debugger, when "activate" is set to true. The debugger script is then loaded and activated.
-	 *
-	 *   PARAMETERS
-	 *	activate (boolean) -
-	 *		Indicates whether the debugger should be activated or not.
-	 *
-	 *   NOTES
-	 *	When the debugger has been activated, $.debug is replaced with the real debugger object. Thus, calling
-	 *	$. debug ( false ) will call the debugger version of $. debug instead of this one.
-	 *
-	 *==============================================================================================================*/
-	$.debug		=  function ( activate )
-	   {
-		if  ( activate )
+		// killEvent -
+		//	I was fed up to check if an event was not undefined, if it contained preventDefault() and stopxxx(),
+		//	when all I wanted to do was really preventing the event from propagating anymore.
+		$. fn. killEvent	=  function  ( e )
 		   {
-			$. system. loadScript ( "thrak.debug-1.0.0.js" ) ;
+			if ( e )
+			   {
+				e. preventDefault		&&  e. preventDefault ( ) ;
+				e. stopPropagation		&&  e. stopPropagation ( ) ;
+				e. stopImmediatePropagation	&&  e. stopImmediatePropagation ( ) ;
+			    }
 		    }
 	    }
-
     } ( jQuery ) ) ;

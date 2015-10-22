@@ -108,17 +108,26 @@
 		     },
 		msgbox	:
 		   {
-			alert			:  
+			boxTitles		:
+			  {
+				alert			:  "Message", 
+				error			:  "Error",
+				confirm			:  "Confirmation",
+				msgbox			:  "Message",
+				inputbox		:  "Input value"
+			   },  
+			buttonLabels		:
 			   {
-				title		:  "Message"
-			    },
-			error			:  
-			   {
-				title		:  "Error"
-			    },
-			confirm			:  
-			   {
-				title		:  "Confirmation"
+				'ok'			:  "Ok",
+				'cancel'		:  "Cancel",
+				'abort'			:  "Abort",
+				'retry'			:  "Retry",
+				'ignore'		:  "Ignore",
+				'continue'		:  "Continue",
+				'try'			:  "Try again",
+				'help'			:  "Help",
+				'yes'			:  "Yes",
+				'no'			:  "No"
 			    }
 		    }
 		} ;
