@@ -56,6 +56,11 @@
    {
     }
 
+.ui-popup-dialog-input
+   {
+   	padding-top			:  4px ;
+    }
+
 .ui-msgbox-dialog-button
    {
    	width				:  120px !important; 

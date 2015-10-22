@@ -66,7 +66,7 @@
 	
 	// alert function -
 	//	Displays a message with a single Ok button. If a callback is specified, it will be called with a single 'status'
-	//	parameter which will always be set to 1.
+	//	parameter which will always be set to true.
 	//	The default title for alert() is : "Message".
 	$. alert	=  function  ( msg, title, callback, options )
 	   {
@@ -75,7 +75,6 @@
 
 	// error function -
 	//	Same as alert() with a few color differences.
-	//	The default title for error() is : "Erreur".
 	$. error	=  function  ( msg, title, callback, options )
 	   {
 		__show_alert ( "error", arguments ) ;
@@ -84,7 +83,7 @@
 
 	// confirm function -
 	//	Displays a confirmation message with an Ok and Cancel button. If a callback function is specified, its "status"
-	//	parameter will be set to 1 if the Ok button was clicked, and to 0 if it was the Cancel button.
+	//	parameter will be set to true if the Ok button was clicked, and to false if it was the Cancel button.
 	//	The default title for confirm() is : "Confirmation".
 	$. confirm	=  function  ( msg, title, callback, options )
 	  {
@@ -96,6 +95,19 @@
 	$. msgbox	=  function  ( msg, title, flags, callback, options )
 	   {
 		__show_alert ( "msgbox", arguments ) ;
+	    }
+
+
+	// inputbox function -
+	//	Asks for user input and returns the supplied value to the callback, or boolean false if the user
+	//	cancelled the request.
+	//	The field_definition parameter can be used to supply html code for defining the input field ; no
+	//	id or name attribute is required, as the definition will automatically be handled by the inputbox()
+	//	function ; note however that this parameter is a string and must be the 3rd string parameter of the
+	//	call, after "msg" and "title".
+	$. inputbox	=  function  ( msg, title, callback, options, field_definition )
+	   {
+		__show_alert ( "inputbox", arguments ) ;
 	    }
 
 
@@ -201,10 +213,26 @@
 	//	called...
 	function  __close_me ( $this, user_callback, status )
 	   {
+		// In case of an inputbox call, we substitute a "true" result with the value of the underlying
+		// <input> or <textarea> field
+		if  ( status  ===  true  &&  $this. dialog ( 'option', 'dialogType' )  ==  'inputbox' )
+		   {
+			var	$items ;
+
+			$items	=  $('input', $this) ;
+
+			if  ( $items. length  >  0 )
+				status	=  $items. val ( ) ;
+
+			$items	=  $('textarea', $this ) ;
+
+			if  ( $items. length  >  0 )
+				status	=  $items. val ( ) ;
+		    }
+
 		// Call the callback if one specified, providing the return value of the message box (ok, cancel, etc...).
 		// For the $.alert() and $.error functions, this parameter will always be set to 1.
 		user_callback  &&  user_callback ( status, $this ) ;
-		console.log($this);
 				
 		// Since we're closing, we can remove our definition from the body of the document
 		$this. dialog ( 'destroy' ) ;
@@ -215,6 +243,9 @@
 	//	Main entry point for displaying message boxes.
 	function  __show_alert ( boxtype, args ) 
 	    {
+		var	$this		=  $(this) ;
+
+
 		boxtype	=  boxtype. toLowerCase ( ) ;
 		
 		// Get labels from the current locale (if any)
@@ -233,7 +264,10 @@
 			idcancel	=  false ;
 		
 		// Loop through the arguments provided to alert(), error(), confirm(), etc...
-		var	got_message		=  false ;
+		var	got_message		=  false,
+			got_title		=  false ;
+		var	message,
+			field_definition	=  '<input type="text" size="50"/>' ;
 		var	msgbox_flags		=  0 ;
 		var	icon			=  undefined ;
 		
@@ -248,6 +282,7 @@
 			// Automatic conversions
 			switch  ( argtype )
 			   {
+				// Promote boolean and numeric arguments to string
 				case  'boolean' :
 					argument	=  argument. toString ( ) ;
 					argtype		=  'string' ;
@@ -260,6 +295,12 @@
 						argtype		=  'string' ;
 					    }
 					break ;
+
+				// Strings : check if we have an <input> or <textarea> field ; in this case, 
+				// set the pseudo-parameter type 'html'
+				case  'string' :
+					if  ( argument. indexOf ( '<input' )  >=  0  ||  argument. indexOf ( '<textarea' )  >=  0 )
+						argtype		=  'html' ;
 			    }			
 			
 			// Process current argument
@@ -269,12 +310,20 @@
 				//	if we encounter it for the first time, it is the message to display. For the second time, it is the title.       
 				case	'string' :
 					if  ( got_message )
+					   {
 						dialog_options. title	=  argument ;
+						got_title		=  true ;
+					    }
 					else
 					   {
 						message		=  argument ;
 						got_message	=  true ;
 					    }
+					break ;
+
+				// 'html' pseudo-type : this is an input field definition
+				case	'html' :
+					field_definition	=  argument ;
 					break ;
 
 				// Function type -
@@ -301,6 +350,8 @@
 		    }	 
 		
 		// Depending on the message box type, captions and buttons may differ...
+		dialog_options. dialogType	=  boxtype ;
+
 		switch  ( boxtype )
 		   {
 			// Confirmation box : we should have an Ok and Cancel button
@@ -309,11 +360,11 @@
 				   [
 					{
 						html	:  labels. buttonLabels [ 'ok' ],
-						click	:  function ( e ) { __close_me ( $(this), user_callback, true ) ; }
+						click	:  function ( e ) { __close_me ( $this, user_callback, true ) ; }
 					 },
 					{
 						html	:  labels. buttonLabels [ 'cancel' ],
-						click	:  function ( e ) { __close_me ( $(this), user_callback, false ) ; }
+						click	:  function ( e ) { __close_me ( $this, user_callback, false ) ; }
 					 }
 				    ] ;
 
@@ -325,12 +376,28 @@
 				   [
 					{
 						html	:  labels. buttonLabels [ 'ok' ],
-						click	:  function ( e ) { __close_me ( $(this), user_callback, true ) ; }
+						click	:  function ( e ) { __close_me ( $this, user_callback, true ) ; }
 					 }
 				    ] ;
 
 				break ;
 
+			// Input box : we should have an Ok and Cancel button
+			case	"inputbox" :
+				dialog_options. buttons	=
+				   [
+					{
+						html	:  labels. buttonLabels [ 'ok' ],
+						click	:  function ( e ) { __close_me ( $this, user_callback, true ) ; }
+					 },
+					{
+						html	:  labels. buttonLabels [ 'cancel' ],
+						click	:  function ( e ) { __close_me ( $this, user_callback, false ) ; }
+					 }
+				    ] ;
+
+				break ;    
+			
 			// Msgbox message box : almost the same as on Windows platforms...
 			case	"msgbox" :
 			   {
@@ -345,11 +412,11 @@
 						   [
 							{
 								html	:  labels. buttonLabels [ 'ok' ],
-								click	:  function ( e ) { __close_me ( $(this), user_callback, $. msgbox. IDOK ) ; }
+								click	:  function ( e ) { __close_me ( $this, user_callback, $. msgbox. IDOK ) ; }
 							 },
 							{
 								html	:  labels. buttonLabels [ 'cancel' ],
-								click	:  function ( e ) { __close_me ( $(this), user_callback, $. msgbox. IDCANCEL ) ; }
+								click	:  function ( e ) { __close_me ( $this, user_callback, $. msgbox. IDCANCEL ) ; }
 							 }
 						    ] ;
 
@@ -362,11 +429,11 @@
 						   [
 							{
 								html	:  labels. buttonLabels [ 'yes' ],
-								click	:  function ( e ) { __close_me ( $(this), user_callback, $. msgbox. IDYES ) ; }
+								click	:  function ( e ) { __close_me ( $this, user_callback, $. msgbox. IDYES ) ; }
 							 },
 							{
 								html	:  labels. buttonLabels [ 'no' ],
-								click	:  function ( e ) { __close_me ( $(this), user_callback, $. msgbox. IDNO ) ; }
+								click	:  function ( e ) { __close_me ( $this, user_callback, $. msgbox. IDNO ) ; }
 							 }
 						    ] ;
 
@@ -379,15 +446,15 @@
 						   [
 							{
 								html	:  labels. buttonLabels [ 'yes' ],
-								click	:  function ( e ) { __close_me ( $(this), user_callback, $. msgbox. IDYES ) ; }
+								click	:  function ( e ) { __close_me ( $this, user_callback, $. msgbox. IDYES ) ; }
 							 },
 							{
 								html	:  labels. buttonLabels [ 'no' ],
-								click	:  function ( e ) { __close_me ( $(this), user_callback, $. msgbox. IDNO ) ; }
+								click	:  function ( e ) { __close_me ( $this, user_callback, $. msgbox. IDNO ) ; }
 							 },
 							{
 								html	:  labels. buttonLabels [ 'cancel' ],
-								click	:  function ( e ) { __close_me ( $(this), user_callback, $. msgbox. IDCANCEL ) ; }
+								click	:  function ( e ) { __close_me ( $this, user_callback, $. msgbox. IDCANCEL ) ; }
 							 }
 						    ] ;
 
@@ -400,11 +467,11 @@
 						   [
 							{
 								html	:  labels. buttonLabels [ 'retry' ],
-								click	:  function ( e ) { __close_me ( $(this), user_callback, $. msgbox. IDRETRY ) ; }
+								click	:  function ( e ) { __close_me ( $this, user_callback, $. msgbox. IDRETRY ) ; }
 							 },
 							{
 								html	:  labels. buttonLabels [ 'cancel' ],
-								click	:  function ( e ) { __close_me ( $(this), user_callback, $. msgbox. IDNCANCEL ) ; }
+								click	:  function ( e ) { __close_me ( $this, user_callback, $. msgbox. IDNCANCEL ) ; }
 							 }
 						    ] ;
 
@@ -417,15 +484,15 @@
 						   [
 							{
 								html	:  labels. buttonLabels [ 'abort' ],
-								click	:  function ( e ) { __close_me ( $(this), user_callback, $. msgbox. IDABORT ) ; }
+								click	:  function ( e ) { __close_me ( $this, user_callback, $. msgbox. IDABORT ) ; }
 							 },
 							{
 								html	:  labels. buttonLabels [ 'retry' ],
-								click	:  function ( e ) { __close_me ( $(this), user_callback, $. msgbox. IDRETRY ) ; }
+								click	:  function ( e ) { __close_me ( $this, user_callback, $. msgbox. IDRETRY ) ; }
 							 },
 							{
 								html	:  labels. buttonLabels [ 'ignore' ],
-								click	:  function ( e ) { __close_me ( $(this), user_callback, $. msgbox. IDIGNORE ) ; }
+								click	:  function ( e ) { __close_me ( $this, user_callback, $. msgbox. IDIGNORE ) ; }
 							 }
 						    ] ;
 
@@ -438,15 +505,15 @@
 						   [
 							{
 								html	:  labels. buttonLabels [ 'cancel' ],
-								click	:  function ( e ) { __close_me ( $(this), user_callback, $. msgbox. IDCANCEL ) ; }
+								click	:  function ( e ) { __close_me ( $this, user_callback, $. msgbox. IDCANCEL ) ; }
 							 },
 							{
 								html	:  labels. buttonLabels [ 'try' ],
-								click	:  function ( e ) { __close_me ( $(this), user_callback, $. msgbox. IDTRY ) ; }
+								click	:  function ( e ) { __close_me ( $this, user_callback, $. msgbox. IDTRY ) ; }
 							 },
 							{
 								html	:  labels. buttonLabels [ 'continue' ],
-								click	:  function ( e ) { __close_me ( $(this), user_callback, $. msgbox. IDCONTINUE ) ; }
+								click	:  function ( e ) { __close_me ( $this, user_callback, $. msgbox. IDCONTINUE ) ; }
 							 }
 						    ] ;
 
@@ -460,7 +527,7 @@
 						   [
 							{
 								html	:  labels. buttonLabels [ 'ok' ],
-								click	:  function ( e ) { __close_me ( $(this), user_callback, $. msgbox. IDOK ) ; }
+								click	:  function ( e ) { __close_me ( $this, user_callback, $. msgbox. IDOK ) ; }
 							 }
 						    ] ;
 
@@ -500,9 +567,19 @@
 				   [
 					{
 						html	:  labels. buttonLabels [ 'ok' ],
-						click	:  function ( e ) { console.log(e);__close_me ( $(this), user_callback, true ) ; }
+						click	:  function ( e ) { console.log(e);__close_me ( $this, user_callback, true ) ; }
 					 }
 				    ] ;
+		    }
+
+		// If an input box was requested, add the code for the input field
+		var	input_field		=  '' ;
+
+		if  ( boxtype  ==  'inputbox' )
+		   {
+			input_field	=  '<div class="' + 'ui-popup-dialog-input ui-' + boxtype + '-dialog-input">' +
+						field_definition +
+					   '</div>' ;
 		    }
 
 		// If an icon has been specified, then we need to wrap both the icon and the message within a table
@@ -527,6 +604,7 @@
 				   '<div class="' + 'ui-popup-dialog-message ui-' + boxtype + '-dialog-message">' +
 					message + 
 				   '</div>' +
+				   input_field + 
 				   wrapper_end ;
 		   
 		// Generate a unique dialog id		
@@ -574,9 +652,9 @@
 			    }
 		    ) ;
 
-		// Handle escape and enter keys
-		// Escape cannot be handled by keyup() because it is processed by the keydown() event ;
-		// whereas Enter MUST be processed in keypress(), not keydown().
+		// Handle escape and enter keys :
+		//	Escape cannot be handled by keyup() because it is processed by the keydown() event ;
+		//	whereas Enter MUST be processed in keypress(), not keydown().
 		$parent. keydown
 		   (
 			function ( e )
@@ -602,6 +680,44 @@
 				    }
 			    }
 		    ) ;
+
+		// textarea input fields -
+		//	Catch the Enter key to insert a newline in the input text.
+		$('textarea', $parent). keypress
+		   (
+			function  ( e )
+			   {
+				var	$this	=  $(this) ;
+
+				if  ( e. keyCode  ===  $. ui. keyCode. ENTER )
+				   {
+					$this. killEvent ( e ) ;
+					$this. val ( $this. val ( ) + "\n" ) ;
+					return ( false ) ;
+				    }
+			    }
+		    ) ;
+
+		// textarea input fields -
+		//	The combination of Ctrl+Tab will insert a tabulation in the input text.
+		//	Note that the keydown event is not appropriate, since it will be called twice : once for the Ctrl key,
+		//	once for the tab key (in this case, e. ctrlKey will be false). keypress is not good either, since 
+		//	the tab key is intercepted before any transformation into a key press.
+		$('textarea', $parent). keyup
+		   (
+			function  ( e )
+			   {
+				var	$this	=  $(this) ;
+
+				if  ( e. keyCode  ===  $. ui. keyCode. TAB  &&   e. ctrlKey )
+				   {
+					$this. killEvent ( e ) ;
+					$this. val ( $this. val ( ) + "\t" ) ;
+					return ( false ) ;
+				    }
+			    }
+		    ) ;
+
 
 		// Open the dialog
 		$this. dialog ( 'open' ) ;
