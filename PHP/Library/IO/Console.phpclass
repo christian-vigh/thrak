@@ -34,6 +34,9 @@
 	. Changed the __Output() function so that on Windows, in CLI mode, characters are converted
 	  to codepage 437.
 
+    [Version : 1.0.6]		[Date : 2015/10/21]		[Author : CV]
+	. Called @iconv() instead of iconv()
+
  ***************************************************************************************************/
 namespace 	Thrak\IO ;
 
@@ -380,7 +383,12 @@ class  Console 		extends  Object
         		   		$message .= $newline ;
 
 				if  ( IS_WINDOWS  &&  IS_CLI )
-					$message		=  iconv ( 'ISO-8859-1', 'CP437', $message ) ;
+				   {
+					$str	=  @iconv ( 'ISO-8859-1', 'CP437', $message ) ;
+
+					if  ( $str  !==  false )
+						$message	=  $str ;
+				    }
 
 				if  ( IS_STANDALONE )
         		   		fputs ( $fp, $message ) ;
