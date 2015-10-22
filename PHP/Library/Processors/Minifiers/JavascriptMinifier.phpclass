@@ -127,7 +127,7 @@ class	JavascriptMinifier	extends  Minifier
 					   {
 						$token	.=  ' ' ;
 
-						if  ( $last_token  ==  '}' )
+						if  ( $last_token  ==  '}'  ||  $last_token  ==  ']'  ||  $last_token  ==  ')')
 							$data .= "\n" ;
 					    }
 					// Detect regular expressions
