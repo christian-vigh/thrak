@@ -394,10 +394,15 @@ abstract class  ClientSideIncluder  extends Object
 			    ] ;
 		    }
 		// Otherwise, perform the inclusion
-		else if  ( $return )
-			return ( $this -> DoInclude ( $include, true ) ) ;
 		else
-			$this -> DoInclude ( $include, false ) ;
+		   {
+			$final_path	=  $include . $query ;
+
+			if  ( $return )
+				return ( $this -> DoInclude ( $final_path, true ) ) ;
+			else
+				$this -> DoInclude ( $final_path, false ) ;
+		    }
 	    }
 	    
 	    
