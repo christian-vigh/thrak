@@ -8,13 +8,20 @@
    	width				:  100% ;
     }
      
+.form-field-wrapper
+   {
+   	display				:  inline ;
+   	margin				:  0px ;
+   	padding				:  0px ;
+    }
+     
 .form-field-label-column
    {
    	text-align			:  left ;
    	vertical-align			:  middle ;
    	padding-right			:  16px ;
     }
-    
+
 .form-field-value-column
    {
    	text-align			:  left ;
@@ -48,7 +55,18 @@
    	color				:  #FF0000 ;
     }
 
-.form-required-tag::after
+.form-error-field-message
+   {
+   	color				:  #FF0000 ;
+   	font-style			:  italic ;
+   	font-size			:  10px ;
+    }
+
+.form-required-tag
+   {
+    }
+    
+.form-required-tag:after
    {
    	display				:  inline ;
    	color				:  #0000FF ;
@@ -69,12 +87,27 @@
    	font-style			:  italic ;
     }
     
-.checkbox:hover 
+.checkbox-wrapper
    {
-   	cursor				:  pointer ;
+    }
+
+.checkbox-label
+   {
+   	padding-left			:  4px ;
     }
     
-.checkbox input:hover 
+.checkbox-input, 
+.checkbox-label
+   {
+   	display				:  inline-block ;
+   	vertical-align			:  middle ;
+    }
+
+.checkbox-wrapper:hover,    
+.checkbox-input:hover, 
+.checkbox-input input:hover, 
+.checkbox-label:hover, 
+.checkbox-label label:hover
    {
    	cursor				:  pointer ;
     }
