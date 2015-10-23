@@ -209,46 +209,6 @@
 		$(".positive-integer"	, context). numeric ( { decimal: false, negative: false } ) ;
 
 		// Checkboxes - allow associated labels to be clickable
-		$('.checkbox'). each
-		   (
-			function  ( index, obj )
-			   {
-				var	$this		=  $(obj) ;
-				var	$this_label	=  $('label[for="' + $this. attr ( 'id' ) + '"]') ;
-
-				
-				if  ( $this_label. length  == 0 )
-					return ;
-
-				$this_label
-					.css ( 'cursor', 'pointer' )
-					.addClass ( 'unselectable' ) ;
-			    }
-		    ) ;
-
-		/*** A few additions to JQuery objects... ***/
-
-		// outerHtml -
-		//	Same as html(), but for outer html
-		$. fn. outerHtml	=  function ( html )
-		   { 
-			if  ( html  ===  undefined )
-				return ( this [0]. outerHTML ) ; 
-			else
-				this. replaceWith ( html ) ;
-		    }
-
-		// killEvent -
-		//	I was fed up to check if an event was not undefined, if it contained preventDefault() and stopxxx(),
-		//	when all I wanted to do was really preventing the event from propagating anymore.
-		$. fn. killEvent	=  function  ( e )
-		   {
-			if ( e )
-			   {
-				e. preventDefault		&&  e. preventDefault ( ) ;
-				e. stopPropagation		&&  e. stopPropagation ( ) ;
-				e. stopImmediatePropagation	&&  e. stopImmediatePropagation ( ) ;
-			    }
-		    }
+		$('.checkbox'		, context). checkbox ( ) ;
 	    }
     } ( jQuery ) ) ;
