@@ -20,6 +20,9 @@
     [Version : 1.0.2]	[Date : 2015/10/19]     [Author : CV]
 	. Added support for Javascript and Css on-the-fly minification.
 
+    [Version : 1.0.3]	[Date : 2015/10/25]     [Author : CV]
+	. The $theme parameter of the UseJQuery() method is now optional.
+
  **************************************************************************************************************/
 namespace 	Thrak\Javascript ;
 
@@ -161,8 +164,9 @@ abstract class  ClientSideIncluder  extends Object
 		// Other cases : we need to go through the include path list
 		foreach  ( $this -> RealIncludePaths  as  $directory )
 		   {
-			$test_file	=  $directory . "/" . $file  ;
-			
+			$test_file	=  Path::ToUnix ( $directory . "/" . $file ) ;
+
+
 			if  ( file_exists ( $test_file ) )
 			   {
 				$real_file	=  Path::ToUnix ( substr ( $test_file, strlen ( $_SERVER [ 'DOCUMENT_ROOT' ] ) ) ) ;
@@ -410,7 +414,7 @@ abstract class  ClientSideIncluder  extends Object
 	   { $this -> __do_include ( $file, false, false, $return ) ; }
 	    
 	public function  IncludeFileOnce ( $file, $return = false ) 
-	   {$this -> __do_include ( $file, false, true, $return ) ; }
+	   { $this -> __do_include ( $file, false, true, $return ) ; }
 	    
 	public function  RequireFile ( $file, $return = false ) 
 	   { $this -> __do_include ( $file, true, false, $return ) ; }
@@ -750,15 +754,17 @@ class  JSIncluder	extends ClientSideIncluder
 	    }
 	    
 	    
-	public function  UseJQuery ( $theme, $min = true, $custom = true, $return = false )
+	public function  UseJQuery ( $theme = false, $min = true, $custom = true, $return = false )
 	   {
 		global		$CSSIncluder ;
 		
 		if  ( $return )
 		   {
 			$result		=  $this -> IncludeJQuery ( $min, true ) . 
-					   $this -> IncludeJQueryUI ( $min, true ) . 
-					   $CSSIncluder -> IncludeJQueryUITheme ( $theme, $min, $custom, true ) ;
+					   $this -> IncludeJQueryUI ( $min, true )  ;
+
+			if  ( $theme )
+				$result		.=  $CSSIncluder -> IncludeJQueryUITheme ( $theme, $min, $custom, true ) ;
 			
 			return ( $result ) ;
 		    }
@@ -766,7 +772,9 @@ class  JSIncluder	extends ClientSideIncluder
 		   {
 			$this -> IncludeJQuery ( $min ) ;
 			$this -> IncludeJQueryUI ( $min ) ;
-			$CSSIncluder -> IncludeJQueryUITheme ( $theme, $min, $custom ) ;
+
+			if  ( $theme ) 
+				$CSSIncluder -> IncludeJQueryUITheme ( $theme, $min, $custom ) ;
 		    }
 	    }
     }    
