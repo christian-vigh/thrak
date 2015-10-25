@@ -193,10 +193,194 @@
     }    
     
     
-.labelled-checkbox:hover
+.checkbox-wrapper
+   {
+    }
+
+.checkbox-label
+   {
+   	padding-left			:  4px ;
+    }
+    
+.checkbox-input, 
+.checkbox-label
+   {
+   	display				:  inline-block ;
+   	vertical-align			:  middle ;
+    }
+
+.checkbox-wrapper:hover,    
+.checkbox-input:hover, 
+.checkbox-input input:hover, 
+.checkbox-label:hover, 
+.checkbox-label label:hover
    {
    	cursor				:  pointer ;
     }
     
+/**************************************************************************************************
+
+	Forms.
+
+ **************************************************************************************************/
+.form-table
+   {
+   	width				:  100% ;
+    }
+     
+.form-field-wrapper
+   {
+   	display				:  inline ;
+   	margin				:  0px ;
+   	padding				:  0px ;
+    }
+     
+.form-field-label-column
+   {
+   	text-align			:  left ;
+   	vertical-align			:  middle ;
+   	padding-right			:  16px ;
+    }
+
+.form-field-value-column
+   {
+   	text-align			:  left ;
+   	vertical-align			:  middle ;
+    }
     
+.form-field-label
+   {
+   	display				:  inline ;
+    }
+    
+.form-field-value
+   {
+   	font-size			:  12px !important ;
+   	font-family			:  "Palatino Linotype", times !important ;
+    }
+    
+.form-required-field
+   {
+   	border-width			:  2px ;
+   	border-style			:  solid ;
+    }
+
+.form-error-field-value
+   {
+   	border-color			:  #FF0000 ;
+    }
+
+.form-error-field-label
+   {
+   	color				:  #FF0000 ;
+    }
+
+.form-error-field-message
+   {
+   	color				:  #FF0000 ;
+   	font-style			:  italic ;
+   	font-size			:  10px ;
+   	display				:  none ;
+    }
+
+.form-error-field-message.visible
+   {
+   	display				:  block ;
+    }
+
+.form-required-tag
+   {
+    }
+    
+.form-required-tag:after
+   {
+   	display				:  inline ;
+   	color				:  #0000FF ;
+   	font-size			:  .83em ;
+   	vertical-align			:  super ;
+   	font-weight			:  bolder ;
+   	border-width			:  2px ;
+   	content				:  "(*)" ;
+   	padding-left			:  2px ;
+    }
+    
+.form-mandatory-field-hint
+   {
+   	display				:  inline ;
+   	color				:  #0000FF ;
+   	font-size			:  10px ;
+   	vertical-align			:  top ;
+   	font-style			:  italic ;
+    }
+
+
+
+.ui-msgbox-content
+   {
+   	min-height			: 0px !important ;
+    }
+    
+ .ui-msgbox-dialog-buttonset
+    {
+    	float				:  none !important ;
+    	text-align			:  center !important;
+     }
+
+.ui-msgbox-button
+   {
+    	margin				:  3px 0px 3px 3px !important ;
+    	padding				:  0px 0px 0px 0px !important ;
+    	width				:  auto ;
+    }
+ 
+ .ui-msgbox-button span
+   {
+    }
+    
+.ui-msgbox-button-icon-only
+   {
+   	margin-top			: -7px !important ;
+    }
+    
+.ui-msgbox-dialog-title	
+   {
+   	margin				: -2px 0px 0px 2px !important ;
+    }
+
+
+.ui-widget, ui-widget-content
+   {
+   	border				:  1px solid #480417 !important ; 
+    }
+
+input:focus, select:focus
+   {
+   	outline				:  1px solid #E7507B ;
+    }         
+
+.ui-widget-header .ui-icon 
+   {
+	background-image		:  url(images/ui-icons_f9bd01_256x240.png) ;
+    }
+    
+    
+/**************************************************************************************************
+
+	JQuery UI extras.
+
+ **************************************************************************************************/
+ 
+ /* Allow an extra message to be placed in the JQuery dialog button pane area */
+.ui-dialog-buttonpane-extra-wrapper
+   {
+   	position			:  relative ;
+    }
+    
+.ui-dialog-buttonpane-extra
+   {
+   	position			:  absolute ;
+   	left				:  0px ;
+   	top				:  -2px ;
+    }
+ 
     
