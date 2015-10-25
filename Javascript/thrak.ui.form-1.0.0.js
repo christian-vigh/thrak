@@ -33,7 +33,10 @@
 			requiredField		:  "form-required-field",
 			errorFieldValue		:  "form-error-field-value",
 			errorFieldLabel		:  "form-error-field-label",
-			uploadFile		:  "form-field-upload-file"
+			uploadFile		:  "form-field-upload-file",
+			errorFieldMessage	:  "form-error-field-message",
+			fieldWrapper		:  "form-field-wrapper",
+			requiredFieldTag	:  "form-required-tag"
 		    },
 		attributes	:
 		   {
@@ -48,13 +51,14 @@
 		   {
 			'fr'	:
 			    {
-				missingFields		:  "Les champs suivants sont obligatoires :<br/>",
-				errorFields		:  "Les champs suivants poss&egrave;dent une valeur incorrecte<br/>"
+				mandatoryField		:  "Ce champ est obligatoire",
+				invalidEmail		:  "Adresse email invalide"
+
 			     },
 			'en'	:
 			   {
-				missingFields		:  "The following fields are mandatory :<br/>",
-				errorFields		:  "The following fields have an incorrect value :<br/>"
+				mandatoryField		:  "This field is mandatory",
+				invalidEmail		:  "Invalid email address"
 			    }
 		    }
 	    } ;
@@ -66,9 +70,11 @@
 		   {
 			async			:  true,
 			dataType		:  "text"
-		    }
+		    },
+		realTimeValidation	:  false
 	    } ;
-
+	
+	var	this_form ;
 
 
 	/*-------------------------------------------------------------------------------------------------------------
@@ -136,12 +142,43 @@
 		$form		=  $(selector) ;
 		$form. attr ( constants. attributes. formId, id ) ;		// Save dialog id since it's replaced by JQuery
 
+		this_form	=  $form ;
 
 		// Normalize attributes (correct values, add them if not specified, etc.)
 		normalize_attributes ( $form ) ;
 
 		// Add field handlers
 		install_field_handlers ( $form ) ;
+
+		// Wrap every input field with a div
+		$('.' + constants. classes. fieldValue, $form). each
+		   (
+			function ( )
+			   {
+				var	$this		=  $(this) ;
+				var	this_id		=  $this. attr ( 'id' ) ;
+				var	$parent		=  $this. parent ( ) ;
+
+				// Wrap the field
+				$this. wrap ( '<div class="' + constants. classes. fieldWrapper + '" field-wrapper-id="' +
+						this_id + '"></div>' ) ;
+
+				// Get a reference to the wrapper <div>
+				var	$wrapper	=  $('[field-wrapper-id="' + this_id + '"]') ;
+
+				// Append a <div> for a poentential error message
+				$parent. append ( '<div class="' + constants. classes. errorFieldMessage + '"></div>' ) ;
+
+				// Add the form-required-tag class for mandatory values if not specified with the field value or its associated label
+				if  ( $this. hasClass ( constants. classes. requiredField )  &&  ! $this. hasClass ( constants. classes. requiredFieldTag ) )
+				   {
+					var	label	=  get_associated_label ( $this ) ;
+
+					if  ( ! label. hasClass ( constants. classes. requiredFieldTag ) )
+						$wrapper. addClass ( constants. classes. requiredFieldTag ) ;
+				    }
+			    }
+		    ) ;
 
 		// Initialize the JQuery dialog
 		$form. dialog ( dialog_options ) ;
@@ -208,22 +245,7 @@
 			   {
 				var	status		=  validate ( this. element ) ;
 
-				if  ( status  ===  true )
-					return ( true ) ;
-				else
-				   {
-					$. error 
-					   ( 
-						status,
-						function ( )
-						   {
-							$('.' + constants. classes. errorFieldValue ). first ( ). focus ( ). select ( ) ;
-						    }
-						    
-					    ) ;
-
-					return ( false ) ;
-				    }
+				return ( status ) ;
 			    },
 			// submit -
 			//	Submits the form.
@@ -270,115 +292,84 @@
 	//	Validates the whole form contents.
 	function  validate ( form ) 
 	   {
-		var		status ;
-
-		// First, check for mandatory values
-		status		=  validate_mandatory_values ( form ) ;
-
-		if  ( status  !==  true )
-			return ( status ) ;
-
-		// Then check typed field values
-		status		=  validate_typed_values ( form ) ;
-
-		if (  status  !==  true )
-			return ( status ) ;
-
-		return ( true ) ;
-	    }
-
-
-	// validate_mandatory_value -
-	//	Validates a mandatory value. Sets the visual effects depending on whether it is missing or not.
-	function  validate_mandatory_value ( $this, value )
-	   {
-		if  ( ! $this. hasClass ( constants. classes. requiredField ) )
-			return ( true ) ;
-
-		var	format		=  $this. attr ( constants. attributes. fieldFormat ) ;
-
-		// Empty values may take different forms, depending on the field type
-		switch ( format )
-		   {
-			default		: 
-				if  ( value  ==  '' )
-				   {
-					set_field_error_state ( $this, true ) ;
-					return ( false ) ;
-				    }
-				else
-				   {
-					set_field_error_state ( $this, false ) ;
-					return ( true ) ;
-				    }
-		    }
-	    }
-
-
-	// validate_mandatory_values -
-	//	Validates all the mandatory values in the form.
-	//	Returns true if everything is ok, or an error message string otherwise.
-	function  validate_mandatory_values ( form )
-	   {
-		var	error_fields	=  [] ;
-
-		$('.' + constants. classes. requiredField, form). filter ( filter_field ). each
-		   (
-			function  ( index, obj )
-			   {
-				var	$this		=  $(obj) ;
-
-				if  ( ! validate_mandatory_value ( $this, $this. val ( ) ) )
-					error_fields. push ( $this ) ;
-			    }
-		    ) ;
-
-		if  ( error_fields. length )
-		   {
-			var	message		=  constants. messages [ $. locale ( ) ]. missingFields + "<ul>" ;
-
-			for  ( i = 0 ; i  <  error_fields. length ; i ++ )
-				message		+=  "<li>" + error_fields [i]. attr ( constants. attributes. fieldLabel ) + "</li>" ;
-
-			message		+=  "</ul>" ;
-
-			return ( message ) ;
-		    }
-		else
-			return ( true ) ;
-	    }
-
-
-	// validate_typed_value -
-	//	Validates a field value according to its type and adds a "validated-value" attribute with the
-	//	(potentially) reformatted value.
-	function  validate_typed_value ( $this, value, ui_reflect )
-	   {
-		var	format			=  $this. attr ( constants. attributes. fieldFormat ) ;
-		var	type			=  $this. attr ( constants. attributes. fieldType ) ;
-		var	validated_value		=  value ;
-		var	status			=  true ;
-
-		switch ( type )
-		   {
-			case	'select' :
-				validated_value		=  $this. val ( ) ;
-				break ;
-		    }
-
-		$this. attr ( constants. attributes. fieldValidatedValue, validated_value ) ;
-
-		if  ( ui_reflect )
-			set_field_error_state ( $this, ( status  !==  true ) ) ;
+		var		status	=  validate_values ( form ) ;
 
 		return ( status ) ;
 	    }
 
 
-	// validate_typed_values -
+	// Validation functions
+	function  validate_email_value ( $this, result )
+	   {
+		if  ( ! /^[a-z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+\/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?/
+				. test ( result. value ) )
+		   {
+			result. status	=  false ;
+			result. message	=  constants. messages [ $. locale ( ) ]. invalidEmail ;
+		    }
+	    }
+
+	// validate_value -
+	//	Validates a field value according to its type and adds a "validated-value" attribute with the
+	//	(potentially) reformatted value.
+	function  validate_value ( $this, value )
+	   {
+		var	format			=  $this. attr ( constants. attributes. fieldFormat ). toLowerCase ( ) ;
+		var	type			=  $this. attr ( constants. attributes. fieldType ). toLowerCase ( ) ;
+		var	status			=  true ;
+		var	result			=  
+		   {
+			value		:  value,
+			status		:  true,
+			message		:  undefined
+		    }
+
+		if  ( value  ==  '' )
+		   {
+			if  ( $this.hasClass ( constants. classes. requiredField ) )
+			   {
+				result. status	=  false ;
+				result. message =  constants. messages [ $. locale ( ) ]. mandatoryField ;
+			    }
+		    }
+		
+		if  ( result. status )
+		   {
+			switch ( type )
+			   {
+				case	'text'	:
+					switch ( format )
+					   {
+						case	'email' :
+							validate_email_value ( $this, result ) ;
+							break ;
+
+						case	'string' :
+							break ;
+
+						default :
+							throw ( "Parameter format \"" + format + "\" not yet handled." ) ; 
+					    }
+
+					break ;
+
+				case	'select' :
+					result. value		=  $this. val ( ) ;
+					break ;
+			    }
+		    }
+
+		$this. attr ( constants. attributes. fieldValidatedValue, result. value ) ;
+		set_field_error_state ( $this, ! result. status, result. message ) ;
+
+		return ( result. status ) ;
+	    }
+
+
+	// validate_values -
 	//	Validates all the values of the form according to their type.
 	//	Returns true if everything is ok, or an error message string otherwise.
-	function  validate_typed_values ( form )
+	function  validate_values ( form )
 	   {
 		var	error_fields	=  [] ;
 
@@ -387,7 +378,7 @@
 			function  ( index, obj )
 			   {
 				var	$this		=  $(obj) ;
-				var	status		=  validate_typed_value ( $this, $this. val ( ), false ) ;
+				var	status		=  validate_value ( $this, $this. val ( ) ) ;
 
 				if  ( status  !==  true )
 					error_fields. push ( [ $this, status ] ) ;
@@ -598,20 +589,41 @@
 			   (
 				function  ( e )
 				   {
-					var	$this	=  $(this) ;
+					var	options		=  this_form. dialog ( 'option', 'formOptions' ) ;
 
-					validate_mandatory_value ( $this, $this. val ( ) + String. fromCharCode ( e. keyCode ||  e. which ) ) ;
-					validate_typed_value     ( $this, $this. val ( ) + String. fromCharCode ( e. keyCode ||  e. which ) ) ;
+					if  ( options. realTimeValidation )
+					   {
+						var	$this		=  $(this) ;
+
+						validate_value ( $this, $this. val ( ) + String. fromCharCode ( e. keyCode ||  e. which ) ) ;
+					    }
 				    }
 			    )
-			. blur 
+			.keyup
+			   (
+				function  ( e )
+				   {
+					var	options		=  this_form. dialog ( 'option', 'formOptions' ) ;
+
+					if  ( options. realTimeValidation )
+					   {
+						var	$this			=  $(this) ;
+						var	isBackspaceOrDelete	=  ( event. keyCode  ==  8  ||  event. keyCode  ==  46 ) ;
+
+						if  ( isBackspaceOrDelete )
+							validate_value ( $this, $this. val ( ) ) ;
+					    }
+				    }
+			    )
+			.blur 
 			   (
 				function  ( e )
 				   {
 					var	$this	=  $(this) ;
 
-					validate_mandatory_value ( $this, $this. val ( ) ) ;
-					validate_typed_value     ( $this, $this. val ( ) ) ;
+					validate_value ( $this, $this. val ( ) ) ;
+
+					return ( true ) ;
 				    }
 			    ) ;
 	    }
@@ -658,14 +670,19 @@
 
 	// set_field_error_state -
 	//	Sets the visual appearance of a field depending on whether its value is correct or not.
-	function  set_field_error_state ( $this, state ) 
+	function  set_field_error_state ( $this, state, msg ) 
 	   {
+		var		$parent		=  $this. parent ( ). parent ( ) ;
+
 		if  ( state )
 		   {
-			var		label	=  get_associated_label ( $this ) ;
+			var		label		=  get_associated_label ( $this ) ;
 
 			$this. addClass ( constants. classes. errorFieldValue ) ;
 			label. addClass ( constants. classes. errorFieldLabel ) ;
+			$('.' + constants. classes. errorFieldMessage, $parent)
+				.addClass ( 'visible' )
+				.html ( msg ) ;
 
 			return ( false ) ;
 		    }
@@ -675,6 +692,9 @@
 
 			$this. removeClass ( constants. classes. errorFieldValue ) ;
 			label. removeClass ( constants. classes. errorFieldLabel ) ;
+			$('.' + constants. classes. errorFieldMessage, $parent)
+				.removeClass ( 'visible' )
+				.html ( '' ) ;
 
 			return ( true ) ;
 		    }
