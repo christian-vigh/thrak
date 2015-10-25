@@ -38,26 +38,33 @@
 
 				$label. remove ( ) ;
 
-				// Wrap the <input> and <label> tags within <div>s
-				$this. replaceWith
+				// Wrap the <input> and <label> tags within <div>'s. Don't use the replaceWith() function
+				// since it will override the existing <input type="checkbox"> element together with its
+				// attached events
+				$this. wrap
 				   (
 					'<div class="checkbox-wrapper" checkbox-wrapper-id="' + this_id + '">' +
-						'<div class="checkbox-input">' + input. trim ( ) + '</div>' +
-						'<div class="checkbox-label">' + label + '</div>' +
+						'<div class="checkbox-input"></div>' +
 					'</div>' 
 				    ) ;
 
 				// $this still references the <input> tag ; we now need a reference to the surrounding <div>
 				// we created
-				$this	=  $('[checkbox-wrapper-id="contact-me-upload-files"]') ;
+				var	$wrapper	=  $('[checkbox-wrapper-id="' + this_id + '"]') ;
 
-				$('.checkbox-wrapper, .checkbox-input, .checkbox-label, .checkbox-label label', $this). click
+				// Append the associated label to the checkbox wrapper
+				$wrapper. append ( '<div class="checkbox-label">' + label. trim ( ) + '</div>' ) ;
+
+				// Add a click handler for all the <div>'s we have wrapped around the checkbox
+				$('.checkbox-wrapper, .checkbox-label, .checkbox-label label', $wrapper). click
 				   (
 					function ( e )
 					   {
-						var	$this	=  $('#' + this_id) ;
+						var	$target		=  $('#' + this_id) ;
+						var	$this		=  $(this) ;
 
-						$this. prop ( 'checked', ! $this. prop ( 'checked' ) ) ;
+
+						$target. click ( ) ;
 						$this. killEvent ( e ) ;
 
 						return ( false ) ;
