@@ -24,9 +24,11 @@
 	 *  Globals.
 	 *
 	 *-------------------------------------------------------------------------------------------------------------*/
+
+	// Constant strings
 	var	constants	= 
 	   {
-		classes		:  
+		classes		:		// Class names
 		   {
 			fieldLabel		:  "form-field-label",
 			fieldValue		:  "form-field-value",
@@ -38,40 +40,126 @@
 			fieldWrapper		:  "form-field-wrapper",
 			requiredFieldTag	:  "form-required-tag"
 		    },
-		attributes	:
+		attributes	:		// Specific attribute names
 		   {
 			fieldType		:  "field-type",
 			fieldFormat		:  "field-format",
 			fieldLabel		:  "label",
 			fieldId			:  "field-id",
 			formId			:  "form-id",
-			fieldValidatedValue	:  "field-validated-value"
-		    },
-		messages	:
-		   {
-			'fr'	:
-			    {
-				mandatoryField		:  "Ce champ est obligatoire",
-				invalidEmail		:  "Adresse email invalide"
-
-			     },
-			'en'	:
-			   {
-				mandatoryField		:  "This field is mandatory",
-				invalidEmail		:  "Invalid email address"
-			    }
+			fieldValidatedValue	:  "field-validated-value",
+			fieldDatepickerIcon	:  "field-datepicker-icon",
+			fieldRealtimeValidation	:  "field-realtime-validation"
 		    }
 	    } ;
 
+	// Default form options that can be overridden by the caller (formOptions field of the dialog options)
 	var	default_form_options	=
 	   {
+		// buttonPaneMessage (optional) -
+		//	Can be used to define a message to appear in the button pane ; for example :
+		//	buttonPaneMessage	:  '<div class="form-mandatory-field-hint">' + data. mandatory_hint + '</div>'
+		buttonPaneMessage	:  false,
+		// alertOnError (optional) -
+		//	Indicates whether an alert box should be displayed when errors have been encountered during form validation.
+		//	Default is false.
+		alertOnError		:  true,
+		// url (required) -
+		//	The url to which form submission results are posted.
+		url			:  false,
+		// method (optional) :
+		//	The method used to submit the form. Can be either "get" or "post". The default is "get".
 		method			:  'get',
+		// ajax (optional) -
+		//	Any data to provide to the $.ajax() call.
 		ajax			:  
 		   {
 			async			:  true,
 			dataType		:  "text"
 		    },
-		realTimeValidation	:  false
+		// data (optional) -
+		//	Form fields are sent through an ajax request using the 'data' member ; this one can be used to specify additional options
+		//	before form submission. For example :
+		/***
+			data			:
+			   {
+				operation	:  'sendmail'
+			    }
+		 ***/
+		// realtimeValidation (optional) -
+		//	When true, the syntax of input fields is checked while the user types characters.
+		//	This can be overriden by the "field-realtime-validation" attribute.
+		//	The default is false.
+		realtimeValidation	:  false,
+		// Input field validators, associated to the field-format attribute.
+		// Any field format can be defined in the supplied form, provided that the caller supplied the
+		// appropriate validator in this object.
+		// A field value validator is supplied the following parameters :
+		// - form :
+		//	The form (dialog) object.
+		// - options :
+		//	Dialog options (including the formOptions field).
+		// - field :
+		//	The JQuery object referencing the current field.
+		// - result : 
+		//	An object containing the following members :
+		//	- value :
+		//		Contents of the input field.
+		//	- status :
+		//		A boolean value that must be set by the validator to indicate whether the value is correct or not.
+		//	- message :
+		//		When status is set to false, message must be set to an error message.
+		//		The set_error() internal function can be used for that.
+		validators		:  
+		   {
+			// string validator -
+			//	Checks the following fields :
+			//	- field-min-length, field-max-length
+			'string'	:  function  ( form, options, field, result )
+			   { },
+
+			// email validator -
+			//	Checks that the supplied input is a valid email.
+			'email'		:  function  ( form, options, field, result )
+			   {
+				if  ( ! /^[a-z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+\/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?/
+						. test ( result. value ) )
+				   {
+					set_error ( options, result, 'invalidEmail' ) ;
+				    }
+			    },
+
+			// Date validator -
+			//	Dates are always converted to the mysql format (yyyy-mm-dd).
+			'date'	:  function  ( form, options, field, result )
+			   {
+				var	date	=  field. datepicker ( 'getDate' ) ;
+
+				if  ( date  ===  null  ||  date  ===  undefined )
+					result. value	=  '0000-00-00' ;
+				else
+					result. value	=  date. getFullYear ( ) + '-' +
+							   ( date. getMonth ( ) + 1 ) + '-' + 
+							   date. getDate ( ) ;
+			    },
+
+		    },
+		// Localized messages
+		messages	:		
+		   {
+			'fr'	:
+			    {
+				formErrors		:  "Des erreurs ont &eacute;t&eacute; rencontr&eacute;es dans les valeurs que vous avez saisies.",
+				mandatoryField		:  "Ce champ est obligatoire",
+				invalidEmail		:  "Adresse email invalide",
+			     },
+			'en'	:
+			   {
+				formErrors		:  "Errors have been found in your input data.",
+				mandatoryField		:  "This field is mandatory",
+				invalidEmail		:  "Invalid email address"
+			    }
+		    }
 	    } ;
 	
 	var	this_form ;
@@ -293,30 +381,42 @@
 	function  validate ( form ) 
 	   {
 		var		status	=  validate_values ( form ) ;
+		var		options	=  form. dialog ( 'option' ) ;
+
+		if  ( status  ===  false )
+		   {
+			var	first_error	=  $('.' + constants. classes. errorFieldValue). first ( ) ;
+
+			if  ( options. formOptions. alertOnError )
+			   {
+				$. error 
+				   ( 
+					options. formOptions. messages [ $. locale ( ) ]. formErrors,
+					function ( )
+					   {
+						first_error. focus ( ) ;
+					    }
+				    ) ;
+			    }
+			else
+				first_error. focus ( ) ;
+		    }
 
 		return ( status ) ;
 	    }
 
-
-	// Validation functions
-	function  validate_email_value ( $this, result )
-	   {
-		if  ( ! /^[a-z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+\/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?/
-				. test ( result. value ) )
-		   {
-			result. status	=  false ;
-			result. message	=  constants. messages [ $. locale ( ) ]. invalidEmail ;
-		    }
-	    }
 
 	// validate_value -
 	//	Validates a field value according to its type and adds a "validated-value" attribute with the
 	//	(potentially) reformatted value.
 	function  validate_value ( $this, value )
 	   {
+		var	options			=  this_form. dialog ( 'option' ) ;
+		var	validators		=  options. formOptions. validators ;
 		var	format			=  $this. attr ( constants. attributes. fieldFormat ). toLowerCase ( ) ;
 		var	type			=  $this. attr ( constants. attributes. fieldType ). toLowerCase ( ) ;
-		var	status			=  true ;
+
+		// Result object passed to field validators
 		var	result			=  
 		   {
 			value		:  value,
@@ -324,32 +424,23 @@
 			message		:  undefined
 		    }
 
+		// Empty value : complain if the field is mandatory
 		if  ( value  ==  '' )
 		   {
-			if  ( $this.hasClass ( constants. classes. requiredField ) )
-			   {
-				result. status	=  false ;
-				result. message =  constants. messages [ $. locale ( ) ]. mandatoryField ;
-			    }
+			if  ( $this. hasClass ( constants. classes. requiredField ) )
+				set_error ( options, result, 'mandatoryField' ) ;
 		    }
 		
+		// Field is either non-empty or non-mandatory - process its value using its corresponding validator
 		if  ( result. status )
 		   {
 			switch ( type )
 			   {
 				case	'text'	:
-					switch ( format )
-					   {
-						case	'email' :
-							validate_email_value ( $this, result ) ;
-							break ;
-
-						case	'string' :
-							break ;
-
-						default :
-							throw ( "Parameter format \"" + format + "\" not yet handled." ) ; 
-					    }
+					if  ( validators [ format ]  !==  undefined )
+						validators [ format ] ( this_form, options, $this, result ) ;
+					else
+						throw ( "Parameter format \"" + format + "\" not yet handled." ) ; 
 
 					break ;
 
@@ -359,7 +450,10 @@
 			    }
 		    }
 
+		// Save the validated value, which can be different from user input
 		$this. attr ( constants. attributes. fieldValidatedValue, result. value ) ;
+
+		// Provide a visual clue if an error occurred
 		set_field_error_state ( $this, ! result. status, result. message ) ;
 
 		return ( result. status ) ;
@@ -371,6 +465,7 @@
 	//	Returns true if everything is ok, or an error message string otherwise.
 	function  validate_values ( form )
 	   {
+		var	options		=  form. dialog ( 'option' ) ;
 		var	error_fields	=  [] ;
 
 		$('.' + constants. classes. fieldValue, form). filter ( filter_field ). each
@@ -385,21 +480,7 @@
 			    }
 		    ) ;
 
-		if  ( error_fields. length )
-		   {
-			var	message		=  constants. messages [ $. locale ( ) ]. errorFields + "<ul>" ;
-
-			for  ( i = 0 ; i  <  error_fields. length ; i ++ )
-				message		+=  "<li><b>" + error_fields [i] [0]. attr ( constants. attributes. fieldLabel ) + 
-						    "</b> : " + error_fields [i] [1] +
-						    "</li>" ;
-
-			message		+=  "</ul>" ;
-
-			return ( message ) ;
-		    }
-		else
-			return ( true ) ;
+		return ( error_fields. length  ==  0 ) ;
 	    }
 
 
@@ -457,6 +538,28 @@
 	    }
 
 
+	// get_boolean_attribute -
+	//	Retrieves a boolean attribute value.
+	//	A boolean attribute value can contain :
+	//	- "false", "no", "off" or "0" for the boolean value false
+	//	- Any other non-empty string for the boolean value true
+	//	If the attribute is not specified, then the value of the default_value parameter will be returned.
+	function  get_boolean_attribute ( $this, attr, default_value ) 
+	   {
+		var	value		=  $this. attr ( attr ) ;
+
+		if  ( value  ===  ''  ||  value  ===  undefined )
+			return ( default_value ) ;
+
+		value	=  value. trim ( ). toLowerCase ( ) ;
+
+		if  ( value  ==  'false'  ||  value  ==  'no'  ||  value  ==  'off'  ||  value  ==  '0' )
+			return ( false ) ;
+		else
+			return ( true ) ;
+	    }
+
+
 	// get_field_format -
 	//	Returns the format of a field specified with its "field-format" attribute.
 	//	Missing field format attributes or having an incorrect value will default to "string".
@@ -465,7 +568,12 @@
 		var	format		=  $this. attr ( constants. attributes. fieldFormat ) ;
 
 		if  ( format  ===  ''  ||  format  ===  undefined )
-			format	=  'string' ;
+		   {
+			if  ( $this. hasClass ( 'date' ) )
+				format	=  'date' ;
+			else
+				format	=  'string' ;
+		    }
 		else
 			format	=  format. toLowerCase ( ) ;
 
@@ -577,6 +685,18 @@
 	    }
 
 
+	// has_realtime_validation -
+	//	Returns true if either the global form option 'realtimeValidation' is true or if the 'realtime-validation' attribute
+	//	of the specified field exists and is different from the empty string, 0 or false
+	function  has_realtime_validation ( $this )
+	   {
+		var	options			=  this_form. dialog ( 'option', 'formOptions' ) ;
+		var	realtime		=  get_boolean_attribute ( $this, constants. attributes. fieldRealtimeValidation, options. realtimeValidation ) ;
+
+		return ( realtime ) ;
+	    }
+
+
 	// install_field_handlers -
 	//	Install field handlers that will mainly :
 	//	- Add or remove the visual class that signals if a mandatory value is missing or not
@@ -589,25 +709,20 @@
 			   (
 				function  ( e )
 				   {
-					var	options		=  this_form. dialog ( 'option', 'formOptions' ) ;
+					var	$this		=  $(this) ;
 
-					if  ( options. realTimeValidation )
-					   {
-						var	$this		=  $(this) ;
-
+					if  ( has_realtime_validation ( $this ) )
 						validate_value ( $this, $this. val ( ) + String. fromCharCode ( e. keyCode ||  e. which ) ) ;
-					    }
 				    }
 			    )
 			.keyup
 			   (
 				function  ( e )
 				   {
-					var	options		=  this_form. dialog ( 'option', 'formOptions' ) ;
+					var	$this		=  $(this) ;
 
-					if  ( options. realTimeValidation )
+					if  ( has_realtime_validation ( $this ) )
 					   {
-						var	$this			=  $(this) ;
 						var	isBackspaceOrDelete	=  ( event. keyCode  ==  8  ||  event. keyCode  ==  46 ) ;
 
 						if  ( isBackspaceOrDelete )
@@ -640,7 +755,9 @@
 				var	$this	=  $(obj) ;
 
 				// Normalize the "field-format" attribute
-				$this. attr ( constants. attributes. fieldFormat, get_field_format ( $this ) ) ;
+				var	format		=  get_field_format ( $this ) ;
+
+				$this. attr ( constants. attributes. fieldFormat, format ) ;
 
 				// The the "field-type" attribute
 				$this. attr ( constants. attributes. fieldType, get_field_type ( $this ) ) ;
@@ -660,11 +777,42 @@
 					else
 						$this. attr ( constants. attributes. fieldLabel, "<span style='color: #FF0000'>*** MISSING LABEL ***</span>" ) ;
 				    }
+
+				// Special field formats
+				switch ( format )
+				   {
+					// 'date' format :
+					//	Add a datepicker icon, unless the 'field-datepicker-icon' is set to false
+					case	'date' :
+						var	has_picker		=  get_boolean_attribute ( $this, constants. attributes. fieldDatepickerIcon, true ) ;
+
+						if  ( has_picker )
+						   {
+							$this. after ( '<div class="ui-datepicker-icon"></div>' ) ;
+							$this. next ( '.ui-datepicker-icon' ). click
+							   (
+								function  ( e ) 
+								   {
+									$this. datepicker ( 'show' ) ;
+								    }
+							    ) ;
+						    }
+				    }
 			    }
 		    ) ;
 
 		// Remove any stuff that may have been set by a previous validation error
 		$('.' + constants. classes. errorField ). removeClass ( constants. classes. errorField ) ;
+	    }
+
+
+	// set_error -
+	//	For validators only. Sets the "status" field of th specified object to false, and the "message" field
+	//	to the localized constant provided by "errconst".
+	function  set_error ( options, result, errconst )
+	   {
+		result. status	=  false ;
+		result. message	=  options. formOptions. messages [ $. locale ( ) ] [ errconst ] ;
 	    }
 
 

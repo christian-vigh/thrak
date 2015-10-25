@@ -1445,9 +1445,15 @@ body .ui-tooltip {
    	background			:  #FBEC88 ;
     }
 
-.ui-datepicker .ui-datepicker-calendar .ui-datepicker-week-col
+.ui-datepicker .ui-datepicker-calendar th.ui-datepicker-week-col
    {
    	font-weight			:  bold ;
+   	color				:  crimson ;
+    }
+
+.ui-datepicker .ui-datepicker-calendar td.ui-datepicker-week-col
+   {
+   	color				:  crimson ;
     }
 
 .ui-datepicker .ui-datepicker-header .ui-datepicker-next-hover
@@ -1463,4 +1469,20 @@ body .ui-tooltip {
 input.hasDatepicker
    {
    	width				:  5.2em ;
+   	text-align			:  center ;
     }     
+  
+.ui-datepicker-icon
+   {
+   	background-image		:  url(images/calendar-icon.png) ;
+   	width				:  16px ;
+   	height				:  16px ;
+   	display				:  inline-block ;
+   	margin-left			:  4px ;
+    }
+    
+.ui-datepicker-icon:hover
+   {
+   	cursor				:  pointer ;
+    }
+    
