@@ -840,7 +840,7 @@ body .ui-tooltip {
 .ui-widget-content .ui-state-focus,
 .ui-widget-header .ui-state-focus {
 	border: 1px solid #79b7e7;
-	background: #d0e5f5 url(images/ui-bg_glass_75_d0e5f5_1x400.png) 50% 50% repeat-x;
+	/* background: #d0e5f5 url(images/ui-bg_glass_75_d0e5f5_1x400.png) 50% 50% repeat-x; */
 	font-weight: bold;
 	color: #1d5987;
 }
@@ -1368,6 +1368,12 @@ body .ui-tooltip {
    {
     	margin-left			:  -9px !important;
     }
+
+.ui-widget-header .ui-icon 
+   {
+	background-image		:  url(images/ui-icons_custom_256x240.png) ;
+    }
+    
         
 
 /**************************************************************************************************
@@ -1444,3 +1450,17 @@ body .ui-tooltip {
    	font-weight			:  bold ;
     }
 
+.ui-datepicker .ui-datepicker-header .ui-datepicker-next-hover
+   {
+   	border				:  1px solid #6E1C33 ;
+    }
+
+.ui-datepicker .ui-datepicker-header .ui-datepicker-prev-hover
+   {
+   	border				:  1px solid #E7AABC ;
+    }
+
+input.hasDatepicker
+   {
+   	width				:  5.2em ;
+    }     

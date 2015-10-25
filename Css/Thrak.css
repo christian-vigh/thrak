@@ -47,7 +47,7 @@
 	Message boxes
 
  **************************************************************************************************/
-.ui-popup-dialog-button
+.ui-popup-dialog-button:not(.ui-dialog-titlebar-close)
    {
    	width				:  80px !important; 
     }
@@ -358,11 +358,6 @@ input:focus, select:focus
    	outline				:  1px solid #E7507B ;
     }         
 
-.ui-widget-header .ui-icon 
-   {
-	background-image		:  url(images/ui-icons_f9bd01_256x240.png) ;
-    }
-    
     
 /**************************************************************************************************
 
