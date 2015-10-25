@@ -77,6 +77,10 @@
 		. Corrected the __Load() method, which did not recognize key definitions preceded
 		  by spaces or tabs.
 
+	[Version : 1.0.13]		[Date : 2015/10/25]	[Author : CV]
+		. Since version 1.0.9, spaces to the left of the equal sign were not preserved when
+		  reading .ini files.
+
  ***************************************************************************************************/
 namespace  Thrak\Processors ;
 
@@ -323,10 +327,10 @@ class  IniFile  extends  Object
 
  	   	$single_re		=  '/^
    						(?P<name> [^' . $key_value_separator . ']+)
-							(
- 	   							(?P<sep>  \s*' . $key_value_separator . '\s*)
- 	   							(?P<value> .*)
-							 )?
+						(
+ 	   						(?P<sep>  \s*' . $key_value_separator . '\s*)
+ 	   						(?P<value> .*)
+						 )?
 			 		     $/isx' ;
 		$multi_re 		=  '/^' .
    						'(?P<name> [^' . $key_value_separator . ']+)' .
@@ -477,7 +481,8 @@ class  IniFile  extends  Object
 				if  ( preg_match ( $multi_re, $entry, $matches ) )
    				   {
 					$name		=  trim ( $matches [ 'name' ] ) ;
-					$separator	=  $matches [ 'sep' ] ;
+					preg_match ( '/(?P<spaces> \s*)$/x', $matches [ 'name' ], $spmatch ) ;
+					$separator	=  $spmatch [ 'spaces' ] . $matches [ 'sep' ] ;
 					$word 		=  trim ( $matches [ 'word' ] ) ;
 					$multiline 	=  true ;
 
@@ -500,8 +505,9 @@ class  IniFile  extends  Object
 				// Single-line definition
 				else if  ( preg_match ( $single_re, $entry, $matches ) )
 				   {
-					$name		=  $matches [ 'name' ] ;
-					$separator	=  ( isset ( $matches [ 'sep'   ] ) ) ?  $matches [ 'sep'   ] : '=' ;
+					$name		=  trim ( $matches [ 'name' ] ) ;
+					preg_match ( '/(?P<spaces> \s*)$/x', $matches [ 'name' ], $spmatch ) ;
+					$separator	=  ( isset ( $matches [ 'sep'   ] ) ) ?  $spmatch [ 'spaces' ] . $matches [ 'sep'   ] : '=' ;
 					$value		=  ( isset ( $matches [ 'value' ] ) ) ?  $matches [ 'value' ] : '' ;
 					$word 		=  "" ;
 					$multiline	=  false ;
