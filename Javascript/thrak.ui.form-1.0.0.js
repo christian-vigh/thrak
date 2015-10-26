@@ -17,6 +17,12 @@
 
  **************************************************************************************************************/
 
+//# include_once ( "sprintf.js" )
+//# include_once ( "intval.js" )
+//# include_once ( "floatval.js" )
+//# include_once ( "is_numeric.js" )
+
+
  ( function ( $ )
    {
 	/*-------------------------------------------------------------------------------------------------------------
@@ -49,7 +55,11 @@
 			formId			:  "form-id",
 			fieldValidatedValue	:  "field-validated-value",
 			fieldDatepickerIcon	:  "field-datepicker-icon",
-			fieldRealtimeValidation	:  "field-realtime-validation"
+			fieldRealtimeValidation	:  "field-realtime-validation",
+			fieldMinLength		:  "field-min-length",
+			fieldMaxLength		:  "field-max-length",
+			fieldMinValue		:  "field-min-value",
+			fieldMaxValue		:  "field-max-value"
 		    }
 	    } ;
 
@@ -113,10 +123,15 @@
 		validators		:  
 		   {
 			// string validator -
-			//	Checks the following fields :
+			//	Checks the following attributes :
 			//	- field-min-length, field-max-length
 			'string'	:  function  ( form, options, field, result )
-			   { },
+			   {
+				check_field_length ( form, options, field, result ) ;
+
+				if  ( result. status  ===  false )
+					return ;
+			    },
 
 			// email validator -
 			//	Checks that the supplied input is a valid email.
@@ -131,7 +146,7 @@
 
 			// Date validator -
 			//	Dates are always converted to the mysql format (yyyy-mm-dd).
-			'date'	:  function  ( form, options, field, result )
+			'date'		:  function  ( form, options, field, result )
 			   {
 				var	date	=  field. datepicker ( 'getDate' ) ;
 
@@ -143,6 +158,21 @@
 							   date. getDate ( ) ;
 			    },
 
+			// Integer validator
+			//	Ensures that the integer is correct and falls within the optional range specified with
+			//	the field-min-value and field-max-value attributes.
+			'integer'	:  function  ( form, options, field, result )
+			   {
+				check_field_numeric_value ( form, options, field, result, true ) ;
+			    },
+
+			// Float validator
+			//	Ensures that the integer is correct and falls within the optional range specified with
+			//	the field-min-value and field-max-value attributes.
+			'float'	:  function  ( form, options, field, result )
+			   {
+				check_field_numeric_value ( form, options, field, result, true ) ;
+			    }
 		    },
 		// Localized messages
 		messages	:		
@@ -150,14 +180,30 @@
 			'fr'	:
 			    {
 				formErrors		:  "Des erreurs ont &eacute;t&eacute; rencontr&eacute;es dans les valeurs que vous avez saisies.",
-				mandatoryField		:  "Ce champ est obligatoire",
-				invalidEmail		:  "Adresse email invalide",
+				mandatoryField		:  "Ce champ est obligatoire.",
+				invalidEmail		:  "Adresse email invalide.",
+				valueTooShort		:  "La valeur saisie doit faire au moins %d caract&egrave;res.",
+				valueTooLong		:  "La valeur saisie doit faire au plus  %d caract&egrave;res.",
+				invalidValueLength	:  "La valeur saisie doit faire entre %d et %d caract&egrave;res.",
+				valueTooLow		:  "Le nombre %s saisi doit &ecirc;tre sup&eacute;rieur ou &eacute;gal &agrave; %g.",
+				valueTooHigh		:  "Le nombre %s saisi doit &ecirc;tre inf&eacute;rieur ou &eacute;gal &agrave; %g.",
+				valueOutOfRange		:  "Le nombre %s saisi doit &ecirc;tre compris entre %g et %g.",
+				integerValueType	:  "entier",
+				floatValueType		:  "r&eacute;el"
 			     },
 			'en'	:
 			   {
 				formErrors		:  "Errors have been found in your input data.",
-				mandatoryField		:  "This field is mandatory",
-				invalidEmail		:  "Invalid email address"
+				mandatoryField		:  "This field is mandatory.",
+				invalidEmail		:  "Invalid email address.",
+				valueTooShort		:  "Input value must be at least %d characters long.",
+				valueTooLong		:  "Input value must be at most %d characters long.",
+				invalidValueLength	:  "Input value must have between %d and %d characters.",
+				valueTooLow		:  "Input %s value must be greater than or equal to %g.",
+				valueTooHigh		:  "Input %s value must be less than or equal to %g.",
+				valueOutOfRange		:  "Input %s value must be between %g and %g.",
+				integerValueType	:  "integer",
+				floatValueType		:  "float"
 			    }
 		    }
 	    } ;
@@ -489,7 +535,79 @@
 	 *  Helper functions.
 	 *
 	 *-------------------------------------------------------------------------------------------------------------*/
-	
+
+	// check_field_length -
+	//	Checks that the field value length is between the values specified by the field-min-length and 
+	//	field-max-length attributes.
+	function  check_field_length ( form, options, field, result )
+	   {
+		var	min_length	=  get_integer_attribute ( field, constants. attributes. fieldMinLength ),
+			max_length	=  get_integer_attribute ( field, constants. attributes. fieldMaxLength ) ;
+		var	length		=  result. value. length ;
+
+
+		if  ( min_length  !==  undefined )
+		   {
+			if  ( max_length  ===  undefined )
+			   {
+				if  ( length  <  min_length )
+					set_error ( options, result, 'valueTooShort', min_length ) ;
+			    }
+			else
+			   {
+				if  ( length  <  min_length  ||  length  >  max_length )
+					set_error ( options, result, 'invalidValueLength', min_length, max_length ) ;
+			    }
+		    }
+		else if  ( max_length  !==  undefined )
+		   {
+			if  ( length  > max_length )
+				set_error ( options, result, 'valueTooLong', max_length ) ;
+		    }  
+	    }
+
+
+	// check_field_numeric_value -
+	//	Checks that the field value is between the values specified by the field-min-value and 
+	//	field-max-value attributes.
+	function  check_field_numeric_value ( form, options, field, result, is_integer )
+	   {
+		var	min_value	=  get_numeric_attribute ( field, constants. attributes. fieldMinValue ),
+			max_value	=  get_numeric_attribute ( field, constants. attributes. fieldMaxValue ) ;
+		var	typename	=  options. formOptions. messages [ $. locale ( ) ] [ ( is_integer ) ?  'integerValueType' : 'floatValueType' ] ;
+		var	value		=  floatval ( result. value ) ;
+
+
+		if  ( min_value  !==  undefined )
+		   {
+			if  ( is_integer ) 
+				min_value	=  Math. floor ( min_value ) ;
+
+			if  ( max_value  ===  undefined )
+			   {
+				if  ( value  <  min_value )
+					set_error ( options, result, 'valueTooLow', typename, min_value ) ;
+			    }
+			else
+			   {
+				if  ( is_integer ) 
+					max_value	=  Math. floor ( max_value ) ;
+
+				if  ( value  <  min_value  ||  value  >  max_value )
+					set_error ( options, result, 'valueOutOfRange', typename, min_value, max_value ) ;
+			    }
+		    }
+		else if  ( max_value  !==  undefined )
+		   {
+			if  ( is_integer ) 
+				max_value	=  Math. floor ( max_value ) ;
+
+			if  ( value  > max_value )
+				set_error ( options, result, 'valueTooHigh', typename, max_value ) ;
+		    }  
+	    }
+	    
+	    	
 	// collect_field_values -
 	//	Collects the field values.
 	function  collect_field_values ( form )
@@ -557,6 +675,42 @@
 			return ( false ) ;
 		else
 			return ( true ) ;
+	    }
+
+
+	// get_integer_attribute -
+	//	Returns the value of an integer attribute, or undefined if the attribute does not contain a valid value.
+	function  get_integer_attribute ( $this, attr, default_value )
+	   {
+		var	value		=  $this. attr ( attr ) ;
+
+		if  ( value  ===  ''  ||  value  ===  undefined )
+			return ( default_value ) ;
+
+		value	=  value. trim ( ). toLowerCase ( ) ;
+
+		if  ( is_numeric ( value ) )
+			return ( intval ( value ) ) ;
+		else
+			return ( default_value ) ;
+	    }
+
+
+	// get_numeric_attribute -
+	//	Returns the value of a numeric attribute, or undefined if the attribute does not contain a valid value.
+	function  get_numeric_attribute ( $this, attr, default_value )
+	   {
+		var	value		=  $this. attr ( attr ) ;
+
+		if  ( value  ===  ''  ||  value  ===  undefined )
+			return ( default_value ) ;
+
+		value	=  value. trim ( ). toLowerCase ( ) ;
+
+		if  ( is_numeric ( value ) )
+			return ( floatval ( value ) ) ;
+		else
+			return ( default_value ) ;
 	    }
 
 
@@ -736,7 +890,10 @@
 				   {
 					var	$this	=  $(this) ;
 
-					validate_value ( $this, $this. val ( ) ) ;
+					// Avoid unnecessary validation if the button definition contains a "cancel" attribute
+					// set to a non-false value
+					if  ( ! get_boolean_attribute ( $(e. relatedTarget), 'cancel', false ) )
+						validate_value ( $this, $this. val ( ) ) ;
 
 					return ( true ) ;
 				    }
@@ -797,6 +954,32 @@
 								    }
 							    ) ;
 						    }
+
+						break ;
+
+					// 'integer' format :
+					//	If the "size" attribute has not been specified, and there is a min or max value, automatically
+					//	adjust the field width.
+					case	'integer' :
+						if  ( $this [0]. style. width  ==  '' )
+						   {
+							var	size_attr	=  $this. attr ( 'size' ) ;
+
+							if  ( size_attr  ===  ''  ||  size_attr  ===  undefined )
+							   {
+								var	max_value	=  get_integer_attribute ( $this, constants. attributes. fieldMaxValue ) ;
+								var	max		=  Number. MAX_SAFE_INTEGER ;
+
+								if  ( max_value  !==  undefined )
+									max	=  max_value ;
+
+								max	=  Math. floor ( Math. log10 ( max ) ) + 1 ;
+								
+								$this. css ( 'width', ( max / 1.7 ) + 'em' ) ;
+							    }
+						    }
+
+						break ;
 				    }
 			    }
 		    ) ;
@@ -811,8 +994,11 @@
 	//	to the localized constant provided by "errconst".
 	function  set_error ( options, result, errconst )
 	   {
+		var	message		=  options. formOptions. messages [ $. locale ( ) ] [ errconst ] ;
+		var	argv		=  [ message ]. concat ( Array. prototype. slice. call ( arguments, 3 ) ) ;
+		 
 		result. status	=  false ;
-		result. message	=  options. formOptions. messages [ $. locale ( ) ] [ errconst ] ;
+		result. message	=  sprintf. apply ( null, argv ) ;
 	    }
 
 
