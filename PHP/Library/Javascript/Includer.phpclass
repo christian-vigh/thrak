@@ -510,7 +510,6 @@ abstract class  ClientSideIncluder  extends Object
 			    }
 			else
 			   {
-				echo ( $result ) ;
 				$this -> DoInclude ( $final_path, false ) ;
 			    }
 		    }
