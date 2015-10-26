@@ -506,12 +506,11 @@ abstract class  ClientSideIncluder  extends Object
 			   {
 				$result .=  $this -> DoInclude ( $final_path, true ) ;
 
-				output ( "************" . htmlentities ( $result ) . "****************\n" ) ;
 				return ( $result ) ;
 			    }
 			else
 			   {
-				output ( $result ) ;
+				echo ( $result ) ;
 				$this -> DoInclude ( $final_path, false ) ;
 			    }
 		    }
