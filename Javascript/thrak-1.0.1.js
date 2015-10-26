@@ -55,8 +55,9 @@
 	 *	thrak.system, thrak.debug, thrak.browser.
 	 *
 	 *==============================================================================================================*/
-	$. thrak	=  function  ( context )
+	$. thrak	=  function  ( )
 	    {
+		var	context		=  undefined ;
 		var	language	=  document. documentElement. lang ;
 
 		// Arguments can be :
@@ -93,7 +94,7 @@
 		    }
 
 		// Set the default locale
-		if  ( language )
+		if  ( language  &&  context  !==  undefined )
 			$. locale ( language ) ;
 
 		// Make all buttons cancel the default button action
@@ -210,5 +211,14 @@
 
 		// Checkboxes - allow associated labels to be clickable
 		$('.checkbox'		, context). checkbox ( ) ;
+
+		// Auto-select field contents for numeric values
+		$('.integer, .float'	, context). focus
+		   (
+			function  ( )
+			   {
+				$(this). select ( ) ;
+			    }
+		    ) ;
 	    }
     } ( jQuery ) ) ;
