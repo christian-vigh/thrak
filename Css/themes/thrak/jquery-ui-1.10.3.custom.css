@@ -1478,7 +1478,9 @@ input.hasDatepicker
    	width				:  16px ;
    	height				:  16px ;
    	display				:  inline-block ;
-   	margin-left			:  4px ;
+   	margin-left			:  2px ;
+   	margin-bottom			:  2px ;
+   	vertical-align			:  middle ;
     }
     
 .ui-datepicker-icon:hover
