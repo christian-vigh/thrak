@@ -36,11 +36,6 @@
    	max-width			:  480px;
     }
     
-.tooltip
-   {
-	/* font				:  13px "Palatino Linotype", "Book Antiqua", Palatino, serif; */
-    }
-    
     
 /**************************************************************************************************
 
@@ -217,6 +212,24 @@
    {
    	cursor				:  pointer ;
     }
+ 
+.tooltip
+   {
+	/* font				:  13px "Palatino Linotype", "Book Antiqua", Palatino, serif; */
+    }
+    
+.integer, .float
+   {
+   	text-align			:  right ;
+    }
+
+
+input 
+   {
+   	padding-left			:  3px ;
+   	padding-right			:  3px ;
+    }    
+    
     
 /**************************************************************************************************
 
