@@ -23,6 +23,20 @@
     [Version : 1.0.3]	[Date : 2015/10/25]     [Author : CV]
 	. The $theme parameter of the UseJQuery() method is now optional.
 
+    [Version : 1.1.0]	[Date : 2015/10/26]     [Author : CV]
+	. Added support for file inclusion in css and javascript files. Files can be included using the
+	  following constructs :
+
+	  . In javascript :
+		//# include ( "file" )
+	  . In both javascript and css :
+		/*# include ( "file" ) * /
+	    Note that there can be any number of "*" and spaces after the starting comment delimiter and the
+	    ending one. 
+	    
+	  As a general case, spaces are not signifificant in these constructs.
+	  Keywords are the same as in PHP : include, include_once, require, require_once.
+
  **************************************************************************************************************/
 namespace 	Thrak\Javascript ;
 
@@ -75,6 +89,16 @@ abstract class  ClientSideIncluder  extends Object
 
 	// Buffered include files
 	protected	$BufferedIncludes	=  [] ;
+
+	// Regex to match for a file inclusion construct
+	protected	$InclusionRegex		=  [] ;
+	private		$InclusionKeywords	=  
+	   [ 
+		'include'	=>  'IncludeFile',
+		'include_once'	=>  'IncludeFileOnce',
+		'require'	=>  'RequireFile',
+		'require_once'	=>  'RequireFileOnce'
+	    ] ;
 
 	
 	/*==============================================================================================================
@@ -241,6 +265,78 @@ abstract class  ClientSideIncluder  extends Object
 
 	/*==============================================================================================================
 	
+	    __process_dependencies -
+	        Scans the specified include file for additional file inclusions using one of the following constructs :
+
+		//# include		( "file" )
+		//# include_once	( "file" )
+		//# require		( "file" )
+		//# require_once	( "file" )
+	
+	  ==============================================================================================================*/
+	private function  __process_dependencies ( $file, $return ) 
+	   {
+		$matches	=  [] ;
+		$contents	=  file_get_contents ( $file ) ;
+		$result		=  '' ;
+
+		foreach  ( $this -> InclusionRegex  as  $regex )
+		   {
+			if  ( preg_match_all ( $regex, $contents, $file_matches ) )
+			   {
+				$matches []	=  $file_matches ;
+			    }
+		    }
+
+		if  ( count ( $matches ) )
+		   {
+			foreach  ( $matches  as  $match )
+			   {
+				$index	=  0 ;
+
+				foreach  ( $match [ 'keyword' ]  as  $keyword )
+				   {
+					$keyword	=  strtolower ( $keyword ) ;
+
+					if  ( isset ( $this -> InclusionKeywords [ $keyword ] ) )
+					   {
+						$method		 =  $this -> InclusionKeywords [ $keyword ] ;
+						$result		.=  $this -> $method ( $match [ 'file' ] [ $index ], $return ) ;
+					    }
+
+					$index ++ ; 
+				    }
+			    }
+		    }
+
+		if  ( $return )
+			return ( $result ) ;
+	    }
+
+
+	/*==============================================================================================================
+	
+	    SetInclusionRegex -
+		Defines the regular expressions that can be used for match file inclusion constructs.
+		Each regex in the supplied array must contain the #KEYWORDS# construct, which will be replaced with 
+		the authorized file inclusion keywords.
+
+	  ==============================================================================================================*/
+	protected function  SetInclusionRegex ( $array )
+	   {
+		foreach  ( $array  as  $item )
+		   {
+			$regex	=  str_replace ( '#KEYWORDS#', '(?P<keyword> ( ' .
+					implode ( ' | ', array_keys ( $this -> InclusionKeywords ) ) . ' ) )',
+					$item ) ;
+
+			$this -> InclusionRegex []	=  $regex ;
+		    }
+	     }
+
+
+	/*==============================================================================================================
+	
 	    NAME
 	        AddIncludePath - Adds a directory to the include path list.
 	
@@ -350,6 +446,7 @@ abstract class  ClientSideIncluder  extends Object
 	   {
 		$errfunc	=  ( $error ) ?  'error' : 'warning' ;
 		$status 	=  $this -> __get_client_side_path ( $file, $include, $query ) ;
+		$result		=  '' ;
 
 		if  ( ! $status )
 		   {
@@ -382,9 +479,12 @@ abstract class  ClientSideIncluder  extends Object
 			else
 			   {
 				output ( $error ) ;
-				return ;
+				return ( false ) ;
 			    }
 		    }
+
+		if  ( ! $this -> __is_remote ( $include ) )
+			$result		=  $this -> __process_dependencies ( $_SERVER [ 'DOCUMENT_ROOT' ] . $include, $return ) ;
 
 		// If group compression is active, buffer the filename until the Flush() method is called
 		if  ( $this -> CompressionType  ==  self::COMPRESSION_GROUP  &  ! $this -> __is_remote ( $include ) )
@@ -403,9 +503,17 @@ abstract class  ClientSideIncluder  extends Object
 			$final_path	=  $include . $query ;
 
 			if  ( $return )
-				return ( $this -> DoInclude ( $final_path, true ) ) ;
+			   {
+				$result .=  $this -> DoInclude ( $final_path, true ) ;
+
+				output ( "************" . htmlentities ( $result ) . "****************\n" ) ;
+				return ( $result ) ;
+			    }
 			else
+			   {
+				output ( $result ) ;
 				$this -> DoInclude ( $final_path, false ) ;
+			    }
 		    }
 	    }
 	    
@@ -548,6 +656,21 @@ class  CSSIncluder	extends ClientSideIncluder
 			$Configuration -> Get ( 'Environment/css-include-path' ),
 			$Configuration -> Get ( 'Javascript/compression/css' ) 
 		    ) ;
+
+		$this -> SetInclusionRegex
+		   ([
+			'/
+				\/ \*
+				[*\s]*
+				\# \s*
+				#KEYWORDS#
+				\s* \( \s*
+				["\'] (?P<file> [^"\']+) ["\']
+				\s* \)
+				[\s*]*
+				\* \/
+			 /imsx'
+		     ]) ;
 	    }
 	    
 
@@ -668,6 +791,30 @@ class  JSIncluder	extends ClientSideIncluder
 			$Configuration -> Get ( 'Environment/js-include-path' ),
 			$Configuration -> Get ( 'Javascript/compression/js' ) 
 		    ) ;
+
+		$this -> SetInclusionRegex
+		   ([
+			'/
+				\/ \*
+				[*\s]*
+				\# \s*
+				#KEYWORDS#
+				\s* \( \s*
+				["\'] (?P<file> [^"\']+) ["\']
+				\s* \)
+				[\s*]*
+				\* \/
+			 /imsx',
+			'/
+				\/ \/
+				\s*
+				\# \s*
+				#KEYWORDS#
+				\s* \( \s*
+				["\'] (?P<file> [^"\']+) ["\']
+				\s* \)
+			 /imsx'
+		     ]) ;
 	    }
 	    
 	    
