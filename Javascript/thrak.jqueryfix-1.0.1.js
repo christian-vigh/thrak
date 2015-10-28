@@ -41,13 +41,52 @@
 	       
 	// outerHtml -
 	//	Same as html(), but for outer html
-	$. prototype. outerHtml	=  function ( html )
+	$. fn. outerHtml	=  function ( html )
 	   { 
-		if  ( html  ===  undefined )
+		if  ( arguments. length  ===  0 )
 			return ( this [0]. outerHTML ) ; 
 		else
 			this. replaceWith ( html ) ;
 	    }
+
+	// attr -
+	//	Extends the original attr() function to return all attributes for a given jQuery object.
+	//	This function is defined as a traditional one (__attr), because nesting such constructs :
+	//		( function ( p ) { } ( $. fn. something ) )
+	//	within an anonymous functions has strange side effects (it makes for example the this.replaceWith() call
+	//	in the $.fn.outerHtml() function above non-existent).
+	//	Once again, thank you javascript for those endless hours spent into debugging architectural insanities and 
+	//	language quirks. Don't know how many developers justify their work upon that.
+	function  __attr ( old )
+	   {
+		$. fn. attr	=  function ( )
+		   {
+			if  ( arguments. length  ===  0 ) 
+			   {
+				if  ( this. length  ===  0 ) 
+					return ( null ) ;
+
+				var	obj	=  {} ;
+
+				$. each 
+				   ( 
+					this [0]. attributes, 
+					function ( ) 
+					   {
+						if  ( this. specified ) 
+							obj [ this. name ]	=  this. value ;
+					    }
+				    ) ;
+
+				return ( obj ) ;
+			    }
+
+			return ( old. apply ( this, arguments ) ) ;
+		    } 
+	     } ;
+
+	__attr ( $. fn. attr ) ;
+
 
 	// killEvent -
 	//	I was fed up to check if an event was not undefined, if it contained preventDefault() and stopxxx(),
