@@ -212,6 +212,9 @@
 		// Checkboxes - allow associated labels to be clickable
 		$('.checkbox'		, context). checkbox ( ) ;
 
+		// Calculator
+		$('.calculator'		, context). calculator ( ) ;
+
 		// Auto-select field contents for numeric values
 		$('.integer, .float'	, context). focus
 		   (

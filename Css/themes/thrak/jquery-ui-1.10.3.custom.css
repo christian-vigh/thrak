@@ -1488,3 +1488,115 @@ input.hasDatepicker
    	cursor				:  pointer ;
     }
     
+    
+/**************************************************************************************************
+
+	Calculator.
+
+ **************************************************************************************************/
+
+.ui-calculator-input
+   {
+    }
+    
+.ui-calculator-icon
+   {
+   	width				:  16px ;
+   	height				:  16px ;
+   	background-image		:  url(images/calc-icon.png) ;
+   	display				:  inline-block ;
+   	margin-left			:  2px ;
+   	margin-bottom			:  2px ;
+   	vertical-align			:  middle ;
+    }
+    
+.ui-calculator-icon:hover
+   {
+   	cursor				:  pointer ;
+    }
+    
+.ui-calculator-hidden
+   {
+   	display				:  none ;
+    }     
+
+.ui-calculator-visible
+   {
+   	display				:  block ;
+    }     
+
+.ui-calculator table
+   {
+   	width				:  100% ;
+    }
+    
+.ui-calculator.ui-calculator-layout-standard
+   {
+   	font-family			:  Consolas, "Courier New", Arial, Courrier ;
+   	font-size			:  16px ;
+   	font-weight			:  normal ;
+	background			:  #e9adbe; /* Old browsers */
+	background			:  -moz-linear-gradient(-45deg,  #D38B9F 0%, #DE9CAF 51%, #e9adbe 100%); /* FF3.6+ */
+	background			:  -webkit-gradient(linear, left top, right bottom, color-stop(0%,#D38B9F), color-stop(51%,#DE9CAF), color-stop(100%,#e9adbe)); /* Chrome,Safari4+ */
+	background			:  -webkit-linear-gradient(-45deg,  #D38B9F 0%,#DE9CAF 51%,#e9adbe 100%); /* Chrome10+,Safari5.1+ */
+	background			:  -o-linear-gradient(-45deg,  #D38B9F 0%,#DE9CAF 51%,#e9adbe 100%); /* Opera 11.10+ */
+	background			:  -ms-linear-gradient(-45deg,  #D38B9F 0%,#DE9CAF 51%,#e9adbe 100%); /* IE10+ */
+	background			:  linear-gradient(135deg,  #D38B9F 0%,#DE9CAF 51%,#e9adbe 100%); /* W3C */
+	filter				:  progid:DXImageTransform.Microsoft.gradient( startColorstr='#D38B9F', endColorstr='#e9adbe',GradientType=1 ); /* IE6-9 fallback on horizontal gradient */
+   	display				:  block ;
+   	border				:  1px solid #000000 ;
+	-webkit-box-shadow		:  2px 2px 6px #808080, 1px 1px 1px #ffffff; 
+	-moz-box-shadow			:  2px 2px 6px #808080,  1px 1px 1px #ffffff;  
+	box-shadow			:  2px 2px 6px #808080, 1px 1px 1px #ffffff;  
+	margin-top			:  1px ;
+	padding				:  4px 6px ;
+    }
+
+.ui-calculator.ui-calculator-layout-standard .lcd
+   {
+   	font-family			:  Consolas, "Courier New", Arial, Courrier ;
+   	font-size			:  18px ;
+   	font-weight			:  bold ;
+   	border				:  1px solid black ;
+   	background-color		:  #FFFFFF ;
+	border-radius			:  1px ;
+	text-align			:  right ;
+	padding				:  2px 6px ;
+	display				:  inline-block ;
+	width				:  100%;
+	box-sizing			:  border-box ;		/* Take border size and padding into account to compute real div dimensions, otherwise it will be larger than table cell */
+    }    
+
+.ui-calculator.ui-calculator-layout-standard .group
+   {
+   	padding				:  2px 3px ;
+    }
+        
+.ui-calculator.ui-calculator-layout-standard .ui-button
+   {
+   	font-size			:  13px ;
+	background			:  #F8F4B8 ;
+	text-align			:  center ;
+	vertical-align			:  middle ;
+	border-radius			:  2px ;
+	-webkit-box-shadow		:  1px 1px 1px #290811, 1px 1px 1px #ffffff; 
+	-moz-box-shadow			:  1px 1px 1px #290811,  1px 1px 1px #ffffff;  
+	box-shadow			:  1px 1px 1px #290811, 1px 1px 1px #ffffff;  
+	width				:  24px ;
+	height				:  24px ;
+	line-height			:  24px ;
+	margin				:  1px ;
+    }    
+
+.ui-calculator.ui-calculator-layout-standard .ui-button.ui-state-hover
+   {
+   	background			:  #FCFC7D ;
+    }
+    
+.ui-calculator.ui-calculator-layout-standard .ui-button span
+   {
+   	padding				:  2px 3px !important ;
+   	background			:  transparent ;
+	color				:  black !important ;
+    }    
+
