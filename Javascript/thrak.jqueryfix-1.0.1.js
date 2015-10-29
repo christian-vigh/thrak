@@ -53,7 +53,7 @@
 	//	Extends the original attr() function to return all attributes for a given jQuery object.
 	//	This function is defined as a traditional one (__attr), because nesting such constructs :
 	//		( function ( p ) { } ( $. fn. something ) )
-	//	within an anonymous functions has strange side effects (it makes for example the this.replaceWith() call
+	//	within an anonymous function has strange side effects (it makes for example the this.replaceWith() call
 	//	in the $.fn.outerHtml() function above non-existent).
 	//	Once again, thank you javascript for those endless hours spent into debugging architectural insanities and 
 	//	language quirks. Don't know how many developers justify their work upon that.
