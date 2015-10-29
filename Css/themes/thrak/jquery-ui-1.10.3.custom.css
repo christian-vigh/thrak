@@ -1373,6 +1373,12 @@ body .ui-tooltip {
    {
 	background-image		:  url(images/ui-icons_custom_256x240.png) ;
     }
+  
+input[type="checkbox"]:focus, input[type="radio"]:focus
+   {
+   	outline				:  none ;
+    }
+        
     
         
 

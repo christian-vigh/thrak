@@ -212,6 +212,9 @@
 		// Checkboxes - allow associated labels to be clickable
 		$('.checkbox'		, context). checkbox ( ) ;
 
+		// Same for radiobuttons
+		$('.radio'		, context). radio ( ) ;
+
 		// Calculator
 		$('.calculator'		, context). calculator ( ) ;
 

@@ -213,6 +213,32 @@
    	cursor				:  pointer ;
     }
  
+.radio-wrapper
+   {
+   	display				:  inline ;
+    }
+
+.radio-label
+   {
+   	padding-left			:  4px ;
+    }
+    
+.radio-input, 
+.radio-label
+   {
+   	display				:  inline-block ;
+   	vertical-align			:  middle ;
+    }
+
+.radio-wrapper:hover,    
+.radio-input:hover, 
+.radio-input input:hover, 
+.radio-label:hover, 
+.radio-label label:hover
+   {
+   	cursor				:  pointer ;
+    }
+ 
 .tooltip
    {
 	/* font				:  13px "Palatino Linotype", "Book Antiqua", Palatino, serif; */
@@ -229,7 +255,7 @@ input
    	padding-left			:  3px ;
    	padding-right			:  3px ;
     }    
-    
+
     
 /**************************************************************************************************
 
