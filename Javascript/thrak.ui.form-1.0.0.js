@@ -52,6 +52,8 @@
 			fieldFormat		:  "field-format",
 			fieldLabel		:  "label",
 			fieldId			:  "field-id",
+			fieldName		:  "field-name",
+			fieldDefaultValue	:  "field-default-value",
 			formId			:  "form-id",
 			fieldValidatedValue	:  "field-validated-value",
 			fieldDatepickerIcon	:  "field-datepicker-icon",
@@ -574,9 +576,20 @@
 	   {
 		var	min_value	=  get_numeric_attribute ( field, constants. attributes. fieldMinValue ),
 			max_value	=  get_numeric_attribute ( field, constants. attributes. fieldMaxValue ) ;
+		var	default_value	=  get_numeric_attribute ( field, constants. attributes. fieldDefaultValue, '' ) ;
 		var	typename	=  options. formOptions. messages [ $. locale ( ) ] [ ( is_integer ) ?  'integerValueType' : 'floatValueType' ] ;
-		var	value		=  floatval ( result. value ) ;
+		var	value ;
 
+
+		if  ( result. value  ==  '' )
+		   {
+			if  ( default_value  ==  '' )	// Optional values with no default are authorized
+				return ;
+
+			result. value	=  default_value ;
+		    }
+
+		value	=  floatval ( result. value ) ;
 
 		if  ( min_value  !==  undefined )
 		   {
@@ -613,34 +626,59 @@
 	function  collect_field_values ( form )
 	   {
 		var	values		=  { __uploads__ : [] } ;
+		var	radiobuttons	=  {} ;
 
-		$('.' + constants. classes. fieldValue). filter ( filter_field ). each
+		$('.' + constants. classes. fieldValue, form). filter ( filter_field ). each
 		   (
 			function ( index, obj )
 			   {
 				var	$this		=  $(obj);
-				var	id		=  $this. attr ( constants. attributes. fieldId ) ;
+				var	name		=  $this. attr ( constants. attributes. fieldName ) ;
 				var	type		=  $this. attr ( constants. attributes. fieldType ) ;
 				var	value ;
 
 				switch  ( type )
 				   {
+					// Checkboxes : will give either 0 (unchecked) or 1 (checked)
 					case	'checkbox' :
 						value	=  ( $this. is ( ':checked' ) ) ?  "1" : "0" ;
 						break ;
 
+					// Radio buttons : collect the names of the various radio buttons defined in the form
+					// We will post-process them outside of the $.each loop
+					case	'radio' :
+						if  ( name  !==  undefined  &&  radiobuttons [ name ]  ===  undefined )
+							radiobuttons [ name ]		=  name ;
+
+						return ;
+
+					// Files : put them into a separate member
 					case	'file' :
 						values. __uploads__. push ( $this ) ;
 						return ;
 
+					// Other cases : simply post the value as is
 					default :
 						value	=  $this. attr ( constants. attributes. fieldValidatedValue ) ;
 				    }
 
-				values [id]	=  value ;
+				values [ name ]		=  value ;
 			    }
 		    ) ;
 
+		// Now retrieve the value of each option checked in radiobutton groups defined in this form
+		// If no option is checked within a group, the group value will be an empty string
+		for  ( var  name  in  radiobuttons )
+		   {
+			var	$button		=  $('[name="' + name + '"][type="radio"]:checked', form) ;
+			var	value		=  ( $button. length  ==  0 ) ?  '' : $button. val ( ) ;
+
+			alert ( "radiobutton value = " + value ) ;
+			values [ name ]		=  value ;
+		    }
+
+
+		// All done, return
 		return ( values ) ;
 	    }
 
@@ -922,6 +960,17 @@
 				// Provide a default value for the "field-id" attribute, equal to its id
 				if  ( $this. attr ( constants. attributes. fieldId )  ===  undefined )
 					$this. attr ( constants. attributes. fieldId, $this. attr ( 'id' ) ) ;
+
+				// Same for field name
+				if  ( $this. attr ( constants. attributes. fieldName )  ===  undefined )
+				    {
+					var	name	=  $this. attr ( 'name' ) ;
+
+					if  ( name  ===  undefined )
+						$this. attr ( constants. attributes. fieldName, $this. attr ( 'id' ) ) ;
+					else
+						$this. attr ( constants. attributes. fieldName, name ) ;
+				     }
 
 				// Provide a default value for the "field-label" attribute
 				if  ( $this. attr ( constants. attributes. fieldLabel )  ===  undefined )
