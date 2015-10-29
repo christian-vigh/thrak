@@ -505,6 +505,7 @@ class  Math  extends  Object
 		$x	=  abs ( round ( $x, 0 ) ) ;
 		$y 	=  abs ( round ( $y, 0 ) ) ;
 		$z 	=  $x * $y ;
+		$result =  false ;
 
 		while  ( $x  >  1 )
 		   {
