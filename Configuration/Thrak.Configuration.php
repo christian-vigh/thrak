@@ -26,7 +26,9 @@ $Configuration =  array
 	   	'include-path'			=>  array
 	   	    (
 			"private://include",
-			"public://include"
+			"public://include",
+			"thrak://PHP/Contribs",
+			"thrak://PHP/Contribs/is_email"
 	   	     ),
 		// Javascript include paths. "thrak://" and "site://" references are allowed.
 		'js-include-path'	=>  array 
