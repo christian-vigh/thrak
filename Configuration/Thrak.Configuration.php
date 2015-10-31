@@ -269,9 +269,5 @@ $Configuration =  array
 	// The Site entry holds various definitions for the site
 	'Site'					=>  array
 	   (
-		// Default email address for anything
-		'webmaster-recipient'		=>  'some.address@some.domain',
-		// Address where all the alerts & errors will be mailed to
-		'errors-recipient'		=>  'some.address@some.domain'
 	    )
     ) ;

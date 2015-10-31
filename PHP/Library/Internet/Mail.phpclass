@@ -1,0 +1,974 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        Mail.phpclass
+
+    DESCRIPTION
+        A class for sending emails.
+
+    AUTHOR
+        Christian Vigh, 10/2015.
+
+    HISTORY
+    [Version : 2.0]    [Date : 2015/10/29]     [Author : CV]
+        Initial version, ported from the version 1 survivor of the Thrak library.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Internet ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ; 
+
+
+// Used namespaces & objects
+use 	Thrak\System\Object ;
+use	Thrak\IO\Path ;
+use	Thrak\Types\String ;
+use	Thrak\Types\String\Regex ;
+use	Thrak\Internet\MimeTypes ;
+
+
+class  MailException		extends  \Thrak\System\RuntimeException { } ;
+
+
+/*==============================================================================================================
+
+    MailObject -
+        Base class for the Mail and Mail attachments classes. Mainly defines properties that should remain
+	accessible only by the mail-related classes.
+
+  ==============================================================================================================*/
+class  MailObject	extends  Object 
+   {
+	// Max text line length in the ascii part of an email
+	static protected	$MaxTextLength			=  76 ;
+	// String introducing mime contents
+	static protected 	$MimeIntroduction		=  'This is a multi-part message in MIME format.' ;
+	// End of line string
+	static protected	$EOL				=  "\r\n" ;
+	// Mime types
+	static protected	$MimeTypes			=  false ;
+
+
+	public function  __construct ( )
+	   {
+		parent::__construct ( ) ;
+
+		// Load MIME types if it's first time
+		if  ( self::$MimeTypes  ===  false )
+			self::$MimeTypes	=  new MimeTypes ( ) ;
+	    }
+    }
+
+
+/*==============================================================================================================
+
+    Mail -
+        A class for sending emails.
+
+  ==============================================================================================================*/
+class	Mail		extends  MailObject
+   {
+	public  	$To				=  [],				// Recipient list
+			$CC				=  [],				// CC list
+			$BCC				=  [] ;				// BCC list
+	public  	$From				=  false,			// Originator
+			$ReplyTo			=  false,			// Reply to address
+			$ErrorsTo			=  false,			// Address where errors are to be redirected
+			$ReturnPath			=  false,			// Returns path
+			$ReturnReceiptTo		=  false ;			// Email address of the return receipt recipient
+	public  	$Subject			=  '(no subject)' ;		// Email subject
+	public  	$Text				=  '',				// Text and html versions
+			$Html				=  '',
+			$HtmlBasePath			=  false ;			// Html base path for links
+	public		$SourceCharset			=  'ISO8859-1',			// Source and destination character sets
+			$DestinationCharset		=  'ISO8859-1' ; 
+
+	protected  	$Attachments			=  [] ;				// Attachments (including inline ones)
+	protected	$MimeHeaders			=				// Additional MIME headers
+			   [
+				'MIME-Version'		=>  '1.0',
+				'X-Mailer'		=>  'PHP/Thrak',
+				'X-Priority'		=>  3
+			    ] ;
+
+	// This flag prevents inline images to be processed more than once, for example when the GetContents() or
+	// Send() methods are called more than once.
+	private		$InlineImageIndex		=  1 ;
+
+	
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        Constructor
+	 
+	    PROTOTYPE
+	        $mail	=  new Mail ( $from = false, $to = false, $subject = false, $text = false, $html = false, 
+					$html_base = false )
+	 
+	    DESCRIPTION
+	        Creates a Mail object.
+	 
+	    PARAMETERS
+	        $from (string) -
+	                Address of the email originator.
+
+		$to (mixed) -
+			String representing an email address, or array of email addresses.
+
+		$subject (string) -
+			Mail subject.
+
+		$text (string) -
+			Text (ascii) contents.
+
+		$html (string) -
+			Html contents.
+
+		$html_base (string)
+			Path to be used for relative links from the $html string (mainly images).
+	 
+	    NOTES
+	        If $text is specified but not $html, the mail will be sent as a pure SMTP mail. Otherwise, it will be
+		sent as a MIME-format mail, including a text part if $text is specified.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( $from = false, $to = false, $subject = false, $text = false, $html = false, $html_base = false )
+	   {
+		parent::__construct ( ) ;
+
+		// Initialize properties using what has been specified to the constructor
+		if  ( ! empty ( $from ) )
+			$this -> From	=  $from ;
+
+		if  ( ! empty ( $to ) )
+			$this -> AddRecipient ( $to ) ;
+
+		if  ( ! empty ( $subject ) )
+			$this -> Subject	=  $subject ;
+
+		if  ( ! empty ( $text ) )
+			$this -> Text		=  $text ;
+
+		if  ( ! empty ( $html ) )
+			$this -> Html	=  $html ;
+
+		if  ( ! empty ( $html_base ) )
+			$this -> HtmlBasePath	=  $html_base ;
+	    }
+
+
+	public function  __tostring ( )
+	   { return ( $this -> GetContents ) ; }
+
+
+	/**************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 ******                                      HELPER FUNCTIONS                                            ******
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************/
+
+	// add_attachment -
+	//	Adds an attachment to this email.
+	private function  add_attachment ( $path )
+	   { $this -> Attachments []  =  new MailFileAttachment ( $path ) ; }
+
+
+	// add_attachments -
+	//	Adds attachments to the specified array. The argument list can contain path strings and arrays of path strings.
+	private function  add_attachments ( $argv )
+	   {
+		foreach  ( $argv  as  $arg )
+		   {
+			if  ( is_array ( $arg ) )
+				$this -> add_attachments ( $arg ) ;
+			else
+				$this -> add_attachment ( $arg ) ;
+		    }
+	    }
+
+
+	// add_email -
+	//	Adds an email to the specified array, if it does not exist.
+	private function  add_email ( $property, $email )
+	   {
+		$array		=  &$this -> $property ;
+
+		foreach  ( $array  as  $item )
+		   {
+			if  ( ! strcasecmp ( $item, $email ) )
+				return ;
+		    }
+
+		$array []	=  $email ;
+	    }
+
+
+	// add_emails -
+	//	Adds emails to the specified array. The argument list can contain strings and arrays of strings.
+	private function  add_emails ( $property, $argv )
+	   {
+		foreach  ( $argv  as  $arg )
+		   {
+			if  ( is_array ( $arg ) )
+				$this -> add_emails ( $property, $arg ) ;
+			else
+				$this -> add_email ( $property, $arg ) ;
+		    }
+	    }
+
+
+	// add_mime_header -
+	//	Called by the AddMimeHeader() function.
+	private function  add_mime_header ( &$array, $name, $value, $replace = true )
+	   {
+		foreach  ( $array  as  $mime_name => $junk )
+		   {
+			if  ( ! strcasecmp ( $mime_name, $name ) )
+			   {
+				if  ( $replace )
+					$array [ $mime_name ]	=  $value ;
+
+				return ;
+			    }
+		    }
+
+		$array [ $name ]	=  $value ;
+
+	    }
+
+
+	// encode_charset -
+	//	Encodes from the source to the destination character set defined for this mail instance.
+	private function  encode_charset ( $data )
+	   {
+		if  ( strcasecmp ( $this -> SourceCharset, $this -> DestinationCharset ) )
+		   {
+			$data	=  icon ( $this -> SourceCharset, $this -> DestinationCharset, $data ) ;
+		    }
+
+		return ( $data ) ;
+	    }
+
+
+	/**************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 ******                                      PUBLIC FUNCTIONS                                            ******
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************/
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        AddRecipient, AddCC, AddBCC - Adds recipients to the email.
+	 
+	    PROTOTYPE
+	        $mail -> AddRecipient	( args... ) ;
+	        $mail -> AddCC		( args... ) ;
+	        $mail -> AddBCC		( args... ) ;
+	 
+	    DESCRIPTION
+	        Adds destinations to the email. AddRecipient() adds email recipients ; AddCC() add carbon-copy recipients,
+		and AddBCC() adds blind carbon-copy recipients.
+	 
+	    PARAMETERS
+	        $args (any) -
+	                An unlimited number of arguments, which can be :
+			- Strings containing an email address
+			- Arrays of strings containing a list of email addresses.
+	 	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  AddRecipient ( )
+	   { $this -> add_emails ( 'To', func_get_args ( ) ) ; }
+
+	public function  AddCC ( )
+	   { $this -> add_emails ( 'CC', func_get_args ( ) ) ; }
+
+	public function  AddBCC ( )
+	   { $this -> add_emails ( 'BCC', func_get_args ( ) ) ; }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        AddMimeHeader - Adds or replaces an existing MIME header.
+	 
+	    PROTOTYPE
+	        $email -> AddMimeHeader ( $name, $value, $replace = true ) ;
+	 
+	    DESCRIPTION
+	        Adds the specfied MIME header or replaces an existing one.
+	 
+	    PARAMETERS
+	        $name (string) -
+	                Mime header name.
+
+		$value (string) -
+			Mime header value.
+
+		$replace (boolean) -
+			The header, if it exists, will only be replaced if this parameter is true (otherwise nothing
+			happens).
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  AddMimeHeader ( $name, $value, $replace = true )
+	   {
+		$this -> add_mime_header ( $this -> MimeHeaders, $name, $value, $replace ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        AddAttachment, AddInlineAttachment - Adds email attachments.
+	 
+	    PROTOTYPE
+	        $email -> AddAttachment ( $path(s)... ) ;
+		$email -> AddInlineAttachment ( $path, $contents ) ;
+	 
+	    DESCRIPTION
+	        Adds attachments to the current email.
+	 
+	    PARAMETERS
+	        $path(s)... (mixed) -
+	                A list of path names and/or arrays of path names to be added as attachments.
+			The files must reside on the local file system.
+
+		$path (string) -
+			The name that will be used to identify the attached file in the sent email.
+   
+		$contents (string) -
+			Contents to be attached inline.
+
+	    NOTES
+		AddInlineAttachment() is a protected method, since its use is mainly related to embedded images in
+		HTML contents. It would be of no use to the (honest) caller to embed contents that are not accessible by
+		the user.
+	 	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  AddAttachment ( )
+	   { $this -> add_attachments ( func_get_args ( ) ) ; }
+
+	
+	protected function  AddInlineAttachment ( $path, $contents ) 
+	   {
+		foreach  ( $this -> Attachments  as  $attachment )
+		   {
+			if  ( $attachment -> Inline )
+			   {
+				if  ( ! strcmp ( $attachment -> Filename, $path ) )
+					return ( $attachment -> AttachmentId ) ;
+			    }
+		    }
+
+		$cid			 =  "ATTIMG" . $this -> InlineImageIndex ;
+		$this -> Attachments []  =  new MailInlineAttachment ( $path, $cid, $contents ) ; 
+		$this -> InlineImageIndex ++ ;
+
+		return ( $cid ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        GetContents - Retrieves current mail contents
+	 
+	    PROTOTYPE
+	        $str	=  $mail -> GetContents ( ) ;
+	 
+	    DESCRIPTION
+	        Retrieves the MIME part of the current mail contents.
+	 
+	    RETURN VALUE
+	        A string containing the data that will be passed to the PHP mail() function.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  GetContents ( )
+	   {
+		$result		=  $this -> GetMimeHeaders ( ) . self::$EOL . $this -> GetBody ( ) ;
+
+		return ( $result ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        Send - Sends this mail.
+	 
+	    PROTOTYPE
+	        $mail -> Send ( ) ;
+	 
+	    DESCRIPTION
+	        Sends the current mail using the PHP mail() function.
+	 
+	    RETURN VALUE
+	        Returns true if the mail was sent, false otherwise.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  Send ( )
+	   {
+		// Create the mail header and body
+		$headers	=  $this -> GetMimeHeaders ( ) ;
+		$body		=  $this -> GetBody ( ) ;
+
+		// Create the list of recipients (a list of comma-separated email addresses)
+		$to		=  implode ( ", ", $this -> To ) ;
+
+		// Send the mail
+		$status = mail ( $to, $this -> Subject, $body, $headers ) ;
+
+		// All done, return
+		return ( $status ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+
+	    NAME
+	  	Validate - Checks that all the mail fields are ok.
+		
+	    PROTOTYPE
+		$email -> Validate ( ) ;
+		
+	    DESCRIPTION
+		Verifies the supplied email data :
+		- At least one recipient must have been specified
+		- The email originator must have been specified
+		
+		It also provides default values for certain fields :
+		- If the Subject field is empty, it will be set to "(No subject)" 
+		- If the ReplyTo and ErrorsTo fields are empty, they will be set to the email
+		  originator.
+		- If the HTML content part is empty but not the text content part, HTML contents will
+		  be set to text contents (or vice-versa).
+		- If both content parts are empty, the string "*** EMPTY MESSAGE ***" will be inserted.
+		 				
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function Validate ( ) 
+	   {
+		global	$Configuration ;
+
+	   	//***********************************************************************  Checkings
+		// Check that at least one recipient has been specified
+		if  ( ! count ( $this -> To ) )
+			error ( new MailException ( "No email recipient has been specified." ) ) ;
+		 
+		// Check that the mail originator has been specified    
+		// If not, check for the sendmail_from entry of php.ini
+		if  ( ! count ( $this -> From ) )
+		    {
+			$from	=  php_ini_get ( 'sendmail_from' ) ;
+
+			if  ( $from ) 
+				$this -> From	=  $from ;
+			else
+				error ( new MailException ( "No email originator has been specified." ) ) ;
+		     }
+
+		// Check that the base path, if any, corresponds to an existing directory
+		if  ( $this -> HtmlBasePath  &&  ! is_dir ( $this -> HtmlBasePath ) )
+			error ( new MailException ( "Html base contents directory \"{$this -> HtmlBasePath}\" is not a valid directory." ) ) ;
+		    
+	   	//***********************************************************************  Adjustments
+		// If no originator, try the following :
+		// - Sites/emails/webmaster key of $Configuration
+		// - sendmail_from entry of php.ini
+		if  ( ! $this -> From )
+		   {
+			$from	=  $Configuration -> GetKey ( 'Site/emails/webmaster' ) ;
+
+			if  ( ! $from )
+			   {
+				$from	=  ini_get ( 'sendmail_from' ) ;
+
+				if  ( ! $from )
+					error ( new MailException ( "No originator mail specified and none defined in either the site configuration file " .
+							"(key Sites/emails/webmaster) or the sendmail_from entry of php.ini" ) ) ;
+			    }
+
+			$this -> From	=  $from ;
+		    }
+
+		// If no subject has been specified, provide a default one
+		if  ( ! $this -> Subject )
+			$this -> Subject = "(no subject)" ;
+		
+		// If no Reply-To address has been specified, provide a default one using the From field
+		if  ( ! $this -> ReplyTo )
+			$this -> ReplyTo = $this -> From ;
+			
+		// Same for Errors-To Mime field
+		if  ( ! $this -> ErrorsTo )
+			$this -> ErrorsTo = $this -> From ;
+	
+		// If no text or html message, provide a default one
+		if  ( ! $this -> Text  &&  ! $this -> Html )
+			$this -> Text = "***  EMPTY MESSAGE  ***" ;
+			
+		// If there is an Html part but no text part, create a text part by textifying the
+		// html part
+		if  ( ! $this -> Text  &&  $this -> Html )
+			$this -> Text = strip_tags ( CrimsonHtml::GetHtmlBodyFromString ( $this -> Html ) ) ;
+	    }
+
+
+	/**************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 ******                                     PROTECTED FUNCTIONS                                          ******
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************/
+
+	// GetMimeBoundary -
+	//	Generates a MIME boundary id.
+	protected function  GetMimeBoundary ( $id )
+	   {
+		$bid	=  '___THRAKMAIL_' . sprintf ( '%03d', $id ) . '___' ;
+
+		return ( $bid ) ;
+	    }
+
+
+	// GetMailId -
+	//	Returns a unique mail id.
+	protected function  GetMailId ( )
+	   {
+		$now	=  date ( 'r' ) ;
+		$id	=  md5 ( $now . " - Random ID = " . rand ( 0, PHP_INT_MAX ) ) ;
+
+		return ( $id ) ;
+	    }
+
+
+	// GetMimeAddressField -
+	//	Builds a MIME address header (From:, CC:, BCC:) from an address list.
+	protected function  GetMimeAddressList ( $addresses ) 
+	   {
+		$count	=  count ( $addresses ) ;
+
+		if  ( ! $count )
+			return ( false ) ;
+
+		$list		=  [] ;
+
+		foreach ( $addresses  as  $address )
+			$list []	=  '<' . $address . '>' ;
+  
+		$data	       =  implode ( ',' . self::$EOL . "\t", $list )  ;
+
+		return ( $data ) ;
+	    }
+
+
+	// GetMimeHeaders -
+	//	Retrieves the MIME headers (first part of smtp DATA).
+	protected function  GetMimeHeaders ( )
+	   {
+		$this -> Validate ( ) ;
+
+		$headers	=  $this -> MimeHeaders ;
+		
+		// Return path
+		$this -> add_mime_header ( $headers, 'Reply-To', '<' . $this -> ReplyTo . '>', true ) ;
+		
+		// "From" field. Note that the address could be preceded with a display name enclosed in quotes.
+		$this -> add_mime_header ( $headers, 'From', '<' . $this -> From . '>', true ) ;
+
+		// List of recipients
+		$this -> add_mime_header ( $headers, 'To', $this ->  GetMimeAddressList ( $this -> To ) ) ;
+		
+		// List of carbon copy users
+		if  ( count ( $this -> CC ) )
+			$this -> add_mime_header ( $headers, 'CC', $this ->  GetMimeAddressList ( $this -> CC ) ) ;
+		
+		// List of blind copy users
+		if  ( count ( $this -> BCC ) )
+			$this -> add_mime_header ( $headers, 'BCC', $this ->  GetMimeAddressList ( $this -> BCC ) ) ;
+		
+		// Subject field
+		$this -> add_mime_header ( $headers, 'Subject', $this -> Subject, true ) ;
+		
+		// Date field of the following form : "Mon, 03 Nov 2003 22:44:07 +0100"
+		$this -> add_mime_header ( $headers, 'Date', date ( 'r' ), true ) ;
+		
+		// Message ID field
+		$this -> add_mime_header ( $headers, 'Message-ID', $this -> GetMailID ( ), true ) ;
+
+		// Return path
+		if  ( $this -> ReturnPath )
+			$this -> add_mime_header ( $headers, 'Return-Path', $this -> ReturnPath, true ) ;
+
+		// Return receipt to
+		if  ( $this -> ReturnReceiptTo )
+			$this -> add_mime_header ( $headers, 'Return-Receipt-To', $this -> ReturnReceiptTo, true ) ;
+		
+		// Address where errors are to be redirected
+		if  ( $this -> ErrorsTo )
+			$this -> add_mime_header ( $headers, 'Errors-To', $this -> ErrorsTo, true ) ;
+
+		// The X-auth-smtp-user and X-abuse-contact fields are required for hotmail.
+		// Take them from the return path first, or return receipt if empty, or else take the originator email
+		if  ( $this -> ReturnPath )
+			$xmail = $this -> ReturnPath ;
+		else if  ( $this -> ReturnReceiptTo )
+			$xmail = $this -> ReturnReceiptTo ;
+		else
+			$xmail = $this -> From ;
+			
+		$this -> add_mime_header ( $headers, 'X-auth-smtp-user', $xmail, true ) ;
+		$this -> add_mime_header ( $headers, 'X-abuse-contact', $xmail, true ) ; 
+
+		// Build header string
+		$list		=  [] ;
+
+		foreach  ( $headers  as  $name => $value )
+			$list []	=  "$name: $value" ;
+
+		$result		=  implode ( self::$EOL, $list ) . self::$EOL ;
+
+		// Content description
+		$result .= "Content-Type: multipart/mixed;" . self::$EOL . "\t" .
+			   'boundary="' . $this -> GetMimeBoundary ( 1 ) . '"' . self::$EOL ;
+
+		// All done, return
+		return ( $result ) ;
+	     }
+
+
+	// GetBody -
+	//	Builds the body part of the MIME mail.
+	protected function  GetBody ( )
+	   {
+		$mime_boundary1		=  $this -> GetMimeBoundary ( 1 ) ;
+		$mime_boundary2		=  $this -> GetMimeBoundary ( 2 ) ;
+		$mime_boundary3		=  $this -> GetMimeBoundary ( 3 ) ;
+		$body			=  '' ;
+		$dash			=  '--' ;
+		$eol			=  self::$EOL ;
+		
+		// Mime comment
+		$body	.= self::$MimeIntroduction . self::$EOL . self::$EOL ;
+
+		/***
+		 	The general layout of a mail containing text and html versions, with attachments, is the following
+			for the Mail class :
+
+		  	--BOUNDARY1
+				Introduces the next sections, starting with --BOUNDARY2.
+				--BOUNDARY2
+					Introduces the text and html versions, starting with --BOUNDARY3. Of course,
+					additional content types could be added here.
+					--BOUNDARY3 
+						Text version
+					--BOUNDARY3
+						Html version
+					--BOUNDARY3--
+				--BOUNDARY2
+					attachment 1
+				--BOUNDARY2
+					attachment 2
+				...
+				--BOUNDARY2 
+					attachment n
+				--BOUNDARY2--
+			--BOUNDARY1--
+
+			Note that "--BOUNDARYx" start a new multipart entry, which is stopped when encountering the string
+			"--BOUNDARYx--" (ie, with two trailing dashes) followed by two crlf.
+
+			Attachments are encoded in base64.
+		 ***/
+
+		// Boundary 1 : really start the mail multiparts
+		$body		.=  "$dash$mime_boundary1$eol" ;
+
+		// Boundary 1 : Set the content type to multipart/related and specify the boundary string for its inner parts
+		$body		.=  "Content-Type: multipart/related;$eol\tboundary=\"$mime_boundary2\"$eol$eol$eol" ; 
+
+
+			// Boundary 2 : Introduces the multipart sections for text and html contents, and specify the boundary
+			//		delimiter for those parts.
+			$body		.=  "$dash$mime_boundary2$eol" ;
+			$body		.=  "Content-Type: multipart/alternative;$eol\tboundary=\"$mime_boundary3\"$eol$eol$eol" ;
+
+				// Boundary 3 (1/2) : Text message part
+				if  ( $this -> Text )
+				   {
+					$body	.=  "$dash$mime_boundary3$eol" ;
+					$body   .=  "Content-Type: text/plain;$eol\t" .
+						    "charset=\"{$this -> DestinationCharset}\"$eol" .
+						    "Content-Transfer-Encoding: quoted-printable$eol$eol" ;
+
+					$body	.=  quoted_printable_encode ( $this -> encode_charset ( $this -> Text ) ) . "$eol$eol$eol" ;
+				    }
+
+				// Boundary 3 (2/2) : Html message part
+				if  ( $this -> Html )
+				   {
+					$contents	=  $this -> PreprocessHtml ( $this -> encode_charset ( $this -> Html ) ) ;
+					
+					$body	.=  "$dash$mime_boundary3$eol" ;
+					$body   .=  "Content-Type: text/html;$eol\t" .
+						    "charset=\"{$this -> DestinationCharset}\"$eol" .
+						    "Content-Transfer-Encoding: 7bit$eol$eol" ;
+					$body	.=  "$contents$eol$eol$eol" ;
+				    }
+				    
+				// Boundary 3 end
+				$body	.=  "$dash$mime_boundary3$dash$eol$eol" ;
+			
+			// Boundary 2 : Attachments
+			foreach ( $this -> Attachments  as  $attachment )
+			   {
+				$contents	 =  $attachment -> GetMimeContents ( ) ; 
+				$body		.=  "$dash$mime_boundary2$eol$contents$eol$eol" ;
+			    }
+
+			// Boundary 2 end
+			$body	.=  "$dash$mime_boundary2$dash$eol$eol" ;
+
+		// Boundary 1 end
+		$body	.=  "$dash$mime_boundary1$dash$eol$eol" ;
+
+		// All done, return
+		return ( $body ) ;
+	    }
+
+
+	// PreprocessHtml -
+	//	Preprocesses links to images and files in html contents.
+	protected function  PreprocessHtml ( $contents )
+	   {
+		global		$SITE_ROOT ;
+		
+
+		$result   = $contents;//'' ;
+		
+		// If a base path has been specified, use it, otherwise use site's root instead
+		if  ( $this -> HtmlBasePath )
+			$basedir	=  $this -> HtmlBasePath ;
+		else
+			$basedir	=  $SITE_ROOT ;
+		
+		// Regex for matching the following :
+		//	. The src= attribute of an <img> tag, 
+		//	. The background-image:url() style
+		$re	=  '/
+				(
+					<img .+?
+					src=["\'] (?P<image> [^"\']+? ) ["\']
+				 ) |
+				(
+					background-image \s* : \s*
+					url \s* \(
+						(?P<image> [^)]+?)
+					\)
+				 ) |
+				(
+					background \s* : \s*
+					url \s* \(
+						(?P<image> [^)]+?)
+					\)
+				 )
+			    /imsx' ;
+		
+		// Match all occurrences of html tags that could contain links to images
+		if ( Regex::PregMatchAllEx ( $re, $contents, $matches, PREG_OFFSET_CAPTURE ) )
+		   {
+			$replacements	=  [] ;
+
+			// Process matches
+			foreach  ( $matches [ 'image' ]  as  $image )
+			   {
+				// Well, sometimes matches could yield either an empty string or a two-values array
+				// where the second one (the offset) is -1
+				if  ( is_array ( $image )  &&  $image [1]  !=  -1 )
+				   {
+					$file		=  $image [0] ;
+					$offset		=  $image [1] ;
+
+					// Ignore links that specify an absolute path or an url scheme
+					if  ( $file [0]  ==  '/'  ||  preg_match ( '#^[!:]://#', $file ) )
+						continue ;
+
+					// Final path should be the image filename with the HtmlBaseDir directory
+					$path		=  "$basedir/$file" ;
+					
+					// Warn if the file does not exist (but send the mail anyway)
+					if  ( ! file_exists ( $path ) )
+					   {
+						warning ( new MailException ( "Image \"$file\" not found." ) ) ;
+						continue ;
+					    }
+
+					// Build the inline attachment id
+					$cid			=  $this -> AddInlineAttachment ( $file, file_get_contents ( $path ) ) ;
+
+					// Add this entry to the list of strings to be subsituted
+					$replacements []	=  [ $file, "cid:$cid", $offset ] ;
+				    }
+			    }
+			
+			// Perform substitutions : replace image filenames with a cid
+			$result		=  Regex::MultiSubstrReplace ( $contents, $replacements ) ;
+		    }
+		else
+			$result		=  $contents ;
+
+		// All done, return
+		return ( $result ) ;
+	    }
+    }
+
+
+/*==============================================================================================================
+
+    MailAttachment class -
+        Abstract base class for external file attachments and internal attachments.
+	Only for internal use.
+
+  ==============================================================================================================*/
+abstract class  MailAttachment		extends  MailObject 
+   {
+	// Full path of the attachment
+	public		$Filename ;
+	// Attachment name, as will be displayed in the recipient's mail
+	public		$AttachmentName ;
+	// Unique attachment id
+	public		$AttachmentId ;
+	// To be set by derived classes : specifies whether the attachment should be inlined or not
+	public		$Inline			=  false ;
+
+
+	// Constructor -
+	//	Builds an attachment object.
+	public function  __construct ( $path, $name = false ) 
+	   {
+		parent::__construct ( ) ;
+
+		$this -> Filename		=  $path ;
+		$this -> AttachmentName		=  ( $name ) ?  $name : basename ( $path ) ;
+	    }
+
+
+	// GetContents -
+	//	Retrieves attachment contents. To be implemented by derived classes.
+	abstract public function  GetContents ( ) ;
+
+	
+	// IsInline -
+	//	Checks if this attachment is an inline attachment.
+	public function  IsInline ( )
+	   { return ( $this -> Inline ) ; }
+
+
+	// GetMimeContents -
+	//	Retrieves the attachment as a base64-encoded text to be included after a MIME boundary.
+	public function  GetMimeContents ( )
+	   {
+		$contents	=  base64_encode ( $this -> GetContents (  ) ) ;
+		$extension	=  Path::Extension ( $this -> Filename ) ;
+		$mimetype	=  self::$MimeTypes -> GetByExtension ( $extension ) ;
+		$filename	=  basename ( $this -> AttachmentName ) ;
+		$nl		=  self::$EOL ;
+
+		if  ( ! $mimetype )
+			$mimetype	=  'application/octet-stream' ;
+		else
+			$mimetype	=  $mimetype [0] -> Application ;
+
+		if  ( $this -> Inline )
+			$extra	=  '' ;
+		else
+			$extra	=  ";$nl\tname=\"$filename\"" ;
+
+		$part	=  "Content-Type: $mimetype$extra$nl" .
+			   'Content-Transfer-Encoding: base64' . $nl .
+			   'Content-ID: <' . $this -> AttachmentId . '>' . $nl . $nl .
+			   chunk_split ( $contents, self::$MaxTextLength, $nl ) ;
+
+		return ( $part ) ;
+	    }
+
+
+	// __tostring -
+	//	Returns attachment contents.
+	public function  __tostring ( )
+	   { return ( $this -> GetContents ( ) ) ; }
+    }
+
+
+/*==============================================================================================================
+
+    MailFileAttachment -
+        Implements a mail attachment given by an external file.
+
+  ==============================================================================================================*/
+class  MailFileAttachment		extends  MailAttachment 
+   {
+	private		$Contents	=  false ;
+
+	public function  __construct ( $path )
+	   {
+		if  ( ! file_exists ( $path ) )
+			error ( new \Thrak\System\FileNotFoundException ( "File \"$path\" does not exist." ) ) ;
+
+		parent::__construct ( $path ) ;
+
+		$this -> AttachmentId		=  md5 ( date ( 'r' ) + ' - ' . rand ( 0, PHP_INT_MAX ) ) ;
+	    }
+
+
+	public function  GetContents ( )
+	   {
+		if  ( $this -> Contents  ===  false )
+			$this -> Contents	=  file_get_contents ( $this -> Filename ) ;
+
+		return ( $this -> Contents ) ; 
+	    }
+    }
+
+
+/*==============================================================================================================
+
+    MailInlineAttachment -
+        Implements an inline mail attachment whose contents are given by a string.
+
+  ==============================================================================================================*/
+class  MailInlineAttachment		extends  MailAttachment 
+   {
+	protected	$Contents ;
+
+
+	public function  __construct ( $path, $cid, $contents )
+	   {
+		$this -> Contents	=  $contents ;
+		$this -> Inline		=  true ;
+		$this -> AttachmentId	=  $cid ;
+
+		parent::__construct ( $path, $path ) ;
+	    }
+
+
+	public function  GetContents ( )
+	   { return ( $this -> Contents ) ; }
+    }
