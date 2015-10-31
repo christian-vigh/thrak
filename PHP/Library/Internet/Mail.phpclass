@@ -364,6 +364,7 @@ class	Mail		extends  MailObject
 	
 	protected function  AddInlineAttachment ( $path, $contents ) 
 	   {
+		// Don't add an inline attachment twice - just reuse a reference to the existing one, if any
 		foreach  ( $this -> Attachments  as  $attachment )
 		   {
 			if  ( $attachment -> Inline )
