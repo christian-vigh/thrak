@@ -46,7 +46,7 @@
 	Object. defineProperty
 	   (
 		Object. prototype,
-		'getClass',
+		'class',
 		{
 			enumerable	:  false,
 			get		:  function ( )
@@ -208,6 +208,32 @@
 		return ( result / this. length ) ;
 	    }
 
+	// The traditional min/max functions
+	Array. prototype. min		=  function ( )
+	   { return ( Math. min. apply ( null, this ) ) ; }
+
+	Array. prototype. max		=  function ( )
+	   { return ( Math. max. apply ( null, this ) ) ; }
+
+
+	// Some string extensions
+	Array. prototype. toLowerCase	=  function ( )
+	   {
+		for  ( var  i = 0 ; i  <  this. length ; i ++ )
+			this [i]	=  this [i]. toLowerCase ( ) ;
+
+		return ( this ) ;
+	    }
+
+	Array. prototype. toUpperCase	=  function ( )
+	   {
+		for  ( var  i = 0 ; i  <  this. length ; i ++ )
+			this [i]	=  this [i]. toUpperCase ( ) ;
+
+		return ( this ) ;
+	    }
+
+
 
 	/*-------------------------------------------------------------------------------------------------------------
 	 *
@@ -263,10 +289,38 @@
 		if  ( p  >  n )
 			return ( 0 ) ;
 
-		i = n - p + 1 ;
+		var	i	=  n - p + 1 ;
 
 		while  ( i  <  n + 1 )
 			result *= i ++ ;
+
+		return ( result ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------------------------
+	 *
+	 *	String extensions.
+	 *
+	 *-------------------------------------------------------------------------------------------------------------*/
+
+	// extract -
+	//	Similar to substring(), but the selection is inclusive, ie the character at index 'high' will be included in the result.
+	//	Who designed this object, with the brainfucking substr() and substring() functions ?
+	String. prototype. extract	=  function ( low, high )
+	   {
+		return ( String. prototype. substring. call ( this, low, high + 1 ) ) ;
+	    }
+
+
+	// repeat -
+	//	Repeats a string 'count' times.
+	String. prototype. repeat	=  function ( count )
+	   {
+		var	result		=  '' ;
+
+		for  ( var  i = 0 ; i  <  count ; i ++ )
+			result		+=  this ;
 
 		return ( result ) ;
 	    }
