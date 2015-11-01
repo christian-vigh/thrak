@@ -67,7 +67,7 @@
 
     NOTES
 	If you want to debug this module, you will have to put a breakpoint somewhere in the calling script.
-	Trying to print values after a page is loaded will print the values for the very last <script> 
+	Trying to print values after a page is loaded will print the values of the very last <script> 
 	node that was encountered in the page, which is certainly not the script you wanted to inspect.
 
 	Also, script parameters MUST NOT be retrieved from a function located in your script file because,
