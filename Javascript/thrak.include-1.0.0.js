@@ -95,6 +95,19 @@
 					default is false.
 				- selector (string or jQuery object) :
 					Item which will receive the inclusion directive.
+		. callback (function) -
+			A function called after the last file has been downloaded. It has the following 
+			signature :
+
+				function  callback ( included_files, ignored_files, error_files )
+
+			The three parameters are arrays that contain respectively :
+			- the files included successfully 
+			- the files ignored (because they were specified more than once in the document,
+			  and the "once" parameter was set to true)
+			- the files not found
+		. once (boolean) -
+			Indicates if files should be included only once.
 
 	$.include can also be called as a function :
 	
@@ -188,8 +201,16 @@
 	//	Prepends the directory part of the current script if the specified path does not start with a slash.
 	function  get_path ( path )
 	   {
+		if  ( /^[^:]+\/\//. test ( path ) )
+			throw ( "Only local urls are allowed." ) ;
+
 		if  ( path. charAt ( 0 )  !=  '/' )
-			path	=  $script. dirname + '/' + path ;
+		   {
+			if  ( $script. dirname  ==  '/' )
+				path	=  '/' + path ;
+			else
+				path	=  $script. dirname + '/' + path ;
+		    }
 
 		return ( path ) ;
 	    }
