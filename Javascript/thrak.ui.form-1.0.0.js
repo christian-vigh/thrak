@@ -397,9 +397,9 @@
 				if (  form_options. method  ===  "post"  ||  form_options. method  ===  "get" )
 					send_regular_form ( $this, form_options ) ;
 				// Form will be submitted using ajax
-				else if (  form_options. method  ==  "ajax-post"  ||  form_options. method  ==  "ajax-get" )
+				else if (  form_options. method  ==  "ajax/post"  ||  form_options. method  ==  "ajax/get" )
 				   {
-					form_options. ajax. method	=  ( form_options. method  ==  "ajax-get" ) ?  "get" : "post" ;
+					form_options. ajax. method	=  ( form_options. method  ==  "ajax/get" ) ?  "get" : "post" ;
 					form_options. ajax. data	=  form_options. data ;
 
 					send_ajax_form ( $this, form_options ) ;
@@ -1157,7 +1157,23 @@
 			url		:  form_options. url,
 			cache		:  false,
 			contentType	:  false,
-			processData	:  false
+			processData	:  false,
+			uploadProgress	:  function ( e )
+			   {
+				console. log ( e ) ;
+			    },
+			xhr		:  function ( )
+			   {
+				var	jquery_xhr	=  $. ajaxSettings. xhr ( ) ;
+				var	$this		=  this ;
+
+				if  ( jquery_xhr. upload )
+				    {
+					$this. uploadProgress  &&  jquery_xhr. upload. addEventListener ( 'progress', $this. uploadProgress ) ;
+				     }
+
+				return ( jquery_xhr ) ;
+			    }
 		    } ;
 		var	ajax_data	=  $. extend ( request_data, form_options. ajax, { data : form_data } ) ;
 
