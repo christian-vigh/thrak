@@ -11,8 +11,12 @@
         Christian Vigh, 10/2015.
 
     HISTORY
-    [Version : 2.0]    [Date : 2015/10/29]     [Author : CV]
+    [Version : 2.0]	[Date : 2015/10/29]     [Author : CV]
         Initial version, ported from the version 1 survivor of the Thrak library.
+
+    [Version : 2.0.1]	[Date : 2015/11/02]     [Author : CV]
+	. Changed the MailAttachment::GetMimeContents() methods because the attachment icon was missing in
+	  messenging clients. This was due to a missing 'Content-disposition: attachment' header.
 
  **************************************************************************************************************/
 namespace 	Thrak\Internet ;
@@ -180,20 +184,6 @@ class	Mail		extends  MailObject
 	   { $this -> Attachments []  =  new MailFileAttachment ( $path ) ; }
 
 
-	// add_attachments -
-	//	Adds attachments to the specified array. The argument list can contain path strings and arrays of path strings.
-	private function  add_attachments ( $argv )
-	   {
-		foreach  ( $argv  as  $arg )
-		   {
-			if  ( is_array ( $arg ) )
-				$this -> add_attachments ( $arg ) ;
-			else
-				$this -> add_attachment ( $arg ) ;
-		    }
-	    }
-
-
 	// add_email -
 	//	Adds an email to the specified array, if it does not exist.
 	private function  add_email ( $property, $email )
@@ -358,8 +348,10 @@ class	Mail		extends  MailObject
 		the user.
 	 	 
 	 *-------------------------------------------------------------------------------------------------------------*/
-	public function  AddAttachment ( )
-	   { $this -> add_attachments ( func_get_args ( ) ) ; }
+	public function  AddAttachment ( $path, $name = false )
+	   {
+		$this -> Attachments []  =  new MailFileAttachment ( $path, $name ) ;
+	    }
 
 	
 	protected function  AddInlineAttachment ( $path, $contents ) 
@@ -703,7 +695,7 @@ class	Mail		extends  MailObject
 		$body		.=  "$dash$mime_boundary1$eol" ;
 
 		// Boundary 1 : Set the content type to multipart/related and specify the boundary string for its inner parts
-		$body		.=  "Content-Type: multipart/related;$eol\tboundary=\"$mime_boundary2\"$eol$eol$eol" ; 
+		$body		.=  "Content-Type: multipart/mixed;$eol\tboundary=\"$mime_boundary2\"$eol$eol$eol" ; 
 
 
 			// Boundary 2 : Introduces the multipart sections for text and html contents, and specify the boundary
@@ -867,7 +859,7 @@ abstract class  MailAttachment		extends  MailObject
 		parent::__construct ( ) ;
 
 		$this -> Filename		=  $path ;
-		$this -> AttachmentName		=  ( $name ) ?  $name : basename ( $path ) ;
+		$this -> AttachmentName		=  ( $name ) ?  basename ( $name ) : basename ( $path ) ;
 	    }
 
 
@@ -904,6 +896,7 @@ abstract class  MailAttachment		extends  MailObject
 
 		$part	=  "Content-Type: $mimetype$extra$nl" .
 			   'Content-Transfer-Encoding: base64' . $nl .
+			   'Content-disposition: attachment ; filename="' . $filename . '"' . $nl .
 			   'Content-ID: <' . $this -> AttachmentId . '>' . $nl . $nl .
 			   chunk_split ( $contents, self::$MaxTextLength, $nl ) ;
 
@@ -928,12 +921,12 @@ class  MailFileAttachment		extends  MailAttachment
    {
 	private		$Contents	=  false ;
 
-	public function  __construct ( $path )
+	public function  __construct ( $path, $name = false )
 	   {
 		if  ( ! file_exists ( $path ) )
 			error ( new \Thrak\System\FileNotFoundException ( "File \"$path\" does not exist." ) ) ;
 
-		parent::__construct ( $path ) ;
+		parent::__construct ( $path, $name ) ;
 
 		$this -> AttachmentId		=  md5 ( date ( 'r' ) + ' - ' . rand ( 0, PHP_INT_MAX ) ) ;
 	    }
@@ -966,7 +959,7 @@ class  MailInlineAttachment		extends  MailAttachment
 		$this -> Inline		=  true ;
 		$this -> AttachmentId	=  $cid ;
 
-		parent::__construct ( $path, $path ) ;
+		parent::__construct ( $path, basename ( $path ) ) ;
 	    }
 
 
