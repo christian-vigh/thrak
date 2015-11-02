@@ -934,6 +934,9 @@ class  MailFileAttachment		extends  MailAttachment
 
 	public function  GetContents ( )
 	   {
+		if  ( ! file_exists ( $this -> Filename ) )
+			error ( new MailException ( "File attachment \"{$this -> Filename}\" has been deleted since it was added to this mail." ) ) ;
+
 		if  ( $this -> Contents  ===  false )
 			$this -> Contents	=  file_get_contents ( $this -> Filename ) ;
 
