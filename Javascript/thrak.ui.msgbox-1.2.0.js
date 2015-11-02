@@ -193,16 +193,26 @@
 		width		:  "auto",
 		closeOnEscape	:  true,
 		height		:  "auto",
-		maxWidth	:  "800px",
+		maxWidth	:  800,
 		resizable	:  false,
 		stack		:  true,
 		open		:  function ( )
 		   {
 			var	$this		=  $(this) ;
 			var	defbutton	=  $this. dialog ( 'option', 'defaultButton' ) ;
+			var	width		=  $this. width ( ) ;
+			var	maxwidth	=  $this. dialog ( 'option', 'maxWidth' ) ;
 
 			if  ( defbutton  !=  undefined )
 				$('.ui-dialog-buttonpane button:eq(' + defbutton + ')', $this. parent ()). focus ( ) ;
+
+			if  ( width  >  maxwidth )
+			   {
+				$this
+					.css ( 'max-width', maxwidth + 'px' )
+					.css ( 'overflow' , 'hidden' )
+					.dialog ( 'option', 'position', $this. dialog ( 'option', 'position' ) ) ;
+			    }
 		    }
 	     } ;
 
@@ -567,7 +577,7 @@
 				   [
 					{
 						html	:  labels. buttonLabels [ 'ok' ],
-						click	:  function ( e ) { console.log(e);__close_me ( $this, user_callback, true ) ; }
+						click	:  function ( e ) { __close_me ( $this, user_callback, true ) ; }
 					 }
 				    ] ;
 		    }
