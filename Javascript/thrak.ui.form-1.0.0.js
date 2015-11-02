@@ -265,9 +265,8 @@
 
 		// Append the dialog template
 		var	$body		=  $('body') ;
-		var	selector	=  '#' + id ;
-		var	$form		=  $(selector) ;
-		var	$element	=  wrapform ( id, dialog_options. formOptions ) + template + '</form>' ;
+		var	$form		=  getform ( id ) ;
+		var	$element	=  wrapform ( id, dialog_options. formOptions, template ) ;
 
 		if  ( $form. length  ==  0 )
 			$body. append ( $element ) ;
@@ -275,7 +274,7 @@
 			$form. replaceWith ( $element ) ;
 
 		// Add dialog id to the newly inserted template
-		$form		=  $(selector) ;
+		$form		=  getform ( id ) ;
 		$form. attr ( constants. attributes. formId, id ) ;		// Save dialog id since it's replaced by JQuery
 
 		this_form	=  $form ;
@@ -673,7 +672,6 @@
 			var	$button		=  $('[name="' + name + '"][type="radio"]:checked', form) ;
 			var	value		=  ( $button. length  ==  0 ) ?  '' : $button. val ( ) ;
 
-			alert ( "radiobutton value = " + value ) ;
 			values [ name ]		=  value ;
 		    }
 
@@ -1086,7 +1084,7 @@
 
 	// wrapform -
 	//	Wraps a <form> construct around a form template.
-	function  wrapform ( form_id, form_options )
+	function  wrapform ( form_id, form_options, template )
 	   {
 		var	has_files	=  $('[type="file"]'). length  >  0 ;
 		var	encoding	=  ( has_files ) ?  '' : 'enctype="multipart/form-data"' ;
@@ -1099,11 +1097,18 @@
 				form_html	+=  name + '"' + form_options. attributes [ name ] + '"' ;
 		    }
 
-		form_html	+=  ">" ;
+		form_html	+=  ">" + template + '</form>' ;
 
 		return ( form_html ) ;
 	    }
 
+
+	// getform -
+	//	Retrieves a jQuery object to the specified form.
+	function  getform ( id )
+	   {
+		return ( $( '#' + id ) ) ;
+	    }
 
 
 	/*-------------------------------------------------------------------------------------------------------------
