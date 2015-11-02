@@ -221,9 +221,17 @@
 					   {
 						var	$this	=  $(item) ;
 						var	id	=  $this. attr ( 'id' ) ;
+						var	name	=  $this. attr ( 'name' ) ;
+						var	newid	=  id + "_" + $widget. options. data. currentId ;
 
-						$this. attr ( 'id', id + "_" + $widget. options. data. currentId ) ;
+						$this. attr ( 'id', newid ) ;
 						$this. attr ( 'data-index', $widget. options. data. currentId ) ;
+
+						// "name" attribute is changed in two cases :
+						// - It is undefined
+						// - It has the same value as the "id" attribute
+						if  ( name  ===  undefined  ||  name  ==  id )
+							$this. attr ( 'name', newid ) ;
 					    }
 				    ) ;
 			    },
