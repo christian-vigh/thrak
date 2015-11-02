@@ -211,6 +211,12 @@ class  WebSite			extends	Object
 			$Locale -> Value	=  $Session [ self::SITE_VAR_LANGUAGE ] ;
 		    }
 		
+		// Save superglobals that will be wrapped
+		$GLOBALS [ '_RAW_GET' ]		=  $_GET ;
+		$GLOBALS [ '_RAW_POST' ]	=  $_POST ;
+		$GLOBALS [ '_RAW_FILES' ]	=  $_FILES ;
+		$GLOBALS [ '_RAW_COOKIE' ]	=  $_COOKIE ;
+
 		// Wrap superglobals
 		$_GET		=  Sanitizer::Wrap ( $_GET ) ;
 		$_POST		=  Sanitizer::Wrap ( $_POST ) ;
