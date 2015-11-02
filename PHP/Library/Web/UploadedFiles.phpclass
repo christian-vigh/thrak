@@ -106,11 +106,9 @@ class  UploadedFiles		extends		Object
 				// Otherwise reorganize sub-entries so that they represent an array with the usual file entries (name, type, ...)
 				else
 				   {
-					$output_array [ $index ]	=  [] ;
-					
 					$this -> __process_subarray 
 					   ( 
-						$output_array [ $index ],
+						$output_array,
 						[
 							'name'		=>  $input_array [ 'name'     ] [ $index ],
 							'type'		=>  $input_array [ 'type'     ] [ $index ],
