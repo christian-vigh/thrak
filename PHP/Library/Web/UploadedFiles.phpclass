@@ -11,8 +11,12 @@
         Christian Vigh, 06/2015.
 
     HISTORY
-    [Version : 1.0]    [Date : 2015/06/04]     [Author : CV]
+    [Version : 1.0]	[Date : 2015/06/04]     [Author : CV]
         Initial version.
+
+    [Version : 1.0.1]	[Date : 2015/11/02]     [Author : CV]
+	. Changed the Unlink() method to only remove the temp file if it has not been moved.
+	. Added the Unlink() method to class UploadedFiles()
 
  **************************************************************************************************************/
 namespace 	Thrak\Web ;
@@ -125,8 +129,21 @@ class  UploadedFiles		extends		Object
 									$input_array [ 'error' ], $input_array [ 'size' ] ) ;
 		    }
 	    }
-		
-		
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+		 
+		NAME
+		Unlink - Removes all downloaded files.
+		 
+		*-------------------------------------------------------------------------------------------------------------*/
+	public function  Unlink ( )
+	   {
+		foreach  ( $this -> Files  as  $file )
+			$file -> Unlink ( ) ;
+	    }
+
+
 	/*==============================================================================================================
 	
 		Interfaces implementations.
@@ -137,7 +154,7 @@ class  UploadedFiles		extends		Object
 		
 	
 	public function  getIterator ( )
-	   { return ( $this -> Files -> getIterator ( ) ) ; }
+	   { return ( new \ArrayIterator ( $this -> Files ) ) ; }
 	
 	
 	public function  offsetExists ( $offset )
@@ -351,6 +368,7 @@ class  UploadedFile		extends		Object
 		   {
 			if  ( $this -> IsUploaded ( ) )
 			   {
+				output ( "MOVE ( " . $this -> TempFile . ", $destination )" ) ;
 				$status		=  @move_uploaded_file ( $this -> TempFile, $destination ) ;
 			
 				if  ( $status  ===  false )
@@ -370,14 +388,17 @@ class  UploadedFile		extends		Object
 	/*==============================================================================================================
 	
 	    Unlink -
-	        Unlinks either the original file or its destination, if the MoveTo() method has been called.
+	        Unlinks the original file.
 	
 	  ==============================================================================================================*/
 	public function  Unlink ( )
 	   {
-		$path	=  ( $this -> MovedTo ) ?  $this -> MovedTo : $this -> TempFile ;
+		if  ( ! $this -> MovedTo )
+		   {
+			$path	=  $this -> TempFile ;
 		
-		if  ( file_exists ( $path ) )
-			unlink ( $path ) ;
+			if  ( file_exists ( $path ) )
+				unlink ( $path ) ;
+		    }
 	    }
     }
