@@ -408,9 +408,6 @@ class	Mail		extends  MailObject
 	    DESCRIPTION
 	        Sends the current mail using the PHP mail() function.
 	 
-	    RETURN VALUE
-	        Returns true if the mail was sent, false otherwise.
-	 
 	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  Send ( )
 	   {
@@ -422,10 +419,10 @@ class	Mail		extends  MailObject
 		$to		=  implode ( ", ", $this -> To ) ;
 
 		// Send the mail
-		$status = mail ( $to, $this -> Subject, $body, $headers ) ;
+		$status = @mail ( $to, $this -> Subject, $body, $headers ) ;
 
-		// All done, return
-		return ( $status ) ;
+		if  ( $status  ===  false )
+			error ( new MailException ( error_get_last ( ) ) ) ;
 	    }
 
 
