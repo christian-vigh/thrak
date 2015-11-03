@@ -226,4 +226,118 @@ class  HtmlGenerator		extends		Object
 
 		return ( $result ) ;
 	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        Radio - Generates a radio button group.
+	 
+	    PROTOTYPE
+	        echo HtmlGenerator::Radio ( $name, $values, $attributes, $default = null, $slice = false ) ;
+	 
+	    DESCRIPTION
+	        Generates a radio button group.
+	 
+	    PARAMETERS
+	        $name (string) -
+	                Name for this button group (this will be the value of the "name=" attribute for each button).
+
+		$values (array) -
+			Array of associative arrays containing the following entries :
+			- 'value' :
+				The value which will be returned when the form is submitted.
+			- 'label' :
+				Label for the radiobutton. A <label for=> tag will be inserted for each radiobutton.
+			- 'attributes' (optional) :
+				Attribute name/value pairs specific to this radiobutton.
+
+		$attributes (associative array) -
+			Array of attribute name/value pairs that will be put in the <input> tag.
+
+		$default (integer or string) -
+			Default value ; this can be either an integer specifying the index in the $values array or a
+			string which will be compared to the 'value' entry of each $values array item.
+
+		$slice (false or integer or array) -
+			Allows to slice the set of value when generating button arrays. This is useful for example when
+			buttons are too numerous and must be written on multiple lines, in separate parts of the html
+			document.
+			The $slice parameter can have the following values :
+			- false :
+				Radiobuttons will be generated for all elements of $values.
+			- integer :
+				Radiobuttons will be generated starting from element #$slice up to the end.
+			- Array :
+				- 1-element array :
+					Same as for integer value, as described above.
+				- 2-elements array :
+					Radiobuttons will be generated starting from element #0 to element #1 in
+					$values.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public static function  Radio ( $name, $values, $attributes, $default = null, $slice = false )
+	   {
+		// Since radiobutton groups may be large if they are numerous, the Radio() method allows for slicing.
+		// Slicing allows to call the Radio() method several times on the same value set, displaying only the
+		// needed buttons. This will be useful for example if you want to span your button group over several lines.
+		if  ( $slice  ===  false )
+		   {
+			$slice_min	=  0 ; 
+			$slice_max	=  count ( $values ) - 1 ;
+		    }
+		else
+		   {
+			if  ( is_array ( $slice ) )
+			   {
+				$slice_min	=  $slice [0] ;
+
+				if  ( count ( $slice )  >  1 )
+					$slice_max	=  $slice_min + $slice [1] - 1 ;
+				else
+					$slice_max	=  count ( $values ) - 1 ;
+			    }
+			else
+			   {
+				$slice_min	=  $slice ;
+				$slice_max	=  count ( $values ) - 1 ;
+			    }
+		    }
+
+		// Loop through values
+		$result		=  '' ;
+
+		for  ( $i = $slice_min ; $i  <=  $slice_max ; $i ++ )
+		   {
+			static		$checked_attribute	=  'checked="checked"' ;
+
+			$element	=  $values [$i] ;
+			$checked	=  '' ;
+
+			if  ( $default  !==  null )
+			   {
+				if  ( is_integer ( $default ) )
+				   {
+					if  ( $i  ==  $default )
+						$checked	=  $checked_attribute ;
+				    }
+				else if  ( ! strcmp ( $default, $element [ 'value' ] ) )
+					$checked	=  $checked_attribute ;
+			    }
+
+			$id		 =  $name . '_' . ( $i + 1 ) ;
+
+			if  ( isset ( $element [ 'attributes' ] ) )
+				$attrlist	=  array_merge ( $attributes, $element [ 'attributes' ] ) ;
+			else
+				$attrlist	=  $attributes ;
+
+			$result		.=  "<input id='$id' name='$name' type='radio' value='{$element [ 'value' ]}' $checked " .
+					    self::GetAttributesAsString ( $attrlist ) . "/>\n" .
+					    "<label for='$id'>{$element [ 'label' ]}</label>" ;
+		    }
+
+		// All done, return
+		return ( $result ) ;
+	    }
     }
