@@ -39,66 +39,6 @@
     
 /**************************************************************************************************
 
-	Message boxes
-
- **************************************************************************************************/
-.ui-popup-dialog-button:not(.ui-dialog-titlebar-close)
-   {
-   	width				:  80px !important; 
-    }
-
-.ui-popup-dialog-message
-   {
-    }
-
-.ui-popup-dialog-input
-   {
-   	padding-top			:  4px ;
-    }
-
-.ui-msgbox-dialog-button
-   {
-   	width				:  120px !important; 
-    }
-
-.ui-error-dialog-title
-   {
-   	color				:  #FFFFFF ;
-   	font-weight			:  bold ;
-    }
-    
-.ui-error-dialog-titlebar
-   {
-   	background			:  #DD0909 ;
-    }
-    
-.ui-error-dialog-button-text
-   {
-   	color				:  #000000 ;
-   	font-weight			:  bold !important ;
-    }
-    
-.ui-error-dialog-message
-   {
-   	color				:  #DD0909 ;
-   	font-weight			:  bold ;
-    }
-
-.ui-msgbox-dialog-icon-cell
-   {
-   	width				:  58px ;
-   	text-align			:  left ;
-   	vertical-align			:  middle ;
-    }
-
-.ui-msgbox-dialog-message-cell
-   {
-   	text-align			:  left ;
-   	vertical-align			:  middle ;
-    }
-
-/**************************************************************************************************
-
 	UI: repeatable styling
 
  **************************************************************************************************/

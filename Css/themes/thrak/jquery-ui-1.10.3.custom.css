@@ -1606,3 +1606,110 @@ input.hasDatepicker
 	color				:  black !important ;
     }    
 
+
+/**************************************************************************************************
+
+	Message boxes
+
+ **************************************************************************************************/
+.ui-popup-dialog-button:not(.ui-dialog-titlebar-close)
+   {
+   	width				:  80px !important; 
+    }
+
+.ui-popup-dialog-message
+   {
+    }
+
+.ui-popup-dialog-input
+   {
+   	padding-top			:  4px ;
+    }
+
+.ui-msgbox-dialog-button
+   {
+   	width				:  120px !important; 
+    }
+
+.ui-error-dialog-title
+   {
+   	color				:  #FFFFFF ;
+   	font-weight			:  bold ;
+    }
+    
+.ui-error-dialog-titlebar
+   {
+   	background			:  #DD0909 ;
+    }
+    
+.ui-error-dialog-button-text
+   {
+   	color				:  #000000 ;
+   	font-weight			:  bold !important ;
+    }
+    
+.ui-error-dialog-message
+   {
+   	color				:  #DD0909 ;
+   	font-weight			:  bold ;
+    }
+
+.ui-msgbox-dialog-icon-cell
+   {
+   	width				:  58px ;
+   	text-align			:  left ;
+   	vertical-align			:  middle ;
+    }
+
+.ui-msgbox-dialog-message-cell
+   {
+   	text-align			:  left ;
+   	vertical-align			:  middle ;
+    }
+
+.ui-wait-dialog
+   {
+   	border-radius			:  3px ;
+	-webkit-box-shadow		:  2px 2px 6px #808080, 1px 1px 1px #ffffff; 
+	-moz-box-shadow			:  2px 2px 6px #808080,  1px 1px 1px #ffffff;  
+	box-shadow			:  2px 2px 6px #808080, 1px 1px 1px #ffffff;  
+	min-height			:  auto !important ;
+	text-align			:  center ;
+	padding-left			:  8px ;
+	padding-right			:  8px ;
+    }
+
+.ui-wait-dialog .ui-wait-dialog-message
+   {
+	text-align			:  center ;
+	font-family			:  "Palatino Linotype", times ;
+	font-size			:  16px ;
+	font-weight			:  bold ;
+	min-width			:  300px ;
+    }
+
+.ui-wait-dialog .ui-wait-dialog-message-default
+   {
+    }
+    
+.ui-wait-dialog .ui-wait-dialog-icon
+   {
+   	text-align			:  center ;
+    }
+
+.ui-wait-dialog .ui-wait-dialog-icon div
+   {
+   	display				:  inline-block ;
+   	margin-top			:  14px ;
+   	margin-bottom			:  4px ;
+    }
+    
+.ui-wait-dialog .ui-wait-dialog-icon-default div
+   {
+   	background			:  url(images/wait32x32.gif) ;
+   	width				:  32px ;
+   	height				:  32px ;
+    }
+    
+            
+ 
