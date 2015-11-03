@@ -1157,49 +1157,11 @@
 			url		:  form_options. url,
 			cache		:  false,
 			contentType	:  false,
-			processData	:  false,
-			uploadProgress	:  function ( e )
-			   {
-				console. log ( e ) ;
-			    },
-			xhr		:  function ( )
-			   {
-				var	jquery_xhr	=  $. ajaxSettings. xhr ( ) ;
-				var	$this		=  this ;
-
-				if  ( jquery_xhr. upload )
-				    {
-					$this. uploadProgress  &&  jquery_xhr. upload. addEventListener ( 'progress', $this. uploadProgress ) ;
-				     }
-
-				return ( jquery_xhr ) ;
-			    }
+			processData	:  false
 		    } ;
+
 		var	ajax_data	=  $. extend ( request_data, form_options. ajax, { data : form_data } ) ;
 
 		$. ajax ( ajax_data ) ;
 	    }
     } ( jQuery ) ) ;
-
-/*
-   $.ajax({
-        url: 'upload.php',  //Server script to process data
-        type: 'POST',
-        xhr: function() {  // Custom XMLHttpRequest
-            var myXhr = $.ajaxSettings.xhr();
-            if(myXhr.upload){ // Check if upload property exists
-                myXhr.upload.addEventListener('progress',progressHandlingFunction, false); // For handling the progress of the upload
-            }
-            return myXhr;
-        },
-        //Ajax events
-        beforeSend: beforeSendHandler,
-        success: completeHandler,
-        error: errorHandler,
-        // Form data
-        data: formData,
-        //Options to tell jQuery not to process data or worry about content-type.
-        cache: false,
-        contentType: false,
-        processData: false
-*/
