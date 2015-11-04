@@ -217,54 +217,6 @@ $Configuration =  array
 	// Security
 	'Security'				=>  array
 	   (
-		// When set to true, the default verifications apply (blacklisted domains or ips, ips sending too much http requests)
-		// This parameter can be set to false to unactivate 'verify-domain', 'verify-ip' and 'verify-frequency' settings.
-		'verify'			=>  false,
-		// When true, the referrer domain name is checked against blacklisted domains
-		'verify-domain'			=>  false,
-		// When true, the referrer ip is checked against blacklisted ips
-		'verify-ip'			=>  true,
-		// When true, the frequency of http requests coming from the same ip is verified.
-		// If frequency is too high, the originator will be blacklisted
-		'verify-frequency'		=>  true,
-		// When true, a mail is sent for each failure
-		'send-mail-on-failure'		=>  false,
-		// Time to wait in seconds before a response is sent back to the requester
-		'shutdown-time'			=>  3,
-		// Redirection target
-		'shutdow-redirect-to'		=>  'undefined.php',
-		// Frequency settings ; every array defines how many http requests a user is allowed to perform in a certain time, along
-		// with the duration of its IP address blocking.
-		// The entries of each array are :
-		// - count :
-		//	Number of authorized http requests.
-		// - interval :
-		//	Interval, in seconds, during which the end-user is allowed at most 'count' http requests.
-		// - duration :
-		//	Specifies the number of seconds an IP address will remain blocked if it issues more than 'count' http request
-		//	within 'interval' seconds.
-		// If no appropriate entry is found in this array, the IP address will be blocked forever.
-		'frequencies'			=>  array 
-		   (
-			array 
-			   (
-				'count'		=>  30,
-				'interval'	=>  10,
-				'duration'	=>  3 * 60
-			    ),
-			array 
-			   (
-				'count'		=>  50,
-				'interval'	=>  30,
-				'duration'	=>  5 * 60
-			    ),
-			array 
-			   (
-				'count'		=>  3,
-				'interval'	=>  1, 
-				'duration'	=>  1 * 60
-			    )
-		    )
 	    ),
 	// The Site entry holds various definitions for the site
 	'Site'					=>  array

@@ -1,0 +1,223 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        Tracker.php
+
+    DESCRIPTION
+        Abstract base classes for data trackers.
+
+
+    AUTHOR
+        Christian Vigh, 11/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/11/03]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Security ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use 	Thrak\System\Object ;
+use     Thrak\Types\String ;
+use	Thrak\Database\Tables\StringStore ;
+
+
+/*==============================================================================================================
+
+    Tracker class -
+        Abstract base class for data trackers.
+
+  ==============================================================================================================*/
+abstract class  Tracker		extends  Object
+   {
+	// A simple, quick&dirty safeguard for derived classes that use the string store
+	// They must declare the value types they handle using RegisterTypes ; registered data will be checked
+	// for duplicates and stored here
+	static private		$RegisteredStringStoreTypes	=  [] ;
+
+	// Tracking buffer table
+	const	TABLE_TRACKING_BUFFER	=  'tracking_buffer' ;
+
+	// String store associated to this Tracker class
+	protected	$StringStore ;
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+
+	    Constructor -
+		Initialize the string store table.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( $string_store_table = 'tracking_string_store', $types = null )
+	   {
+		parent::__construct ( ) ;
+
+		$this -> StringStore	=  new StringStore ( $string_store_table, 'Tracking string store table', 1024 * 1024 ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+
+	    RegisterTypes -
+		Declares the value types used by the derived class.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  RegisterTypes ( $array )
+	   {
+		$class		=  get_called_class ( ) ;
+
+		foreach  ( $array  as  $key => $value )
+		   {
+			if  ( isset ( self::$RegisteredStringStoreTypes [ $key ] ) )
+				error ( new \Thrak\System\InvalidArgumentException ( "Class $class defines a string store type of \"$value\" (#$key), " .
+						"but it has already been defined by class " . self::$RegisteredStringStoreTypes [ $key ] [ 'class' ] ) ) ;
+
+			self::$RegisteredStringStoreTypes [ $key ]	=  [ 'value' => $value, 'class' => $class ] ;
+		    }
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+
+	    Track -
+		Performs the real data tracking job.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	abstract function  Track ( ) ;
+    }
+
+
+
+/*==============================================================================================================
+
+    BufferedTracker class -
+        Abstract base class for data trackers that use buffering, ie raw data will be written in a buffer table
+	until it is processed by an external batch.
+	Buffered trackers must implement the GetRawData() abstract class.
+
+  ==============================================================================================================*/
+abstract class  BufferedTracker		extends  Tracker
+   {
+	protected	$BatchProcessedRows ;
+
+
+	public function  __construct ( $string_store_table = 'tracking_string_store', $types = null )
+	   {
+		parent::__construct ( ) ;
+
+		$this -> StringStore	=  new StringStore ( $string_store_table, 'Tracking string store table', 1024 * 1024 ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+
+	    Track -
+		Inserts raw data into the buffer table, to be processed later by the BatchProcess() method.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  Track ( )
+	   {
+		global	$Database ;
+
+
+		$data	=  $Database -> Escape ( $this -> GetRawData ( ) ) ;
+		$query	=  "INSERT DELAYED INTO " . self::TABLE_TRACKING_BUFFER . " SET DATA = '$data'" ;
+		$Database -> Execute ( $query ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+
+	    GetRawData -
+		Implemented by derived classes. Must return the raw data to be written to the buffer table.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected abstract function  GetRawData ( ) ;
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+
+	    BatchProcess -
+		Batch processes the unprocessed records in the buffer table.
+		Returns the number of processed rows.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  BatchProcess ( )
+	   {
+		global		$Database ;
+
+
+		$table	=  self::TABLE_TRACKING_BUFFER ;
+
+		$this -> BatchProcessStart ( ) ;
+
+		// "lock" the records to be processed in the table buffer, by setting the "processed" column to 1
+		$Database -> Execute ( "UPDATE $table SET processed = 1" ) ;
+
+		// Now select them - other processes are free to add new records, they will ignored here but they will 
+		// be processed by the next batch run
+		$rs	=  $Database -> Execute ( "SELECT data FROM $table WHERE processed = 1" ) ;
+
+		while  ( $row = $Database -> GetNextRow ( $rs ) )
+		   {
+			$this -> BatchProcessRow ( $row [ 'data' ] ) ;
+			$this -> BatchProcessedRows ++ ;
+		    }
+
+		// "unlock" the records (they are simply deleted once processed)
+		$Database -> Execute  ( "DELETE $table FROM $table WHERE processed = 1" ) ;
+
+		$this -> BatchProcessEnd ( ) ;
+
+		return ( $this -> BatchProcessedRows ) ;
+	    }
+
+
+	protected function  BatchProcessStart ( )
+	   {
+		$this -> BatchProcessedRows	=  0 ;
+	    }
+
+	protected function  BatchProcessEnd ( )
+	   { }
+
+
+	protected abstract function  BatchProcessRow ( $data ) ;
+    }
+
+
+
+/*==============================================================================================================
+
+    UnbufferedTracker class -
+        Abstract base class for data trackers that don't use buffering.
+	Unbuffered trackers must implement the Insert() abstract class.
+
+  ==============================================================================================================*/
+abstract class  UnbufferedTracker	extends  Tracker
+   {
+	public function  __construct ( $string_store_table = 'tracking_string_store', $types = null )
+	   {
+		parent::__construct ( ) ;
+
+		$this -> StringStore	=  new StringStore ( $string_store_table, 'Tracking string store table', 1024 * 1024 ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+
+	    Track -
+		Just calls the Insert() function, which must be implemented by derived classes.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  Track ( )
+	   {
+		$this -> Insert ( ) ;
+	    }
+
+
+	abstract protected function  Insert ( ) ;
+     }

@@ -1,0 +1,208 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        HttpRequestTracker.phpclass
+
+    DESCRIPTION
+        Tracks http requests.
+
+    AUTHOR
+        Christian Vigh, 11/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/11/03]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Security ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use 	Thrak\System\Object ;
+use     Thrak\Types\String ;
+use	Thrak\Security\Tracker ;
+use	Thrak\Database\BufferedInsert ;
+
+
+/*==============================================================================================================
+
+    HttpRequestTracker class -
+        Tracks http requests.
+
+  ==============================================================================================================*/
+class  HttpRequestTracker	extends  BufferedTracker
+   {
+	// String store type constants
+	const	STRING_STORE_URL		=  1 ;
+	const	STRING_STORE_QUERY		=  2 ;
+	const	STRING_STORE_LOCAL_IP		=  3 ;
+	const	STRING_STORE_REMOTE_IP		=  4 ;
+	const	STRING_STORE_SERVER_KEY		=  5 ;
+	const	STRING_STORE_SERVER_VALUE	=  6 ;
+	const	STRING_STORE_GET_ARRAY		=  7 ;
+	const   STRING_STORE_POST_ARRAY		=  8 ;
+	const	STRING_STORE_FILES_ARRAY	=  9 ;
+	const	STRING_STORE_COOKIE_ARRAY	=  10 ;
+	const	STRING_STORE_SESSION_ARRAY	=  11 ;
+
+	// Tables used to track http access
+	const	TABLE_HTTP_ACCESS		=  'tracking_http_access' ;		// Url, query parameters + ips
+	const	TABLE_HTTP_SERVER_VARS		=  'tracking_http_server_vars' ;	// $_SERVER contents
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+
+	    Constructor -
+		Declare the string store value types that are handled by this class.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( )
+	   {
+		parent::__construct ( ) ;
+
+		$this -> RegisterTypes
+		   ([
+			self::STRING_STORE_URL			=>  'url',
+			self::STRING_STORE_QUERY		=>  'query',
+			self::STRING_STORE_LOCAL_IP		=>  'local ip',
+			self::STRING_STORE_REMOTE_IP		=>  'remote ip',
+			self::STRING_STORE_SERVER_KEY		=>  '$_SERVER array key',
+			self::STRING_STORE_SERVER_VALUE		=>  '$_SERVER array value',
+			self::STRING_STORE_GET_ARRAY		=>  '$_GET array contents',
+			self::STRING_STORE_POST_ARRAY		=>  '$_POST array contents',
+			self::STRING_STORE_FILES_ARRAY		=>  '$_FILES array contents',
+			self::STRING_STORE_COOKIE_ARRAY		=>  '$_COOKIE array contents'
+		     ]) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+
+	    GetRawData -
+		Returns the raw data to be put in the buffer table before a BatchProcessing() job occurs.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  GetRawData ( )
+	   {
+		$array	=  
+		   [
+			'_GET'		=>  $_GET,
+			'_POST'		=>  $_POST,
+			'_FILES'	=>  $_FILES,
+			'_COOKIE'	=>  $_COOKIE,
+			'_SESSION'	=>  ( isset ( $_SESSION ) ) ?  $_SESSION : [],
+			'_SERVER'	=>  $_SERVER
+		    ] ;
+
+		return ( serialize ( $array ) ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+
+	    BatchProcessRow -
+		Process one row from the buffer table.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	private		$HttpServerVarsInserter ;
+
+
+	protected function  BatchProcessStart ( ) 
+	   {
+		parent::BatchProcessStart ( ) ;
+
+		$this -> HttpServerVarsInserter	=  new BufferedInsert
+		   (
+			self::TABLE_HTTP_SERVER_VARS,
+			[
+				'httsv_parent_id',
+				'httsv_key_id',
+				'httsv_value_id'
+			 ],
+			16384
+		    ) ;
+	    }
+
+
+	protected function  BatchProcessEnd ( )
+	   {
+		$this -> HttpServerVarsInserter -> Flush ( ) ;
+	    }
+
+
+	protected function  BatchProcessRow ( $data )
+	   {
+		global		$Database ;
+
+		// Ignore $_SERVER variables that may change at any invocation (so its wasteful to store them in a string
+		// store). They will be rather stored in the http access table, not in the server vars tables.
+		static	$ignored_server_vars	=
+		   [
+			'SERVER_PORT', 'REMOTE_PORT', 'REQUEST_TIME', 'REQUEST_TIME_FLOAT' 
+		    ] ;
+
+		// Data has been serialized in the past by GetRawData()
+		$array			=  unserialize ( $data ) ;
+
+		// Convenience variables
+		$http_access_table	=  self::TABLE_HTTP_ACCESS ;
+		$store			=  $this -> StringStore ;
+		$server			=  $array [ '_SERVER' ] ;
+
+		// Retrieve values for the http access table
+		$request_time		=  \DateTime::createFromFormat ( 'U.u', ( isset ( $server [ 'REQUEST_TIME_FLOAT' ] ) ) ?  
+								$server [ 'REQUEST_TIME_FLOAT' ] : $server [ 'REQUEST_TIME' ] ) ;
+		$timestring		=  $request_time -> format ( 'Y-m-d H:i:s.u' ) ;
+		$local_port		=  ( integer ) $server [ 'SERVER_PORT' ] ;
+		$remote_port		=  ( integer ) $server [ 'REMOTE_PORT' ] ;
+
+		$url_id			=  $store -> Insert ( self::STRING_STORE_URL		, $server [ 'HTTP_HOST' ] . $server [ 'REQUEST_URI' ] ) ;
+		$query_id		=  $store -> Insert ( self::STRING_STORE_QUERY		, $server [ 'QUERY_STRING' ] ) ;
+		$local_ip_id		=  $store -> Insert ( self::STRING_STORE_LOCAL_IP	, $server [ 'SERVER_ADDR' ] ) ;
+		$remote_ip_id		=  $store -> Insert ( self::STRING_STORE_REMOTE_IP	, $server [ 'REMOTE_ADDR' ] ) ;
+		$get_id			=  $store -> Insert ( self::STRING_STORE_GET_ARRAY	, serialize ( $array [ '_GET' ] ) ) ;
+		$post_id		=  $store -> Insert ( self::STRING_STORE_POST_ARRAY	, serialize ( $array [ '_POST' ] ) ) ;
+		$files_id		=  $store -> Insert ( self::STRING_STORE_FILES_ARRAY	, serialize ( $array [ '_FILES' ] ) ) ;
+		$cookie_id		=  $store -> Insert ( self::STRING_STORE_COOKIE_ARRAY	, serialize ( $array [ '_COOKIE' ] ) ) ;
+		$session_id		=  $store -> Insert ( self::STRING_STORE_SESSION_ARRAY	, serialize ( $array [ '_SESSION' ] ) ) ;
+
+		// Insert a new http access record
+		$query		=  "
+					INSERT INTO $http_access_table
+					SET
+						htta_request_time	=  '$timestring',
+						htta_url_id		=  $url_id,
+						htta_query_id		=  $query_id,
+						htta_local_ip_id	=  $local_ip_id,
+						htta_local_port		=  $local_port,
+						htta_remote_ip_id	=  $remote_ip_id,
+						htta_remote_port	=  $remote_port,
+						htta_get_id		=  $get_id,
+						htta_post_id		=  $post_id,
+						htta_files_id		=  $files_id,
+						htta_cookie_id		=  $cookie_id,
+						htta_session_id		=  $session_id
+				   " ;
+
+		$Database -> Execute ( $query ) ;
+		$id		=  $Database -> GetLastInsertid ( ) ;
+
+		// Now, insert $_SERVER variables
+		foreach  ( $server  as  $key => $value ) 
+		   {
+			if  ( in_array ( $key, $ignored_server_vars ) )
+				continue ;
+
+			$key_id		=  $store -> Insert ( self::STRING_STORE_SERVER_KEY, $key ) ;
+			$value_id	=  $store -> Insert ( self::STRING_STORE_SERVER_VALUE, $value ) ;
+
+			$this -> HttpServerVarsInserter -> Add
+			   ([
+				'httsv_parent_id'	=>  $id,
+				'httsv_key_id'		=>  $key_id,
+				'httsv_value_id'	=>  $value_id
+			     ]) ;
+		    }
+	    }
+    }

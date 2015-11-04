@@ -30,6 +30,7 @@ use	Thrak\Web\UploadedFiles ;
 use	Thrak\Web\Cookies ;
 use	Thrak\Web\ConditionalHtml ;
 use	Thrak\Security\Session ;
+use	Thrak\Security\HttpRequestTracker ;
 
 
 /*==============================================================================================================
@@ -86,7 +87,7 @@ class  WebSite			extends	Object
 	public function  __construct ( )
 	   {
 		global		$SITE_ROOT, $Configuration ;
-		
+
 		// Get real site root
 		$root	=  Path::RealPath ( $SITE_ROOT ) ;
 		
@@ -205,6 +206,9 @@ class  WebSite			extends	Object
 		
 		$Session	=  new Session ( ) ;
 
+		// Security checkings, just after session opening
+		$this -> SecurityCheck ( ) ;
+		
 		// Session settings that may override existing ones
 		if  ( isset ( $Session [ self::SITE_VAR_LANGUAGE ] ) )				// Current language
 		   {
@@ -325,5 +329,27 @@ class  WebSite			extends	Object
 		global		$Locale ;
 
 		require ( $this -> UnderConstructionPage ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    SecurityCheck -
+	        Performs security checkings for the requested page.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  SecurityCheck ( )
+	   {
+		global	$Configuration ;
+
+
+		// Http request tracking
+		$http_tracking		=  $Configuration -> Get ( 'Security/http-tracking' ) ;
+
+		if  ( $http_tracking )
+		   {
+			$tracker	=  new  HttpRequestTracker ( ) ;
+			$tracker -> Track ( ) ;
+		    }
 	    }
     }
