@@ -1,0 +1,8 @@
+Order Allow,Deny
+Deny from all
+
+# Prevent unexpected access to private things 
+<FilesMatch "\.(phpclass|phpscript|phpinc|phpinclude|phs|dat|sql|mysql|md)$">
+	Deny from all
+</FilesMatch>
+
