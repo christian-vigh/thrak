@@ -389,9 +389,6 @@ class  Debug		extends  Object
 			      
    		   		foreach  ( $constants  as  $name => $value )
    		   		   {
-   		   	   		if  ( is_string ( $value ) )
-   		   	   			$value = '"' . str_replace ( $string_searches, $string_replacements, $value ) . '"' ;
-
    		   	   		$name 		=  sprintf ( "%-32s", $name ) ;
    		   			$output [] 	=  array ( "string", "const  $name  =  $value ;" ) ;
    		   			$output []	=  array ( "nl" ) ;
