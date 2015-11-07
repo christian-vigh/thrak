@@ -1,0 +1,1558 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        Crontab.phpclass
+
+    DESCRIPTION
+        A simple class to retrieve/update crontabs.
+
+    AUTHOR
+        Christian Vigh, 11/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/11/04]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace	Thrak\Administration ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces & objects
+use	Thrak\System\Object ;
+use     Thrak\IO\Path ;
+use	Thrak\Types\String ;
+
+
+/*==============================================================================================================
+
+    Crontab class -
+        Retrieves/updates crontab data.
+
+  ==============================================================================================================*/
+class  Crontab		extends  Object
+   {
+	// Parsed entry types
+	const	PARSE_COMMENT		=  0 ;			// A comment
+	const	PARSE_EMPTY_LINE	=  1 ;			// An empty line
+	const	PARSE_COMMAND		=  2 ;			// A cron command
+	const	PARSE_COMMAND_ID	=  3 ;			// A comment with a CRON-ID: tag
+	const	PARSE_VARIABLE		=  4 ;			// A variable definition
+
+	// True if crontab contents have been loaded
+	public		$Loaded		=  false ;
+	// Variables defined in the crontab (associative array with variable name/value pairs)
+	private		$Variables	=  [] ;
+	// Cron commands
+	private		$Commands	=  [] ;
+	// Cron contents - this allows for appending data to an existing cron
+	private		$Contents	=  '' ;
+	// Cron blocks (ie, cron entries with their potential leading comments) ; this array is created by the
+	// Reparse() method, which is called when crontab contents are loaded or data is appended to them.
+	// At that point, block entries belong to only 3 types :
+	// - Comment (PARSE_COMMENT)
+	// - Command (PARSE_COMMAND)
+	// - Variable (PARSE_VARIABLE)
+	// Leading comments and trailing empty lines are associated to variable & command blocks.
+	// Each block entry is an associative array that contains the following keys :
+	// - lines :
+	//	Array of lines parsed from the crontab contents
+	// - type :
+	//	Block type (comment, variable or command).
+	// - id :
+	//	Index, in the 'lines' entry, of the line containing the command id (command-type blocks only).
+	// - index :
+	//	For command or variable-type blocks, contains the index of the command/variable definition in the
+	//	'lines' entry.
+	private		$CronBlocks	=  [] ;
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        Constructor
+	 
+	    PROTOTYPE
+	        $crontab	=  new Crontab ( $load = true ) ;
+	 
+	    DESCRIPTION
+	        Creates a Crontab object.
+	 
+	    PARAMETERS
+	        $load (boolean or string) -
+	                When specified as a boolean, indicates whether current user crontab contents should be loaded.
+			If a path is specified, then crontab contents will be loaded from this file.
+	 	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( $load = true )
+	   {
+		parent::__construct ( $load ) ;
+
+		if  ( $load )
+			$this -> Load ( $load )  ;
+	    }
+
+
+	public function  __tostring ( )
+	   { return ( $this -> GetContents ( ) ) ; }
+
+
+
+	/**************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 ******                                        PUBLIC METHODS                                            ******
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************/
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        Append - Appends crontab contents to the current crontab.
+	 
+	    PROTOTYPE
+	        $crontab -> Append ( $contents ) ;
+	 
+	    DESCRIPTION
+	        Appends crontab contents to the current crontab.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  Append ( $contents ) 
+	   {
+		$new_contents	=  $this -> Contents ;
+
+		if  ( $new_contents  &&  ! String::EndsWith ( $new_contents, "\n" ) )
+			$new_contents	.=  "\n" ;
+
+		$new_contents	.=  $contents ;
+
+		$this -> Parse ( $new_contents ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        DefineVariable - Defines a variable in a crontab.
+	 
+	    PROTOTYPE
+	        $status		=  $crontab -> DefineVariable ( $name, $value, $replace = false, $comments = false ) ;
+	 
+	    DESCRIPTION
+	        Defines a variable with the specified name.
+	 
+	    PARAMETERS
+	        $name (string) -
+	                Variable name.
+
+		$value (string) -
+			Variable value.
+
+		$replace (boolean) -
+			When true, the LAST occurrence of the variable will be replaced.
+
+		$comments (string or array of strings) -
+			Comments to be prepended to the variable definition. A '#' sign is always inserted at each start
+			of line if it is missing.
+			If false, no comments will be added.
+	 
+	    RETURN VALUE
+	        True if the variable has been created, false if it has been replaced.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  DefineVariable  ( $name, $value, $replace = false, $comments = false )
+	   {
+		if  ( $replace )
+		   {
+			$index	=  $this -> __findlast ( $name, self::PARSE_VARIABLE ) ;
+
+			if  ( $index  !==  false )
+			   {
+				$this -> __replace_variable ( $index, $value, $comments ) ;
+				return ;
+			    }
+		    }
+
+		$object		=  new CrontabVariable ( $name, $value ) ;
+		$lines		=  $this -> __process_comments ( $comments ) ;
+		$index		=  count ( $lines ) ;
+		$lines []	=
+		   [
+			'type'		=>  self::PARSE_VARIABLE,
+			'name'		=>  $name,
+			'separator'	=>  '=',
+			'value'		=>  $value,
+			'text'		=>  "$name=$value",
+			'object'	=>  $object
+		    ] ;
+
+		$this -> CronBlocks []	=  
+		   [
+			'lines'		=>  $lines,
+			'type'		=>  self::PARSE_VARIABLE,
+			'name'		=>  $name,
+			'index'		=>  $index 
+		    ] ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        DefineCommand - Defines a command in a crontab.
+	 
+	    PROTOTYPE
+	        $status		=  $crontab -> DefineCommand ( $name, $command, $fields = false, $replace = false, 
+									$comments = false ) ;
+	 
+	    DESCRIPTION
+	        Defines a command with the specified name.
+	 
+	    PARAMETERS
+	        $name (string) -
+	                Command name (will be written as a comment containing the string "CRON-ID:").
+
+		$command (string) -
+			Either a crontab entry with date fields, or a single command ; in this latter case, the $fields
+			parameter must be supplied.
+
+		$replace (boolean) -
+			When true, the LAST occurrence of the command will be replaced.
+
+		$comments (string or array of strings) -
+			Comments to be prepended to the command definition. A '#' sign is always inserted at each start
+			of line if it is missing.
+			If false, no comments will be added.
+	 
+	    RETURN VALUE
+	        True if the command has been created, false if it has been replaced.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  DefineCommand  ( $name, $command, $fields = false, $replace = false, $comments = false )
+	   {
+		if  ( $replace )
+		   {
+			$index	=  $this -> __findlast ( $name, self::PARSE_COMMAND ) ;
+
+			if  ( $index  !==  false )
+			   {
+				$this -> __replace_command ( $index, $command, $fields, $comments ) ;
+				return ;
+			    }
+		    }
+
+		$object		=  new CrontabCommand ( $command, $fields ) ;
+		$lines		=  $this -> __process_comments ( $comments ) ;
+		$lines []	=  [ 'text' => "# CRON-ID: $name", 'type' => self::PARSE_COMMAND_ID, 'name' => $name ] ;
+		$index		=  count ( $lines ) ;
+		$text		=  ( string ) $object ;
+		$lines []	=
+		   [
+			'type'		=>  self::PARSE_COMMAND,
+			'name'		=>  $name,
+			'command'	=>  $text,
+			'text'		=>  $text,
+			'object'	=>  $object
+		    ] ;
+
+		$this -> CronBlocks []	=  
+		   [
+			'lines'		=>  $lines,
+			'type'		=>  self::PARSE_COMMAND,
+			'name'		=>  $name,
+			'index'		=>  $index 
+		    ] ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        GetContents - Returns the text contents of the currently loaded crontab
+	 
+	    PROTOTYPE
+	        $content	=  $crontab -> GetContents ( ) ;
+	 
+	    RETURN VALUE
+	        A string containing the current crontab contents.
+		Crontab commands are formatted and aligned on the same columns.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  GetContents ( )
+	   {
+		$contents	=  '' ;
+
+		$headers	=  [ 'minute', 'hour', 'day-of-month', 'month', 'day-of-week', 'command' ] ;
+		$header_count	=  count ( $headers ) ;
+		$found_command	=  false ;
+		$widths		=  [] ;
+
+		// Compute max widths for each of the crontab entry date fields
+		foreach  ( $headers  as  $header )
+			$widths []	=  strlen ( $header ) ;
+
+		foreach  ( $this -> CronBlocks  as  $block )
+		   {
+			foreach  ( $block [ 'lines' ]  as  $line )
+			   {
+				if  ( $line [ 'type' ]  !=  self::PARSE_COMMAND )
+					continue ;
+
+				$object		=  $line [ 'object' ] ;
+
+				$length		=  strlen ( $object -> Minute ) ;
+
+				if  ( $length  >  $widths [0] )
+					$widths [0]	=  $length ;
+
+				$length		=  strlen ( $object -> Hour ) ;
+
+				if  ( $length  >  $widths [1] )
+					$widths [1]	=  $length ;
+
+				$length		=  strlen ( $object -> DayOfMonth ) ;
+
+				if  ( $length  >  $widths [2] )
+					$widths [2]	=  $length ;
+
+				$length		=  strlen ( $object -> Month ) ;
+
+				if  ( $length  >  $widths [3] )
+					$widths [3]	=  $length ;
+
+				$length		=  strlen ( $object -> DayOfWeek ) ;
+
+				if  ( $length  >  $widths [4] )
+					$widths [4]	=  $length ;
+			    }
+		    }
+
+		// Now loop again through each entry, this time to return aligned contents
+		foreach  ( $this -> CronBlocks  as  $block )
+		   {
+			foreach  ( $block [ 'lines' ]  as  $line )
+			   {
+				switch ( $line [ 'type' ] )
+				   {
+					// Variable definitions : return their original definition
+					case	self::PARSE_VARIABLE :
+						$object		 =  $line [ 'object' ] ;
+						$contents	.=  $object -> Name . $line [ 'separator' ] . $object -> Value . "\n" ;
+						break ;
+
+					// Commands : try to align each column
+					case	self::PARSE_COMMAND :
+						// No command found so far : display an aligned comment explaining columns
+						if  ( ! $found_command )
+						   {
+							$contents	.=  "# " ;
+
+							for  ( $i = 0 ; $i  <  $header_count ; $i ++ )
+							   {
+								$contents	.=  str_pad ( $headers [$i], $widths [$i], ' ', STR_PAD_RIGHT ) ;
+
+								if  ( $i + 1  <  $header_count )
+									$contents	.=  " \t" ;
+							    }
+
+							$contents	.=  "\n" ;
+							$found_command	 =  true ;
+						    }
+
+						$object		 =  $line [ 'object' ] ;
+						$contents	.=  '  ' .
+								    str_pad ( $object -> Minute    , $widths [0], ' ', STR_PAD_RIGHT ) . " \t" .
+								    str_pad ( $object -> Hour      , $widths [1], ' ', STR_PAD_RIGHT ) . " \t" .
+								    str_pad ( $object -> DayOfMonth, $widths [2], ' ', STR_PAD_RIGHT ) . " \t" .
+								    str_pad ( $object -> Month     , $widths [3], ' ', STR_PAD_RIGHT ) . " \t" .
+								    str_pad ( $object -> DayOfWeek , $widths [4], ' ', STR_PAD_RIGHT ) . " \t" .
+								    $object -> Command . "\n" ;
+
+						break ;
+
+					// Other cases : return them as is
+					default :
+						$contents	.=  $line [ 'text' ] . "\n" ;
+				    }
+			    }
+		    }
+
+		// Empty lines at the end of a crontab are always trimmed
+		return ( rtrim ( $contents ) . "\n" ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        GetCommands - Returns command list.
+	 
+	    PROTOTYPE
+	        $array	=  GetCommands ( $return_as_object = true ) ;
+	 
+	    DESCRIPTION
+	        Returns the list of commands defined in this crontab, as CrontabCommands objects.
+
+	    PARAMETERS
+		$return_as_object (boolean) - 
+			When true, array values will be CrontabCommand objects.
+			When false, they will contain only the crontab entries as strings.
+	 
+	    RETURN VALUE
+	        Returns an array of crontab commands objects.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  GetCommands ( $return_as_object = true )
+	   {
+		$result		=  [] ;
+
+		foreach  ( $this -> CronBlocks  as  $block )
+		   {
+			if  ( $block [ 'type' ]  ==  self::PARSE_COMMAND )
+			   {
+				$line		=  $block [ 'lines' ] [ $block [ 'index' ] ] ;
+				$id		=  $block [ 'name' ] ;
+
+				if  ( $return_as_object )
+					$result [ $id ]	=  $line [ 'object' ] ;
+				else
+					$result [ $id ]	=  ( string ) $line [ 'object' ] ;
+			    }
+		    }
+
+		return ( $result ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        GetVariables - Returns the variable list.
+	 
+	    PROTOTYPE
+	        $array	=  GetVariables ( $return_as_object = true ) ;
+	 
+	    DESCRIPTION
+	        Returns the list of variables defined in this crontab.
+
+	    PARAMETERS
+		$return_as_object (boolean) - 
+			When true, array values will be CrontabVariable objects.
+			When false, they will contain only the variable value.
+	 
+	    RETURN VALUE
+	        Returns an associative array of variable name/value pairs.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  GetVariables ( $return_as_object = true )
+	   {
+		$result		=  [] ;
+
+		foreach  ( $this -> CronBlocks  as  $block )
+		   {
+			if  ( $block [ 'type' ]  ==  self::PARSE_VARIABLE )
+			   {
+				$line	=  $block [ 'lines' ] [ $block [ 'index' ] ] ;
+				$name	=  $line [ 'name' ] ;
+
+				if  ( $return_as_object )
+					$result [ $name ]	=  $line [ 'object' ] ;
+				else
+					$result [ $name ]	=  $line [ 'value' ] ;
+			    }
+		    }
+
+		return ( $result ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        IsVariableDefined, IsCommandDefined - Checks if a variable/command is defined.
+	 
+	    PROTOTYPE
+	        $status		=  $crontab -> IsVariableDefined ( $name ) ;
+	        $status		=  $crontab -> IsCommandDefined ( $name ) ;
+	 	 
+	    DESCRIPTION
+	        Checks if the specified variable/command is defined within the crontab contents.
+	 
+	    PARAMETERS
+	        $name (string) -
+	                Name of the variable/command whose existence is to be checked.
+	 
+	    RETURN VALUE
+	        True if the variable/command exists, false otherwise.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  IsVariableDefined ( $name )
+	   { return ( $this -> __is_defined ( self::PARSE_VARIABLE, $name ) ) ; }
+
+	public function  IsCommandDefined ( $name )
+	   { return ( $this -> __is_defined ( self::PARSE_COMMAND, $name ) ) ; }
+
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        Load - Loads and parses crontab contents.
+	 
+	    PROTOTYPE
+	        $crontab -> Load ( $path ) ;
+	 
+	    DESCRIPTION
+	        Loads and parses crontab contents.
+	 
+	    PARAMETERS
+	        $load (boolean or string) -
+	                When specified as a boolean, indicates whether current user crontab contents should be loaded.
+			If a path is specified, then crontab contents will be loaded from this file.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  Load ( $path )
+	   {
+		if  ( is_bool ( $path ) )
+		   {
+			if  ( $path ) 
+				$contents	=  $this -> LoadUserCrontab ( ) ;
+			else
+				return ;
+		    }
+		else
+		   {
+			if  ( ! file_exists ( $path ) )
+				error ( new \Thrak\System\FileNotFoundException ( "File \"$path\" not found." ) ) ;
+
+			$contents	=  file_get_contents ( $path ) ;
+		    }
+
+		$this -> Append ( $contents ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        LoadUserCrontab - Returns current user crontab contents.
+	 
+	    PROTOTYPE
+	        $content	=  $crontab -> LoadUserCrontab ( ) ;
+	 
+	    DESCRIPTION
+	        Returns the crontab contents for the current user.
+	 
+	    RETURN VALUE
+	        A string containing the crontab contents.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  LoadUserCrontab ( )
+	   {
+		error ( "Not yet implemented." ) ;
+		return ( $data ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        Save - Saves crontab contents.
+	 
+	    PROTOTYPE
+	        $crontab -> Save ( $path = false ) ;
+	 
+	    DESCRIPTION
+	        Saves crontab contents.
+	 
+	    PARAMETERS
+	        $path (string) -
+	                When specified, saves contents to the specified crontab file. 
+			When not specified, the crontab of the current user will be replaced by the current contents.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  Save  ( $path = false )
+	   {
+		if  ( $path )
+			file_put_contents ( $path, $this -> GetContents ( ) ) ;
+		else
+			$this -> SaveUserCrontab ( ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        SaveUserCrontab - Save crontab contents for the current user.
+	 
+	    PROTOTYPE
+	        $content	=  $crontab -> SaveUserCrontab ( ) ;
+	 
+	    DESCRIPTION
+	        Saves the current crontab contents for the current user.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  SaveUserCrontab ( )
+	   {
+		error ( "Not yet implemented." ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        UndefineVariable, UndefineCommand - Undefines the specified variable/command.
+	 
+	    PROTOTYPE
+	        $status	=  $crontab -> UndefineVariable ( $name, $last_only = true ) ;
+	        $status	=  $crontab -> UndefineCommand  ( $name, $last_only = true ) ;
+	 
+	    DESCRIPTION
+	        Undefines the specified variable/command.
+
+	    PARAMETERS
+		$name (string) -
+			Variable/command to be undefined.
+			Crontab entries not having a "# CRON-ID:" comment are numbered from 1.
+
+		$last_only (boolean) -
+			If true, only the last occurrence of the variable/command will be undefined.
+			If false, ALL occurrences of the variable/command will be undefined.
+
+	    RETURN VALUE
+		True if the variable was already defined, false if not found.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  UndefineVariable ( $name, $last_only = true )
+	   { return ( $this -> __undefine ( self::PARSE_VARIABLE, $name, $last_only ) ) ; }
+
+	public function  UndefineCommand ( $name, $last_only = true )
+	   { return ( $this -> __undefine ( self::PARSE_COMMAND, $name, $last_only ) ) ; }
+
+
+	/**************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 ******                                      PROTECTED METHODS                                           ******
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************/
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        Parse - Parse crontab contents.
+	 
+	    PROTOTYPE
+	        $crontab -> Parse ( $contents ) ;
+	 
+	    DESCRIPTION
+	        Parse crontab contents and initializes the Variables and Commands arrays.
+	 
+	    PARAMETERS
+	        $contents (string) -
+	                Contents to be parsed.
+
+	    RETURN VALUE 
+		Returns an array of associative arrays describing each line type.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  Parse ( $contents ) 
+	   {
+		$lines			=  explode ( "\n", $contents ) ;
+		$last_id		=  0 ;
+		$last_cron_id		=  null ;
+		$typed_lines		=  [] ;
+
+
+		// Loop through content lines
+		foreach  ( $lines  as  $line )
+		   {
+			$line		=  rtrim ( $line ) ;
+			$trimmed	=  trim ( $line ) ;
+
+			// Empty line entry
+			if  ( $trimmed  ===  '' )
+			   {
+				$typed_lines []	=
+				   [
+					'type'		=>  self::PARSE_EMPTY_LINE,
+					'text'		=>  $line
+				    ] ;
+			    }
+			// A comment with the 'CRON-ID:' this has been previously inserted by the Crontab class when 
+			// adding new cron commands
+			else if  ( preg_match ( '/\# \s* CRON-ID \s* : \s* (?P<id> .*) /imsx', $trimmed, $match ) )
+			   {
+				$last_cron_id	=  $match [ 'id' ] ;
+
+				$typed_lines []	=
+				   [
+					'type'		=>  self::PARSE_COMMAND_ID,
+					'text'		=>  $line,
+					'name'		=>  $last_cron_id
+				    ] ;
+			    }
+			// The header describing the meaning of each column ; it is ignored here but will be rebuilt above
+			// the first command when the crontab file will be written back
+			else if  ( preg_match ( '/\# \s* minute \s+ hour \s+/imsx', $trimmed ) )
+				continue ;
+			// Regular comment
+			else if  ( $trimmed [0]  ==  '#' )
+			   {
+				$typed_lines []		=
+				   [
+					'type'		=>  self::PARSE_COMMENT,
+					'text'		=>  $line 
+				    ] ;
+			    }
+			// Variable definition
+			else if  ( preg_match ( '/(?P<name> [^\s]+) (?P<separator> \s* = \s*) (?P<value> .*)/imsx', $trimmed, $match ) )
+			   {
+				$typed_lines []		=
+				   [
+					'type'		=>  self::PARSE_VARIABLE,
+					'text'		=>  $line,
+					'name'		=>  $match [ 'name' ],
+					'value'		=>  $match [ 'value' ],
+					'separator'	=>  $match [ 'separator' ],
+					'object'	=>  new CrontabVariable ( $match [ 'name' ], $match [ 'value' ] )
+				   ] ;
+			    }
+			// Cron command entry
+			else
+			   {
+				if  ( $last_cron_id  ===  null )
+					$id	=  ( ++ $last_id ) ;
+				else
+					$id	=  $last_cron_id ;
+
+				try
+				   {
+					$object		=  new CrontabCommand ( $trimmed ) ;
+				    }
+				catch ( \Exception  $e )
+				   {
+					error ( new \Thrak\System\InvalidArgumentException ( "An error was encountered while processing the following " .
+							"crontab entry :\n\t$trimmed\n" .
+							"Error message is :\n\t" .
+							$e -> getMessage ( ) ) ) ;
+				    }
+
+				$typed_lines []		=
+				   [
+					'type'		=>  self::PARSE_COMMAND,
+					'text'		=>  $line,
+					'name'		=>  $id,
+					'command'	=>  $trimmed,
+					'object'	=>  $object
+				    ] ;
+
+				$last_cron_id	=  null ;
+			    }
+		    }
+
+		$this -> Rescan ( $typed_lines ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    GetNextBlock -
+	        Retrieves the next block from a crontab file.
+		A very simple state parser has been implemented for that ; it has the following rules
+		- Any empty linesfound after some block (comment, variable definition, command) belongs to that block
+		- Comments may be included before a variable definition or a command ; they will be associated with that
+		  definition or command
+		- ... unless they are followed by one or more empty lines : in that case they will be considered as
+		  "standalone" comments, no referring to any variable definition or command.
+
+		The retrieved block can only belong to 3 possible types :
+		- PARSE_COMMENT :
+			Any series of empty lines, or comments (including a possible CRON-ID: tag).
+		- PARSE_VARIABLE :
+			A variable definition.
+		- PARSE_COMMAND :
+			A command.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	const	STATE_INITIAL		=  0 ;
+	const	STATE_VARIABLE		=  1 ;
+	const	STATE_COMMAND		=  2 ;
+	const	STATE_COMMENT		=  3 ;
+	const	STATE_COMMAND_ID	=  4 ;
+	const	STATE_FINAL		=  5 ;
+
+	private function  GetNextBlock ( $lines, &$index )
+	   {
+		static	$nextstates	=
+		   [
+			self::STATE_INITIAL		=>
+			   [
+				self::PARSE_EMPTY_LINE	=>  self::STATE_FINAL,
+				self::PARSE_VARIABLE	=>  self::STATE_VARIABLE,
+				self::PARSE_COMMAND	=>  self::STATE_COMMAND,
+				self::PARSE_COMMENT	=>  self::STATE_COMMENT,
+				self::PARSE_COMMAND_ID	=>  self::STATE_COMMENT
+			    ],
+			self::STATE_VARIABLE		=>
+			   [
+				self::PARSE_EMPTY_LINE	=>  self::STATE_FINAL,
+				self::PARSE_VARIABLE	=>  self::STATE_FINAL,
+				self::PARSE_COMMAND	=>  self::STATE_FINAL,
+				self::PARSE_COMMENT	=>  self::STATE_FINAL,
+				self::PARSE_COMMAND_ID	=>  self::STATE_FINAL
+			    ],
+			self::STATE_COMMAND		=> 
+			   [
+				self::PARSE_EMPTY_LINE	=>  self::STATE_FINAL,
+				self::PARSE_VARIABLE	=>  self::STATE_FINAL,
+				self::PARSE_COMMAND	=>  self::STATE_FINAL,
+				self::PARSE_COMMENT	=>  self::STATE_FINAL,
+				self::PARSE_COMMAND_ID	=>  self::STATE_FINAL
+			    ],
+			self::STATE_COMMENT		=> 
+			   [
+				self::PARSE_EMPTY_LINE	=>  self::STATE_FINAL,
+				self::PARSE_VARIABLE	=>  self::STATE_VARIABLE,
+				self::PARSE_COMMAND	=>  self::STATE_COMMAND,
+				self::PARSE_COMMENT	=>  self::STATE_COMMENT,
+				self::PARSE_COMMAND_ID	=>  self::STATE_COMMENT
+			    ],
+			self::STATE_COMMAND_ID		=> 
+			   [
+				self::PARSE_EMPTY_LINE	=>  self::STATE_FINAL,
+				self::PARSE_VARIABLE	=>  self::STATE_VARIABLE,
+				self::PARSE_COMMAND	=>  self::STATE_COMMAND,
+				self::PARSE_COMMENT	=>  self::STATE_COMMENT,
+				self::PARSE_COMMAND_ID	=>  self::STATE_COMMENT
+			    ]
+		    ] ;
+
+		$line_count	=  count ( $lines ) ;
+
+		if  ( $index  >=  $line_count )
+			return ( false ) ;
+
+		$state		=  self::STATE_INITIAL ;
+		$block_type	=  false ;
+		$initial_index	=  $index ;
+		$cmdvar_index	=  false ;
+		$cmdvar_id	=  false ;
+		$block_lines	=  [] ;
+
+		while  ( $state  !=  self::STATE_FINAL  &&  $index  <  $line_count )
+		   {
+			$line		=  $lines [ $index ] ;
+			$type		=  $line [ 'type' ] ;
+			$next_state	=  $nextstates [ $state ] [ $type ] ;
+			
+			switch  ( $next_state )
+			   {
+				case	self::STATE_FINAL :
+					if  ( $block_type  ===  false )		// This case is only for handling empty lines at the beginning of the crontab
+						$block_type	=  self::PARSE_COMMENT ;
+
+					break 2 ;
+
+				case	self::STATE_VARIABLE :
+					$block_type	=  self::PARSE_VARIABLE ;
+					$cmdvar_index	=  $index - $initial_index ;
+					$cmdvar_id	=  $line [ 'name' ] ;
+					break ;
+
+				case	self::STATE_COMMAND :
+					$block_type	=  self::PARSE_COMMAND ;
+					$cmdvar_index	=  $index - $initial_index ;
+					$cmdvar_id	=  $line [ 'name' ] ;
+					break ;
+
+				case	self::STATE_COMMENT :
+					$block_type	=  self::PARSE_COMMENT ;
+					break ;
+
+				case	self::STATE_COMMAND_ID :
+					$block_type	=  self::PARSE_COMMENT ;
+					$command_id	=  $index - $initial_index ;
+					break ;
+
+				default : 
+					error ( new \Thrak\System\ParanoidException ( "Unhandled parser state" ) ) ;
+			    }
+
+			$block_lines []		=  $line ;
+			$state			=  $next_state ;
+			$index ++ ;
+		    }
+
+		// Empty lines past the parsed block belong to that block
+		while  ( $index  <  $line_count  &&  $lines [ $index ] [ 'type' ]  ==  self::PARSE_EMPTY_LINE )
+			$block_lines []		=  $lines [ $index ++ ] ;
+
+		$block	=
+		   [
+			'lines'		=>  $block_lines, 
+			'type'		=>  $block_type,
+			'name'		=>  $cmdvar_id,
+			'index'		=>  $cmdvar_index 
+		    ] ;  
+
+		return ( $block ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    Rescan -
+	        Rescans parsed entries and set the $Variables and $Commands member arrays to the appropriate indexes in
+		$CronBlocks.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  Rescan ( $lines )
+	   {
+		$this -> Variables	=  [] ;
+		$this -> Commands	=  [] ;
+		$this -> CronBlocks	=  [] ;
+
+		$index			=  0 ;
+		$block_index		=  0 ;
+
+		while  ( ( $block = $this -> GetNextBlock ( $lines, $index ) )  !==  false )
+		   {
+			$this -> CronBlocks []	=  $block ;
+
+			if  ( $block [ 'type' ]  ==  self::PARSE_VARIABLE )
+				$this -> Variables []	=  $block_index ;
+			else if  ( $block [ 'type' ]  ==  self::PARSE_COMMAND )
+				$this -> Commands []	=  $block_index ;
+
+			$block_index ++ ;
+		    }
+	    }
+
+
+	/**************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 ******                                      SUPPORT FUNCTIONS                                           ******
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************/
+
+	// __findfirst, __findlast -
+	//	Finds the first/last instance of a variable definition or crontab entry and returns its index.
+	private function  __findfirst ( $name, $type )
+	  {
+		$count	=  count ( $this -> CronBlocks ) ;
+
+		for  ( $i = 0 ; $i  <  $count ; $i ++ )
+		   {
+			$block	=   $this -> CronBlocks [$i] ;
+
+			if  ( $block [ 'type' ]  ==  $type  &&  $block [ 'name' ]  ==  $name )
+				return ( $i ) ;
+		    }
+
+		return ( false ) ;
+	   }
+
+	private function  __findlast ( $name, $type )
+	  {
+		$count	=  count ( $this -> CronBlocks ) ;
+
+		for  ( $i = $count - 1 ; $i  >=  0 ; $i -- )
+		   {
+			$block	=   $this -> CronBlocks [$i] ;
+
+			if  ( $block [ 'type' ]  ==  $type  &&  $block [ 'name' ]  ==  $name )
+				return ( $i ) ;
+		    }
+
+		return ( false ) ;
+	   }
+
+
+	//  __is_defined -
+	//	Checks if the specified variable or command is defined.
+	private function  __is_defined ( $type, $name )
+	   {
+		$count	=  count ( $this -> CronBlocks ) ;
+
+		for  ( $i = 0 ; i  <  $count ; $i ++ )
+		   {
+			$block		=  $this -> CronBlocks [$i] ;
+
+			if  ( $block [ 'type' ]  ==  $type  &&  $block [ 'name' ]  ==  $name )
+				return ( true ) ;
+		    }
+
+		return ( false ) ;
+	    }
+
+
+	// __process_comments -
+	//	Returns an array of lines containing the preprocessed contents of the specified comments.
+	//	$comments can either be an array or a string (string can contain newlines, that will generate
+	//	new array entries).
+	//	The string '# ' is always prepended to a line if it is missing the comment sign '#'.
+	//	If $comments is false, an empty array is returned.
+	private function  __process_comments ( $comments )
+	   {
+		$result		=  [] ;
+
+		if  ( is_string ( $comments ) )
+			$comments	=  explode ( "\n", $comments ) ;
+
+		if  ( is_array ( $comments ) )
+		   {
+			foreach  ( $comments  as  $comment )
+			   {
+				if  ( ! preg_match ( '/^\s*\#/', $comment ) )
+					$comment	=    '# ' . $comment ;
+
+				$result []	=  [ 'type' => self::PARSE_COMMENT, 'text' => $comment ] ;
+			    }
+		    }
+
+		return ( $result ) ;
+	    }
+
+
+	// __replace_variable -
+	//	Replaces a variable in the specified crontab block.
+	private function  __replace_variable ( $index, $value, $comments = false )
+	   {
+		$block	=  &$this -> CronBlocks [ $index ] ;
+		$item	=  &$block [ 'lines' ] [ $block [ 'index' ] ] ;
+
+		if  ( $comments  ===  false )
+			$item [ 'object' ] -> Value	=  $value ;
+		else
+		   {
+			$lines				=  $this -> __process_comments ( $comments ) ;
+			$block [ 'index' ]		=  count ( $lines ) ;
+			$item [ 'object' ] -> Value	=  $value ; 
+			$lines []			=  $item ;
+			$block [ 'lines' ]		=  $lines ;
+		    }
+	    }
+
+
+	// __replace_command -
+	//	Replaces a command in the specified crontab block.
+	private function  __replace_command ( $index, $command, $fields = false, $comments = false )
+	   {
+		$block	=  &$this -> CronBlocks [ $index ] ;
+		$item	=  &$block [ 'lines' ] [ $block [ 'index' ] ] ;
+
+		if  ( $comments  ===  false )
+			$item [ 'object' ]	=  new CrontabCommand ( $command, $fields ) ;
+		else
+		   {
+			$lines			=  $this -> __process_comments ( $comments ) ;
+			$block [ 'index' ]	=  count ( $lines ) ;
+			$item [ 'object' ]	=  new CrontabCommand ( $command, $fields ) ;
+			$lines []		=  $item ;
+			$block [ 'lines' ]	=  $lines ;
+		    }
+	    }
+	
+
+	// __undefine -
+	//	Undefines the specified variable or command.
+	private function  __undefine ( $type, $name, $last_only = true )
+	   {
+		$count	=  count ( $this -> CronBlocks ) ;
+		$status =  false ;
+
+		for  ( $i = $count - 1 ; $i  >=  0 ; $i -- )
+		   {
+			$block		=  $this -> CronBlocks [$i] ;
+
+			if  ( $block [ 'type' ]  ==  $type  &&  $block [ 'name' ]  ==  $name )
+			   {
+				unset ( $this -> CronBlocks [$i] ) ;
+				$status		=  true ;
+
+				if   ( $last_only ) 
+					break ;
+			    }
+		    }
+
+		return ( $status ) ;
+	    }
+    }
+
+
+
+/*==============================================================================================================
+
+    CrontabCommand -
+        Implements a crontab command.
+
+  ==============================================================================================================*/
+class  CrontabCommand		extends  Object
+   {
+	// Authorized month names
+	static private	$MonthNames		=
+	   [
+		'jan'		=>  [ 'january', 'jan', 'janvier', 'jan' ],
+		'feb'		=>  [ 'february', 'feb', 'fevrier', 'fev' ],
+		'mar'		=>  [ 'march', 'mar', 'mars', 'mar' ],
+		'apr'		=>  [ 'april', 'apr', 'avril', 'avr' ],
+		'may'		=>  [ 'may', 'mai' ],
+		'jun'		=>  [ 'june', 'jun', 'juin' ],
+		'jul'		=>  [ 'july', 'jul', 'juillet' ],
+		'aug'		=>  [ 'august', 'aug', 'aout', 'aou' ],
+		'sep'		=>  [ 'september', 'sep', 'septembre' ],
+		'oct'		=>  [ 'october', 'oct', 'octobre' ],
+		'nov'		=>  [ 'november', 'nov', 'novembre' ],
+		'dec'		=>  [ 'december', 'dec', 'decembre' ]
+	    ] ;
+	// Authorized day-of-week names 
+	static private 	$DayNames		=
+	   [
+		'sun'		=>  [ 'sunday', 'sun', 'su', 'dimanche', 'dim', 'di' ],
+		'mon'		=>  [ 'monday', 'mon', 'mo', 'lundi', 'lun', 'lu' ],
+		'tue'		=>  [ 'tuesday', 'tue', 'tu', 'mardi', 'mar', 'ma' ],
+		'wed'		=>  [ 'wednesday', 'wed', 'we', 'mercredi', 'mer', 'me' ],
+		'thu'		=>  [ 'thursday', 'thu', 'th', 'jeudi', 'jeu', 'je' ],
+		'fri'		=>  [ 'friday', 'fri', 'fr', 'vendredi', 'ven', 've' ],
+		'sat'		=>  [ 'saturday', 'sat', 'sa', 'samedi', 'sam', 'sa' ]
+	    ] ;
+
+	// Shortcuts
+	static private	$Shortcuts		=
+	   [
+		'@reboot'	=>  null,
+		'@yearly'	=>  [ 'minute' => 0, 'hour' => 0, 'dom' => 1, 'month' => 1 ],
+		'@annually'	=>  [ 'minute' => 0, 'hour' => 0, 'dom' => 1, 'month' => 1 ],
+		'@monthly'	=>  [ 'minute' => 0, 'hour' => 1, 'dom' => 1 ],
+		'@weekly'	=>  [ 'minute' => 0, 'hour' => 0, 'dow' => 1 ],
+		'@daily'	=>  [ 'minute' => 0, 'hour' => 0 ],
+		'@hourly'	=>  [ 'minute' => 0 ]
+	    ] ;
+	// Allowed keywords for the $fields parameters
+	static private	$FieldDefinitions	=
+	   [
+		'minute'	=>  [ 'name' => [ 'minute', 'min', 'mn'	], 'field' => '__Minute'    , 'min-value' => 0, 'max-value' => 59, 'default' => '*'				],
+		'hour'		=>  [ 'name' => [ 'hour', 'hr'		], 'field' => '__Hour'      , 'min-value' => 0, 'max-value' => 23, 'default' => '*'				],
+		'day-of-month'	=>  [ 'name' => [ 'day-of-month', 'dom'	], 'field' => '__DayOfMonth', 'min-value' => 0, 'max-value' => 31, 'default' => '*'				],
+		'month'		=>  [ 'name' => [ 'month', 'mon', 'mo'	], 'field' => '__Month'     , 'min-value' => 1, 'max-value' => 12, 'default' => '*', 'keywords' => 'MonthNames'	],
+		'day-of-week'	=>  [ 'name' => [ 'day-of-week', 'dow'	], 'field' => '__DayOfWeek' , 'min-value' => 0, 'max-value' =>  7, 'default' => '*', 'keywords' => 'DayNames'	]
+	    ] ;
+
+	// Regular expressions
+	static	$CrontabKeywordCommand	=  '/
+						(?P<keyword> \@\w+) \s+ (?P<command> .*)
+					    /imsx' ;
+	static	$CrontabCommand		=  '/
+						(?P<minute> [^\s]+)
+						\s+
+						(?P<hour> [^\s]+)
+						\s+
+						(?P<dom> [^\s]+)
+						\s+
+						(?P<month> [^\s]+)
+						\s+
+						(?P<dow> [^\s]+)
+						\s+
+						(?P<command> .*)
+					    /imsx' ;
+
+	// Crontab entries have the following order :
+	// minute        hour    day-of-month     month   day-of-week    command
+	private		$__Minute			=  '*',
+			$__Hour				=  '*',
+			$__DayOfMonth			=  '*',
+			$__Month			=  '*',
+			$__DayOfWeek			=  '*' ;
+	// Shell command corresponding to this crontab entry
+	private		$__Command			=  false ;
+	// This variable is set to the specified keyword if the "@something" construct is used
+	private		$SpecialKeyword			=  false ;
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+
+	    Constructor -
+		Builds a crontab command object. Initializes it if the $command parameter is not empty.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( $command = false, $fields = false )
+	   {
+		parent::__construct ( ) ;
+
+		if  ( $command  !==  false )
+			$this -> __set_command ( $command, $fields ) ;
+	    }
+
+
+	public function  __tostring ( )
+	   { return ( $this -> __get_crontab_string ( ) ) ; }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+
+		getter and setter.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __get ( $member )
+	   {
+		switch ( strtolower ( $member ) )
+		   {
+			case  'minute' :  case  'min' :  case  'mn' :
+				return ( $this -> __Minute ) ;
+
+			case  'hour' :  case  'hr' :
+				return ( $this -> __Hour ) ;
+
+			case  'day_of_month' :  case  'dayofmonth' :  case  'dom' :
+				return ( $this -> __DayOfMonth ) ;
+
+			case  'month' : case  'mon' : case  'mo' :
+				return ( $this -> __Month ) ;
+
+			case  'day_of_week' : case  'dayofweek' : case 'dow' :
+				return ( $this -> __DayOfWeek ) ;
+
+			case  'command' :
+				return ( $this -> __Command ) ;
+
+			case  'crontabstring' :
+				return ( $this -> __get_crontab_string ( ) ) ;
+
+			default :
+				error ( new \Thrak\System\UndefinedPropertyException ( $member ) ) ;
+		    }
+	    }
+
+
+	public function  __set ( $member, $value )
+	   {
+		switch ( strtolower ( $member ) )
+		   {
+			case  'minute' :  case  'min' :  case  'mn' :
+				$this -> __validate_field_value ( $value, self::$FieldDefinitions [ 'minute' ] ) ;
+				break ;
+
+			case  'hour' :  case  'hr' :
+				$this -> __validate_field_value ( $value, self::$FieldDefinitions [ 'hour' ] ) ;
+				break ;
+
+			case  'day_of_month' :  case  'dayofmonth' :  case  'dom' :
+				$this -> __validate_field_value ( $value, self::$FieldDefinitions [ 'day-of-month' ] ) ;
+				break ;
+
+			case  'month' : case  'mon' : case  'mo' :
+				$this -> __validate_field_value ( $value, self::$FieldDefinitions [ 'month' ] ) ;
+				break ;
+
+			case  'day_of_week' : case  'dayofweek' : case 'dow' :
+				$this -> __validate_field_value ( $value, self::$FieldDefinitions [ 'day-of-week' ] ) ;
+				break ;
+
+			case  'command' :
+				$this -> __Command	=  $value ;
+				break ;
+
+			case  'crontabstring' :
+				$this -> __set_command ( $value, false ) ;
+				break ;
+
+			default :
+				error ( new \Thrak\System\UndefinedPropertyException ( $member ) ) ;
+		    }
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+
+	    IsKeyword -
+		Returns true if this crontab entry contains a reserved keyword, such as "@reboot" or "@monthly".
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  IsKeyword ( )
+	   {
+		return ( $this -> SpecialKeyword  !==  false ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+
+	    __get_crontab_string -
+		Returns a string representation of this crontab entry.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	private function  __get_crontab_string ( )
+	   {
+		return 
+		   (
+			$this -> __Minute	. " \t" .
+			$this -> __Hour		. " \t" .
+			$this -> __DayOfMonth	. " \t" .
+			$this -> __Month	. " \t" .
+			$this -> __DayOfWeek	. " \t" .
+			$this -> __Command
+		    ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+
+	    __set_command -
+		Initializes this crontab entry with the specified command.
+		$fields, if specified, must be an array which can contain the following entries :
+		- minute (or min or mn)
+		- hour (or hr)
+		- day-of-month (or dom)
+		- month (or mon or mo)
+		- day-of-week (or dow)
+		In this case, $command will not be considered as a full crontab entry, but as a shell command.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	private function  __set_command ( $command, $fields )
+	   {
+		// If a whole crontab entry has been specified, split it into command and fields
+		if  ( $fields  ===  false )
+		   {
+			if  ( preg_match ( self::$CrontabCommand, $command, $match ) )
+			   {
+				$command	=  $match [ 'command' ] ;
+				$fields		=
+				   [
+					'minute'	=>  $match [ 'minute' ],
+					'hour'		=>  $match [ 'hour' ],
+					'dom'		=>  $match [ 'dom' ],
+					'month'		=>  $match [ 'month' ],
+					'dow'		=>  $match [ 'dow' ]
+				    ] ;
+			    }
+			else if  ( preg_match ( self::$CrontabKeywordCommand, $command, $match ) )
+			   {
+				$command	=  $match [ 'command' ] ;
+				$fields		=  $match [ 'keyword' ] ;
+			    }
+			else
+				error ( new \Thrak\System\InvalidArgumentException ( "The following command is not a valid crontab entry :\n\t$command" ) ) ;
+		    }
+
+		// Save the command part
+		$this -> __Command	=  $command ;
+
+		// A string means that the caller specified one of the reserved keywords instead of a ist of crontab command fields
+		if  ( is_string ( $fields ) )
+		   {
+			$keyword	=  strtolower ( $fields ) ;
+
+			// So check if this reserved keyword exists
+			if  ( isset ( $this -> Shortcuts [ $keyword ] ) )
+			   {
+				$this -> SpecialKeyword	=  $keyword ;
+
+				if  ( $this -> Shortcuts [ $keyword ] )
+					$fields			=  $this -> Shortcuts [ $keyword ] ;
+				else
+					return ;
+			    }
+			else  
+				error ( new \Thrak\System\InvalidArgumentException ( "Invalid keyword \"$fields\"" ) ) ;
+		    }
+
+		// Normalize supplied field definitions using the field's 'official' name, ie the first element of the 'name'
+		// entry in the self::$FieldDefinitions array
+		$new_fields	=  [] ;
+
+		foreach  ( $fields  as  $name => $value )
+		   {
+			$field_data	=  $this -> __get_field_data ( $name ) ;
+
+			if  ( $field_data  ===  false )
+				error ( new \Thrak\System\InvalidArgumentException ( "Unknown field name \"$name\"" ) ) ;
+
+			$new_fields [ $field_data [ 'name' ] [0] ]	=  [ 'value' => $value, 'definition' => $field_data ] ;
+		    }
+
+		// Now add default values to missing fields (default value is always "*")
+		foreach  ( self::$FieldDefinitions  as  $def )
+		   {
+			if  ( ! isset ( $new_fields [ $def [ 'name' ] [0] ] ) )
+				$new_fields [ $def [ 'name' ] [0] ]	=  [ 'value' => $def [ 'default' ], 'definition' => $def ] ;
+		    }
+
+		// Validate field values
+		foreach  ( $new_fields  as  &$field )
+			$this -> __validate_field_value ( $field [ 'value' ], $field [ 'definition' ] ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+
+	    __get_field_data -
+		Returns the field definitions corresponding to the specified field name.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	private function  __get_field_data ( $name )
+	   {
+		foreach  ( self::$FieldDefinitions  as  $def )
+		   {
+			foreach  ( $def [ 'name' ]  as  $field_name )
+			   {
+				if  ( ! strcasecmp ( $field_name, $name ) )
+					return ( $def ) ;
+			    }
+		    }
+
+		return ( false ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+
+	    __validate_field_value -
+		Checks that the specified value matches the specified field definition.
+		Throws an exception if not.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	private function  __validate_field_value ( $value, $def )
+	   {
+		$member			=  $def [ 'field' ] ;
+		$keywords		=  ( isset ( $def [ 'keywords' ] ) ) ?  $def [ 'keywords' ] : false ;
+		$min_value		=  $def [ 'min-value' ] ;
+		$max_value		=  $def [ 'max-value' ] ;
+
+		// Default value of '*'
+		if  ( $value  ==  '*' )
+		   {
+			$this -> $member	=  '*' ;
+			return ;
+		    }
+
+		// Check if the supplied value is not a keyword
+		if  ( $keywords )
+		   {
+			foreach  ( $keywords  as  $name => $entries )
+			   {
+				foreach  ( $entries  as  $entry )
+				   {
+					if  ( ! strcasecmp ( $entry, $value ) )
+					   {
+						$this -> $member	=  $name ;
+						return ;
+					    }
+				    }
+			    }
+		    }
+
+		// Other kind of value : integer, list, range, range with step, list of ranges, etc.
+		$list_items	=  explode ( ',', $value ) ;
+		$defname	=  $def [ 'name' ] [0] ;
+
+		foreach  ( $list_items  as  $list_item )
+		   {
+			$re	=  '/
+					(?P<min> \d+)
+					(
+						-
+						(?P<max> \d+)
+						(
+							\/
+							(?P<step> \d+)
+						 )?
+					 )?
+				    /imsx' ;
+
+
+			if  ( preg_match ( $re, $list_item, $match ) )
+			   {
+				$min	=  $match [ 'min' ] ;
+				$max	=  ( isset ( $match [ 'max' ]  ) ) ?  $match [ 'max'  ] : $min ;
+				$step	=  ( isset ( $match [ 'step' ] ) ) ?  $match [ 'step' ] : 1 ;
+
+				if  ( $min  >  $max )
+					error ( new \Thrak\System\InvalidArgumentException ( "Min value \"$min\" exceeds max value \"$max\" for crontab column \"$defname\"" ) ) ;
+
+				if  ( $min  <  $min_value  ||  $min  >  $max_value )
+					error ( new \Thrak\System\InvalidArgumentException ( "Min value \"$min\" is out of range for crontab column \"$defname\"" ) ) ;
+
+				if  ( $max  <  $min_value  ||  $max  >  $max_value )
+					error ( new \Thrak\System\InvalidArgumentException ( "Max value \"$max\" is out of range for crontab column \"$defname\"" ) ) ;
+
+				$this -> $member	=  $value ;
+			    }
+			else
+				error ( new \Thrak\System\InvalidArgumentException ( "Invalid value \"$value\" for crontab column \"$defname\"" ) ) ;
+		    }
+	    }
+    }
+
+
+/*==============================================================================================================
+
+    CrontabVariable -
+        Implements a crontab variable.
+	This class is not absolutely necessary, but it is here to allow the caller to modify variable values
+	returned by the Crontab::GetVariables() method, as it is the case for the Crontab::GetCommands() one.
+
+  ==============================================================================================================*/
+class  CrontabVariable		extends  Object
+   {
+	protected	$__Name ;
+	protected	$__Value ;
+
+
+	public function  __construct ( $name, $value )
+	   {
+		parent::__construct ( ) ;
+
+		$this -> __Name		=  $name ;
+		$this -> __Value	=  $value ;
+	    }
+
+
+	public function  __get ( $member )
+	   {
+		switch ( strtolower ( $member ) )
+		   {
+			case	'name'	:  return ( $this -> __Name ) ;
+			case	'value' :  return ( $this -> __Value ) ;
+			default :
+				error ( new \Thrak\System\UndefinedPropertyException ( $member ) ) ;
+		    }
+	    }
+
+
+	public function  __set ( $member, $value )
+	   {
+		switch ( strtolower ( $member ) )
+		   {
+			case	'name'	:  error ( new \Thrak\System\ReadOnlyPropertyException ( $member ) ) ;
+			case	'value' :  
+				$this -> __Value  = $value ;
+				break ;
+			default :
+				error ( new \Thrak\System\UndefinedPropertyException ( $member ) ) ;
+		    }
+	    }
+
+
+	public function  __tostring ( )
+	   {
+		return ( $this -> __Name . '=' . $this -> Value ) ;
+	    }
+    }
