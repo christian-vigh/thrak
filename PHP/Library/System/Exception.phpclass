@@ -390,6 +390,8 @@ class  Exception 	extends  \Exception
 	  ==================================================================================================*/
 	static private function  __DisplayTextMessage ( $errtype, $errno, $errstr, $errfile, $errline, $stacktrace = null, $exception = null )
 	   {
+		self::__GetExceptionParameters ( ) ;
+
 	   	$header 	=  Exception::$Errors [ $errtype ] [ 'text' ] ;
 		$trailer	=  "" ;
 	   	$error 		=  Exception::$Errors [ $errtype ] [ 'error' ] ;

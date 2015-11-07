@@ -100,9 +100,6 @@ if  ( IS_STANDALONE )
     }
 
 
-// Enable this until all classes that do not inherit from the Object class or do not call its constructor have been corrected
-$GLOBALS [ 'OBJECT_GARDENKEEPER' ]	=  true ;
-
 // Global variables
 $Configuration  		=  null ;
 
