@@ -131,6 +131,17 @@ class  HttpRequestTracker	extends  BufferedTracker
 	    }
 
 
+	protected function  BatchOptimize ( )
+	   {
+		global	$Database ;
+
+		parent::BatchOptimize ( ) ;
+
+		$Database -> Execute ( "OPTIMIZE TABLE ". self::TABLE_HTTP_ACCESS ) ;
+		$Database -> Execute ( "OPTIMIZE TABLE ". self::TABLE_HTTP_SERVER_VARS ) ;
+	    }
+
+
 	protected function  BatchProcessRow ( $data )
 	   {
 		global		$Database ;
@@ -151,8 +162,13 @@ class  HttpRequestTracker	extends  BufferedTracker
 		$server			=  $array [ '_SERVER' ] ;
 
 		// Retrieve values for the http access table
-		$request_time		=  \DateTime::createFromFormat ( 'U.u', ( isset ( $server [ 'REQUEST_TIME_FLOAT' ] ) ) ?  
-								$server [ 'REQUEST_TIME_FLOAT' ] : $server [ 'REQUEST_TIME' ] ) ;
+		$time			=  ( isset ( $server [ 'REQUEST_TIME_FLOAT' ] ) ) ?  
+							$server [ 'REQUEST_TIME_FLOAT' ] : $server [ 'REQUEST_TIME' ] ;
+
+		if  ( $time  ==  round ( $time ) )
+			$time	=  "$time.0" ;
+
+		$request_time		=  \DateTime::createFromFormat ( 'U.u', $time ) ;
 		$timestring		=  $request_time -> format ( 'Y-m-d H:i:s.u' ) ;
 		$local_port		=  ( integer ) $server [ 'SERVER_PORT' ] ;
 		$remote_port		=  ( integer ) $server [ 'REMOTE_PORT' ] ;

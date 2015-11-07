@@ -185,6 +185,13 @@ abstract class  BufferedTracker		extends  Tracker
 	   { }
 
 
+	protected function  BatchOptimize ( )
+	   {
+		global	$Database ;
+
+		$Database -> Execute ( "OPTIMIZE TABLE " . self::TABLE_TRACKING_BUFFER ) ;
+	    }
+
 	protected abstract function  BatchProcessRow ( $data ) ;
     }
 
