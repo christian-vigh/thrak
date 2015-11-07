@@ -1,0 +1,4 @@
+<?php
+	$THRAK_ROOT	=  realpath ( dirname ( __FILE__ ) . '/../..' ) ;
+
+	require_once ( $THRAK_ROOT . "/Thrak.phpinclude" ) ;

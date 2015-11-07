@@ -1,0 +1,26 @@
+<?php
+	/**************************************************************************************************************
+	
+	    NAME
+	        tracking.phs
+	
+	    DESCRIPTION
+	        A job that collects buffered data.
+	
+	    AUTHOR
+	        Christian Vigh, 11/2015.
+	
+	    HISTORY
+	    [Version : 1.0]    [Date : 2015/11/04]     [Author : CV]
+	        Initial version.
+	
+	 **************************************************************************************************************/
+	 require ( 'Job.phpinclude' ) ;
+
+	 use  Thrak\Administration\Crontab ;
+
+	 $crontab	=  new Crontab ( 'c:/temp/crontab.in' ) ;
+
+	 $crontab -> UndefineCommand ( 'cmd2' ) ;
+
+	 $crontab -> Save ( 'c:/temp/crontab.out' ) ;
