@@ -350,7 +350,6 @@ class  WebSite			extends	Object
 		   {
 			$tracker	=  new  HttpRequestTracker ( ) ;
 			$tracker -> Track ( ) ;
-		$tracker -> BatchProcess ( ) ;
 		    }
 	    }
     }
