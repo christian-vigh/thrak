@@ -1,0 +1,215 @@
+<?php
+	/**************************************************************************************************************
+	
+	    NAME
+	        Bin.phpinclude
+	
+	    DESCRIPTION
+		The main difficulty with general-purpose Thrak scripts (such as scripts aimed to be executed from cron,
+		or command-line scripts) is that they are not aware of where a site root is located.
+
+		The additional difficulty is that the absolute path where the thrak library and the site sources reside
+		may differ between the local (development) version and the remote (production) one.
+
+		Solving the second issue is easy : just put somewhere a file, say 'server.ini', that have the following
+		contents :
+
+			[Local]
+			DOCUMENT_ROOT 		=  W:\Sites\www.wuthering-bytes.home
+			THRAK_ROOT 		=  W:\Sites\www.wuthering-bytes.home\thrak
+			USER 			=
+			GROUP 			=
+			LOGFILE 		=  T:\Temp\thrakjobs.log
+
+			[Remote]
+			DOCUMENT_ROOT	 	=  /server/www/wuthering-bytes.com/site
+			THRAK_ROOT	 	=  /server/www/wuthering-bytes.com/site/thrak
+			USER 			=  www-data
+			GROUP 			=  www-data
+			LOGFILE 		=  /server/www/wuthering-bytes.com/logs
+
+		The [Local] section contains variable definitions for the local environment, and [Remote] is for
+		remote. Determining which one to use is easy : simply declare a $THRAK_LOCAL environment variable on
+		your development machine. If $THRAK_LOCAL is defined, then the [Local] section will be used ; in any
+		othercase, [Remote] will be used.
+
+		That was for the second issue ; the first issue becomes now a matter of locating file 'server.ini'.
+		Another environment variable could have been used for that (in fact you can effectively define a
+		THRAK_ENV environment variable for that) but this method allows to manage only one site on the
+		same machine, either a development or a production one, unless you take care of changing the THRAK_ENV
+		variable each time you work on a different site.
+
+		So a kludge has been designed for general-purpose thrak scripts ; either the caller of the script
+		specifies the location of the server.ini file using the --environment or --env parameter, which will
+		be removed later from the $argv array :
+
+			myscript.phs --environment /path/to/server.ini
+
+		Either it accepts a parameter, such as -configuration_file, which needs a path to an existing file.
+		By convention, the directory containing this file will also contain file "server.ini".
+
+		The default name for this "special" parameter is "-configuration_file" (or "-cf") : this can be
+		overridden by the $THRAK_SPECIAL_PARAMETER script variable (which must be defined before including
+		this script). This variable can be either a string or an array of strings, giving the special parameter
+		name and its aliases ; the default value for this variable is :
+
+			$THRAK_SPECIAL_PARAMETER  = [ '-configuration_file', '-cf' ] ;
+
+		Cron scripts residing in the PHP/Jobs directory rely upon this convention.
+		The $THRAK_SPECIAL_PARAMETER will be unset at the end of this file.
+
+		Note that the --environment parameter has the precedence over the -configuration_file one.
+
+		At the end of the script, a variable named $SCRIPT_VARIABLES will exist, containing the ones defined
+		in server.ini. This is a VariableStore object that can be specified when loading .ini files.
+
+	    AUTHOR
+	        Christian Vigh, 11/2015.
+	
+	    HISTORY
+	    [Version : 1.0]    [Date : 2015/11/08]     [Author : CV]
+	        Initial version.
+	
+	 **************************************************************************************************************/
+	use	Thrak\Processors\VariableStore ;
+
+
+	 // Error display function
+	 $error		=  function  ( $msg )
+	    {
+		 echo ( "*** Error *** $msg\n" ) ;
+		 exit ( 1 ) ;
+	     } ;
+
+
+	// The function for setting up the script environment
+	$setup_script_environment	=  function ( )
+	   {
+		global	$argv, $argc, $error ;
+		global	$THRAK_SPECIAL_PARAMETER,
+			$THRAK_ROOT, $SITE_ROOT, $SITE_CONFIGURATION ;
+		
+		
+		$new_argv	=  [ $argv [0] ] ;
+		$server_ini	=  false ;
+
+		// Default value for THRAK_SPECIAL_PARAMETER if undefined
+		if  ( ! $THRAK_SPECIAL_PARAMETER )
+			$THRAK_SPECIAL_PARAMETER	=  [ '-configuration_file', '-cf' ] ;
+		else if  ( ! is_array ( $THRAK_SPECIAL_PARAMETER ) )
+			$THRAK_SPECIAL_PARAMETER	=  [ $THRAK_SPECIAL_PARAMETER ] ;
+
+		// Loop through command-line arguments, trying to catch either --environment or one of the parameters 
+		// defined by $THRAK_SPECIAL_PARAMETER
+		for  ( $i = 1 ; $i  <  $argc ; $i ++ )
+		   {
+			// --environment or --env : get path to server.ini and remove the two arguments (--environment + filename)
+			// from the command line.
+			if  ( ! strcasecmp ( $argv [$i], '--environment' )  ||  ! strcasecmp ( $argv [$i], '--env' ) )
+			   {
+				if  ( $i  <  $argc )
+				   {
+					$server_ini	=  $argv [++$i] ;
+
+					if  ( ! file_exists ( $server_ini ) )
+						$error ( "File \"$server_ini\" specified for the --environment parameter does not exist." ) ;
+
+					continue ;
+				    }
+				else
+					error ( "The --environment parameter requires a valid file name." ) ;
+			    }
+			// Other arguments : check if they are specified by the $THRAK_SPECIAL_PARAMETER variable
+			else if  ( ! $server_ini )	// ... but only for the first occurrence
+			   {
+				foreach  ( $THRAK_SPECIAL_PARAMETER  as  $name )
+				   {
+					if  ( ! strcasecmp ( $name, $argv [$i] ) )
+					   {
+						if  ( $i + 1  >=  $argc )
+							$error ( "File \"$server_ini\" specified for the {$argv [$i]} parameter does not exist." ) ;
+
+						$arg		=  $argv [$i] ;
+						$path		=  $argv [$i+1] ;
+
+						if (  file_exists ( $path ) )
+						   {
+							if  ( ! is_dir ( $path ) )
+								$path	=  dirname ( $path ) ;
+
+							$server_ini	=  "$path/server.ini" ;
+
+							if  ( ! file_exists ( $server_ini ) )
+								$error ( "File \"$server_ini\" specified for the $arg parameter does not exist." ) ;
+						    }
+
+						$new_argv []	=  $arg ;
+						$i ++ ;
+
+						break ;
+					    }
+				    }
+			    }
+
+			// Add current argument to output argument array
+			$new_argv []	=  $argv [$i] ;
+		    }
+
+		// Check if a server.ini file has been located
+		if  ( ! $server_ini )
+			$error ( "No server.ini file could be located." ) ;
+
+		// Load .ini file contents 
+		$variables	=  parse_ini_file ( $server_ini, true, INI_SCANNER_RAW ) ;
+		$variables	=  array_change_key_case ( $variables, CASE_LOWER ) ;
+	
+		if  ( ! isset ( $variables [ 'local' ] ) )
+			$error ( "File \"$server_ini\" is missing required section [Local]." ) ;
+
+		if  ( ! isset ( $variables [ 'remote' ] ) )
+			$error ( "File \"$server_ini\" is missing required section [Remote]." ) ;
+
+		// Get section appropriate to the local or remote environment
+		$variables	=  ( getenv ( "THRAK_LOCAL" )  ===  false ) ?  $variables [ 'remote' ] : $variables [ 'local' ] ;
+
+		// Two keys are mandatory : SITE_ROOT and THRAK_ROOT
+		if  ( ! isset ( $variables [ 'SITE_ROOT' ] ) )
+			$error ( "The \"SITE_ROOT\" key must be defined in file \"$server_ini\"." ) ;
+
+		$SITE_ROOT	=  $variables [ 'SITE_ROOT' ] ;
+
+		if  ( ! isset ( $variables [ 'THRAK_ROOT' ] ) )
+			$error ( "The \"THRAK_ROOT\" key must be defined in file \"$server_ini\"." ) ;
+
+		$THRAK_ROOT	=  $variables [ 'THRAK_ROOT' ] ;
+
+		// Optional site configuration
+		if  ( isset ( $variables [ 'SITE_CONFIGURATION' ] ) )
+			$SITE_CONFIGURATION	=  $variables [ 'SITE_CONFIGURATION' ] ;
+
+		// Define new argv, which is the initial one minus its "--environment path" parameters
+		$argv	=  $new_argv ;
+		$argc	=  count ( $argv ) ;
+
+		// All done, return variables
+		return ( $variables ) ;
+	    } ;
+
+
+	// Setup the script environment
+	$variables	=  $setup_script_environment ( ) ;
+
+	// All done, we can safely include the thrak main file - the site configuration file will be loaded as well
+	require_once ( $THRAK_ROOT . "/Thrak.phpinclude" ) ;
+
+	// Create a $ScriptVariables variable store
+	$ScriptVariables	=  new VariableStore ( ) ;
+
+	foreach ( $variables  as  $name => $value )
+		$ScriptVariables -> Define ( $name, $value ) ;
+
+	// Clean the name space
+	unset ( $THRAK_SPECIAL_PARAMETER ) ;
+	unset ( $setup_script_environment ) ;
+	unset ( $error ) ;
+	unset ( $variables ) ;

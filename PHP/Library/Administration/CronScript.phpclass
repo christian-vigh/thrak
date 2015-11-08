@@ -1,0 +1,181 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        CronScript.phpclass
+
+    DESCRIPTION
+         simple class framework to ease the development of cron scripts using the Thrak framework.
+	 A cron script must implement a class deriving from this one and implement the Run() abstract method,
+	 such as in :
+
+		 class  MyScript extends CronScript
+		    {
+			public function  __construct ( )
+			   {
+				parent::__construct ( $this -> CLDefinitions, $argv, $run_options ) ;
+			    }
+
+
+			public function  Run ( $CL )
+			   {
+				// do something....
+			    }
+		     }
+
+		$script		=  new MyScript ( ) ;
+		$script -> Run ( ) ;
+
+    AUTHOR
+        Christian Vigh, 11/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/11/07]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace	Thrak\Administration ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces & objects
+use	Thrak\Administration\Crontab ;
+use	Thrak\System\Object ;
+use     Thrak\IO\Path ;
+use	Thrak\Types\String ;
+use	Thrak\Processors\CL\CLParser ;
+use	Thrak\Processors\CL\CLException ;
+
+
+/*==============================================================================================================
+
+    CronScript -
+        Provides a framework for developing cron scripts using the Thrak framework.
+
+  ==============================================================================================================*/
+abstract class  CronScript		extends  Object
+   {
+	static		$StandardParameters		=  <<<END
+		<file name="logfile" disposition="here" hidden="true">
+			Specifies the output log filename.
+		</file>
+END;
+
+	// Command-line object
+	protected	$CL ;
+	// Script-related data
+	protected	$ScriptPath ;				// Full script path
+	protected	$ScriptName ;				// Script name, either passed to the constructor or taken from the filename part of the script path
+	protected	$ScriptPid ;				// Current pid
+	protected	$ScriptRunOptions ;			// Run options
+	protected	$ScriptCommandLine ;			// Command line to be run by cron
+	protected	$ScriptVariables	=  [] ;		// Variables to be declared before the command
+	// Log file
+	protected	$Logfile		=  null ;
+
+
+	public function  __construct ( $definitions, $args = false, $run_options = '', $scriptname = false, $variables = false )
+	   {
+		global		$argv ;
+
+		if  ( $args  ===  false )
+			$args	=  $argv ;
+
+		// Put the default CronScript parameter definitions inside the supplied ones
+		$re				=  '#(</command>|</command-line>|</options>|</parameters>|</switches>)#ix' ;
+		$definitions			=  preg_replace ( $re, "\n" . self::$StandardParameters . "\n\n" . '\1', $definitions ) ;
+		$this -> CL			=  new CLParser ( $definitions, $args ) ;
+
+		// Save data related to this script 
+		$this -> ScriptPath		=  Path::RealPath ( $argv [0] ) ;
+		$this -> ScriptName		=  ( $scriptname ) ?  $scriptname : pathinfo ( $this -> ScriptPath, PATHINFO_FILENAME ) ;
+		$this -> ScriptPid		=  getmypid ( ) ;
+		$this -> ScriptRunOptions	=  $run_options ;
+		$this -> ScriptCommandLine	=  "\"{$this -> ScriptPath}\" {$this -> ScriptRunOptions}" ;
+
+		if  ( is_array ( $variables ) )
+			$this -> ScriptVariables	=  $variables ;
+
+		// Check if a logfile has been specified
+		if  ( $this -> CL -> logfile )
+			$this -> Logfile	=  Path::RealPath ( $this -> CL -> logfile ) ;
+
+	    }
+
+
+	public function  Log ( $message )
+	   {
+		if  ( $this -> Logfile )
+		   {
+			$log_message	=  date ( 'Y-m-d H:i:s' ) . ' ' .
+					   $this -> ScriptName .
+					   '[' . $this -> ScriptPid . ']: ' .
+					   $message .
+					   "\n" ;
+
+			$fp		=  fopen ( $this -> Logfile, "a" ) ;
+			fputs ( $fp, $log_message ) ;
+			fclose ( $fp ) ;
+		    }
+	    }
+
+
+	protected function  Install ( $script, $cron_options )
+	   {
+		if  ( ! $script )
+			$script		=  $this -> ScriptName ;
+
+		$crontab	=  new Crontab ( ) ;
+
+		// Define a CRONJOB environment variable to tell the invoked scripts that they are run by cron
+		$crontab -> UndefineVariable ( 'CRONJOB' ) ;
+		$crontab -> DefineTopVariable ( 'CRONJOB', 1, 'Tells scripts that they are invoked by cron' ) ;
+
+		// Define script variables, if any
+		if  ( count ( $this -> ScriptVariables ) )
+		   {
+			$crontab -> AddComment ( "Variables for CRON-ID: $script" ) ;
+
+			foreach ( $this -> ScriptVariables  as  $name => $value )
+				$crontab -> DefineVariable ( $name, $value ) ;
+		    }
+
+		// Add the command to be installed
+		$crontab -> DefineCommand ( $script, $this -> ScriptCommand, $cron_options, true ) ;
+
+		$this -> Log ( "Script \"$script\" installed in crontab." ) ;
+
+		exit ( ) ;
+	    }
+
+
+	protected function  Uninstall ( $script )
+	   {
+		if  ( ! $script )
+			$script		=  $this -> ScriptName ;
+
+		$crontab	=  new Crontab ( ) ;
+
+		// Undefine script variables, if any
+		foreach ( $this -> ScriptVariables  as  $name => $value )
+			$crontab -> UndefineVariable ( $name ) ;
+
+		// Remove the command
+		$crontab -> UndefineCommand ( $script, false ) ;
+
+		$this -> Log ( "Script \"$script\" removed from crontab." ) ;
+
+		exit ( ) ;
+	    }
+
+
+	protected function  IsInvokedByCron ( )
+	   {
+		$cronjob	=  getenv ( 'CRONJOB' ) ;
+
+		return ( $cronjob  !==  false ) ;
+	    }
+
+	abstract public function  Run ( ) ;
+    }
