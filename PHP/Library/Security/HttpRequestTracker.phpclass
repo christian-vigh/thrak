@@ -146,6 +146,7 @@ class  HttpRequestTracker	extends  BufferedTracker
 	   {
 		global		$Database ;
 
+		output ( "*************** here" ) ;
 		// Ignore $_SERVER variables that may change at any invocation (so its wasteful to store them in a string
 		// store). They will be rather stored in the http access table, not in the server vars tables.
 		static	$ignored_server_vars	=
