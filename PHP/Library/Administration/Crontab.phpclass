@@ -43,6 +43,8 @@ class  Crontab		extends  Object
 
 	// True if crontab contents have been loaded
 	public		$Loaded		=  false ;
+	// Related user - false means current user
+	public		$User		=  false ;
 	// Variables defined in the crontab (associative array with variable name/value pairs)
 	private		$Variables	=  [] ;
 	// Cron commands
@@ -75,7 +77,7 @@ class  Crontab		extends  Object
 	        Constructor
 	 
 	    PROTOTYPE
-	        $crontab	=  new Crontab ( $load = true ) ;
+	        $crontab	=  new Crontab ( $load = true, $user = false ) ;
 	 
 	    DESCRIPTION
 	        Creates a Crontab object.
@@ -84,11 +86,16 @@ class  Crontab		extends  Object
 	        $load (boolean or string) -
 	                When specified as a boolean, indicates whether current user crontab contents should be loaded.
 			If a path is specified, then crontab contents will be loaded from this file.
+
+		$user (string) -
+			If specified, indicates the user name or id on which crontab operations are to be applied.
 	 	 
 	 *-------------------------------------------------------------------------------------------------------------*/
-	public function  __construct ( $load = true )
+	public function  __construct ( $load = true, $user = false )
 	   {
 		parent::__construct ( $load ) ;
+
+		$this -> User	=  $user ;
 
 		if  ( $load )
 			$this -> Load ( $load )  ;
@@ -111,6 +118,31 @@ class  Crontab		extends  Object
 	 **************************************************************************************************************
 	 **************************************************************************************************************
 	 **************************************************************************************************************/
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        AddComment - Appends a comment.
+	 
+	    PROTOTYPE
+	        $crontab -> AddComment ( $comments ) ;
+	 
+	    DESCRIPTION
+	        Appends comment(s) to the crontab contents. The "#" sign is automatically prepended to each comment
+		line if not present.
+	 
+	    PARAMETERS
+	        $comments (string or array of strings) -
+	                Comments to be appended.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  AddComment ( $comments ) 
+	   {
+		$lines	=  $this -> __process_comments ( $comments ) ;
+		$this -> CronBlocks []	=  [ 'lines' => $lines, 'type' => self::PARSE_COMMENT ] ;
+	    }
+
 
 	/*--------------------------------------------------------------------------------------------------------------
 	 
@@ -144,9 +176,12 @@ class  Crontab		extends  Object
 	 
 	    PROTOTYPE
 	        $status		=  $crontab -> DefineVariable ( $name, $value, $replace = false, $comments = false ) ;
+		$status		=  $crontab -> DefineTopVariable ( $name, $value, $comments = false ) ;
 	 
 	    DESCRIPTION
 	        Defines a variable with the specified name.
+		DefineTopVariable() defines a variable at the top of the crontab file, where "top" means : "between the
+		last variable and the first crontab entry.".
 	 
 	    PARAMETERS
 	        $name (string) -
@@ -165,6 +200,10 @@ class  Crontab		extends  Object
 	 
 	    RETURN VALUE
 	        True if the variable has been created, false if it has been replaced.
+
+	    NOTES 
+		DefineTopVariable() removes any occurrences of the specified variable from crontab contents before
+		inserting it.
 	 
 	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  DefineVariable  ( $name, $value, $replace = false, $comments = false )
@@ -200,6 +239,53 @@ class  Crontab		extends  Object
 			'name'		=>  $name,
 			'index'		=>  $index 
 		    ] ;
+	    }
+
+
+	public function  DefineTopVariable ( $name, $value, $comments = false ) 
+	   {
+		$this -> UndefineVariable ( $name, false ) ;
+
+		$count		=  count ( $this -> CronBlocks ) ;
+		$insert_before	=  false ;
+
+		for  ( $i = 0 ; $i  <  $count ; $i ++ )
+		   {
+			$block	=  $this -> CronBlocks [$i] ;
+
+			if  ( $block [ 'type' ]  ==  self::PARSE_COMMAND )
+			   {
+				$insert_before	=  $i ;
+				break ;
+			    }
+		    }
+
+		$object		=  new CrontabVariable ( $name, $value ) ;
+		$lines		=  $this -> __process_comments ( $comments ) ;
+		$index		=  count ( $lines ) ;
+		$lines []	=
+		   [
+			'type'		=>  self::PARSE_VARIABLE,
+			'name'		=>  $name,
+			'separator'	=>  '=',
+			'value'		=>  $value,
+			'text'		=>  "$name=$value",
+			'object'	=>  $object
+		    ] ;
+		$lines []	=  [ 'type' => self::PARSE_EMPTY_LINE, 'text' => '' ] ;
+
+		$block	=  
+		   [
+			'lines'		=>  $lines,
+			'type'		=>  self::PARSE_VARIABLE,
+			'name'		=>  $name,
+			'index'		=>  $index 
+		    ] ;
+
+		if  ( $insert_before  ===  false )
+			$this -> CronBlocks []		=  $block ;
+		else
+			array_splice ( $this -> CronBlocks, $insert_before, 0, [ $block ] ) ;
 	    }
 
 
@@ -556,8 +642,33 @@ class  Crontab		extends  Object
 	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  LoadUserCrontab ( )
 	   {
-		error ( "Not yet implemented." ) ;
-		return ( $data ) ;
+		$path	=  Path::RealPath ( 'volatile://cron.' . getmypid ( ) . '.out' ) ;
+		system ( $this -> __get_crontab_command ( ) . " -l >\"$path\" 2>&1" ) ;
+
+		$data	=  file_get_contents ( $path ) ;
+
+		if  ( ! strncmp ( 'no crontab for', $data, 14 ) )
+			return ( '' ) ;
+		else
+			return ( $data ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        Remove - Removes the current crontab.
+	 
+	    PROTOTYPE
+	        $crontab -> Remove ( ) ;
+	 
+	    DESCRIPTION
+	        Removes the crontab for the current user.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  Remove ( )
+	   {
+		system ( $this -> __get_crontab_command ( ) . ' -r' ) ;
 	    }
 
 
@@ -580,10 +691,13 @@ class  Crontab		extends  Object
 	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  Save  ( $path = false )
 	   {
-		if  ( $path )
-			file_put_contents ( $path, $this -> GetContents ( ) ) ;
+		if  ( is_bool ( $path ) )
+		   {
+			if  ( $path ) 
+				$this -> SaveUserCrontab ( ) ;
+		    }
 		else
-			$this -> SaveUserCrontab ( ) ;
+			file_put_contents ( $path, $this -> GetContents ( ) ) ;
 	    }
 
 
@@ -601,7 +715,11 @@ class  Crontab		extends  Object
 	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  SaveUserCrontab ( )
 	   {
-		error ( "Not yet implemented." ) ;
+		$contents	=  $this -> GetContents ( ) ;
+		$path		=  Path::ToHost ( Path::RealPath ( 'volatile://cron.' . getmypid ( ) . '.in' ) ) ;
+
+		file_put_contents ( $path, $contents ) ;
+		system ( $this -> __get_crontab_command ( ) . " \"$path\"" ) ;
 	    }
 
 
@@ -985,6 +1103,20 @@ class  Crontab		extends  Object
 
 		return ( false ) ;
 	   }
+
+
+	// __get_crontab_command -
+	//	Returns a string that allows for invoking the crontab utility, taking the specified user in
+	//	consideration.
+	private function  __get_crontab_command ( )
+	   {
+		$command	=  'crontab' ;
+
+		if  ( $this -> User )
+			$command	.=  '-u ' . $this -> User ;
+
+		return ( $command ) ;
+	    }
 
 
 	//  __is_defined -
