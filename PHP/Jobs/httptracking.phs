@@ -1,0 +1,54 @@
+#!/usr/bin/php
+<?php
+	/**************************************************************************************************************
+	
+	    NAME
+	        httptracking.phs
+	
+	    DESCRIPTION
+	        A job that collects data buffered from web page accesses.
+	
+	    AUTHOR
+	        Christian Vigh, 11/2015.
+	
+	    HISTORY
+	    [Version : 1.0]    [Date : 2015/11/04]     [Author : CV]
+	        Initial version.
+	
+	 **************************************************************************************************************/
+	require ( dirname ( __FILE__ ) . '/../Script.phpinclude' ) ;
+
+	use  Thrak\Administration\CronScript ;
+	use  Thrak\Security\HttpRequestTracker ;
+
+	
+	class  Script		extends  CronScript
+	   {
+		public function  __construct ( )
+		   {
+			$definitions	=  <<<END
+	<command>
+		<usage>
+			Processes the data buffered during web page accesses.
+		</usage>
+	</command>
+END;
+
+			parent::__construct ( $definitions ) ;
+		    }
+
+
+		public function  Run ( )
+		   {
+			// Process buffered http queries
+			$this -> Log ( "Processing buffered http requests..." ) ;
+			$http_tracker	=  new HttpRequestTracker ( ) ;
+			$count		=  $http_tracker -> BatchProcess ( ) ;
+
+			$this -> Log ( "$count http requests processed" ) ;
+		    }
+	    }
+
+	$Script		=  new Script ( ) ;
+	$Script -> Run ( ) ;
+	
