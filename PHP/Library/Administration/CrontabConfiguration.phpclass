@@ -188,10 +188,13 @@ class	CrontabConfiguration		extends  Object
 	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  FindJob ( $name )
 	   {
-		foreach  ( $this -> Jobs  as  $job )
+		foreach  ( $this -> Jobs  as  $user => $jobs )
 		   {
-			if  ( ! strcasecmp ( $name, $job [ 'name' ] ) )
-				return ( $job ) ;
+			foreach  ( $jobs  as  $job )
+			   {
+				if  ( ! strcasecmp ( $name, $job [ 'name' ] ) )
+					return ( $job ) ;
+			    }
 		    }
 
 		return ( false ) ;
