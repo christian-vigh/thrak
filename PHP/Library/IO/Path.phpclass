@@ -65,6 +65,9 @@
   
     [Version : 1.0.14]		[Date : 2015/10/20]		[Author : CV]
 	. Added the PrependExtension() method
+  
+    [Version : 1.0.15]		[Date : 2015/11/09]		[Author : CV]
+	. Add the Quote() method.
 
  ***************************************************************************************************/
 namespace 	Thrak\IO ;
@@ -1823,6 +1826,49 @@ class  	Path	extends  Object
 		$new_path	=  Path::ToUnix ( $pathinfo [ 'dirname' ] . '/' . $pathinfo [ 'filename' ] . '.' . $extension . '.' . $pathinfo [ 'extension' ] ) ;
 
 		return ( $new_path ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        Quote - Quotes a path.
+	 
+	    PROTOTYPE
+	        $quoted		=  Path::Quote ( $path, $force = false ) ;
+	 
+	    DESCRIPTION
+	        Put quotes around a filename if it contains spaces or quotes (internal quotes will be escaped).
+		Quotes are put only if needed, unless the $force parameter is set to true.
+	 
+	    PARAMETERS
+	        $path (string) -
+	                Path to be quoted.
+
+		$force (boolean) -
+			When true, the path is quoted even if it does not contain spaces or quotes.
+	 
+	    RETURN VALUE
+	        Returns the double-quoted path.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public static function  Quote ( $path, $force = false )
+	   {
+		$quote		=  $force ;
+
+		if  ( strpos ( $path, '"' )  !==  false )
+		   {
+			$path	=  str_replace ( '"', '\\"', $path ) ;
+			$quote	=  true ;
+		    }
+
+		if  ( strpos ( $path, ' ' )  !==  false )
+			$quote	=  true ;
+
+		if  ( $quote )
+			$path	=  '"' . $path . '"' ;
+
+		return ( $path ) ;
 	    }
 
 	
