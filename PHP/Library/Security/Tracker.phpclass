@@ -152,26 +152,21 @@ abstract class  BufferedTracker		extends  Tracker
 
 		$table	=  self::TABLE_TRACKING_BUFFER ;
 
-		dump ( $Database ) ;
-output ( "STEP 1" ) ;
 		$this -> BatchProcessStart ( ) ;
 
 		// "lock" the records to be processed in the table buffer, by setting the "processed" column to 1
 		$Database -> Execute ( "UPDATE $table SET processed = 1" ) ;
 
-output ( "STEP 2: UPDATE $table SET processed = 1" ) ;
 		// Now select them - other processes are free to add new records, they will ignored here but they will 
 		// be processed by the next batch run
 		$rs	=  $Database -> Execute ( "SELECT data FROM $table WHERE processed = 1" ) ;
 
 		while  ( $row = $Database -> GetNextRow ( $rs ) )
 		   {
-output ( "STEP 2.1" ) ;
 			$this -> BatchProcessRow ( $row [ 'data' ] ) ;
 			$this -> BatchProcessedRows ++ ;
 		    }
 
-output ( "STEP 3" ) ;
 		// "unlock" the records (they are simply deleted once processed)
 		$Database -> Execute  ( "DELETE $table FROM $table WHERE processed = 1" ) ;
 
