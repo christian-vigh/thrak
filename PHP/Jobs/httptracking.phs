@@ -24,18 +24,17 @@
 	
 	class  Script		extends  CronScript
 	   {
-		public function  __construct ( )
-		   {
-			$definitions	=  <<<END
+		private		$Definitions	=  <<<END
 	<command>
 		<usage>
 			Processes the data buffered during web page accesses.
 		</usage>
+
 	</command>
 END;
 
-			parent::__construct ( $definitions ) ;
-		    }
+		public function  __construct ( )
+		   { parent::__construct ( $this -> Definitions ) ; }
 
 
 		public function  Run ( )
@@ -49,6 +48,5 @@ END;
 		    }
 	    }
 
-	$Script		=  new Script ( ) ;
-	$Script -> Run ( ) ;
-	
+	$script		=  new Script ( ) ;
+	$script -> Run ( ) ;
