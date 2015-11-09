@@ -186,11 +186,10 @@ END;
 				    }
 
 				// Add the command to be installed
-				//$command	=  $job [ 'schedule' ] . ' ' . quote_path ( $job [ 'path' ] ) . ' ' . $job [ 'parameters' ] ;
 				$command	=  $job [ 'schedule' ] . ' ' .
-						   Path::Quote ( Path::ToUnix ( Path::RealPath ( 'thrak://PHP/Bin/cronrunner.phs' ) ) ) . ' ' .
+						   Path::Quote ( $job [ 'path' ] ) . ' ' .
 						   '-cf ' . Path::Quote ( $ConfigurationFile ) . ' ' .
-						   $job [ 'name' ] ;
+						   '-job "' . $job [ 'name' ] . '" ' ;
 
 				$crontab -> DefineCommand ( $job [ 'name' ], $command ) ;
 		  	    }

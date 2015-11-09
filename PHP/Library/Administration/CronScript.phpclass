@@ -11,9 +11,11 @@
 
 		 class  MyScript extends CronScript
 		    {
+			private  $Definitions = '<command> </command>' ;
+
 			public function  __construct ( )
 			   {
-				parent::__construct ( $this -> CLDefinitions, $argv, $run_options ) ;
+				parent::__construct ( $this -> Definitions ) ;
 			    }
 
 
@@ -40,7 +42,7 @@ defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." 
 
 
 // Used namespaces & objects
-use	Thrak\Administration\Crontab ;
+use	Thrak\Administration\CrontabConfiguration ;
 use	Thrak\System\Object ;
 use     Thrak\IO\Path ;
 use	Thrak\Types\String ;
@@ -57,27 +59,58 @@ use	Thrak\Processors\CL\CLException ;
 abstract class  CronScript		extends  Object
    {
 	static		$StandardParameters		=  <<<END
-		<file name="logfile, lf" disposition="here">
-			Specifies the output log filename.
+		<file name="configuration_file, cf" disposition="existing" required="true">
+			Path of a crontab.ini configuration file.
 		</file>
+
+		<string name="job, j">
+			Specifies the job name for this script, as defined in the configuration file.
+		</string>
 END;
 
 	// Command-line object
 	protected	$CL ;
+	// Configuration file & data
+	protected	$ConfigurationFile ;
+	protected	$ConfigurationData ;
 	// Script-related data
-	protected	$ScriptPath ;				// Full script path
-	protected	$ScriptName ;				// Script name, either passed to the constructor or taken from the filename part of the script path
-	protected	$ScriptPid ;				// Current pid
-	protected	$ScriptRunOptions ;			// Run options
-	protected	$ScriptCommandLine ;			// Command line to be run by cron
-	protected	$ScriptVariables	=  [] ;		// Variables to be declared before the command
+	protected	$Script ;				// Full script path
+	protected	$JobName ;				// Script name, either passed to the constructor or taken from the filename part of the script path
+	protected	$Pid ;					// Current pid
+	protected	$InvokedByCron ;			// True if the CRONJOB environment variable exists
+	protected	$JobData ;				// Job data coming from configuration file
 	// Log file
 	protected	$Logfile		=  null ;
 
 
-	public function  __construct ( $definitions, $args = false, $run_options = '', $scriptname = false, $variables = false )
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        Constructor
+	 
+	    PROTOTYPE
+	        $script		=  new CronScript ( $definitions, $args = false ) ;
+	 
+	    DESCRIPTION
+	        Every cron script that wants to use the thrak environment must inherit from this class.
+		The constructor establishes a well-prepared environment for running the host script.
+	 
+	    PARAMETERS
+	        $definitions (string) -
+	                Xml definitions for the script command-line parameters (CL).
+			Two additional parameters are systematically added :
+			-configuration_file path :
+				Path of the crontab.ini file.
+			-job name :
+				Name of the crontab job, as defined in the crontab.ini file.
+
+		$args (array of strings) -
+			Command-line arguments. If not specified, the global $argv variable will be used.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( $definitions, $args = false )
 	   {
-		global		$argv ;
+		global		$ScriptVariables, $argv ;
 
 		if  ( $args  ===  false )
 			$args	=  $argv ;
@@ -88,29 +121,51 @@ END;
 		$this -> CL			=  new CLParser ( $definitions, $args ) ;
 
 		// Save data related to this script 
-		$this -> ScriptPath		=  Path::RealPath ( $argv [0] ) ;
-		$this -> ScriptName		=  ( $scriptname ) ?  $scriptname : pathinfo ( $this -> ScriptPath, PATHINFO_FILENAME ) ;
-		$this -> ScriptPid		=  getmypid ( ) ;
-		$this -> ScriptRunOptions	=  $run_options ;
-		$this -> ScriptCommandLine	=  "\"{$this -> ScriptPath}\" {$this -> ScriptRunOptions}" ;
+		$this -> ConfigurationFile	=  $this -> CL -> configuration_file ;
+		$this -> Script			=  Path::RealPath ( $argv [0] ) ;
+		$this -> JobName		=  ( $this -> CL -> job ) ?  $this -> CL -> job : pathinfo ( $this -> Script, PATHINFO_FILENAME ) ;
 
-		if  ( is_array ( $variables ) )
-			$this -> ScriptVariables	=  $variables ;
+		// Get cron job info (specially logfile path)
+		$this -> ConfigurationData	=  new CrontabConfiguration ( $this -> ConfigurationFile, $ScriptVariables ) ;
+		$this -> JobData		=  $this -> ConfigurationData -> FindJob ( $this -> JobName ) ;
 
-		// Check if a logfile has been specified
-		if  ( $this -> CL -> logfile )
-			$this -> Logfile	=  Path::RealPath ( $this -> CL -> logfile ) ;
+		if  ( ! $this -> JobData )
+			error ( new \Thrak\System\RuntimeException ( "Could not find entry \"{$this -> JobName}\" in crontab.ini file \"{$this -> ConfigurationFile}\"" ) ) ;
 
+		$this -> Logfile		=  $this -> JobData [ 'logfile' ] ;
+
+		// Other environment data
+		$this -> Pid			=  getmypid ( ) ;
+		$this -> InvokedByCron		=  ( getenv ( 'CRONJOB' )  !==  false ) ;
 	    }
 
 
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        Log - Logs a message.
+	 
+	    PROTOTYPE
+	        $script -> Log ( $message ) ;
+	 
+	    DESCRIPTION
+	        Logs a message to the logfile that has been specified for the cron job in the crontab.ini file.
+	 
+	    PARAMETERS
+	        $message (string) -
+	                Message to be logged.
+	 
+	    NOTES
+	        Nothing is done if no logfile is specified for the script cron entry.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  Log ( $message )
 	   {
 		if  ( $this -> Logfile )
 		   {
 			$log_message	=  date ( 'Y-m-d H:i:s' ) . ' ' .
-					   $this -> ScriptName .
-					   '[' . $this -> ScriptPid . ']: ' .
+					   $this -> JobName .
+					   '[' . $this -> Pid . ']: ' .
 					   $message .
 					   "\n" ;
 
@@ -121,61 +176,18 @@ END;
 	    }
 
 
-	protected function  Install ( $script, $cron_options )
-	   {
-		if  ( ! $script )
-			$script		=  $this -> ScriptName ;
-
-		$crontab	=  new Crontab ( ) ;
-
-		// Define a CRONJOB environment variable to tell the invoked scripts that they are run by cron
-		$crontab -> UndefineVariable ( 'CRONJOB' ) ;
-		$crontab -> DefineTopVariable ( 'CRONJOB', 1, 'Tells scripts that they are invoked by cron' ) ;
-
-		// Define script variables, if any
-		if  ( count ( $this -> ScriptVariables ) )
-		   {
-			$crontab -> AddComment ( "Variables for CRON-ID: $script" ) ;
-
-			foreach ( $this -> ScriptVariables  as  $name => $value )
-				$crontab -> DefineVariable ( $name, $value ) ;
-		    }
-
-		// Add the command to be installed
-		$crontab -> DefineCommand ( $script, $this -> ScriptCommand, $cron_options, true ) ;
-
-		$this -> Log ( "Script \"$script\" installed in crontab." ) ;
-
-		exit ( ) ;
-	    }
-
-
-	protected function  Uninstall ( $script )
-	   {
-		if  ( ! $script )
-			$script		=  $this -> ScriptName ;
-
-		$crontab	=  new Crontab ( ) ;
-
-		// Undefine script variables, if any
-		foreach ( $this -> ScriptVariables  as  $name => $value )
-			$crontab -> UndefineVariable ( $name ) ;
-
-		// Remove the command
-		$crontab -> UndefineCommand ( $script, false ) ;
-
-		$this -> Log ( "Script \"$script\" removed from crontab." ) ;
-
-		exit ( ) ;
-	    }
-
-
-	protected function  IsInvokedByCron ( )
-	   {
-		$cronjob	=  getenv ( 'CRONJOB' ) ;
-
-		return ( $cronjob  !==  false ) ;
-	    }
-
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        Run - Run the script.
+	 
+	    PROTOTYPE
+	        $script -> Run ( ) ;
+	 
+	    DESCRIPTION
+	        This is the main entry point for running the script code. This method must be implemented by the
+		derived script class.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
 	abstract public function  Run ( ) ;
     }
