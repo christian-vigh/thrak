@@ -1125,7 +1125,7 @@ class  Crontab		extends  Object
 	   {
 		$count	=  count ( $this -> CronBlocks ) ;
 
-		for  ( $i = 0 ; i  <  $count ; $i ++ )
+		for  ( $i = 0 ; $i  <  $count ; $i ++ )
 		   {
 			$block		=  $this -> CronBlocks [$i] ;
 
@@ -1209,8 +1209,9 @@ class  Crontab		extends  Object
 	//	Undefines the specified variable or command.
 	private function  __undefine ( $type, $name, $last_only = true )
 	   {
-		$count	=  count ( $this -> CronBlocks ) ;
-		$status =  false ;
+		$count		=  count ( $this -> CronBlocks ) ;
+		$status		=  false ;
+		$newblocks	=  [] ;
 
 		for  ( $i = $count - 1 ; $i  >=  0 ; $i -- )
 		   {
@@ -1218,13 +1219,19 @@ class  Crontab		extends  Object
 
 			if  ( $block [ 'type' ]  ==  $type  &&  $block [ 'name' ]  ==  $name )
 			   {
-				unset ( $this -> CronBlocks [$i] ) ;
-				$status		=  true ;
-
 				if   ( $last_only ) 
-					break ;
+				   {
+					if  ( $status ) 
+						$newblocks []	=  $block ;
+				    }
+
+				$status		=  true ;
 			    }
+			else
+				$newblocks []	=  $block ;
 		    }
+
+		$this -> CronBlocks	=  array_reverse ( $newblocks ) ;
 
 		return ( $status ) ;
 	    }

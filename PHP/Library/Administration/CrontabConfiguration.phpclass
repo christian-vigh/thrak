@@ -1,0 +1,201 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        CrontabConfiguration.phpclass
+
+    DESCRIPTION
+        A simple class to parse crontab.ini files.
+
+    AUTHOR
+        Christian Vigh, 11/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/11/04]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace	Thrak\Administration ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces & objects
+use	Thrak\System\Object ;
+use     Thrak\IO\Path ;
+use	Thrak\Types\String ;
+use	Thrak\Processors\IniFile ;
+
+
+/*==============================================================================================================
+
+    CrontabConfiguration class -
+        Holds configuration data coming from custom crontab.ini files.
+
+  ==============================================================================================================*/
+class	CrontabConfiguration		extends  Object
+   {
+	// Ini file for crontab configuration
+	public		$IniFile	=  null ;
+	// Job definitions
+	public		$Jobs		=  [] ;
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    Constructor -
+		Instanciates a CrontabConfiguration object and optionally loads settings from an external file.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( $path = false, $vstore = false )
+	   {
+		parent::__construct ( ) ;
+
+		if  ( $path )
+			$this -> Load ( $path, $vstore ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    Load -
+		Loads crontab configuration from the specified file.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  Load  ( $file = false, $vstore = false )
+	   {
+		$this -> IniFile	=  
+		$inifile		=  IniFile::LoadFromFile ( $file ) ;
+
+		if  ( $vstore ) 
+			$this -> IniFile -> SetVariableStore ( 'Variables', $vstore ) ;
+		else
+			$this -> IniFile -> SetVariableStore ( 'Variables' ) ;
+
+		// Get global settings - default values
+		$default_user		=  $inifile -> GetKey ( 'Settings', 'User'	, 'root' ) ;
+		$default_group		=  $inifile -> GetKey ( 'Settings', 'Group'	, 'root' ) ;
+		$default_logfile	=  $inifile -> GetKey ( 'Settings', 'LogFile'	, false ) ;
+
+		// Get the [Job:] section names
+		$sections	=  $inifile -> GetSections ( '(Job|Cron) \s* : \s* (?P<name> [^\s]+)' ) ;
+	
+		if  ( ! count ( $sections ) )
+			error ( new \Thrak\System\InvalidArgumentException ( "File \"$file\" is missing [Job: ] sections in file \"$file\"." ) ) ;
+
+		// Loop through section names
+		foreach ( $sections  as  $section )
+		   {
+			$section_name	=  $section [ 'name' ] ;
+			$cron_name	=  $section [ 'match' ] [ 'name' ] ;
+
+			// Get parameters that may have a default value in the [Settings] section
+			$current_user		=  $inifile -> GetKey ( $section_name, 'User'		, $default_user		) ;
+			$current_group		=  $inifile -> GetKey ( $section_name, 'Group'		, $default_group	) ;
+			$current_logfile	=  $inifile -> GetKey ( $section_name, 'Logfile'	, $default_logfile	) ;
+
+			// Get crontab entry name and check for duplicates
+			$current_name	=  $inifile -> GetKey ( $section_name, 'Name', $cron_name ) ;
+
+			foreach  ( $this -> Jobs  as  $cronjob )
+			   {
+				if ( ! strcasecmp ( $cronjob [ 'name' ], $current_name ) )
+					error ( new \Thrak\System\InvalidArgumentException ( 
+							"Cron job \"$current_name\" in section [$section_name] is already defined in section " .
+							"[{$cronjob [ 'section' ]}] of file \"$file\"." ) ) ;
+			    }
+
+			// Get script path (a leading '*' indicates that this is a thrak stock script)
+			$path			=  $inifile -> GetKey ( $section_name, 'Path'	, false ) ;
+
+			if  ( ! $path )
+				error ( new \Thrak\System\InvalidArgumentException ( 
+						"Cron job \"$current_name\" in section [$section_name] is missing the required \"Path\" entry in file \"$file\"." ) ) ;
+
+			if  ( $path [0]  ==  '*' )		// Stock script : locate it
+			   {
+				$path		=  substr ( $path, 1 ) ;
+				$is_stocked	=  true ;
+
+				$current_path	=  Path::RealPath ( "thrak://PHP/Jobs/$path.phs" ) ;
+
+				if  ( ! file_exists ( $current_path ) )
+					error ( new \Thrak\System\InvalidArgumentException ( "Stock script \"$path\" specified in section [$section_name] of file \"$file\" does not exist." ) ) ;
+			    }
+			else
+			    {
+				if  ( ! file_exists ( $path ) )
+					error ( new \Thrak\System\InvalidArgumentException ( "Path \"$path\" specified in section [$section_name] of file \"$file\" does not exist." ) ) ;
+
+				$current_path	=  Path::RealPath ( $path ) ;
+				$is_stocked	=  false ;
+			     }
+
+			// Get parameters
+			$current_parameters	=  $inifile -> GetKey ( $section_name, 'Parameters', '' ) ;
+
+			// Get cron schedule
+			$current_schedule	=  $inifile -> GetKey ( $section_name, 'Schedule', false ) ;
+
+			if  ( $current_schedule )
+				$schedule_job		=  true ;
+			else
+				$schedule_job		=  false ;
+
+			// Get variables, if any
+			$value			=  $inifile -> GetKey ( $section_name, 'Variables', false ) ;
+			$variables		=  [] ;
+
+			if  ( $value )
+			   {
+				$list	=  explode ( "\n", $value ) ;
+
+				foreach  ( $list  as  $item )
+				   {
+					$item	=  trim ( $item ) ;
+
+					if  ( preg_match ( '/^(?P<name> [^\s=]+) \s*=\s* (?P<value> .*)/imsx', $item, $match ) )
+						$variables [ $match [ 'name' ] ]	=  $match [ 'value' ] ;
+				    }
+			    }
+
+			// Add a new cron job entry
+			$job	=
+			   [
+				'section'		=>  $cron_name,
+				'name'			=>  $current_name,
+				'user'			=>  $current_user,
+				'group'			=>  $current_group,
+				'logfile'		=>  $current_logfile,
+				'path'			=>  Path::ToUnix ( $current_path ),
+				'parameters'		=>  $current_parameters,
+				'schedule'		=>  $current_schedule,
+				'stock-script'		=>  $is_stocked,
+				'schedule-job'		=>  $schedule_job,
+				'variables'		=>  $variables
+			    ] ;
+
+			$this -> Jobs [ $current_user ] []	=  $job ;
+		    }
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    FindJob -
+		Finds a job entry having the specified name.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  FindJob ( $name )
+	   {
+		foreach  ( $this -> Jobs  as  $job )
+		   {
+			if  ( ! strcasecmp ( $name, $job [ 'name' ] ) )
+				return ( $job ) ;
+		    }
+
+		return ( false ) ;
+	    }
+    }
+
+
