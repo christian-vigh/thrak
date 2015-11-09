@@ -57,7 +57,7 @@ use	Thrak\Processors\CL\CLException ;
 abstract class  CronScript		extends  Object
    {
 	static		$StandardParameters		=  <<<END
-		<file name="logfile" disposition="here" hidden="true">
+		<file name="logfile, lf" disposition="here">
 			Specifies the output log filename.
 		</file>
 END;
