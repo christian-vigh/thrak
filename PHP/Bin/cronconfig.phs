@@ -1,0 +1,339 @@
+#!/usr/bin/php
+<?php
+	/**************************************************************************************************************
+	
+	    NAME
+	        cronconfig.phs
+	
+	    DESCRIPTION
+	        Configures the crontab file for the specified site.
+
+	    USAGE
+		cronconfig -configuration_file crontab.ini
+			   -install
+			   -uninstall
+		  
+	    PARAMETERS
+		-configuration_file, -cf file :
+			Path of the crontab.ini file describing crontab jobs.
+
+		-install :
+			Installs the cron jobs defined in the specified crontab.ini file.
+
+		-list :
+			Lists the cronjobs currently configured in the crontab.ini file, along with their availability
+			in the crontab file of the defined users.
+
+		-uninstall :
+			Uninstalls the cron jobs defined in the specified crontab.ini file.
+	
+	    CRONTAB.INI FILE FORMAT
+		The file specified with the -configuration_file option has the following sections. Each cron job is
+		defined through sections called [Cron: some_id], where "some_id" is a unique identifier for your section.
+
+		[Variables]
+			Define here any variables that you may want to reuse in the other section values.
+
+		[Settings]
+			Mainly specify default settings. It can have the following keys :
+
+			- User :
+				Default cron user for [Cron:xxx] sections. The default is the empty string, which
+				corresponds to the root user.
+
+			- Group :
+				Default group. The default is the empty string, which corresponds to the root group.
+
+			- LogFile :
+				Default logfile.
+
+		[Cron : some_id]
+			Defines a section for a cron job named "some_id". This section can have the following entries :
+
+			- Name :
+				Cron job name. If not specified, "some_id" will be used instead. Note that this id 
+				must be unique within the crontab.ini file.
+
+			- Path :
+				Either the full path of an existing script, or "*keyword", where "keyword" is the name
+				of one of the stock scripts stored in the PHP/Jobs durectory of the thrak library.
+
+			- User :
+				Overrides the default user for this crontab entry.
+
+			- Group :
+				Overrides the default group.
+
+			- Parameters :
+				Additional parameters to be passed to the script.
+
+			- Schedule :
+				cron schedule parameters, separated by spaces (minute, hour, day-of-month, month, day-of-week).
+
+			- Variables :
+				This entry must be multiline if you want to define variables specific to your cron job.
+				Each line must define a "name=value" construct, such as :
+
+				Variables	= <<END
+					MYSCRIPTVAR1 = value1
+					MYSCRIPTVAR2 = value2
+					...
+				END
+
+			To be able to identify a cron command in the system crontab file, a comment of the form :
+
+				# CRON-ID: some_id
+
+			is inserted before the cron command itself.
+
+			Similarly, a comment is inserted before the local variable definitions (for informational purposes
+			only).
+
+	    NOTES
+		This script must be run as root.
+
+	    AUTHOR
+	        Christian Vigh, 11/2015.
+	
+	    HISTORY
+	    [Version : 1.0]    [Date : 2015/11/08]     [Author : CV]
+	        Initial version.
+	
+	 **************************************************************************************************************/
+	require ( dirname ( __FILE__ ) . '/../Script.phpinclude' ) ;
+
+	use  Thrak\Types\String ;
+	use  Thrak\IO\Path ;
+	use  Thrak\IO\AsciiReport ;
+	use  Thrak\Processors\CL\CLParser ;
+	use  Thrak\Processors\IniFile ;
+	use  Thrak\Processors\VariableStore ;
+	use  Thrak\Administration\Crontab ;
+	use  Thrak\Administration\CrontabConfiguration ;
+	
+
+	/*==============================================================================================================
+	
+	        Command-line definitions.
+	
+	  ==============================================================================================================*/
+	$Definitions	=  <<<END
+<command>
+	<usage>
+		Configure cron processes for the site specified in the configuration file.
+	</usage>
+
+	<file name="configuration_file, cf" disposition="existing" required="true">
+		Path of a crontab.ini configuration file.
+	</file>
+
+	<flag name="install, i">
+		Installs the cron jobs defined in the specified configuration file.
+	</flag>
+
+	<flag name="list, l">
+		Lists the cron jobs defined in the specified configuration file.
+	</flag>
+
+	<flag name="uninstall, u">
+		Uninstalls the cron jobs defined in the specified configuration file.
+	</flag>
+
+	<exclude name="install" with="uninstall"/>
+</command>
+END;
+
+
+	/*==============================================================================================================
+	
+		Support functions.
+	
+	  ==============================================================================================================*/
+
+
+	/*==============================================================================================================
+	
+	    InstallJobs -
+		Installs the jobs defined in the specified configuration file.
+	
+	  ==============================================================================================================*/
+	function  InstallJobs ( $cronjobs )
+	   {
+		global		$ConfigurationFile ;
+
+		foreach  ( $cronjobs  as  $user => $jobs )
+		   {
+			if  ( ! $user )
+				$user	=  false ;
+
+			$crontab	=  new Crontab ( true, $user ) ;
+
+			foreach (  $jobs  as  $job )
+			   {
+				// Undefine any previously installed command
+				$crontab -> UndefineCommand ( $job [ 'name' ], false ) ;
+
+				// Make sure there is a CRONJOB environment variable to tell the invoked scripts that they are run by cron
+				$crontab -> UndefineVariable ( 'CRONJOB', false ) ;
+				$crontab -> DefineTopVariable ( 'CRONJOB', 1, 'Tells scripts that they are invoked by cron' ) ;
+
+				// Define script-specific variables, if any
+				if  ( count ( $job [ 'variables' ] ) )
+				   {
+					$crontab -> AddComment ( "Variables for CRON-ID: {$job [ 'name' ]}" ) ;
+
+					foreach ( $job [ 'variables' ]  as  $name => $value )
+						$crontab -> DefineVariable ( $name, $value ) ;
+				    }
+
+				// Add the command to be installed
+				//$command	=  $job [ 'schedule' ] . ' ' . quote_path ( $job [ 'path' ] ) . ' ' . $job [ 'parameters' ] ;
+				$command	=  $job [ 'schedule' ] . ' ' .
+						   Path::Quote ( Path::ToUnix ( Path::RealPath ( 'thrak://PHP/Bin/cronrunner.phs' ) ) ) . ' ' .
+						   '-cf ' . Path::Quote ( $ConfigurationFile ) . ' ' .
+						   $job [ 'name' ] ;
+
+				$crontab -> DefineCommand ( $job [ 'name' ], $command ) ;
+		  	    }
+
+			$crontab -> Save ( true ) ;
+		    }
+	    }
+
+
+	/*==============================================================================================================
+	
+	    UninstallJobs -
+		Uninstalls the jobs defined in the specified configuration file.
+	
+	  ==============================================================================================================*/
+	function  UninstallJobs ( $cronjobs )
+	   {
+		foreach  ( $cronjobs  as  $user => $jobs )
+		   {
+			if  ( ! $user )
+				$user	=  false ;
+
+			$crontab	=  new Crontab ( true, $user ) ;
+
+			foreach (  $jobs  as  $job )
+			   {
+				// Undefine any previously installed command
+				$crontab -> UndefineCommand ( $job [ 'name' ], false ) ;
+
+				// Define script-specific variables, if any
+				if  ( count ( $job [ 'variables' ] ) )
+				   {
+					foreach ( $job [ 'variables' ]  as  $name => $value )
+						$crontab -> UndefineVariable ( $name ) ;
+				    }
+		  	    }
+
+			$crontab -> Save ( true ) ;
+		    }
+	    }
+
+
+	/*==============================================================================================================
+	
+	    ListJobs -
+		Lists the jobs defined in the specified configuration file.
+	
+	  ==============================================================================================================*/
+	function  ListJobs ( $cronjobs )
+	   {
+		global		$SITE_ROOT ;
+
+		$report		=  new  AsciiReport 
+		  (
+			[ 'member' => 'user'		, 'title' => 'User'					],
+			[ 'member' => 'name'		, 'title' => 'Name'					],
+			[ 'member' => 'path'		, 'title' => 'Path'					],
+			[ 'member' => 'schedule'	, 'title' => 'Schedule'					],
+			[ 'member' => 'installed'	, 'title' => 'Cron?'		, 'align' => 'center'	]
+		   ) ;
+
+		$data	=  [] ;
+
+		foreach ( $cronjobs  as  $user => $jobs )
+		   {
+			$crontab	=  new Crontab ( true, $user ) ;
+
+			if  ( ! $user )
+				$user	=  'root' ;
+
+			foreach  ( $jobs  as  $job )
+			   {
+				$name	=  $job [ 'name' ] ;
+
+				if  ( $job [ 'stock-script' ] )
+					$path	=  '*' . pathinfo ( $job [ 'path' ], PATHINFO_FILENAME ) ;
+				else
+					$path	=  substr ( $job [ 'path' ], strlen ( $SITE_ROOT ) ) ;
+
+				$schedule	=  $job [ 'schedule' ] ;
+				$installed	=  ( $crontab -> IsCommandDefined ( $name ) ) ?  '*' : '' ;
+
+				$data []	=
+				   [
+					'user'		=>  $user,
+					'name'		=>  $name,
+					'path'		=>  $path,
+					'schedule'	=>  $schedule,
+					'installed'	=>  $installed
+				    ] ;
+			    }
+		    }
+
+		echo $report -> Generate ( $data ) ;
+		echo $report -> Summary ( 'cron job' ) ;
+	    }
+
+
+
+	/*==============================================================================================================
+	
+	        Main program.
+	
+	  ==============================================================================================================*/
+	$CL			=  new CLParser ( $Definitions ) ;
+	$ConfigurationFile	=  Path::ToUnix ( $CL -> configuration_file ) ;
+	$Install		=  $CL -> install ;
+	$List			=  $CL -> list ;
+	$Uninstall		=  $CL -> uninstall ;
+
+	if  ( getmyuid ( )  >  0 )
+		error ( "This script must be run as root." ) ;
+
+	$HadOption		=  false ;
+	$CronConfiguration	=  new  CrontabConfiguration ( $ConfigurationFile, $ScriptVariables ) ;
+
+	// -install :
+	//	Installs the options defined in the specified crontab.ini file.
+	if  ( ! $HadOption  &&  $Install )
+	   {
+		InstallJobs ( $CronConfiguration -> Jobs ) ;
+		$HadOption	=  true ;
+	    }
+
+
+	// -uninstall :
+	//	Uninstalls the options defined in the specified crontab.ini file.
+	if  ( ! $HadOption  &&  $Uninstall )
+	   {
+		UninstallJobs ( $CronConfiguration -> Jobs ) ;
+		$HadOption	=  true ;
+	    }
+
+
+	// -list :
+	//	Lists the cron jobs currently defined in the configuration file.
+	if  ( $List )
+	   {
+		ListJobs ( $CronConfiguration -> Jobs ) ;
+		$HadOption	=  true ;
+	    }
+
+
+	if  ( ! $HadOption )
+		$CL -> DisplayHelp ( ) ;
