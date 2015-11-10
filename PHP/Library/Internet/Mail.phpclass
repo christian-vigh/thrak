@@ -18,6 +18,10 @@
 	. Changed the MailAttachment::GetMimeContents() methods because the attachment icon was missing in
 	  messenging clients. This was due to a missing 'Content-disposition: attachment' header.
 
+    [Version : 2.0.2]	[Date : 2015/11/02]     [Author : CV]
+	. Changed GetMimeHeaders() so that the 'To:' header will not be sent, since it is already done by the
+	  mail() function.
+
  **************************************************************************************************************/
 namespace 	Thrak\Internet ;
 
@@ -583,8 +587,10 @@ class	Mail		extends  MailObject
 		// "From" field. Note that the address could be preceded with a display name enclosed in quotes.
 		$this -> add_mime_header ( $headers, 'From', '<' . $this -> From . '>', true ) ;
 
-		// List of recipients
-		$this -> add_mime_header ( $headers, 'To', $this ->  GetMimeAddressList ( $this -> To ) ) ;
+		// List of recipients - Well, they are already specified to the mail() function.
+		// No impact on Windows since the smtp server seems to ignore duplicate recipients.
+		// Postfix, however, do not ignore them...
+		// $this -> add_mime_header ( $headers, 'To', $this ->  GetMimeAddressList ( $this -> To ) ) ;
 		
 		// List of carbon copy users
 		if  ( count ( $this -> CC ) )
