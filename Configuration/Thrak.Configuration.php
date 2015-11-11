@@ -16,28 +16,28 @@
 
  ***************************************************************************************************/
 
-$Configuration =  array
-   (
+$Configuration =  
+   [
    	// Site/application environment-related variables
-	'Environment'		 		=>  array
-	   (
+	'Environment'		 		=>  
+	   [
 	   	// Directories to look for when searching for a relative include file. The current directory
-	   	// (".") is always prepended to the list by the Thrak library
-	   	'include-path'			=>  array
-	   	    (
+	   	// ["."] is always prepended to the list by the Thrak library
+	   	'include-path'			=>  
+	   	    [
 			"private://include",
 			"public://include",
 			"thrak://PHP/Contribs",
 			"thrak://PHP/Contribs/is_email"
-	   	     ),
+	   	     ],
 		// Javascript include paths. "thrak://" and "site://" references are allowed.
-		'js-include-path'	=>  array 
-		   (
+		'js-include-path'	=>   
+		   [
 			".", 
 			"thrak://Javascript", 
 			"thrak://Javascript/contribs",
 			"thrak://Javascript/contribs/jquery",
-			"thrak://Javascript/contribs/phpjs/functions/array",
+			"thrak://Javascript/contribs/phpjs/functions/",
 			"thrak://Javascript/contribs/phpjs/functions/bc",
 			"thrak://Javascript/contribs/phpjs/functions/classkit",
 			"thrak://Javascript/contribs/phpjs/functions/classobj",
@@ -67,45 +67,45 @@ $Configuration =  array
 			"thrak://Javascript/contribs/phpjs/functions/xdiff",
 			"thrak://Javascript/contribs/phpjs/functions/xml",
 			"thrak://Javascript/contribs/phpjs/functions/_phpjs_shared"
-		    ),
+		    ],
 		// CSS include paths?
-		'css-include-path'		=>  array 
-		   (
+		'css-include-path'		=>   
+		   [
 			".",
 			"thrak://Css", 
 			"thrak://Javascript/contribs/jquery/css", 
 			"thrak://Javascript/contribs"
-		    ),
+		    ],
 		// Log files dir
 		'log-dir'			=>  'site://logs',
 		// Data directory
 		'data-dir'			=>  'site://data'
-	    ),
+	    ],
 
 	// Console-mode related parameters
-	'Console'		 		=>  array
-	   (
+	'Console'		 		=>  
+	   [
 	   	// Maximum line width, in characters
 	   	'line-width'			=>  110
-	    ),
+	    ],
 
-	'autoload'				=>  array
-	   (
-		// Compression scheme : none, strip (php_strip_whitespace) or gzip
+	'autoload'				=>  
+	   [
+		// Compression scheme : none, strip [php_strip_whitespace] or gzip
 		'compression'			=>  'gzip',
 		
-		// Display statistics ? (only available for CLI mode)
+		// Display statistics ? [only available for CLI mode]
 		// Either true, false or 'environment', where the THRAK_STATISTICS environment variable
-		// determines whether to show them or not (integer value)
+		// determines whether to show them or not [integer value]
 		'show-statistics'		=>  'environment',
 		
-		// Reporting level (detailed, summary)
+		// Reporting level [detailed, summary]
 		'reporting-level'		=>  'summary'
-	    ),
+	    ],
 	   
 	// Runtime behavior
-	'Runtime'				=>  array
-	   (
+	'Runtime'				=>  
+	   [
 	   	// 'normal', 'verbose' or 'stacktrace'
 		'error-mode'	=>  'verbose',
 
@@ -121,15 +121,15 @@ $Configuration =  array
 		// 'production' :  No messages will be displayed.
 		// 'default'	:  Use current PHP parameters
 		'error-reporting'	=>  'debug'
-	   ),
+	   ],
 
 
 	// Database parameters
-	'Database' 				=>  array
-	   (
+	'Database' 				=>  
+	   [
 	   	// Default connection information
-	   	'default'	=>  array
-	   	   (
+	   	'default'	=>  
+	   	   [
 	   		'host'		=>  'localhost',		// Host name
 	   	   	'port'		=>  3306,			// Port
 	   	   	'user'		=>  'thrak',			// User name
@@ -141,61 +141,60 @@ $Configuration =  array
 	   	   	'log'		=>  false,			// When true, database query logging is enabled
 	   	   	'debug'		=>  false,			// When true, debug information is logged
 	   	   	'profile'	=>  false			// When true, queries are timed
-	   	    )
-	     ),
+	   	    ]
+	     ],
 
 	// Security
-	'Security'				=>  array
-	   (
-		'random'			=>  array
-		   (
-			'providers'		=>  array
-			   ( 
-				'ValueFileRandomProvider'	=>  array
-				   (
+	'Security'				=>  
+	   [
+		'random'			=>  
+		   [
+			'providers'		=>  
+			   [ 
+				'ValueFileRandomProvider'	=>  
+				   [
 					'data-file'		=>  "site://Data/randomfifo.bin"
-				    ),
-				'RandomOrgRandomProvider'	=>  array ( ),
-				'DevURandomRandomProvider'	=>  array
-				   (
-				    ),
-				'StandardRandomProvider'	=>  array ( )
-			    )
-		    )
-	    ),
+				    ],
+				'RandomOrgRandomProvider'	=>   [],
+				'DevURandomRandomProvider'	=>   [],
+				'StandardRandomProvider'	=>   []
+			    ]
+		    ],
+
+	    ],
 	// Sessions
-	'Session'				=>  array
-	   (
+	'Session'				=>  
+	   [
 		// 'autostart' :
 		//	When true, a session will be automatically started when the Session object is instanciated
 		'autostart'			=>  true
-	    ),
+	    ],
 	
 	// Javascript contribs
-	'Javascript'				=>  array
-	   (
+	'Javascript'				=>  
+	   [
 		// JQuery 
-	   	'jquery'			=>  array
-	   	    (
+	   	'jquery'			=>  
+	   	    [
 		        'location'		=>  "//ajax.googleapis.com/ajax/libs/jquery/%v/jquery.%m.js",
 			'version'		=>  "2.1.4",
 			'minified'		=>  true
-	   	     ),
+	   	     ],
 		// JQuery UI
-	   	'jquery-ui'			=>  array
-	   	    (
+	   	'jquery-ui'			=>  
+	   	    [
 		        'location'		=>  "//ajax.googleapis.com/ajax/libs/jqueryui/%v/jquery-ui.%m.js",
 			'version'		=>  "1.11.4",
 			'minified'		=>  true
-	   	     ),
+	   	     ],
 		// JQuery UI themes
-		'jquery-ui-themes'		=>  array
-		   (
+		'jquery-ui-themes'		=>  
+		   [
 			'location'		=>  "themes/%t/jquery-ui-%v.%c.%m.css",
 			'version'		=>  "1.10.3",
 			'minified'		=>  true,
 			'custom'		=>  true
-		    ),
+		    ],
 		// Compression mode for .jss and .css files
 		// Can be one of the following values :
 		// - 'none' or boolean false :
@@ -213,13 +212,13 @@ $Configuration =  array
 			'js'			=>  false,
 			'css'			=>  false
 		    ]
-	    ),
+	    ],
 	// Security
-	'Security'				=>  array
-	   (
-	    ),
+	'Security'				=>  
+	   [
+	    ],
 	// The Site entry holds various definitions for the site
-	'Site'					=>  array
-	   (
-	    )
-    ) ;
+	'Site'					=>  
+	   [
+	    ]
+    ] ;

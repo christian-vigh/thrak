@@ -1,0 +1,122 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        WebSecurity.phpclass
+
+    DESCRIPTION
+        Implements basic security mechanisms.
+
+    AUTHOR
+        Christian Vigh, 11/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/11/10]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Web ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces & objects
+use 	Thrak\System\Object ;
+use	Thrak\IO\Path ;
+use	Thrak\Security\HttpRequestTracker ;
+use	Thrak\Security\BlacklistedDomainTracker ;
+use	Thrak\Security\BlacklistedEmailTracker ;
+
+
+/*==============================================================================================================
+
+    WebSecurity class -
+        Implements basic security mechanisms.
+
+  ==============================================================================================================*/
+class	WebSecurity		extends  Object
+   {
+	// Indicates whether http requests should be tracked or not
+	public		$TrackHttpRequests ;
+	// Indicates whether blacklisted domains should be checked or not
+	public		$TrackedBlacklistedDomains ;
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        Constructor
+	 
+	    DESCRIPTION
+	        Retrieves security checkings.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( )
+	   {
+		global		$Configuration ;
+
+
+		parent::__construct ( ) ;
+
+		// Should we track http requests ?
+		$this -> TrackHttpRequests	=  ( boolean ) $Configuration -> Get ( 'Security/track-http-requests', false ) ;
+		// Should we check blacklisted domains ?
+		$value				=  $Configuration -> Get ( 'Security/blacklisted-domains', false ) ;
+
+		if  ( is_array ( $value ) )
+		   {
+			if  ( isset ( $value [ 'enabled' ] )  &&  $value [ 'enabled' ] )
+			   {
+				$data			=  [] ;
+				$data [ 'table'	]	=  ( isset ( $value [ 'table' ] ) ) ?  $value [ 'table'	] : 'tracking_blacklisted_domains' ;
+				$data [ 'log'	]	=  ( isset ( $value [ 'log'   ] ) ) ?  $value [ 'log'   ] : false ;
+
+				$this -> TrackedBlacklistedDomains	=  $data ;
+			    }
+			else
+				$this -> TrackedBlacklistedDomains	=  false ;
+		    }
+		else
+			$this -> TrackedBlacklistedDomains	=  false ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        PageCheck - Security checkings on current page.
+	 
+	    PROTOTYPE
+	        $websecurity -> PageCheck ( ) ;
+	 
+	    DESCRIPTION
+	        Performs the following actions :
+		- Track http request data and put it in the mysql database
+		- Check if the referrer does not belong to the blacklisted domain list
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  PageCheck ( )
+	   {
+		if  ( $this -> TrackHttpRequests )
+		   {
+			$tracker	=  new  HttpRequestTracker ( ) ;
+			$tracker -> Track ( ) ;
+		    }
+
+		$status		=  $this -> BlacklistedDomainCheck ( ) ;
+	    }
+
+
+	public function  BlacklistedDomainCheck ( )
+	   {
+		if  ( ! $this -> TrackedBlacklistedDomains )
+			return ;
+
+		$referrer	=  '00.be' ;//$_SERVER [ 'HTTP_REFERRER' ] ;
+
+		if  ( preg_match ( '#^[^:]+://(?P<value> .*)#imsx', $referrer, $match ) )
+			$referrer	=  $match [ 'value' ] ;
+
+		$tracker	=  new BlacklistedDomainTracker ( $this -> TrackedBlacklistedDomains ) ;
+		$tracker -> Verify ( $referrer ) ;
+	    }
+    }

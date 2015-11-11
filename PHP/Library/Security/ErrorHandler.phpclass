@@ -1,0 +1,148 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        ErrorHandler.phpclass
+
+    DESCRIPTION
+        Base class for error handlers.
+	Error handlers gives the possibility to stack objects that are executed when a class such as
+	BlacklistTracker encounters blacklisted data.
+	This class is mainly used by the WebSecurity class to perform basic checkings on http requests.
+	Error handlers are used to react upon hacking attempts ; they can be of two types :
+	- Non fatal error handlers :
+		They are used to perform some action but do not cause the current script to stop. This is the
+		case for example of the WaitErrorHandler object which causes script execution to be paused by 
+		a specified number of seconds.
+	- Fatal error handlers :
+		Fatal error handlers also perform some actions, but stop script execution at the end.
+
+	All error handlers must implement the Execute() method.
+
+    AUTHOR
+        Christian Vigh, 11/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/11/11]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Security ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use 	Thrak\System\Object ;
+use     Thrak\Types\String ;
+
+
+/*==============================================================================================================
+
+    ErrorHandlers -
+        Implements an array of error handlers to be executed sequentially.
+
+  ==============================================================================================================*/
+abstract class  ErrorHandlers	extends		Object
+				implements	\ArrayAccess, \Countable, \IteratorAggregate
+   {
+	protected	$Handlers	=  [] ;
+
+	public function  __construct ( )
+	   {
+		parent::__construct ( ) ;
+	    }
+
+
+	public function  Execute ( )
+	   {
+		foreach  ( $this -> Handlers  as  $handler )
+			$handler -> Trigger ( ) ;
+	    }
+
+
+	public function	Count ( )
+	   { return ( count ( $this -> Handlers ) ) ; }
+
+
+	public function  offsetExists ( $offset )
+	   { return ( $offset  >=  0  &&  $offset  <  count ( $this -> Handlers ) ) ; }
+
+	public function  offsetGet ( $offset )
+	   { return ( $this -> Handlers [ $offset ] ) ; }
+
+	public function  offsetSet ( $offset, $value ) 
+	   {
+		if  ( $offset  ===  null )
+			$this -> Handlers []		=  $value ;
+		else
+			$this -> Handlers [ $offset ]	=  $value ;
+	    }
+
+	public function  offsetUnset ( $offset )
+	   { unset ( $this -> Handlers [ $offset ] ) ; }
+
+
+	public function  getIterator ( )
+	   { return ( new \ArrayIterator ( $this -> Handlers ) ) ; }
+    }
+
+
+/*==============================================================================================================
+
+    ErrorHandler class -
+        Base class for all error handlers.
+
+  ==============================================================================================================*/
+abstract class  ErrorHandler	extends  Object
+   {
+	public function  __construct ( )
+	   {
+		parent::__construct ( ) ;
+	    }
+
+
+	abstract public    function  Execute ( ) ;
+	abstract protected function  Trigger ( ) ;
+    }
+
+
+/*==============================================================================================================
+
+    NonFatalErrorHandler -
+        Base class for all error handlers that do not stop script execution.
+
+  ==============================================================================================================*/
+abstract class  NonFatalErrorHandler	extends  Object
+   {
+	public function  __construct ( )
+	   {
+		parent::__construct ( ) ;
+	    }
+
+
+	protected function  Trigger ( )
+	   {
+		$this -> Execute ( ) ;
+	    }
+    }
+
+
+/*==============================================================================================================
+
+    FatalErrorHandler -
+        Base class for all error handlers that DO stop script execution.
+
+  ==============================================================================================================*/
+abstract class  FatalErrorHandler	extends  Object
+   {
+	public function  __construct ( )
+	   {
+		parent::__construct ( ) ;
+	    }
+
+
+	protected function  Trigger ( )
+	   {
+		$this -> Execute ( ) ;
+		exit ( ) ;
+	    }
+    }

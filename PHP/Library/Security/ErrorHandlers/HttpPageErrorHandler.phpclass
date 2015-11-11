@@ -1,0 +1,49 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        HttpPageErrorHandler.phpclass
+
+    DESCRIPTION
+        Error handler that generates an error page for the specified http status code.
+
+    AUTHOR
+        Christian Vigh, 11/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/11/11]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Security ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use 	Thrak\System\Object ;
+use     Thrak\Types\String ;
+use	Thrak\Security\NonFatalErrorHandler ;
+use	Thrak\Html\HtmlGenerator ;
+
+
+/*==============================================================================================================
+
+    HttpPageErrorHandler -
+        Error handler that generates an error page for the specified http status code.
+
+  ==============================================================================================================*/
+class  HttpPageErrorHandler		extends  NonFatalErrorHandler 
+   {
+	public		$HttpStatus ;
+
+	public function  __construct ( $http_status )
+	   {
+		parent::__construct ( ) ;
+
+		$this -> HttpStatus	=  $http_status ;
+	    }
+
+	public function  Execute ( )
+	   {
+		HtmlGenerator::ErrorPage ( $this -> HttpStatus ) ;
+	    }
+    }

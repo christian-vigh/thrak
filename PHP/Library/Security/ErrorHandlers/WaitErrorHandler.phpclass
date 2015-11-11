@@ -1,0 +1,111 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        WaitErrorHandler.phpclass
+
+    DESCRIPTION
+        Error handler that waits for the specified number of seconds.
+
+    AUTHOR
+        Christian Vigh, 11/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/11/11]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Security ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use 	Thrak\System\Object ;
+use     Thrak\Types\String ;
+use	Thrak\Security\NonFatalErrorHandler ;
+
+
+/*==============================================================================================================
+
+    WaitErrorHandler -
+        Error handler that waits for the specified number of seconds.
+
+  ==============================================================================================================*/
+class  WaitErrorHandler		extends  NonFatalErrorHandler 
+   {
+	public		$SecondsMin,
+			$SecondsMax ;
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        Constructor
+	 
+	    PROTOTYPE
+	        $handler	=  new WaitErrorHandler ( $seconds ) ;
+	 
+	    DESCRIPTION
+	        Creates an error handler that waits the specified number of seconds when executed.
+	 
+	    PARAMETERS
+	        $seconds (integer or array) -
+			Can be any of the following value types :
+			- integer :
+				Waits for the specified number of seconds.
+			- array [2] :
+				Waits for a random number of seconds chosen between $seconds[0] and $seconds[1].
+			- array [1] :
+				Waits for a random number of seconds chosen between $seconds[0] and the value of the
+				max_execution_time directive in the php.ini file.
+				If max_execution_time is 0, then waits for $seconds[0] (as if an integer value was
+				specified).
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( $seconds )
+	   {
+		parent::__construct ( ) ;
+
+		if  ( is_array ( $seconds ) )
+		   {
+			if  ( count ( $seconds )  >  1 )
+			   {
+				$this -> SecondsMin	=  $seconds [0] ;
+				$this -> SecondsMax	=  $seconds [1] ;
+			    }
+			else
+			   {
+				$this -> SecondsMin	=  $seconds [0] ;
+				$max_execution_time	=  ini_get ( 'max_execution_time' ) ;
+
+				if  ( $max_execution_time  <  $this -> SecondsMin )
+					$this -> SecondsMax	=  $this -> SecondsMin ;
+				else
+					$this -> SecondsMax	=  max ( $this -> SecondsMin, $max_execution_time - 1 ) ;
+			    }
+		    }
+		else
+		   {
+				$this -> SecondsMin	= 
+				$this -> SecondsMax	=  $seconds [0] ;
+		    }
+
+		// Silently adjust parameter inconsistencies
+		if  ( $this -> SecondsMax  <  $this -> SecondsMin )
+			$this -> SecondsMax	=  $this -> SecondsMin ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    Execute -
+		Performs the sleep() action.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  Execute ( )
+	   {
+		if  ( $this -> SecondsMin  ==  $this -> SecondsMax )
+			sleep ( $this -> SecondsMin ) ;
+		else
+			sleep ( mt_rand ( $this -> SecondsMin, $this -> SecondsMax ) ) ;
+	    }
+    }

@@ -11,8 +11,11 @@
         Christian Vigh, 11/2015.
 
     HISTORY
-    [Version : 1.0]    [Date : 2015/11/03]     [Author : CV]
+    [Version : 1.0]	[Date : 2015/11/03]     [Author : CV]
         Initial version.
+
+    [Version : 1.0.1]   [Date : 2015/11/10]     [Author : CV]
+	. Adapted for the new TrackerStringStore class
 
  **************************************************************************************************************/
 namespace 	Thrak\Security ;
@@ -33,19 +36,6 @@ use	Thrak\Database\BufferedInsert ;
   ==============================================================================================================*/
 class  HttpRequestTracker	extends  BufferedTracker
    {
-	// String store type constants
-	const	STRING_STORE_URL		=  1 ;
-	const	STRING_STORE_QUERY		=  2 ;
-	const	STRING_STORE_LOCAL_IP		=  3 ;
-	const	STRING_STORE_REMOTE_IP		=  4 ;
-	const	STRING_STORE_SERVER_KEY		=  5 ;
-	const	STRING_STORE_SERVER_VALUE	=  6 ;
-	const	STRING_STORE_GET_ARRAY		=  7 ;
-	const   STRING_STORE_POST_ARRAY		=  8 ;
-	const	STRING_STORE_FILES_ARRAY	=  9 ;
-	const	STRING_STORE_COOKIE_ARRAY	=  10 ;
-	const	STRING_STORE_SESSION_ARRAY	=  11 ;
-
 	// Tables used to track http access
 	const	TABLE_HTTP_ACCESS		=  'tracking_http_access' ;		// Url, query parameters + ips
 	const	TABLE_HTTP_SERVER_VARS		=  'tracking_http_server_vars' ;	// $_SERVER contents
@@ -60,20 +50,6 @@ class  HttpRequestTracker	extends  BufferedTracker
 	public function  __construct ( )
 	   {
 		parent::__construct ( ) ;
-
-		$this -> RegisterTypes
-		   ([
-			self::STRING_STORE_URL			=>  'url',
-			self::STRING_STORE_QUERY		=>  'query',
-			self::STRING_STORE_LOCAL_IP		=>  'local ip',
-			self::STRING_STORE_REMOTE_IP		=>  'remote ip',
-			self::STRING_STORE_SERVER_KEY		=>  '$_SERVER array key',
-			self::STRING_STORE_SERVER_VALUE		=>  '$_SERVER array value',
-			self::STRING_STORE_GET_ARRAY		=>  '$_GET array contents',
-			self::STRING_STORE_POST_ARRAY		=>  '$_POST array contents',
-			self::STRING_STORE_FILES_ARRAY		=>  '$_FILES array contents',
-			self::STRING_STORE_COOKIE_ARRAY		=>  '$_COOKIE array contents'
-		     ]) ;
 	    }
 
 
@@ -120,7 +96,9 @@ class  HttpRequestTracker	extends  BufferedTracker
 				'httsv_key_id',
 				'httsv_value_id'
 			 ],
-			16384
+			16384,
+			BufferedInsert::INSERT_FLAGS_IGNORE,
+			$this -> Database
 		    ) ;
 	    }
 
@@ -133,20 +111,17 @@ class  HttpRequestTracker	extends  BufferedTracker
 
 	protected function  BatchOptimize ( )
 	   {
-		global	$Database ;
-
 		parent::BatchOptimize ( ) ;
 
-		$Database -> Execute ( "OPTIMIZE TABLE ". self::TABLE_HTTP_ACCESS ) ;
-		$Database -> Execute ( "OPTIMIZE TABLE ". self::TABLE_HTTP_SERVER_VARS ) ;
+		$db	=  $this -> Database ;
+
+		$db -> Execute ( "OPTIMIZE TABLE ". self::TABLE_HTTP_ACCESS ) ;
+		$db -> Execute ( "OPTIMIZE TABLE ". self::TABLE_HTTP_SERVER_VARS ) ;
 	    }
 
 
 	protected function  BatchProcessRow ( $data )
 	   {
-		global		$Database ;
-
-
 		// Ignore $_SERVER variables that may change at any invocation (so its wasteful to store them in a string
 		// store). They will be rather stored in the http access table, not in the server vars tables.
 		static	$ignored_server_vars	=
@@ -159,8 +134,9 @@ class  HttpRequestTracker	extends  BufferedTracker
 
 		// Convenience variables
 		$http_access_table	=  self::TABLE_HTTP_ACCESS ;
-		$store			=  $this -> StringStore ;
+		$store			=  self::$StringStore ;
 		$server			=  $array [ '_SERVER' ] ;
+		$db			=  $this -> Database ;
 
 		// Retrieve values for the http access table
 		$time			=  ( isset ( $server [ 'REQUEST_TIME_FLOAT' ] ) ) ?  
@@ -174,15 +150,15 @@ class  HttpRequestTracker	extends  BufferedTracker
 		$local_port		=  ( integer ) $server [ 'SERVER_PORT' ] ;
 		$remote_port		=  ( integer ) $server [ 'REMOTE_PORT' ] ;
 
-		$url_id			=  $store -> Insert ( self::STRING_STORE_URL		, $server [ 'HTTP_HOST' ] . $server [ 'REQUEST_URI' ] ) ;
-		$query_id		=  $store -> Insert ( self::STRING_STORE_QUERY		, $server [ 'QUERY_STRING' ] ) ;
-		$local_ip_id		=  $store -> Insert ( self::STRING_STORE_LOCAL_IP	, $server [ 'SERVER_ADDR' ] ) ;
-		$remote_ip_id		=  $store -> Insert ( self::STRING_STORE_REMOTE_IP	, $server [ 'REMOTE_ADDR' ] ) ;
-		$get_id			=  $store -> Insert ( self::STRING_STORE_GET_ARRAY	, serialize ( $array [ '_GET' ] ) ) ;
-		$post_id		=  $store -> Insert ( self::STRING_STORE_POST_ARRAY	, serialize ( $array [ '_POST' ] ) ) ;
-		$files_id		=  $store -> Insert ( self::STRING_STORE_FILES_ARRAY	, serialize ( $array [ '_FILES' ] ) ) ;
-		$cookie_id		=  $store -> Insert ( self::STRING_STORE_COOKIE_ARRAY	, serialize ( $array [ '_COOKIE' ] ) ) ;
-		$session_id		=  $store -> Insert ( self::STRING_STORE_SESSION_ARRAY	, serialize ( $array [ '_SESSION' ] ) ) ;
+		$url_id			=  $store -> Insert ( TrackerStringStore::STRING_STORE_URL		, $server [ 'HTTP_HOST' ] . $server [ 'REQUEST_URI' ] ) ;
+		$query_id		=  $store -> Insert ( TrackerStringStore::STRING_STORE_QUERY		, $server [ 'QUERY_STRING' ] ) ;
+		$local_ip_id		=  $store -> Insert ( TrackerStringStore::STRING_STORE_LOCAL_IP	, $server [ 'SERVER_ADDR' ] ) ;
+		$remote_ip_id		=  $store -> Insert ( TrackerStringStore::STRING_STORE_REMOTE_IP	, $server [ 'REMOTE_ADDR' ] ) ;
+		$get_id			=  $store -> Insert ( TrackerStringStore::STRING_STORE_GET_ARRAY	, serialize ( $array [ '_GET' ] ) ) ;
+		$post_id		=  $store -> Insert ( TrackerStringStore::STRING_STORE_POST_ARRAY	, serialize ( $array [ '_POST' ] ) ) ;
+		$files_id		=  $store -> Insert ( TrackerStringStore::STRING_STORE_FILES_ARRAY	, serialize ( $array [ '_FILES' ] ) ) ;
+		$cookie_id		=  $store -> Insert ( TrackerStringStore::STRING_STORE_COOKIE_ARRAY	, serialize ( $array [ '_COOKIE' ] ) ) ;
+		$session_id		=  $store -> Insert ( TrackerStringStore::STRING_STORE_SESSION_ARRAY	, serialize ( $array [ '_SESSION' ] ) ) ;
 
 		// Insert a new http access record
 		$query		=  "
@@ -202,8 +178,8 @@ class  HttpRequestTracker	extends  BufferedTracker
 						htta_session_id		=  $session_id
 				   " ;
 
-		$Database -> Execute ( $query ) ;
-		$id		=  $Database -> GetLastInsertid ( ) ;
+		$db -> Execute ( $query ) ;
+		$id		=  $db -> GetLastInsertid ( ) ;
 
 		// Now, insert $_SERVER variables
 		foreach  ( $server  as  $key => $value ) 
@@ -211,8 +187,8 @@ class  HttpRequestTracker	extends  BufferedTracker
 			if  ( in_array ( $key, $ignored_server_vars ) )
 				continue ;
 
-			$key_id		=  $store -> Insert ( self::STRING_STORE_SERVER_KEY, $key ) ;
-			$value_id	=  $store -> Insert ( self::STRING_STORE_SERVER_VALUE, $value ) ;
+			$key_id		=  $store -> Insert ( TrackerStringStore::STRING_STORE_SERVER_KEY, $key ) ;
+			$value_id	=  $store -> Insert ( TrackerStringStore::STRING_STORE_SERVER_VALUE, $value ) ;
 
 			$this -> HttpServerVarsInserter -> Add
 			   ([

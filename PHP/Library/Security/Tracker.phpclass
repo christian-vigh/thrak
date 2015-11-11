@@ -12,8 +12,11 @@
         Christian Vigh, 11/2015.
 
     HISTORY
-    [Version : 1.0]    [Date : 2015/11/03]     [Author : CV]
+    [Version : 1.0]	[Date : 2015/11/03]     [Author : CV]
         Initial version.
+
+    [Version : 1.0.1]	[Date : 2015/11/10]     [Author : CV]
+	. Added the TrackerStringStore class.
 
  **************************************************************************************************************/
 namespace 	Thrak\Security ;
@@ -33,16 +36,14 @@ use	Thrak\Database\Tables\StringStore ;
   ==============================================================================================================*/
 abstract class  Tracker		extends  Object
    {
-	// A simple, quick&dirty safeguard for derived classes that use the string store
-	// They must declare the value types they handle using RegisterTypes ; registered data will be checked
-	// for duplicates and stored here
-	static private		$RegisteredStringStoreTypes	=  [] ;
-
 	// Tracking buffer table
-	const	TABLE_TRACKING_BUFFER	=  'tracking_buffer' ;
+	const	TABLE_TRACKING_BUFFER		=  'tracking_buffer' ;
+	const	TABLE_TRACKING_STRING_STORE	=  'tracking_string_store' ;
 
 	// String store associated to this Tracker class
-	protected	$StringStore ;
+	static public		$StringStore ;
+	// Database object
+	public			$Database ;
 
 
 	/*--------------------------------------------------------------------------------------------------------------
@@ -51,32 +52,17 @@ abstract class  Tracker		extends  Object
 		Initialize the string store table.
 	 
 	 *-------------------------------------------------------------------------------------------------------------*/
-	public function  __construct ( $string_store_table = 'tracking_string_store', $types = null )
+	public function  __construct ( $string_store_table = 'tracking_string_store', $db = null )
 	   {
+		global		$Database ;
+
 		parent::__construct ( ) ;
 
-		$this -> StringStore	=  new StringStore ( $string_store_table, 'Tracking string store table', 1024 * 1024 ) ;
-	    }
+		if  ( ! $string_store_table )
+			$string_store_table	=  self::TABLE_TRACKING_STRING_STORE ;
 
-
-	/*--------------------------------------------------------------------------------------------------------------
-
-	    RegisterTypes -
-		Declares the value types used by the derived class.
-	 
-	 *-------------------------------------------------------------------------------------------------------------*/
-	protected function  RegisterTypes ( $array )
-	   {
-		$class		=  get_called_class ( ) ;
-
-		foreach  ( $array  as  $key => $value )
-		   {
-			if  ( isset ( self::$RegisteredStringStoreTypes [ $key ] ) )
-				error ( new \Thrak\System\InvalidArgumentException ( "Class $class defines a string store type of \"$value\" (#$key), " .
-						"but it has already been defined by class " . self::$RegisteredStringStoreTypes [ $key ] [ 'class' ] ) ) ;
-
-			self::$RegisteredStringStoreTypes [ $key ]	=  [ 'value' => $value, 'class' => $class ] ;
-		    }
+		self::$StringStore	=  new TrackerStringStore ( $string_store_table, 'Tracking string store table', $db ) ;
+		$this -> Database	=  ( $db ) ?  $db : $Database ;
 	    }
 
 
@@ -104,11 +90,9 @@ abstract class  BufferedTracker		extends  Tracker
 	protected	$BatchProcessedRows ;
 
 
-	public function  __construct ( $string_store_table = 'tracking_string_store', $types = null )
+	public function  __construct ( $string_store_table = null, $db = null )
 	   {
-		parent::__construct ( ) ;
-
-		$this -> StringStore	=  new StringStore ( $string_store_table, 'Tracking string store table', 1024 * 1024 ) ;
+		parent::__construct ( $string_store_table, $db ) ;
 	    }
 
 
@@ -120,12 +104,10 @@ abstract class  BufferedTracker		extends  Tracker
 	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  Track ( )
 	   {
-		global	$Database ;
-
-
-		$data	=  $Database -> Escape ( $this -> GetRawData ( ) ) ;
+		$db	=  $this -> Database ;
+		$data	=  $db -> Escape ( $this -> GetRawData ( ) ) ;
 		$query	=  "INSERT DELAYED INTO " . self::TABLE_TRACKING_BUFFER . " SET DATA = '$data'" ;
-		$Database -> Execute ( $query ) ;
+		$db -> Execute ( $query ) ;
 	    }
 
 
@@ -147,28 +129,26 @@ abstract class  BufferedTracker		extends  Tracker
 	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  BatchProcess ( )
 	   {
-		global		$Database ;
-
-
 		$table	=  self::TABLE_TRACKING_BUFFER ;
+		$db	=  $this -> Database ;
 
 		$this -> BatchProcessStart ( ) ;
 
 		// "lock" the records to be processed in the table buffer, by setting the "processed" column to 1
-		$Database -> Execute ( "UPDATE $table SET processed = 1" ) ;
+		$db -> Execute ( "UPDATE $table SET processed = 1" ) ;
 
 		// Now select them - other processes are free to add new records, they will ignored here but they will 
 		// be processed by the next batch run
-		$rs	=  $Database -> Execute ( "SELECT data FROM $table WHERE processed = 1" ) ;
+		$rs	=  $db -> Execute ( "SELECT data FROM $table WHERE processed = 1" ) ;
 
-		while  ( $row = $Database -> GetNextRow ( $rs ) )
+		while  ( $row = $db -> GetNextRow ( $rs ) )
 		   {
 			$this -> BatchProcessRow ( $row [ 'data' ] ) ;
 			$this -> BatchProcessedRows ++ ;
 		    }
 
 		// "unlock" the records (they are simply deleted once processed)
-		$Database -> Execute  ( "DELETE $table FROM $table WHERE processed = 1" ) ;
+		$db -> Execute  ( "DELETE $table FROM $table WHERE processed = 1" ) ;
 
 		$this -> BatchProcessEnd ( ) ;
 
@@ -187,9 +167,7 @@ abstract class  BufferedTracker		extends  Tracker
 
 	protected function  BatchOptimize ( )
 	   {
-		global	$Database ;
-
-		$Database -> Execute ( "OPTIMIZE TABLE " . self::TABLE_TRACKING_BUFFER ) ;
+		$this -> Database -> Execute ( "OPTIMIZE TABLE " . self::TABLE_TRACKING_BUFFER ) ;
 	    }
 
 	protected abstract function  BatchProcessRow ( $data ) ;
@@ -206,11 +184,9 @@ abstract class  BufferedTracker		extends  Tracker
   ==============================================================================================================*/
 abstract class  UnbufferedTracker	extends  Tracker
    {
-	public function  __construct ( $string_store_table = 'tracking_string_store', $types = null )
+	public function  __construct ( $string_store_table = null, $db = null )
 	   {
-		parent::__construct ( ) ;
-
-		$this -> StringStore	=  new StringStore ( $string_store_table, 'Tracking string store table', 1024 * 1024 ) ;
+		parent::__construct ( $string_store_table, $db ) ;
 	    }
 
 
@@ -222,9 +198,44 @@ abstract class  UnbufferedTracker	extends  Tracker
 	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  Track ( )
 	   {
-		$this -> Insert ( ) ;
+		call_user_func_array ( [ $this, 'Log' ], func_get_args ( ) ) ;
 	    }
 
 
-	abstract protected function  Insert ( ) ;
+	/*--------------------------------------------------------------------------------------------------------------
+
+	    Log -
+		Logs data in a log table. To be implemented by derived classes.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	abstract protected function  Log ( ) ;
      }
+
+
+/*==============================================================================================================
+
+    TrackerStringStore -
+        A string store for tracking data.
+
+  ==============================================================================================================*/
+class  TrackerStringStore		extends  StringStore 
+   {
+	// String store type constants
+	const	STRING_STORE_URL		=  1 ;
+	const	STRING_STORE_QUERY		=  2 ;
+	const	STRING_STORE_LOCAL_IP		=  3 ;
+	const	STRING_STORE_REMOTE_IP		=  4 ;
+	const	STRING_STORE_SERVER_KEY		=  5 ;
+	const	STRING_STORE_SERVER_VALUE	=  6 ;
+	const	STRING_STORE_GET_ARRAY		=  7 ;
+	const   STRING_STORE_POST_ARRAY		=  8 ;
+	const	STRING_STORE_FILES_ARRAY	=  9 ;
+	const	STRING_STORE_COOKIE_ARRAY	=  10 ;
+	const	STRING_STORE_SESSION_ARRAY	=  11 ;
+
+
+	public function  __construct ( $table, $comment = '', $db = null )
+	   {
+		parent::__construct ( $table, $comment, 1024 * 1024, 0, $db ) ;
+	    }
+    }

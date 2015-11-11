@@ -1,0 +1,128 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        BlacklistTracker.phpclass
+
+    DESCRIPTION
+        A generic track for tracking blacklisted data.
+
+    AUTHOR
+        Christian Vigh, 11/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/11/10]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Security ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use 	Thrak\System\Object ;
+use     Thrak\Types\String ;
+use	Thrak\Security\Tracker ;
+
+
+/*==============================================================================================================
+
+    BlacklistTracker class -
+        A generic track for tracking blacklisted data.
+
+  ==============================================================================================================*/
+abstract class	BlacklistTracker		extends  UnbufferedTracker 
+   {
+	const	TABLE_BLACKLIST_LOG		=  'tracking_blacklist_log' ;
+
+	// Underlying tables
+	protected	$Table ;
+	protected	$LogTables ;
+	// Error handlers
+	protected	$ErrorHandlers ;
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+
+	    Constructor -
+		Initializes a tracking log.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( $error_handlers, $table, $log_table = self::TABLE_BLACKLIST_LOG, $string_store_table = null, $db = null )
+	   {
+		if  ( ! $table )
+			$table	=  self::TABLE_BLACKLIST_LOG ;
+
+		parent::__construct ( $string_store_table, $db ) ;
+
+		$this -> Table		=  $table ;
+		$this -> ErrorHandlers	=  $error_handlers ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+
+	    Verify -
+		Checks if the specified data is blacklisted.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  Verify ( $data )
+	   {
+		if  ( $this -> IsBlacklisted ( $data ) )
+		   {
+			$this -> Track ( $data ) ;
+
+			if  ( $this -> ErrorHandlers ) 
+				$this -> ErrorHandlers -> Execute ( ) ;
+		    }
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+
+	    IsBlacklisted -
+		Checks if the specified data is blacklisted.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  IsBlacklisted ( $data )
+	   {
+		$escaped_data		=  $this -> Database -> Escape ( $data ) ;
+		$query			=  "
+						SELECT 1 
+						FROM {$this -> Table}
+						WHERE
+							crc  = CRC32('$escaped_data') AND
+							name = '$escaped_data'
+					   " ;
+		$this -> Database -> SetQuery ( $query ) ;
+
+		$value			=  $this -> Database -> LoadValue ( ) ;
+
+		return  ( $value  ==  1 ) ;
+	    }
+    }
+
+
+/*==============================================================================================================
+
+    BlacklistedDomainTracker class -
+        A generic track for tracking blacklisted data.
+
+  ==============================================================================================================*/
+class  BlacklistedDomainTracker			extends		BlacklistTracker
+   {
+	/*--------------------------------------------------------------------------------------------------------------
+
+	    Constructor -
+		Initializes a tracking log for blacklisted domains.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( $error_handlers, $table = 'tracking_blaklisted_domains', $log_table = null, $string_store_table = null, $db = null )
+	   {
+		parent::__construct ( $error_handlers, $table, $log_table, $string_store_table, $db ) ;
+	    }
+
+
+	protected function  Log ( )
+	   {
+	    }
+    }

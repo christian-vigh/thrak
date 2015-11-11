@@ -30,7 +30,6 @@ use	Thrak\Web\UploadedFiles ;
 use	Thrak\Web\Cookies ;
 use	Thrak\Web\ConditionalHtml ;
 use	Thrak\Security\Session ;
-use	Thrak\Security\HttpRequestTracker ;
 
 
 /*==============================================================================================================
@@ -51,6 +50,8 @@ class  WebSite			extends	Object
 
 	// Site root
 	public		$Root ;
+	// Site domain
+	public		$Domain ;
 	// Email contacts
 	public		$Emails ;
 	// Site running mode
@@ -86,7 +87,10 @@ class  WebSite			extends	Object
 	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  __construct ( )
 	   {
-		global		$SITE_ROOT, $Configuration ;
+		global		$SITE_ROOT, $Configuration, $WebSecurity ;
+
+		// Define absolute url
+		$_SERVER [ 'HTTP_URL' ]	=  self::GetAbsoluteUrl ( ) ;
 
 		// Get real site root
 		$root	=  Path::RealPath ( $SITE_ROOT ) ;
@@ -95,6 +99,9 @@ class  WebSite			extends	Object
 			error ( new \Thrak\System\FileNotDirectoryException ( "Site root \"$root\" is not a valid directory." ) ) ;
 
 		$this -> Root	=  Path::ToUnix ( Path::AppendDS ( $root ) ) ;
+
+		// Domain name
+		$this -> Domain	=  $Configuration -> Get ( 'Site/domain' ) ;
 
 		// Configuration : Site/page-root -
 		//	Page root.
@@ -207,7 +214,7 @@ class  WebSite			extends	Object
 		$Session	=  new Session ( ) ;
 
 		// Security checkings, just after session opening
-		$this -> SecurityCheck ( ) ;
+		$WebSecurity -> PageCheck ( ) ;
 		
 		// Session settings that may override existing ones
 		if  ( isset ( $Session [ self::SITE_VAR_LANGUAGE ] ) )				// Current language
@@ -221,6 +228,10 @@ class  WebSite			extends	Object
 		$GLOBALS [ '_RAW_FILES' ]	=  $_FILES ;
 		$GLOBALS [ '_RAW_COOKIE' ]	=  $_COOKIE ;
 
+		// If the debug GET parameter has been specified, then switch site to debug mode
+		if  ( isset ( $_GET [ 'debug' ] ) )
+			$this -> Mode	=  self::SITE_MODE_DEBUG ;
+		
 		// Wrap superglobals
 		$_GET		=  Sanitizer::Wrap ( $_GET ) ;
 		$_POST		=  Sanitizer::Wrap ( $_POST ) ;
@@ -230,12 +241,58 @@ class  WebSite			extends	Object
 		
 		// Cookies
 		$_COOKIE	=  new Cookies ( ) ;
+	    }
 
-		// If the debug GET parameter has been specified, then switch site to debug mode
-		if  ( isset ( $_GET [ 'debug' ] ) )
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        GetAbsoluteUrl - Returns the current script absolute url.
+	 
+	    PROTOTYPE
+	       $url	=  WebSite::GetAbsoluteUrl ( $include_default_port = false ) ;
+	 
+	    DESCRIPTION
+	        Returns the absolute url of the current script, include request scheme, user/password if any, host and
+		uri.
+
+	    PARAMETERS 
+		$include_default_port (boolean) -
+			When true, the port number is included in the result even if it's the default port 80.
+			When false, it will be omitted if it is the default port 80.
+	 
+	    NOTES
+	        This function cannot return the fragment part of an url, since it is never sent to the server.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public static function  GetAbsoluteUrl ( $include_default_port = false )
+	   {
+		$url	 =  '' ;
+		$url	.=  ( isset ( $_SERVER [ 'REQUEST_SCHEME' ] ) ) ?  $_SERVER [ 'REQUEST_SCHEME' ] : 'http' ;
+		$url	.=  '://' ;
+
+		if  ( isset ( $_SERVER [ 'PHP_AUTH_USER' ] ) )
 		   {
-			$this -> Mode	=  self::SITE_MODE_DEBUG ;
+			$url	.=  $_SERVER [ 'PHP_AUTH_USER' ] ;
+
+			if  ( isset ( $_SERVER [ 'PHP_AUTH_PW' ] ) )
+				$url	.=  ':' . $_SERVER [ 'PHP_AUTH_PW' ] ;
+
+			$url	.=  '@' ;
 		    }
+
+		$url	.=  $_SERVER [ 'HTTP_HOST' ] ;
+
+		if  ( isset ( $_SERVER [ 'SERVER_PORT' ] ) )
+		   {
+			if  ( $include_default_port  ||  $_SERVER [ 'SERVER_PORT' ]  !=  80 )
+				$url	.=  '.' . $_SERVER [ 'SERVER_PORT' ] ;
+		    }
+
+		if  ( isset ( $_SERVER [ 'REQUEST_URI' ] ) )
+			$url	.=  $_SERVER [ 'REQUEST_URI' ] ;
+
+		return ( $url ) ;
 	    }
 
 
@@ -290,19 +347,6 @@ class  WebSite			extends	Object
 
 	/*--------------------------------------------------------------------------------------------------------------
 	 
-	    SendHeaders -
-	        Sends the headers defined into the configuration file, including the one containing the character set.
-	 
-	 *-------------------------------------------------------------------------------------------------------------*/
-	public function  SendHeaders ( )
-	   {
-		foreach  ( $this -> Headers  as  $header )
-			header ( $header ) ;
-	    }
-
-
-	/*--------------------------------------------------------------------------------------------------------------
-	 
 	    Flush -
 	        Flushes JS and CSS includes, and sends the headers defined in the configuration file.
 		This method must be called in the <head> tag.
@@ -334,22 +378,13 @@ class  WebSite			extends	Object
 
 	/*--------------------------------------------------------------------------------------------------------------
 	 
-	    SecurityCheck -
-	        Performs security checkings for the requested page.
+	    SendHeaders -
+	        Sends the headers defined into the configuration file, including the one containing the character set.
 	 
 	 *-------------------------------------------------------------------------------------------------------------*/
-	protected function  SecurityCheck ( )
+	public function  SendHeaders ( )
 	   {
-		global	$Configuration ;
-
-
-		// Http request tracking
-		$http_tracking		=  $Configuration -> Get ( 'Security/http-tracking' ) ;
-
-		if  ( $http_tracking )
-		   {
-			$tracker	=  new  HttpRequestTracker ( ) ;
-			$tracker -> Track ( ) ;
-		    }
+		foreach  ( $this -> Headers  as  $header )
+			header ( $header ) ;
 	    }
     }
