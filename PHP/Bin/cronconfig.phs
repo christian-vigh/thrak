@@ -185,9 +185,19 @@ END;
 						$crontab -> DefineVariable ( $name, $value ) ;
 				    }
 
+				// Some extra processing for running cygwin cron under Windows
+				// You MUST have php.exe in your path
+				if  ( IS_WINDOWS )
+				   {
+					$php_path	=  Path::ToCygwin ( Path::Whereis ( 'php.exe' ) ) ;
+					$extra		=  $php_path . ' ' ;
+				    }
+				else
+					$extra		=  '' ;
+
 				// Add the command to be installed
 				$command	=  $job [ 'schedule' ] . ' ' .
-						   Path::Quote ( $job [ 'path' ] ) . ' ' .
+						   $extra . Path::Quote ( $job [ 'path' ] ) . ' ' .
 						   '-cf ' . Path::Quote ( $ConfigurationFile ) . ' ' .
 						   '-job ' . Path::Quote ( $job [ 'name' ] ) . ' ' ;
 
