@@ -11,8 +11,11 @@
         Christian Vigh, 10/2015.
 
     HISTORY
-    [Version : 1.0]    [Date : 2015/10/09]     [Author : CV]
+    [Version : 1.0]	[Date : 2015/10/09]     [Author : CV]
         Initial version.
+
+    [Version : 1.0.1]	[Date : 2015/11/11]     [Author : CV]
+	. Added the ErrorPage() method.
 
  **************************************************************************************************************/
 namespace 	Thrak\Html ;
@@ -21,6 +24,7 @@ defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." 
 
 // Used namespaces & objects
 use 	Thrak\System\Object ;
+use	Thrak\Web\WebSite ;
 
 
 /*==============================================================================================================
@@ -31,6 +35,103 @@ use 	Thrak\System\Object ;
   ==============================================================================================================*/
 class  HtmlGenerator		extends		Object
    {
+	// HTTP codes
+	public static	$HttpCodes 	=  
+	   [
+		'200' => array ( 'short' => 'OK'				, 'long' => 'OK' ),
+		'201' => array ( 'short' => 'Created'				, 'long' => 'Created' ),
+		'202' => array ( 'short' => 'Accepted'				, 'long' => 'Accepted' ),
+		'203' => array ( 'short' => 'Non-Authorative Information'	, 'long' => 'Non-Authorative Information' ),
+		'204' => array ( 'short' => 'No Content'			, 'long' => 'No Content' ),
+		'205' => array ( 'short' => 'Reset Content'			, 'long' => 'Reset Content' ),
+		'206' => array ( 'short' => 'Partial Content'			, 'long' => 'Partial Content' ),
+		'300' => array ( 'short' => 'Multiple Choices'			, 'long' => 'Multiple Choices' ),
+		'301' => array ( 'short' => 'Moved Permanently'			, 'long' => 'Moved Permanently' ),
+		'302' => array ( 'short' => 'Moved Temporarily'			, 'long' => 'Moved Temporarily' ),
+		'303' => array ( 'short' => 'See Other'				, 'long' => 'See Other' ),
+		'304' => array ( 'short' => 'Not Modified'			, 'long' => 'Not Modified' ),
+		'305' => array ( 'short' => 'Use Proxy'				, 'long' => 'Use Proxy' ),
+		'400' => array ( 'short' => 'Bad Request'			, 'long' => 'Bad Request' ),
+		'401' => array ( 'short' => 'Authorization Required'		, 'long' => 'Authorization Required' ),
+		'402' => array ( 'short' => 'Payment Required (not used yet)'	, 'long' => 'Payment Required (not used yet)' ),
+		'403' => array ( 'short' => 'Forbidden'				, 'long' => 'Forbidden' ),
+		'404' => array ( 'short' => 'Not Found'				, 'long' => 'The requested URL %s was not found on this server.' ),
+		'405' => array ( 'short' => 'Method Not Allowed'		, 'long' => 'Method Not Allowed' ),
+		'406' => array ( 'short' => 'Not Acceptable (encoding)'		, 'long' => 'Not Acceptable (encoding)' ),
+		'407' => array ( 'short' => 'Proxy Authentication Required'	, 'long' => 'Proxy Authentication Required' ),
+		'408' => array ( 'short' => 'Request Timed Out'			, 'long' => 'Request Timed Out' ),
+		'409' => array ( 'short' => 'Conflicting Request'		, 'long' => 'Conflicting Request' ),
+		'410' => array ( 'short' => 'Gone'				, 'long' => 'Gone' ),
+		'411' => array ( 'short' => 'Content Length Required'		, 'long' => 'Content Length Required' ),
+		'412' => array ( 'short' => 'Precondition Failed'		, 'long' => 'Precondition Failed' ),
+		'413' => array ( 'short' => 'Request Entity Too Long'		, 'long' => 'Request Entity Too Long' ),
+		'414' => array ( 'short' => 'Request URI Too Long'		, 'long' => 'Request URI Too Long' ),
+		'415' => array ( 'short' => 'Unsupported Media Type'		, 'long' => 'Unsupported Media Type' ),
+		'500' => array ( 'short' => 'Internal Server Error'		, 'long' => 'Internal Server Error' ),
+		'501' => array ( 'short' => 'Not Implemented'			, 'long' => 'Not Implemented' ),
+		'502' => array ( 'short' => 'Bad Gateway'			, 'long' => 'Bad Gateway' ),
+		'503' => array ( 'short' => 'Service Unavailable'		, 'long' => 'Service Unavailable' ),
+		'504' => array ( 'short' => 'Gateway Timeout'			, 'long' => 'Gateway Timeout' ),
+		'505' => array ( 'short' => 'HTTP Version Not Supported'	, 'long' => 'HTTP Version Not Supported' )
+	    ] ;
+
+
+	public static function  ErrorPage ( $error, $error_url = null )
+	   {
+		if  ( ! $error_url )
+			$error_url	=  ( isset ( $_SERVER [ 'HTTP_URL' ] ) ) ?  $_SERVER [ 'HTTP_URL' ] : WebSite::GetAbsoluteUrl ( ) ;
+
+		// Unknown errors default to "internal server error"
+		if  ( ! isset ( self::$HttpCodes [ $error ] ) )
+			$error		=  500 ;
+		
+		// Variables referenced in Html code and headers
+		$http_error 		=  self::$HttpCodes [ $error ] [ 'short' ] ;
+		$http_error_description =  sprintf ( self::$HttpCodes [ $error ] [ 'long' ], "/$error_url" ) ;
+		$apache_version		=  apache_get_version ( ) ;
+		$server_name 		=  $_SERVER [ 'SERVER_NAME' ] ;
+		$server_port 		=  $_SERVER [ 'SERVER_PORT' ] ;
+		$date 			=  date ( 'r' ) ;
+
+		// Generate the final html code that mimics an error page
+		$html 	=  <<<END
+			<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
+			<html><head>
+			<title>$error $http_error</title>
+			</head><body>
+			<h1>$http_error</h1>
+			<p>$http_error_description</p>
+			<hr>
+			<address>$apache_version at $server_name Port $server_port</address>
+			</body></html>
+END;
+		$length	=  strlen ( $html ) ;
+
+
+		// Mimic an error page
+		@ob_clean ( ) ;
+
+		/***
+			A quirk :
+			- When header ( "Connection: Keep-Alive" ) is called, the client receives "Connection: Keep-Alive, Keep-Alive"
+			- When this function is not called, the "Connection: Keep-Alive" is sent, but an extra "X-Pad:avoid browser bug"
+			  header is sent. This header is not present in the headers_list(), and trying to remove it from .htaccess or
+			  Apache configuration files does not work either.
+			This will be the only difference with a regular 404 error page.
+		 ***/
+		//header ( "Connection: Keep-Alive" ) ;
+		header ( "HTTP/1.0 $error $http_error" ) ; 
+		header ( "Content-Encoding: gzip" ) ;
+		header ( "Content-Length: $length" ) ;
+		header ( "Content-Type: text/html; charset=iso-8859-1" ) ;
+		header ( "Date: $date" ) ;
+		header ( "Keep-Alive: timeout=5, max=100" ) ;
+		header ( "Server: $apache_version" ) ;
+		header ( "Vary: Accept-Encoding" ) ;
+		echo ( gzencode ( $html ) ) ;
+	    }
+
+
 	/*--------------------------------------------------------------------------------------------------------------
 	 
 	    NAME
@@ -129,101 +230,6 @@ class  HtmlGenerator		extends		Object
 		    }
 
 		// All done, return
-		return ( $result ) ;
-	    }
-
-
-	/*--------------------------------------------------------------------------------------------------------------
-	 
-	    NAME
-	        Select - Generates a <select> tag.
-	 
-	    PROTOTYPE
-	        echo HtmlGenerator::Select ( $values, $attributes, $default = null, $include_empty = false ) ;
-	 
-	    DESCRIPTION
-	        Generates a configurable <select> tag.
-	 
-	    PARAMETERS
-	        $values (associative array) -
-	                An array whose keys are the <select> tag <option> values, and whose values are the display text.
-			Note that values can also be specified as array of values, such as in :
-
-				[ 'class' => [ 'myclass1', 'myclass2' ] ]
-
-		$attributes (associative array) -
-			Array of attribute name/value pairs that will be put in the <select> tag.
-
-		$default (string) -
-			Default selected value. Must be one of the keys defined in the $values array.
-
-		$include_empty (mixed) -
-			Can be either :
-			- true :
-				An empty item will be inserted as the first element of the <select> tag.
-				Its value in the <option> tag will be set to the empty string.
-			- false :
-				No empty value will be present in the <select> options.
-			- array of two items :
-				An initial value will be inserted at the top of the <select> list. Item #0 will represent
-				the <option> value, and item #1 the <option> display text.
-			- string :
-				The specified initial value will be inserted at the top of the <select> list. The
-				value attribute of the <option> tag will be an empty string.
-					 
-	    RETURN VALUE
-	        Returns the html code to be displayed.
-	 
-	 *-------------------------------------------------------------------------------------------------------------*/
-	public static function  Select ( $values, $attributes, $default = null, $include_empty = false )
-	   {
-		$attr_string	=  self::GetAttributesAsString ( $attributes ) ;
-
-		if  ( $include_empty  ===  true )
-			$values		=  array_merge ( [ '' => '' ], $values ) ;
-		else if  ( is_string ( $include_empty ) )
-			$values		=  array_merge ( [ '' => $include_empty ], $values ) ;
-		else if  ( is_array ( $include_empty )  &&  count ( $include_empty )  ==  2 )
-			$values		=  array_merge ( [ $include_empty [0] => $include_empty [1] ], $values ) ;
-
-		$result		=  "<select $attr_string>\n" ;
-		$first		=  true ;
-		$optselect	=  'selected="selected"' ;
-		$selected	=  '' ;
-		$found		=  false ;
-
-		// Loop through values to be included in the <select> tag
-		foreach  ( $values  as  $key => $value )
-		   {
-			$quoted_key	=  self::QuoteAttributeValue ( $key ) ;
-			$htmlvalue	=  htmlentities ( $value ) ;
-
-			// Always set the default option to the first element, if no default has been specified
-			if  ( $default  ===  null )
-			   {
-				if  ( $first )
-				   {
-					$selected	=  $optselect ;
-					$first		=  false ;
-				    }
-				else
-					$selected	=  '' ;
-			    }
-			// Otherwise, perform a case-insensitive comparison of both key and value
-			// ... but do it only if a previous match has not been found
-			else if  ( ! $found  &&  ( ! strcasecmp ( $key, $default )  ||  ! strcasecmp ( $value, $default ) ) )
-			   {
-				$found		=  true ;
-				$selected	=  $optselect ;
-			    }
-			else
-				$selected	=  '' ;
-
-			$result		.=  "\n\t<option value=$quoted_key $selected>$htmlvalue</value>"  ;
-		    }
-
-		$result		.=  "\n</select>\n" ;
-
 		return ( $result ) ;
 	    }
 
@@ -338,6 +344,101 @@ class  HtmlGenerator		extends		Object
 		    }
 
 		// All done, return
+		return ( $result ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        Select - Generates a <select> tag.
+	 
+	    PROTOTYPE
+	        echo HtmlGenerator::Select ( $values, $attributes, $default = null, $include_empty = false ) ;
+	 
+	    DESCRIPTION
+	        Generates a configurable <select> tag.
+	 
+	    PARAMETERS
+	        $values (associative array) -
+	                An array whose keys are the <select> tag <option> values, and whose values are the display text.
+			Note that values can also be specified as array of values, such as in :
+
+				[ 'class' => [ 'myclass1', 'myclass2' ] ]
+
+		$attributes (associative array) -
+			Array of attribute name/value pairs that will be put in the <select> tag.
+
+		$default (string) -
+			Default selected value. Must be one of the keys defined in the $values array.
+
+		$include_empty (mixed) -
+			Can be either :
+			- true :
+				An empty item will be inserted as the first element of the <select> tag.
+				Its value in the <option> tag will be set to the empty string.
+			- false :
+				No empty value will be present in the <select> options.
+			- array of two items :
+				An initial value will be inserted at the top of the <select> list. Item #0 will represent
+				the <option> value, and item #1 the <option> display text.
+			- string :
+				The specified initial value will be inserted at the top of the <select> list. The
+				value attribute of the <option> tag will be an empty string.
+					 
+	    RETURN VALUE
+	        Returns the html code to be displayed.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public static function  Select ( $values, $attributes, $default = null, $include_empty = false )
+	   {
+		$attr_string	=  self::GetAttributesAsString ( $attributes ) ;
+
+		if  ( $include_empty  ===  true )
+			$values		=  array_merge ( [ '' => '' ], $values ) ;
+		else if  ( is_string ( $include_empty ) )
+			$values		=  array_merge ( [ '' => $include_empty ], $values ) ;
+		else if  ( is_array ( $include_empty )  &&  count ( $include_empty )  ==  2 )
+			$values		=  array_merge ( [ $include_empty [0] => $include_empty [1] ], $values ) ;
+
+		$result		=  "<select $attr_string>\n" ;
+		$first		=  true ;
+		$optselect	=  'selected="selected"' ;
+		$selected	=  '' ;
+		$found		=  false ;
+
+		// Loop through values to be included in the <select> tag
+		foreach  ( $values  as  $key => $value )
+		   {
+			$quoted_key	=  self::QuoteAttributeValue ( $key ) ;
+			$htmlvalue	=  htmlentities ( $value ) ;
+
+			// Always set the default option to the first element, if no default has been specified
+			if  ( $default  ===  null )
+			   {
+				if  ( $first )
+				   {
+					$selected	=  $optselect ;
+					$first		=  false ;
+				    }
+				else
+					$selected	=  '' ;
+			    }
+			// Otherwise, perform a case-insensitive comparison of both key and value
+			// ... but do it only if a previous match has not been found
+			else if  ( ! $found  &&  ( ! strcasecmp ( $key, $default )  ||  ! strcasecmp ( $value, $default ) ) )
+			   {
+				$found		=  true ;
+				$selected	=  $optselect ;
+			    }
+			else
+				$selected	=  '' ;
+
+			$result		.=  "\n\t<option value=$quoted_key $selected>$htmlvalue</value>"  ;
+		    }
+
+		$result		.=  "\n</select>\n" ;
+
 		return ( $result ) ;
 	    }
     }
