@@ -99,6 +99,8 @@ if  ( IS_STANDALONE )
 	$__THRAK_STDCONSTANTS__ 	=  get_defined_constants ( ) ;
     }
 
+// Some initializations
+mt_srand ( ) ;
 
 // Global variables
 $Configuration  		=  null ;
@@ -488,7 +490,7 @@ if  ( ! IS_STANDALONE )
 	$GLOBALS [ 'Browser'	 ]	=  new  \Thrak\Internet\Browser ( ) ;
 	
 	// Create a website instance
-	require_once ( 'Web/WebSite.phpclass' ) ;
+	$WebSecurity	=  new  \Thrak\Web\WebSecurity ( ) ;
 	$WebSite	=  new  \Thrak\Web\WebSite ( ) ;
     }
 
