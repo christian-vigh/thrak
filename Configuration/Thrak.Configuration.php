@@ -216,6 +216,62 @@ $Configuration =
 	// Security
 	'Security'				=>  
 	   [
+		/***
+			Security options processed by the WebSite class. A typical example would be the following :
+
+			// When true, http requests, together with the contents of the following superglobals :
+			//	$_GET, $_POST, $_COOKIE, $_FILES, $_SESSION
+			// are stored in the tracking_buffer table as serialized data.
+			// A cron job later analyzes their contents and put them in the tracking_http_access,
+			// tracking_http_server_vars and tracking_string_store tables.
+			'track-http-requests'		=>  true,
+
+			// Blacklisted domain processing ; it can have the following entries :
+			// - table :
+			//	Name of the table containing the list of blacklisted domains.
+			// - log-table :
+			//	Name of the table where http requests from blacklisted domains are recorded.
+			// - enabled :
+			//	Set it to true to enable blacklisted domain checking.
+			// - error-handlers :
+			//	A list of error handlers to be called when a blacklisted domain has tried an http
+			//	request. Error handlers have two entries : 'action', which determines the action
+			//	to be performed (corresponds to one of the \Thrak\Security\***ErrorHandler classes) ;
+			//	and 'parameters', which are either a value or an array of values passed as arguments
+			//	to the class constructor.
+			//	Note that when specified as an array, each array item represents one argument of the
+			//	class constructor.
+			//	Current, the following actions are defined :
+			//	- 'wait' :
+			//		Waits the number of seconds specified by the 'parameters' entry.
+			//		If specified as an array of two values, then the script will wait for a random
+			//		number of seconds ranging comprised between the first and second value.
+			//	- 'error-page' :
+			//		Generates an error page with the specified http response code.
+			//		This action terminates the script.
+			'blacklisted-domains'		=>  
+			   [
+				'table'			=>  'tracking_blacklisted_domains',
+				'log-table'		=>  'tracking_blacklist_log',
+				'enabled'		=>  true,
+				'error-handlers'	=>
+				   [
+					[ 'action' => 'wait'		, 'parameters' =>  [ 1, 2 ] ],
+					[ 'action' => 'error-page'	, 'parameters' =>  500 ] 
+				    ]
+			    ],
+			// Blacklisted email processing. Similar to blacklisted domain processing.
+			'blacklisted-emails'		=>  
+			   [
+				'table'			=>  'tracking_blacklisted_emails',
+				'log-table'		=>  'tracking_blacklist_log',
+				'enabled'		=>  true,
+				'error-handlers'	=>
+				   [
+					[ 'action' => 'wait'		, 'parameters' =>  [ 1, 2 ] ]
+				    ]
+			    ]
+		 ***/
 	    ],
 	// The Site entry holds various definitions for the site
 	'Site'					=>  

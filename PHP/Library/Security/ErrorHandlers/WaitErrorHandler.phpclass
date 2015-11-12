@@ -61,32 +61,19 @@ class  WaitErrorHandler		extends  NonFatalErrorHandler
 				specified).
 	 
 	 *-------------------------------------------------------------------------------------------------------------*/
-	public function  __construct ( $seconds )
+	public function  __construct ( $seconds_min, $seconds_max = false )
 	   {
 		parent::__construct ( ) ;
 
-		if  ( is_array ( $seconds ) )
+		if  ( $seconds_max  ===  false )
 		   {
-			if  ( count ( $seconds )  >  1 )
-			   {
-				$this -> SecondsMin	=  $seconds [0] ;
-				$this -> SecondsMax	=  $seconds [1] ;
-			    }
-			else
-			   {
-				$this -> SecondsMin	=  $seconds [0] ;
-				$max_execution_time	=  ini_get ( 'max_execution_time' ) ;
-
-				if  ( $max_execution_time  <  $this -> SecondsMin )
-					$this -> SecondsMax	=  $this -> SecondsMin ;
-				else
-					$this -> SecondsMax	=  max ( $this -> SecondsMin, $max_execution_time - 1 ) ;
-			    }
+			$this -> SecondsMin	= 
+			$this -> SecondsMax	=  $seconds_min ;
 		    }
 		else
 		   {
-				$this -> SecondsMin	= 
-				$this -> SecondsMax	=  $seconds [0] ;
+			$this -> SecondsMin	=  $seconds_min ;
+			$this -> SecondsMax	=  $seconds_max ;
 		    }
 
 		// Silently adjust parameter inconsistencies

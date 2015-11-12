@@ -25,6 +25,9 @@ use	Thrak\IO\Path ;
 use	Thrak\Security\HttpRequestTracker ;
 use	Thrak\Security\BlacklistedDomainTracker ;
 use	Thrak\Security\BlacklistedEmailTracker ;
+use	Thrak\Security\ErrorHandlers ;
+use	Thrak\Security\WaitErrorHandler ;
+use	Thrak\Security\HttpPageErrorHandler ;
 
 
 /*==============================================================================================================
@@ -37,8 +40,10 @@ class	WebSecurity		extends  Object
    {
 	// Indicates whether http requests should be tracked or not
 	public		$TrackHttpRequests ;
-	// Indicates whether blacklisted domains should be checked or not
-	public		$TrackedBlacklistedDomains ;
+	// Indicates whether blacklisted domains and emails should be checked or not
+	public		$TrackedBlacklistedDomains,
+			$TrackedBlacklistedEmails ;
+
 
 
 	/*--------------------------------------------------------------------------------------------------------------
@@ -59,24 +64,87 @@ class	WebSecurity		extends  Object
 
 		// Should we track http requests ?
 		$this -> TrackHttpRequests	=  ( boolean ) $Configuration -> Get ( 'Security/track-http-requests', false ) ;
+
 		// Should we check blacklisted domains ?
-		$value				=  $Configuration -> Get ( 'Security/blacklisted-domains', false ) ;
+		$this -> TrackedBlacklistedDomains	=  $this -> __get_blacklist_data ( 'domains' ) ;
 
-		if  ( is_array ( $value ) )
-		   {
-			if  ( isset ( $value [ 'enabled' ] )  &&  $value [ 'enabled' ] )
-			   {
-				$data			=  [] ;
-				$data [ 'table'	]	=  ( isset ( $value [ 'table' ] ) ) ?  $value [ 'table'	] : 'tracking_blacklisted_domains' ;
-				$data [ 'log'	]	=  ( isset ( $value [ 'log'   ] ) ) ?  $value [ 'log'   ] : false ;
+		// Should we check blacklisted emails ?
+		$this -> TrackedBlacklistedEmails	=  $this -> __get_blacklist_data ( 'emails' ) ;
+	    }
 
-				$this -> TrackedBlacklistedDomains	=  $data ;
-			    }
-			else
-				$this -> TrackedBlacklistedDomains	=  false ;
-		    }
-		else
-			$this -> TrackedBlacklistedDomains	=  false ;
+
+	/**************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 ******                                       PUBLIC FUNCTIONS                                           ******
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************/
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        BlacklistedDomainCheck - Checks if the referer domain is blacklisted.
+	 
+	    PROTOTYPE
+	        $websecurity -> BlacklistedDomainCheck ( ) ;
+	 
+	    DESCRIPTION
+		Checks if the referer domain, as specified by the $_SERVER [ 'HTTP_referer' ], is blacklisted.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  BlacklistedDomainCheck ( )
+	   {
+		if  ( ! $this -> TrackedBlacklistedDomains  ||  ! isset ( $_SERVER [ 'HTTP_REFERER' ] ) )
+			return ;
+
+		$referer	=  $_SERVER [ 'HTTP_REFERER' ] ;
+
+		if  ( preg_match ( '#^[^:]+://(?P<value> .*)#imsx', $referer, $match ) )
+			$referer	=  $match [ 'value' ] ;
+
+		$tracker	=  new BlacklistedDomainTracker 
+		   ( 
+			$this -> TrackedBlacklistedDomains [ 'error-handlers' ],
+			$this -> TrackedBlacklistedDomains [ 'table' ],
+			$this -> TrackedBlacklistedDomains [ 'log-table' ]
+		    ) ;
+
+		$tracker -> Verify ( $referer ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        BlacklistedEmailCheck - Checks if the specified email is blacklisted.
+	 
+	    PROTOTYPE
+	        $websecurity -> BlacklistedEmailCheck ( $email ) ;
+	 
+	    DESCRIPTION
+		Checks if the specified email is blacklisted.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  BlacklistedEmailCheck ( $email, &$tracker = null )
+	   {
+		if  ( ! $this -> TrackedBlacklistedEmails )
+			return ( true ) ;
+
+		$tracker	=  new BlacklistedEmailTracker 
+		   ( 
+			$this -> TrackedBlacklistedEmails [ 'error-handlers' ],
+			$this -> TrackedBlacklistedEmails [ 'table' ],
+			$this -> TrackedBlacklistedEmails [ 'log-table' ]
+		    ) ;
+
+		$status		=  $tracker -> Verify ( $email ) ;
+
+		return ( $status ) ;
 	    }
 
 
@@ -91,7 +159,7 @@ class	WebSecurity		extends  Object
 	    DESCRIPTION
 	        Performs the following actions :
 		- Track http request data and put it in the mysql database
-		- Check if the referrer does not belong to the blacklisted domain list
+		- Check if the referer does not belong to the blacklisted domain list
 	 
 	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  PageCheck ( )
@@ -102,21 +170,110 @@ class	WebSecurity		extends  Object
 			$tracker -> Track ( ) ;
 		    }
 
-		$status		=  $this -> BlacklistedDomainCheck ( ) ;
+		$this -> BlacklistedDomainCheck ( ) ;
 	    }
 
 
-	public function  BlacklistedDomainCheck ( )
+	/**************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 ******                                      SUPPORT FUNCTIONS                                           ******
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************/
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        __create_error_handler_object
+	 
+	    DESCRIPTION
+	        Creates an error handler based on the supplied array definition.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	private function  __create_error_handler_object ( $type, $handler_data )
 	   {
-		if  ( ! $this -> TrackedBlacklistedDomains )
-			return ;
+		// Silently ignore entries with no 'action' element
+		if  ( ! isset ( $handler_data [ 'action' ] ) )
+			return ( null ) ;
 
-		$referrer	=  '00.be' ;//$_SERVER [ 'HTTP_REFERRER' ] ;
+		$action		=  $handler_data [ 'action' ] ;
+		$parameters	=  ( isset ( $handler_data [ 'parameters' ] ) ) ?  $handler_data [ 'parameters' ] : [] ;
+		$class		=  false ;
 
-		if  ( preg_match ( '#^[^:]+://(?P<value> .*)#imsx', $referrer, $match ) )
-			$referrer	=  $match [ 'value' ] ;
+		switch  ( strtolower ( $action ) )
+		   {
+			case	'debug'		:  $class =  'DebugErrorHandler'	; break ;
+			case	'wait'		:  $class =  'WaitErrorHandler'		; break ;
+			case	'error-page'	:  $class =  'HttpPageErrorHandler'	; break ;
 
-		$tracker	=  new BlacklistedDomainTracker ( $this -> TrackedBlacklistedDomains ) ;
-		$tracker -> Verify ( $referrer ) ;
+			default :
+				error ( new \Thrak\System\InvalidArgumentException ( "Invalid handler \"$action\" in blacklisted $type entry of Security section." ) ) ;
+		    }
+
+		// If we found a valid 'action' entry, then instanciate this error handler
+		// Otherwise ignore it
+		if  ( $class )
+		   {
+			if  ( ! is_array ( $parameters ) )
+				$parameters	=  [ $parameters ] ;
+
+			$class		=  "\\Thrak\\Security\\" . $class ;
+			$reflection	=  new \ReflectionClass ( $class ) ;
+			$object		=  $reflection -> newInstanceArgs ( $parameters ) ;
+
+			return ( $object ) ;
+		    }
+		else
+			return ( null ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        __get_blacklist_data
+	 
+	    DESCRIPTION
+	        Retrieves parameters related to domain/email blacklisting.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	private function  __get_blacklist_data ( $type ) 
+	   {
+		global		$Configuration ;
+
+		$value				=  $Configuration -> Get ( "Security/blacklisted-$type", false ) ;
+
+		if  ( is_array ( $value ) )
+		   {
+			if  ( isset ( $value [ 'enabled' ] )  &&  $value [ 'enabled' ] )
+			   {
+				$data				=  [] ;
+				$data [ 'table'	]		=  ( isset ( $value [ 'table'     ] ) ) ?  $value [ 'table'	] :  "tracking_blacklisted_$type" ;
+				$data [ 'log-table' ]		=  ( isset ( $value [ 'log-table' ] ) ) ?  $value [ 'log-table'	] :  'tracking_blacklist_log' ;
+				$data [ 'error-handlers' ]	=  new ErrorHandlers ( ) ;
+
+				if  ( isset ( $value [ 'error-handlers' ] )  &&  is_array ( $value [ 'error-handlers' ] ) )
+				   {
+					foreach ( $value [ 'error-handlers' ]  as  $handler_data )
+					   {
+						$object		=  $this -> __create_error_handler_object ( $type, $handler_data ) ;
+
+						if  ( $object )
+							$data [ 'error-handlers' ] []	=  $object ;
+					    }
+				    }
+
+				return ( $data ) ;
+			    }
+			else
+				return ( false ) ;
+		    }
+		else
+			return ( false ) ;
 	    }
     }

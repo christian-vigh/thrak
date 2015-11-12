@@ -95,21 +95,23 @@ class  HtmlGenerator		extends		Object
 
 		// Generate the final html code that mimics an error page
 		$html 	=  <<<END
-			<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
-			<html><head>
-			<title>$error $http_error</title>
-			</head><body>
-			<h1>$http_error</h1>
-			<p>$http_error_description</p>
-			<hr>
-			<address>$apache_version at $server_name Port $server_port</address>
-			</body></html>
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
+<html><head>
+<title>$error $http_error</title>
+</head><body>
+<h1>$http_error</h1>
+<p>$http_error_description.</p>
+<hr>
+<address>$apache_version at $server_name Port $server_port</address>
+</body></html>
 END;
-		$length	=  strlen ( $html ) ;
+
+		$html		=  str_replace ( "\r", '', $html ) ;
+		$length		=  strlen ( $html ) ;
 
 
 		// Mimic an error page
-		@ob_clean ( ) ;
+		@ob_end_clean ( ) ;
 
 		/***
 			A quirk :
@@ -119,16 +121,15 @@ END;
 			  Apache configuration files does not work either.
 			This will be the only difference with a regular 404 error page.
 		 ***/
-		//header ( "Connection: Keep-Alive" ) ;
 		header ( "HTTP/1.0 $error $http_error" ) ; 
-		header ( "Content-Encoding: gzip" ) ;
 		header ( "Content-Length: $length" ) ;
 		header ( "Content-Type: text/html; charset=iso-8859-1" ) ;
 		header ( "Date: $date" ) ;
 		header ( "Keep-Alive: timeout=5, max=100" ) ;
 		header ( "Server: $apache_version" ) ;
 		header ( "Vary: Accept-Encoding" ) ;
-		echo ( gzencode ( $html ) ) ;
+
+		echo ( $html ) ;
 	    }
 
 

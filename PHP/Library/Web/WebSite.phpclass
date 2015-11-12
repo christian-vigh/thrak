@@ -91,6 +91,7 @@ class  WebSite			extends	Object
 
 		// Define absolute url
 		$_SERVER [ 'HTTP_URL' ]	=  self::GetAbsoluteUrl ( ) ;
+		ksort ( $_SERVER ) ;
 
 		// Get real site root
 		$root	=  Path::RealPath ( $SITE_ROOT ) ;

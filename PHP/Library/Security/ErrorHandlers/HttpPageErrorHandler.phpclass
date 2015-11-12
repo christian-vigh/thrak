@@ -31,7 +31,7 @@ use	Thrak\Html\HtmlGenerator ;
         Error handler that generates an error page for the specified http status code.
 
   ==============================================================================================================*/
-class  HttpPageErrorHandler		extends  NonFatalErrorHandler 
+class  HttpPageErrorHandler		extends  FatalErrorHandler 
    {
 	public		$HttpStatus ;
 

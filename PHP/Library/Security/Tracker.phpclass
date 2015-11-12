@@ -232,6 +232,7 @@ class  TrackerStringStore		extends  StringStore
 	const	STRING_STORE_FILES_ARRAY	=  9 ;
 	const	STRING_STORE_COOKIE_ARRAY	=  10 ;
 	const	STRING_STORE_SESSION_ARRAY	=  11 ;
+	const   STRING_STORE_EMAIL		=  12 ;
 
 
 	public function  __construct ( $table, $comment = '', $db = null )

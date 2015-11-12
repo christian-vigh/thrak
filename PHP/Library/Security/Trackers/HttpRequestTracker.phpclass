@@ -26,6 +26,7 @@ use 	Thrak\System\Object ;
 use     Thrak\Types\String ;
 use	Thrak\Security\Tracker ;
 use	Thrak\Database\BufferedInsert ;
+use	Thrak\Web\WebSite ;
 
 
 /*==============================================================================================================
@@ -149,8 +150,9 @@ class  HttpRequestTracker	extends  BufferedTracker
 		$timestring		=  $request_time -> format ( 'Y-m-d H:i:s.u' ) ;
 		$local_port		=  ( integer ) $server [ 'SERVER_PORT' ] ;
 		$remote_port		=  ( integer ) $server [ 'REMOTE_PORT' ] ;
+		$absolute_url		=  WebSite::GetAbsoluteUrl ( ) ;
 
-		$url_id			=  $store -> Insert ( TrackerStringStore::STRING_STORE_URL		, $server [ 'HTTP_HOST' ] . $server [ 'REQUEST_URI' ] ) ;
+		$url_id			=  $store -> Insert ( TrackerStringStore::STRING_STORE_URL		, $absolute_url ) ;
 		$query_id		=  $store -> Insert ( TrackerStringStore::STRING_STORE_QUERY		, $server [ 'QUERY_STRING' ] ) ;
 		$local_ip_id		=  $store -> Insert ( TrackerStringStore::STRING_STORE_LOCAL_IP	, $server [ 'SERVER_ADDR' ] ) ;
 		$remote_ip_id		=  $store -> Insert ( TrackerStringStore::STRING_STORE_REMOTE_IP	, $server [ 'REMOTE_ADDR' ] ) ;

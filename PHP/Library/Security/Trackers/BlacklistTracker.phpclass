@@ -22,6 +22,7 @@ defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." 
 use 	Thrak\System\Object ;
 use     Thrak\Types\String ;
 use	Thrak\Security\Tracker ;
+use	Thrak\Web\WebSite ;
 
 
 /*==============================================================================================================
@@ -32,11 +33,16 @@ use	Thrak\Security\Tracker ;
   ==============================================================================================================*/
 abstract class	BlacklistTracker		extends  UnbufferedTracker 
    {
+	// Blacklist log table name
 	const	TABLE_BLACKLIST_LOG		=  'tracking_blacklist_log' ;
+
+	// Blacklist log entry types
+	const	BLACKLISTED_DOMAIN		=  0 ;
+	const	BLACKLISTED_EMAIL		=  1 ;
 
 	// Underlying tables
 	protected	$Table ;
-	protected	$LogTables ;
+	protected	$LogTable ;
 	// Error handlers
 	protected	$ErrorHandlers ;
 
@@ -55,6 +61,7 @@ abstract class	BlacklistTracker		extends  UnbufferedTracker
 		parent::__construct ( $string_store_table, $db ) ;
 
 		$this -> Table		=  $table ;
+		$this -> LogTable	=  $log_table ;
 		$this -> ErrorHandlers	=  $error_handlers ;
 	    }
 
@@ -67,13 +74,19 @@ abstract class	BlacklistTracker		extends  UnbufferedTracker
 	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  Verify ( $data )
 	   {
+		$status		=  false ;
+
 		if  ( $this -> IsBlacklisted ( $data ) )
 		   {
 			$this -> Track ( $data ) ;
 
 			if  ( $this -> ErrorHandlers ) 
 				$this -> ErrorHandlers -> Execute ( ) ;
+
+			$status		=  true ;
 		    }
+
+		return ( $status ) ;
 	    }
 
 
@@ -99,13 +112,40 @@ abstract class	BlacklistTracker		extends  UnbufferedTracker
 
 		return  ( $value  ==  1 ) ;
 	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+
+	    Log -
+		Logs blacklisting data.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  Log ( )
+	   {
+		$argv		=  func_get_args ( ) ;
+		$logtype	=  $argv [0] ;
+		$sstype		=  $argv [1] ;
+		$data		=  $argv [2] ;
+		$url_id		=  self::$StringStore -> Insert ( TrackerStringStore::STRING_STORE_URL, WebSite::GetAbsoluteUrl ( ) ) ;
+		$data_id	=  self::$StringStore -> Insert ( $sstype, $data ) ;
+		$query		=  "
+					INSERT INTO {$this -> LogTable}
+					SET
+						blal_time	=  NOW(),
+						blal_type	=  $logtype,
+						blal_url_id	=  $url_id,
+						blal_entry_id	=  $data_id
+				   " ;
+
+		$this -> Database -> Execute ( $query ) ;
+	    }
     }
 
 
 /*==============================================================================================================
 
     BlacklistedDomainTracker class -
-        A generic track for tracking blacklisted data.
+        A generic track for tracking blacklisted domains.
 
   ==============================================================================================================*/
 class  BlacklistedDomainTracker			extends		BlacklistTracker
@@ -116,13 +156,62 @@ class  BlacklistedDomainTracker			extends		BlacklistTracker
 		Initializes a tracking log for blacklisted domains.
 	 
 	 *-------------------------------------------------------------------------------------------------------------*/
-	public function  __construct ( $error_handlers, $table = 'tracking_blaklisted_domains', $log_table = null, $string_store_table = null, $db = null )
+	public function  __construct ( $error_handlers = [], $table = 'tracking_blaklisted_domains', 
+					$log_table = null, $string_store_table = null, $db = null )
 	   {
 		parent::__construct ( $error_handlers, $table, $log_table, $string_store_table, $db ) ;
 	    }
 
 
+	/*--------------------------------------------------------------------------------------------------------------
+
+	    Log -
+		Logs blacklisted domain.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
 	protected function  Log ( )
 	   {
+		$argv		=  func_get_args ( ) ;
+		$data		=  $argv [0] ;
+
+		parent::Log ( self::BLACKLISTED_DOMAIN, TrackerStringStore::STRING_STORE_URL, $data ) ;
 	    }
     }
+
+
+/*==============================================================================================================
+
+    BlacklistedEmailTracker class -
+        A generic track for tracking blacklisted emails.
+
+  ==============================================================================================================*/
+class  BlacklistedEmailTracker			extends		BlacklistTracker
+   {
+	/*--------------------------------------------------------------------------------------------------------------
+
+	    Constructor -
+		Initializes a tracking log for blacklisted emails.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( $error_handlers = [], $table = 'tracking_blaklisted_emails', 
+					$log_table = null, $string_store_table = null, $db = null )
+	   {
+		parent::__construct ( $error_handlers, $table, $log_table, $string_store_table, $db ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+
+	    Log -
+		Logs blacklisted email.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  Log ( )
+	   {
+		$argv		=  func_get_args ( ) ;
+		$data		=  $argv [0] ;
+
+		parent::Log ( self::BLACKLISTED_EMAIL, TrackerStringStore::STRING_STORE_EMAIL, $data ) ;
+	    }
+    }
+

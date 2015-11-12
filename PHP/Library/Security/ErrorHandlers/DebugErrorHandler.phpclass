@@ -1,0 +1,68 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        DebugErrorHandler.phpclass
+
+    DESCRIPTION
+        Error handler that prints a message, for debugging purposes.
+
+    AUTHOR
+        Christian Vigh, 11/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/11/11]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Security ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use 	Thrak\System\Object ;
+use     Thrak\Types\String ;
+use	Thrak\Security\NonFatalErrorHandler ;
+
+
+/*==============================================================================================================
+
+    DebugErrorHandler -
+        Error handler that prints a message, for debugging purposes.
+
+  ==============================================================================================================*/
+class  DebugErrorHandler		extends  FatalErrorHandler 
+   {
+	private		$Message ;
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        Constructor
+	 
+	    PROTOTYPE
+	        $handler	=  new DebugErrorHandler ( $message ) ;
+	 
+	    DESCRIPTION
+	        Creates an error handler that displays the specified message then exits.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( $message )
+	   {
+		parent::__construct ( ) ;
+		$this-> Message		=  $message ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    Execute -
+		Displays the debug message.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  Execute ( )
+	   {
+		output ( "DEBUG ERROR ENTRY MESSAGE :\n" . $this -> Message ) ;
+		exit;
+	    }
+    }

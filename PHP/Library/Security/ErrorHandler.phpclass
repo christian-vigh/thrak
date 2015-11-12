@@ -41,8 +41,8 @@ use     Thrak\Types\String ;
         Implements an array of error handlers to be executed sequentially.
 
   ==============================================================================================================*/
-abstract class  ErrorHandlers	extends		Object
-				implements	\ArrayAccess, \Countable, \IteratorAggregate
+class  ErrorHandlers	extends		Object
+			implements	\ArrayAccess, \Countable, \IteratorAggregate
    {
 	protected	$Handlers	=  [] ;
 
@@ -100,8 +100,8 @@ abstract class  ErrorHandler	extends  Object
 	    }
 
 
-	abstract public    function  Execute ( ) ;
-	abstract protected function  Trigger ( ) ;
+	abstract public function  Execute ( ) ;
+	abstract public function  Trigger ( ) ;
     }
 
 
@@ -119,7 +119,7 @@ abstract class  NonFatalErrorHandler	extends  Object
 	    }
 
 
-	protected function  Trigger ( )
+	public function  Trigger ( )
 	   {
 		$this -> Execute ( ) ;
 	    }
@@ -140,7 +140,7 @@ abstract class  FatalErrorHandler	extends  Object
 	    }
 
 
-	protected function  Trigger ( )
+	public function  Trigger ( )
 	   {
 		$this -> Execute ( ) ;
 		exit ( ) ;
