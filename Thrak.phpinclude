@@ -17,6 +17,12 @@
     [Version : 1.0.1]	[Date : 2015/10/19]	[Author : CV]
 	. Renamed wrapper "usrtmp://" to "site.tmp://".
 
+    [Version : 1.0.2]	[Date : 2015/11/13]	[Author : CV]
+	. Added the $LOCAL_CONFIGURATION global variable, to specify a third configuration file.
+	  The goal is to be able to specify custom configuration values on remote production sites
+	  (for example, development system might connect to mysql using the standard port 3306, 
+	  while the production system may use another port).
+
  ***************************************************************************************************/
 ! defined ( '__THRAK_SETUP__' ) or die ( "Stopped." ) ;
 
@@ -135,6 +141,10 @@ $Configuration  		=  null ;
 	  	the environment. If not found, it is assumed to be the parent directory of the path
 	  	specified by the THRAK_ROOT_VARIABLE.
 
+	  - LOCAL_CONFIGURATION :
+		A third configuration file that allows for custom configuration settings on either
+		the production or development server.
+
 	- Set the include path to point to Thrak PHP include files.
 
   ==================================================================================================*/
@@ -213,6 +223,7 @@ $BootSetup 		=  function  ( $debug )
 	$GLOBALS [ 'THRAK_CONFIGURATION' ]	=  $getcfgvar ( 'THRAK_CONFIGURATION', $GLOBALS [ 'THRAK_ROOT' ] . '/Configuration/Thrak.Configuration.php', false ) ;
 	$GLOBALS [ 'SITE_ROOT' ]		=  $getcfgvar ( 'SITE_ROOT', dirname ( __FILE__ ) . '/..', true ) ;
 	$GLOBALS [ 'SITE_CONFIGURATION' ]	=  $getcfgvar ( 'SITE_CONFIGURATION', $GLOBALS [ 'SITE_ROOT' ] . 'Site.Configuration.php', false ) ;
+	$GLOBALS [ 'LOCAL_CONFIGURATION' ]	=  $getcfgvar ( 'LOCAL_CONFIGURATION', $GLOBALS [ 'SITE_ROOT' ] . 'Local.Configuration.php', false ) ;
 	$GLOBALS [ 'THRAK_VERSION' ]		=  "2.0" ;
 
 	// A little exception for URLs, which must refer to the root of the site, not to the root of the filesystem...
@@ -243,6 +254,7 @@ $BootSetup 		=  function  ( $debug )
 		echo ( "THRAK_CONFIGURATION	=  {$GLOBALS [ 'THRAK_CONFIGURATION' ]}\n" ) ;
 		echo ( "SITE_ROOT		=  {$GLOBALS [ 'SITE_ROOT' ]}\n" ) ;
 		echo ( "SITE_CONFIGURATION	=  {$GLOBALS [ 'SITE_CONFIGURATION' ]}\n" ) ;
+		echo ( "LOCAL_CONFIGURATION	=  {$GLOBALS [ 'LOCAL_CONFIGURATION' ]}\n" ) ;
 		echo ( "IS_STANDALONE 		=  " . IS_STANDALONE 	. "\n" ) ;
 		echo ( "IS_LOCAL 		=  " . IS_LOCAL 	. "\n" ) ;
 		echo ( "IS_WINDOWS 		=  " . IS_WINDOWS 	. "\n" ) ;
@@ -289,12 +301,15 @@ $BootFinalize		=  function ( $debug )
 	require_once ( $this_dir . '/PHP/Library/Runtime/Configuration.phpclass' ) ;
 	$Configuration	=  new  \Thrak\Runtime\Configuration ( ) ;
 
-	// Load Thrak and site configuration files
+	// Load Thrak, site & local configuration files
 	if  ( file_exists ( $GLOBALS [ 'THRAK_CONFIGURATION' ] ) )
 		$Configuration -> Load ( $GLOBALS [ 'THRAK_CONFIGURATION' ] ) ;
 
 	if  ( file_exists ( $GLOBALS [ 'SITE_CONFIGURATION' ] ) )
 		$Configuration -> Load ( $GLOBALS [ 'SITE_CONFIGURATION' ] ) ;
+
+	if  ( file_exists ( $GLOBALS [ 'LOCAL_CONFIGURATION' ] ) )
+		$Configuration -> Load ( $GLOBALS [ 'LOCAL_CONFIGURATION' ] ) ;
 
 	// Install the class autoloader. This is at a very early stage, where we won't benefit from the Thrak classes.
 	require_once ( $this_dir . '/PHP/Library/Runtime/Autoloader.phpclass' ) ;
