@@ -18,6 +18,9 @@
 	. Corrected the LogicalDrives::__get_offset method, which did not check for drive existence when a
  	  non-numeric index was specified.
 
+    [Version : 1.0.2]	[Date : 2015/11/13]	[Author : CV]
+	. Indexing by property name was not correctly checked.
+
  ************************************************************************************************************/
 namespace 	Thrak\Windows ;
 
@@ -341,7 +344,7 @@ class  LogicalDrive 		extends  	AbstractWindowsBase
 	   {
 		if  ( is_integer ( $offset )  &&  $offset  >  0  &&  $offset  <  count ( $this -> PropertyNames ) )
 			return ( $this -> PropertyNames [ $offset ] ) ;
-		else if  ( is_string  ( $offset )  &&  is_string  ( $offset ) )
+		else if  ( is_string  ( $offset )  &&  isset  ( $this -> PropertyNames [ $offset ] ) )
 			return  ( $offset ) ;
 		else
 			return ( false ) ;
