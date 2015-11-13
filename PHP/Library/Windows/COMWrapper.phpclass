@@ -124,7 +124,7 @@ class  COMWrapper       extends Object
 	                               
 	                if  ( ! $class_definition )
 	                        return ( null ) ;
-	                                               
+	                      
 	                $class_name		=  ( $desired_class ) ? $desired_class : self::GetClassNameFromDefinition ( $class_definition ) ;
 	                               
 	                if  ( ! isset ( self::$__class_definitions [ $class_name ] ) )
@@ -217,7 +217,7 @@ class  COMWrapper       extends Object
 	                               
 	        // Get class definition and class name
 	        $class_definition             =  self::GetInterfaceDefinition ( $com_object ) ;
-	               
+
 	        if  ( ! $class_definition ) 
 	                return ( $com_object ) ;
 	        
