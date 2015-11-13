@@ -1,0 +1,111 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        Reflection.phpclass
+
+    DESCRIPTION
+        This class is some kind of reproduct
+
+    AUTHOR
+        Christian Vigh, 10/2014.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2014/10/14]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Internals ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces & objects
+use 	Thrak\System\Object 				as  Object ;
+use     Thrak\System\IsNonObject ;
+use	Thrak\Internals\ReflectionAttributeHelpers ;
+
+    
+ 
+/*==============================================================================================================
+
+    ReflectionClass class -
+        Enhancements to the existing \ReflectionClass class.
+ 
+	The following enhancements have been added :
+	- getAttributes() method, to retrieve the attributes present in the class' docComment element.
+
+  ==============================================================================================================*/
+class  ReflectionClass  extends  \ReflectionClass
+   {
+	use  IsNonObject, ReflectionAttributeHelpers ;
+	
+	public function  __construct ( $argument )
+	   {
+		parent::__construct ( $argument ) ;
+		$this -> CoreInit ( ) ;
+	    }
+	
+    }
+
+    
+/*==============================================================================================================
+
+    ReflectionFunction class -
+        Enhancements to the existing \ReflectionFunction class.
+ 
+	The following enhancements have been added :
+	- getAttributes() method, to retrieve the attributes present in the class' docComment element.
+
+  ==============================================================================================================*/
+class  ReflectionFunction  extends  \ReflectionFunction
+   {
+	use  IsNonObject, ReflectionAttributeHelpers ;
+	
+	public function  __construct ( $argument )
+	   {
+		parent::__construct ( $argument ) ;
+		$this -> CoreInit ( ) ;
+	    }
+    }
+
+    
+/*==============================================================================================================
+
+    ReflectionMethod class -
+        Enhancements to the existing \ReflectionMethod class.
+ 
+	The following enhancements have been added :
+	- getAttributes() method, to retrieve the attributes present in the class' docComment element.
+
+  ==============================================================================================================*/
+class  ReflectionMethod  extends  \ReflectionMethod
+   {
+	use  IsNonObject, ReflectionAttributeHelpers ;
+	
+	public function  __construct ( $class_method, $method = null )
+	   {
+		parent::__construct ( $class_method, $method ) ;
+		$this -> CoreInit ( ) ;
+	    }
+    }
+
+
+/*==============================================================================================================
+
+    ReflectionProperty class -
+        Enhancements to the existing \ReflectionProperty class.
+ 
+	The following enhancements have been added :
+	- getAttributes() method, to retrieve the attributes present in the class' docComment element.
+
+  ==============================================================================================================*/
+class  ReflectionProperty  extends  \ReflectionProperty
+   {
+	use  IsNonObject, ReflectionAttributeHelpers ;
+	
+	public function  __construct ( $class_method, $method = null )
+	   {
+		parent::__construct ( $class_method, $method ) ;
+		$this -> CoreInit ( ) ;
+	    }
+    }
