@@ -400,8 +400,6 @@ class  LogicalDrive 		extends  	AbstractWindowsBase
 		
 		return  ( $this -> $property ) ;
 	    }
-	
-	
     }
     
     
