@@ -8,10 +8,10 @@
         WMI interface for PHP.
 
     AUTHOR
-        Christian Vigh, 10/2014.
+        Christian Vigh, 11/2015.
 
     HISTORY
-    [Version : 1.0]    [Date : 2014/10/21]     [Author : CV]
+    [Version : 1.0]    [Date : 2014/11/14]     [Author : CV]
         Initial version.
 
  **************************************************************************************************************/
@@ -22,6 +22,7 @@ defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." 
 use  	Thrak\System\Object ;
 use	Thrak\Windows\AbstractWindowsBase ;
 use     Thrak\Windows\COM\COMWrapper ;
+use	Thrak\Types\String ;
 
 
 /*==============================================================================================================
@@ -30,38 +31,355 @@ use     Thrak\Windows\COM\COMWrapper ;
         Wrapper around the WMI COM object.
 
   ==============================================================================================================*/
-class  WMIAbstractBase               extends  AbstractWindowsBase
+class      Wmi      extends  AbstractWindowsBase
    {
+	// Underlying WMI object
+	protected	$WmiObject ;
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        Constructor
+	 
+	    PROTOTYPE
+	        $wmi	=  new WMI ( $wmi_object ) ;
+		$wmi	=  new WMI ( $namespace ) ;
+		$wmi	=  new WMI ( ) ;
+	 
+	    DESCRIPTION
+	        Instanciates a WMI class which manages an underlying WMI object.
+	 
+	    PARAMETERS
+	        $wmi_object (COM object) -
+	                A COM instance of a winmgmts class.
+
+		$namespace (string) -
+			Windows management namespace. The default is :
+
+				winmgmts:{impersonationLevel=Impersonate}!//./root/CIMV2
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( $wmi_object_or_namespace = null )
+	   {
+		if  ( $wmi_object_or_namespace  ===  null )
+			$this -> WmiObject	=  new \COM ( 'winmgmts:{impersonationLevel=Impersonate}!//./root/CIMV2' ) ;
+		else if  ( is_string ( $wmi_object_or_namespace ) )
+			$this -> WmiObject	=  new \COM ( $wmi_object_or_namespace ) ;
+		else
+			$this -> WmiObject	=  $wmi_object_or_namespace ;
+	    }
+
+	
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    LocalInstance -
+		Creates a WMI object instance on the local computer.     
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public static function  LocalInstance ( $namespace = 'winmgmts:{impersonationLevel=Impersonate}!//./root/CIMV2' )
+	   {
+	        $wmi_object     =  new self ( new \COM ( $namespace ) ) ;
+		
+	        return ( $wmi_object ) ;
+	    }
+	
+	
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    RemoteInstance -
+		Creates a WMI object instance on the specified remote computer.     
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public static function  RemoteInstance ( $computer, $namespace = 'root\CIMV2', $user, $password, $locale = null, $domain = null )
+	   {
+	        $locator	=  new \COM ( "WbemScripting.SWbemLocator" ) ;
+	        $wmi_object     =  $locator -> ConnectServer ( $computer, $namespace, $user, $password, $locale, $domain ) ;
+	        $wmi_object     =  new  self ( $wmi_object ) ;
+		
+	        return ( $wmi_object ) ;
+	    }
+	  
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    QueryInstances -
+		A shortcut for :
+
+			$wmi -> Query ( "SELECT * FROM $table" ) ;
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  QueryInstances ( $table, $base_class = 'WmiInstance', $namespace = 'Thrak\Windows\Wmi' )
+	   {
+		return ( $this -> Query ( "SELECT * FROM $table", $base_class, $namespace ) ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        Query - Queries WMI interface
+	 
+	    PROTOTYPE
+	        $array	=  $wmi -> Query ( $query, $base_class = 'WmiInstance', $namespace = 'Thrak\Windows\Wmi' ) ;
+	 
+	    DESCRIPTION
+	        Performs a query on the Windows WMI interface and returns the results as an array of objects belonging
+		to class $base_class.
+	 
+	    PARAMETERS
+	        $query (string) -
+	                Query for the WMI interface, eg :
+
+				SELECT * FROM Win32_Process
+
+		$base_class (string) -
+			The Query() method creates a new class for the WMI table being queried. The new class will have
+			the table name prepended with 'Wmi' ; for example, querying Win32_Process will return objects
+			of class WmiWin32_Process, inheriting from $base_class which is, by default, the WmiInstance
+			class.
+			If you want to encapsulate the generated class, simply declare a new class inheriting from
+			WmiInstance and specify its name to the Query() call.
+
+		$namespace (string) -
+			Indicates the namespace where new classes are to be created. An empty value means the current
+			namespace.
+	 
+	    RETURN VALUE
+	        Returns an array of Wmixxx objects, where "xxx" is the name of the WMI table being queried.
+		An empty array is returned if the query returned no results.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  Query ( $query, $base_class = 'WmiInstance', $namespace = 'Thrak\Windows\Wmi' )
+	   {
+		if  ( ! preg_match ( '/FROM \s+ (?P<table> \w+)/imsx', $query, $match ) )
+			return ( false ) ;
+
+		$wmi_class		=  $match [ 'table' ] ;
+		$full_class_path	=  $this -> __get_class_path ( $wmi_class, $namespace ) ;
+		$class_exists		=  class_exists ( $full_class_path, false ) ;
+		$rs			=  $this -> WmiObject -> ExecQuery ( $query ) ;
+		$result			=  [] ;
+		
+		foreach  ( $rs  as  $row )
+		   {
+			if  ( ! $class_exists )
+			   {
+				$this -> __create_class ( $wmi_class, $base_class, $namespace ) ;
+
+				if  ( ! is_subclass_of ( $full_class_path, 'Thrak\Windows\WmiInstance' ) )
+					error ( new \Thrak\System\RuntimeException ( "Class \"$full_class_path\" should inherit from Thrak\Windows\WmiInstance" ) ) ;
+
+				$class_exists	=  true ;
+			    }
+
+			$result	[]	=  $this -> __get_instance ( $row, $full_class_path ) ;
+		    }
+
+		return ( $result ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+		Support functions.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+
+	// __create_class -
+	//	Creates a class on-the-fly mapped to a query result.
+	private function  __create_class ( $class, $base, $namespace )
+	   {
+		$namespace	=  ( $namespace ) ?  "namespace $namespace ;" : '' ;
+		$classtext	=  <<<END
+			$namespace
+			use  Thrak\\Windows\\WmiInstance ;
+
+			class  $class extends $base
+			   {
+				public function  __construct ( \$row )
+				   {
+					parent::__construct ( \$row ) ;
+				    }
+			    }
+END;
+
+		eval ( $classtext ) ;
+	    }
+
+
+	// __get_class_path -
+	//	Returns the full path of the specified class.
+	private function  __get_class_path ( $class, $namespace )
+	   {
+		if  ( $namespace )
+			return ( "$namespace\\$class" ) ;
+		else
+			return ( "$class" ) ;
+	    }
+
+
+	// __get_instance -
+	//	Instanciate a query row using our brand new class.
+	private function  __get_instance ( $wmi_row, $class )
+	   {
+		return ( new $class ( $wmi_row ) ) ;
+	    }
     }
 
 
 /*==============================================================================================================
 
-    WMI class -
-        Wrapper around the WMI COM object.
+    WmiInstance -
+        Maps the properties of a row returned by a query to real class members.
 
   ==============================================================================================================*/
-class      WMI      extends  WMIAbstractBase
+class  WmiInstance		extends		AbstractWindowsBase
    {
-	
-	
-	public static function  LocalWMI ( $namespace = 'winmgmts://localhost/root/CIMV2' )
+	protected	$PropertyNames ;
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+
+	    Constructor -
+	        Instanciates a WmiInstance object using a data row returned by a Wmi query.
+		After instanciation, all the properties of the data row become available as regular PHP object 
+		properties.
+		Properties are also accessible through iterators and array access.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( $wmi_row )
 	   {
-	        $wmi_object     =  COMWrapper::Wrap ( new \COM ( $namespace ), null, get_called_class ( ) ) ;
-		
-	        return ( $wmi_object ) ;
+		foreach  ( $wmi_row -> Properties_  as  $property )
+		   {
+			$property_name 			=  $property -> Name ;
+			
+			// Property is an array : we have to extract each item from the underlying variant
+			if  ( $property -> IsArray )
+			   {
+				$property_value	=  [] ;
+
+				// ... but be careful to null or empty arrays
+				if (  $property -> Value  !==  null  &&  variant_get_type ( $property -> Value )  !=  VT_NULL )
+				   {
+					foreach (  $property -> Value  as  $item )
+						$property_value []	=  $this -> __normalize ( $item ) ;
+				    }
+			    }
+			// Property should be a "standard" value, that can be mapped to one of the PHP base scalar types.
+			else
+				$property_value 	=  $this -> __normalize ( $property -> Value ) ;
+				
+			// Assign the property to this instance (either a scalar type or an array)
+			$this -> $property_name 	=  $property_value ;
+			
+			// Add it to the list of dynamically defined properties
+			$this -> PropertyNames []	=  $property_name ;
+		    }
+
+	    }
+
+
+	// __normalize -
+	//	Try to guess the type of a property value.
+	private function  __normalize ( $item )
+	   {
+		if  ( is_numeric ( $item ) )
+		   {
+			if  ( $item  ==  ( integer ) $item )
+				$result		=  ( integer ) $item ;
+			else
+				$result	=  ( double ) $item ;
+		    }
+		else if  ( $item  ===  null )
+			$result	=  null ;
+		else if  ( ( $value = String::BooleanValue ( $item ) )  !==  null )
+			$result	=  $value ;
+		else
+			$result	=  $item ;
+
+		return ( $result ) ;
+	    }
+
+
+	public static function  __dump_debuginfo ( )
+	   {
+		return ( [ 'hidden' => [ 'PropertyNames' ] ] ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	        Countable interface implementation.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  count ( )
+	   { return ( count ( $this -> PropertyNames ) ) ; }
+	
+	
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	        ArrayAccess interface implementation.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	private function  __offset_get ( $offset )
+	   {
+		if  ( is_integer ( $offset )  &&  $offset  >  0  &&  $offset  <  count ( $this -> PropertyNames ) )
+			return ( $this -> PropertyNames [ $offset ] ) ;
+		else if  ( is_string  ( $offset )  &&  isset  ( $this -> PropertyNames [ $offset ] ) )
+			return  ( $offset ) ;
+		else
+			return ( false ) ;
 	    }
 	
+	
+	public function  offsetExists ( $offset )
+	   { return ( $this -> __offset_get ( $offset )  !==  false ) ; }
+		
+	
+	public function  offsetGet ( $offset )
+	   {
+		$real_offset	=  $this -> __offset_get ( $offset ) ;
+		
+		if  ( $real_offset  !==  false )
+			return ( $this -> $real_offset ) ;
+		else
+			error ( new \Thrak\System\OutOfRangeException ( "Invalid offset $offset." ) ) ;
+	    }
 
 	
+	public function  OffsetSet ( $offset, $value ) 
+	   { error ( new \Thrak\System\UnsupportedOperationException ( ) ) ; }
+
 	
-	public static function  RemoteWMI ( $computer, $namespace = 'root\CIMV2', $user, $password, $locale = null, $domain = null )
+	public function  Offsetunset ( $offset ) 
+	   { error ( new \Thrak\System\UnsupportedOperationException ( ) ) ; }
+	
+	
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	        Iterator interface implementation.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	private	$__iterator_index	=  null ;
+	
+	
+	public function  rewind ( )
+	   { $this -> __iterator_index = 0 ; }
+	
+	public function  valid ( )
+	   { return ( $this -> __iterator_index  >=  0  &&  $this -> __iterator_index  <  count ( $this -> PropertyNames ) ) ; }
+	
+	public function  next ( )
+	   { $this -> __iterator_index ++ ; }
+	
+	public function  key ( )
+	   { return ( $this -> PropertyNames [ $this -> __iterator_index ] ) ; }
+	
+	public function  current ( )
 	   {
-	        $locator	=  new \COM ( "WbemScripting.SWbemLocator" ) ;
-	        $wmi_object     =  $locator -> ConnectServer ( $computer, $namespace, $user, $password, $locale, $domain ) ;
-	        $wmi_object     =  COMWrapper::Wrap ( $wmi_object ) ;
+		$property	=  $this -> PropertyNames [ $this -> __iterator_index ] ;
 		
-	        return ( $wmi_object ) ;
+		return  ( $this -> $property ) ;
 	    }
-	      
     }
