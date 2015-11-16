@@ -1,0 +1,192 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        WampPackages.phpclass
+
+    DESCRIPTION
+        Base class for wamp package versions list.
+
+    AUTHOR
+        Christian Vigh, 11/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/11/15]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Windows\Wamp ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use  	Thrak\System\Object ;
+use	Thrak\IO\Path ;
+use	Thrak\Windows\AbstractWindowsBase ;
+use	Thrak\Windows\Wamp\PhpVersions ;
+use	Thrak\Windows\Wamp\WampException ;
+
+
+/*==============================================================================================================
+
+    WampPackages -
+        Base class for wamp Packages list (PHP, MySql and Apache).
+
+  ==============================================================================================================*/
+abstract class  WampPackages		extends		AbstractWindowsBase
+					implements	\ArrayAccess, \Countable, \IteratorAggregate
+   {
+	// Package name
+	public		$Name ;
+	// Parent WampManager object
+	protected	$Parent ;
+	// Found Package list
+	protected	$Packages ;
+	// Current version
+	protected	$ActiveVersion ;
+	// Underlying class for individual items
+	private		$UnderlyingClass ;
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        Constructor - Creates a list of wamp Packages
+	 
+	    PROTOTYPE
+	        $Packages	=  new WampPackages ( $name, $class, $parent, $rootdir, $prefix, $active_version ) ;
+	 
+	    DESCRIPTION
+	        Creates a list of Packages whose configuration information is to be loaded.
+		Since this is an abstract class, it is the responsibility of derived classes (PhpVersions, MySqlVersions
+		and ApacheVersions) to provide the required parameters appropriate to their function.
+	 
+	    PARAMETERS
+	        $name (string) -
+	                Official list name ("PHP", "MySQL", "Apache").
+
+		$class (string) -
+			Name of class deriving from WampPackage which is responsible for loading Package data.
+
+		$parent (WampConfiguration object) -
+			Parent WampConfiguration object.
+
+		$rootdir (string) -
+			Base directory under Wamp root (eg, 'bin/php').
+
+		$prefix (string) -
+			Prefix string used to name directories under $rootdir. For example, it will be 'php' for PHP
+			versions (they all start with the string 'php'), 'mysql' for mysql version, 'apache' for
+			apache versions.
+
+		$active_version (string) -
+			The derived class must retrieve the currently active version from wampmanager.conf. 
+			It will be 'phpCliVersion' in the [phpCli] section, 'apacheVersion' in the [apache] section,
+			and 'mysqlVersion' in the [mysql] version.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( $name, $class, $parent, $rootdir, $prefix, $active_version )
+	   {
+		$this -> Name			=  $name ;
+		$this -> Parent			=  $parent ;
+		$this -> UnderlyingClass	=  $class ;
+
+		$this -> __find_Packages ( $rootdir, $prefix ) ;
+		$this -> SetVersion ( $active_version, false ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+		Version-related functions.
+  
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  GetVersion ( )
+	   { return ( $this -> ActiveVersion ) ; }
+	
+
+	public function  SetVersion ( $version, $reload = true )
+	   {
+		if  ( ! isset ( $this -> Packages [ $version ] ) )
+			error ( new WampException ( "{$this -> Name} version \"$version\" does not exist." ) ) ;
+
+		$this -> ActiveVersion	=  $version ;
+
+		if  ( $reload )
+		   {
+			$this -> GetActivePackage ( ) -> Restart ( ) ;
+		    }
+	    }
+
+
+	public function  GetActivePackage ( )
+	   { return ( $this -> Packages [ $this -> ActiveVersion ] ) ; }
+
+
+	public function  GetVersions ( )
+	   { return ( array_keys ( $this -> Packages ) ) ; }
+
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+		Private methods.
+  
+	 *-------------------------------------------------------------------------------------------------------------*/
+
+	// __find_Packages
+	private function  __find_Packages ( $rootdir, $prefix )
+	   {
+		$mask	=  $this -> Parent -> InstallationDirectory . '/' . $rootdir . '/' . $prefix . '*' ;
+		$paths	=  glob ( $mask ) ;
+		$class	=  $this -> UnderlyingClass ;
+
+		foreach  ( $paths  as  $path )
+		   {
+			// Ignore non-directories
+			if  ( ! is_dir ( $path ) )
+				continue ;
+
+			$name	=  basename ( $path ) ;
+
+			// Ignore directories that do not start with the specified prefix followed by a version string
+			if  ( ! preg_match ( "/^$prefix (?P<version> \d+ \. \d+ \. \d+ .*)$/imsx", $name, $match ) )
+				continue ;
+
+			// Ignore directories that do not contain a wampserver.conf file
+			if  ( ! file_exists ( "$path/wampserver.conf" ) )
+				continue ;
+
+			// Retrieve version name
+			$version			=  $match [ 'version' ] ;
+
+			// Add this new Package (version)
+			$this -> Packages [ $version ]	=  new $class ( $this -> Name, $this -> Parent, $path, $match [ 'version' ] ) ;
+		    }
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+		Interfaces implementations.
+  
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  Count ( )
+	   { return ( count ( $this -> Packages ) ) ; }
+
+	public function  getIterator ( )
+	   { return ( new \ArrayIterator ( $this -> Packages ) ) ; }
+
+	public function  offsetExists ( $offset )
+	   { return ( $offset  >=  0  &&  $offset  <  count ( $this -> Packages ) ) ; }
+
+	public function  offsetGet ( $offset )
+	   { return ( $this -> Packages [ $offset ] ) ; }
+
+	public function  offsetSet ( $offset, $value )
+	   { error ( new \Thrak\System\UnsupportedOperationException ( ) ) ; }
+
+	public function  offsetUnset ( $offset )
+	   { error ( new \Thrak\System\UnsupportedOperationException ( ) ) ; }
+
+
+    }

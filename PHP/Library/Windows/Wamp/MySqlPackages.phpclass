@@ -1,0 +1,44 @@
+<?php
+/**************************************************************************************************************
+ 
+     NAME
+         MysqlPackages.phpclass
+ 
+     DESCRIPTION
+         Loads information for all PHP packages installed on Wamp.
+ 
+     AUTHOR
+         Christian Vigh, 11/2015.
+ 
+     HISTORY
+     [Package : 1.0]    [Date : 2015/11/15]     [Author : CV]
+         Initial Package.
+ 
+  **************************************************************************************************************/
+namespace 	Thrak\Windows\Wamp ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use  	Thrak\System\Object ;
+use	Thrak\IO\Path ;
+use	Thrak\Windows\AbstractWindowsBase ;
+use	Thrak\Windows\Wamp\WampModules ;
+use	Thrak\Windows\Wamp\WampException ;
+
+
+/*==============================================================================================================
+
+    MysqlPackages class -
+        Holds the list of currently installed PHP Packages.
+
+  ==============================================================================================================*/
+class  MysqlPackages		extends   WampPackages
+   {
+	public function  __construct ( $parent )
+	   {
+		parent::__construct ( 'MySql', 'Thrak\Windows\Wamp\MySqlPackage',
+					$parent, 
+					'bin/mysql', 'mysql',
+					$parent -> WampManagerConfiguration [ 'mysql' ] [ 'mysqlversion' ] ) ;
+	    }
+    }

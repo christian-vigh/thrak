@@ -8,28 +8,33 @@
         An object for managing the Wamp manager.
 
     AUTHOR
-        Christian Vigh, 10/2014.
+        Christian Vigh, 11/2015.
 
-    NOTES
-	This class require the presence of the following external SysInternals commands :
-	- PSEXEC
- 	- PSSERVICE
- 	- PSKILL
-  
     HISTORY
-    [Version : 1.0]    [Date : 2014/10/07]     [Author : CV]
+    [Version : 1.0]    [Date : 2015/11/13]     [Author : CV]
         Initial version.
 
  **************************************************************************************************************/
-namespace 	Thrak\Windows ;
+namespace 	Thrak\Windows\Wamp ;
 
 defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
 
 use  	Thrak\System\Object ;
 use	Thrak\IO\Path ;
+use	Thrak\Windows\AbstractWindowsBase ;
+use	Thrak\Windows\LogicalDrives ;
+use	Thrak\Windows\WShell ;
+use	Thrak\Windows\Wmi ;
+use	Thrak\Windows\Wamp\PhpPackages ;
+use	Thrak\Windows\Wamp\ApachePackages ;
+use	Thrak\Windows\Wamp\MySqlPackages ;
 
 
-define ( 'WAMPMANAGER_EXECUTABLE'		,  "WampManager.exe" ) ;
+define ( 'WAMPMANAGER_EXECUTABLE'		,  'WampManager.exe' ) ;
+define ( 'WAMPMANAGER_CONFIGURATION'		,  'WampManager.conf' ) ;
+define ( 'WAMPMANAGER_LOCAL_CONFIGURATION'	,  'WampServer.conf' ) ;
+
+class	WampException		extends		\Thrak\System\Exception  {} ;
 
 
 /*===========================================================================================
@@ -42,40 +47,152 @@ class  WampManager extends AbstractWindowsBase
    {
 	// Installation directory
 	public		$InstallationDirectory ;
-	// WShell object
-	protected	$WShell ;
-	// Wamp configuration data
-	public		$Configuration		=  array
-	   (
-		'wamp'		=>  array ( ),
-		'php'		=>  array ( ),
-		'mysql'		=>  array ( ),
-		'apache'	=>  array ( )
-	    ) ;
+	// WampManager configuration
+	public		$WampManagerConfiguration ;
+	// Wamp packages
+	public		$PhpPackages ;
+	public		$MySqlPackages ;
+	public		$ApachePackages ;
+	// Wamp executable
+	public		$WampExecutable ;
+	// WShell and Wmi objects
+	public		$WShell ;
+	public		$Wmi ;
 	
 
-	/*==============================================================================================================
-	
-	    NAME
-	        Constructor.
-	
-	    DESCRIPTION
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    Constructor -
 	        Loads any needed information about current WAMP manager configuration.
-	
-	  ==============================================================================================================*/
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  __construct ( )
 	   {
 		parent::__construct ( ) ;
 
-		// Load configuration data
-		//$this -> __verify_required_executables	( ) ;
-		$this -> __get_wamp_data ( ) ;
-		
-		// Instanciate a Shell object
+		// Instanciate a Shell and a Wmi object
 		$this -> WShell		=  new WShell ( ) ;
+		$this -> Wmi		=  new Wmi ( ) ;
+
+		// Try to locate installation directory
+		$this -> __locate_installation_directory ( ) ;
+
+		// Load the wampmanager configuration file
+		$this -> WampManagerConfiguration	=  array_change_key_case ( 
+								parse_ini_file ( $this -> InstallationDirectory . '\\' . WAMPMANAGER_CONFIGURATION, true ),
+								CASE_LOWER ) ;
+
+		foreach  ( $this -> WampManagerConfiguration  as  $key => $array )
+			$this -> WampManagerConfiguration [ $key ]	=  array_change_key_case ( $array ) ;
+
+		// Collect the apache, mysql and php versions installed
+		$this -> PhpPackages	=  new PhpPackages	( $this ) ;
+		$this -> ApachePackages =  new ApachePackages	( $this ) ;
+		$this -> MySqlPackages	=  new MySqlPackages	( $this ) ;
+
+		// Other data
+		$this -> WampExecutable		=  $this -> InstallationDirectory . '\\' . WAMPMANAGER_EXECUTABLE ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+
+	    Getter -
+		Implements the following properties :
+		- Apache	:  returns an object describing the active Apache version.
+		- MySql		:  returns an object describing the active MySql version.
+		- Php		:  returns an object describing the active Php version.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __get ( $member )
+	   {
+		switch  ( strtolower ( $member ) )
+		   {
+			case	'apache'	:  return ( $this -> ApachePackages -> GetActivePackage ( ) ) ;
+			case	'mysql'		:  return ( $this -> MySqlPackages  -> GetActivePackage ( ) ) ;
+			case	'php'		:  return ( $this -> PhpPackages    -> GetActivePackage ( ) ) ;
+
+			default :
+				error ( new \Thrak\System\UndefinedPropertyException ( $member ) ) ;
+		    }
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    Restart -
+	        Restarts the WampManager.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  Restart ( )
+	   {
+		$existing_pid	=  $this -> Terminate ( ) ;
+		$new_pid	=  $this -> Start ( ) ;
+
+		return ( [ $new_pid, $existing_pid ] ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    Start -
+	        Starts the WampManager.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  Start ( )
+	   {
+		$processes	=  $this -> __get_running_processes ( ) ;
+
+		if  ( $processes ) 
+		   {
+			warning ( "WampManager is already running." ) ;
+			return ( false ) ;
+		    }
+
+		$this -> WShell -> Exec ( $this -> WampExecutable ) ;
+
+		$processes	= $this -> __get_running_processes ( ) ;
+
+		if  ( $processes )
+			return ( $processes [0] -> ProcessId ) ;
+		else
+			return ( false ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    Terminate -
+	        Terminates the WampManager.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  Terminate ( )
+	   {
+		$processes	=  $this -> __get_running_processes ( ) ;
+
+		if  ( $processes ) 
+		   {
+			$process	=  $processes [0] ;
+			$pid		=  $process -> ProcessId ;
+
+			exec ( "TASKKILL /T /F /PID $pid 2>&1", $junk ) ;
+
+ShootAgain :
+			$processes	=  $this -> __get_running_processes ( ) ;
+
+			if  ( count ( $processes ) )
+			   {
+				usleep ( 20000 ) ;
+				goto ShootAgain ;
+			    }
+
+			return ( $pid ) ;
+		    }
+		else 
+			return ( false ) ;
 	    }
 	
-	
+
 	/**************************************************************************************************************
 	 **************************************************************************************************************
 	 **************************************************************************************************************
@@ -88,9 +205,118 @@ class  WampManager extends AbstractWindowsBase
 	 **************************************************************************************************************
 	 **************************************************************************************************************/
 
+	// __get_running_processes -
+	//	Returns the running wampmanager processes.
+	private function  __get_running_processes ( )
+	   {
+		$query		=  "SELECT * FROM Win32_Process WHERE name = '" . WAMPMANAGER_EXECUTABLE . "'" ;
+		$processes	=  $this -> Wmi -> Query ( $query ) ;
+
+		return ( $processes ) ;
+	    }
+
+
+	// __locate_installation_directory -
+	//	Tries to locate the wamp installation directory. Of course, defining a WAMPDIR environment variable
+	//	will help a lot...
+	private function  __locate_installation_directory ( )
+	   {
+		$dir	=  getenv ( "WAMPDIR" ) ;
+		$dirs	=  [] ;
+
+		if  ( $dir  ===  false )
+			$dirs	=  $this -> __search_installation_directories ( ) ;
+		else
+		   {
+			if  ( $this -> __validate_installation_directory ( $dir ) )
+				$dirs []	=  $dir ;
+		    }
+
+		$dircount	=  count ( $dirs ) ;
+
+		if  ( $dircount  ==  0 )
+			error ( "Wamp was not found on this system ; please define the WAMPDIR environment variable to point to " .
+				"a valid installation directory." ) ;
+		else if ( $dircount  >  1 )
+		   {
+			$message	=  "Wamp has been found in more than one directory :\n" ;
+
+			foreach  ( $dirs  as  $wampdir )
+				$message	.=  "\t- $wampdir\n" ;
+
+			$message	=  "Please define the WAMPDIR environment variable to specify the correct Wamp installation directory." ;
+
+			error ( $message ) ;
+		    }
+
+		$this -> InstallationDirectory	=  $dirs [0] ;
+	    }
+
+
+	// __search_installation_directories -
+	//	Searches for a "wamp*" directory in every possible fixed drive.
+	private function  __search_installation_directories ( )
+	   {
+		$drives		=  new LogicalDrives ( ) ;
+		$result		=  [] ;
+
+		foreach  ( $drives  as  $drive )
+		   {
+			if  ( ! $drive -> IsLocalDisk ( ) )
+				continue ;
+
+			$files	= glob ( $drive -> Name . '\\*wamp*' ) ;
+			
+			foreach  ( $files  as  $file )
+			   {
+				if  ( ! is_dir ( $file ) )
+					continue ;
+				
+				if (  ! $this -> __validate_installation_directory ( $file ) )
+					continue ;
+
+				$result []	=  $file ;
+			    }
+		    }
+
+		return ( $result ) ;
+	    }
+
+
+	// __validate_installation_directory -
+	//	Verifies that the specified directory contains a valid wampmanager version, including apache, php and mysql.
+	//	At that point, we can only make assumptions on their respective executable filenames, since wampmanager.conf
+	//	has not yet been loaded.
+	private function  __validate_installation_directory ( $path )
+	   {
+		$checkings	=
+		   [
+			[ 'file' => 'wampmanager.conf'					],
+			[ 'file' => 'wampmanager.exe'					],
+			[ 'file' => 'bin/php/php*/php.exe'				],
+			[ 'file' => 'bin/mysql/mysql*/bin/mysqld.exe'			],
+			[ 'file' => 'bin/apache/apache*/bin/httpd.exe'			],
+			[ 'file' => 'bin/php/php*/' . WAMPMANAGER_LOCAL_CONFIGURATION	],
+			[ 'file' => 'bin/mysql/mysql*/wampserver.conf'			],
+			[ 'file' => 'bin/apache/apache*/wampserver.conf'		]
+		    ] ;
+
+		foreach  ( $checkings  as  $entry )
+		   {
+			$entry_path	=  $path . '/' . $entry [ 'file' ] ;
+			$files		=  glob ( $entry_path ) ;
+			
+			if  ( ! count ( $files ) )
+				return ( false ) ;
+		    }
+
+		return ( true ) ;
+	    }
+
+
 	// __get_wamp_data -
 	//	Collects all Wamp data.
-	public function  __get_wamp_data ( )
+	public function  __zzget_wamp_data ( )
 	   {
 		// Get Wamp installation directory from environment variable
 		$directory	=  getenv ( "WAMPDIR" ) ;
@@ -251,25 +477,5 @@ class  WampManager extends AbstractWindowsBase
 				
 			    }
 		    }
-	    }
-	
-	
-	// __verify_paths -
-	//	Verifies that the required executables and paths are present.
-	public function  __verify_paths ( )
-	   {
-		$missing	=  array ( ) ;
-		
-		foreach  ( $this -> RequiredExecutables  as  $executable )
-		   {
-			$path	=  Path::WhereIs ( $executable ) ;
-			
-			if  ( ! $path )
-				$missing []	=  "\t. $executable" ;
-		    }
-		
-		if  ( count ( $missing ) )
-			error ( new \Thrak\System\RuntimeException ( "The following executable files are required but have not been found in path :\n" .
-					implode ( "\n", $missing ) ) ) ;
 	    }
     }

@@ -1,0 +1,132 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        WampPackage.phpclass
+
+    DESCRIPTION
+        Abstract base class for a single Wamp package.
+
+    AUTHOR
+        Christian Vigh, 11/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/11/15]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Windows\Wamp ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use  	Thrak\System\Object ;
+use	Thrak\IO\Path ;
+use	Thrak\Windows\AbstractWindowsBase ;
+use	Thrak\Windows\Wamp\PhpVersions ;
+use	Thrak\Windows\Wamp\WampException ;
+
+
+
+/*==============================================================================================================
+
+	Optional module interfaces.
+
+  ==============================================================================================================*/
+interface	WampRestartableModule
+   {
+	public function		Start		( ) ;
+	public function		Stop		( ) ;
+	public function		Restart		( ) ;
+    }
+
+
+interface	WampInstallableModule
+   {
+	public function		Install		( ) ;
+	public function		Uninstall	( ) ;
+    }
+
+
+/*==============================================================================================================
+
+    WampPackage class -
+        Base class for a wamp package (PHP, MySql and Apache).
+
+  ==============================================================================================================*/
+abstract class  WampPackage		extends		AbstractWindowsBase
+   {
+	// Package name
+	public			$Name ;
+	// Package path
+	public			$Path ;
+	// Current package version
+	public			$Version ;
+	// Wamp configuration parent object
+	protected		$Parent ;
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    Constructor -
+		Creates a Wamp Package that holds configuration data for a specific Package version.
+  
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( $name, $parent, $path, $version )
+	   {
+		$this -> Name		=  $name ;
+		$this -> Parent		=  $parent ;
+		$this -> Path		=  Path::ToHost ( $path ) ;
+		$this -> Version	=  $version ;
+	    }
+    }
+
+
+/*==============================================================================================================
+
+    WampModule class -
+        Base class for a wamp module.
+	A wamp module is a package that needs the mysql and apache services when a configuration option is
+	modified.
+
+  ==============================================================================================================*/
+abstract class  WampModule		extends		WampPackage
+					implements	WampRestartableModule
+   {
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    Constructor -
+		Creates a Wamp module that holds configuration data for a specific Package version.
+  
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( $name, $parent, $path, $version )
+	   {
+		parent::__construct ( $name, $parent, $path, $version ) ;
+	    }
+   }
+
+
+/*==============================================================================================================
+
+    WampService class -
+        Base class for a wamp service.
+
+  ==============================================================================================================*/
+abstract class  WampService		extends		WampModule
+					implements	WampInstallableModule
+   {
+	public		$ServiceName ;
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    Constructor -
+		Creates a Wamp module that holds configuration data for a specific Package version.
+  
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( $name, $parent, $path, $version, $service_name )
+	   {
+		parent::__construct ( $name, $parent, $path, $version ) ;
+		
+		$this -> ServiceName			=  $service_name ;
+	    }
+    }

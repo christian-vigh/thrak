@@ -1,0 +1,71 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        MysqlPackage.php
+
+    DESCRIPTION
+        Implements a PHP package currently installed in Wamp.
+
+    AUTHOR
+        Christian Vigh, 11/2015.
+
+    HISTORY
+    [Package : 1.0]    [Date : 2015/11/15]     [Author : CV]
+        Initial Package.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Windows\Wamp ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use  	Thrak\System\Object ;
+use	Thrak\Windows\Wamp\WampService ;
+
+
+/*==============================================================================================================
+
+    MysqlPackage class -
+        Holds configuration data for one installed PHP Package.
+
+  ==============================================================================================================*/
+class  MySqlPackage		extends  WampService
+   {
+	public function  __construct ( $name, $parent, $path, $version )
+	   {
+		parent::__construct ( $name, $parent, $path, $version, $parent -> WampManagerConfiguration [ 'service' ] [ 'servicemysql' ] ) ;
+	    }
+
+
+ 	/*--------------------------------------------------------------------------------------------------------------
+	 
+		WampRestartableModule interface implementation.
+  
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  Start		( ) 
+	   {
+		system ( "NET START \"{$this -> ServiceName}\"" ) ;
+	    }
+ 
+
+	public function  Stop		( ) 
+	   {
+		system ( "NET STOP \"{$this -> ServiceName}\"" ) ;
+	    }
+ 
+
+	public function  Restart	( ) 
+	   {
+		$this -> Stop ( ) ;
+		$this -> Start ( ) ;
+	    }
+
+
+ 	/*--------------------------------------------------------------------------------------------------------------
+	 
+		WampInstallableModule interface implementation.
+  
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  Install	( ) {}
+	public function  Uninstall	( ) {}
+    }
