@@ -36,6 +36,10 @@
    [Version : 2.0.6]	[Date : 2015/08/30]		[Author : CV]
 	. Added the GetNextRow() method.
 
+   [Version : 2.0.7]	[Date : 2015/11/15]		[Author : CV]
+	. Added the __EnsureConnected() method, and the Database/* /connect boolean value. When false,
+	  database connection is only established upon the first query, not at script start.
+
  ***************************************************************************************************/
 namespace 	Thrak\Database ;
 
@@ -101,6 +105,7 @@ class	Database  extends  Object
 	// $Connection -
 	//	Resource allocated for the database connection.
 	public		$Connection		=  null ;
+	public		$AutoConnect		=  true ;
 	// $SQLQuery -
 	//	Last defined SQL query.
 	public		$SQLQuery		=  "" ;
@@ -269,12 +274,14 @@ class	Database  extends  Object
 		else
 			$this -> EnableQueryTimings 	=  false ;
 
+		if  ( isset ( $options [ 'connect' ] ) )			// Automatic connection at startup ?
+			$this -> AutoConnect		=  $options [ 'connect' ] ;
+
 		// Load the driver
 		$driver_file		=  "thrak://PHP/Library/Database/Drivers/" . $this -> DatabaseDriverName . ".phpclass" ;
 
 		if  ( file_exists ( $driver_file ) )
 		   {
-			//require_once  $driver_file ) ;
 			$fullname 	=  __NAMESPACE__ . "\\Drivers\\" . $this -> DatabaseDriverName ;
 
 			if  ( ! class_exists ( $fullname ) )
@@ -293,10 +300,8 @@ class	Database  extends  Object
 		    }
 
 		// Connect to the database
-		$this -> Connect ( $this -> DatabaseUser, $this -> DatabasePassword,
-				   $this -> DatabaseHost, $this -> DatabasePort,
-				   $this -> DatabaseName ) ;
-		$this -> DatabaseVersion  =  $this -> DatabaseDriver -> db_get_version ( $this -> Connection ) ;
+		if  ( $this -> AutoConnect )
+			$this -> __EnsureConnected ( ) ;
 	    }
 
 
@@ -386,6 +391,29 @@ class	Database  extends  Object
 
 			$this -> __LogMessage ( $message ) ;
 			error ( new \Thrak\System\RuntimeException ( $message ) ) ;
+		    }
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		__EnsureConnected - Ensures that a database connection has been established.
+
+	    PROTOTYPE
+		$this -> __EnsureConnected ( ) ;
+
+	    DESCRIPTION
+	    	Ensures that a database connection has been established.
+
+	 --------------------------------------------------------------------------------------------*/
+	private function  __EnsureConnected ( )
+	   {
+		if  ( ! $this -> Connection )
+		   {
+			$this -> Connect ( $this -> DatabaseUser, $this -> DatabasePassword,
+					   $this -> DatabaseHost, $this -> DatabasePort,
+					   $this -> DatabaseName ) ;
 		    }
 	    }
 
@@ -741,6 +769,8 @@ class	Database  extends  Object
 		// If a database has been specified (or is defined in the configuration parameters), select it
 		if  ( $database )
 			$this -> SelectDatabase ( $database ) ;
+
+		$this -> DatabaseVersion  =  $this -> DatabaseDriver -> db_get_version ( $this -> Connection ) ;
 	    }
 
 
@@ -797,6 +827,7 @@ class	Database  extends  Object
 	 --------------------------------------------------------------------------------------------*/
 	public function  Escape ( $value )
 	   {
+		$this -> __EnsureConnected ( ) ;
 		return ( $this -> DatabaseDriver -> db_escape_value ( $this -> Connection, $value ) ) ;
 	    }
 
@@ -816,6 +847,8 @@ class	Database  extends  Object
 	 --------------------------------------------------------------------------------------------*/
 	public function  Execute ( $query )
 	   {
+		$this -> __EnsureConnected ( ) ;
+
 		$this -> SetSimpleQuery ( $query ) ;
 		$result		=  $this -> Query ( ) ;
 		
@@ -841,6 +874,7 @@ class	Database  extends  Object
 	 --------------------------------------------------------------------------------------------*/
 	public function  GetAffectedRows ( )
 	   {
+		$this -> __EnsureConnected ( ) ;
 		$this -> __ResetError ( ) ;
 
 		$status = $this -> DatabaseDriver -> db_get_affected_rows ( $this -> Connection ) ;
@@ -871,6 +905,8 @@ class	Database  extends  Object
 	 --------------------------------------------------------------------------------------------*/
 	public function  GetDatabases ( $wildcard = null )
 	   {
+		$this -> __EnsureConnected ( ) ;
+
 		$result		=  $this -> DatabaseDriver -> db_get_databases ( $this -> Connection, $wildcard ) ;
 
 		return ( $result ) ;
@@ -891,6 +927,8 @@ class	Database  extends  Object
 	 --------------------------------------------------------------------------------------------*/
 	public function  GetTables ( $database = null, $wildcard = null )
 	   {
+		$this -> __EnsureConnected ( ) ;
+
 		if  ( ! $database )
 			$database	=  $this -> DatabaseName ;
 
@@ -918,6 +956,7 @@ class	Database  extends  Object
 	 --------------------------------------------------------------------------------------------*/
 	public function  GetLastInsertId ( )
 	   {
+		$this -> __EnsureConnected ( ) ;
 		$this -> __ResetError ( ) ;
 
 		$status = $this -> DatabaseDriver -> db_get_last_insert_id ( $this -> Connection ) ;
@@ -957,6 +996,8 @@ class	Database  extends  Object
 	 --------------------------------------------------------------------------------------------*/
 	public function  GetNextRow ( $recordset )
 	   {
+		$this -> __EnsureConnected ( ) ;
+
 		if  ( $recordset  ===  false )
 			return ( false ) ;
 
@@ -993,6 +1034,7 @@ class	Database  extends  Object
 	 --------------------------------------------------------------------------------------------*/
 	public function  GetRowCount ( )
 	   {
+		$this -> __EnsureConnected ( ) ;
 		$this -> __ResetError ( ) ;
 
 		$status = $this -> DatabaseDriver -> db_get_num_rows ( $this -> Connection ) ;
@@ -1047,6 +1089,8 @@ class	Database  extends  Object
 	 --------------------------------------------------------------------------------------------*/
 	public function  LoadRows ( $query_params = null )
 	   {
+		$this -> __EnsureConnected ( ) ;
+
 		// Run the query and check the results
 		$recordset  =  $this -> Query ( $query_params ) ;
 
@@ -1108,6 +1152,8 @@ class	Database  extends  Object
 	 --------------------------------------------------------------------------------------------*/
 	public function  LoadRow ( $query_params = null )
 	   {
+		$this -> __EnsureConnected ( ) ;
+
 		// Run the query and check the results
 		$recordset = $this -> Query ( $query_params ) ;
 
@@ -1170,6 +1216,8 @@ class	Database  extends  Object
 	 --------------------------------------------------------------------------------------------*/
 	public function  LoadValue ( $index  =  null, $query_params = null )
 	   {
+		$this -> __EnsureConnected ( ) ;
+
 		// Run the query and check the results
 		$recordset  =  $this -> Query ( $query_params ) ;
 
@@ -1250,6 +1298,8 @@ class	Database  extends  Object
 	 --------------------------------------------------------------------------------------------*/
 	public function  LoadValues ( $index  =  null, $query_params = null )
 	   {
+		$this -> __EnsureConnected ( ) ;
+
 		// Run the query and check the results
 		$recordset  =  $this -> Query ( $query_params ) ;
 
@@ -1352,6 +1402,7 @@ class	Database  extends  Object
 	 --------------------------------------------------------------------------------------------*/
 	public function  Query ( $query_params = null, $discard_results = false )
 	   {
+		$this -> __EnsureConnected ( ) ;
 		$this -> __ResetError ( ) ;
 		$recordset = false ;
 
@@ -1500,6 +1551,8 @@ class	Database  extends  Object
 	 --------------------------------------------------------------------------------------------*/
 	public function  SelectDatabase ( $database = null )
 	   {
+		$this -> __EnsureConnected ( ) ;
+
 		if  ( $database  ==  null )
 			$database = $this -> DatabaseName ;
 
@@ -1546,6 +1599,8 @@ class	Database  extends  Object
 	 --------------------------------------------------------------------------------------------*/
 	public function  SetQuery ( $sql, $limit = 0, $offset = 0, $prefix = '##' )
 	   {
+		$this -> __EnsureConnected ( ) ;
+
 		$this -> SQLQuery 	= $this -> __ReplacePrefix ( $sql, $prefix, $this -> DatabaseTablePrefix ) ;
 		$this -> QueryLimit 	=  ( integer ) $limit ;
 		$this -> QueryOffset	=  ( integer ) $offset ;
@@ -1554,6 +1609,8 @@ class	Database  extends  Object
 
 	public function  SetSimpleQuery ( $sql ) 
 	   {
+		$this -> __EnsureConnected ( ) ;
+
 		$this -> SQLQuery 	=  $sql ;
 		$this -> QueryLimit 	=  0 ;
 		$this -> QueryOffset	=  0 ;
@@ -1601,6 +1658,8 @@ class	Database  extends  Object
 	 --------------------------------------------------------------------------------------------*/
 	public function  SetCallQuery ( $procedure, $parameters = null, $limit = 0, $offset = 0, $prefix = '##' )
 	   {
+		$this -> __EnsureConnected ( ) ;
+
 		$sql 		=  "CALL $procedure ( " ;
 		$values		=  array ( "'" . $this -> DatabaseTablePrefix . "'" ) ;
 
@@ -1644,6 +1703,8 @@ class	Database  extends  Object
 	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  Truncate ( $table_name )
 	   {
+		$this -> __EnsureConnected ( ) ;
+
 		$this -> SetQuery ( "SELECT COUNT(*) FROM $table_name" ) ;
 		$count	=  $this -> LoadValue ( ) ;
 		
