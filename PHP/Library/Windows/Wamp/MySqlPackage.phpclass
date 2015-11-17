@@ -33,39 +33,10 @@ class  MySqlPackage		extends  WampService
    {
 	public function  __construct ( $name, $parent, $path, $version )
 	   {
-		parent::__construct ( $name, $parent, $path, $version, $parent -> WampManagerConfiguration [ 'service' ] [ 'servicemysql' ] ) ;
+		parent::__construct ( $name, $parent, $path, $version, 
+			$parent -> WampManagerConfiguration [ 'service' ] [ 'servicemysql' ],
+			$parent -> WampManagerConfiguration [ 'mysql' ] [ 'mysqlexedir' ],	
+			$parent -> WampManagerConfiguration [ 'mysql' ] [ 'mysqlexefile' ]
+			) ;
 	    }
-
-
- 	/*--------------------------------------------------------------------------------------------------------------
-	 
-		WampRestartableModule interface implementation.
-  
-	 *-------------------------------------------------------------------------------------------------------------*/
-	public function  Start		( ) 
-	   {
-		system ( "NET START \"{$this -> ServiceName}\"" ) ;
-	    }
- 
-
-	public function  Stop		( ) 
-	   {
-		system ( "NET STOP \"{$this -> ServiceName}\"" ) ;
-	    }
- 
-
-	public function  Restart	( ) 
-	   {
-		$this -> Stop ( ) ;
-		$this -> Start ( ) ;
-	    }
-
-
- 	/*--------------------------------------------------------------------------------------------------------------
-	 
-		WampInstallableModule interface implementation.
-  
-	 *-------------------------------------------------------------------------------------------------------------*/
-	public function  Install	( ) {}
-	public function  Uninstall	( ) {}
     }

@@ -37,6 +37,7 @@ interface	WampRestartableModule
 	public function		Start		( ) ;
 	public function		Stop		( ) ;
 	public function		Restart		( ) ;
+	public function		IsRunning	( ) ;
     }
 
 
@@ -59,6 +60,8 @@ abstract class  WampPackage		extends		AbstractWindowsBase
 	public			$Name ;
 	// Package path
 	public			$Path ;
+	// Executable file
+	public			$ExecutableFile ;
 	// Current package version
 	public			$Version ;
 	// Wamp configuration parent object
@@ -71,12 +74,15 @@ abstract class  WampPackage		extends		AbstractWindowsBase
 		Creates a Wamp Package that holds configuration data for a specific Package version.
   
 	 *-------------------------------------------------------------------------------------------------------------*/
-	public function  __construct ( $name, $parent, $path, $version )
+	public function  __construct ( $name, $parent, $path, $version, $exedir, $exefile )
 	   {
 		$this -> Name		=  $name ;
 		$this -> Parent		=  $parent ;
 		$this -> Path		=  Path::ToHost ( $path ) ;
 		$this -> Version	=  $version ;
+
+		$exe	=  $this -> Path . '\\' . $exedir . '\\' . $exefile ;
+		$this -> ExecutableFile	=  Path::ToHost ( Path::RealPath ( $exe ) ) ;
 	    }
     }
 
@@ -98,10 +104,61 @@ abstract class  WampModule		extends		WampPackage
 		Creates a Wamp module that holds configuration data for a specific Package version.
   
 	 *-------------------------------------------------------------------------------------------------------------*/
-	public function  __construct ( $name, $parent, $path, $version )
+	public function  __construct ( $name, $parent, $path, $version, $exedir, $exefile )
 	   {
-		parent::__construct ( $name, $parent, $path, $version ) ;
+		parent::__construct ( $name, $parent, $path, $version, $exedir, $exefile ) ;
 	    }
+
+
+  	/*--------------------------------------------------------------------------------------------------------------
+	 
+		WampRestartableModule interface implementation.
+		Derived classes do not need to implement them, since the code is the same.
+		Note that the Start/Stop/Restart methods will throw an exception if the service cannot be started or
+		stopped within a certain period of time.
+  
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  IsRunning ( )
+	   {
+		$rs	=  $this -> Parent -> Wmi -> Query ( "SELECT * FROM Win32_Service WHERE name = '{$this -> ServiceName}'" ) ;
+
+		return ( count ( $rs )  !==  0  &&  ! strcasecmp ( $rs [0] -> State, 'running' ) ) ;
+	    }
+
+
+	public function  Start		( ) 
+	   {
+		if  ( $this -> IsRunning ( ) )
+			return ( false ) ;
+
+		$this -> Parent -> WShell -> Exec ( "NET START \"{$this -> ServiceName}\"" ) ;
+		$this -> Parent -> AwaitService ( $this -> ServiceName, true ) ;
+
+		return ( true ) ;
+	    }
+ 
+
+	public function  Stop		( ) 
+	   {
+		if  ( ! $this -> IsRunning ( ) )
+			return ( false ) ;
+
+		$this -> Parent -> WShell -> Exec ( "NET STOP \"{$this -> ServiceName}\"" ) ;
+		$this -> Parent -> AwaitService ( $this -> ServiceName, false ) ;
+
+		return ( true ) ;
+	    }
+ 
+
+	public function  Restart	( ) 
+	   {
+		$old_status	=  $this -> Stop ( ) ;
+		$new_status	=  $this -> Start ( ) ;
+
+		return ( [ $new_status, $old_status ] ) ;
+	    }
+
+
    }
 
 
@@ -123,10 +180,19 @@ abstract class  WampService		extends		WampModule
 		Creates a Wamp module that holds configuration data for a specific Package version.
   
 	 *-------------------------------------------------------------------------------------------------------------*/
-	public function  __construct ( $name, $parent, $path, $version, $service_name )
+	public function  __construct ( $name, $parent, $path, $version, $service_name, $exedir, $exefile )
 	   {
-		parent::__construct ( $name, $parent, $path, $version ) ;
+		parent::__construct ( $name, $parent, $path, $version, $exedir, $exefile ) ;
 		
 		$this -> ServiceName			=  $service_name ;
 	    }
-    }
+
+
+ 	/*--------------------------------------------------------------------------------------------------------------
+	 
+		WampInstallableModule interface implementation.
+  
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  Install	( ) {}
+	public function  Uninstall	( ) {}
+}

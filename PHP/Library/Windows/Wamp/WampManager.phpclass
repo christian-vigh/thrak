@@ -45,6 +45,13 @@ class	WampException		extends		\Thrak\System\Exception  {} ;
   ===========================================================================================*/
 class  WampManager extends AbstractWindowsBase
    {
+	// When a task or a service is being started or stopped, the Windows process or service list
+	// is polled every TASK_CHECK_INTERVAL milliseconds, until either one of the following happens :
+	// - The task or service has effectively started
+	// - TASK_CHECK_MAX retries have been performed. In this case, an exception will be thrown.
+	const	TASK_CHECK_MAX			=  500 ;
+	const	TASK_CHECK_INTERVAL		=  20 ;			// milliseconds
+
 	// Installation directory
 	public		$InstallationDirectory ;
 	// WampManager configuration
@@ -120,6 +127,73 @@ class  WampManager extends AbstractWindowsBase
 
 	/*--------------------------------------------------------------------------------------------------------------
 	 
+	    AwaitTask, AwaitService -
+	        Waits for the specified task/service to be started.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  AwaitTask ( $taskname, $started )
+	   {
+		$count		=  0 ;
+		$query		=  "SELECT * FROM Win32_Process WHERE name = '$taskname'" ;
+		$processes	=  $this -> Wmi -> Query ( $query ) ;
+
+		do
+		   {
+			if  ( count ( $processes ) )
+			   {
+				if  ( $started ) 
+					return ( $processes [0] -> ProcessId ) ;
+			    }
+			else
+			   {
+				if  ( ! $started )
+					return ( true ) ;
+			    }
+
+			$processes	=  $this -> Wmi -> Query ( $query ) ;
+			$count ++ ;
+
+		    }  while  ( $count  <  self::TASK_CHECK_MAX ) ;
+
+		error ( new WampException ( "Timeout occurred when trying to start task \"$taskname\"." ) ) ;
+	    }
+
+
+	public function  AwaitService ( $servicename, $up )
+	   {
+		$count		=  0 ;
+		$query		=  "SELECT * FROM Win32_Service WHERE name = '$servicename'" ;
+		$services	=  $this -> Wmi -> Query ( $query ) ;
+
+		do
+		   {
+			if  ( count ( $services ) )
+			   {
+				$running	=  ! strcasecmp ( $services [0] -> State, 'Running' ) ;
+				
+				if  ( $up )
+				   {
+					if  ( $running )
+						return ( $services [0] -> ProcessId ) ;
+				    }
+				else
+				   {
+					if  ( ! $running )
+						return ( false ) ;
+				    }
+			    }
+
+			$services	=  $this -> Wmi -> Query ( $query ) ;
+			$count ++ ;
+
+		    }  while  ( $count  <  self::TASK_CHECK_MAX ) ;
+
+		error ( new WampException ( "Timeout occurred when trying to start task \"$servicename\"." ) ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
 	    Restart -
 	        Restarts the WampManager.
 	 
@@ -141,7 +215,8 @@ class  WampManager extends AbstractWindowsBase
 	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  Start ( )
 	   {
-		$processes	=  $this -> __get_running_processes ( ) ;
+		$query		=  "SELECT * FROM Win32_Process WHERE name = '" . WAMPMANAGER_EXECUTABLE . "'" ;
+		$processes	=  $this -> Wmi -> Query ( $query ) ;
 
 		if  ( $processes ) 
 		   {
@@ -150,13 +225,9 @@ class  WampManager extends AbstractWindowsBase
 		    }
 
 		$this -> WShell -> Exec ( $this -> WampExecutable ) ;
+		$pid	=  $this -> AwaitTask ( WAMPMANAGER_EXECUTABLE, true ) ;
 
-		$processes	= $this -> __get_running_processes ( ) ;
-
-		if  ( $processes )
-			return ( $processes [0] -> ProcessId ) ;
-		else
-			return ( false ) ;
+		return ( $pid ) ;
 	    }
 
 
@@ -168,7 +239,8 @@ class  WampManager extends AbstractWindowsBase
 	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  Terminate ( )
 	   {
-		$processes	=  $this -> __get_running_processes ( ) ;
+		$query		=  "SELECT * FROM Win32_Process WHERE name = '" . WAMPMANAGER_EXECUTABLE . "'" ;
+		$processes	=  $this -> Wmi -> Query ( $query ) ;
 
 		if  ( $processes ) 
 		   {
@@ -176,15 +248,7 @@ class  WampManager extends AbstractWindowsBase
 			$pid		=  $process -> ProcessId ;
 
 			exec ( "TASKKILL /T /F /PID $pid 2>&1", $junk ) ;
-
-ShootAgain :
-			$processes	=  $this -> __get_running_processes ( ) ;
-
-			if  ( count ( $processes ) )
-			   {
-				usleep ( 20000 ) ;
-				goto ShootAgain ;
-			    }
+			$this -> AwaitTask ( WAMPMANAGER_EXECUTABLE, false ) ;
 
 			return ( $pid ) ;
 		    }
@@ -204,17 +268,6 @@ ShootAgain :
 	 **************************************************************************************************************
 	 **************************************************************************************************************
 	 **************************************************************************************************************/
-
-	// __get_running_processes -
-	//	Returns the running wampmanager processes.
-	private function  __get_running_processes ( )
-	   {
-		$query		=  "SELECT * FROM Win32_Process WHERE name = '" . WAMPMANAGER_EXECUTABLE . "'" ;
-		$processes	=  $this -> Wmi -> Query ( $query ) ;
-
-		return ( $processes ) ;
-	    }
-
 
 	// __locate_installation_directory -
 	//	Tries to locate the wamp installation directory. Of course, defining a WAMPDIR environment variable

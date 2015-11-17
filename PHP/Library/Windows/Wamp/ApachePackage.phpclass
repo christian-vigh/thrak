@@ -33,41 +33,11 @@ class  ApachePackage		extends  WampService
    {
 	public function  __construct ( $name, $parent, $path, $version )
 	   {
-		parent::__construct ( $name, $parent, $path, $version, $parent -> WampManagerConfiguration [ 'service' ] [ 'serviceapache' ] ) ;
+		parent::__construct ( 
+					$name, $parent, $path, $version, 
+					$parent -> WampManagerConfiguration [ 'service' ] [ 'serviceapache' ],
+					$parent -> WampManagerConfiguration [ 'apache' ] [ 'apacheexedir' ],	
+					$parent -> WampManagerConfiguration [ 'apache' ] [ 'apacheexefile' ]
+				     ) ;
 	    }
-
-
- 	/*--------------------------------------------------------------------------------------------------------------
-	 
-		WampRestartableModule interface implementation.
-  
-	 *-------------------------------------------------------------------------------------------------------------*/
-	public function  Start		( ) 
-	   {
-		system ( "NET START \"{$this -> ServiceName}\"" ) ;
-	    }
- 
-
-	public function  Stop		( ) 
-	   {
-		system ( "NET STOP \"{$this -> ServiceName}\"" ) ;
-	    }
- 
-
-	public function  Restart	( ) 
-	   {
-		$this -> Stop ( ) ;
-		$this -> Start ( ) ;
-	    }
-
-
-
-
- 	/*--------------------------------------------------------------------------------------------------------------
-	 
-		WampInstallableModule interface implementation.
-  
-	 *-------------------------------------------------------------------------------------------------------------*/
-	public function  Install	( ) {}
-	public function  Uninstall	( ) {}
     }

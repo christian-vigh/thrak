@@ -33,29 +33,6 @@ class  PhpPackage		extends  WampModule
    {
 	public function  __construct ( $name, $parent, $path, $version )
 	   {
-		parent::__construct ( $name, $parent, $path, $version ) ;
-	    }
-
-
- 	/*--------------------------------------------------------------------------------------------------------------
-	 
-		WampRestartableModule interface implementation.
-  
-	 *-------------------------------------------------------------------------------------------------------------*/
-	public function  Start ( )
-	   {
-		$this -> Parent -> Apache -> Start ( ) ;
-	    }
-
-
-	public function  Stop ( )
-	   {
-		$this -> Parent -> Apache -> Stop ( ) ;
-	    }
-
-
-	public function  Restart ( )
-	   {
-		$this -> Parent -> Apache -> Restart ( ) ;
+		parent::__construct ( $name, $parent, $path, $version, '.', $parent -> WampManagerConfiguration [ 'phpcli' ] [ 'phpexefile' ] ) ;
 	    }
     }
