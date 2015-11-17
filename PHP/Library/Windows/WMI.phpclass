@@ -235,6 +235,7 @@ END;
 
   ==============================================================================================================*/
 class  WmiInstance		extends		AbstractWindowsBase
+				implements	\ArrayAccess, \Countable, \Iterator
    {
 	protected	$PropertyNames ;
 
@@ -348,11 +349,11 @@ class  WmiInstance		extends		AbstractWindowsBase
 	    }
 
 	
-	public function  OffsetSet ( $offset, $value ) 
+	public function  offsetSet ( $offset, $value ) 
 	   { error ( new \Thrak\System\UnsupportedOperationException ( ) ) ; }
 
 	
-	public function  Offsetunset ( $offset ) 
+	public function  offsetUnset ( $offset ) 
 	   { error ( new \Thrak\System\UnsupportedOperationException ( ) ) ; }
 	
 	
