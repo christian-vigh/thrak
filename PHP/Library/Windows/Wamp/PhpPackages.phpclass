@@ -36,9 +36,12 @@ class  PhpPackages		extends   WampPackages
    {
 	public function  __construct ( $parent )
 	   {
+		$this -> Section	=  'php' ;
+		$this -> VersionKey	=  'phpVersion' ;
+
 		parent::__construct ( 'PHP', 'Thrak\Windows\Wamp\PhpPackage',
 					$parent, 
 					'bin/php', 'php',
-					$parent -> WampManagerConfiguration [ 'phpcli' ] [ 'phpcliversion' ] ) ;
+					$parent -> GetConfigurationValue ( 'php', 'phpversion' ) ) ;
 	    }
     }

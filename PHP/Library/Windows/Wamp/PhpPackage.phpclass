@@ -33,6 +33,6 @@ class  PhpPackage		extends  WampModule
    {
 	public function  __construct ( $name, $parent, $path, $version )
 	   {
-		parent::__construct ( $name, $parent, $path, $version, '.', $parent -> WampManagerConfiguration [ 'phpcli' ] [ 'phpexefile' ] ) ;
+		parent::__construct ( $name, $parent, $path, $version, '.', $parent -> GetConfigurationValue ( 'phpcli', 'phpexefile' ) ) ;
 	    }
-    }
+   }

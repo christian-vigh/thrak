@@ -36,9 +36,12 @@ class  MysqlPackages		extends   WampPackages
    {
 	public function  __construct ( $parent )
 	   {
+		$this -> Section	=  'mysql' ;
+		$this -> VersionKey	=  'mysqlVersion' ;
+
 		parent::__construct ( 'MySql', 'Thrak\Windows\Wamp\MySqlPackage',
 					$parent, 
 					'bin/mysql', 'mysql',
-					$parent -> WampManagerConfiguration [ 'mysql' ] [ 'mysqlversion' ] ) ;
+					$parent -> GetConfigurationValue ( 'mysql', 'mysqlversion' ) ) ;
 	    }
     }

@@ -112,7 +112,7 @@ abstract class  WampModule		extends		WampPackage
 
   	/*--------------------------------------------------------------------------------------------------------------
 	 
-		WampRestartableModule interface implementation.
+	    WampRestartableModule interface implementation -
 		Derived classes do not need to implement them, since the code is the same.
 		Note that the Start/Stop/Restart methods will throw an exception if the service cannot be started or
 		stopped within a certain period of time.

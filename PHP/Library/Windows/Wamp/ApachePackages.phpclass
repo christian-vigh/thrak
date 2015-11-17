@@ -36,9 +36,12 @@ class  ApachePackages		extends   WampPackages
    {
 	public function  __construct ( $parent )
 	   {
+		$this -> Section	=  'apache' ;
+		$this -> VersionKey	=  'apacheVersion' ;
+
 		parent::__construct ( 'Apache', 'Thrak\Windows\Wamp\ApachePackage',
 					$parent, 
 					'bin/apache', 'apache',
-					$parent -> WampManagerConfiguration [ 'apache' ] [ 'apacheversion' ] ) ;
+					$parent -> GetConfigurationValue (  'apache', 'apacheversion' ) ) ;
 	    }
     }

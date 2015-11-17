@@ -33,10 +33,12 @@ class  MySqlPackage		extends  WampService
    {
 	public function  __construct ( $name, $parent, $path, $version )
 	   {
-		parent::__construct ( $name, $parent, $path, $version, 
-			$parent -> WampManagerConfiguration [ 'service' ] [ 'servicemysql' ],
-			$parent -> WampManagerConfiguration [ 'mysql' ] [ 'mysqlexedir' ],	
-			$parent -> WampManagerConfiguration [ 'mysql' ] [ 'mysqlexefile' ]
-			) ;
+		parent::__construct 
+		   ( 
+			$name, $parent, $path, $version, 
+			$parent -> GetConfigurationValue ( 'service', 'servicemysql' ),
+			$parent -> GetConfigurationValue ( 'mysql', 'mysqlexedir' ),	
+			$parent -> GetConfigurationValue ( 'mysql', 'mysqlexefile' )
+		    ) ;
 	    }
     }

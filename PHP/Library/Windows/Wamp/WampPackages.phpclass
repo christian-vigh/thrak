@@ -45,6 +45,9 @@ abstract class  WampPackages		extends		AbstractWindowsBase
 	protected	$ActiveVersion ;
 	// Underlying class for individual items
 	private		$UnderlyingClass ;
+	// Section and version key in the wampmanager.conf file
+	protected	$Section,
+			$VersionKey ;
 
 
 	/*--------------------------------------------------------------------------------------------------------------
@@ -100,7 +103,7 @@ abstract class  WampPackages		extends		AbstractWindowsBase
 		Version-related functions.
   
 	 *-------------------------------------------------------------------------------------------------------------*/
-	public function  GetVersion ( )
+	public function  GetActiveVersion ( )
 	   { return ( $this -> ActiveVersion ) ; }
 	
 
@@ -109,12 +112,20 @@ abstract class  WampPackages		extends		AbstractWindowsBase
 		if  ( ! isset ( $this -> Packages [ $version ] ) )
 			error ( new WampException ( "{$this -> Name} version \"$version\" does not exist." ) ) ;
 
+		$previous_version	=  $this -> ActiveVersion ;
 		$this -> ActiveVersion	=  $version ;
 
-		if  ( $reload )
+		// WampServer is able to reload its configuration when sollicited from the UI
+		// However, we cannot force him to do that from the outside so the only solution is to restart it
+		if  ( $reload  &&  $previous_version  !=  $version )
 		   {
-			$this -> GetActivePackage ( ) -> Restart ( ) ;
+			$this -> Parent -> SetConfigurationValue ( $this -> Section, $this -> VersionKey, $version ) ;
+			$this -> Parent -> ConfigurationChanged ( ) ;
+
+			return ( true ) ;
 		    }
+		else
+			return ( false ) ;
 	    }
 
 
@@ -124,6 +135,10 @@ abstract class  WampPackages		extends		AbstractWindowsBase
 
 	public function  GetVersions ( )
 	   { return ( array_keys ( $this -> Packages ) ) ; }
+
+
+	public function  VersionExists ( $version )
+	   { return ( isset ( $this -> Packages [ $version ] ) ) ; }
 
 
 
@@ -159,9 +174,56 @@ abstract class  WampPackages		extends		AbstractWindowsBase
 			// Retrieve version name
 			$version			=  $match [ 'version' ] ;
 
-			// Add this new Package (version)
+			// Add this new Package
 			$this -> Packages [ $version ]	=  new $class ( $this -> Name, $this -> Parent, $path, $match [ 'version' ] ) ;
 		    }
+
+		// Sort versions by ascending (numerical) order
+		uksort
+		   (
+			$this -> Packages,
+			function ( $a, $b )
+		           {
+				static	$re	=  '/^ (?P<major> \d+) \. (?P<minor> \d+) \. (?P<release> \d+) (?P<text> .*) $/imsx' ;
+
+				$a_status	=  preg_match ( $re, $a, $a_match ) ;
+				$b_status	=  preg_match ( $re, $b, $b_match ) ;
+
+				if  ( $a_status  &&  $b_status )
+				   {
+					if  ( is_numeric ( $a_match [ 'major' ] )  &&  is_numeric ( $b_match [ 'major' ] ) )
+					   {
+						$a_major	=  ( integer ) $a_match [ 'major' ] ;
+						$b_major	=  ( integer ) $b_match [ 'major' ] ;
+
+						if  ( $a_major  !=  $b_major )
+							return ( $a_major - $b_major ) ;
+					    }
+
+					if  ( is_numeric ( $a_match [ 'minor' ] )  &&  is_numeric ( $b_match [ 'minor' ] ) )
+					   {
+						$a_minor	=  ( integer ) $a_match [ 'minor' ] ;
+						$b_minor	=  ( integer ) $b_match [ 'minor' ] ;
+
+						if  ( $a_minor  !=  $b_minor )
+							return ( $a_minor - $b_minor ) ;
+					    }
+
+					if  ( is_numeric ( $a_match [ 'release' ] )  &&  is_numeric ( $b_match [ 'release' ] ) )
+					   {
+						$a_release	=  ( integer ) $a_match [ 'release' ] ;
+						$b_release	=  ( integer ) $b_match [ 'release' ] ;
+
+						if  ( $a_release  !=  $b_release )
+							return ( $a_release - $b_release ) ;
+					    }
+
+					return ( strcmp ( $a_match [ 'text' ], $b_match [ 'text' ] ) ) ;
+				    }
+				else
+					return ( strcmp ( $a, $b ) ) ;
+			    }
+		    ) ;
 	    }
 
 

@@ -33,11 +33,12 @@ class  ApachePackage		extends  WampService
    {
 	public function  __construct ( $name, $parent, $path, $version )
 	   {
-		parent::__construct ( 
-					$name, $parent, $path, $version, 
-					$parent -> WampManagerConfiguration [ 'service' ] [ 'serviceapache' ],
-					$parent -> WampManagerConfiguration [ 'apache' ] [ 'apacheexedir' ],	
-					$parent -> WampManagerConfiguration [ 'apache' ] [ 'apacheexefile' ]
-				     ) ;
+		parent::__construct 
+		   ( 
+			$name, $parent, $path, $version, 
+			$parent -> GetConfigurationValue ( 'service', 'serviceapache' ),
+			$parent -> GetConfigurationValue ( 'apache', 'apacheexedir' ),	
+			$parent -> GetConfigurationValue ( 'apache', 'apacheexefile' )
+		    ) ;
 	    }
     }
