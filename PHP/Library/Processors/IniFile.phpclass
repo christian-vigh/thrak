@@ -1,85 +1,89 @@
 <?php
 /***************************************************************************************************
 
-	NAME
-		IniFile.phpclass
+    NAME
+	IniFile.phpclass
 
-	DESCRIPTION
-		Ini-File management system.
+    DESCRIPTION
+	Ini-File management system.
 
-	AUTHOR
-		Christian Vigh, 01/2010.
+    AUTHOR
+	Christian Vigh, 01/2010.
 
-	HISTORY
-	[Version : 1.0]			[Date : 2010/08/22]		[Author : CV]
-		Initial release.
+    HISTORY
+    [Version : 1.0]	[Date : 2010/08/22]		[Author : CV]
+	Initial release.
 
-	[Version : 1.0.1]		[Date : 2014/11/06]	[Author : CV]
- 		. Fixed some bugs on property names in Save().
-		. Added the $keys_by_reference boolean parameter to GetKeys(). When true (the default,
-		  and also the original behavior), key values are returned by reference. When false,
-		  a copy is returned.
+    [Version : 1.0.1]	[Date : 2014/11/06]	[Author : CV]
+ 	. Fixed some bugs on property names in Save().
+	. Added the $keys_by_reference boolean parameter to GetKeys(). When true (the default, and 
+	  also the original behavior), key values are returned by reference. When false, a copy is 
+	  returned.
  
-	[Version : 1.0.2]		[Date : 2014/12/06]	[Author : CV]
-		. Swapped the $file and $forced parameters of the Save() method.
+    [Version : 1.0.2]	[Date : 2014/12/06]	[Author : CV]
+	. Swapped the $file and $forced parameters of the Save() method.
  
-	[Version : 1.0.3]		[Date : 2014/12/06]	[Author : CV]
-		. Changed the GetKeys() method to return an empty array if the section does not exist.
+    [Version : 1.0.3]	[Date : 2014/12/06]	[Author : CV]
+	. Changed the GetKeys() method to return an empty array if the section does not exist.
  
-	[Version : 1.0.4]		[Date : 2015/03/28]	[Author : CV]
- 		. Added a regex parameter to the GetSections() method.
- 		. Added a regex parameter to the GetKeys() method.
+    [Version : 1.0.4]	[Date : 2015/03/28]	[Author : CV]
+ 	. Added a regex parameter to the GetSections() method.
+ 	. Added a regex parameter to the GetKeys() method.
  
-	[Version : 1.0.5]		[Date : 2015/04/07]	[Author : CV]
-		. Changed the __Load() method to allow spaces after the ending keyword of a 
-		  multiline entry.
+    [Version : 1.0.5]	[Date : 2015/04/07]	[Author : CV]
+	. Changed the __Load() method to allow spaces after the ending keyword of a 
+	  multiline entry.
  
-	[Version : 1.0.6]		[Date : 2015/04/08]	[Author : CV]
-		. Added the GetBooleanKey() function
+    [Version : 1.0.6]	[Date : 2015/04/08]	[Author : CV]
+	. Added the GetBooleanKey() function
  
-	[Version : 1.0.7]		[Date : 2015/04/10]	[Author : CV]
-		. Corrected a bug in the __Load() method that made current line number tracking
-		  erroneous. Note that displayed error line may differ from the actual one by an
-		  index of 1.
-		. Changed the __SetPosition() method not to modify the current line number, which is
-		  now completely tracked by the __Load() method.
+    [Version : 1.0.7]	[Date : 2015/04/10]	[Author : CV]
+	. Corrected a bug in the __Load() method that made current line number tracking erroneous. 
+	  Note that displayed error line may differ from the actual one by an index of 1.
+	. Changed the __SetPosition() method not to modify the current line number, which is now
+	  completely tracked by the __Load() method.
  
-	[Version : 1.0.8]		[Date : 2015/04/11]	[Author : CV]
- 		. Added the SetVariableStore() and __SetVariableStore() methods.
-		. Changed the GetKey() and GetKeys() methods to use optional variable store for 
-		  variable expansion.
- 		. Changed the GetKey() method so that several key aliases can be specified as an
- 		  array for the $key parameter.
+    [Version : 1.0.8]	[Date : 2015/04/11]	[Author : CV]
+	. Added the SetVariableStore() and __SetVariableStore() methods.
+	. Changed the GetKey() and GetKeys() methods to use optional variable store for variable 
+	  expansion.
+ 	. Changed the GetKey() method so that several key aliases can be specified as an array for 
+	  the $key parameter.
  
-	[Version : 1.0.9]		[Date : 2015/06/12]	[Author : CV]
- 		. Changed the __Load() method so that the equal sign is not mandatory for a key with
- 		  an empty value. Thus, the key :
+    [Version : 1.0.9]	[Date : 2015/06/12]	[Author : CV]
+ 	. Changed the __Load() method so that the equal sign is not mandatory for a key with an
+	  empty value. Thus, the key :
   
- 			[SomeSection]
- 			somekey
+ 		[SomeSection]
+ 		somekey
   
- 		  becomes equivalent to :
+ 	  becomes equivalent to :
   
- 			[SomeSection]
- 			somekey		= 
+ 		[SomeSection]
+ 		somekey		= 
  
-	[Version : 1.0.10]		[Date : 2015/06/12]	[Author : CV]
-		. Changed the Load*() and Append*() methods to include an additional parameter,
-		  $separator (default is '='), to specify the separator string between a key and its
-		  value.
-		. Authorize spaces in key names
+    [Version : 1.0.10]	[Date : 2015/06/12]	[Author : CV]
+	. Changed the Load*() and Append*() methods to include an additional parameter,
+	  $separator (default is '='), to specify the separator string between a key and its value.
+	. Authorize spaces in key names
  
-	[Version : 1.0.11]		[Date : 2015/06/12]	[Author : CV]
-		. $this -> EOL and $this -> CRLF were handled inconsistently.
-		. Spaces before the equal sign for single-line entries where not preserved
+    [Version : 1.0.11]	[Date : 2015/06/12]	[Author : CV]
+	. $this -> EOL and $this -> CRLF were handled inconsistently.
+	. Spaces before the equal sign for single-line entries where not preserved
 
-	[Version : 1.0.12]		[Date : 2015/10/07]	[Author : CV]
-		. Corrected the __Load() method, which did not recognize key definitions preceded
-		  by spaces or tabs.
+    [Version : 1.0.12]	[Date : 2015/10/07]	[Author : CV]
+	. Corrected the __Load() method, which did not recognize key definitions preceded by
+	  spaces or tabs.
 
-	[Version : 1.0.13]		[Date : 2015/10/25]	[Author : CV]
-		. Since version 1.0.9, spaces to the left of the equal sign were not preserved when
-		  reading .ini files.
+    [Version : 1.0.13]	[Date : 2015/10/25]	[Author : CV]
+	. Since version 1.0.9, spaces to the left of the equal sign were not preserved when reading
+	  .ini files.
+
+    [Version : 1.0.14]	[Date : 2015/11/17]	[Author : CV]
+	. Added the $options parameter to the class constructor	and the Loadxxx/Appendxxx() functions.
+	  This allows for specifying compqtibility options with parse_ini_file(), for example for
+	  quoted string values.
+	. Fixed some inconsistencies with $separator parameter handling.
 
  ***************************************************************************************************/
 namespace  Thrak\Processors ;
@@ -140,6 +144,26 @@ use	Thrak\Processors\VariableStore ;
   ===========================================================================================*/
 class  IniFile  extends  Object
    {
+	// Ini entry types
+	const   INI_COMMENT				=  "any" ; 		// Comment or spaces
+	const	INI_SECTION				=  "section" ;		// Section name
+	const  	INI_ENTRY				=  "entry" ;		// Section entry
+
+	// Load disposition option
+	const	LOAD_ANY				=  0 ;			// The .ini file is loaded if it exists, or will be created
+	const	LOAD_EXISTING				=  1 ;			// The .ini file is loaded. If it does not exist, an error will occur
+	const	LOAD_NEW				=  2 ;			// The .ini file is recreated, whether existing or not
+
+	// Key definitions alignment options
+	const	ALIGN_NONE				=  0 ;			// No alignment
+	const	ALIGN_SECTION				=  1 ;			// Aligns the equal signs within a section only
+	const   ALIGN_FILE				=  2 ;			// Aligns the equal signs within the whole file
+
+	// Compatibility options with parse_ini_file()
+	const   OPTION_NONE				=  0x0000 ;		// No particular options - default behavior
+	const	OPTION_COMPATIBILITY_QUOTED_VALUES	=  0x0001 ;		// When set, quotes are removed from values
+
+
 	// Ini file path
 	public 		$File			=  null ;
 	// Reformat on save (align definitions)
@@ -155,22 +179,8 @@ class  IniFile  extends  Object
 	public 		$Variables		=  false ;
 	// Separator between a key and a value
 	public		$Separator		=  '=' ;
-
-
-	// Ini entry types
-	const   INI_COMMENT			=  "any" ; 		// Comment or spaces
-	const	INI_SECTION			=  "section" ;		// Section name
-	const  	INI_ENTRY			=  "entry" ;		// Section entry
-
-	// Load disposition option
-	const	LOAD_ANY			=  0 ;			// The .ini file is loaded if it exists, or will be created
-	const	LOAD_EXISTING			=  1 ;			// The .ini file is loaded. If it does not exist, an error will occur
-	const	LOAD_NEW			=  2 ;			// The .ini file is recreated, whether existing or not
-
-	// Key definitions alignment options
-	const	ALIGN_NONE			=  0 ;			// No alignment
-	const	ALIGN_SECTION			=  1 ;			// Aligns the equal signs within a section only
-	const   ALIGN_FILE			=  2 ;			// Aligns the equal signs within the whole file
+	// INI file options
+	public		$Options ;
 
 
 	/*********************************************************************************************/
@@ -184,7 +194,7 @@ class  IniFile  extends  Object
 	/*********************************************************************************************/
 
 	// Constructor : does nothing. A IniFile object must be created by using the LoadFromxxx methods
-	public function  __construct ( $separator = '=' )
+	public function  __construct ( $separator = '=', $options = self::OPTIONS_NONE )
 	   {
 	   	// Determine the current EOL string, depending on OS type.
 	   	// This setting may be overriden if .INI file contents coming from a different OS are loaded.
@@ -200,6 +210,7 @@ class  IniFile  extends  Object
    		    }
 
 		$this -> Separator	=  $separator ;
+		$this -> Options	=  $options ;
 	    }
 
 
@@ -318,12 +329,12 @@ class  IniFile  extends  Object
 	//	. If the input string contains duplicate key names, subsequent key definitions will
 	//	  override the original one.
 	//
-	private function  __Load ( $contents, $file = null )
+	private function  __Load ( $contents, $file = null, $separator = '=', $options = self::OPTION_NONE )
 	   {
 		if  ( ! $file )
 			$file	=  '(string)' ;
 
-		$key_value_separator	=  $this -> Separator ;
+		$key_value_separator	=  ( $separator ) ?  $separator : '=' ;
 
  	   	$single_re		=  '/^
    						(?P<name> [^' . $key_value_separator . ']+)
@@ -369,8 +380,8 @@ class  IniFile  extends  Object
 		for  ( $i = 0 ; $i < $contents_length ; $i ++ )
 		   {
 		   	// Get current and next chars
-			$ch		=  substr ( $contents, $i, 1 ) ;
-			$chnext		=  ( $i + 1  <  $contents_length ) ? substr ( $contents, $i + 1, 1 ) : null ;
+			$ch		=  $contents [$i] ;
+			$chnext		=  ( $i + 1  <  $contents_length ) ? $contents [$i+1] : null ;
 
 			// Complain if we have a construct other than '//' or '/*'
 			if  ( $ch  ==  '/'  &&  $chnext  !=  '*'  &&  $chnext  !=  '/' )
@@ -485,6 +496,7 @@ class  IniFile  extends  Object
 					$separator	=  $spmatch [ 'spaces' ] . $matches [ 'sep' ] ;
 					$word 		=  trim ( $matches [ 'word' ] ) ;
 					$multiline 	=  true ;
+					$quoted		=  false ;
 
    				   	$closing = strpos ( $contents, "\n$word", $i ) ;
 
@@ -506,11 +518,15 @@ class  IniFile  extends  Object
 				else if  ( preg_match ( $single_re, $entry, $matches ) )
 				   {
 					$name		=  trim ( $matches [ 'name' ] ) ;
+
 					preg_match ( '/(?P<spaces> \s*)$/x', $matches [ 'name' ], $spmatch ) ;
-					$separator	=  ( isset ( $matches [ 'sep'   ] ) ) ?  $spmatch [ 'spaces' ] . $matches [ 'sep'   ] : '=' ;
+					$separator	=  ( isset ( $matches [ 'sep'   ] ) ) ?  $spmatch [ 'spaces' ] . $matches [ 'sep'   ] : $key_value_separator ;
+
 					$value		=  ( isset ( $matches [ 'value' ] ) ) ?  $matches [ 'value' ] : '' ;
 					$word 		=  "" ;
 					$multiline	=  false ;
+					$quoted		=  ( $this -> Options & self::OPTION_COMPATIBILITY_QUOTED_VALUES ) ?
+								String::RemoveDelimiters ( $value, '"' ) : false ;
 				    }
 	    			// Neither multiline, nor single-line : complain
 	    			else
@@ -535,7 +551,8 @@ class  IniFile  extends  Object
 			       		'separator'	=>  $separator,
 			       		'value'		=>  $value,
 			       		'multiline'	=>  $multiline,
-			       		'word'		=>  $word
+			       		'word'		=>  $word,
+					'quoted'	=>  $quoted
        				    ) ;
 
    				// Check if the key already exists
@@ -747,14 +764,14 @@ class  IniFile  extends  Object
 	    	True if the operation was successful, false otherwise.
 
 	 --------------------------------------------------------------------------------------------*/
-	public function  AppendFromArray ( $array )
+	public function  AppendFromArray ( $array, $options = self::OPTION_NONE )
 	   {
 		$this -> Dirty = true ;
-		return ( $this -> __Load ( implode ( $this -> EOL, $array ), null, $this -> Separator ) ) ;
+		return ( $this -> __Load ( implode ( $this -> EOL, $array ), null, $this -> Separator, $options ) ) ;
 	     }
 
 
-	public function  AppendFromFile ( $file )
+	public function  AppendFromFile ( $file, $options = self::OPTION_NONE  )
 	   {
 		global		$Application ;
 
@@ -764,17 +781,17 @@ class  IniFile  extends  Object
 		if  ( file_exists ( $inifile ) )
 		   {
 		   	$this -> Dirty = true ;
-			return ( $this -> __Load ( file_get_contents ( $file ), $file, $this -> Separator ) ) ;
+			return ( $this -> __Load ( file_get_contents ( $file ), $file, $this -> Separator, $options ) ) ;
 		    }
    		else
 			return ( false ) ;
  	    }
 
 
-	public function  AppendFromString ( $string )
+	public function  AppendFromString ( $string, $options = self::OPTION_NONE  )
 	   {
 	   	$this -> Dirty = true ;
-	   	return ( $this -> __Load ( $string, null, $this -> Separator ) ) ;
+	   	return ( $this -> __Load ( $string, null, $this -> Separator, $options ) ) ;
 	    }
 
 
@@ -871,13 +888,20 @@ class  IniFile  extends  Object
 				case	self::INI_ENTRY :
 					if  ( $item [ 'multiline'] )
 					   {
-					   	$value   = $this -> __EOLReplace ( $item [ 'value' ] ) ;
-						$result .= $item [ 'name' ] . $item [ 'separator' ] . $this -> EOL .
-							   $value . $this -> EOL .
-							   $item [ 'word' ] ;
+					   	$value   =  $this -> __EOLReplace ( $item [ 'value' ] ) ;
+						$result .=  $item [ 'name' ] . $item [ 'separator' ] . $this -> EOL .
+							    $value . $this -> EOL .
+							    $item [ 'word' ] ;
 			   		    }
 			   		else
-			   			$result .= $item [ 'name' ] . $item [ 'separator' ] . $item [ 'value' ] ;
+					   {
+						if  ( ( $this -> Options & self::OPTION_COMPATIBILITY_QUOTED_VALUES )  &&  $item [ 'quoted' ] )
+							$value	=  String::QuotedString ( $item [ 'value' ], '"', true ) ;
+						else
+							$value	=  $item [ 'value' ] ;
+
+			   			$result .= $item [ 'name' ] . $item [ 'separator' ] . $value ;
+					    }
 					break ;
 
 				default :
@@ -1563,16 +1587,16 @@ class  IniFile  extends  Object
 	    	Returns the created IniFile object, with the specified contents.
 
 	 --------------------------------------------------------------------------------------------*/
-	public static function  LoadFromArray ( $array, $separator = '=' )
+	public static function  LoadFromArray ( $array, $separator = '=', $options = self::OPTION_NONE )
 	   {
-		$object = new IniFile ( $separator ) ;
-		$object -> __Load ( implode ( $this -> EOL, $array ) ) ;
+		$object = new IniFile ( $separator, $options ) ;
+		$object -> __Load ( implode ( self::$EOL, $array ), null, $separator, $options ) ;
 
 		return ( $object ) ;
 	    }
 
 
-	public static function  LoadFromFile ( $file, $load_option = self::LOAD_ANY, $separator = '=' )
+	public static function  LoadFromFile ( $file, $load_option = self::LOAD_ANY, $separator = '=', $options = self::OPTION_NONE )
 	   {
 		global		$Application ;
 
@@ -1619,20 +1643,20 @@ class  IniFile  extends  Object
 				error ( new \Thrak\System\InvalidArgumentException ( "Invalid value '$load_option' specified for the load option parameter of the IniFile constructor." ) ) ;
 		    }
 
-		$object = new IniFile ( $separator ) ;
+		$object = new IniFile ( $separator, $options ) ;
 		$object -> File = $inifile ;
 
 		if  ( $load )
-			$object -> __Load ( file_get_contents ( $inifile ), $file, $separator ) ;
+			$object -> __Load ( file_get_contents ( $inifile ), $file, $separator, $options ) ;
 
 		return ( $object ) ;
 	    }
 
 
-  	public static function LoadFromString ( $string, $separator = '=' )
+  	public static function LoadFromString ( $string, $separator = '=', $options = self::OPTION_NONE )
   	   {
-  	   	$object = new IniFile ( $separator ) ;
-		$object -> __Load ( $string, null, $separator ) ;
+  	   	$object = new IniFile ( $separator, $options ) ;
+		$object -> __Load ( $string, null, $separator, $options ) ;
 
 		return ( $object ) ;
   	    }
