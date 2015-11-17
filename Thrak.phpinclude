@@ -508,4 +508,3 @@ if  ( ! IS_STANDALONE )
 	$WebSecurity	=  new  \Thrak\Web\WebSecurity ( ) ;
 	$WebSite	=  new  \Thrak\Web\WebSite ( ) ;
     }
-
