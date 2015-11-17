@@ -59,6 +59,10 @@
     [Version : 2.0.7]		[Date : 2015/08/08]		[Author : CV]
 	. Data items can include a boolean '!' entry ; when true, the item will not be included in
 	  the final count.
+
+    [Version : 2.0.8]		[Date : 2015/11/17]		[Author : CV]
+	. Modified the UpdateWidths() method which did not correctly handle objects implementing
+	  the ArrayAccess interface.
   
  ***************************************************************************************************/
 namespace 	Thrak\IO ;
@@ -586,7 +590,7 @@ class  AsciiReport		extends  Object
 					$max_height	=  1 ;
 			
 				// If data is an array, then output the values for a single row
-				if  ( is_array ( $item ) )
+				if  ( is_array ( $item )  ||  $item  instanceof  \ArrayAccess )
 				   {
 					for  ( $i = 0 ; $i  <  $max_height ; $i ++ )
 					   {
@@ -694,7 +698,7 @@ class  AsciiReport		extends  Object
 				foreach ( $list  as  $row )
 	                           {
 					// Only process real data row, not separators
-					if  ( is_array ( $row ) )
+					if  ( is_array ( $row )  ||  $row  instanceof \ArrayAccess )
 					   {
 						$value = $this -> GetMemberValue ( $def, $row ) ;
 						$width = $def -> ValueLength ( $value ) ;
