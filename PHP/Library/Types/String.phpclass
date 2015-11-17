@@ -152,6 +152,9 @@
 	  keep the separator line with the contents.
 	. Added the MatchesEx() method.
  
+     [Version : 2.0.29]	[Date : 2015/11/17]		[Author : CV]
+	. Added the IsDelimitedBy() and RemoveDelimiters() methods.
+ 
  ***************************************************************************************************/
 namespace 	Thrak\Types ;
 
@@ -1445,8 +1448,50 @@ class String  extends  Object
 
 		return  ( implode ( $separator, $result ) ) ;
 	    }
-
 	
+	
+	/*-------------------------------------------------------------------------------------------
+	
+	    NAME
+	        IsDelimitedBy - Checks if a string is delimited by a sequence.
+	
+	    PROTOTYPE
+	        $status		=  String::IsDelimitedBy ( $value, $left, $right = false ) ;
+	
+	    DESCRIPTION
+	        Checks if a string is delimited by a sequence.
+	
+	    PARAMETERS
+		$value (string) -
+			Value to be checked.
+
+		$left (string) -
+			Left delimiter.
+
+		$right (string) -
+			Right delimiter. If not specified, the right delimiter will be set to $left.
+	
+	    RETURN VALUE
+		Returns true if $value starts with $left and ends with $right.
+	
+	  --------------------------------------------------------------------------------------------*/
+	public static function  IsDelimitedBy ( $value, $left, $right = false )
+	   {
+		if  ( $right  ===  false )
+			$right	=  $left ;
+
+		if  ( ! strncmp ( $value, $left, strlen ( $left ) ) )
+		   {
+			$value_length	=  strlen ( $value ) ;
+			$right_length	=  strlen ( $right ) ;
+
+			if  ( ! substr_compare ( $value, $right, $value_length - $right_length ) )
+				return ( true ) ;
+		    }
+
+		return ( false ) ;
+	    }
+
 	
 	/*-------------------------------------------------------------------------------------------
 	
@@ -2547,6 +2592,55 @@ class String  extends  Object
 	    }
 
 
+	/*-------------------------------------------------------------------------------------------
+	
+	    NAME
+	        RemoveDelimiters - Remove delimiters around a string.
+	
+	    PROTOTYPE
+	        $status		=  String::RemoveDelimiters ( &$value, $left, $right = false ) ;
+	
+	    DESCRIPTION
+	        Removes delimiters from the specified string.
+	
+	    PARAMETERS
+		$value (string) -
+			Value to be checked.
+
+		$left (string) -
+			Left delimiter.
+
+		$right (string) -
+			Right delimiter. If not specified, the right delimiter will be set to $left.
+	
+	    RETURN VALUE
+		Returns true if $value starts with $left and ends with $right.
+	
+	  --------------------------------------------------------------------------------------------*/
+	public static function  RemoveDelimiters ( &$value, $left, $right = false )
+	   {
+		if  ( $right  ===  false )
+			$right	=  $left ;
+
+		$left_length	=  strlen ( $left ) ;
+
+		if  ( ! strncmp ( $value, $left, $left_length ) )
+		   {
+			$value_length	=  strlen ( $value ) ;
+			$right_length	=  strlen ( $right ) ;
+
+			if  ( ! substr_compare ( $value, $right, $value_length - $right_length ) )
+			   {
+				$value	=  substr ( $value, $left_length, $value_length - $left_length - $right_length ) ;
+
+				return ( true ) ;
+			    }
+		    }
+
+		return ( false ) ;
+	    }
+
+	
 	/*-------------------------------------------------------------------------------------------
 	 
 	    NAME
