@@ -55,6 +55,8 @@ class  WampManager extends AbstractWindowsBase
 
 	// Installation directory
 	public		$InstallationDirectory ;
+	// Log directory
+	public		$LogsDirectory ;
 	// WampManager configuration
 	public static	$WampManagerConfiguration ;
 	// Wamp packages
@@ -84,6 +86,10 @@ class  WampManager extends AbstractWindowsBase
 
 		// Try to locate installation directory
 		$this -> __locate_installation_directory ( ) ;
+
+		// Log directory - no parameter in the configuration allows to specify it, so assume that
+		// it is a "Logs" directory under Wamp installation directory
+		$this -> LogsDirectory	=  $this -> InstallationDirectory . '\\logs' ;
 
 		// Load the wampmanager configuration file
 		self::$WampManagerConfiguration	=  IniFile::LoadFromFile 

@@ -29,7 +29,7 @@ use	Thrak\Windows\Wamp\WampService ;
         Holds configuration data for one installed PHP Package.
 
   ==============================================================================================================*/
-class  MySqlPackage		extends  WampService
+class  MySqlPackage		extends		WampService
    {
 	public function  __construct ( $name, $parent, $path, $version )
 	   {
@@ -44,12 +44,40 @@ class  MySqlPackage		extends  WampService
 		    ) ;
 	    }
 
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    GetConfigurationFiles -
+		Returns the list of MySql configuration files (well, we only have my.ini...).
+
+	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  GetConfigurationFiles ( )
 	   {
-
 		return 
 		   ([ 
 			$this -> ConfigurationFile
 		     ]) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    GetLogFiles -
+		Returns the list of Mysql log files.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  GetLogFiles ( )
+	   {
+		$contents	=  file_get_contents ( $this -> ConfigurationFile ) ;
+		
+		if  ( preg_match ( '/\n \s* log-error \s* = \s* (?P<file> [^\s]+)/imsx', $contents, $match ) )
+		   {
+			return 
+			   ([ 
+				$this -> GetAbsolutePath ( $match [ 'file' ] ) 
+			     ]) ;
+		    }
+		else
+			return ( [] ) ;
 	    }
     }

@@ -20,6 +20,7 @@ namespace 	Thrak\Windows\Wamp ;
 defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
 
 use  	Thrak\System\Object ;
+use	Thrak\IO\Path ;
 use	Thrak\Windows\Wamp\WampModule ;
 
 
@@ -29,7 +30,8 @@ use	Thrak\Windows\Wamp\WampModule ;
         Holds configuration data for one installed PHP Package.
 
   ==============================================================================================================*/
-class  PhpPackage		extends  WampModule
+class  PhpPackage		extends		WampModule
+				implements	WampConfigurableModule 
    {
 	public function  __construct ( $name, $parent, $path, $version )
 	   {
@@ -43,11 +45,75 @@ class  PhpPackage		extends  WampModule
 	    }
 
 
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    GetConfigurationFiles -
+		Returns the list of PHP configuration files (well, we only have php.ini...).
+
+	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  GetConfigurationFiles ( )
 	   {
 		return 
 		   ([ 
 			$this -> ConfigurationFile 
 		     ]) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    GetLogFiles -
+		Returns the list of PHP log files.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  GetLogFiles ( )
+	   {
+		return 
+		   ([ 
+			$this -> GetAbsolutePath ( ini_get ( 'error_log' ) )
+		     ]) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+		WampConfigurableModule interface implementation.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+
+	public function  GetModules ( )
+	   {
+		$lines		=  file ( $this -> ConfigurationFile ) ;
+		$modules	=  [] ;
+
+		foreach  ( $lines  as  $line )
+		   {
+			if  ( preg_match ( '/^ ( (?P<comment> ;) )? extension \s* = \s* (?P<file> [^\s;]+) /imsx', $line, $match ) )
+			   {
+				$file		=  $match [ 'file' ] ;
+				$commented	=  ( isset ( $match [ 'comment' ] )  &&  $match [ 'comment' ]  ==  ';' ) ?  true : false ;
+
+				if  ( ! Path::IsAbsolute ( $file ) )
+					$file	=  Path::ToHost ( $this -> Path . "\\ext\\$file" ) ;
+
+				$file_exists	=  file_exists ( $file ) ;
+
+				if  ( $file_exists )
+					$state	=  ( $commented ) ?  self::STATE_DISABLED : self::STATE_ENABLED ;
+				else
+					$state	=  ( $commented ) ?  self::STATE_DISABLED_MISSING : self::STATE_ENABLED_MISSING ;
+
+				$modules []	=  [ 'file' => $file, 'state' => $state ] ;
+			    }
+		    }
+
+		usort
+		   (
+			$modules,
+			function  ( $a, $b )
+			   { return ( strcmp ( $a [ 'file' ], $b [ 'file' ] ) ) ; }
+		    ) ;
+
+		return ( $modules ) ;
 	    }
    }

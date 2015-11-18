@@ -20,6 +20,7 @@ namespace 	Thrak\Windows\Wamp ;
 defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
 
 use  	Thrak\System\Object ;
+use	Thrak\IO\Path ;
 use	Thrak\Windows\Wamp\WampService ;
 
 
@@ -29,7 +30,8 @@ use	Thrak\Windows\Wamp\WampService ;
         Holds configuration data for one installed PHP Package.
 
   ==============================================================================================================*/
-class  ApachePackage		extends  WampService
+class  ApachePackage		extends		WampService
+				implements	WampConfigurableModule
    {
 	public function  __construct ( $name, $parent, $path, $version )
 	   {
@@ -45,6 +47,13 @@ class  ApachePackage		extends  WampService
 	    }
 
 
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    GetConfigurationFiles -
+		Returns the list of Apache configuration files (including those that have been referenced by an 
+		Include directive).
+
+	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  GetConfigurationFiles ( )
 	   {
 		$conffiles	=  [ $this -> ConfigurationFile ] ;
@@ -67,4 +76,74 @@ class  ApachePackage		extends  WampService
 
 		return ( $conffiles ) ;
 	    }
-    }
+ 
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    GetLogFiles -
+		Returns the list of Apache log files (included those specified by included configuration files).
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  GetLogFiles ( )
+	   {
+		$configuration_files	=  $this -> GetConfigurationFiles ( ) ;
+		$files			=  [] ;
+
+		foreach  ( $configuration_files  as  $configuration_file )
+		   {
+			$lines	=  file ( $configuration_file ) ;
+
+			foreach  ( $lines  as  $line )
+			   {
+				if  ( preg_match ( '/^ \s* ( CustomLog | ErrorLog ) \s+ " (?P<file> [^"]+)/imsx', $line, $match ) )
+					$files []	=  $match [ 'file' ] ;
+			    }
+		    }
+
+		return ( $files ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+		WampConfigurableModule interface implementation.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+
+	public function  GetModules ( )
+	   {
+		$lines		=  file ( $this -> ConfigurationFile ) ;
+		$modules	=  [] ;
+
+		foreach  ( $lines  as  $line )
+		   {
+			if  ( preg_match ( '/^ ( (?P<comment> \#) )? LoadModule \s+ (?P<name> [^\s]+) \s+ "? (?P<file> [^\s\#"]+) /imsx', $line, $match ) )
+			   {
+				$file		=  $match [ 'file' ] ;
+				$commented	=  ( isset ( $match [ 'comment' ] )  &&  $match [ 'comment' ]  ==  '#' ) ?  true : false ;
+
+				if  ( ! Path::IsAbsolute ( $file ) )
+					$file	=  Path::ToHost ( $this -> Path . "\\$file" ) ;
+
+				$file		=  Path::ToHost ( $file ) ;
+				$file_exists	=  file_exists ( $file ) ;
+
+				if  ( $file_exists )
+					$state	=  ( $commented ) ?  self::STATE_DISABLED : self::STATE_ENABLED ;
+				else
+					$state	=  ( $commented ) ?  self::STATE_DISABLED_MISSING : self::STATE_ENABLED_MISSING ;
+
+				$modules []	=  [ 'name' => $match [ 'name' ], 'file' => $file, 'state' => $state ] ;
+			    }
+		    }
+
+		usort
+		   (
+			$modules,
+			function  ( $a, $b )
+			   { return ( strcmp ( $a [ 'file' ], $b [ 'file' ] ) ) ; }
+		    ) ;
+
+		return ( $modules ) ;
+	    }
+   }
