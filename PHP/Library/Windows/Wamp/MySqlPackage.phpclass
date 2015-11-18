@@ -38,7 +38,18 @@ class  MySqlPackage		extends  WampService
 			$name, $parent, $path, $version, 
 			$parent -> GetConfigurationValue ( 'service', 'servicemysql' ),
 			$parent -> GetConfigurationValue ( 'mysql', 'mysqlexedir' ),	
-			$parent -> GetConfigurationValue ( 'mysql', 'mysqlexefile' )
+			$parent -> GetConfigurationValue ( 'mysql', 'mysqlexefile' ),
+			$parent -> GetConfigurationValue ( 'mysql', 'mysqlconfdir' ),
+			$parent -> GetConfigurationValue ( 'mysql', 'mysqlconffile' )
 		    ) ;
+	    }
+
+	public function  GetConfigurationFiles ( )
+	   {
+
+		return 
+		   ([ 
+			$this -> ConfigurationFile
+		     ]) ;
 	    }
     }

@@ -38,7 +38,33 @@ class  ApachePackage		extends  WampService
 			$name, $parent, $path, $version, 
 			$parent -> GetConfigurationValue ( 'service', 'serviceapache' ),
 			$parent -> GetConfigurationValue ( 'apache', 'apacheexedir' ),	
-			$parent -> GetConfigurationValue ( 'apache', 'apacheexefile' )
+			$parent -> GetConfigurationValue ( 'apache', 'apacheexefile' ),
+			$parent -> GetConfigurationValue ( 'apache', 'apacheconfdir' ),
+			$parent -> GetConfigurationValue ( 'apache', 'apacheconffile' )
 		    ) ;
+	    }
+
+
+	public function  GetConfigurationFiles ( )
+	   {
+		$conffiles	=  [ $this -> ConfigurationFile ] ;
+		$lines		=  file ( $this -> ConfigurationFile ) ;
+
+		foreach  ( $lines  as  $line )
+		   {
+			if  ( preg_match ( '/^ \s* include \s+ (?P<file> [^\s]+)/imsx', $line, $match ) )
+			   {
+				$file		=  $match [ 'file' ] ;
+				$dir		=  basename ( $this -> ConfigurationDirectory ) ;
+				$dirlen		=  strlen ( $dir ) ;
+
+				if  ( ! strncmp ( $file, "$dir/", $dirlen + 1 ) )
+					$file	=  substr ( $file, $dirlen + 1 ) ;
+
+				$conffiles []	=  $this -> GetAbsolutePath ( $file ) ;
+			    }
+		    }
+
+		return ( $conffiles ) ;
 	    }
     }

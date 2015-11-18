@@ -33,6 +33,21 @@ class  PhpPackage		extends  WampModule
    {
 	public function  __construct ( $name, $parent, $path, $version )
 	   {
-		parent::__construct ( $name, $parent, $path, $version, '.', $parent -> GetConfigurationValue ( 'phpcli', 'phpexefile' ) ) ;
+		parent::__construct 
+		   ( 
+			$name, $parent, $path, $version, '.', 
+			$parent -> GetConfigurationValue ( 'phpcli', 'phpexefile' ),
+			$parent -> GetConfigurationValue ( 'php', 'phpinidir' ),
+			$parent -> GetConfigurationValue ( 'php', 'phpconffile' )
+		    ) ;
+	    }
+
+
+	public function  GetConfigurationFiles ( )
+	   {
+		return 
+		   ([ 
+			$this -> ConfigurationFile 
+		     ]) ;
 	    }
    }

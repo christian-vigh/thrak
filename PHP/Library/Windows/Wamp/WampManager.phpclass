@@ -260,7 +260,7 @@ class  WampManager extends AbstractWindowsBase
 	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  Restart ( )
 	   {
-		$existing_pid	=  $this -> Terminate ( ) ;
+		$existing_pid	=  $this -> Stop  ( ) ;
 		$new_pid	=  $this -> Start ( ) ;
 
 		return ( [ $new_pid, $existing_pid ] ) ;
@@ -284,6 +284,9 @@ class  WampManager extends AbstractWindowsBase
 			return ( false ) ;
 		    }
 
+		$this -> MySql  -> Start ( ) ;
+		$this -> Apache -> Start ( ) ;
+
 		$this -> WShell -> Exec ( $this -> WampExecutable ) ;
 		$pid	=  $this -> AwaitTask ( WAMPMANAGER_EXECUTABLE, true ) ;
 
@@ -293,11 +296,11 @@ class  WampManager extends AbstractWindowsBase
 
 	/*--------------------------------------------------------------------------------------------------------------
 	 
-	    Terminate -
-	        Terminates the WampManager.
+	    Stop -
+	        Stops the WampManager.
 	 
 	 *-------------------------------------------------------------------------------------------------------------*/
-	public function  Terminate ( )
+	public function  Stop ( )
 	   {
 		$query		=  "SELECT * FROM Win32_Process WHERE name = '" . WAMPMANAGER_EXECUTABLE . "'" ;
 		$processes	=  $this -> Wmi -> Query ( $query ) ;
@@ -306,6 +309,9 @@ class  WampManager extends AbstractWindowsBase
 		   {
 			$process	=  $processes [0] ;
 			$pid		=  $process -> ProcessId ;
+
+			$this -> MySql  -> Stop ( ) ;
+			$this -> Apache -> Stop ( ) ;
 
 			exec ( "TASKKILL /T /F /PID $pid 2>&1", $junk ) ;
 			$this -> AwaitTask ( WAMPMANAGER_EXECUTABLE, false ) ;
