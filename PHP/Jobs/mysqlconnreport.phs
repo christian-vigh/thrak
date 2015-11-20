@@ -1,0 +1,106 @@
+#!/usr/bin/php
+<?php
+	/**************************************************************************************************************
+	
+	    NAME
+	        mysqlconnreport.phs
+	
+	    DESCRIPTION
+	        A job that sends a summary report on past mysql connections.
+	
+	    AUTHOR
+	        Christian Vigh, 11/2015.
+	
+	    HISTORY
+	    [Version : 1.0]    [Date : 2015/11/04]     [Author : CV]
+	        Initial version.
+	
+	 **************************************************************************************************************/
+	require ( dirname ( __FILE__ ) . '/../Script.phpinclude' ) ;
+
+	use  Thrak\Administration\CronScript ;
+	use  Thrak\Types\DateTime ;
+
+	
+	class  Script		extends  CronScript
+	   {
+		private		$Definitions	=  <<<END
+	<command>
+		<usage>
+			Emits a report on past mysql connections.
+		</usage>
+
+		<integer name="days, d" default="1">
+			Number of past day connections to be reported.
+		</integer>
+
+		<flag name="include_today, it, today, t">
+			When specified, also includes the current day (otherwise, results will stop
+			at the previous day).
+		</flag>
+
+		<email name="send_to, st">
+			Specifies an email address for the report recipient.
+		</email>
+	</command>
+END;
+
+		public function  __construct ( )
+		   { parent::__construct ( $this -> Definitions ) ; }
+
+
+		public function  Run ( )
+		   {
+			global		$Database ;
+
+
+			$days			=  $this -> CL -> days ;
+			$include_today		=  $this -> CL -> include_today ;
+			$send_to		=  $this -> JobData [ 'administrator-email' ] ;
+
+			if  ( $this -> CL -> send_to )
+				$send_to	=  $this -> CL -> SendTo ;
+			
+			if  ( $include_today )
+				$last	=  0 ;
+			else
+				$last	=  1 ;
+
+			$start_time		=  DateTime::FirstTimeOfDay ( "now - $days days" ) ;
+			$end_time		=  DateTime::LastTimeOfDay  ( "now - $last days" ) ; 
+			$start_time_string	=  date ( 'Y-m-d H:i:s', $start_time ) ;
+			$end_time_string	=  date ( 'Y-m-d H:i:s', $end_time ) ;
+			$one_day		=  ( $days  ==  $last ) ;
+				
+			$query			=  "
+							SELECT 
+								COUNT(myscl_time)	AS 'count',
+								myscl_user		AS 'user'
+							FROM thrak_logs. mysql_connection_log
+							WHERE
+								myscl_time BETWEEN '$start_time_string' AND '$end_time_string'
+							GROUP BY myscl_user
+							ORDER BY myscl_user, COUNT(myscl_time)
+						   " ;
+			$Database -> SetQuery ( $query ) ;
+			$rows		=  $Database -> LoadRows ( ) ;
+			$row_count	=  count ( $rows ) ;
+
+			$title		=  '[' . gethostname ( ) . '] mysql connections summary - ' . date ( 'Y/m/d' ) ;
+			$date_range	=  ( $one_day ) ?  
+						substr ( $start_time_string, 0, 10 ) : 
+						substr ( $start_time_string, 0, 10 ) . ' to ' . substr ( $end_time_string, 0, 10 ) ;
+			$message	=  "Mysql connections report summary for : $date_range\n" ;
+
+			foreach  ( $rows  as  $row )
+			   {
+				$message .=  sprintf ( "%6d", $row [ 'count' ] ) . '    ' . $row [ 'user' ] . "\n" ;
+			    }
+
+			mail ( $send_to, $title, $message ) ;
+			$this -> Log ( "Mysql connections report summary : $row_count rows processed" ) ;
+		    }
+	    }
+
+	$script		=  new Script ( ) ;
+	$script -> Run ( ) ;

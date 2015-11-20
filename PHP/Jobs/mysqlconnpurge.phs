@@ -1,0 +1,75 @@
+#!/usr/bin/php
+<?php
+	/**************************************************************************************************************
+	
+	    NAME
+	        mysqlconnpurge.phs
+	
+	    DESCRIPTION
+	        Deletes old mysql connection data.
+	
+	    AUTHOR
+	        Christian Vigh, 11/2015.
+	
+	    HISTORY
+	    [Version : 1.0]    [Date : 2015/11/04]     [Author : CV]
+	        Initial version.
+	
+	 **************************************************************************************************************/
+	require ( dirname ( __FILE__ ) . '/../Script.phpinclude' ) ;
+
+	use  Thrak\Administration\CronScript ;
+	use  Thrak\Types\DateTime ;
+
+	
+	class  Script		extends  CronScript
+	   {
+		private		$Definitions	=  <<<END
+	<command>
+		<usage>
+			Emits a report on past mysql connections.
+		</usage>
+
+		<integer name="days, d" default="30">
+			Mysql connections older than the specified number of day will be purged.
+		</integer>
+
+		<email name="send_to, st">
+			Specifies an email address for the report recipient.
+		</email>
+	</command>
+END;
+
+		public function  __construct ( )
+		   { parent::__construct ( $this -> Definitions ) ; }
+
+
+		public function  Run ( )
+		   {
+			global		$Database ;
+
+
+			$days			=  $this -> CL -> days ;
+			$send_to		=  $this -> JobData [ 'administrator-email' ] ;
+
+			if  ( $this -> CL -> send_to )
+				$send_to	=  $this -> CL -> SendTo ;
+			
+			$start_time		=  DateTime::FirstTimeOfDay ( "now - $days days" ) ;
+			$start_time_string	=  date ( 'Y-m-d H:i:s', $start_time ) ;
+				
+			$query			=  "
+							DELETE  thrak_logs. mysql_connection_log
+							FROM thrak_logs. mysql_connection_log
+							WHERE
+								myscl_time < '$start_time_string'
+						   " ;
+			$Database -> Execute ( $query ) ;
+			$row_count		=  $Database -> GetAffectedRows ( ) ;
+
+			$this -> Log ( "Mysql connections report summary : $row_count rows processed" ) ;
+		    }
+	    }
+
+	$script		=  new Script ( ) ;
+	$script -> Run ( ) ;
