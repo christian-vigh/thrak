@@ -34,7 +34,7 @@ use	Thrak\Web\WebSite ;
 abstract class	BlacklistTracker		extends  UnbufferedTracker 
    {
 	// Blacklist log table name
-	const	TABLE_BLACKLIST_LOG		=  'tracking_blacklist_log' ;
+	const	TABLE_BLACKLIST_LOG		=  'thrak_logs.blacklist_log' ;
 
 	// Blacklist log entry types
 	const	BLACKLISTED_DOMAIN		=  0 ;
