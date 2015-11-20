@@ -20,6 +20,8 @@
 
     [Version : 1.0.2]		[Date : 2015/11/20]		[Author : CV]
 	. Added the DateEx() method and dateex() function.
+	. Changed the FirstTimeOfDay() and LastTimeOfDay methods to accept both a timestamp and
+	  a date string.
  
  ***************************************************************************************************/
 namespace 	Thrak\Types ;
@@ -109,8 +111,8 @@ class  	DateTime	extends  Object
 	  	FirstTimeOfDay, LastTimeOfDay - Returns the first and last time of a given day
 
 	    PROTOTYPE
-		$status = DateTime::FirstTimeOfDay ( $time = '' ) ;
-		$status = DateTime::LastTimeOfDay  ( $time = '' ) ;
+		$status = DateTime::FirstTimeOfDay ( $time = false ) ;
+		$status = DateTime::LastTimeOfDay  ( $time = false ) ;
 
 	    DESCRIPTION
 		These functions return the first and last time of a day specified by a time value.
@@ -118,10 +120,12 @@ class  	DateTime	extends  Object
 		The first time of the day is 00h00:00 ; the last time of the day is 23:59:59.
 
 	 --------------------------------------------------------------------------------------------*/
-	public static function  FirstTimeOfDay ( $time = '' )
+	public static function  FirstTimeOfDay ( $time = false )
 	   {
 	   	if  ( ! $time )
-			$time = time ( ) ;
+			$time	=  time ( ) ;
+		else if  ( is_string ( $time ) )
+			$time	=  strtotime ( $time ) ;
 
 		$result =  strtotime ( date ( 'Y/m/d', $time ) ) ;
 
@@ -129,8 +133,13 @@ class  	DateTime	extends  Object
 	    }
 
 
-	public static function  LastTimeOfDay ( $time = '' )
+	public static function  LastTimeOfDay ( $time = false )
 	   {
+	   	if  ( ! $time )
+			$time	=  time ( ) ;
+		else if  ( is_string ( $time ) )
+			$time	=  strtotime ( $time ) ;
+
 	   	$result  = DateTime::FirstTimeOfDay ( $time ) ;
 		$result += ( 24 * 60 * 60 ) - 1 ;
 		return ( $result ) ;
