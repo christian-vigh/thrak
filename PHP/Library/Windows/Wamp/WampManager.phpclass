@@ -264,10 +264,10 @@ class  WampManager extends AbstractWindowsBase
 	        Restarts the WampManager.
 	 
 	 *-------------------------------------------------------------------------------------------------------------*/
-	public function  Restart ( )
+	public function  Restart ( $verbose = false )
 	   {
-		$existing_pid	=  $this -> Stop  ( ) ;
-		$new_pid	=  $this -> Start ( ) ;
+		$existing_pid	=  $this -> Stop  ( $verbose ) ;
+		$new_pid	=  $this -> Start ( $verbose ) ;
 
 		return ( [ $new_pid, $existing_pid ] ) ;
 	    }
@@ -279,7 +279,7 @@ class  WampManager extends AbstractWindowsBase
 	        Starts the WampManager.
 	 
 	 *-------------------------------------------------------------------------------------------------------------*/
-	public function  Start ( )
+	public function  Start ( $verbose )
 	   {
 		$query		=  "SELECT * FROM Win32_Process WHERE name = '" . WAMPMANAGER_EXECUTABLE . "'" ;
 		$processes	=  $this -> Wmi -> Query ( $query ) ;
@@ -290,11 +290,30 @@ class  WampManager extends AbstractWindowsBase
 			return ( false ) ;
 		    }
 
+		if  ( $verbose )
+			echo ( "Starting mysql service..." ) ;
+
 		$this -> MySql  -> Start ( ) ;
+
+		if  ( $verbose )  
+			output ( "done" ) ;
+
+		if  ( $verbose )  
+			echo ( "Starting apache service..." ) ;
+
 		$this -> Apache -> Start ( ) ;
+			
+		if  ( $verbose )  
+			output ( "done" ) ;
+
+		if  ( $verbose )  
+			echo ( "Waiting for " . WAMPMANAGER_EXECUTABLE . " to start..." ) ;
 
 		$this -> WShell -> Exec ( $this -> WampExecutable ) ;
 		$pid	=  $this -> AwaitTask ( WAMPMANAGER_EXECUTABLE, true ) ;
+
+		if  ( $verbose ) 
+			output ( "done" ) ;
 
 		return ( $pid ) ;
 	    }
@@ -306,7 +325,7 @@ class  WampManager extends AbstractWindowsBase
 	        Stops the WampManager.
 	 
 	 *-------------------------------------------------------------------------------------------------------------*/
-	public function  Stop ( )
+	public function  Stop ( $verbose )
 	   {
 		$query		=  "SELECT * FROM Win32_Process WHERE name = '" . WAMPMANAGER_EXECUTABLE . "'" ;
 		$processes	=  $this -> Wmi -> Query ( $query ) ;
@@ -316,11 +335,30 @@ class  WampManager extends AbstractWindowsBase
 			$process	=  $processes [0] ;
 			$pid		=  $process -> ProcessId ;
 
+			if  ( $verbose )
+				echo ( "Stopping mysql service..." ) ;
+
 			$this -> MySql  -> Stop ( ) ;
+
+			if  ( $verbose )  
+				output ( "done" ) ;
+
+			if  ( $verbose )  
+				echo ( "Stopping apache service..." ) ;
+
 			$this -> Apache -> Stop ( ) ;
+			
+			if  ( $verbose )  
+				output ( "done" ) ;
+
+			if  ( $verbose )  
+				echo ( "Waiting for " . WAMPMANAGER_EXECUTABLE . " to exit..." ) ;
 
 			exec ( "TASKKILL /T /F /PID $pid 2>&1", $junk ) ;
 			$this -> AwaitTask ( WAMPMANAGER_EXECUTABLE, false ) ;
+
+			if  ( $verbose ) 
+				output ( "done" ) ;
 
 			return ( $pid ) ;
 		    }
