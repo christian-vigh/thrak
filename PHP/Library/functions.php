@@ -23,15 +23,19 @@
     [Version : 1.0.3]	[Date : 2015/04/17]	[Author : CV]
 	. Added the require_file() and require_directory() functions.
 
+    [Version : 1.0.4]	[Date : 2015/11/20]	[Author : CV]
+	. Added the dateex() function.
+
  ***************************************************************************************************/
 defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
 
 
 // Used namespaces & objects
-use 		Thrak\IO\Console  		as  Console ;
-use  		Thrak\System\Debug 		as  Debug ;
-use		Thrak\Types\ObjectifiedArray	as  ObjectifiedArray ;
-use		Thrak\Internals\Chainer		as  Chainer ;
+use 		Thrak\IO\Console ;
+use  		Thrak\System\Debug ;
+use		Thrak\Types\ObjectifiedArray ;
+use		Thrak\Internals\Chainer ;
+use		Thrak\Types\DateTime ;
 
 
 /*==================================================================================================
@@ -205,7 +209,7 @@ function  o ( $array )
 
    On -
 	A notational shortcut for : Chainer::On.
- * 
+  
   ==============================================================================================================*/
 function  On ( $value )
    {
@@ -214,3 +218,14 @@ function  On ( $value )
 	return ( $chain ) ;
     }
 
+
+/*==============================================================================================================
+
+   dateex -
+	Extended date() function, which accepts a float for specifying microseconds.
+  
+  ==============================================================================================================*/
+function  dateex ( $format, $timestamp )
+   {
+	return ( DateTime::DateEx ( $format, $timestamp ) ) ;
+    }

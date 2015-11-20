@@ -17,6 +17,9 @@
 
     [Version : 1.0.1]		[Date : 2015/03/05]		[Author : CV]
 	. Added the GetDateTimeElements(), GetTimeElements() and GetDateElements() static methods.
+
+    [Version : 1.0.2]		[Date : 2015/11/20]		[Author : CV]
+	. Added the DateEx() method and dateex() function.
  
  ***************************************************************************************************/
 namespace 	Thrak\Types ;
@@ -130,6 +133,39 @@ class  	DateTime	extends  Object
 	   {
 	   	$result  = DateTime::FirstTimeOfDay ( $time ) ;
 		$result += ( 24 * 60 * 60 ) - 1 ;
+		return ( $result ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		DateEx - Extended date() function.
+
+	    PROTOTYPE
+		$string		=  DateTime::DateEx ( $format, $timestamp = time ( ) ) ;
+
+	    DESCRIPTION
+		Overcomes the limitation of the date() function, which does not allow to specify
+		timestamps as floats, where the decimal parts represent microseconds.
+		It correctly handles timezone offsets.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  DateEx ( $format, $timestamp = null )
+	   {
+		if  ( $timestamp )
+			$timestamp	=  ( double ) $timestamp ;
+		else
+			$timestamp	=  microtime ( true ) ;
+
+		$datetime	=  \DateTime::createFromFormat ( 'U.u', $timestamp ) ;
+		$tzstring	=  date_default_timezone_get ( ) ;
+		$tz		=  new \DateTimeZone ( $tzstring ) ;
+
+		$datetime -> setTimezone ( $tz ) ;
+
+		$result		=  $datetime -> format ( $format ) ;
+
 		return ( $result ) ;
 	    }
 
@@ -347,3 +383,4 @@ class	DateTimeIterator	extends		Object
 	public function  valid ( )
 	   { return (  $this -> IsBetween ( $this -> CurrentTime ) ) ; }
     }
+
