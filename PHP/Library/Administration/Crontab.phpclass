@@ -1113,7 +1113,7 @@ class  Crontab		extends  Object
 		$command	=  'crontab' ;
 
 		if  ( $this -> User )
-			$command	.=  '-u ' . $this -> User ;
+			$command	.=  ' -u ' . $this -> User ;
 
 		return ( $command ) ;
 	    }
