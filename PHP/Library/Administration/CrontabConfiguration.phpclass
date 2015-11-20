@@ -73,9 +73,10 @@ class	CrontabConfiguration		extends  Object
 			$this -> IniFile -> SetVariableStore ( 'Variables' ) ;
 
 		// Get global settings - default values
-		$default_user		=  $inifile -> GetKey ( 'Settings', 'User'	, 'root' ) ;
-		$default_group		=  $inifile -> GetKey ( 'Settings', 'Group'	, 'root' ) ;
-		$default_logfile	=  $inifile -> GetKey ( 'Settings', 'LogFile'	, false ) ;
+		$default_user		=  $inifile -> GetKey ( 'Settings', 'User'			, 'root' ) ;
+		$default_group		=  $inifile -> GetKey ( 'Settings', 'Group'			, 'root' ) ;
+		$default_logfile	=  $inifile -> GetKey ( 'Settings', 'LogFile'			, false ) ;
+		$default_email		=  $inifile -> GetKey ( 'Settings', 'AdministratorEmail'	, 'root@localhost' ) ;
 
 		// Get the [Job:] section names
 		$sections	=  $inifile -> GetSections ( '(Job|Cron) \s* : \s* (?P<name> [^\s]+)' ) ;
@@ -90,14 +91,18 @@ class	CrontabConfiguration		extends  Object
 			$cron_name	=  $section [ 'match' ] [ 'name' ] ;
 
 			// Get parameters that may have a default value in the [Settings] section
-			$current_user		=  $inifile -> GetKey ( $section_name, 'User'		, $default_user		) ;
-			$current_group		=  $inifile -> GetKey ( $section_name, 'Group'		, $default_group	) ;
-			$current_logfile	=  $inifile -> GetKey ( $section_name, 'Logfile'	, $default_logfile	) ;
+			$current_user		=  $inifile -> GetKey ( $section_name, 'User'			, $default_user		) ;
+			$current_group		=  $inifile -> GetKey ( $section_name, 'Group'			, $default_group	) ;
+			$current_logfile	=  $inifile -> GetKey ( $section_name, 'Logfile'		, $default_logfile	) ;
+			$current_email		=  $inifile -> GetKey ( $section_name, 'AdministratorEmail'	, $default_email	) ;
+
+			if  ( ! isset ( $this -> Jobs [ $current_user ] ) )
+				$this -> Jobs [ $current_user ]		=  [] ;
 
 			// Get crontab entry name and check for duplicates
 			$current_name	=  $inifile -> GetKey ( $section_name, 'Name', $cron_name ) ;
 
-			foreach  ( $this -> Jobs  as  $cronjob )
+			foreach  ( $this -> Jobs [ $current_user ]  as  $cronjob )
 			   {
 				if ( ! strcasecmp ( $cronjob [ 'name' ], $current_name ) )
 					error ( new \Thrak\System\InvalidArgumentException ( 
@@ -172,7 +177,8 @@ class	CrontabConfiguration		extends  Object
 				'schedule'		=>  $current_schedule,
 				'stock-script'		=>  $is_stocked,
 				'schedule-job'		=>  $schedule_job,
-				'variables'		=>  $variables
+				'variables'		=>  $variables,
+				'administrator-email'	=>  $current_email 
 			    ] ;
 
 			$this -> Jobs [ $current_user ] []	=  $job ;

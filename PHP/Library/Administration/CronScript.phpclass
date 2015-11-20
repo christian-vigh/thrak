@@ -81,6 +81,8 @@ END;
 	protected	$JobData ;				// Job data coming from configuration file
 	// Log file
 	protected	$Logfile		=  null ;
+	// Administrator email
+	protected	$AdministratorEmail	=  null ;
 
 
 	/*--------------------------------------------------------------------------------------------------------------
@@ -133,6 +135,7 @@ END;
 			error ( new \Thrak\System\RuntimeException ( "Could not find entry \"{$this -> JobName}\" in crontab.ini file \"{$this -> ConfigurationFile}\"" ) ) ;
 
 		$this -> Logfile		=  $this -> JobData [ 'logfile' ] ;
+		$this -> AdministratorEmail	=  $this -> JobData [ 'administrator-email' ] ;
 
 		// Other environment data
 		$this -> Pid			=  getmypid ( ) ;
