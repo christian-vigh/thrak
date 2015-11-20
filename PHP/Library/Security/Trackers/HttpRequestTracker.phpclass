@@ -38,8 +38,8 @@ use	Thrak\Web\WebSite ;
 class  HttpRequestTracker	extends  BufferedTracker
    {
 	// Tables used to track http access
-	const	TABLE_HTTP_ACCESS		=  'tracking_http_access' ;		// Url, query parameters + ips
-	const	TABLE_HTTP_SERVER_VARS		=  'tracking_http_server_vars' ;	// $_SERVER contents
+	const	TABLE_HTTP_ACCESS		=  'thrak_logs.http_access_log' ;		// Url, query parameters + ips
+	const	TABLE_HTTP_SERVER_VARS		=  'thrak_logs.http_access_server_vars' ;	// $_SERVER contents
 
 
 	/*--------------------------------------------------------------------------------------------------------------
@@ -146,21 +146,21 @@ class  HttpRequestTracker	extends  BufferedTracker
 		if  ( $time  ==  round ( $time ) )
 			$time	=  "$time.0" ;
 
-		$request_time		=  \DateTime::createFromFormat ( 'U.u', $time ) ;
-		$timestring		=  $request_time -> format ( 'Y-m-d H:i:s.u' ) ;
+		$timestring		=  dateex ( 'Y-m-d H:i:s.u', $time ) ;
 		$local_port		=  ( integer ) $server [ 'SERVER_PORT' ] ;
 		$remote_port		=  ( integer ) $server [ 'REMOTE_PORT' ] ;
-		$absolute_url		=  WebSite::GetAbsoluteUrl ( ) ;
+		$absolute_url		=  WebSite::GetAbsoluteUrl ( false, $server ) ;
 
 		$url_id			=  $store -> Insert ( TrackerStringStore::STRING_STORE_URL		, $absolute_url ) ;
 		$query_id		=  $store -> Insert ( TrackerStringStore::STRING_STORE_QUERY		, $server [ 'QUERY_STRING' ] ) ;
-		$local_ip_id		=  $store -> Insert ( TrackerStringStore::STRING_STORE_LOCAL_IP	, $server [ 'SERVER_ADDR' ] ) ;
+		$local_ip_id		=  $store -> Insert ( TrackerStringStore::STRING_STORE_LOCAL_IP		, $server [ 'SERVER_ADDR' ] ) ;
 		$remote_ip_id		=  $store -> Insert ( TrackerStringStore::STRING_STORE_REMOTE_IP	, $server [ 'REMOTE_ADDR' ] ) ;
 		$get_id			=  $store -> Insert ( TrackerStringStore::STRING_STORE_GET_ARRAY	, serialize ( $array [ '_GET' ] ) ) ;
 		$post_id		=  $store -> Insert ( TrackerStringStore::STRING_STORE_POST_ARRAY	, serialize ( $array [ '_POST' ] ) ) ;
 		$files_id		=  $store -> Insert ( TrackerStringStore::STRING_STORE_FILES_ARRAY	, serialize ( $array [ '_FILES' ] ) ) ;
 		$cookie_id		=  $store -> Insert ( TrackerStringStore::STRING_STORE_COOKIE_ARRAY	, serialize ( $array [ '_COOKIE' ] ) ) ;
 		$session_id		=  $store -> Insert ( TrackerStringStore::STRING_STORE_SESSION_ARRAY	, serialize ( $array [ '_SESSION' ] ) ) ;
+
 
 		// Insert a new http access record
 		$query		=  "

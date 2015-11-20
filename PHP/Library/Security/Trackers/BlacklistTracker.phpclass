@@ -136,6 +136,7 @@ abstract class	BlacklistTracker		extends  UnbufferedTracker
 						blal_url_id	=  $url_id,
 						blal_entry_id	=  $data_id
 				   " ;
+		output ( $query ) ;
 
 		$this -> Database -> Execute ( $query ) ;
 	    }

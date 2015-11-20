@@ -37,8 +37,8 @@ use	Thrak\Database\Tables\StringStore ;
 abstract class  Tracker		extends  Object
    {
 	// Tracking buffer table
-	const	TABLE_TRACKING_BUFFER		=  'tracking_buffer' ;
-	const	TABLE_TRACKING_STRING_STORE	=  'tracking_string_store' ;
+	const	TABLE_TRACKING_BUFFER		=  'thrak_logs.tracking_buffer' ;
+	const	TABLE_TRACKING_STRING_STORE	=  'thrak_logs.string_store' ;
 
 	// String store associated to this Tracker class
 	static public		$StringStore ;
@@ -52,7 +52,7 @@ abstract class  Tracker		extends  Object
 		Initialize the string store table.
 	 
 	 *-------------------------------------------------------------------------------------------------------------*/
-	public function  __construct ( $string_store_table = 'tracking_string_store', $db = null )
+	public function  __construct ( $string_store_table = self::TABLE_TRACKING_STRING_STORE, $db = null )
 	   {
 		global		$Database ;
 
@@ -104,9 +104,11 @@ abstract class  BufferedTracker		extends  Tracker
 	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  Track ( )
 	   {
+		$argv	=  func_get_args ( ) ;
+		$type	=  ( count ( $argv ) ) ?  $argv [0] : 0 ;
 		$db	=  $this -> Database ;
 		$data	=  $db -> Escape ( $this -> GetRawData ( ) ) ;
-		$query	=  "INSERT DELAYED INTO " . self::TABLE_TRACKING_BUFFER . " SET DATA = '$data'" ;
+		$query	=  "INSERT DELAYED INTO " . self::TABLE_TRACKING_BUFFER . " SET data = '$data', type = $type" ;
 		$db -> Execute ( $query ) ;
 	    }
 
