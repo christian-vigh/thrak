@@ -623,7 +623,11 @@ class  VariableStore		extends		Object
 						   {
 							$call_stack [ $name ]	 =  $name ;
 							$result			.=  $this -> __Expand ( $this_value -> Value, $accept_escapes, $call_stack ) ;
-							$call_stack -> Pop ( ) ;
+
+							if  ( is_array ( $call_stack ) )
+								array_pop ( $call_stack ) ;
+							else
+								$call_stack -> Pop ( ) ;
 						    }
 						// Otherwise, simply expand the value as is
 						else
@@ -631,7 +635,10 @@ class  VariableStore		extends		Object
 					    }
 					// Undefined variable, issue a warning if requested
 					else if  ( $this -> Options  &  self::OPTION_WARN_IF_UNDEFINED )
+					   {
+						dump ( $this ) ; exit ;
 						warning ( "Reference to undefined variable \"$name\"." ) ;
+					    }
 				    }
 			    }
 			// Other cases : simply collect the character
@@ -732,7 +739,12 @@ class  VariableStore		extends		Object
 	
 	
 	public function  getIterator ( )
-	   { return ( $this -> Variables -> getIterator ( ) ) ; }
+	   { 
+		if  ( is_array ( $this -> Variables ) )
+			return ( new \ArrayIterator ( $this -> Variables ) ) ; 
+		else
+			return ( $this -> Variables -> getIterator ( ) ) ;
+	    }
 	
 	
 	public function  offsetExists ( $offset )
