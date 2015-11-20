@@ -199,7 +199,8 @@ END;
 				$command	=  $job [ 'schedule' ] . ' ' .
 						   $extra . Path::Quote ( $job [ 'path' ] ) . ' ' .
 						   '-cf ' . Path::Quote ( $ConfigurationFile ) . ' ' .
-						   '-job ' . Path::Quote ( $job [ 'name' ] ) . ' ' ;
+						   '-job ' . Path::Quote ( $job [ 'name' ] ) . ' ' .
+						   $job [ 'parameters' ] ;
 
 				$crontab -> DefineCommand ( $job [ 'name' ], $command ) ;
 		  	    }
