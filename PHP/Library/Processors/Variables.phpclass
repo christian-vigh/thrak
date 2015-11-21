@@ -53,6 +53,11 @@
  	. Corrected a bug in the __Expand() method that caused nested variable references to be incorrectly
  	  diagnosed as recursive references because the $call_stack array was not cleaned up after an inner
  	  call to _Expand().
+
+    [Version : 1.0.3]	[Date : 2015/11/20]     [Author : CV]
+	. Variables are either stored in a regular PHP array or an object of class AssociativeArray, depending
+	  on whether variable names are case-sensitive (Unix platforms) or not (Windows platforms). Array access
+	  methods called in a few locations of this class where not handling correctly this duality.
  
  **************************************************************************************************************/
 namespace  Thrak\Processors ;
@@ -636,7 +641,6 @@ class  VariableStore		extends		Object
 					// Undefined variable, issue a warning if requested
 					else if  ( $this -> Options  &  self::OPTION_WARN_IF_UNDEFINED )
 					   {
-						dump ( $this ) ; exit ;
 						warning ( "Reference to undefined variable \"$name\"." ) ;
 					    }
 				    }
