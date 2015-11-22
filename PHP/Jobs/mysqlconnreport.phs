@@ -91,11 +91,15 @@ END;
 						substr ( $start_time_string, 0, 10 ) : 
 						substr ( $start_time_string, 0, 10 ) . ' to ' . substr ( $end_time_string, 0, 10 ) ;
 			$message	=  "Mysql connections report summary for : $date_range\n" ;
+			$total		=  0 ;
 
 			foreach  ( $rows  as  $row )
 			   {
-				$message .=  sprintf ( "%6d", $row [ 'count' ] ) . '    ' . $row [ 'user' ] . "\n" ;
+				$message	.=  sprintf ( "%6d", $row [ 'count' ] ) . '    ' . $row [ 'user' ] . "\n" ;
+				$total		+=  $row [ 'count' ] ;
 			    }
+
+			$message	.=  "Total : $total connections\n" ;
 
 			mail ( $send_to, $title, $message ) ;
 			$this -> Log ( "Mysql connections report summary : $row_count rows processed" ) ;
