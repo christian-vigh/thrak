@@ -310,6 +310,23 @@ class  WmiInstance		extends		AbstractWindowsBase
 
 
 	/*--------------------------------------------------------------------------------------------------------------
+
+	    ToArray -
+	        Converts this object to an associative array of property name/value pairs.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  ToArray ( )
+	   {
+		$result		=  [] ;
+
+		foreach  ( $this -> PropertyNames  as  $name )
+			$result [ $name ]	=  $this -> $name ;
+
+		return ( $result ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
 	 
 	        Countable interface implementation.
 	 
