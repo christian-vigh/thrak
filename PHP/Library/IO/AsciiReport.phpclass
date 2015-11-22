@@ -63,6 +63,11 @@
     [Version : 2.0.8]		[Date : 2015/11/17]		[Author : CV]
 	. Modified the UpdateWidths() method which did not correctly handle objects implementing
 	  the ArrayAccess interface.
+
+    [Version : 2.0.9]		[Date : 2015/11/21]		[Author : CV]
+	. The Generate() method does not display column headers anymore if there is no data to 
+	  display.
+	. Added the $display parameter to the Generate() method.
   
  ***************************************************************************************************/
 namespace 	Thrak\IO ;
@@ -508,6 +513,12 @@ class  AsciiReport		extends  Object
 			// Words ending with -y give -ies
 			else if  ( String::EndsWith ( $low_singular, 'y' ) )
 				$plural		=  substr ( $low_singular, 0, strlen ( $low_singular ) - 1 ) . 'ies' ;
+			// Words ending with -x give -xes
+			else if  ( String::EndsWith ( $low_singular, 'x' ) )
+				$plural		=  substr ( $low_singular, 0, strlen ( $low_singular ) - 1 ) . 'xes' ;
+			// Words ending with -ss give -sses
+			else if  ( String::EndsWith ( $low_singular, 'ss' ) )
+				$plural		=  substr ( $low_singular, 0, strlen ( $low_singular ) - 2 ) . 'sses' ;
 			// Otherwise, add trailing 's' for unmatched words
 			else if  ( ! String::EndsWith ( $low_singular, 's' ) )
 				$plural		=  $singular . 's' ;
@@ -531,15 +542,32 @@ class  AsciiReport		extends  Object
 		Generate - Generates report.
 
 	    PROTOTYPE
-		$output = $report -> Generate ( $list ) ;
+		$output = $report -> Generate ( $list, $display = false ) ;
 
 	    DESCRIPTION
 	        Generates a report according to the column definitions specified during report object
 		construction.
 
+	    PARAMETERS
+		$list (array of associative arrays or objects) -
+			An array whose items are either an associative array with key/value pairs
+			or an object.
+			The associative array keys or the object properties must match the member
+			names supplied to the AsciiReport constructor.
+
+		$display (boolean) -
+			When true, the results are also displayed in real time.
+
+	    RETURN VALUE
+		Returns a string containing the ascii report data, or an empty string if no data
+		were supplied.
+
 	 --------------------------------------------------------------------------------------------*/
-	public function  Generate ( $list )
+	public function  Generate ( $list, $display = false )
            {
+		if  ( ! count ( $list ) )
+			return ( '' ) ;
+
 		$this -> ElementCount = 0 ;
 
 		// Compute the width of each column
@@ -560,6 +588,9 @@ class  AsciiReport		extends  Object
 		$big_separation =  $this -> SeparationLine ( '=' ) . $newline ;
 		$separation	=  $this -> SeparationLine (  ) . $newline ;
 		$result        .=  $big_separation . $this -> TitleLine ( ) . $newline . $big_separation ;
+
+		if  ( $display )
+			echo ( $result ) ;
 
 		// Loop through the provided items to be listed
 		if  ( $list )
@@ -592,9 +623,11 @@ class  AsciiReport		extends  Object
 				// If data is an array, then output the values for a single row
 				if  ( is_array ( $item )  ||  $item  instanceof  \ArrayAccess )
 				   {
+					$line	=  '' ;
+
 					for  ( $i = 0 ; $i  <  $max_height ; $i ++ )
 					   {
-						$result .= "|" ;
+						$line .= "|" ;
 
 						foreach ( $this -> ColDefs  as  $def )
 						   {
@@ -606,14 +639,18 @@ class  AsciiReport		extends  Object
 											str_repeat ( ' ', ( $def -> ComputedWidth ) ?  
 														$def -> ComputedWidth : $def -> Width ) ;
 
-							$result .= " $value |" ;
+							$line .= " $value |" ;
 						    }
 					
-						$result	.=  $newline ;
+						$line	.=  $newline ;
 					    }
 					
 					// Add the report bottom
-					$result .= $separation ;
+					$line   .= $separation ;
+					$result	.=  $line ;
+
+					if  ( $display )
+						echo ( $line ) ;
 
 					// Count one more element if array key '!' is undefined or set to false
 					if  ( ! isset ( $item [ '!' ] )  ||  ! $item [ '!' ] )
