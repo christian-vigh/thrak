@@ -32,6 +32,9 @@
 
     [Version : 1.0.6]	[Date : 2015/08/27]     [Author : CV]
 	. Added the ToRanges() method.
+
+    [Version : 1.0.7]	[Date : 2015/11/22]     [Author : CV]
+	. Added the MultiSort() method.
   
  **************************************************************************************************************/
 namespace 	Thrak\Types ;
@@ -494,7 +497,99 @@ class  ArrayHelpers		extends  Object
 	/*==============================================================================================================
 	
 	    NAME
-		SortedFind* - Perform dichotomic search operations on sorted arrays.
+	        MultiSort - Performs array sorting based on multiple criterias.
+	
+	    PROTOTYPE
+		ArrayHelpers::MultiSort ( &$array, $criterias ) ;
+	
+	    DESCRIPTION
+		Sorts an array based on multiple criterias.
+	
+	    PARAMETERS
+		$array (array of associative arrays or array of objects) -
+			The values to be sorted.
+
+		$criterias (associative array) -
+			Each key in this array specifies a sort criteria, which must reference a key in a $array item
+			(if $array is an array of associative arrays) or a property (if $array is an array of objects).
+			Each value in $criterias is a boolean value indicating the sort direction : true for ascending,
+			false for descending.
+	
+	    RETURN VALUE
+		Returns the number of comparisons performed.
+	
+	  ==============================================================================================================*/
+
+	// For performance reasons, a comparison function will be used instead of a closure (calling a closure is 5 times
+	// more expensive than calling a function). This is why we will save the $criterias parameter passed to the
+	// MultiSort method to the self::__$multisort_criterias variable.
+	private	static		$__multisort_criterias ;
+	private static		$__multisort_compares ;
+	private static		$__multisort_case_sensitive ;
+
+
+	private static function  __multisort_compare_single ( $a, $b, $field )
+	   {
+		if  ( is_numeric ( $a ) )
+			return ( ( ( double ) $a ) - ( ( double ) $b ) ) ;
+		else if  ( is_bool ( $a ) )
+			return ( ( ( integer ) $a ) - ( ( integer ) $b ) ) ;
+		else if  ( @strtotime ( $a )  !==  false )
+			return ( String::IsDateString ( $a )  -  String::IsDateString ( $b ) ) ;
+		else	// strings
+		   {
+			if  ( self::$__multisort_case_sensitive )
+				return  ( strcmp ( $a, $b ) ) ;
+			else
+				return ( strcasecmp ( $a, $b ) ) ;
+		    }
+	    }
+
+
+	private static function  __multisort_compare ( $a, $b )
+	   {
+		$criterias	=  self::$__multisort_criterias ;
+
+		if  ( ( ! is_array ( $a )  &&  ! is_object ( $a ) )  ||
+		      ( ! is_array ( $b )  &&  ! is_object ( $b ) ) )
+		      error ( new \Thrak\System\InvalidArgumentException ( "The items of the array passed to the MultiSort() function must be either " .
+				"associative arrays or objects." ) ) ;
+
+		foreach  ( $criterias  as  $field => $direction )
+		   {
+			$a_value	=  ( is_array ( $a ) ) ?  $a [ $field ] : $a -> $field ;
+			$b_value	=  ( is_array ( $b ) ) ?  $b [ $field ] : $b -> $field ;
+			$status		=  self::__multisort_compare_single ( $a_value, $b_value, $field ) ;
+
+			if  ( $status  ==  0 )
+				continue ;
+
+			if  ( ! $direction )
+				$status		=  - $status ;
+
+			return ( $status ) ;
+		    }
+
+		return ( 0 ) ;
+	    }
+
+
+	public static function  MultiSort ( &$array, $criterias, $case_sensitive = true )
+	   {
+		self::$__multisort_criterias		=  $criterias ;
+		self::$__multisort_compares		=  0 ;
+		self::$__multisort_case_sensitive	=  $case_sensitive ;
+
+		usort ( $array, [ get_called_class ( ), '__multisort_compare' ] ) ;
+
+		return ( self::$__multisort_compares ) ;
+	    }
+
+
+	/*==============================================================================================================
+	
+	    NAME
+		SortedFind - Perform dichotomic search operations on sorted arrays.
 	
 	    PROTOTYPE
 	     	$index	=  ArrayHelpers::SortedFind   ( $array, $value ) ;
