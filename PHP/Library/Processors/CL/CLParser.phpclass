@@ -84,6 +84,12 @@
 	. Added the $Delimiter property ; the idea is to allow any arbitrary data after a command
 	  switch (such as <command-line>) : individual parameters are captured until the delimiter
 	  has been found or the last command-line argument has been processed.
+ 
+   [Version : 2.0.12]	[Date : 2015/11/23]		[Author : CV]
+	. Allowed help topic names to have aliases
+	. "topic" is now an alias of the "help-topic" attribute
+	. <topic> is now equivalent to <help-topic>.
+	. Renamed the -helptopics standard parameter to -topics.
 
  ***************************************************************************************************/
 namespace 	Thrak\Processors\CL ;
@@ -215,7 +221,7 @@ END;
 		    ),
 	    	array
 	    	  (
-	    	  	'names'		=>  array ( 'help-topic', 'help-group' ),
+	    	  	'names'		=>  array ( 'help-topic', 'help-group', 'topic' ),
 	    	  	'brief'		=>  'Defines help topics',
 	    	  	'help'		=>  array
 			   (
@@ -986,7 +992,7 @@ END;
 
 				// -topics parameter :
 				//	Displays full topic help.
-				case	'-helptopics' :
+				case	'-topics' :
 					echo ltrim ( $this -> GetHelpTopicsHelp ( false ) ) ;
 					exit ( ) ;
 
@@ -1515,6 +1521,7 @@ END;
 				case	'help-topic' :
 				case	'help-group' :
 				case 	'help-keyword' :
+				case	'topic' :
 					$topic 		=  null ;
 
 					foreach  ( $child [ 'attributes' ]  as  $child_attribute )
@@ -1531,7 +1538,12 @@ END;
 					if  ( $topic  ===  null )
 						error ( new CLException ( "<help-topic> tag : the 'name' attribute is mandatory." ) ) ;
 
-					$this -> CommandHelpTopics [ $value ] = trim ( $child [ 'contents' ] ) ;
+					$topics					=  String::ExplodeAndTrim ( ',', $value ) ;
+					$this -> CommandHelpTopics [ $topics [0] ]	=  
+					   [
+						'names'		=>  $topics,
+						'text'		=>  trim ( $child [ 'contents' ] )
+					    ] ;
 					break ;
 
 				// <exclusions parameter="param list 1" with="param list 2">
@@ -1819,16 +1831,21 @@ END;
 		$count   =  0 ;
 
 		// If a topic has been specified, check that it exists
+		$defined_topic	=  false ;
+
 		if  ( $topic )
 		   {
 			$found 	 =  false ;
 
-			foreach  ( array_keys ( $this -> CommandHelpTopics )  as  $defined_topic )
+			foreach  ( $this -> CommandHelpTopics  as  $defined_topic )
 			   {
-				if  ( ! strcasecmp ( $defined_topic, $topic ) )
+				foreach  ( $defined_topic [ 'names' ]  as  $topic_name ) 
 				   {
-					$found = true ;
-					break ;
+					if  ( ! strcasecmp ( $topic_name, $topic ) )
+					   {
+						$found = true ;
+						break ;
+					    }
 				    }
 			    }
 
@@ -1856,15 +1873,18 @@ END;
 
 			// If a topic has been specified, only include the parameters related to this topic
 			// (the command has been run with the -help "topic" option)
-		   	if  ( $topic )
+		   	if  ( $defined_topic )
 		   	   {
-		   	   	foreach  ( $parameter -> HelpTopics  as  $ptopic )
+				foreach  ( $defined_topic [ 'names' ]  as  $topic )
 				   {
-					if  ( ! strcasecmp ( $topic, $ptopic ) )
+		   	   		foreach  ( $parameter -> HelpTopics  as  $ptopic )
 					   {
-						$result .= $phelp ;
-						$count ++ ;
-						break ;
+						if  ( ! strcasecmp ( $topic, $ptopic ) )
+						   {
+							$result .= $phelp ;
+							$count ++ ;
+							break ;
+						    }
 					    }
 				    }
 		   	    }
@@ -1914,8 +1934,10 @@ END;
 		if  ( $count )
 			$result .= "\n" ;
 
-		$result .=  "\n" . $this -> GetHelpTopicsHelp ( true ) ;
-		$result  =  rtrim ( $result ) ;
+		if  ( ! $topic ) 
+			$result .=  $this -> GetHelpTopicsHelp ( true ) ;
+
+		$result  =  rtrim ( $result ) . "\n" ;
 
 		return ( $result ) ;
 	    }
@@ -1959,22 +1981,35 @@ END;
 	   	if  ( count ( $this -> CommandHelpTopics ) )
 		   {
 	   		if  ( $short )
-	   			$result = "\tAvailable help topics : " . implode ( ', ', array_keys ( $this -> CommandHelpTopics ) ) ;
+			   {
+	   			$result		=  "\tAvailable help topics : " ;
+				$topics		=  [] ;
+
+				foreach  ( $this -> CommandHelpTopics  as  $topic ) 
+					$topics	[]	=  $topic [ 'names' ] [0] ;
+
+				$result		.=  implode ( ', ', $topics ) ;
+			    }
    			else
    			   {
 				$result = "Available help topics :" ;
 				$length = -1 ;
 
-				foreach  ( array_keys ( $this -> CommandHelpTopics )  as  $topic )
+				foreach  ( $this -> CommandHelpTopics  as  $topic )
 				   {
-					$htl = strlen ( $topic ) ;
+					$topic_names	=  implode ( ',', $topic [ 'names' ] ) ;
+					$htl		=  strlen ( $topic_names ) ;
 
 					if  ( $htl  >  $length )
 						$length = $htl ;
 				    }
 
-				foreach  ( $this -> CommandHelpTopics  as  $topic => $help )
-				 	$result .= sprintf ( "\n    * %-{$length}s - %s", $topic, $help ) ;
+				foreach  ( $this -> CommandHelpTopics  as  $name => $topic )
+				   {
+					$topic_names	 =  implode ( ', ', $topic [ 'names' ] ) ;
+					$help		 =  Formatting::FormatParagraph ( $topic [ 'text' ], null, $this -> MaxWidth, 8 ) ;
+				 	$result		.=  sprintf ( "\n. %-{$length}s :\n%s", $topic_names, $help ) ;
+				    }
    			    }
 
 		    	return ( $result ) ;
@@ -1989,7 +2024,7 @@ END;
 		$help = $this -> GetHelpTopicsHelp ( $short ) ;
 
 		if  ( $help  !==  null )
-			output ( "\n$help" ) ;
+			output ( "$help" ) ;
  	    }
 
 

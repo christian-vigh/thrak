@@ -53,6 +53,9 @@
 	. Corrected a bug where the attribute name specified in the xml definition was passed to
 	  the GetAttributeValue() method, instead of the first item of attribute name and aliases.
 
+    [Version : 2.0.9]	[Date : 2015/11/23]		[Author : CV]
+	. Added support for help topic aliases.
+
 ***************************************************************************************************/
 namespace 	Thrak\Processors\CL ;
 
@@ -1907,12 +1910,15 @@ class  CLAbstractParameter  extends Object
 		   {
 		   	$found = false ;
 
-			foreach  ( array_keys ( $this -> Parent -> CommandHelpTopics ) as  $ParentTopic )
+			foreach  ( $this -> Parent -> CommandHelpTopics  as  $ParentTopic )
 			   {
-				if  ( ! strcasecmp ( $MyTopic, $ParentTopic ) )
+				foreach  ( $ParentTopic [ 'names' ]  as  $ParentTopicName )
 				   {
-				   	$found = true ;
-					break ;
+					if  ( ! strcasecmp ( $MyTopic, $ParentTopicName ) )
+					   {
+				   		$found = true ;
+						break ;
+					    }
 				    }
 			    }
 
