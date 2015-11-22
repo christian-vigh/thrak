@@ -223,18 +223,22 @@ abstract class  UnbufferedTracker	extends  Tracker
 class  TrackerStringStore		extends  StringStore 
    {
 	// String store type constants
-	const	STRING_STORE_URL		=  1 ;
-	const	STRING_STORE_QUERY		=  2 ;
-	const	STRING_STORE_LOCAL_IP		=  3 ;
-	const	STRING_STORE_REMOTE_IP		=  4 ;
-	const	STRING_STORE_SERVER_KEY		=  5 ;
-	const	STRING_STORE_SERVER_VALUE	=  6 ;
-	const	STRING_STORE_GET_ARRAY		=  7 ;
-	const   STRING_STORE_POST_ARRAY		=  8 ;
-	const	STRING_STORE_FILES_ARRAY	=  9 ;
-	const	STRING_STORE_COOKIE_ARRAY	=  10 ;
-	const	STRING_STORE_SESSION_ARRAY	=  11 ;
-	const   STRING_STORE_EMAIL		=  12 ;
+	const	STRING_STORE_URL			=  1 ;
+	const	STRING_STORE_QUERY			=  2 ;
+	const	STRING_STORE_LOCAL_IP			=  3 ;
+	const	STRING_STORE_REMOTE_IP			=  4 ;
+	const	STRING_STORE_SERVER_KEY			=  5 ;
+	const	STRING_STORE_SERVER_VALUE		=  6 ;
+	const	STRING_STORE_GET_ARRAY			=  7 ;
+	const   STRING_STORE_POST_ARRAY			=  8 ;
+	const	STRING_STORE_FILES_ARRAY		=  9 ;
+	const	STRING_STORE_COOKIE_ARRAY		=  10 ;
+	const	STRING_STORE_SESSION_ARRAY		=  11 ;
+	const   STRING_STORE_EMAIL			=  12 ;
+
+	// Additional string store constants that may be used from within stored procedures
+	const	STRING_STORE_MYSQL_CLIENT_USER		=  1000 ;
+	const	STRING_STORE_MYSQL_AUTHENTICATED_USER	=  1001 ;
 
 
 	public function  __construct ( $table, $comment = '', $db = null )
