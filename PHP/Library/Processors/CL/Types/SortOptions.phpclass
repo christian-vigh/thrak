@@ -1,0 +1,295 @@
+<?php
+/***************************************************************************************************
+
+    NAME
+	SortOptions.phpclass
+
+    DESCRIPTION
+	Sort options parameter type. Allows for specifying a list of comma-separated names optionally 
+	followed by the keywords ASC or DESC.
+
+	The parsed value of a <sort-options> type parameter is a array of associative arrays, whose
+	keys are the field name, and values a boolean value indicating whether the sort is ascending
+	(true) or descending (false).
+
+	The "field" attribute can be used for substituting a field name, as specified on the command
+	line, with the real underlying field name.
+
+    AUTHOR
+     	Christian Vigh, 05/2011.
+
+    HISTORY
+    [Version : 1.0]	[Date : 2011/05/27]	[Author : CV]
+     	Initial version.
+ 
+ ***************************************************************************************************/
+namespace  	Thrak\Processors\CL ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces and classes
+use 	Thrak\Processors\CL\CLException ;
+use     Thrak\Types\String ;
+use	Thrak\Types\String\Formatting ;
+
+
+/*==================================================================================================
+
+    CLSortOptionsParameter class -
+	Implements a sort options parameter.
+
+  ==================================================================================================*/
+class  CLSortOptionsParameter  extends  \Thrak\Processors\CL\CLAbstractParameter
+   {
+   	// Sort field entries
+   	public 		$SortDefinitions		=  array ( ) ;
+	// Existing sort field names and underlying field names
+	private		$ExistingNames		=  [] ;
+	private		$ExistingFieldNames	=  [] ;
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Class constructor.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __construct ( $parent, $tags, $valuetext = "keyword" )
+	   {
+   		$this -> Help = "Defines a sort options parameter, ie a list of field names optionally followed by the keyword ASC (ascending order) or DESC.\n" .
+			        "It can contain any number of <case>, <keyword> or <option> subtags, with the following attributes :\n\n" .
+  		 		"name -\n" .
+		   		"	Comma-separated list of names and aliases for this keyword.\n\n" .
+		   		"value -\n" .
+		   		"       Corresponding value. If this attribute is not specified, then the keyword value will be the first parameter name.\n\n" .
+				"field -\n" .
+				"	Field name to be substituted to the one specified on the command line. If not specified, the first name will be used.\n\n" . 
+		   		"help -\n" .
+		   		"       Help text for this sort option value.\n\n" .
+				"The <else> or <case-else> subtag can be specified to allow any other kind of value." ;
+
+		$this -> ReturnValueHelp 	=  "Returns an array of associative arrays, whose keys are the field name, " .
+						   "and values a boolean value indicating whether the sort is ascending (true) or descending (false)." ;
+
+		parent::__construct ( $parent, $tags, $valuetext ) ;
+	    }
+
+
+ 	/*-------------------------------------------------------------------------------------------
+
+	    GetHelp -
+	    	Returns the help text for this keyword.
+
+ 	 --------------------------------------------------------------------------------------------*/
+	public function  GetHelp ( )
+	   {
+		$help 	=  parent::GetHelp ( ) ; 
+
+		if  ( $help )
+			$help .= "\n" ;
+		else
+			$help = "" ;
+
+		$help .= "\t\tAvailable fields : \n" ;
+
+		// Loop through sort options definitions
+		foreach  ( $this -> SortOptionDefinitions  as  $definition )
+		   {
+			// Remove leading space, leaving only one tab to the second and subsequent lines
+			$help_text	=  preg_replace ( '/\n\s*/', "\n\t", ltrim ( $definition [ 'help' ] ) ) ;
+
+			// Evaluate PHP tags
+			$help_text	=  $this -> Parent -> EvaluatePhpTags ( $help_text, 'help', "\t" ) ;
+
+			// Format the resulting text using 3 leading tabs (well, 24 spaces...)
+		   	$help .= Formatting::FormatParagraph ( $help_text, null, $this -> Parent -> MaxWidth, 24 ) . "\n\n" ;
+		    }
+
+		return ( rtrim ( $help ) ) ;
+	    }
+
+
+ 	/*-------------------------------------------------------------------------------------------
+
+	    ProcessChildTag -
+	    	Processes <option> or <keyword> tags.
+
+ 	 --------------------------------------------------------------------------------------------*/
+	protected function  ProcessChildTag ( $child )
+	   {
+	   	// Get child and parent tagname
+	   	$tag 	=  $child [ 'tag' ] ;
+	   	$name 	=  $this -> GetUsageParameterName ( ) ;
+		   
+		// Check if they are allowed
+		if  ( strcasecmp ( $tag, 'keyword' )  &&  strcasecmp ( $tag, 'option' )  &&  strcasecmp ( $tag, "constant" )  &&
+		      strcasecmp ( $tag, 'case'    ) )
+		   {
+			parent::ProcessChildTag ( $child ) ;
+			exit ( ) ;
+   		    }
+
+		// Get inner contents
+	   	$contents 		=  trim ( $child [ 'contents' ] ) ;
+
+		// Loop through attributes to get names and value
+	   	$attrnames		=  null ;
+		$attrhelp		=  null ;
+		$attrfield		=  null ;
+
+
+		foreach  ( $child [ 'attributes' ]  as  $attribute )
+		   {
+			switch ( strtolower ( $attribute [ 'name' ] ) )
+			   {
+				case	'name' :
+					$attrnames = String::ExplodeAndTrim ( ',', $attribute [ 'value' ] ) ;
+
+					// Check that the name was not already specified
+					foreach  ( $attrnames  as  $attrname )
+					   {
+					   	$lcattrname = strtolower ( $attrname ) ;
+
+						if  ( in_array ( $lcattrname, $this -> ExistingNames ) )
+							error ( new CLException ( "The sort field name '$attrname' has been defined more than once for the '$name' parameter." ) ) ;
+			
+						$this -> ExistingNames [] = $lcattrname ;
+					    }
+
+					break ;
+
+				case	'field' :
+					$attrfield	=  $attribute [ 'value' ] ;
+					$fieldname	=  strtolower ( $attrfield ) ;
+
+					if  ( in_array ( $fieldname, $this -> ExistingFieldNames ) )
+						error ( new CLException ( "The internal field name '$fieldname' has been defined more than once for the '$name' parameter." ) ) ;
+
+					$this -> ExistingFieldNames []	=  $fieldname ;
+					break ;
+
+				case	'help' :
+					$attrhelp	=  $attribute [ 'value' ] ;
+					break ;
+
+				default :
+					error ( new CLException ( "Invalid attribute '{$attribute [ 'name' ]} for the <$tag> subtag of the '$name' parameter." ) ) ;
+			    }
+		    }
+
+		// Check that we have the mandatory 'name=' attribute
+		if  ( ! $attrnames )
+			error ( new CLException ( "The 'name' attribute is required for the <$tag> subtag of the '$name' parameter." ) ) ;
+
+		// Field name defaults to the first name specified
+		if  ( ! $attrfield )
+			$attrfield	=  $attrnames [0] ;
+
+		// Build a help string
+		if  ( is_array ( $attrnames ) )
+			$attrlist 	=  implode ( ', ', $attrnames ) ;
+		else
+			$attrlist 	=  $attrnames ;
+
+		if ( ! $contents  &&  $attrhelp  !=  null )
+			$contents	=  $attrhelp ;
+
+		$help  =  $attrlist . " :\n" ;
+		$help .=  "\t\t\t\t$contents" ;
+
+		// Add the new entry
+		$this -> SortOptionDefinitions [] = array ( 'names' => $attrnames, 'field' => $attrfield, 'help' => $help ) ;
+	    }
+
+
+ 	/*-------------------------------------------------------------------------------------------
+
+	    ProcessValue -
+	    	Processes a keyword value.
+
+ 	 --------------------------------------------------------------------------------------------*/
+	protected function  ProcessValue ( $pname, $pvalue )
+	   {
+		// Sort field names are comma-separated
+		$values		=  String::ExplodeAndTrim ( ',', $pvalue ) ;
+		$result		=  [] ;
+
+		// Loop through each field name optionnally followed by ASC or DESC
+		foreach  ( $values  as  $value )
+		   {
+			$items		=  String::ExplodeAndTrim ( ' ', $value, true ) ;
+			$item_count	=  count ( $items ) ;
+			
+			switch  ( $item_count ) 
+			   {
+				case    1 :
+					$name		=  $items [0] ;
+					$order		=  'asc' ;
+					break ;
+
+				case    2 :
+					$name		=  $items [0] ;
+					$order		=  $items [1] ;
+					break ;
+
+				case	0 :
+					error ( new CLException ( "An empty sort field name has been specified for the '$pname' parameter. " .
+							"Did you specify two consecutive commas ?" ) ) ;
+
+				default :
+					$count	=  $item_count - 1 ;
+					error ( new CLException ( "A sort field name can be followed by an optional ASC or DESC keyword. " .
+						"The '{$items [0]}' field for the '$pname' parameter is followed by $count keywords : " .
+						implode ( ', ', array_splice ( $items, 1 ) ) . "." ) ) ;
+			    }
+
+			// Search for the field name definitions
+			if  ( ! in_array ( $name, $this -> ExistingNames ) )
+				error ( new CLException ( "The sort field name '$name' is not defined for parameter '$pname'." ) ) ;
+
+			// Retrieve internal field name from specified sort field name
+			$found		=  false ;
+			
+			foreach  ( $this -> SortOptionDefinitions  as  $definition )
+			   {
+				foreach  ( $definition [ 'names' ]  as  $sort_name )
+				   {
+					if  ( ! strcasecmp ( $sort_name, $name ) )
+					   {
+						$name	=  $definition [ 'field' ] ;
+						$found	=  true ;
+						break ;
+					    }
+				    }
+			    }
+
+			if  ( ! $found )
+				error ( new \Thrak\System\ParanoidException ( "The '$name' sort field is marked as defined but has not been found " .
+						"in the list of defined sort field names for the '$pname' parameter." ) ) ;
+
+			// Analyze the optional sort direction parameter 
+			switch  ( strtolower ( $order ) )
+			   {
+				case	'ascending' :
+				case	'asc' :
+				case	'a' :
+					$order	=  true ;
+					break ;
+
+				case	'descending' :
+				case	'desc' :
+				case	'd' :
+					$order	=  false ;
+					break ;
+
+				default :
+					error ( new CLException ( "Invalid sort order '$order' for the '$name' field of the '$pname' parameter." ) ) ;
+			    }
+
+			// Everything is ok - add this new field to the list
+			$result [ $name ]	=  $order ;
+		    }
+
+		return ( $result ) ;
+	    }
+    }
