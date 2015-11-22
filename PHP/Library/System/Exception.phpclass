@@ -412,7 +412,7 @@ class  Exception 	extends  \Exception
 		$last	=  substr ( $errstr, -1, 1 ) ; 
 		$count	=  substr_count ( $errstr, "\n" ) ;
 		
-	   	if  ( $count  ==  0  &&  ! in_array ( $last, [ '.', ':', ';', "\n" ] ) )
+	   	if  ( $count  ==  0  &&  ! in_array ( $last, [ '?', '!', '.', ':', ';', "\n" ] ) )
 	   		$errstr .= "." ;
 
 	   	if  ( self::$ErrorMode  ==  ERROR_MODE_VERBOSE  &&  $stacktrace  !=  null )
