@@ -1,0 +1,87 @@
+/***************************************************************************************************
+
+    NAME
+	thrak_data.mysql
+
+    DESCRIPTION
+	Contains base, pre-filled data tables.
+
+    AUTHOR
+	Christian Vigh, 11/2015.
+
+    HISTORY
+	[Version : 1.0]	[Date : 2015/11/03]	[Author : CV]
+		Initial version.
+
+  ***************************************************************************************************/
+
+CREATE DATABASE IF NOT EXISTS thrak_data CHARSET latin1 ;
+USE 	thrak_data ;
+  
+    
+ /*==============================================================================================================
+
+    blacklisted_domains -
+        Holds blacklisted domains.
+
+  ==============================================================================================================*/
+DROP TABLE IF EXISTS  blacklisted_domains ;
+
+CREATE TABLE 	blacklisted_domains 
+   (
+	id 				INT UNSIGNED 			NOT NULL AUTO_INCREMENT
+									COMMENT 'Unique id for this entry',
+	crc 				INT UNSIGNED 			NOT NULL DEFAULT 0
+									COMMENT 'CRC32 used to locate a domain faster',
+	name 				VARCHAR(1024)			NOT NULL DEFAULT ''
+									COMMENT 'Blacklisted domain name',
+									
+	PRIMARY KEY 			( id ),
+	KEY 				( crc ),
+	KEY 				( name(32) )
+    )  ENGINE = MyIsam CHARSET latin1 COMMENT 'Blacklisted domains list' ;
+    
+LOAD DATA LOCAL INFILE 'E:\\PHP\\Frameworks\\Thrak\\Support\\Materials\\Blacklisted Domains\\blacklisted-domains.csv'
+	INTO TABLE  blacklisted_domains
+	CHARACTER SET latin1
+	FIELDS TERMINATED BY ';' OPTIONALLY ENCLOSED BY '"'
+	LINES  TERMINATED BY '\n'
+	( name ) ;
+
+UPDATE blacklisted_domains
+   SET
+	crc = CRC32( name ) ;
+
+	
+ /*==============================================================================================================
+
+    blacklisted_emails -
+        Holds blacklisted emails.
+
+  ==============================================================================================================*/
+DROP TABLE IF EXISTS  blacklisted_emails ;
+
+CREATE TABLE 	blacklisted_emails 
+   (
+	id 				INT UNSIGNED 			NOT NULL AUTO_INCREMENT
+									COMMENT 'Unique id for this entry',
+	crc 				INT UNSIGNED 			NOT NULL DEFAULT 0
+									COMMENT 'CRC32 used to locate an email faster',
+	name 				VARCHAR(1024)			NOT NULL DEFAULT ''
+									COMMENT 'Blacklisted email name',
+									
+	PRIMARY KEY 			( id ),
+	KEY 				( crc ),
+	KEY 				( name(32) )
+    )  ENGINE = MyIsam CHARSET latin1 COMMENT 'Blacklisted emails list' ;
+    
+LOAD DATA LOCAL INFILE 'E:\\PHP\\Frameworks\\Thrak\\Support\\Materials\\Blacklisted emails\\blacklisted-emails.csv'
+	INTO TABLE  blacklisted_emails
+	CHARACTER SET latin1
+	FIELDS TERMINATED BY ';' OPTIONALLY ENCLOSED BY '"'
+	LINES  TERMINATED BY '\n'
+	( name ) ;
+
+UPDATE blacklisted_emails
+   SET
+	crc = CRC32( name ) ;

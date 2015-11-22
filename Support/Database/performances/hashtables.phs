@@ -1,0 +1,702 @@
+<?php
+	/**************************************************************************************************************
+
+	    NAME
+		hashtables.phs
+
+	    DESCRIPTION
+		Tests the performances of several hashtable version (MD5, binary MD5, SHA1, binary SHA1, CRC32 and
+		CRC64 (using a stored function).
+
+	    AUTHOR
+		Christian Vigh, 09/2014.
+
+	    HISTORY
+	    [Version : 1.0]    [Date : 2014/09/19]     [Author : CV]
+		Initial version.
+	  
+	    NOTES
+		This prograqm has been run with an input file of 10 million lines ; random reads have been tested after
+		that. Here are the results :
+
+		MD5 :
+		+--------------------------------+------------------------------------------+
+		| Execution data                 | Value                                    |
+		+--------------------------------+------------------------------------------+
+		| Input file                     | c:\temp\data.txt                         |
+		| Output table                   | thrak_performances.hashtable_md5         |
+		| Hashing algorithm              | md5                                      |
+		| Input rows processed           | 10000000                                 |
+		| Total insertion time (elapsed) | 2hr 58mn 55s 37ms 376.881us              |
+		| Total insertion time (real)    | 9mn 53s 597ms 784us                      |
+		| Insertion time min/max/avg     | 181ms 421us / 10s 541ms 36.5us / 53.26us |
+		| Duplicate keys                 | none                                     |
+		| Random reads                   | 10000                                    |
+		| Total random time (elapsed)    | 1mn 37s 788ms 324.118us                  |
+		| Total random time (real)       | 28s 794ms 788.5us                        |
+		| Random read time min/max/avg   | 225.25us / 131ms 838us / 3ms 779.379us   |
+		| Data file size                 | 2 086 714 520 bytes                      |
+		| Index file size                | 797 165 568 bytes                        |
+		+--------------------------------+------------------------------------------+
+
+		MD5 raw :
+		+--------------------------------+----------------------------------------------+
+		| Execution data                 | Value                                        |
+		+--------------------------------+----------------------------------------------+
+		| Input file                     | c:\temp\data.txt                             |
+		| Output table                   | thrak_performances.hashtable_md5_raw         |
+		| Hashing algorithm              | md5_raw                                      |
+		| Input rows processed           | 10000000                                     |
+		| Total insertion time (elapsed) | 2hr 4mn 5s 617ms 933.823us                   |
+		| Total insertion time (real)    | 8mn 15s 182ms 83.75us                        |
+		| Insertion time min/max/avg     | 264ms 451.25us / 5s 473ms 229.5us / 49.518us |
+		| Duplicate keys                 | none                                         |
+		| Random reads                   | 10000                                        |
+		| Total random time (elapsed)    | 1mn 31s 653ms 631.044us                      |
+		| Total random time (real)       | 21s 321ms 445.75us                           |
+		| Random read time min/max/avg   | 228us / 301ms 310.25us / 2ms 132.145us       |
+		| Data file size                 | 1 926 714 336 bytes                          |
+		| Index file size                | 602 839 040 bytes                            |
+		+--------------------------------+----------------------------------------------+
+	 	- The raw mode seems to be a little bit faster since it stores 16 bytes instead of 32 for the non-raw
+	 	  mode. Total execution time (elapsed) is 2h04 vs 2h58, real is 8mn15 vs 9mn53, and real random read 
+	 	  time is 21s03 vs 28s80
+	 	- Index size is about 20% smaller in raw mode 
+	 	- Suprisingly, max random read time is 3ms78 (non raw) and 2ms13 (raw). I added a call to sleep() before
+	 	  trying the first read, so that MySql buffers have a chance to get flushed properly.
+
+		SHA1 :
+		+--------------------------------+-----------------------------------------------+
+		| Execution data                 | Value                                         |
+		+--------------------------------+-----------------------------------------------+
+		| Input file                     | c:\temp\data.txt                              |
+		| Output table                   | thrak_performances.hashtable_sha1             |
+		| Hashing algorithm              | sha1                                          |
+		| Input rows processed           | 10000000                                      |
+		| Total insertion time (elapsed) | 2hr 9mn 39s 725ms 77.152us                    |
+		| Total insertion time (real)    | 9mn 57s 187ms 574.25us                        |
+		| Insertion time min/max/avg     | 213ms 953.25us / 7s 165ms 819.75us / 53.719us |
+		| Duplicate keys                 | none                                          |
+		| Random reads                   | 10000                                         |
+		| Total random time (elapsed)    | 1mn 26s 737ms 645.937us                       |
+		| Total random time (real)       | 1mn 12s 203ms 909.25us                        |
+		| Random read time min/max/avg   | 222us / 1s 532ms 945.75us / 7ms 220.291us     |
+		| Data file size                 | -2 128 252 776 bytes                          |
+		| Index file size                | 931 906 560 bytes                             |
+		+--------------------------------+-----------------------------------------------+
+	 	- A little bit slower than MD5 (real), and MD5 does not have any collision on 10 million rows
+
+		SHA1 raw :
+		+--------------------------------+----------------------------------------------+
+		| Execution data                 | Value                                        |
+		+--------------------------------+----------------------------------------------+
+		| Input file                     | c:\temp\data.txt                             |
+		| Output table                   | thrak_performances.hashtable_sha1_raw        |
+		| Hashing algorithm              | sha1_raw                                     |
+		| Input rows processed           | 10000000                                     |
+		| Total insertion time (elapsed) | 2hr 1mn 58s 275ms 637.222us                  |
+		| Total insertion time (real)    | 8mn 56s 84ms 417us                           |
+		| Insertion time min/max/avg     | 230ms 581.75us / 7s 477ms 230.5us / 47.608us |
+		| Duplicate keys                 | none                                         |
+		| Random reads                   | 10000                                        |
+		| Total random time (elapsed)    | 1mn 6s 514ms 101.982us                       |
+		| Total random time (real)       | 1mn 53s 71ms 776.75us                        |
+		| Random read time min/max/avg   | 216.5us / 437ms 612.25us / 5ms 307.078us     |
+		| Data file size                 | 1 966 714 376 bytes                          |
+		| Index file size                | 664 096 768 bytes                            |
+		+--------------------------------+----------------------------------------------+
+	  
+	 	CRC32 :
+		+-------------------------------------+-------------------------------------------+
+		| Execution data                      | Value                                     |
+		+-------------------------------------+-------------------------------------------+
+		| Input file                          | c:\temp\data.txt                          |
+		| Output table                        | thrak_performances.hashtable_crc32        |
+		| Hashing algorithm                   | crc32                                     |
+		| Input rows processed                | 10000000                                  |
+		| Total insertion time (elapsed)      | 2hr 50mn 49s 86ms 122.99us                |
+		| Total insertion time (real)         | 6mn 41s 456ms 837.5us                     |
+		| Insertion time min/max/avg          | 199ms 521us / 2s 520ms 796us / 34.146us   |
+		| Duplicate keys having 2 occurrences | 11753                                     |
+		| Duplicate keys having 3 occurrences | 10                                        |
+		| Random reads                        | 10000                                     |
+		| Total random time (elapsed)         | 1mn 58s 228ms 88.856us                    |
+		| Total random time (real)            | 1mn 43s 123ms 468.5us                     |
+		| Random read time min/max/avg        | 178.25us / 130ms 510.25us / 4ms 312.347us |
+		| Data file size                      | 1 806 714 520 bytes                       |
+		| Index file size                     | 401 299 456 bytes                         |
+		+-------------------------------------+-------------------------------------------+
+	 	- Hash key size does not seem to have so much impact on real execution time
+	 	- Many collisions on 10 million records, especially by 2, but they do not exceed 3.
+	 	- Index size is really smaller
+	 	- Min random read time is smaller
+	  
+	 	CRC64 :
+	 	- The stored thrak.CRC64 function causes a memory leak in mysql (only for the approximately 50 last
+	 	   records out of 10 millions. This method cannot be retained
+	 
+	 	Conclusion :
+	 	- The CRC32 shows some advantages over the other solutions, but without outperforming them.
+	 	  However, despite the collisions on keys, I will retain this one for its min random read time and
+	 	  index file size.
+	  
+	 **************************************************************************************************************/
+	require ( getenv ( 'THRAK_PHPTOOLS' ) . "/tools.phpinclude" ) ;
+
+	require_once ( 'Processors/CL/CLParser.phpclass' ) ;
+
+	use  Thrak\Processors\CL\CLParser ;
+	use  Thrak\Types\String ;
+	use  Thrak\IO\Path ;
+	use  Thrak\IO\AsciiReport ;
+	use  Thrak\System\Timer ;
+
+	
+	/*===========================================================================================
+
+		Statistics.
+
+	  ===========================================================================================*/
+	$MinInsertionTime		=  PHP_INT_MAX ;
+	$MaxInsertionTime		=  0 ;
+	$AvgInsertionTime		=  0 ;
+	$MinRandomReadTime		=  PHP_INT_MAX ;
+	$MaxRandomReadTime		=  0 ;
+	$AvgRandomReadTime		=  0 ;
+	$InsertionTime			=  0 ;
+	$RandomReadTime			=  0 ;
+	$InsertionTimeElapsed		=  0 ;
+	$RandomReadTimeElapsed		=  0 ;
+	$RecordCount			=  0 ;
+	$DuplicateKeys			=  array ( ) ;
+	
+	/*===========================================================================================
+
+		Command-line definitions.
+
+	  ===========================================================================================*/
+	$Definitions = <<<END
+<command name="hashtables" allow-files="true" min-files="1" max-files="1" value-text="input file">
+	<usage>
+		Tests performances of various hashing algorithms on each line of the supplied input text file.
+		Creates a table and inserts the lines present in the specified input file into that table, using
+		the specified hash algorithm.
+		Random reads are performed after and timed.
+	</usage>
+
+	<keyword name="algorithm, alg" default="md5">
+		Specifies the algorithm to be used for hashing.
+		
+		<case name="md5">
+			MD5 32-characters string hash.
+		</case>
+		<case name="md5_raw">
+			MD5 raw 16-bytes hash.
+		</case>
+		<case name="sha1">
+			SHA1 40-characters string hash.
+		</case>
+		<case name="sha1_raw">
+			SHA1 raw 20-bytes hash.
+		</case>
+		<case name="crc32">
+			32-bit CRC.
+		</case>
+		<case name="crc64">
+			64-bit CRC.
+		</case>
+	</keyword>
+	
+	<unsigned name="group_inserts, gi" default="1" min-value="1">
+		Number of rows inserted at a time.
+	</unsigned>
+	
+	<unsigned name="optimize_every, oe" default="1000000">
+		Performs an OPTMIMZE TABLE every that amount of rows inserted.
+	</unsigned>
+	
+	<unsigned name="random_reads, rr" default="10000">
+		Number of random reads to perform after table creation.
+	</unsigned>
+
+	<unsigned name="records_per_dot, rpd" default="1000" min-value="1">
+		A dot will be displayed every records_per_dot insertion.
+	</unsigned>
+	
+	<flag name="skip_table_creation, stc, sc">
+		When specified, the table used for performance testing is assumed to be already existing.
+	</flag>
+	
+	<flag name="skip_duplicate_key_search, sdks, sdk">
+		When specified, No duplicate key search is performed.
+	</flag>
+</command>
+END;
+
+	/*===========================================================================================
+
+	    SafeQuery -
+		Executes a query, 
+
+	  ===========================================================================================*/
+	function  SafeQuery ( $query ) 
+	   {
+		global		$Database ;
+		
+		$Database -> SetQuery ( $query ) ;
+		
+		if ( $Database -> LastErrorNumber )
+			error ( "MySQL query error :\n$query\n[Error {$Database -> LastErrorNumber}] {$Database -> LastErrorMessage}" ) ;
+
+		$result		=  $Database -> LoadRows ( ) ;
+		
+		return ( $result ) ;
+	    }
+	
+
+	/*===========================================================================================
+
+	    DefineTable -
+		Creates or truncates the thrak_perf.hashtable_xxx table, using the specified 
+		algorithm for the key hash.
+		Returns the fully qualified name of the table.
+
+	  ===========================================================================================*/
+	function  DefineTable  ( $algorithm )
+	   {
+		$template	=  "thrak.template_hashtable_$algorithm" ;
+		$destination	=  "thrak_performances.hashtable_$algorithm" ;
+		SafeQuery ( "CREATE TABLE IF NOT EXISTS $destination LIKE $template" ) ;
+		SafeQuery ( "TRUNCATE TABLE  $destination" ) ;
+
+		return ( $destination ) ;
+	    }
+	
+
+	/*===========================================================================================
+
+	    GetQueryTime -
+		Returns precise timing of the last query.
+
+	  ===========================================================================================*/
+	function  GetQueryTime ( )
+	   {
+		$result		=  SafeQuery ( "SHOW PROFILES" ) ;
+	
+		return ( ( double ) $result [0] [ 'Duration' ] ) ;
+	    }
+	
+	
+	/*===========================================================================================
+
+	    InsertRows -
+		Inserts the specified nuber of records.
+
+	  ===========================================================================================*/
+	function  InsertRows ( $Table, $Input, $Algorithm, $OptimizeEvery, $GroupInserts, $RecordsPerDot )
+	   {
+		global		$MinInsertionTime, $MaxInsertionTime, $AvgInsertionTime,
+				$InsertionTime, $InsertionTimeElapsed, $RecordCount ;
+		global		$Database ;
+
+		// Timer for measuring the whole stuff
+		$Timer		=  new Timer ( ) ;
+		$Timer -> SetLowerPrecision ( TTS_UNIT_MICROSECONDS ) ;
+		
+		// Determine which MySQL function should be called
+		$function	=  null ;
+		$is_raw		=  false ;
+		$Algorithm	=  strtolower ( $Algorithm ) ;
+		
+		switch  ( $Algorithm )
+		   {
+			case	'md5_raw' :
+				$function	=  'MD5' ;
+				$is_raw		=  true ;
+				break ;
+				
+			case	'sha1' :
+				$function	=  'SHA1' ;
+				$is_raw		=  false ;
+				break ;
+				
+			case	'sha1_raw' :
+				$function	=  'SHA1' ;
+				$is_raw		=  true ;
+				break ;
+				
+			case	'crc32' :
+				$function	=  'CRC32' ;
+				$is_raw		=  false ;
+				break ;
+				
+			case	'crc64' :
+				$function	=  'thrak.CRC64' ;
+				$is_raw		=  false ;
+				break ;
+				
+			case	'md5' :
+			default	:
+				$function	=  'MD5' ;
+				$is_raw		=  false ;
+		    }
+		
+		// Hash function call
+		if  ( $is_raw ) 
+		   {
+			$HashLeft	=  "UNHEX( $function( " ;
+			$HashRight	=  " ) )" ;
+		    }
+		else
+		   {
+			$HashLeft	=  "$function( " ;
+			$HashRight	=  " )" ;
+		    }
+		
+		// Turn profiling on 
+		SafeQuery ( "SET PROFILING_HISTORY_SIZE = 1" ) ;
+		SafeQuery ( "SET PROFILING = 1" ) ;
+		
+		// Insertion loop
+		$fp		=  fopen ( $Input, "r" ) ;
+		$lines		=  array ( ) ;
+		$do_insert	=  false ;
+		$Timer -> Start ( ) ;
+		
+		while  ( true )
+		   {
+			// Collect lines until either EOF or $GroupInserts lines have been read
+			$line	=  fgets ( $fp ) ;
+			
+			if  ( $line  !==  false )
+			   {
+				$line	=  trim ( $line ) ;
+			
+				if  ( ! $line )
+					continue ;
+				
+				$line		=  $Database -> QuoteValue ( $line ) ;
+				$lines []	=  "\t( $HashLeft '$line' $HashRight, '$line' )" ;
+				$RecordCount ++ ;
+				
+				if  ( $RecordCount % $GroupInserts  ==  0 )
+					$do_insert	=  true ;
+			    }
+			else
+				$do_insert	=  true ;
+			
+			// $GroupInserts lines read (or EOF reached)
+			if  ( $do_insert  &&  count ( $lines ) )
+			   {
+				$query	=  "
+						INSERT INTO $Table ( hash_key, hash_value )
+						VALUES
+					   " . implode ( ", \n", $lines ) ;
+			
+				SafeQuery ( $query ) ;
+				$time		 =  GetQueryTime ( ) ;
+				$InsertionTime	+=  $time ;
+			
+				if  ( ! ( $RecordCount % $RecordsPerDot ) )
+					echo "." ;
+			
+				if  ( ! ( $RecordCount % $OptimizeEvery ) )
+				   {
+					echo "*" ;
+					SafeQuery ( "OPTIMIZE TABLE $Table" ) ;
+					$msg	=  "$RecordCount rows" ;
+					echo str_repeat ( "\r \r", ( $RecordCount / $RecordsPerDot ) + strlen ( $msg ) + 1 ) ;
+					echo $msg ;
+				    }
+			
+				if  ( $time  <  $MinInsertionTime )
+					$MinInsertionTime	=  $time ;
+				
+				if  ( $time  >  $MaxInsertionTime )
+					$MaxInsertionTime	=  $time ;
+				
+				$lines		=  array ( ) ;
+				$do_insert	=  false ;
+			    }
+			
+			// Empty line means EOF : exit loop
+			if  ( ! $line )
+				break ;
+		    }
+		
+		// All done
+		fclose ( $fp ) ;
+		$Timer -> Stop ( ) ;
+		$AvgInsertionTime	=  $InsertionTime / $RecordCount ;
+		$InsertionTimeElapsed	=  $Timer -> Elapsed ( true ) ;
+		SafeQuery ( "SET PROFILING = 0" ) ;
+		SafeQuery ( "OPTIMIZE TABLE $Table" ) ;
+
+		$msg	=  "$RecordCount rows" ;
+		echo str_repeat ( " \r", ( $RecordCount / $RecordsPerDot ) + strlen ( $msg ) + 1 ) ;
+		echo "$msg\n" ;
+	    }
+	
+	
+	/*===========================================================================================
+
+	    TestPerformances -
+		Tests the individual row access performances for the specified number of rows.
+
+	  ===========================================================================================*/
+	function  TestPerformances ( $Table, $Algorithm )
+	   {
+		global		$MinRandomReadTime, $MaxRandomReadTime, $AvgRandomReadTime,
+				$RandomReadTime, $RandomReadTimeElapsed, $RecordCount, $RandomReads ;
+		global		$Database ;
+		
+		// Timer for measuring the whole stuff
+		$Timer		=  new Timer ( ) ;
+		$Timer -> SetLowerPrecision ( TTS_UNIT_MICROSECONDS ) ;
+		
+		// Determine which MySQL function should be called
+		$function	=  null ;
+		$is_raw		=  false ;
+		$Algorithm	=  strtolower ( $Algorithm ) ;
+		
+		switch  ( $Algorithm )
+		   {
+			case	'md5_raw' :
+				$function	=  'MD5' ;
+				$is_raw		=  true ;
+				break ;
+				
+			case	'sha1' :
+				$function	=  'SHA1' ;
+				$is_raw		=  false ;
+				break ;
+				
+			case	'sha1_raw' :
+				$function	=  'SHA1' ;
+				$is_raw		=  true ;
+				break ;
+				
+			case	'crc32' :
+				$function	=  'CRC32' ;
+				$is_raw		=  false ;
+				break ;
+				
+			case	'crc64' :
+				$function	=  'thrak.CRC64' ;
+				$is_raw		=  false ;
+				break ;
+				
+			case	'md5' :
+			default	:
+				$function	=  'MD5' ;
+				$is_raw		=  false ;
+		    }
+		
+		// Hash function call
+		if  ( $is_raw ) 
+		   {
+			$HashLeft	=  "UNHEX( $function( " ;
+			$HashRight	=  " ) )" ;
+		    }
+		else
+		   {
+			$HashLeft	=  "$function( " ;
+			$HashRight	=  " )" ;
+		    }
+
+		// Get random row values
+		$query		=  "
+					SELECT hash_value
+					FROM $Table
+					ORDER BY RAND()
+					LIMIT $RandomReads
+				   " ;
+		$results	=  SafeQuery ( $query ) ;
+		
+		if  ( count ( $results )  <  $RandomReads )
+			$RandomReads	=  count ( $results ) ;
+		
+		// Empty MySQL cache
+		SafeQuery ( "FLUSH TABLES" ) ;
+		SafeQuery ( "FLUSH PRIVILEGES" ) ;
+		sleep ( 20 ) ;
+		
+		// Turn profiling on 
+		SafeQuery ( "SET PROFILING_HISTORY_SIZE = 1" ) ;
+		SafeQuery ( "SET PROFILING = 1" ) ;
+		$Timer -> Start ( ) ;
+		
+		// Random reads
+		for  ( $i = 0 ; $i  <  $RandomReads ; $i ++ )
+		   {
+			$index		=  mt_rand ( 0, $RandomReads - 1 ) ;
+			$value		=  $Database -> QuoteValue ( $results [ $index ] [ 'hash_value' ] ) ;
+			$query		=  "
+						SELECT *
+						FROM  $Table
+						WHERE
+							hash_key = $HashLeft '$value' $HashRight
+					   " ;
+			
+			SafeQuery ( $query ) ;
+			$time			=  GetQueryTime ( ) ;
+			$RandomReadTime	       +=  $time ;
+			
+			if  ( $time  <  $MinRandomReadTime )
+				$MinRandomReadTime	=  $time ;
+			
+			if  ( $time  >  $MaxRandomReadTime )
+				$MaxRandomReadTime	=  $time ;
+		    }
+		
+		// All done, return
+		$Timer -> Stop ( ) ;
+		$AvgRandomReadTime	=  $RandomReadTime / $RandomReads ;
+		$RandomReadTimeElapsed	=  $Timer -> Elapsed ( true ) ;
+		SafeQuery ( "SET PROFILING = 0" ) ;
+	    }
+	
+	
+	/*===========================================================================================
+
+	    FindDuplicateKeys -
+		Retrieves the list of duplicate keys in the final table.
+
+	  ===========================================================================================*/
+	function  FindDuplicateKeys ( $Table ) 
+	   {
+		global		$DuplicateKeys ;
+		
+		$query		=  "
+					SELECT total  AS  'occurrences',
+					       COUNT(*)  AS  'occurrence_count'
+					FROM
+					   (
+						SELECT COUNT(hash_key) AS 'total'
+						FROM $Table
+						GROUP BY hash_key 
+						HAVING COUNT(hash_key) > 1
+						ORDER BY hash_key
+					    )  AS  Selection
+					GROUP BY  total
+					ORDER BY  total 
+				   " ;
+		$result		=  SafeQuery ( $query ) ;
+
+		foreach  ( $result  as  $row )
+			$DuplicateKeys []	=  array ( 'name' => "Duplicate keys having {$row [ 'occurrences' ]} occurrences",
+							   'value' => $row [ 'occurrence_count' ] ) ;
+	    }
+	
+	
+	/*===========================================================================================
+
+	    ShowReport -
+		Displays execution report.
+
+	  ===========================================================================================*/
+	function  ShowReport ( ) 
+	   {
+		global		$MinInsertionTime, $MaxInsertionTime, $AvgInsertionTime,
+				$InsertionTime, $InsertionTimeElapsed ;
+		global		$MinRandomReadTime, $MaxRandomReadTime, $AvgRandomReadTime,
+				$RandomReadTime, $RandomReadTimeElapsed ;
+		global		$Input, $Table, $Algorithm, $RecordCount, $RandomReads ;
+		global		$DuplicateKeys, $SkipTableCreation, $SkipDuplicateKeySearch ;
+
+		
+		$report		=  new  AsciiReport 
+		   ( 
+			array ( 'member' => 'name' , 'title' => 'Execution data' ),
+			array ( 'member' => 'value', 'title' => 'Value', 'align' => 'left' )
+		    ) ;
+		
+		$data		=  array
+		   (
+			array ( 'name' => 'Input file'				, 'value' => $Input ),
+			array ( 'name' => 'Output table'			, 'value' => $Table ),
+			array ( 'name' => 'Hashing algorithm'			, 'value' => $Algorithm )
+		    ) ;
+		
+		if  ( ! $SkipTableCreation )
+		   {
+			$data []	=  array ( 'name' => 'Input rows processed'		, 'value' => $RecordCount ) ;
+			$data []	=  array ( 'name' => 'Total insertion time (elapsed)'	, 'value' => $InsertionTimeElapsed ) ;
+			$data []	=  array ( 'name' => 'Total insertion time (real)'		, 'value' => 
+							String::ToTimeString ( $InsertionTime, true, TTS_UNIT_HOURS, TTS_UNIT_MICROSECONDS ) ) ;
+			$data []	=  array ( 'name' => 'Insertion time min/max/avg'		, 'value' => 
+							String::ToTimeString ( $MinInsertionTime, true, TTS_UNIT_HOURS, TTS_UNIT_MICROSECONDS ) . ' / ' .
+							String::ToTimeString ( $MaxInsertionTime, true, TTS_UNIT_HOURS, TTS_UNIT_MICROSECONDS ) . ' / ' .
+							String::ToTimeString ( $AvgInsertionTime, true, TTS_UNIT_HOURS, TTS_UNIT_MICROSECONDS ) ) ;
+		    }
+		
+		if  ( count ( $DuplicateKeys ) )
+		   {
+			foreach  ( $DuplicateKeys  as  $entry )
+				$data []	=  $entry ;
+		    }
+		else
+			$data []	=  array ( 'name' => 'Duplicate keys', 'value' => 'none' ) ;
+		
+		$data []	=  array ( 'name' => 'Random reads'			, 'value' => $RandomReads ) ;
+		$data []	=  array ( 'name' => 'Total random time (elapsed)'	, 'value' => $RandomReadTimeElapsed ) ;
+		$data []	=  array ( 'name' => 'Total random time (real)'		, 'value' => 
+						String::ToTimeString ( $RandomReadTime, true, TTS_UNIT_HOURS, TTS_UNIT_MICROSECONDS ) ) ;
+		$data []	=  array ( 'name' => 'Random read time min/max/avg'		, 'value' => 
+						String::ToTimeString ( $MinRandomReadTime, true, TTS_UNIT_HOURS, TTS_UNIT_MICROSECONDS ) . ' / ' .
+						String::ToTimeString ( $MaxRandomReadTime, true, TTS_UNIT_HOURS, TTS_UNIT_MICROSECONDS ) . ' / ' .
+						String::ToTimeString ( $AvgRandomReadTime, true, TTS_UNIT_HOURS, TTS_UNIT_MICROSECONDS ) ) ;
+		
+		$rows		=  SafeQuery ( "SELECT @@datadir AS 'datadir'" ) ;
+		$TablePath	=  str_replace ( '.', '/', $Table ) ;
+		$datadir	=  $rows [0] [ 'datadir' ] ;
+		$myi_size	=  filesize ( "$datadir/$TablePath.MYI" ) ;
+		$myd_size	=  filesize ( "$datadir/$TablePath.MYD" ) ;
+		
+		$data []	=  array ( 'name' => 'Data file size'	, 'value' => number_format ( $myd_size, 0, '.', ' ' ) . ' bytes' ) ;
+		$data []	=  array ( 'name' => 'Index file size'	, 'value' => number_format ( $myi_size, 0, '.', ' ' ) . ' bytes' ) ;
+
+		echo $report -> Generate ( $data ) ;
+	    }
+	
+	
+	/*===========================================================================================
+
+		Main program.
+
+	  ===========================================================================================*/
+	$CL				=  new  CLParser  ( $Definitions ) ;
+	$Input				=  $CL -> Files [0] ;
+	$Algorithm			=  strtolower ( $CL -> algorithm ) ;
+	$RandomReads			=  $CL -> random_reads ;
+	$SkipTableCreation		=  $CL -> skip_table_creation ;
+	$SkipDuplicateKeySearch		=  $CL -> skip_duplicate_key_search ;
+	$OptimizeEvery			=  $CL -> optimize_every ;
+	$GroupInserts			=  $CL -> group_inserts ;
+	$RecordsPerDot			=  $CL -> records_per_dot ;
+	
+	if  ( ! file_exists ( $Input ) )
+		error ( "Input file \"$Input\" does not exist." ) ;
+	
+	if  ( $GroupInserts  >  $RecordsPerDot )
+		$RecordsPerDot	=  $GroupInserts ;
+	
+	// Create the table if needed 
+	if  ( ! $SkipTableCreation )
+	   {
+		$Table				=  DefineTable ( $Algorithm ) ;
+		InsertRows ( $Table, $Input, $Algorithm, $OptimizeEvery, $GroupInserts, $RecordsPerDot ) ;
+	    }
+	else 
+		$Table				=  "thrak_performances.hashtable_$Algorithm" ;
+	
+	// Get duplicate keys by duplicate count
+	if  ( ! $SkipDuplicateKeySearch )
+		FindDuplicateKeys ( $Table ) ;
+	
+	// Test random read performances
+	TestPerformances ( $Table, $Algorithm, $RandomReads ) ;
+	
+	// Done, show the final report
+	ShowReport ( ) ;
+?>

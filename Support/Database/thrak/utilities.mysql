@@ -1,0 +1,43 @@
+/***************************************************************************************************
+
+    NAME
+	utilities.mysql - Various utility functions & procedures.
+		
+    DESCRIPTION
+	Implements various utility functions & procedures.
+		
+    AUTHOR
+    	Christian Vigh, 2014.
+	
+    HISTORY
+    [Version : 1.0]		[Date : 2014/09/14]		[Author : CV]
+    	Initial release.
+    	
+ ****************************************************************************************************/
+
+
+ /*===============================================================================================================
+
+    CRC64 -
+	Computes a 64-bits CRC from a given text data.
+
+  ==============================================================================================================*/
+DROP FUNCTION IF EXISTS	thrak. CRC64 ;
+
+DELIMITER //
+CREATE 
+	DEFINER	= thrak@localhost
+	FUNCTION thrak. CRC64
+	   ( 
+		value		LONGTEXT
+	    )
+		RETURNS BIGINT
+		COMMENT 'Returns the 64-bits CRC for the given value'
+		DETERMINISTIC 
+		NO SQL
+		SQL SECURITY INVOKER
+	BEGIN
+		RETURN ( ( CRC32 ( value )  <<  32 )  |  CRC32 ( REVERSE ( value ) ) ) ;
+	END ;
+//
+DELIMITER ;

@@ -1,0 +1,71 @@
+/***************************************************************************************************
+
+    NAME
+	quotes.mysql - Holds quote text and authors.
+	
+    DESCRIPTION 
+	Holds a table of quotes together with their authors, aimed at being retrieved in a random way.	
+    
+    AUTHOR
+    	Christian Vigh, 2015.
+	
+    HISTORY
+    [Version : 1.0]		[Date : 2015/10/02]		[Author : CV]
+    	Initial release.
+    	
+ ****************************************************************************************************/
+
+
+DROP TABLE IF EXISTS  /* <xql expand="table_prefix"> */ quotes ;
+
+CREATE TABLE  /* <xql expand="table_prefix"> */ quotes
+   (
+	quo_id 			INTEGER UNSIGNED 		NOT NULL AUTO_INCREMENT
+								COMMENT 'Unique id for this entry',
+	quo_selections 		INTEGER UNSIGNED 		NOT NULL DEFAULT 0
+								COMMENT 'Number of times this quote has been selected for display',
+	quo_author 		VARCHAR(128)			NOT NULL DEFAULT ''
+								COMMENT 'Quote author',
+	quo_text 		VARCHAR(4096)			NOT NULL DEFAULT ''
+								COMMENT 'Quote contents',
+								
+	PRIMARY KEY 		( quo_id ),
+	KEY 			( quo_selections )
+    )  ENGINE = MyISAM DEFAULT CHARSET latin1 COMMENT 'Stores quotes to be displayed randomly' ;
+
+/***
+	The quote_selection table holds only one record used to store :
+	- The interval between two selection changes (in seconds)
+	- The time of the current selection
+	- The id of the current selection
+ ***/
+DROP TABLE IF EXISTS  /* <xql expand="table_prefix"> */ quotes_selection ;
+
+CREATE TABLE  /* <xql expand="table_prefix"> */ quotes_selection
+   (
+	quos_id 		INTEGER UNSIGNED 		NOT NULL AUTO_INCREMENT
+								COMMENT 'Unique id for this entry',
+	quos_interval		INTEGER UNSIGNED 		NOT NULL DEFAULT 0
+								COMMENT 'Interval in seconds between two selection changes',
+	quos_selection_time 	TIMESTAMP 			NOT NULL DEFAULT 0
+								COMMENT 'Time of last selection',
+	quos_selection_id 	INTEGER UNSIGNED 		NOT NULL DEFAULT 0
+								COMMENT 'Id of last selection',
+
+	PRIMARY KEY 		( quos_id ) 
+	
+    )  ENGINE = MyISAM DEFAULT CHARSET latin1 COMMENT 'Stores quotes to be displayed randomly' ;
+
+INSERT INTO quotes_selection
+	SET 
+		quos_id 		=  1,
+		quos_interval		=  3600 * 24,
+		quos_selection_time 	=  0,
+		quos_selection_id 	=  0 ;
+ 
+LOAD DATA LOCAL INFILE 'E:\\PHP\\Frameworks\\Thrak\\Support\\Materials\\Quotes\\Selected quotes.csv'
+	INTO TABLE  quotes
+	CHARACTER SET latin1
+	FIELDS TERMINATED BY ';' OPTIONALLY ENCLOSED BY '"'
+	LINES  TERMINATED BY '\n'
+	( quo_author, quo_text ) ;

@@ -1,0 +1,235 @@
+/***************************************************************************************************
+
+    NAME
+	templates.mysql - A set of template tables.
+	
+    DESCRIPTION 
+	Provides several template tables for specific use. The tables defined here are not meant to
+	store any data, but just provide a structure that can be duplicated to create specific tables.
+
+    AUTHOR
+    	Christian Vigh, 2014.
+	
+    HISTORY
+    [Version : 1.0]		[Date : 2014/09/13]		[Author : CV]
+    	Initial release.
+    	
+ ****************************************************************************************************/
+
+
+/*==============================================================================================================
+
+    template_hashtable_xxx -
+	Implements a hash table. The idea behind that is to index large values on their MD5 hash
+	rather than on their actual contents. The main table just have to store the id of the hash
+	entry.
+	Only the template table is provided here. There is no provisions to provide genric stored
+	procedures and functions, since the template instance will have to build its own ones anyway.
+	Note that such a table has no vocation on tracking temporal information. Its main goal is to avoid to
+	store duplicates of relatively big information.
+
+	Several versions of the same template table exist, where only the hash_key type differs :
+	- template_hashtable_md5 :
+		The string representation of the md5 hash of the value.
+	- template_hashtable_md5_raw :
+		The raw representation (16 bytes) of the md5 hash of the value.
+	- template_hashtable_sha1 :
+		The string representation of the sha1 hash of the value.
+	- template_hashtable_sha1_raw :
+		The raw representation (20 bytes) of the sha1 hash of the value.
+	- template_hashtable_crc64 :
+		The CRC64 hash of the value.
+	- template_hashtable_crc32 :
+		The CRC32 hash of the value.
+
+  ==============================================================================================================*/
+DROP TABLE IF EXISTS  thrak./* <xql expand="table_prefix"> */template_hashtable_md5 ;
+
+CREATE TABLE  thrak./* <xql expand="table_prefix"> */template_hashtable_md5
+   (
+	hash_id			BIGINT			NOT NULL AUTO_INCREMENT
+							COMMENT 'Unique identifier for this hash table entry',
+	hash_key		CHAR(32)		NOT NULL DEFAULT ''
+							COMMENT 'Hash key',
+	hash_value		TEXT			NOT NULL
+							COMMENT 'Value to store',
+	hash_creation_time	TIMESTAMP(6)		NOT NULL DEFAULT CURRENT_TIMESTAMP(6)
+							COMMENT 'Creation time',
+	hash_access_time	TIMESTAMP(6)		NOT NULL DEFAULT CURRENT_TIMESTAMP(6)
+							COMMENT 'Last access time',
+
+	PRIMARY KEY	pk_hashtable_by_id		( hash_id ),
+	KEY		ix_hashtable_by_hash		( hash_key ),
+	KEY		ix_hashtable_by_last_access	( hash_access_time )	-- For easing purges
+
+    )  ENGINE = MyISAM DEFAULT CHARSET latin1 COMMENT 'Holds hash table entries for long values' ;
+
+
+DROP TABLE IF EXISTS  thrak./* <xql expand="table_prefix"> */template_hashtable_md5_raw ;
+
+CREATE TABLE  thrak./* <xql expand="table_prefix"> */template_hashtable_md5_raw
+   (
+	hash_id			BIGINT			NOT NULL AUTO_INCREMENT
+							COMMENT 'Unique identifier for this hash table entry',
+	hash_key		BINARY(16)		NOT NULL DEFAULT ''
+							COMMENT 'Hash key',
+	hash_value		TEXT			NOT NULL
+							COMMENT 'Value to store',
+	hash_creation_time	TIMESTAMP(6)		NOT NULL DEFAULT CURRENT_TIMESTAMP(6)
+							COMMENT 'Creation time',
+	hash_access_time	TIMESTAMP(6)		NOT NULL DEFAULT CURRENT_TIMESTAMP(6)
+							COMMENT 'Last access time',
+
+	PRIMARY KEY	pk_hashtable_by_id		( hash_id ),
+	KEY		ix_hashtable_by_hash		( hash_key ),
+	KEY		ix_hashtable_by_last_access	( hash_access_time )	-- For easing purges
+
+    )  ENGINE = MyISAM DEFAULT CHARSET latin1 COMMENT 'Holds hash table entries for long values' ;
+
+
+DROP TABLE IF EXISTS  thrak./* <xql expand="table_prefix"> */template_hashtable_sha1 ;
+
+CREATE TABLE  thrak./* <xql expand="table_prefix"> */template_hashtable_sha1
+   (
+	hash_id			BIGINT			NOT NULL AUTO_INCREMENT
+							COMMENT 'Unique identifier for this hash table entry',
+	hash_key		CHAR(40)		NOT NULL DEFAULT ''
+							COMMENT 'Hash key',
+	hash_value		TEXT			NOT NULL
+							COMMENT 'Value to store',
+	hash_creation_time	TIMESTAMP(6)		NOT NULL DEFAULT CURRENT_TIMESTAMP(6)
+							COMMENT 'Creation time',
+	hash_access_time	TIMESTAMP(6)		NOT NULL DEFAULT CURRENT_TIMESTAMP(6)
+							COMMENT 'Last access time',
+
+	PRIMARY KEY	pk_hashtable_by_id		( hash_id ),
+	KEY		ix_hashtable_by_hash		( hash_key ),
+	KEY		ix_hashtable_by_last_access	( hash_access_time )	-- For easing purges
+
+    )  ENGINE = MyISAM DEFAULT CHARSET latin1 COMMENT 'Holds hash table entries for long values' ;
+
+
+DROP TABLE IF EXISTS  thrak./* <xql expand="table_prefix"> */template_hashtable_sha1_raw ;
+
+CREATE TABLE  thrak./* <xql expand="table_prefix"> */template_hashtable_sha1_raw
+   (
+	hash_id			BIGINT			NOT NULL AUTO_INCREMENT
+							COMMENT 'Unique identifier for this hash table entry',
+	hash_key		BINARY(20)		NOT NULL DEFAULT ''
+							COMMENT 'Hash key',
+	hash_value		TEXT			NOT NULL
+							COMMENT 'Value to store',
+	hash_creation_time	TIMESTAMP(6)		NOT NULL DEFAULT CURRENT_TIMESTAMP(6)
+							COMMENT 'Creation time',
+	hash_access_time	TIMESTAMP(6)		NOT NULL DEFAULT CURRENT_TIMESTAMP(6)
+							COMMENT 'Last access time',
+
+	PRIMARY KEY	pk_hashtable_by_id		( hash_id ),
+	KEY		ix_hashtable_by_hash		( hash_key ),
+	KEY		ix_hashtable_by_last_access	( hash_access_time )	-- For easing purges
+
+    )  ENGINE = MyISAM DEFAULT CHARSET latin1 COMMENT 'Holds hash table entries for long values' ;
+
+
+DROP TABLE IF EXISTS  thrak./* <xql expand="table_prefix"> */template_hashtable_crc64 ;
+
+CREATE TABLE  thrak./* <xql expand="table_prefix"> */template_hashtable_crc64
+   (
+	hash_id			BIGINT			NOT NULL AUTO_INCREMENT
+							COMMENT 'Unique identifier for this hash table entry',
+	hash_key		BIGINT UNSIGNED		NOT NULL DEFAULT 0
+							COMMENT 'Hash key',
+	hash_value		TEXT			NOT NULL
+							COMMENT 'Value to store',
+	hash_creation_time	TIMESTAMP(6)		NOT NULL DEFAULT CURRENT_TIMESTAMP(6)
+							COMMENT 'Creation time',
+	hash_access_time	TIMESTAMP(6)		NOT NULL DEFAULT CURRENT_TIMESTAMP(6)
+							COMMENT 'Last access time',
+
+	PRIMARY KEY	pk_hashtable_by_id		( hash_id ),
+	KEY		ix_hashtable_by_hash		( hash_key ),
+	KEY		ix_hashtable_by_last_access	( hash_access_time )	-- For easing purges
+
+    )  ENGINE = MyISAM DEFAULT CHARSET latin1 COMMENT 'Holds hash table entries for long values' ;
+
+
+DROP TABLE IF EXISTS  thrak./* <xql expand="table_prefix"> */template_hashtable_crc32 ;
+
+CREATE TABLE  thrak./* <xql expand="table_prefix"> */template_hashtable_crc32
+   (
+	hash_id			BIGINT			NOT NULL AUTO_INCREMENT
+							COMMENT 'Unique identifier for this hash table entry',
+	hash_key		INT UNSIGNED		NOT NULL DEFAULT 0
+							COMMENT 'Hash key',
+	hash_value		TEXT			NOT NULL
+							COMMENT 'Value to store',
+	hash_creation_time	TIMESTAMP(6)		NOT NULL DEFAULT CURRENT_TIMESTAMP(6)
+							COMMENT 'Creation time',
+	hash_access_time	TIMESTAMP(6)		NOT NULL DEFAULT CURRENT_TIMESTAMP(6)
+							COMMENT 'Last access time',
+
+	PRIMARY KEY	pk_hashtable_by_id		( hash_id ),
+	KEY		ix_hashtable_by_hash		( hash_key ),
+	KEY		ix_hashtable_by_last_access	( hash_access_time )	-- For easing purges
+
+    )  ENGINE = MyISAM DEFAULT CHARSET latin1 COMMENT 'Holds hash table entries for long values' ;
+
+
+/*==============================================================================================================
+
+    create_wordlist_table procedure -
+	Creates a simple table having an id and a character value, for storing id/value pairs.
+
+  ==============================================================================================================*/
+DROP PROCEDURE IF EXISTS  create_wordlist_table ;
+
+DELIMITER //
+CREATE
+	DEFINER = thrak@localhost
+	PROCEDURE thrak. create_wordlist_table
+	    (
+		IN TableName		VARCHAR(256),
+		IN ValueLength		INTEGER UNSIGNED,
+		IN IndexLength		INTEGER UNSIGNED,
+		IN UseVarchar		BOOLEAN
+	     )
+		NOT DETERMINISTIC
+		MODIFIES SQL DATA
+		SQL SECURITY DEFINER
+		COMMENT 'Creates a table for storing id/value pairs'
+	BEGIN
+		DECLARE  ValueType	VARCHAR(7) ;
+	
+		IF  ( UseVarchar ) THEN
+			SET ValueType	=  'VARCHAR' ;
+		ELSE
+			SET ValueType	=  'CHAR' ;
+		END IF ;
+
+		IF  ( IndexLength  >  ValueLength )  THEN
+			SET IndexLength	=  ValueLength ;
+		END IF ;
+
+		SET 	@SQL 	=  CONCAT( 'DROP TABLE IF EXISTS ', TableName ) ; 
+		
+		PREPARE Statement FROM @SQL ;
+		EXECUTE Statement ;
+		DEALLOCATE PREPARE  Statement ;
+
+		SET	@SQL	=  CONCAT(
+					'CREATE TABLE ', TableName, ' ',
+					'   ( ',
+					'	id		BIGINT		NOT NULL  AUTO_INCREMENT, ',
+					'	value		', ValueType, '(', CAST( ValueLength AS CHAR(20) ), ' ) DEFAULT '''', ',
+					'	PRIMARY KEY by_id ( id ), ',
+					'	KEY  by_value ( value(', CAST( IndexLength AS CHAR(20) ), ') ) ',
+					'    ) ENGINE = MyISAM  DEFAULT CHARSET latin1 ; ' 
+				        ) ;
+
+		PREPARE Statement FROM @SQL ;
+		EXECUTE Statement ;
+		DEALLOCATE PREPARE  Statement ;
+	END ;
+//
+DELIMITER ;
+

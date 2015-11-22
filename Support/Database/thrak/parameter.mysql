@@ -1,0 +1,174 @@
+/***************************************************************************************************
+
+    NAME
+	parameter.mysql - A simple parameter table.
+	
+    DESCRIPTION 
+	A table for storing parameters and a set of stored procedures and functions to handle them.
+
+    AUTHOR
+    	Christian Vigh, 2014.
+	
+    HISTORY
+    [Version : 1.0]		[Date : 2014/09/13]		[Author : CV]
+    	Initial release.
+    	
+ ****************************************************************************************************/
+
+
+/*===============================================================================================================
+
+    Definition of the parameter table.
+
+  ==============================================================================================================*/
+DROP TABLE IF EXISTS  thrak./* <xql expand="table_prefix"> */parameters ;
+
+CREATE TABLE  thrak./* <xql expand="table_prefix"> */parameters
+   (
+	par_id			BIGINT			NOT NULL AUTO_INCREMENT
+							COMMENT 'Unique id for this parameter',
+	par_name		VARCHAR(64)		NOT NULL DEFAULT ''
+							COMMENT 'Parameter name',
+	par_value		VARCHAR(4096)		NOT NULL DEFAULT 0
+							COMMENT 'Parameter value',
+	par_last_changed	DATETIME		NOT NULL DEFAULT '0000-00-00 00:00:00'
+							COMMENT 'Last modification time for this parameter',
+	par_version		BIGINT			NOT NULL DEFAULT 0
+							COMMENT 'Number of modifications for this parameter. Zero means no modification occurred since its creation',
+
+	PRIMARY KEY	pk_parameters_by_id		( par_id ),
+	UNIQUE KEY	ix_parameters_by_name		( par_name )
+    )  ENGINE = MyISAM DEFAULT CHARSET latin1 COMMENT 'Thrak parameter store' ;
+
+
+/*==============================================================================================================
+
+    parameter_set procedure -
+	Creates a new parameter with the specified value if it does not exists, or simply updates the value of
+	an existing parameter.
+	The par_last_changed and par_version columns are updated accordingly.
+
+  ==============================================================================================================*/
+DROP PROCEDURE IF EXISTS	thrak. /* <xql expand="table_prefix"> */parameter_set ;
+
+DELIMITER //
+CREATE 
+	DEFINER	= thrak@localhost
+	PROCEDURE thrak. /* <xql expand="table_prefix"> */parameter_set 
+	   ( 
+		IN  parameter_name	VARCHAR(64),
+		IN  parameter_value	VARCHAR(4096)
+	    )
+		COMMENT 'Sets the value of a parameter. Creates it if it does not exist.'
+		NOT DETERMINISTIC 
+		MODIFIES SQL DATA
+		SQL SECURITY INVOKER
+	BEGIN
+		INSERT INTO thrak. /* <xql expand="table_prefix"> */parameters ( par_name, par_value, par_last_changed )
+			VALUES ( parameter_name, parameter_value, NOW() )
+		ON DUPLICATE KEY UPDATE
+			par_value		=  parameter_value,
+			par_last_changed	=  NOW(),
+			par_version		=  par_version + 1 ;
+	END ;
+//
+DELIMITER ;
+
+
+/*==============================================================================================================
+
+    parameter_exists function -
+	Returns a boolean value indicating whether the specified parameter exists or not.
+
+  ==============================================================================================================*/
+DROP FUNCTION IF EXISTS	thrak. /* <xql expand="table_prefix"> */parameter_exists ;
+
+DELIMITER //
+CREATE 
+	DEFINER	= thrak@localhost
+	FUNCTION thrak. /* <xql expand="table_prefix"> */parameter_exists 
+	   ( 
+		parameter_name	VARCHAR(64)
+	    )
+		RETURNS BOOLEAN
+		COMMENT 'Returns a boolean value indicating whether the specified parameter exists or not.'
+		NOT DETERMINISTIC 
+		READS SQL DATA
+		SQL SECURITY INVOKER
+	BEGIN
+		DECLARE ID INT DEFAULT 0 ; 	-- Needs to be initialized before the SELECT INTO, in case the searched row does not exist
+
+		SELECT par_id INTO ID
+		FROM  thrak. /* <xql expand="table_prefix"> */parameters
+		WHERE par_name = parameter_name ;
+
+		IF  ( ID  = 0  OR  ID IS NULL ) THEN
+			RETURN ( FALSE ) ;
+		ELSE 
+			RETURN ( TRUE ) ;
+		END IF ;
+	END ;
+//
+DELIMITER ;
+
+
+/*==============================================================================================================
+
+    parameter_get function -
+	Returns the value of the specified parameter, or the empty string if the parameter does not exist.
+
+  ==============================================================================================================*/
+DROP FUNCTION IF EXISTS	thrak. /* <xql expand="table_prefix"> */parameter_get ;
+
+DELIMITER //
+CREATE 
+	DEFINER	= thrak@localhost
+	FUNCTION thrak. /* <xql expand="table_prefix"> */parameter_get 
+	   ( 
+		parameter_name	VARCHAR(64)
+	    )
+		RETURNS VARCHAR(4096)
+		COMMENT 'Returns the value of the specified parameter, or the empty string if the parameter does not exist.'
+		NOT DETERMINISTIC 
+		READS SQL DATA
+		SQL SECURITY INVOKER
+	BEGIN
+		DECLARE Value 	VARCHAR(4096) 	DEFAULT '' ;
+
+		SELECT par_value INTO Value
+		FROM thrak. /* <xql expand="table_prefix"> */parameters
+		WHERE
+			par_name = parameter_name ;
+
+		RETURN ( Value ) ;
+	END ;
+//
+DELIMITER ;
+
+
+/*==============================================================================================================
+
+    parameter_delete procedure -
+	Deletes the specified parameter. 
+
+  ==============================================================================================================*/
+DROP PROCEDURE IF EXISTS	thrak. /* <xql expand="table_prefix"> */parameter_delete ;
+
+DELIMITER //
+CREATE 
+	DEFINER	= thrak@localhost
+	PROCEDURE thrak. /* <xql expand="table_prefix"> */parameter_delete
+	   ( 
+		parameter_name	VARCHAR(64)
+	    )
+		COMMENT 'Deletes the specified parameter.'
+		NOT DETERMINISTIC 
+		READS SQL DATA
+		SQL SECURITY INVOKER
+	BEGIN
+		DELETE FROM thrak. /* <xql expand="table_prefix"> */parameters 
+		WHERE
+			par_name 	=  parameter_name ;
+	END ;
+//
+DELIMITER ;

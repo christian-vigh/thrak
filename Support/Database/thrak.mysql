@@ -1,0 +1,64 @@
+/***************************************************************************************************
+
+    NAME
+	Thrak.mysql - Creates the Thrak databases (thrak, thrak_log, thrak_history).
+		
+    DESCRIPTION
+    	This script contains the SQL commands to create the Thrak databases.
+	
+    AUTHOR
+    	Christian Vigh, 2014.
+	
+    HISTORY
+    [Version : 1.0]		[Date : 2014/08/12]		[Author : CV]
+    	Initial release.
+    	
+ ****************************************************************************************************/
+
+
+/*==================================================================================================
+
+	Databases creation.
+
+  ==================================================================================================*/
+
+-- Main Thrak database 
+DROP DATABASE IF EXISTS  thrak ;
+CREATE DATABASE thrak 
+	DEFAULT CHARACTER SET latin1 
+	DEFAULT COLLATE  latin1_swedish_ci ;
+
+-- Log database
+DROP DATABASE IF EXISTS  thrak_log ;
+CREATE DATABASE thrak_log
+	DEFAULT CHARACTER SET latin1 
+	DEFAULT COLLATE  latin1_swedish_ci ;
+
+-- History - keeps tracks of logs
+DROP DATABASE IF EXISTS  thrak_history ;
+CREATE DATABASE thrak_history
+	DEFAULT CHARACTER SET latin1 
+	DEFAULT COLLATE  latin1_swedish_ci ;
+	-- Performance testing database
+DROP DATABASE IF EXISTS  thrak_performances ;
+CREATE DATABASE thrak_performances
+	DEFAULT CHARACTER SET latin1 
+	DEFAULT COLLATE  latin1_swedish_ci ;
+
+
+
+/*==================================================================================================
+
+	User creation.
+
+  ==================================================================================================*/
+-- Drop user thrak
+GRANT USAGE ON *.* TO thrak@localhost ;		-- This trick ensures that the thrak user exists anyway
+REVOKE ALL PRIVILEGES, GRANT OPTION FROM thrak@localhost ;
+DROP USER thrak@localhost ;
+
+-- Then recreate it
+CREATE USER thrak@localhost IDENTIFIED BY 'a0xlz86-_p2q9sjmc0s7z1l' ;
+GRANT ALL PRIVILEGES ON *.* TO thrak@localhost WITH GRANT OPTION ;
+
+/* <xql include="thrak/*.mysql">		*/

@@ -1,0 +1,258 @@
+/***************************************************************************************************
+
+    NAME
+	thrak_logs.mysql
+
+    DESCRIPTION
+	Thrak web access tracking and logs database.
+
+    AUTHOR
+	Christian Vigh, 11/2015.
+
+    HISTORY
+	[Version : 1.0]	[Date : 2015/11/03]	[Author : CV]
+		Initial version.
+
+  ***************************************************************************************************/
+
+CREATE DATABASE IF NOT EXISTS thrak_logs CHARSET latin1 ;
+USE 	thrak_logs ;
+  
+/*==============================================================================================================
+
+    tracking_buffer -
+        A small table that allows for fast insertion of raw http access data, until it is later processed by a 
+	batchto be dispatched in the http_access_log and http_access_server_vars tables.
+
+  ==============================================================================================================*/
+DROP TABLE IF EXISTS  tracking_buffer ;
+
+CREATE TABLE  tracking_buffer
+   (
+	processed 		TINYINT 		NOT NULL DEFAULT 0
+							COMMENT 'Must be set to 1 by the batch job before starting any processing',
+	type 			TINYINT 		NOT NULL DEFAULT 0
+							COMMENT 'Entry type ; 0 = http access data',
+	data 			LONGTEXT 		NOT NULL
+							COMMENT 'Raw data',
+							
+	KEY 			( processed )
+							
+    )  ENGINE = MyIsam CHARSET latin1 COMMENT 'A buffer table for fast insertion or raw http access data, to be processed later by a batch job' ;
+  
+  
+/*==============================================================================================================
+
+    http_access_log -
+        Records time-stamped http accesses.
+
+  ==============================================================================================================*/
+DROP TABLE IF EXISTS  http_access_log ;
+
+CREATE TABLE  http_access_log
+   (
+	htta_id 			INT UNSIGNED 			NOT NULL AUTO_INCREMENT
+									COMMENT 'Unique id for this entry',
+	htta_request_time 		TIMESTAMP(6) 			NOT NULL DEFAULT 0
+									COMMENT 'Request timestamp',
+	htta_url_id 			INT UNSIGNED 			NOT NULL DEFAULT 0
+									COMMENT 'Id, in the string store, of the requested url',
+	htta_query_id			INT UNSIGNED 			NOT NULL DEFAULT 0
+									COMMENT 'Id, in the string store, of the query parameters',
+	htta_local_ip_id 		INT UNSIGNED 			NOT NULL DEFAULT 0
+									COMMENT 'Id, in the string store, of the local ip',
+	htta_local_port			INT UNSIGNED 			NOT NULL DEFAULT 0
+									COMMENT 'Local port',
+	htta_remote_ip_id 		INT UNSIGNED 			NOT NULL DEFAULT 0
+									COMMENT 'Id, in the string store, of the remote ip',
+	htta_remote_port 		INT UNSIGNED 			NOT NULL DEFAULT 0
+									COMMENT 'Remote port',
+	htta_get_id 			INT UNSIGNED 			NOT NULL DEFAULT 0
+									COMMENT 'Id, in the string store, of the contents of the $_GET array',
+	htta_post_id 			INT UNSIGNED 			NOT NULL DEFAULT 0
+									COMMENT 'Id, in the string store, of the contents of the $_POST array',
+	htta_files_id 			INT UNSIGNED 			NOT NULL DEFAULT 0
+									COMMENT 'Id, in the string store, of the contents of the $_FILES array',
+	htta_cookie_id 			INT UNSIGNED 			NOT NULL DEFAULT 0
+									COMMENT 'Id, in the string store, of the contents of the $_COOKIE array',
+	htta_session_id 		INT UNSIGNED 			NOT NULL DEFAULT 0
+									COMMENT 'Id, in the string store, of the contents of the $_SESSION array',
+				
+	PRIMARY KEY 			( htta_id ),
+	KEY 				( htta_request_time DESC ),
+	KEY 				( htta_remote_ip_id, htta_request_time DESC )
+    )  ENGINE = MyIsam CHARSET latin1 COMMENT 'Records http accesses' ;
+    
+  
+ /*==============================================================================================================
+
+    http_access_server_vars -
+        Records $_SERVER vars for a given http access.
+
+  ==============================================================================================================*/
+DROP TABLE IF EXISTS  http_access_server_vars ;
+
+CREATE TABLE 	http_access_server_vars 
+   (
+	httsv_parent_id 		INT UNSIGNED 			NOT NULL DEFAULT 0
+									COMMENT 'Id of the parent http access, in the tracking_http_access table',
+	httsv_key_id 			INT UNSIGNED 			NOT NULL DEFAULT 0
+									COMMENT 'Id, in the string store, of the $_SERVER key',
+	httsv_value_id 			INT UNSIGNED 			NOT NULL DEFAULT 0
+									COMMENT 'Id, in the string store, of the $_SERVER value',
+							
+	KEY 				( httsv_parent_id ),
+	KEY 				( httsv_key_id )
+	
+    )  ENGINE = MyIsam CHARSET latin1 COMMENT 'Records the $_SERVER variables set during http accesses' ;
+
+    
+/*==============================================================================================================
+
+    blacklist_log -
+        Blacklisted domains/emails access log.
+
+  ==============================================================================================================*/
+DROP TABLE IF EXISTS  blacklist_log ;
+
+CREATE TABLE 	blacklist_log 
+   (
+	blal_id				INT UNSIGNED 			NOT NULL AUTO_INCREMENT
+									COMMENT 'Unique id for this entry',
+	blal_time 			TIMESTAMP(6)			NOT NULL DEFAULT 0
+									COMMENT 'Blacklisting time',
+	blal_type 			TINYINT 			NOT NULL DEFAULT 0
+									COMMENT 'Blaklisting type : 0 = referrer, 1 = email, etc.',
+	blal_url_id 			INT UNSIGNED 			NOT NULL DEFAULT 0
+									COMMENT 'Id, in the string store, of the requested url',
+	blal_entry_id			INT UNSIGNED 			NOT NULL DEFAULT 0
+									COMMENT 'Id, in the string store, of the blacklisted referrer/email',
+		
+	PRIMARY KEY 			( blal_id ),
+	KEY 				( blal_time, blal_type ),
+	KEY 				( blal_type, blal_time ),
+	KEY 				( blal_url_id ),
+	KEY 				( blal_entry_id )
+    )  ENGINE = MyIsam CHARSET latin1 COMMENT 'Blacklist log data' ;
+
+    
+/*==============================================================================================================
+
+    string_store -
+        A string store table. It is normally created by the Trackingxxx classes, but the log_connection()
+	stored procedure needs it as soon as a Mysql user is connecting, so far before the Tracking classes
+	enter the scene.
+	So, for brand new databases, it is safer to create it here instead of relying on the devop...
+
+  ==============================================================================================================*/
+DROP TABLE IF EXISTS  string_store ;
+
+CREATE TABLE string_store 
+   (
+	id 				BIGINT UNSIGNED 		NOT NULL AUTO_INCREMENT 
+									COMMENT 'Unique id for this string entry',
+	type 				INT 				NOT NULL DEFAULT '0' 
+									COMMENT 'Value type ; can be used to differentiate between value groups',
+	checksum 			INT UNSIGNED 			NOT NULL DEFAULT '0' 
+									COMMENT 'CRC32 hash of the string value',
+	value 				MEDIUMTEXT 			NOT NULL COMMENT 'String value',
+	
+	PRIMARY KEY 			( id ),
+	KEY 				( type, checksum )
+    ) ENGINE = MyISAM DEFAULT CHARSET=latin1 COMMENT='Tracking/logging string store table'
+
+    
+/*==============================================================================================================
+
+    connection_log -
+        Mysql connection log. The log_connection stored procedure must be called from within my.cnf, through the
+	"init_connect" entry.
+	
+	This table holds ids for the following string store types :
+	- 1000 (TrackerStringStore::STRING_STORE_MYSQL_CLIENT_USER) : 
+		Username and hostname, as sent by the client.
+	- 1001 (TrackerStringStore::STRING_STORE_MYSQL_AUTHENTICATED_USER) : 
+		Authenticated username and hostname.
+
+  ==============================================================================================================*/
+DROP TABLE IF EXISTS  connection_log ;
+
+CREATE TABLE 	connection_log 
+   (
+	connection_id 			INT UNSIGNED 			NOT NULL DEFAULT 0
+									COMMENT 'Connection id',
+	time 				TIMESTAMP(6)			NOT NULL DEFAULT 0
+									COMMENT 'Connection time',
+	connection_user_id 		BIGINT UNSIGNED 		NOT NULL DEFAULT 0
+									COMMENT 'Connection user id in the string_store table',
+	authenticated_user_id 		BIGINT UNSIGNED 		NOT NULL DEFAULT 0
+									COMMENT 'Authenticated user id in the string_store table',
+	
+	KEY 				( connection_id ),
+	KEY 				( time ),
+	KEY 				( connection_user_id ),
+	KEY 				( authenticated_user_id )
+    )  ENGINE = MyIsam CHARSET latin1 COMMENT 'Mysql connection log' ;
+
+    
+DROP PROCEDURE IF EXISTS  log_connection ;
+
+DELIMITER //
+CREATE 
+   DEFINER = thrak@localhost
+   PROCEDURE log_connection ( )
+	NOT DETERMINISTIC
+	MODIFIES SQL DATA
+	SQL SECURITY DEFINER
+   BEGIN
+	SET 	@ConnectionUser		=  USER( ) ;
+	SET	@AuthenticatedUser 	=  CURRENT_USER( ) ;
+	SET 	@ConnectionID		=  CONNECTION_ID( ) ;
+	SET 	@ConnectionUserCrc	=  CRC32( @ConnectionUser ) ;
+	SET 	@AuthenticatedUserCrc	=  CRC32( @AuthenticatedUser ) ;
+	
+	-- Create an entry in the string store for the client connection user
+	SELECT id INTO @ConnectionUserId
+	FROM thrak_logs. string_store
+	WHERE
+		type 		=  1000 AND
+		checksum 	=  @ConnectionUserCrc AND
+		value 		=  @ConnectionUser ;
+		
+	IF  ( @ConnectionUserId IS NULL ) THEN
+		INSERT INTO thrak_logs. string_store
+		SET
+			type 		=  1000,
+			checksum	=  @ConnectionUserCrc,
+			value 		=  @ConnectionUser ;
+
+		SET @ConnectionUserId = LAST_INSERT_ID() ;
+	END IF ;
+	
+	-- Then another one for the authenticated connection user
+	SELECT id INTO @AuthenticatedUserId
+	FROM thrak_logs. string_store
+	WHERE
+		type 		=  1001 AND
+		checksum 	=  @AuthenticatedUserCrc AND
+		value 		=  @AuthenticatedUser ;
+		
+	IF  ( @AuthenticatedUserId IS NULL ) THEN
+		INSERT INTO thrak_logs. string_store
+		SET
+			type 		=  1001,
+			checksum	=  @AuthenticatedUserCrc,
+			value 		=  @AuthenticatedUser ;
+
+		SET @AuthenticatedUserId = LAST_INSERT_ID() ;
+	END IF ;
+	
+	-- Insert the connection log entry
+	INSERT INTO thrak_logs. connection_log
+	SET
+		connection_id		=  @ConnectionID,
+		time 			=  NOW(6),
+		connection_user_id 	=  @ConnectionUserId,
+		authenticated_user_id 	=  @AuthenticatedUserId ;
+   END //
+DELIMITER ;

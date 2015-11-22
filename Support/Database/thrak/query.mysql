@@ -1,0 +1,840 @@
+/***************************************************************************************************
+
+    NAME
+	query.mysql - Parameterized queries.
+		
+    DESCRIPTION
+	Parameterized queries.
+		
+    AUTHOR
+    	Christian Vigh, 2014.
+	
+    HISTORY
+    [Version : 1.0]		[Date : 2014/09/13]		[Author : CV]
+    	Initial release.
+    	
+ ****************************************************************************************************/
+
+DROP PROCEDURE IF EXISTS	thrak.select_p01 ;
+DROP PROCEDURE IF EXISTS	thrak.select_p02 ;
+DROP PROCEDURE IF EXISTS	thrak.select_p03 ;
+DROP PROCEDURE IF EXISTS	thrak.select_p04 ;
+DROP PROCEDURE IF EXISTS	thrak.select_p05 ;
+DROP PROCEDURE IF EXISTS	thrak.select_p06 ;
+DROP PROCEDURE IF EXISTS	thrak.select_p07 ;
+DROP PROCEDURE IF EXISTS	thrak.select_p08 ;
+DROP PROCEDURE IF EXISTS	thrak.select_p09 ;
+DROP PROCEDURE IF EXISTS	thrak.select_p10 ;
+DROP PROCEDURE IF EXISTS	thrak.select_p11 ;
+DROP PROCEDURE IF EXISTS	thrak.select_p12 ;
+
+DROP PROCEDURE IF EXISTS	thrak.update_p01 ;
+DROP PROCEDURE IF EXISTS	thrak.update_p02 ;
+DROP PROCEDURE IF EXISTS	thrak.update_p03 ;
+DROP PROCEDURE IF EXISTS	thrak.update_p04 ;
+DROP PROCEDURE IF EXISTS	thrak.update_p05 ;
+DROP PROCEDURE IF EXISTS	thrak.update_p06 ;
+DROP PROCEDURE IF EXISTS	thrak.update_p07 ;
+DROP PROCEDURE IF EXISTS	thrak.update_p08 ;
+DROP PROCEDURE IF EXISTS	thrak.update_p09 ;
+DROP PROCEDURE IF EXISTS	thrak.update_p10 ;
+DROP PROCEDURE IF EXISTS	thrak.update_p11 ;
+DROP PROCEDURE IF EXISTS	thrak.update_p12 ;
+
+
+/**************************************************************************************************************
+ **************************************************************************************************************
+ **************************************************************************************************************
+ ******                                                                                                  ******
+ ******                                                                                                  ******
+ ******                          SELECT PROCEDURES WITH SECURITY INVOKER                                 ******
+ ******                                                                                                  ******
+ ******                                                                                                  ******
+ **************************************************************************************************************
+ **************************************************************************************************************
+ **************************************************************************************************************/
+DELIMITER //
+CREATE 
+	DEFINER	= thrak@localhost
+	PROCEDURE thrak.select_p01 
+	   ( 
+		IN  query		TEXT,
+		IN  param1		TEXT
+	    )
+		COMMENT 'Executes a SELECT query with 1 parameter'
+		NOT DETERMINISTIC 
+		READS SQL DATA
+		SQL SECURITY INVOKER
+	BEGIN
+		SET  @SQL	=  query ;
+		SET  @P01	=  param1 ;
+
+		PREPARE Statement FROM @SQL ;
+		EXECUTE Statement USING @P01 ;
+		DEALLOCATE PREPARE Statement ;
+	END ;
+
+
+CREATE 
+	DEFINER	= thrak@localhost
+	PROCEDURE thrak.select_p02
+	   ( 
+		IN  query		TEXT,
+		IN  param1		TEXT,
+		IN  param2		TEXT
+	    )
+		COMMENT 'Executes a SELECT query with 2 parameters'
+		NOT DETERMINISTIC 
+		READS SQL DATA
+		SQL SECURITY INVOKER
+	BEGIN
+		SET  @SQL	=  query ;
+		SET  @P01	=  param1 ;
+		SET  @P02	=  param2 ;
+
+		PREPARE Statement FROM @SQL ;
+		EXECUTE Statement USING @P01, @P02 ;
+		DEALLOCATE PREPARE Statement ;
+	END ;
+
+CREATE 
+	DEFINER	= thrak@localhost
+	PROCEDURE thrak.select_p03
+	   ( 
+		IN  query		TEXT,
+		IN  param1		TEXT,
+		IN  param2		TEXT,
+		IN  param3		TEXT
+	    )
+		COMMENT 'Executes a SELECT query with 3 parameters'
+		NOT DETERMINISTIC 
+		READS SQL DATA
+		SQL SECURITY INVOKER
+	BEGIN
+		SET  @SQL	=  query ;
+		SET  @P01	=  param1 ;
+		SET  @P02	=  param2 ;
+		SET  @P03	=  param3 ;
+
+		PREPARE Statement FROM @SQL ;
+		EXECUTE Statement USING @P01, @P02, @P03 ;
+		DEALLOCATE PREPARE Statement ;
+	END ;
+
+
+CREATE 
+	DEFINER	= thrak@localhost
+	PROCEDURE thrak.select_p04
+	   ( 
+		IN  query		TEXT,
+		IN  param1		TEXT,
+		IN  param2		TEXT,
+		IN  param3		TEXT,
+		IN  param4		TEXT
+	    )
+		COMMENT 'Executes a SELECT query with 4 parameters'
+		NOT DETERMINISTIC 
+		READS SQL DATA
+		SQL SECURITY INVOKER
+	BEGIN
+		SET  @SQL	=  query ;
+		SET  @P01	=  param1 ;
+		SET  @P02	=  param2 ;
+		SET  @P03	=  param3 ;
+		SET  @P04	=  param4 ;
+
+		PREPARE Statement FROM @SQL ;
+		EXECUTE Statement USING @P01, @P02, @P03, @P04 ;
+		DEALLOCATE PREPARE Statement ;
+	END ;
+
+
+CREATE 
+	DEFINER	= thrak@localhost
+	PROCEDURE thrak.select_p05
+	   ( 
+		IN  query		TEXT,
+		IN  param1		TEXT,
+		IN  param2		TEXT,
+		IN  param3		TEXT,
+		IN  param4		TEXT,
+		IN  param5		TEXT
+	    )
+		COMMENT 'Executes a SELECT query with 5 parameters'
+		NOT DETERMINISTIC 
+		READS SQL DATA
+		SQL SECURITY INVOKER
+	BEGIN
+		SET  @SQL	=  query ;
+		SET  @P01	=  param1 ;
+		SET  @P02	=  param2 ;
+		SET  @P03	=  param3 ;
+		SET  @P04	=  param4 ;
+		SET  @P05	=  param5 ;
+
+		PREPARE Statement FROM @SQL ;
+		EXECUTE Statement USING @P01, @P02, @P03, @P04, @P05 ;
+		DEALLOCATE PREPARE Statement ;
+	END ;
+
+
+CREATE 
+	DEFINER	= thrak@localhost
+	PROCEDURE thrak.select_p06
+	   ( 
+		IN  query		TEXT,
+		IN  param1		TEXT,
+		IN  param2		TEXT,
+		IN  param3		TEXT,
+		IN  param4		TEXT,
+		IN  param5		TEXT,
+		IN  param6		TEXT
+	    )
+		COMMENT 'Executes a SELECT query with 6 parameters'
+		NOT DETERMINISTIC 
+		READS SQL DATA
+		SQL SECURITY INVOKER
+	BEGIN
+		SET  @SQL	=  query ;
+		SET  @P01	=  param1 ;
+		SET  @P02	=  param2 ;
+		SET  @P03	=  param3 ;
+		SET  @P04	=  param4 ;
+		SET  @P05	=  param5 ;
+		SET  @P06	=  param6 ;
+
+		PREPARE Statement FROM @SQL ;
+		EXECUTE Statement USING @P01, @P02, @P03, @P04, @P05, @P06 ;
+		DEALLOCATE PREPARE Statement ;
+	END ;
+
+
+CREATE 
+	DEFINER	= thrak@localhost
+	PROCEDURE thrak.select_p07
+	   ( 
+		IN  query		TEXT,
+		IN  param1		TEXT,
+		IN  param2		TEXT,
+		IN  param3		TEXT,
+		IN  param4		TEXT,
+		IN  param5		TEXT,
+		IN  param6		TEXT,
+		IN  param7		TEXT
+	    )
+		COMMENT 'Executes a SELECT query with 7 parameters'
+		NOT DETERMINISTIC 
+		READS SQL DATA
+		SQL SECURITY INVOKER
+	BEGIN
+		SET  @SQL	=  query ;
+		SET  @P01	=  param1 ;
+		SET  @P02	=  param2 ;
+		SET  @P03	=  param3 ;
+		SET  @P04	=  param4 ;
+		SET  @P05	=  param5 ;
+		SET  @P06	=  param6 ;
+		SET  @P07	=  param7 ;
+
+		PREPARE Statement FROM @SQL ;
+		EXECUTE Statement USING @P01, @P02, @P03, @P04, @P05, @P06, @P07 ;
+		DEALLOCATE PREPARE Statement ;
+	END ;
+
+
+CREATE 
+	DEFINER	= thrak@localhost
+	PROCEDURE thrak.select_p08
+	   ( 
+		IN  query		TEXT,
+		IN  param1		TEXT,
+		IN  param2		TEXT,
+		IN  param3		TEXT,
+		IN  param4		TEXT,
+		IN  param5		TEXT,
+		IN  param6		TEXT,
+		IN  param7		TEXT,
+		IN  param8		TEXT
+	    )
+		COMMENT 'Executes a SELECT query with 8 parameters'
+		NOT DETERMINISTIC 
+		READS SQL DATA
+		SQL SECURITY INVOKER
+	BEGIN
+		SET  @SQL	=  query ;
+		SET  @P01	=  param1 ;
+		SET  @P02	=  param2 ;
+		SET  @P03	=  param3 ;
+		SET  @P04	=  param4 ;
+		SET  @P05	=  param5 ;
+		SET  @P06	=  param6 ;
+		SET  @P07	=  param7 ;
+		SET  @P08	=  param8 ;
+
+		PREPARE Statement FROM @SQL ;
+		EXECUTE Statement USING @P01, @P02, @P03, @P04, @P05, @P06, @P07, @P08 ;
+		DEALLOCATE PREPARE Statement ;
+	END ;
+
+
+CREATE 
+	DEFINER	= thrak@localhost
+	PROCEDURE thrak.select_p09
+	   ( 
+		IN  query		TEXT,
+		IN  param1		TEXT,
+		IN  param2		TEXT,
+		IN  param3		TEXT,
+		IN  param4		TEXT,
+		IN  param5		TEXT,
+		IN  param6		TEXT,
+		IN  param7		TEXT,
+		IN  param8		TEXT,
+		IN  param9		TEXT
+	    )
+		COMMENT 'Executes a SELECT query with 9 parameters'
+		NOT DETERMINISTIC 
+		READS SQL DATA
+		SQL SECURITY INVOKER
+	BEGIN
+		SET  @SQL	=  query ;
+		SET  @P01	=  param1 ;
+		SET  @P02	=  param2 ;
+		SET  @P03	=  param3 ;
+		SET  @P04	=  param4 ;
+		SET  @P05	=  param5 ;
+		SET  @P06	=  param6 ;
+		SET  @P07	=  param7 ;
+		SET  @P08	=  param8 ;
+		SET  @P09	=  param9 ;
+
+		PREPARE Statement FROM @SQL ;
+		EXECUTE Statement USING @P01, @P02, @P03, @P04, @P05, @P06, @P07, @P08, @P09 ;
+		DEALLOCATE PREPARE Statement ;
+	END ;
+
+
+CREATE 
+	DEFINER	= thrak@localhost
+	PROCEDURE thrak.select_p10
+	   ( 
+		IN  query		TEXT,
+		IN  param1		TEXT,
+		IN  param2		TEXT,
+		IN  param3		TEXT,
+		IN  param4		TEXT,
+		IN  param5		TEXT,
+		IN  param6		TEXT,
+		IN  param7		TEXT,
+		IN  param8		TEXT,
+		IN  param9		TEXT,
+		IN  param10		TEXT
+	    )
+		COMMENT 'Executes a SELECT query with 10 parameters'
+		NOT DETERMINISTIC 
+		READS SQL DATA
+		SQL SECURITY INVOKER
+	BEGIN
+		SET  @SQL	=  query ;
+		SET  @P01	=  param1 ;
+		SET  @P02	=  param2 ;
+		SET  @P03	=  param3 ;
+		SET  @P04	=  param4 ;
+		SET  @P05	=  param5 ;
+		SET  @P06	=  param6 ;
+		SET  @P07	=  param7 ;
+		SET  @P08	=  param8 ;
+		SET  @P09	=  param9 ;
+		SET  @P10	=  param10 ;
+
+		PREPARE Statement FROM @SQL ;
+		EXECUTE Statement USING @P01, @P02, @P03, @P04, @P05, @P06, @P07, @P08, @P09, @P10 ;
+		DEALLOCATE PREPARE Statement ;
+	END ;
+
+
+CREATE 
+	DEFINER	= thrak@localhost
+	PROCEDURE thrak.select_p11
+	   ( 
+		IN  query		TEXT,
+		IN  param1		TEXT,
+		IN  param2		TEXT,
+		IN  param3		TEXT,
+		IN  param4		TEXT,
+		IN  param5		TEXT,
+		IN  param6		TEXT,
+		IN  param7		TEXT,
+		IN  param8		TEXT,
+		IN  param9		TEXT,
+		IN  param10		TEXT,
+		IN  param11		TEXT
+	    )
+		COMMENT 'Executes a SELECT query with 11 parameters'
+		NOT DETERMINISTIC 
+		READS SQL DATA
+		SQL SECURITY INVOKER
+	BEGIN
+		SET  @SQL	=  query ;
+		SET  @P01	=  param1 ;
+		SET  @P02	=  param2 ;
+		SET  @P03	=  param3 ;
+		SET  @P04	=  param4 ;
+		SET  @P05	=  param5 ;
+		SET  @P06	=  param6 ;
+		SET  @P07	=  param7 ;
+		SET  @P08	=  param8 ;
+		SET  @P09	=  param9 ;
+		SET  @P10	=  param10 ;
+		SET  @P11	=  param11 ;
+
+		PREPARE Statement FROM @SQL ;
+		EXECUTE Statement USING @P01, @P02, @P03, @P04, @P05, @P06, @P07, @P08, @P09, @P10, @P11 ;
+		DEALLOCATE PREPARE Statement ;
+	END ;
+
+
+CREATE 
+	DEFINER	= thrak@localhost
+	PROCEDURE thrak.select_p12
+	   ( 
+		IN  query		TEXT,
+		IN  param1		TEXT,
+		IN  param2		TEXT,
+		IN  param3		TEXT,
+		IN  param4		TEXT,
+		IN  param5		TEXT,
+		IN  param6		TEXT,
+		IN  param7		TEXT,
+		IN  param8		TEXT,
+		IN  param9		TEXT,
+		IN  param10		TEXT,
+		IN  param11		TEXT,
+		IN  param12		TEXT
+	    )
+		COMMENT 'Executes a SELECT query with 12 parameters'
+		NOT DETERMINISTIC 
+		READS SQL DATA
+		SQL SECURITY INVOKER
+	BEGIN
+		SET  @SQL	=  query ;
+		SET  @P01	=  param1 ;
+		SET  @P02	=  param2 ;
+		SET  @P03	=  param3 ;
+		SET  @P04	=  param4 ;
+		SET  @P05	=  param5 ;
+		SET  @P06	=  param6 ;
+		SET  @P07	=  param7 ;
+		SET  @P08	=  param8 ;
+		SET  @P09	=  param9 ;
+		SET  @P10	=  param10 ;
+		SET  @P11	=  param11 ;
+		SET  @P12	=  param12 ; 
+
+		PREPARE Statement FROM @SQL ;
+		EXECUTE Statement USING @P01, @P02, @P03, @P04, @P05, @P06, @P07, @P08, @P09, @P10, @P11, @P12 ;
+		DEALLOCATE PREPARE Statement ;
+	END ;
+
+
+//
+DELIMITER ;
+
+
+/**************************************************************************************************************
+ **************************************************************************************************************
+ **************************************************************************************************************
+ ******                                                                                                  ******
+ ******                                                                                                  ******
+ ******                          UPDATE PROCEDURES WITH SECURITY INVOKER                                 ******
+ ******                                                                                                  ******
+ ******                                                                                                  ******
+ **************************************************************************************************************
+ **************************************************************************************************************
+ **************************************************************************************************************/
+DELIMITER //
+CREATE 
+	DEFINER	= thrak@localhost
+	PROCEDURE thrak.update_p01 
+	   ( 
+		IN  query		TEXT,
+		IN  param1		TEXT
+	    )
+		COMMENT 'Executes a SELECT/MODIFY query with 1 parameter'
+		NOT DETERMINISTIC 
+		MODIFIES SQL DATA
+		SQL SECURITY INVOKER
+	BEGIN
+		SET  @SQL	=  query ;
+		SET  @P01	=  param1 ;
+
+		PREPARE Statement FROM @SQL ;
+		EXECUTE Statement USING @P01 ;
+		DEALLOCATE PREPARE Statement ;
+	END ;
+
+
+CREATE 
+	DEFINER	= thrak@localhost
+	PROCEDURE thrak.update_p02
+	   ( 
+		IN  query		TEXT,
+		IN  param1		TEXT,
+		IN  param2		TEXT
+	    )
+		COMMENT 'Executes a SELECT/MODIFY query with 2 parameters'
+		NOT DETERMINISTIC 
+		MODIFIES SQL DATA
+		SQL SECURITY INVOKER
+	BEGIN
+		SET  @SQL	=  query ;
+		SET  @P01	=  param1 ;
+		SET  @P02	=  param2 ;
+
+		PREPARE Statement FROM @SQL ;
+		EXECUTE Statement USING @P01, @P02 ;
+		DEALLOCATE PREPARE Statement ;
+	END ;
+
+CREATE 
+	DEFINER	= thrak@localhost
+	PROCEDURE thrak.update_p03
+	   ( 
+		IN  query		TEXT,
+		IN  param1		TEXT,
+		IN  param2		TEXT,
+		IN  param3		TEXT
+	    )
+		COMMENT 'Executes a SELECT/MODIFY query with 3 parameters'
+		NOT DETERMINISTIC 
+		MODIFIES SQL DATA
+		SQL SECURITY INVOKER
+	BEGIN
+		SET  @SQL	=  query ;
+		SET  @P01	=  param1 ;
+		SET  @P02	=  param2 ;
+		SET  @P03	=  param3 ;
+
+		PREPARE Statement FROM @SQL ;
+		EXECUTE Statement USING @P01, @P02, @P03 ;
+		DEALLOCATE PREPARE Statement ;
+	END ;
+
+
+CREATE 
+	DEFINER	= thrak@localhost
+	PROCEDURE thrak.update_p04
+	   ( 
+		IN  query		TEXT,
+		IN  param1		TEXT,
+		IN  param2		TEXT,
+		IN  param3		TEXT,
+		IN  param4		TEXT
+	    )
+		COMMENT 'Executes a SELECT/MODIFY query with 4 parameters'
+		NOT DETERMINISTIC 
+		MODIFIES SQL DATA
+		SQL SECURITY INVOKER
+	BEGIN
+		SET  @SQL	=  query ;
+		SET  @P01	=  param1 ;
+		SET  @P02	=  param2 ;
+		SET  @P03	=  param3 ;
+		SET  @P04	=  param4 ;
+
+		PREPARE Statement FROM @SQL ;
+		EXECUTE Statement USING @P01, @P02, @P03, @P04 ;
+		DEALLOCATE PREPARE Statement ;
+	END ;
+
+
+CREATE 
+	DEFINER	= thrak@localhost
+	PROCEDURE thrak.update_p05
+	   ( 
+		IN  query		TEXT,
+		IN  param1		TEXT,
+		IN  param2		TEXT,
+		IN  param3		TEXT,
+		IN  param4		TEXT,
+		IN  param5		TEXT
+	    )
+		COMMENT 'Executes a SELECT/MODIFY query with 5 parameters'
+		NOT DETERMINISTIC 
+		MODIFIES SQL DATA
+		SQL SECURITY INVOKER
+	BEGIN
+		SET  @SQL	=  query ;
+		SET  @P01	=  param1 ;
+		SET  @P02	=  param2 ;
+		SET  @P03	=  param3 ;
+		SET  @P04	=  param4 ;
+		SET  @P05	=  param5 ;
+
+		PREPARE Statement FROM @SQL ;
+		EXECUTE Statement USING @P01, @P02, @P03, @P04, @P05 ;
+		DEALLOCATE PREPARE Statement ;
+	END ;
+
+
+CREATE 
+	DEFINER	= thrak@localhost
+	PROCEDURE thrak.update_p06
+	   ( 
+		IN  query		TEXT,
+		IN  param1		TEXT,
+		IN  param2		TEXT,
+		IN  param3		TEXT,
+		IN  param4		TEXT,
+		IN  param5		TEXT,
+		IN  param6		TEXT
+	    )
+		COMMENT 'Executes a SELECT/MODIFY query with 6 parameters'
+		NOT DETERMINISTIC 
+		MODIFIES SQL DATA
+		SQL SECURITY INVOKER
+	BEGIN
+		SET  @SQL	=  query ;
+		SET  @P01	=  param1 ;
+		SET  @P02	=  param2 ;
+		SET  @P03	=  param3 ;
+		SET  @P04	=  param4 ;
+		SET  @P05	=  param5 ;
+		SET  @P06	=  param6 ;
+
+		PREPARE Statement FROM @SQL ;
+		EXECUTE Statement USING @P01, @P02, @P03, @P04, @P05, @P06 ;
+		DEALLOCATE PREPARE Statement ;
+	END ;
+
+
+CREATE 
+	DEFINER	= thrak@localhost
+	PROCEDURE thrak.update_p07
+	   ( 
+		IN  query		TEXT,
+		IN  param1		TEXT,
+		IN  param2		TEXT,
+		IN  param3		TEXT,
+		IN  param4		TEXT,
+		IN  param5		TEXT,
+		IN  param6		TEXT,
+		IN  param7		TEXT
+	    )
+		COMMENT 'Executes a SELECT/MODIFY query with 7 parameters'
+		NOT DETERMINISTIC 
+		MODIFIES SQL DATA
+		SQL SECURITY INVOKER
+	BEGIN
+		SET  @SQL	=  query ;
+		SET  @P01	=  param1 ;
+		SET  @P02	=  param2 ;
+		SET  @P03	=  param3 ;
+		SET  @P04	=  param4 ;
+		SET  @P05	=  param5 ;
+		SET  @P06	=  param6 ;
+		SET  @P07	=  param7 ;
+
+		PREPARE Statement FROM @SQL ;
+		EXECUTE Statement USING @P01, @P02, @P03, @P04, @P05, @P06, @P07 ;
+		DEALLOCATE PREPARE Statement ;
+	END ;
+
+
+CREATE 
+	DEFINER	= thrak@localhost
+	PROCEDURE thrak.update_p08
+	   ( 
+		IN  query		TEXT,
+		IN  param1		TEXT,
+		IN  param2		TEXT,
+		IN  param3		TEXT,
+		IN  param4		TEXT,
+		IN  param5		TEXT,
+		IN  param6		TEXT,
+		IN  param7		TEXT,
+		IN  param8		TEXT
+	    )
+		COMMENT 'Executes a SELECT/MODIFY query with 8 parameters'
+		NOT DETERMINISTIC 
+		MODIFIES SQL DATA
+		SQL SECURITY INVOKER
+	BEGIN
+		SET  @SQL	=  query ;
+		SET  @P01	=  param1 ;
+		SET  @P02	=  param2 ;
+		SET  @P03	=  param3 ;
+		SET  @P04	=  param4 ;
+		SET  @P05	=  param5 ;
+		SET  @P06	=  param6 ;
+		SET  @P07	=  param7 ;
+		SET  @P08	=  param8 ;
+
+		PREPARE Statement FROM @SQL ;
+		EXECUTE Statement USING @P01, @P02, @P03, @P04, @P05, @P06, @P07, @P08 ;
+		DEALLOCATE PREPARE Statement ;
+	END ;
+
+
+CREATE 
+	DEFINER	= thrak@localhost
+	PROCEDURE thrak.update_p09
+	   ( 
+		IN  query		TEXT,
+		IN  param1		TEXT,
+		IN  param2		TEXT,
+		IN  param3		TEXT,
+		IN  param4		TEXT,
+		IN  param5		TEXT,
+		IN  param6		TEXT,
+		IN  param7		TEXT,
+		IN  param8		TEXT,
+		IN  param9		TEXT
+	    )
+		COMMENT 'Executes a SELECT/MODIFY query with 9 parameters'
+		NOT DETERMINISTIC 
+		MODIFIES SQL DATA
+		SQL SECURITY INVOKER
+	BEGIN
+		SET  @SQL	=  query ;
+		SET  @P01	=  param1 ;
+		SET  @P02	=  param2 ;
+		SET  @P03	=  param3 ;
+		SET  @P04	=  param4 ;
+		SET  @P05	=  param5 ;
+		SET  @P06	=  param6 ;
+		SET  @P07	=  param7 ;
+		SET  @P08	=  param8 ;
+		SET  @P09	=  param9 ;
+
+		PREPARE Statement FROM @SQL ;
+		EXECUTE Statement USING @P01, @P02, @P03, @P04, @P05, @P06, @P07, @P08, @P09 ;
+		DEALLOCATE PREPARE Statement ;
+	END ;
+
+
+CREATE 
+	DEFINER	= thrak@localhost
+	PROCEDURE thrak.update_p10
+	   ( 
+		IN  query		TEXT,
+		IN  param1		TEXT,
+		IN  param2		TEXT,
+		IN  param3		TEXT,
+		IN  param4		TEXT,
+		IN  param5		TEXT,
+		IN  param6		TEXT,
+		IN  param7		TEXT,
+		IN  param8		TEXT,
+		IN  param9		TEXT,
+		IN  param10		TEXT
+	    )
+		COMMENT 'Executes a SELECT/MODIFY query with 10 parameters'
+		NOT DETERMINISTIC 
+		MODIFIES SQL DATA
+		SQL SECURITY INVOKER
+	BEGIN
+		SET  @SQL	=  query ;
+		SET  @P01	=  param1 ;
+		SET  @P02	=  param2 ;
+		SET  @P03	=  param3 ;
+		SET  @P04	=  param4 ;
+		SET  @P05	=  param5 ;
+		SET  @P06	=  param6 ;
+		SET  @P07	=  param7 ;
+		SET  @P08	=  param8 ;
+		SET  @P09	=  param9 ;
+		SET  @P10	=  param10 ;
+
+		PREPARE Statement FROM @SQL ;
+		EXECUTE Statement USING @P01, @P02, @P03, @P04, @P05, @P06, @P07, @P08, @P09, @P10 ;
+		DEALLOCATE PREPARE Statement ;
+	END ;
+
+
+CREATE 
+	DEFINER	= thrak@localhost
+	PROCEDURE thrak.update_p11
+	   ( 
+		IN  query		TEXT,
+		IN  param1		TEXT,
+		IN  param2		TEXT,
+		IN  param3		TEXT,
+		IN  param4		TEXT,
+		IN  param5		TEXT,
+		IN  param6		TEXT,
+		IN  param7		TEXT,
+		IN  param8		TEXT,
+		IN  param9		TEXT,
+		IN  param10		TEXT,
+		IN  param11		TEXT
+	    )
+		COMMENT 'Executes a SELECT/MODIFY query with 11 parameters'
+		NOT DETERMINISTIC 
+		MODIFIES SQL DATA
+		SQL SECURITY INVOKER
+	BEGIN
+		SET  @SQL	=  query ;
+		SET  @P01	=  param1 ;
+		SET  @P02	=  param2 ;
+		SET  @P03	=  param3 ;
+		SET  @P04	=  param4 ;
+		SET  @P05	=  param5 ;
+		SET  @P06	=  param6 ;
+		SET  @P07	=  param7 ;
+		SET  @P08	=  param8 ;
+		SET  @P09	=  param9 ;
+		SET  @P10	=  param10 ;
+		SET  @P11	=  param11 ;
+
+		PREPARE Statement FROM @SQL ;
+		EXECUTE Statement USING @P01, @P02, @P03, @P04, @P05, @P06, @P07, @P08, @P09, @P10, @P11 ;
+		DEALLOCATE PREPARE Statement ;
+	END ;
+
+
+CREATE 
+	DEFINER	= thrak@localhost
+	PROCEDURE thrak.update_p12
+	   ( 
+		IN  query		TEXT,
+		IN  param1		TEXT,
+		IN  param2		TEXT,
+		IN  param3		TEXT,
+		IN  param4		TEXT,
+		IN  param5		TEXT,
+		IN  param6		TEXT,
+		IN  param7		TEXT,
+		IN  param8		TEXT,
+		IN  param9		TEXT,
+		IN  param10		TEXT,
+		IN  param11		TEXT,
+		IN  param12		TEXT
+	    )
+		COMMENT 'Executes a SELECT/MODIFY query with 12 parameters'
+		NOT DETERMINISTIC 
+		MODIFIES SQL DATA
+		SQL SECURITY INVOKER
+	BEGIN
+		SET  @SQL	=  query ;
+		SET  @P01	=  param1 ;
+		SET  @P02	=  param2 ;
+		SET  @P03	=  param3 ;
+		SET  @P04	=  param4 ;
+		SET  @P05	=  param5 ;
+		SET  @P06	=  param6 ;
+		SET  @P07	=  param7 ;
+		SET  @P08	=  param8 ;
+		SET  @P09	=  param9 ;
+		SET  @P10	=  param10 ;
+		SET  @P11	=  param11 ;
+		SET  @P12	=  param12 ; 
+
+		PREPARE Statement FROM @SQL ;
+		EXECUTE Statement USING @P01, @P02, @P03, @P04, @P05, @P06, @P07, @P08, @P09, @P10, @P11, @P12 ;
+		DEALLOCATE PREPARE Statement ;
+	END ;
+
+
+//
+DELIMITER ;
