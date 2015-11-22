@@ -74,14 +74,18 @@ END;
 				
 			$query			=  "
 							SELECT 
-								COUNT(myscl_time)	AS 'count',
-								myscl_user		AS 'user'
-							FROM thrak_logs. mysql_connection_log
+								COUNT(time)				AS 'count',
+								thrak_logs. string_store. value		AS 'user'
+							FROM thrak_logs. connection_log
+							LEFT JOIN thrak_logs. string_store ON
+								thrak_logs. string_store. id = thrak_logs. connection_log. connection_user_id AND
+								thrak_logs. string_store. type = 1000
 							WHERE
-								myscl_time BETWEEN '$start_time_string' AND '$end_time_string'
-							GROUP BY myscl_user
-							ORDER BY myscl_user, COUNT(myscl_time)
+								time BETWEEN '$start_time_string' AND '$end_time_string'
+							GROUP BY thrak_logs. string_store. value
+							ORDER BY thrak_logs. string_store. value, COUNT(time)
 						   " ;
+			output ( $query ) ;
 			$Database -> SetQuery ( $query ) ;
 			$rows		=  $Database -> LoadRows ( ) ;
 			$row_count	=  count ( $rows ) ;

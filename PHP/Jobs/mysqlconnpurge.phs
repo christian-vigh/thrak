@@ -59,10 +59,10 @@ END;
 			$start_time_string	=  date ( 'Y-m-d H:i:s', $start_time ) ;
 				
 			$query			=  "
-							DELETE  thrak_logs. mysql_connection_log
-							FROM thrak_logs. mysql_connection_log
+							DELETE  thrak_logs. connection_log
+							FROM thrak_logs. connection_log
 							WHERE
-								myscl_time < '$start_time_string'
+								time < '$start_time_string'
 						   " ;
 			$Database -> Execute ( $query ) ;
 			$row_count		=  $Database -> GetAffectedRows ( ) ;
