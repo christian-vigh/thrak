@@ -155,6 +155,9 @@
      [Version : 2.0.29]	[Date : 2015/11/17]		[Author : CV]
 	. Added the IsDelimitedBy() and RemoveDelimiters() methods.
  
+     [Version : 2.0.30]	[Date : 2015/11/22]		[Author : CV]
+	. Added the $remove_empty parameter to the ExplodeAndTrim() method.
+ 
  ***************************************************************************************************/
 namespace 	Thrak\Types ;
 
@@ -1056,7 +1059,7 @@ class String  extends  Object
      		ExplodeAndTrim - Explodes a list.
 
      	    PROTOTYPE
-		$array = String::ExplodeAndTrim ( $separator, $string ) ;
+		$array = String::ExplodeAndTrim ( $separator, $string, $remove_empty = false ) ;
 
      	    DESCRIPTION
 		Explodes a list and trims all values.
@@ -1068,6 +1071,9 @@ class String  extends  Object
 		$string (string) -
 			String to be exploded.
 
+		$remove_empty (boolean) -
+			When true, empty strings are not included in the result.
+
      	    RETURN VALUE
 		An array containing the exploded string.
 
@@ -1076,15 +1082,22 @@ class String  extends  Object
 		input string is the empty string.
 
      	 --------------------------------------------------------------------------------------------*/
- 	public static function  ExplodeAndTrim ( $separator, $string )
+ 	public static function  ExplodeAndTrim ( $separator, $string, $remove_empty = false )
  	   {
-		$result = explode ( $separator, $string ) ;
+		$items = explode ( $separator, $string ) ;
 
-		if  ( $result  ===  false )
+		if  ( ! $items )
 			return ( array ( ) ) ;
 
-		foreach  ( $result  as  &$entry )
-			$entry = trim ( $entry ) ;
+		$result		=  [] ;
+
+		foreach  ( $items  as  $item )
+		   {
+			$value	=  trim ( $item ) ;
+
+			if  ( ! $remove_empty  ||  $value )
+				$result []	=  $value ;
+		     }
 
 		return ( $result ) ;
  	    }
