@@ -146,4 +146,22 @@ class  ApachePackage		extends		WampService
 
 		return ( $modules ) ;
 	    }
+
+
+ 	/*--------------------------------------------------------------------------------------------------------------
+	 
+		WampInstallableModule interface implementation.
+  
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  Install	( $service_name, $configuration_file ) 
+	   {
+		parent::Install ( $service_name, $configuration_file ) ;
+		error ( new \Thrak\System\NotYetImplementedException ( ) ) ; 
+	    }
+
+	public function  Uninstall	( $service_name )
+	   {
+		parent::Uninstall ( $service_name, $configuration_file ) ;
+		error ( new \Thrak\System\NotYetImplementedException ( ) ) ; 
+	    }
    }

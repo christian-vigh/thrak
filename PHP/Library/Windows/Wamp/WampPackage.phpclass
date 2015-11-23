@@ -24,7 +24,7 @@ use	Thrak\IO\Path ;
 use	Thrak\Windows\AbstractWindowsBase ;
 use	Thrak\Windows\Wamp\PhpVersions ;
 use	Thrak\Windows\Wamp\WampException ;
-
+use	Thrak\Windows\Wmi ;
 
 
 /*==============================================================================================================
@@ -43,8 +43,8 @@ interface	WampRestartableModule
 
 interface	WampInstallableModule
    {
-	public function		Install		( ) ;
-	public function		Uninstall	( ) ;
+	public function		Install		( $service_name, $configuration_file ) ;
+	public function		Uninstall	( $service_name ) ;
     }
 
 
@@ -57,8 +57,6 @@ interface	WampConfigurableModule
 
 
 	public function		GetModules		( ) ;
-	//public function		GetModuleState		( $module_name ) ;
-	//public function		EnableModule		( $module_name, $enabled ) ;
     }
 
 
@@ -250,12 +248,33 @@ abstract class  WampService		extends		WampModule
 
  	/*--------------------------------------------------------------------------------------------------------------
 	 
-		WampInstallableModule interface implementation.
+		WampInstallableModule interface implementation. These functions must be called by derived classes
+		to perform basic checkings.
   
 	 *-------------------------------------------------------------------------------------------------------------*/
-	public function  Install	( ) 
-	   { error ( new \Thrak\System\NotYetImplementedException ( ) ) ; }
+	public function  Install	( $service_name, $configuration_file ) 
+	   { 
+		$wmi	=  new Wmi ( ) ;
+		$query	=  "SELECT * FROM Win32_Service WHERE Name = '$service_name'" ;
+		$result =  $wmi -> Query ( $query ) ;
 
-	public function  Uninstall	( )
-	   { error ( new \Thrak\System\NotYetImplementedException ( ) ) ; }
-}
+		if  ( $result )
+			error ( new WampException ( "Service \"$service_name\" is already configured and cannot be installed." ) ) ;
+
+		if  ( ! file_exists ( $configuration_file ) )
+			error ( new WampException ( "Service-specific configuration file \"$configuration_file\" does not exist." ) ) ;
+	    }
+
+
+	public function  Uninstall	( $service_name )
+	   { 
+		$wmi	=  new Wmi ( ) ;
+		$query	=  "SELECT * FROM Win32_Service WHERE Name = '$service_name'" ;
+		$result =  $wmi -> Query ( $query ) ;
+
+		if  ( ! $result )
+			error ( new WampException ( "Service \"$service_name\" is not configured and cannot be uninstalled." ) ) ;
+
+		$this -> Stop ( ) ;
+	    }
+    }

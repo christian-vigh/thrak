@@ -20,7 +20,9 @@ namespace 	Thrak\Windows\Wamp ;
 defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
 
 use  	Thrak\System\Object ;
+use	Thrak\IO\Path ;
 use	Thrak\Windows\Wamp\WampService ;
+use	Thrak\Processors\IniFile ;
 
 
 /*==============================================================================================================
@@ -79,5 +81,73 @@ class  MySqlPackage		extends		WampService
 		    }
 		else
 			return ( [] ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    Install -
+		Installs a new Mysql service.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  Install ( $service_name, $configuration_file )
+	   {
+		static	$mysql_hello_string	=  "N\x00\x00\x00" ;
+
+		parent::Install ( $service_name, $configuration_file ) ;
+
+		// Load mysl configuration file
+		$ini	=  IniFile::LoadFromFile ( $configuration_file ) ;
+		
+		// Check if the configuration file contains a section with the same name as the service
+		if  ( ! $ini -> IsSectionDefined ( $service_name ) )
+			error ( new WampException ( "The configuration file \"$configuration_file\" must contain a section [$service_name] " .
+					"for MySql service \"$service_name\"." ) ) ;
+
+		// Try to connect to specified mysql port - if successful, then this means that mysql (or something else)
+		// is already listening to that port
+		$port	=  $ini -> GetKey ( $service_name, 'Port', 3306 ) ;
+		$fp	=  @fsockopen ( '127.0.0.1', $port, $errno, $errstr, 5 ) ;
+
+		if  ( $fp )
+		   {
+			stream_set_blocking ( $fp, 0 ) ;
+			usleep ( 20000 ) ;
+			$data	=  fgets ( $fp ) ;
+			fclose ( $fp ) ;
+
+			if  ( ! strncmp ( $data, $mysql_hello_string, strlen ( $mysql_hello_string ) ) )
+				error ( new WampException ( "Port $port defined in the mysql service \"$service_name\" is already opened by another mysql instance." ) ) ;
+			else
+				error ( new WampException ( "Port $port defined in the mysql service \"$service_name\" is already opened by another process." ) ) ;
+		    }
+
+		// No one is currently listening to this port so it is safe to install a new mysql instance
+		$command	=  '"' . $this -> ExecutableFile . '" ' .	
+				   "--install $service_name --defaults-file=" .
+				   Path::ToUnix ( Path::RealPath ( $configuration_file ) ) .
+				   " 2>&1" ;
+		exec ( $command, $output ) ;
+
+		return ( implode ( "\n", $output ) ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    Uninstall -
+		Installs a new Mysql service.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  Uninstall ( $service_name )
+	   {
+		parent::Uninstall ( $service_name ) ;
+
+		$command	=  '"' . $this -> ExecutableFile . '" ' .	
+				   "--remove $service_name" ;
+				   " 2>&1" ;
+		exec ( $command, $output ) ;
+
+		return ( implode ( "\n", $output ) ) ;
 	    }
     }
