@@ -275,6 +275,6 @@ abstract class  WampService		extends		WampModule
 		if  ( ! $result )
 			error ( new WampException ( "Service \"$service_name\" is not configured and cannot be uninstalled." ) ) ;
 
-		$this -> Stop ( ) ;
+		exec ( "NET STOP $service_name 2>&1", $junk ) ;
 	    }
     }
