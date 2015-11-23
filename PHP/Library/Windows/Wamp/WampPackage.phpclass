@@ -253,6 +253,9 @@ abstract class  WampService		extends		WampModule
 		WampInstallableModule interface implementation.
   
 	 *-------------------------------------------------------------------------------------------------------------*/
-	public function  Install	( ) {}
-	public function  Uninstall	( ) {}
+	public function  Install	( ) 
+	   { error ( new \Thrak\System\NotYetImplementedException ( ) ) ; }
+
+	public function  Uninstall	( )
+	   { error ( new \Thrak\System\NotYetImplementedException ( ) ) ; }
 }

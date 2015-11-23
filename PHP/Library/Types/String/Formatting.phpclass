@@ -450,7 +450,7 @@ class  	Formatting 	extends  Object
 			   	$line_contents 	=  isset ( $matches [ 'string' ] ) ?  rtrim ( $matches [ 'string' ] ) : "" ;
 
 			   	// Compute the actual line width before breaking the line if it exceeds $maxwidth ;
-			   	// We will indeed at the same number of white spaces to each broken line
+			   	// We will indeed add the same number of white spaces to each broken line
 			   	$actual_width 	=  strlen ( $line_contents ) ;
 			   	$space_length 	=  strlen ( $line_spaces ) ;
 
