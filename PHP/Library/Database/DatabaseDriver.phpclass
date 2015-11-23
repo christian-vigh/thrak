@@ -14,6 +14,9 @@
     [Version : 1.0]    [Date : 2015/08/05]     [Author : CV]
         Initial version.
 
+    [Version : 1.0]    [Date : 2015/11/23]     [Author : CV]
+	. Added persistent connection support.
+
  **************************************************************************************************************/
 namespace 	Thrak\Database ;
 
@@ -52,7 +55,7 @@ abstract class  DatabaseDriver	extends  Object
 	public abstract function  db_set_error 			( ) ;
 
 	// Connects to the database
-	public abstract function  db_connect  			( $user, $password, $hostname, $port ) ;
+	public abstract function  db_connect  			( $user, $password, $hostname, $port, $persistent = false ) ;
 
 	// Disconnects from the database
 	public abstract function  db_disconnect			( $resource ) ;

@@ -20,6 +20,9 @@
    [Version : 2.0.1]	[Date : 2015/06/08]		[Author : CV]
 	. Renamed the db_quote_value() method to db_escape_value().
 
+   [Version : 2.0.2]	[Date : 2015/11/23]		[Author : CV]
+	. Changed db_connect() to handle persistent connections.
+
  ***************************************************************************************************/
 namespace  	Thrak\Database\Drivers ;
 
@@ -109,8 +112,11 @@ class	mysqli  extends  DatabaseDriver
 	    }
 
 	// Connects to the database
-	public function  db_connect ( $user, $password, $hostname, $port )
+	public function  db_connect ( $user, $password, $hostname, $port, $persistent = false )
 	   {
+		if  ( $persistent )
+			$hostname	=  "p:$hostname" ;
+
 		$status = @mysqli_connect ( $hostname, $user, $password, null, $port ) ;
 
 		$this -> Parent -> LastErrorNumber 	=  mysqli_connect_errno ( $status ) ;

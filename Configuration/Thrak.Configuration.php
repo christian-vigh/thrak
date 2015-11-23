@@ -140,7 +140,8 @@ $Configuration =
 	   	   	'log-file'	=>  'tmp://thrak.db.log',	// Log file path
 	   	   	'log'		=>  false,			// When true, database query logging is enabled
 	   	   	'debug'		=>  false,			// When true, debug information is logged
-	   	   	'profile'	=>  false			// When true, queries are timed
+	   	   	'profile'	=>  false,			// When true, queries are timed,
+			'persistent'	=>  true			// When true, the established connection will be persistent
 	   	    ]
 	     ],
 

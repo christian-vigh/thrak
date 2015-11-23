@@ -40,6 +40,9 @@
 	. Added the __EnsureConnected() method, and the Database/* /connect boolean value. When false,
 	  database connection is only established upon the first query, not at script start.
 
+   [Version : 2.0.9]	[Date : 2015/11/23]		[Author : CV]
+	. Added the 'persistent' entry in database configuration.
+
  ***************************************************************************************************/
 namespace 	Thrak\Database ;
 
@@ -115,6 +118,9 @@ class	Database  extends  Object
 	// $QueryOffset -
 	//	Start row to be returned by an SQL query.
 	public 		$QueryOffset		=  0 ;
+	// $PersistentConnection -
+	//	True if the connection to establish is to be persistent.
+	public		$PersistentConnection	=  false ;
 
 	//======================================================================  Log & debugging settings
 	// $LastErrorNumber, $LastErrorMessage -
@@ -276,6 +282,9 @@ class	Database  extends  Object
 
 		if  ( isset ( $options [ 'connect' ] ) )			// Automatic connection at startup ?
 			$this -> AutoConnect		=  $options [ 'connect' ] ;
+
+		if  ( isset ( $options [ 'persistent' ] ) )			// Persistent connections
+			$this -> PersistentConnection	=  $options [ 'persistent' ] ;
 
 		// Load the driver
 		$driver_file		=  "thrak://PHP/Library/Database/Drivers/" . $this -> DatabaseDriverName . ".phpclass" ;
@@ -762,7 +771,7 @@ class	Database  extends  Object
 
 		// Connect, checking for error conditions
 		$this -> __ResetError ( ) ;
-		$this -> Connection = $this -> DatabaseDriver -> db_connect ( $user, $password, $host, $port ) ;
+		$this -> Connection = $this -> DatabaseDriver -> db_connect ( $user, $password, $host, $port, $this -> PersistentConnection ) ;
 		$this -> __CheckError ( ) ;
 		$this -> __LogMessage ( "Connected to host \"$host\" (port=$port) with user \"$user\"" ) ;
 
