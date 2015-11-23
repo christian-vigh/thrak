@@ -90,6 +90,8 @@
 	. "topic" is now an alias of the "help-topic" attribute
 	. <topic> is now equivalent to <help-topic>.
 	. Renamed the -helptopics standard parameter to -topics.
+	. Listing parameters per topic was not correctly enforced.
+	. Sorted topics array.
 
  ***************************************************************************************************/
 namespace 	Thrak\Processors\CL ;
@@ -1530,16 +1532,16 @@ END;
 					   	$value 		=  $child_attribute [ 'value' ] ;
 
 						if  ( ! strcasecmp ( $name, "name" ) )
-							$topic = $value ;
+							$topic = strtolower ( $value ) ;
 						else
-							error ( new CLException ( "<help-topic> tag : Invalid attribute '$name'." ) ) ;
+							error ( new CLException ( "<$child_tag> tag : Invalid attribute '$name'." ) ) ;
 					    }
 
 					if  ( $topic  ===  null )
-						error ( new CLException ( "<help-topic> tag : the 'name' attribute is mandatory." ) ) ;
+						error ( new CLException ( "<$child_tag> tag : the 'name' attribute is mandatory." ) ) ;
 
-					$topics					=  String::ExplodeAndTrim ( ',', $value ) ;
-					$this -> CommandHelpTopics [ $topics [0] ]	=  
+					$topics						=  String::ExplodeAndTrim ( ',', $value ) ;
+					$this -> CommandHelpTopics [ strtolower ( $topics [0] ) ]	=  
 					   [
 						'names'		=>  $topics,
 						'text'		=>  trim ( $child [ 'contents' ] )
@@ -1595,6 +1597,8 @@ END;
 					$this -> AddParameter ( $child, true ) ;
 			    }
 		    }
+
+		ksort ( $this -> CommandHelpTopics ) ;
 	    }
 
 
@@ -1873,21 +1877,18 @@ END;
 
 			// If a topic has been specified, only include the parameters related to this topic
 			// (the command has been run with the -help "topic" option)
-		   	if  ( $defined_topic )
-		   	   {
-				foreach  ( $defined_topic [ 'names' ]  as  $topic )
+			if  ( $topic )
+			   {
+   	   			foreach  ( $parameter -> HelpTopics  as  $ptopic )
 				   {
-		   	   		foreach  ( $parameter -> HelpTopics  as  $ptopic )
+					if  ( ! strcasecmp ( $topic, $ptopic ) )
 					   {
-						if  ( ! strcasecmp ( $topic, $ptopic ) )
-						   {
-							$result .= $phelp ;
-							$count ++ ;
-							break ;
-						    }
+						$result .= $phelp ;
+						$count ++ ;
+						break ;
 					    }
-				    }
-		   	    }
+		   		    }
+			    }
  	    		// -help option with no additional parameter
 		   	else
 		   	   {
@@ -1992,12 +1993,12 @@ END;
 			    }
    			else
    			   {
-				$result = "Available help topics :" ;
+				$result = "Available help topics -\n" ;
 				$length = -1 ;
 
 				foreach  ( $this -> CommandHelpTopics  as  $topic )
 				   {
-					$topic_names	=  implode ( ',', $topic [ 'names' ] ) ;
+					$topic_names	=  implode ( ', ', $topic [ 'names' ] ) ;
 					$htl		=  strlen ( $topic_names ) ;
 
 					if  ( $htl  >  $length )
@@ -2007,8 +2008,9 @@ END;
 				foreach  ( $this -> CommandHelpTopics  as  $name => $topic )
 				   {
 					$topic_names	 =  implode ( ', ', $topic [ 'names' ] ) ;
-					$help		 =  Formatting::FormatParagraph ( $topic [ 'text' ], null, $this -> MaxWidth, 8 ) ;
-				 	$result		.=  sprintf ( "\n. %-{$length}s :\n%s", $topic_names, $help ) ;
+					$topic_help	 =  preg_replace ( '/\n\s*/', "\n", $topic [ 'text' ] ) ;
+					$help		 =  ltrim ( Formatting::FormatParagraph ( $topic_help, null, $this -> MaxWidth, $length + 3 ) ) ;
+				 	$result		.=  sprintf ( "%-{$length}s : %s\n", $topic_names, $help ) ;
 				    }
    			    }
 

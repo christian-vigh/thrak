@@ -220,7 +220,7 @@ class  CLAbstractParameter  extends Object
       		    ),
 	    	array
 	    	   (
-	    	   	'names'		=>  array ( 'help-group', 'help-groups', 'help-topic', 'help-topics' ),
+	    	   	'names'		=>  array ( 'help-group', 'help-groups', 'help-topic', 'help-topics', 'topic', 'topics' ),
 	    	   	'type'		=>  self::ATTRIBUTE_TYPE_LIST,
 	    	   	'member'	=>  'HelpTopics',
 	    	   	'help'		=>  'List of help groups to which this parameter belongs'
@@ -1923,7 +1923,7 @@ class  CLAbstractParameter  extends Object
 			    }
 
 			if  ( ! $found )
-				error ( new CLException ( "The '$MyTopic' help topic specified for the '$pname' parameter does not exist." ) ) ;
+				error ( new CLException ( "The '$MyTopic' help topic specified for the $pname parameter does not exist." ) ) ;
 		    }
 
 		// Validate the definition
