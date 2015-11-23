@@ -50,11 +50,6 @@ END;
 
 
 			$days			=  $this -> CL -> days ;
-			$send_to		=  $this -> JobData [ 'administrator-email' ] ;
-
-			if  ( $this -> CL -> send_to )
-				$send_to	=  $this -> CL -> SendTo ;
-			
 			$start_time		=  DateTime::FirstTimeOfDay ( "now - $days days" ) ;
 			$start_time_string	=  date ( 'Y-m-d H:i:s', $start_time ) ;
 				
