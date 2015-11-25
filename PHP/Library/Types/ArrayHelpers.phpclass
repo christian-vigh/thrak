@@ -767,14 +767,13 @@ class  ArrayHelpers		extends  Object
 	   {
 		$ranges		=  [] ;
 		$count		=  count ( $array ) ;
-		sort ( $array ) ;
-
 		if  ( ! $count ) 
 			return ( [] ) ;
 		else if  ( $count  ==  1 )
 			return ( [ [ $array [0], $array [0] ] ] ) ;
 
 		$start_value	=  $array [0] ;
+		sort ( $array ) ;
 
 		for  ( $i = 1 ; $i  <  $count ; $i ++ )
 		   {
