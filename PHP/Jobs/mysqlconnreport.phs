@@ -85,7 +85,6 @@ END;
 							GROUP BY thrak_logs. string_store. value
 							ORDER BY thrak_logs. string_store. value, COUNT(time)
 						   " ;
-			output ( $query ) ;
 			$Database -> SetQuery ( $query ) ;
 			$rows		=  $Database -> LoadRows ( ) ;
 			$row_count	=  count ( $rows ) ;
