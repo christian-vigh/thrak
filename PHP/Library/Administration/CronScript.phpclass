@@ -48,6 +48,7 @@ use     Thrak\IO\Path ;
 use	Thrak\Types\String ;
 use	Thrak\Processors\CL\CLParser ;
 use	Thrak\Processors\CL\CLException ;
+use     Thrak\Processors\IniFile ;
 
 
 /*==============================================================================================================
@@ -70,9 +71,12 @@ END;
 
 	// Command-line object
 	protected	$CL ;
-	// Configuration file & data
+	// General Configuration file & data
 	protected	$ConfigurationFile ;
 	protected	$ConfigurationData ;
+	// Script Configuration file & data
+	protected	$JobConfigurationFile	=  false ;
+	protected	$JobConfigurationData	=  false ;
 	// Script-related data
 	protected	$Script ;				// Full script path
 	protected	$JobName ;				// Script name, either passed to the constructor or taken from the filename part of the script path
@@ -83,6 +87,8 @@ END;
 	protected	$Logfile		=  null ;
 	// Administrator email
 	protected	$AdministratorEmail	=  null ;
+	// Debug level (false means no debugging messages at all)
+	protected	$DebugLevel		=  false ;
 
 
 	/*--------------------------------------------------------------------------------------------------------------
@@ -124,7 +130,7 @@ END;
 
 		// Save data related to this script 
 		$this -> ConfigurationFile	=  $this -> CL -> configuration_file ;
-		$this -> Script			=  Path::RealPath ( $argv [0] ) ;
+		$this -> Script			=  Path::ToUnix ( Path::RealPath ( $argv [0] ) ) ;
 		$this -> JobName		=  ( $this -> CL -> job ) ?  $this -> CL -> job : pathinfo ( $this -> Script, PATHINFO_FILENAME ) ;
 
 		// Get cron job info (specially logfile path)
@@ -134,11 +140,24 @@ END;
 		if  ( ! $this -> JobData )
 			error ( new \Thrak\System\RuntimeException ( "Could not find entry \"{$this -> JobName}\" in crontab.ini file \"{$this -> ConfigurationFile}\"" ) ) ;
 
+		// Job-specific configuration file
+		$this -> JobConfigurationFile	=  $this -> JobData [ 'configuration-file' ] ;
+
+		if  ( $this -> JobData [ 'configuration-file' ] ) 
+			$this -> JobConfigurationData	=  IniFile::LoadFromFile ( $this -> JobData [ 'configuration-file' ] ) ;
+
+		// Job data information that can be put at the Script object level
+		$this -> JobData [ 'logfile' ]	=  $this -> JobData [ 'logfile' ] ;
 		$this -> Logfile		=  $this -> JobData [ 'logfile' ] ;
 		$this -> AdministratorEmail	=  $this -> JobData [ 'administrator-email' ] ;
 
-		// Other environment data
+		// Check if process title needs to be changed
 		$this -> Pid			=  getmypid ( ) ;
+
+		if  ( $this -> JobData [ 'process-title' ] )
+			cli_set_process_title ( $this -> JobData [ 'process-title' ] . ' ' . implode ( ' ', $args ) ) ;
+
+		// Other environment data
 		$this -> InvokedByCron		=  ( getenv ( 'CRONJOB' )  !==  false ) ;
 	    }
 
@@ -146,7 +165,7 @@ END;
 	/*--------------------------------------------------------------------------------------------------------------
 	 
 	    NAME
-	        Log - Logs a message.
+	        Log, DebugLog, Fatal - Logs a message.
 	 
 	    PROTOTYPE
 	        $script -> Log ( $message ) ;
@@ -176,6 +195,14 @@ END;
 			fputs ( $fp, $log_message ) ;
 			fclose ( $fp ) ;
 		    }
+	    }
+
+
+	public function  ErrorLog ( $message, $severity = 'error' )
+	   {
+		$this -> Log ( "$severity: $message" ) ;
+		$this -> Log ( "Process terminated." ) ;
+		exit ( ) ;
 	    }
 
 

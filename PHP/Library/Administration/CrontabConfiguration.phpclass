@@ -73,10 +73,11 @@ class	CrontabConfiguration		extends  Object
 			$this -> IniFile -> SetVariableStore ( 'Variables' ) ;
 
 		// Get global settings - default values
-		$default_user		=  $inifile -> GetKey ( 'Settings', 'User'			, 'root' ) ;
-		$default_group		=  $inifile -> GetKey ( 'Settings', 'Group'			, 'root' ) ;
-		$default_logfile	=  $inifile -> GetKey ( 'Settings', 'LogFile'			, false ) ;
-		$default_email		=  $inifile -> GetKey ( 'Settings', 'AdministratorEmail'	, 'root@localhost' ) ;
+		$default_user		=  $inifile -> GetKey ( 'Settings', 'DefaultUser'			, 'root' ) ;
+		$default_group		=  $inifile -> GetKey ( 'Settings', 'DefaultGroup'			, 'root' ) ;
+		$default_logfile	=  $inifile -> GetKey ( 'Settings', 'DefaultLogFile'			, false ) ;
+		$default_email		=  $inifile -> GetKey ( 'Settings', 'DefaultAdministratorEmail'		, 'root@localhost' ) ;
+		$default_process_title	=  $inifile -> GetKey ( 'Settings', 'DefaultProcessTitle'		, 'false' ) ;
 
 		// Get the [Job:] section names
 		$sections	=  $inifile -> GetSections ( '(Job|Cron) \s* : \s* (?P<name> [^\s]+)' ) ;
@@ -147,6 +148,33 @@ class	CrontabConfiguration		extends  Object
 			else
 				$schedule_job		=  false ;
 
+			// Job configuration file, if any
+			$value			=  $inifile -> GetKey ( $section_name, 'ConfigurationFile', false ) ;
+
+			if  ( $value )
+				$configuration_file	=  Path::RealPath ( $value ) ;
+			else
+				$configuration_file	=  false ;
+
+			// Process title : can be either :
+			// - Missing or 'false' :
+			//	Process title is left as is.
+			// - Boolean true :
+			//	Process title is set to the job entry name.
+			// - Other string :
+			//	Process title is set to that string.
+			$value			=  $inifile -> GetKey ( $section_name, 'ProcessTitle', $default_process_title ) ;
+
+			if  ( ( $bval = String::BooleanValue ( $value ) )  !==  null )
+			   {
+				if  ( $bval )
+					$process_title	=  $current_name ;
+				else
+					$process_title	=  false ;
+			    }
+			else
+				$process_title	=  $value ;
+
 			// Get variables, if any
 			$value			=  $inifile -> GetKey ( $section_name, 'Variables', false ) ;
 			$variables		=  [] ;
@@ -169,19 +197,22 @@ class	CrontabConfiguration		extends  Object
 			   [
 				'section'		=>  $cron_name,
 				'name'			=>  $current_name,
+				'process-title'		=>  $process_title,
 				'user'			=>  $current_user,
 				'group'			=>  $current_group,
-				'logfile'		=>  $current_logfile,
+				'logfile'		=>  Path::ToUnix ( $current_logfile ),
+				'configuration-file'	=>  Path::ToUnix ( $configuration_file ),
 				'path'			=>  Path::ToUnix ( $current_path ),
 				'parameters'		=>  $current_parameters,
 				'schedule'		=>  $current_schedule,
 				'stock-script'		=>  $is_stocked,
 				'schedule-job'		=>  $schedule_job,
 				'variables'		=>  $variables,
-				'administrator-email'	=>  $current_email 
+				'administrator-email'	=>  $current_email
 			    ] ;
 
 			$this -> Jobs [ $current_user ] []	=  $job ;
+			$this -> IniFile			=  $inifile ;
 		    }
 	    }
 
