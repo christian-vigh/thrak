@@ -85,6 +85,9 @@
 	  quoted string values.
 	. Fixed some inconsistencies with $separator parameter handling.
 
+    [Version : 1.0.15]	[Date : 2015/11/26]	[Author : CV]
+	. Added the GetIntegerKey() method.
+
  ***************************************************************************************************/
 namespace  Thrak\Processors ;
 
@@ -1137,7 +1140,7 @@ class  IniFile  extends  Object
 		GetBooleanKey - Gets a boolean key value.
 	 
 	    PROTOTYPE
-		$value = $inifile -> GetKey ( $section, $key, $default = null ) ;
+		$value = $inifile -> GetBooleanKey ( $section, $key, $default = null ) ;
 
 	    DESCRIPTION
 	    	Gets a boolean key from the specified section.
@@ -1172,10 +1175,63 @@ class  IniFile  extends  Object
 			if  ( String::IsBoolean ( $value ) )
 				$result		=  String::IsTrue ( $value ) ?  true : false ;
 			else
-				error ( \Thrak\System\RuntimeException ( "Invalid boolean value \"$value\" for the \"$key\" value of the [$section] section." ) ) ;
+				error ( new \Thrak\System\RuntimeException ( "Invalid boolean value \"$value\" for the \"$key\" value of the [$section] section." ) ) ;
 		    }
 		
 		return ( $result ) ;
+	    }
+	
+	
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		GetIntegerKey - Gets an integer key value.
+	 
+	    PROTOTYPE
+		$value = $inifile -> GetIntegerKey ( $section, $key, $default = null, $min = null, $max = null ) ;
+
+	    DESCRIPTION
+	    	Gets an integer key from the specified section.
+
+	    PARAMETERS
+	    	$section (string) -
+	    		Section name.
+
+    		$key (string) -
+    			Key name.
+	  
+	 	$default (integer) -
+	 		Default value if the key does not exist.
+
+		$min, $max (integer) -
+			Min and max allowed values for this key.
+
+	    RETURN VALUE
+	    	The integer value, or $default if the key does not exist.
+	 	An invalid boolean value will generate an error.
+	  
+	    NOTES
+	 	The GetxxxKey functions do not return a reference to the underlying value. The SetKey()
+	 	method must be used to modify the value, if needed.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  GetIntegerKey ( $section, $key, $default = null, $min = null, $max = null )
+	   {
+		$value		=  $this -> GetKey ( $section, $key, $default ) ;
+
+		if  ( $value  ===  null )
+			return ( null ) ;
+
+		if  ( ! is_numeric ( $value ) )
+			error ( new \Thrak\System\RuntimeException ( "Invalid integer value \"$value\" for the \"$key\" value of the [$section] section." ) ) ;
+
+		if  ( $min  !=  null  &&  $value  <  $min ) 
+			error ( new \Thrak\System\RuntimeException ( "Integer value \"$value\" for the \"$key\" value of the [$section] section must be greater or equal to $min." ) ) ;
+
+		if  ( $max  !=  null  &&  $value  >  $max ) 
+			error ( new \Thrak\System\RuntimeException ( "Integer value \"$value\" for the \"$key\" value of the [$section] section must be less than or equal to $max." ) ) ;
+
+		return ( $value ) ;
 	    }
 	
 	
