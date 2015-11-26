@@ -1,0 +1,179 @@
+#!/usr/bin/php
+<?php
+	/**************************************************************************************************************
+	
+	    NAME
+	        mysqlconnpurge.phs
+	
+	    DESCRIPTION
+	        Deletes old mysql connection data.
+	
+	    AUTHOR
+	        Christian Vigh, 11/2015.
+	
+	    HISTORY
+	    [Version : 1.0]    [Date : 2015/11/04]     [Author : CV]
+	        Initial version.
+	
+	 **************************************************************************************************************/
+	require ( dirname ( __FILE__ ) . '/../Script.phpinclude' ) ;
+
+	use  Thrak\Administration\CronScript ;
+	use  Thrak\Types\DateTime ;
+
+	
+	class  Script		extends  CronScript
+	   {
+		private		$Definitions	=  <<<END
+	<command>
+		<usage>
+			Listener for apache connections targeted at admin panel or other administrative tasks.
+		</usage>
+	</command>
+END;
+		public		$MinPort		=  19991 ;
+		public		$MaxPort		=  65521 ;
+		public		$PortRange		=  45531 ;
+		public		$FallbackPort		=  6621 ;
+		public		$WaitOnFailure		=  5000 ;
+		public		$WaitBetweenAccepts	=  100 ;
+
+
+		public function  __construct ( )
+		   { 
+			parent::__construct ( $this -> Definitions ) ; 
+
+			if  ( $this -> JobConfigurationData )
+			   {
+				$this -> MinPort		=  $this -> JobConfigurationData -> GetIntegerKey ( 'Settings', 'MinPort'  , null, 1, 65534 ) ;
+				$this -> MaxPort		=  $this -> JobConfigurationData -> GetIntegerKey ( 'Settings', 'MaxPort'  , null, 1, 65534 ) ;
+				$this -> PortRange		=  $this -> JobConfigurationData -> GetIntegerKey ( 'Settings', 'PortRange', null, 1, 65534 ) ;
+
+				if  ( $this -> MinPort  &&  $this -> MaxPort )
+				   {
+					if  ( $this -> MinPort  >  $this -> MaxPort )
+						$this -> ErrorLog ( "MinPort must be less than MaxPort in configuration file " .
+								"\"{$this -> JobConfigurationFile}\".", 'fatal' ) ;
+
+					$this -> PortRange	=  $this -> MaxPort - $this -> MinPort + 1 ;
+				    }
+				else if  ( $this -> MinPort  &&  $this -> PortRange )
+				   {
+					$this -> MaxPort	=  $this -> MinPort + $this -> PortRange - 1 ;
+
+					if  ( $this -> MaxPort  >  65534 )
+						$this -> ErrorLog ( "MaxPort + PortRange is greater than the max authorized value of 65534 in configuration file " .
+								"\"{$this -> JobConfigurationFile}\".", 'fatal' ) ;
+
+				    }
+				else if  ( $this -> MaxPort  &&  $this -> PortRange )
+				   {
+					if  ( $this -> MaxPort  -  $this -> PortRange + 1  <  0 )
+						$this -> ErrorLog ( "PortRange is greater than MaxPort in configuration file " .
+								"\"{$this -> JobConfigurationFile}\".", 'fatal' ) ;
+				    }
+				else
+					$this -> ErrorLog ( "At least two of the three following keys must be specified : MinPort, MaxPort, PortRange " .
+							"in configuration file \"{$this -> JobConfigurationFile}\".", 'fatal' ) ;
+
+				$this -> FallbackPort		=  $this -> JobConfigurationData -> GetIntegerKey ( 'Settings', 'FallbackPort', 6621, 1, 65534 ) ;
+				$this -> WaitOnFailure		=  $this -> JobConfigurationData -> GetIntegerKey ( 'Settings', 'WaitOnFailure', 5000, 100, null ) ;
+				$this -> WaitBetweenAccepts	=  $this -> JobConfigurationData -> GetIntegerKey ( 'Settings', 'WaitBetweenAccepts', 100, 10, null ) ;
+			    }
+		    }
+
+
+		public function  GetPort ( )
+		   {
+			$month		=  date ( 'm' ) ;
+			$day		=  date ( 'd' ) ;
+			$hour		=  date ( 'H' ) ;
+			$minute		=  date ( 'i' ) ;
+
+			if  ( $minute % 5 ) 
+				$minute	=  sprintf ( '%02d', $minute - ( $minute % 5 ) ) ;
+
+			$port	=  "$month$hour$minute$day" ;
+			$port	=  $this -> MinPort + ( $port % $this -> PortRange ) ;
+		
+			return ( ( integer ) $port ) ;
+		    }
+
+
+		public function  Run ( )
+		   {
+			$address		=  '0.0.0.0' ;
+			$use_fallback_port	=  false ;
+
+ShootAgain :
+			if  ( ( $socket = @socket_create ( AF_INET, SOCK_STREAM, 0 ) )  <  0 ) 
+			   { 
+				$this -> Log ( "failed to create socket: " . socket_strerror ( $socket ) ) ; 
+				usleep ( $this -> WaitOnFailure * 1000 ) ;
+				goto  ShootAgain ;
+			    } 
+
+			$port	=  $this -> GetPort ( ) ;
+			$this -> Log ( "listening on port $port" ) ;
+
+			if  ( ( $status = @socket_bind ( $socket, $address, ( $use_fallback_port ) ?  $this -> FallbackPort : $port ) )  <  0 ) 
+			   { 
+				$this -> Log ( "failed to bind socket: " . socket_strerror ( $status ) ) ; 
+				usleep ( $this -> WaitOnFailure * 1000 ) ;
+				goto  ShootAgain ;
+			    } 
+
+			if  ( ( $status = @socket_listen ( $socket, 0 ) )  <  0 ) 
+			   { 
+				$this -> Log ( "failed to listen to socket: " . socket_strerror ( $status ) ) ; 
+				usleep ( $this -> WaitOnFailure * 1000 ) ;
+				goto  ShootAgain ;
+			    } 
+
+			socket_set_nonblock ( $socket ) ; 
+
+			while  ( true )
+			   {
+				$new_port	=  $this -> GetPort ( ) ;
+
+				if  ( $port  !=  $new_port )
+				   {
+					socket_close ( $socket ) ;
+					$use_fallback_port	=  false ;
+					goto  ShootAgain ;
+				    }
+
+				$connection	=  @socket_accept ( $socket ) ;
+   
+				if  ( $connection  ===  false ) 
+				   { 
+					usleep ( $this -> WaitBetweenAccepts * 1000 ) ; 
+				    }
+				else
+				   { 
+					$address	=  null ;
+					socket_getpeername ( $connection, $address ) ;
+
+					$message	=  "connection from $address" ;
+
+					$data		=  socket_read ( $connection, 8192 ) ;
+					$data_length	=  strlen ( $data ) ;
+					$data		=  trim ( $data ) ;
+
+					if  ( $data_length )
+						$message	.=  ", $data_length bytes received :"  ;
+
+					if  ( $data )
+						$message	.=  "\t" . str_replace ( "\n", "\n\t", $data ) ;
+
+					$this -> Log ( $message ) ;
+
+					socket_close ( $connection ) ;
+				    }
+			    }
+		    }
+	    }
+
+	$script		=  new Script ( ) ;
+	$script -> Run ( ) ;	
+
