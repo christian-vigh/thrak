@@ -144,7 +144,15 @@ $Configuration =
 			'persistent'	=>  true			// When true, the established connection will be persistent
 	   	    ]
 	     ],
-
+	// Sms
+	'Sms'					=>
+	   [
+		'free-mobile.fr'		=>
+		   [
+			'send-url'		=>  'https://smsapi.free-mobile.fr/sendmsg',
+			'method'		=>  'get'
+		    ]
+	    ],
 	// Security
 	'Security'				=>  
 	   [

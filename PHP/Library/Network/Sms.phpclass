@@ -1,0 +1,267 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        Sms.php
+
+    DESCRIPTION
+        Base classes for SMS sending/retrieval.
+
+    AUTHOR
+        Christian Vigh, 11/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/11/27]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace	Thrak\Network\Sms ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces & objects
+use	Thrak\System\Object ;
+
+
+class  SmsException	extends  \Thrak\System\RuntimeException  {} ;
+
+
+/*==============================================================================================================
+
+    SmsCenter -
+        Base class for accessing SMS center services.
+	For the moment, only provides methods for sending private sms to a subscriber number.
+
+  ==============================================================================================================*/
+abstract class  SmsCenter		extends  Object
+   {
+	public		$Configuration ;
+	protected	$Associations ;
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        Constructor - Creates an SmsCenter object.
+	 
+	    PROTOTYPE
+	        $sms	=  new SmsCenter ( $config, $association
+	 
+	    DESCRIPTION
+	        Creates an SmsCenter object.
+	 
+	    PARAMETERS
+	        $configuration (SmsCenterConfiguration) -
+	                An object that holds all the necessary data to access SMS services.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( $config )
+	   {
+		$this -> Configuration	=  $config ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        Send - Sends an Sms
+	 
+	    PROTOTYPE
+	        $sms -> Send ( $message ) ;
+	 
+	    DESCRIPTION
+	        Sends the specified message as an SMS.
+	 
+	    PARAMETERS
+	        $message (string) -
+	                Message to be sent.
+	 
+	    RETURN VALUE
+	        Throws an SmsException exception if an error occurred.
+
+	    NOTES
+		for the moment, it does not seem possible to send a request using a POST method.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  Send ( $message )
+	   {
+		$rs		=  curl_init ( ) ;
+
+		curl_setopt ( $rs, CURLOPT_SSL_VERIFYPEER, 0 ) ;
+
+		if  ( $this -> Configuration -> Method  ==  'post' )
+		   {
+			curl_setopt ( $rs, CURLOPT_POST, 1 ) ;
+			curl_setopt ( $rs, CURLOPT_URL, $this -> GetUrl ( ) ) ;
+			curl_setopt ( $rs, CURLOPT_POSTFIELDS, $this -> GetUrlParameters ( $message ) ) ;
+		    }
+		else
+		   {
+			curl_setopt ( $rs, CURLOPT_POST, 0 ) ;
+			curl_setopt ( $rs, CURLOPT_URL, $this -> GetUrl ( $message ) . '?' . $this -> GetUrlParameters ( $message ) ) ;
+		    }
+
+		curl_exec ( $rs ) ;
+		$status		=  curl_getinfo ( $rs, CURLINFO_HTTP_CODE ) ;
+
+		if  ( $status  ==  200 )
+			return ( true ) ;
+
+		switch  ( $status ) 
+		   {
+			case	400 :
+				error ( new SmsException ( "One required SMS parameter is missing" ) ) ;
+
+			case	402 :
+				error ( new SmsException ( "Too many SMS have been sent in too short time." ) ) ;
+
+			case	403 :
+				error ( new SmsException ( "Either the user/key combination is incorrect, or the service has not been " .
+						"activated for this subscriber." ) ) ;
+
+			case	500 :
+				error ( new SmsException ( "Server error, please try again later." ) ) ;
+
+			default :
+				error ( new SmsException ( "Unhandled error $status" ) ) ;
+		    }
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        GetUrl - Returns the SMS center url.
+	 
+	    PROTOTYPE
+	        $url	=  $sms -> GetUrl ( ) ;
+	 	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  GetUrl ( )
+	   {
+		$url	=  $this -> Configuration -> Url ;
+
+		return ( $url ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        GetUrlParameters - Returns the url parameters needed to send an SMS.
+	 
+	    PROTOTYPE
+	        $url	=  $sms -> GetUrlParameters ( $message ) ;
+
+	    DESCRIPTION
+		Returns the url parameters needed to send an SMS.
+		The Associations property of the Configuration object will be used to map property names to url
+		parameter names.
+	 	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  GetUrlParameters ( $message ) 
+	   {
+		$parameters	=  [] ;
+
+		foreach  ( $this -> Configuration -> Associations  as  $property => $parameter )
+		   {
+			if  ( $property  ==  '*' )
+				$parameters []	=  "$parameter=" . rawurlencode ( trim ( $message ) ) ;
+			else
+				$parameters []	=  "$parameter=" . rawurlencode ( $this -> Configuration -> $property ) ;
+		    }
+
+		return ( implode ( '&', $parameters ) ) ;
+	    }
+    }
+
+
+/*==============================================================================================================
+
+    SmsCenterConfiguration -
+        Holds the configuration parameters needed to access sms center services.
+
+  ==============================================================================================================*/
+class  SmsCenterConfiguration  extends  Object
+   {
+	// The Associations associative array maps SmsCenterConfiguration properties to url parameters
+	// Array keys are properties, array values are url parameter names.
+	// The special key '*' represents the sms message.
+	public		$Associations ;
+	public		$Url ;
+	public		$User ;
+	public		$Key ;
+	public		$Method ;
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    Constructor -
+		If called directly, then all properties need to be set manually.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( )
+	   { }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    GetInstance -
+		Creates an instance based on the parameter specified in the Thrak configuration file. $configuration_key
+		specifies the entry in the $Configuration object that holds the SMS parameter, for example :
+
+			'Sms/free-mobile.fr'
+
+		$associations is a set of key/value pairs that map properties to url parameter names.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public static function  GetInstance ( $configuration_key, $associations )
+	   {
+		global		$Configuration ;
+
+
+		$config		=  $Configuration -> Get ( $configuration_key ) ;
+		
+		if  ( ! isset ( $config [ 'send-url' ] ) )
+			error ( new SmsException ( "The \"send-url\" entry of key \"$configuration_key\" does not exist." ) ) ;
+		else
+			$url	=  $config [ 'send-url' ] ;
+				
+		if  ( ! isset ( $config [ 'user' ] ) )
+			error ( new SmsException ( "The \"user\" entry of key \"$configuration_key\" does not exist." ) ) ;
+		else
+			$user	=  $config [ 'user' ] ;
+				
+		if  ( ! isset ( $config [ 'key' ] ) )
+			error ( new SmsException ( "The \"key\" entry of key \"$configuration_key\" does not exist." ) ) ;
+		else
+			$key	=  $config [ 'key' ] ;
+
+		if  ( ! isset ( $config [ 'method' ] ) )
+			$method		=  'get' ;
+		else
+		   {
+			$method		=  strtolower ( $config [ 'method' ] ) ;
+
+			switch ( $method )
+			   {
+				case	'post' :
+				case	'get' :
+					break ;
+
+				default :
+					$method		=  'get' ;
+			    }
+		    }
+
+		$object			=  new self ( ) ;
+		$object -> Url		=  $url ;
+		$object -> User		=  $user ;
+		$object -> Key		=  $key ;
+		$object -> Method	=  $method ;
+		$object -> Associations =  $associations ;
+
+		return ( $object ) ;
+	    }
+    }

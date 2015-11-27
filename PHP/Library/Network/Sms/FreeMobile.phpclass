@@ -1,0 +1,48 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        Free.phpclass
+
+    DESCRIPTION
+        A class for sending sms to a free mobile subscriber.
+
+    AUTHOR
+        Christian Vigh, 11/2015.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2015/11/27]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace	Thrak\Network\Sms ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces & objects
+use	Thrak\System\Object ;
+use	Thrak\Network\Sms\SmsCenterConfiguration ;
+
+
+/*==============================================================================================================
+
+    FreeMobile -
+        A class for sending sms to a free mobile subscriber.
+
+  ==============================================================================================================*/
+class	FreeMobile		extends SmsCenter
+   {
+	public function  __construct ( $user = false, $key = false )
+	   {
+		$config		=  SmsCenterConfiguration::GetInstance ( 'Sms/free-mobile.fr', [ 'User' => 'user', 'Key' => 'pass', '*' => 'msg' ] ) ;
+
+		if  ( $user )
+			$config	-> User		=  $user ;
+
+		if  ( $key )
+			$config -> Key		=  $key ;
+
+		parent::__construct ( $config ) ;
+	    }
+    }
