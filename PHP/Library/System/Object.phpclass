@@ -66,6 +66,9 @@
 
  	[Version : 2.0.9]		[Date : 2015/08/02]		[Author : CV]
 		. Added the $MyClass property.
+
+ 	[Version : 2.0.10]		[Date : 2015/11/30]		[Author : CV]
+		. Added the InstantiateFrom() static method.
  
  ***************************************************************************************************/
 namespace  	Thrak\System ;
@@ -351,6 +354,50 @@ class  Object
 	    }
 
 
+	/*==============================================================================================================
+
+	    NAME
+		InstantiateFrom - Specifies which class(es) can instantiate this one.
+
+	    PROTOTYPE
+		self::InstantiateFrom ( $class [, ...] ) ;
+
+	    DESCRIPTION
+		Declares a class to be instantiatable only from the specified class(es). This method should be called
+		from the calling class constructor.
+
+	    PARAMETERS
+		$class (string or array of strings) -
+			List of class names ; arrays of strings can also be specified.
+
+	  ==============================================================================================================*/
+	protected static function  InstantiateFrom ( $class )
+	   {
+		$names		=  [] ;
+		$argv		=  func_get_args ( ) ;
+
+		foreach  ( $argv  as  $arg )
+		   {
+			if  ( is_array ( $arg ) )
+				$names		=  array_merge ( $names, $arg ) ;
+			else
+				$names []	=  $arg ;
+		    }
+
+		$trace		=  debug_backtrace ( 0, 3 ) ;
+		$trace_count	=  count ( $trace ) ;
+
+		if  ( $trace_count  <=  2 )
+			goto  Error ;
+
+		$caller		=  $trace [2] ;
+
+		if  ( isset ( $caller [ 'class' ] )  &&  in_array ( $caller [ 'class' ], $names ) )
+			return ;
+
+Error :
+		error ( new \Thrak\System\Exception ( 'This class cannot be instantiated directly.' ) ) ;
+	    }
 
 
 	/*==============================================================================================================
