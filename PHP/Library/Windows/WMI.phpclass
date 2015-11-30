@@ -11,8 +11,12 @@
         Christian Vigh, 11/2015.
 
     HISTORY
-    [Version : 1.0]    [Date : 2014/11/14]     [Author : CV]
+    [Version : 1.0]	[Date : 2014/11/14]     [Author : CV]
         Initial version.
+
+    [Version : 1.0.1]	[Date : 2015/11/30]     [Author : CV]
+	. Classes implemented on-the-fly now include underlying WMI object methods, which are dependent of the
+	  WMI class being implemented.
 
  **************************************************************************************************************/
 namespace 	Thrak\Windows ;
@@ -165,7 +169,7 @@ class      Wmi      extends  AbstractWindowsBase
 		   {
 			if  ( ! $class_exists )
 			   {
-				$this -> __create_class ( $wmi_class, $base_class, $namespace ) ;
+				$this -> __create_class ( $row, $wmi_class, $base_class, $namespace ) ;
 
 				if  ( ! is_subclass_of ( $full_class_path, 'Thrak\Windows\WmiInstance' ) )
 					error ( new \Thrak\System\RuntimeException ( "Class \"$full_class_path\" should inherit from Thrak\Windows\WmiInstance" ) ) ;
@@ -188,22 +192,115 @@ class      Wmi      extends  AbstractWindowsBase
 
 	// __create_class -
 	//	Creates a class on-the-fly mapped to a query result.
-	private function  __create_class ( $class, $base, $namespace )
+	private function  __create_class ( $row, $class, $base, $namespace )
 	   {
 		$namespace	=  ( $namespace ) ?  "namespace $namespace ;" : '' ;
 		$classtext	=  <<<END
-			$namespace
-			use  Thrak\\Windows\\WmiInstance ;
+$namespace
+use  Thrak\\Windows\\WmiInstance ;
 
-			class  $class extends $base
+class  $class extends $base
+   {
+	public function  __construct ( \$row )
+	   {
+		parent::__construct ( \$row ) ;
+	    }
+
+END;
+		$methods	=  [] ;
+
+
+		foreach (  $row -> Methods_  as  $row_method )
+		   {
+			$method		=  
+			   [ 
+				'name'			=>  $row_method -> Name, 
+				'parameters'		=>  [], 
+				'has-result'		=>  false 
+			    ] ;
+
+			if  ( $row_method -> InParameters )
 			   {
-				public function  __construct ( \$row )
+				foreach  ( $row_method -> InParameters -> Properties_  as  $parameter )
+					$method [ 'parameters'    ] []	=  [ 'name' => $parameter -> Name, 'out' => false ] ;
+			    }
+
+			if  ( $row_method -> OutParameters )
+			   {
+				foreach  ( $row_method -> OutParameters -> Properties_  as  $parameter )
 				   {
-					parent::__construct ( \$row ) ;
+					if  (  ! strcasecmp ( $parameter -> Name, 'ReturnValue' ) )
+						$method [ 'has-result' ]	=  true ;
+					else
+						$method [ 'parameters' ] []	=  [ 'name' => $parameter -> Name, 'out' => true ] ;
 				    }
 			    }
-END;
 
+			$methods []	=  $method ;
+		    }
+
+		// Build method text
+		foreach  ( $methods  as  $method )
+		   {
+			// Function header
+			$classtext	.=  "\n\n\tpublic function  {$method [ 'name' ]} ( " ;
+
+			// Function arguments
+			$list	=  [] ;
+			
+			foreach  ( $method [ 'parameters' ]  as  $parameter )
+			   {
+				if  ( $parameter [ 'out' ] )
+					$item	=  '&$' . $parameter [ 'name' ] ;
+				else
+					$item	=  '$' . $parameter [ 'name' ] ;
+
+				$list []	=  $item ;
+			    }
+
+			$classtext	.=  implode ( ', ', $list ) . " )\n\t   {\n" ;
+
+			// Create a variant for each OUT parameter
+			foreach  ( $method [ 'parameters' ]  as  $parameter )
+			   {
+				if  ( $parameter [ 'out' ] )
+					$classtext	.=  "\t\t\$vt_{$parameter [ 'name' ]}	=  new \VARIANT ( ) ;\n" ;
+			    }
+
+			// Call the underlying COM function
+			$classtext		.=  "\n\t\t\$__result__	=  \$this -> WmiRow -> {$method [ 'name' ]} ( " ;
+			$list		 =  [] ;
+
+			foreach  ( $method [ 'parameters' ]  as  $parameter )
+			   {
+				if  ( $parameter [ 'out' ] )
+					$item	=  '$vt_' . $parameter [ 'name' ] ;
+				else
+					$item	=  '$' . $parameter [ 'name' ] ;
+
+				$list []	=  $item ;
+			    }
+
+			$classtext	.=  implode ( ', ', $list ) . " ) ;\n\n" ;
+
+			// Convert OUT parameters from variant to PHP data
+			foreach  ( $method [ 'parameters' ]  as  $parameter )
+			   {
+				if  ( $parameter [ 'out' ] )
+					$classtext	.=  "\t\t\${$parameter [ 'name' ]}	=  self::FromVariant ( \$vt_{$parameter [ 'name' ]} ) ;\n" ;
+			    }
+
+			$classtext	.=  "\n" ;
+
+			// If method returns a value then convert it
+			if  ( $method [ 'has-result' ] )
+				$classtext	.=  "\t\treturn ( self::FromVariant ( \$__result__ ) ) ;\n" ;
+
+			$classtext	.=  "\t    }\n" ;
+		    }
+
+		// Create the class
+		$classtext	=  $classtext . "\n    }" ;
 		eval ( $classtext ) ;
 	    }
 
@@ -238,6 +335,7 @@ class  WmiInstance		extends		AbstractWindowsBase
 				implements	\ArrayAccess, \Countable, \Iterator
    {
 	protected	$PropertyNames ;
+	protected	$WmiRow ;
 
 
 	/*--------------------------------------------------------------------------------------------------------------
@@ -251,6 +349,8 @@ class  WmiInstance		extends		AbstractWindowsBase
 	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  __construct ( $wmi_row )
 	   {
+		$this -> WmiRow		=  $wmi_row ;
+
 		foreach  ( $wmi_row -> Properties_  as  $property )
 		   {
 			$property_name 			=  $property -> Name ;
