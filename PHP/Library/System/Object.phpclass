@@ -68,7 +68,7 @@
 		. Added the $MyClass property.
 
  	[Version : 2.0.10]		[Date : 2015/11/30]		[Author : CV]
-		. Added the InstantiateFrom() static method.
+		. Added the MustInstantiateFrom() static method.
  
  ***************************************************************************************************/
 namespace  	Thrak\System ;
@@ -357,10 +357,10 @@ class  Object
 	/*==============================================================================================================
 
 	    NAME
-		InstantiateFrom - Specifies which class(es) can instantiate this one.
+		MustInstantiateFrom - Specifies which class(es) can instantiate this one.
 
 	    PROTOTYPE
-		self::InstantiateFrom ( $class [, ...] ) ;
+		self::MustInstantiateFrom ( $class [, ...] ) ;
 
 	    DESCRIPTION
 		Declares a class to be instantiatable only from the specified class(es). This method should be called
@@ -371,7 +371,7 @@ class  Object
 			List of class names ; arrays of strings can also be specified.
 
 	  ==============================================================================================================*/
-	protected static function  InstantiateFrom ( $class )
+	protected static function  MustInstantiateFrom ( $class )
 	   {
 		$names		=  [] ;
 		$argv		=  func_get_args ( ) ;
