@@ -63,4 +63,44 @@ class  NetworkHelpers		extends  Object
 	    }
 
 
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        IsPortAvailable - Checks if a port is available.
+	 
+	    PROTOTYPE
+	        $status		=  NetworkHelpers::IsPortAvailable ( $port, $host = "localhost" ) ;
+	 
+	    DESCRIPTION
+	        Checks if the specified port is available (ie, not listening on) on the specified host.
+	 
+	    PARAMETERS
+		$port (integer) -
+			Port number to be checked.
+
+	        $host (string) -
+	                Host to be checked.
+	 
+	    RETURN VALUE
+	        true if the port is available (ie, no one is listening on that port on the specified host) or false
+		otherwise.
+
+	    NOTE
+		Even if the return value marks the specified port as "available", this does not mean that it is not
+		blocked by a firewall. It just means that nobody is listening to it.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  IsPortAvailable ( $port, $host = 'localhost' )
+	   {
+		$fp	=  fsockopen ( $host, $port, $errno, $errstr, 2 ) ;
+
+		if  ( $fp )
+		   {
+			fclose ( $fp ) ;
+
+			return ( false ) ;
+		    }
+		else
+			return ( true ) ;
+	    }   
     }
