@@ -1339,7 +1339,7 @@ class  	Convert		extends  Object
 			   {
 				// Backslash : escape sequence - only interpret a few special characters
 				case	'\\' :
-					if  ( $i + 1  <  $length )
+					if  ( ! IS_WINDOWS  &&  $i + 1  <  $length )
 					   {
 						$ch2	=  $str [++$i] ;
 
