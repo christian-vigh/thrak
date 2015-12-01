@@ -158,6 +158,9 @@
      [Version : 2.0.30]	[Date : 2015/11/22]		[Author : CV]
 	. Added the $remove_empty parameter to the ExplodeAndTrim() method.
  
+     [Version : 2.0.31]	[Date : 2015/12/01]		[Author : CV]
+	. Added the SplitFields() method.
+ 
  ***************************************************************************************************/
 namespace 	Thrak\Types ;
 
@@ -2963,6 +2966,93 @@ class String  extends  Object
 		    }
 
 		return ( $blocks ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        SplitFields - Splits a line into fields.
+	 
+	    PROTOTYPE
+	        $array	=  String::SplitFields ( $line, $fixed_fields = false, $separator = ' ' ) ;
+	 
+	    DESCRIPTION
+	        Splits a line of text into an array of field values. When non-false, the $fixed_fields parameter
+		specifies how many fields are to be considered as NOT having the specified separator in their value.
+		This method is originally intended to parse the output of external commands, such as :
+
+			ps -ef
+
+		which produces something like :
+
+			UID        PID  PPID  C STIME TTY       TIME     CMD
+			root         1     0  0 Nov29 ?		00:00:02 init [2]
+			...
+
+		Typically, you need to get the value of columns 1 to 6, which (normally) never contain spaces. 
+		The 7th and last column is the command line, which can contain spaces. So, to retrieve field values,
+		just call :
+
+			$array	=  String::SplitFields ( $line, 6 ) ;
+
+		If $line contains the second line of the ps command output, then you will have :
+			$array [0]	==  'root'		(UID)
+			$array [1]	==  '1'			(PID)
+			$array [2]	==  '0'			(PPID)
+			$array [3]	==  '0'			(C)
+			$array [4]	==  'Nov29'		(STIME)
+			$array [5]	==  '?'			(TTY)
+			$array [6]	==  'init [2]'		(CMD, this last one can include spaces)
+
+	 
+	    PARAMETERS
+	        $line (string) -
+	                Line to be parsed.
+
+		$fixed_field (integer) -
+			When specified, indicates the number of fields that are to be considered as NOT having
+			separator characters. When that number of fields has been parsed, the remaining data
+			in $line will the last column.
+			When false (the default), no special handling will be performed on the last column.
+
+		$separator (string) -
+			Separator character. Well, no really a separator in the sense of a CSV file, but a character
+			which can be found multiple times between two fields.
+	 
+	    RETURN VALUE
+	        An array holding the field values or false if the supplied line is empty.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public static function  SplitFields ( $line, $fixed_fields = false, $separator = ' ' )
+	   {
+		if  ( $fixed_fields  ===  false )
+			$fixed_fields	=  PHP_INT_MAX ;
+
+		$result		=  [] ;
+		$result_count	=  0 ;
+		$line_length	=  strlen ( $line ) ;
+		$index		=  0 ;
+		$next_index	=  0 ;
+
+		while  ( $next_index  <  $line_length  &&  $result_count  <=  $fixed_fields  &&  
+				( $next_index = strpos ( $line, $separator, $index ) )  !==  false )
+		   {
+			$item	=  substr  ( $line, $index, $next_index - $index ) ;
+			$next_index ++ ;
+
+			while  ( $next_index  <  $line_length  &&  $line [ $next_index ]  ==  $separator )
+				$next_index ++ ;
+
+			$result []	=  $item ;
+			$result_count ++ ;
+			$index		=  $next_index ;
+		    }
+
+		if  ( $index  <  $line_length )
+			$result []	=  substr ( $line, $index ) ;
+
+		return ( $result ) ;
 	    }
 
 
