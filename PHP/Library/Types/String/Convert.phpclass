@@ -49,6 +49,9 @@
 	  integers,because the integer size on Windows platforms is still 32 bits, even on a 64-bits 
 	  PHP version.
 
+     [Version : 1.0.9]		[Date : 2015/08/27]		[Author : CV]
+	. Added the ToArgv() method.
+
  ***************************************************************************************************/
 namespace 	Thrak\Types\String ;
 
@@ -1289,6 +1292,113 @@ class  	Convert		extends  Object
 				( ord ( $str{2} )  <<   8 )  |
 				( ord ( $str{3} )         )
 			) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        ToArgv - Converts a command-line string to an argv array.
+	 
+	    PROTOTYPE
+	        $argv	=  Convert::ToArgv ( $str, $argv0 = false ) ;
+	 
+	    DESCRIPTION
+	        Converts the specified string, which represents a command line, to an argv array.
+		Quotes can be used to protect individual arguments from being split and are removed from the argument.
+	 
+	    PARAMETERS
+	        $str (string) -
+	                Command-line string to be parsed.
+
+		$argv0 (string) -
+			Normally, the first element of a $argv array is the program name. $argv0 allows to specify a
+			program name if the supplied command-line contains only arguments.
+	 
+	    RETURN VALUE
+	        Returns an array containing the arguments.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public static function  ToArgv ( $str, $argv0 = false )
+	   {
+		$argv	=  [] ;
+
+		if  ( $argv0 )
+			$argv []	=  $argv0 ;
+
+		$length		=  strlen ( $str ) ;
+		$in_quote	=  false ;
+		$param		=  '' ;
+
+		// Loop through input string characters
+		for  ( $i = 0 ; $i  <  $length ; $i ++ )
+		   {
+			$ch	=  $str [$i] ;
+
+			switch  ( $ch )
+			   {
+				// Backslash : escape sequence - only interpret a few special characters
+				case	'\\' :
+					if  ( $i + 1  <  $length )
+					   {
+						$ch2	=  $str [++$i] ;
+
+						switch ( $ch2 )
+						   {
+							case	'n'	: $param  .=  "\n" ; break ;
+							case	't'	: $param  .=  "\t" ; break ;
+							case	'r'	: $param  .=  "\r" ; break ;
+							case	'v'	: $param  .=  "\v" ; break ;
+							default		: $param  .=  $ch2 ;
+						    }
+					    }
+					else
+						$param	.=  '\\' ;
+
+					break ;
+
+				// Space - this terminates the current parameter, if we are not in a quoted string
+				case	' ' :
+				case	"\t" :
+				case	"\n" :
+				case	"\r" :
+					if  ( $in_quote )
+						$param	.=  $ch ;
+					else if  ( $param ) 
+					   {
+						$argv []	=  $param ;
+						$param		=  '' ;
+					    }
+
+					break ;
+
+				// A quote - Either the start or the end of a quoted value
+				case	'"' :
+				case	"'" :
+					if  ( $in_quote )		// We started a quoted string
+					   {
+						if  ( $in_quote  ==  $ch )	// This quoted string started with the same character as the current one
+							$in_quote	=  false ;
+						else				// This quoted string started with a different character
+							$param		.=  $ch ;
+					    }
+					else				// We are not in a quoted string, so say that one quoted string has started
+						$in_quote	=  $ch ;
+
+					break ;
+
+				// Other : just append the current character to the current parameter
+				default :
+					$param		.=  $ch ;
+			    }
+		    }
+
+		// Check for last parameter
+		if  ( $param )
+			$argv []	=  $param ;
+
+		// All done, return
+		return ( $argv ) ;
 	    }
 
 
