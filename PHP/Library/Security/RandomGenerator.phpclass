@@ -59,14 +59,3 @@ interface  ITrueRandomProvider  extends  IRandomProvider
 interface  IPseudoRandomProvider  extends  IRandomProvider 
    {
     }
-
-
-/*==============================================================================================================
-
-    RandomGenerator -
-        A random generator using multiple random providers as fallbacks.
-
-  ==============================================================================================================*/
-class  RandomGenerator
-   {
-    }
