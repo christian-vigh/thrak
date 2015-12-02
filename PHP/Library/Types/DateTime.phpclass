@@ -167,6 +167,9 @@ class  	DateTime	extends  Object
 		else
 			$timestamp	=  microtime ( true ) ;
 
+		if  ( $timestamp  ==  round ( $timestamp, 0 ) )
+			$timestamp	=  "$timestamp.0" ;
+
 		$datetime	=  \DateTime::createFromFormat ( 'U.u', $timestamp ) ;
 		$tzstring	=  date_default_timezone_get ( ) ;
 		$tz		=  new \DateTimeZone ( $tzstring ) ;
