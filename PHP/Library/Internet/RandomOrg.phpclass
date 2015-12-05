@@ -51,18 +51,18 @@ class  RandomOrg	extends Object
 	const	QUOTA_PER_DAY				=  1000000 ;				// Max random.org authorized quota, in bits
 	const   QUOTA_REJECT_LARGE_REQUESTS		=  100000 ;				// Below this quota, large requests will be rejected by the RandomOrg class
 	const   QUOTA_REJECT_SMALL_REQUESTS		=  5000 ;				// Up to this limit, small requests will continue to be served
-	const   QUOTA_SMALL_REQUEST_SIZE		=  144 ;				// Maximum size in bits of a small request
+	const   QUOTA_SMALL_REQUEST_SIZE		=  512 ;				// Maximum size in bits of a small request
 	
 	// Limits for query parameters
-	const	MIN_INTEGER_VALUE			=  -1000000000 ;			// Min/max values for an integer
-	const   MAX_INTEGER_VALUE			=  1000000000 ;
+	const	MIN_INTEGER_VALUE			=  -1000000 ;				// Min/max values for an integer
+	const   MAX_INTEGER_VALUE			=  +1000000 ;
 	const   MAX_STRING_LENGTH			=  20 ;					// Max random string length
 	const   MIN_PASSWORD_LENGTH			=  6 ;					// Min/max password lengths
 	const   MAX_PASSWORD_LENGTH			=  24 ;
 	const   MAX_SEQUENCE_RANGE			=  10000 ;				// Max range of values for sequence generation
 	const	MAX_DECIMAL_PLACES			=  20 ;					// Max decimal places for fraction generaion
 
-	// Limits for query parameters (again) : Max number of values tht can be generated
+	// Limits for query parameters (again) : Max number of values that can be generated
 	const   MAX_VALUES				=  10000 ;				// For anything but...
 	const   MAX_BYTE_VALUES				=  16384 ;				// ... bytes
 	const   MAX_PASSWORD_VALUES			=  100 ;				// ... or passwords
@@ -149,7 +149,7 @@ class  RandomOrg	extends Object
 	private function  __overquota ( $requested_bits )
 	   {
 		$new_quota	=  $this -> CurrentQuota - $requested_bits ;
-		
+
 		// No more requests will be accepted if it force up to go below QUOTA_REJECT_SMALL_REQUESTS bits
 		if  ( $new_quota  <=  self::QUOTA_REJECT_SMALL_REQUESTS )
 			return ( true ) ;
@@ -439,7 +439,7 @@ class  RandomOrg	extends Object
 		$result		=  $this -> __retrieve ( 'integers', self::INTEGERS_URL, $params ) ;
 		$result		=  preg_replace ( '/\s+/', ' ', $result ) ;
 		$values		=  explode ( ' ', $result ) ;
-		
+
 		return ( $this -> __to_integer_array ( $values ) ) ;
 	    }
 
