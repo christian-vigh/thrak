@@ -93,9 +93,9 @@ class  NetworkHelpers		extends  Object
 		blocked by a firewall. It just means that nobody is listening to it.
 	 
 	 *-------------------------------------------------------------------------------------------------------------*/
-	public function  IsPortAvailable ( $port, $host = 'localhost' )
+	public static function  IsPortAvailable ( $port, $host = 'localhost' )
 	   {
-		$fp	=  fsockopen ( $host, $port, $errno, $errstr, 2 ) ;
+		$fp	=  @fsockopen ( $host, $port, $errno, $errstr, 2 ) ;
 
 		if  ( $fp )
 		   {
