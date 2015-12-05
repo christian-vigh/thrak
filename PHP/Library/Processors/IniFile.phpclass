@@ -1231,7 +1231,7 @@ class  IniFile  extends  Object
 		if  ( $max  !=  null  &&  $value  >  $max ) 
 			error ( new \Thrak\System\RuntimeException ( "Integer value \"$value\" for the \"$key\" value of the [$section] section must be less than or equal to $max." ) ) ;
 
-		return ( $value ) ;
+		return ( ( integer ) $value ) ;
 	    }
 	
 	
