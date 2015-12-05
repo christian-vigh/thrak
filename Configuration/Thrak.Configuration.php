@@ -37,6 +37,8 @@ $Configuration =
 			"thrak://Javascript", 
 			"thrak://Javascript/contribs",
 			"thrak://Javascript/contribs/jquery",
+			"thrak://Javascript/contribs/jstree",
+			"thrak://Javascript/contribs/jstree/dist",
 			"thrak://Javascript/contribs/phpjs/functions/",
 			"thrak://Javascript/contribs/phpjs/functions/bc",
 			"thrak://Javascript/contribs/phpjs/functions/classkit",
