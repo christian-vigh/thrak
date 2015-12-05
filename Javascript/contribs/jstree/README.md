@@ -1,6 +1,6 @@
 # jstree
 
-[jsTree](http://www.jstree.com/) is jquery plugin, that provides interactive trees. It is absolutely free, [open source](https://github.com/vakata/jstree) and distributed under the MIT license. 
+[jsTree](http://www.jstree.com/) is jquery plugin, that provides interactive trees. It is absolutely free, [open source](https://github.com/vakata/jstree) and distributed under the MIT license.
 
 jsTree is easily extendable, themable and configurable, it supports HTML & JSON data sources, AJAX & async callback loading.
 
@@ -35,6 +35,7 @@ _Aside from this readme you can find a lot more info on [jstree.com](http://www.
   - [checkbox](#checkbox)
   - [contextmenu](#contextmenu)
   - [dnd](#dnd)
+  - [massload](#massload)
   - [search](#search)
   - [sort](#sort)
   - [state](#state)
@@ -54,14 +55,14 @@ _Aside from this readme you can find a lot more info on [jstree.com](http://www.
 ### Include all neccessary files
 To get started you need 3 things in your page:
  1. jQuery (anything above 1.9.1 will work)
- 2. A jstree theme (there is only one theme supplied by default) 
- 3. The jstree source file 
+ 2. A jstree theme (there is only one theme supplied by default)
+ 3. The jstree source file
 
 ```html
 <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
 
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/jstree/3.0.4/themes/default/style.min.css" />
-<script src="//cdnjs.cloudflare.com/ajax/libs/jstree/3.0.4/jstree.min.js"></script>
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/jstree/3.0.9/themes/default/style.min.css" />
+<script src="//cdnjs.cloudflare.com/ajax/libs/jstree/3.0.9/jstree.min.js"></script>
 ```
 
 _If you decide to host jstree yourself - the files are located in the `dist` folder. You can safely ignore the `dist/libs` folder._
@@ -70,7 +71,7 @@ _If you decide to host jstree yourself - the files are located in the `dist` fol
 
 ### Populating a tree using HTML
 
-Now we are all set to create a tree, inline HTML is the easiest option (suitable for menus). All you need to do is select a node (using a jQuery selector) and invoke the `.jstree()` function to let jstree know you want to render a tree inside the selected node.
+Now we are all set to create a tree, inline HTML is the easiest option (suitable for menus). All you need to do is select a node (using a jQuery selector) and invoke the `.jstree()` function to let jstree know you want to render a tree inside the selected node. `$.jstree.create(element)` can be used too.
 
 ```html
 <div id="container">
@@ -130,7 +131,7 @@ For now it is important to note that jstree will try to parse any data you speci
 
 #### The required JSON format
 
-The data you use must be in a specific format, each branch of the tree is represented by an object, which must at least have a `text` key. The `children` key can be used to add children to the branch, it should be an array of objects. 
+The data you use must be in a specific format, each branch of the tree is represented by an object, which must at least have a `text` key. The `children` key can be used to add children to the branch, it should be an array of objects.
 
 _Keep in mind, you can use a simple string instead of an object if all you need is node with the given text, the above data can be written as:_
 
@@ -162,12 +163,12 @@ $(function() {
   $('#container').jstree({
     'core' : {
       'data' : [
-          { 
-              "text" : "Root node", 
-              "state" : {"opened" : true }, 
+          {
+              "text" : "Root node",
+              "state" : {"opened" : true },
               "children" : [
-                  { 
-                    "text" : "Child node 1", 
+                  {
+                    "text" : "Child node 1",
                     "state" : { "selected" : true },
                     "icon" : "glyphicon glyphicon-flash"
                   },
@@ -218,11 +219,11 @@ The server response is:
 [view result](http://jsfiddle.net/vakata/2kwkh2uL/4/)
 
 Instead of a JS array, you can set `core.data` to a [jQuery AJAX config](http://api.jquery.com/jQuery.ajax/)
-jsTree will hit that URL, and provided you return properly formatted JSON it will be displayed. 
+jsTree will hit that URL, and provided you return properly formatted JSON it will be displayed.
 
 _If you cannot provide proper JSON headers, set `core.data.dataType` to `"json"`._
 
-The ids in the server response make it possible to identify nodes later (which we will see in the next few demos), but they are not required. 
+The ids in the server response make it possible to identify nodes later (which we will see in the next few demos), but they are not required.
 
 __WHEN USING IDS MAKE SURE THEY ARE UNIQUE INSIDE A PARTICULAR TREE__
 
@@ -272,7 +273,7 @@ You will notice that the first request goes off to:
 `http://www.jstree.com/fiddle?lazy&id=#`
 `#` is the special ID that the function receives when jstree needs to load the root nodes.
 
-Now go ahead and open the root node - two children will be shown, but no request will be made - that is because we loaded those children along with the first request. 
+Now go ahead and open the root node - two children will be shown, but no request will be made - that is because we loaded those children along with the first request.
 
 Onto the next difference - "Child node 1" appears closed - that is because in the data we supplied `true` as the `"children"` property of this node (you can see it in the server response). This special value indicated to jstree, that it has to lazy load the "Child node 1" node.
 
@@ -319,7 +320,7 @@ As you can see your function will receive two arguments - the node whose childre
 
 ## Working with events
 
-jstree provides a lot of events to let you know something happened with the tree. The events are the same regardless of how you populate the tree. 
+jstree provides a lot of events to let you know something happened with the tree. The events are the same regardless of how you populate the tree.
 Let's use the most basic event `changed` - it fires when selection on the tree changes:
 
 ```html
@@ -381,7 +382,7 @@ $(function() {
     }
   });
   $('button').on("click", function () {
-    var instance = $('#container').jstree(true); 
+    var instance = $('#container').jstree(true);
     instance.deselect_all();
     instance.select_node('1');
   });
@@ -411,7 +412,7 @@ $("#tree").jstree({ /* config object goes here */ });
 
 Each key in the config object corresponds to a plugin, and the value of that key is the configuration for that plugin. There are also two special keys `"core"` and `"plugins"`:
  * `"core"` stores the core configuration options
- * `"plugins"` is an array of plugin names (strings) you want active on the instance 
+ * `"plugins"` is an array of plugin names (strings) you want active on the instance
 
 When configuring you only need to set values that you want to be different from the defaults.
 
@@ -446,7 +447,7 @@ $("#tree").jstree({
 
 [view result](http://jsfiddle.net/vakata/2kwkh2uL/9/)
 
-`"core.check_callback"` can also be set to a function, that will be invoked every time a modification is about to happen (or when jstree needs to check if a modification is possible). If you return `true` the operation will be allowed, a value of `false` means it will not be allowed.
+`"core.check_callback"` can also be set to a function, that will be invoked every time a modification is about to happen (or when jstree needs to check if a modification is possible). If you return `true` the operation will be allowed, a value of `false` means it will not be allowed. The possible operation you can expect are `create_node`, `rename_node`, `delete_node`, `move_node` and `copy_node`. The `more` parameter will contain various information provided by the plugin that is invoking the check. For example the DND plugin will provide an object containing information about the move ot copy operation that is being checked - is it a multi tree operation, which node is currently hovered, where the insert arrow is pointing - before, after or inside, etc.
 
 ```js
 $("#tree").jstree({
@@ -466,10 +467,10 @@ $("#tree").jstree({
 
 [view result](http://jsfiddle.net/vakata/2kwkh2uL/10/)
 
-The `more` parameter you receive contains other information related to the check being performed. 
+The `more` parameter you receive contains other information related to the check being performed.
 
-__For example__: `move_node` & `copy_node` checks will fire repeatedly while the user drags a node, if the check was triggered by the `dnd` plugin `more` will contain a `dnd` key, which will be set to `true`. 
-You can check for `more.dnd` and only perform a certain action if `dnd` triggered the check. 
+__For example__: `move_node` & `copy_node` checks will fire repeatedly while the user drags a node, if the check was triggered by the `dnd` plugin `more` will contain a `dnd` key, which will be set to `true`.
+You can check for `more.dnd` and only perform a certain action if `dnd` triggered the check.
 If you only want to perform an operation when a node is really about to be dropped check for `more.core`.
 
 ## Plugins
@@ -478,6 +479,8 @@ jsTree comes with a few plugin bundled, but they will only modify your tree if y
 
 ### checkbox
 Renders a checkbox icon in front of each node, making multiselection easy. It also has a "tri-state" option, meaning a node with some of its children checked will get a "square" icon.
+
+_Keep in mind that if any sort of cascade is enabled, disabled nodes may be checked too (not by themselves, but for example when a parent of a disabled node is checked and selection is configured to cascade down)._
 
 ```js
 $("#tree").jstree({
@@ -511,6 +514,24 @@ $("#tree").jstree({
 
 [view result](http://jsfiddle.net/vakata/2kwkh2uL/17/)
 
+### massload
+Makes it possible to load multiple nodes in a single go (for a lazy loaded tree).
+
+```js
+$("#tree").jstree({
+  "core" : {
+    "data" : { .. AJAX config .. }
+  },
+  "massload" : {
+    "url" : "/some/path",
+    "data" : function (nodes) {
+      return { "ids" : nodes.join(",") };
+    }
+  },
+  "plugins" : [ "massload", "state" ]
+});
+```
+
 ### search
 Adds the possibility to search for items in the tree and show only matching nodes. It also has AJAX / callback hooks, so that search will work on lazy loaded trees too.
 
@@ -525,7 +546,7 @@ $("#container").jstree({
 });
 $("#s").submit(function(e) {
   e.preventDefault();
-  $("container").jstree(true).search($("#q").val());
+  $("#container").jstree(true).search($("#q").val());
 });
 </script>
 ```
@@ -632,6 +653,6 @@ _Please do NOT edit files in the "dist" subdirectory as they are generated via g
 If you want to you can always [donate a small amount][paypal] to help the development of jstree.
 [paypal]: https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=paypal@vakata.com&currency_code=USD&amount=&return=http://jstree.com/donation&item_name=Buy+me+a+coffee+for+jsTree
 
-Copyright (c) 2014 Ivan Bozhanov (http://vakata.com) 
+Copyright (c) 2014 Ivan Bozhanov (http://vakata.com)
 
 Licensed under the [MIT license](http://www.opensource.org/licenses/mit-license.php).

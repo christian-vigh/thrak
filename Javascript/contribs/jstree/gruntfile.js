@@ -1,11 +1,15 @@
 /*global module:false, require:false, __dirname:false*/
 
 module.exports = function(grunt) {
+  grunt.util.linefeed = "\n";
 
   // Project configuration.
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
     concat: {
+      options : {
+        separator : "\n"
+      },
       dist: {
         src: ['src/<%= pkg.name %>.js', 'src/<%= pkg.name %>.*.js', 'src/vakata-jstree.js'],
         dest: 'dist/<%= pkg.name %>.js'
@@ -45,7 +49,7 @@ module.exports = function(grunt) {
       }
     },
     qunit: {
-      files: ['test/**/*.html']
+      files: ['test/unit/**/*.html']
     },
     jshint: {
       options: {
@@ -119,6 +123,27 @@ module.exports = function(grunt) {
         }
       },
     },
+    resemble: {
+      options: {
+        screenshotRoot: 'test/visual/screenshots/',
+        url: 'http://127.0.0.1/jstree/test/visual/',
+        gm: false
+      },
+      desktop: {
+        options: {
+          width: 1280,
+        },
+        src: ['desktop'],
+        dest: 'desktop',
+      },
+      mobile: {
+        options: {
+          width: 360,
+        },
+        src: ['mobile'],
+        dest: 'mobile'
+      }
+    },
     imagemin: {
       dynamic: {
         options: {                       // Target options
@@ -162,6 +187,7 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-contrib-less');
   grunt.loadNpmTasks('grunt-contrib-qunit');
+  grunt.loadNpmTasks('grunt-resemble-cli');
   grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.loadNpmTasks('grunt-contrib-imagemin');
   grunt.loadNpmTasks('grunt-text-replace');
@@ -178,9 +204,10 @@ module.exports = function(grunt) {
         contents = contents.replace(/\/\*globals[^\/]+\//ig, '');
         //contents = contents.replace(/\(function \(factory[\s\S]*?undefined/mig, '(function ($, undefined');
         //contents = contents.replace(/\}\)\);/g, '}(jQuery));');
-        contents = contents.replace(/\(function \(factory[\s\S]*?undefined[^\n]+/mig, '');
+        contents = contents.replace(/\(function \(factory[\s\S]*?undefined\s*\)[^\n]+/mig, '');
         contents = contents.replace(/\}\)\);/g, '');
         contents = contents.replace(/\s*("|')use strict("|');/g, '');
+        contents = contents.replace(/\s*return \$\.fn\.jstree;/g, '');
         return grunt.file.read('src/intro.js') + contents + grunt.file.read('src/outro.js');
       }
     });
@@ -204,8 +231,10 @@ module.exports = function(grunt) {
     });
   });
 
+  grunt.util.linefeed = "\n";
+  
   // Default task.
-  grunt.registerTask('default', ['jshint:beforeconcat','concat','amd','jshint:afterconcat','copy:libs','uglify','less','imagemin','replace','copy:docs','qunit','dox']);
+  grunt.registerTask('default', ['jshint:beforeconcat','concat','amd','jshint:afterconcat','copy:libs','uglify','less','imagemin','replace','copy:docs','qunit','resemble','dox']);
   grunt.registerTask('js', ['concat','amd','uglify']);
   grunt.registerTask('css', ['copy','less']);
 
