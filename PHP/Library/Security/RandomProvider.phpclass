@@ -44,7 +44,7 @@ interface   IRandomProvider
 	// Returns the official provider name
 	public function		GetName			( ) ;
 	
-	// Gets the remaining quota, in sizeof(double)
+	// Gets the remaining quota, in value count
 	public function		GetRemainingQuota	( ) ;
 	
 	// Indicates if the random generator generates real or pseudo numbers
@@ -541,7 +541,7 @@ abstract class  RandomProvider		extends		Object
 	   { return ( is_a ( $this, '\Thrak\Security\Random\IQuotaLimitedRandomProvider' ) ) ; }
 	
 	// Returns next random value
-	public abstract function  Next		( $count = 1, $low = 0, $high = 1 ) ;
+	public abstract function  Next		( $count = 1, $low = null, $high = null ) ;
 	
 	// Randomizes the number generator (may not be implemented by all derived classes)
 	public abstract function  Randomize	( $seed = null ) ;

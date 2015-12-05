@@ -71,9 +71,6 @@ class	StandardRandomProvider		extends		RandomProvider
 			    }
 		    }
 		
-		if  ( count ( $result )  ==  1 )
-			return ( $result [0] ) ;
-		else
-			return ( $result ) ;
+		return ( $result ) ;
 	    }
     }
