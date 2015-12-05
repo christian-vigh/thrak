@@ -42,7 +42,7 @@
 		   {
 			// Where are we ?
 			var  document_height	=  $(window). height ( ) ;
-			var  footer_height	=  $this. height ( ) ;
+			var  footer_height	=  $this. outerHeight ( ) ;
 			var  footer_top		=  $this. position ( ). top + footer_height ;
 
 			// If page height is less than screen height, we need to make some adjustments
@@ -54,7 +54,7 @@
 				// The question here is : why ?
 				// Moreover, if you display a real javascript alert() message, the footer will even be shifted by a few pixels !
 				if  ( $. browser. chrome  ||  $. browser. opera )
-					delta	=  -1 ;
+					delta	=  -4 ;
 
 				margin_top += delta ;
 
