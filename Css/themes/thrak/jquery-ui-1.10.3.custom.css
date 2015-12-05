@@ -1713,3 +1713,65 @@ input.hasDatepicker
     
             
  
+/**************************************************************************************************
+
+	Embedded menus.
+
+ **************************************************************************************************/
+.ui-menutree
+   {
+	list-style-type			:  none ;
+	padding-left			:  0px ;
+	font-family			:  "Palatino Linotype", times ;
+    }
+
+.ui-menutree-children
+   {
+	list-style-type			:  none ;
+	padding-left			:  16px ;
+    }
+
+.ui-menutree li
+   {
+   	position			:  relative ;
+    }
+
+.ui-menutree-item div
+   {
+   	display				:  inline-block ;
+   	margin-left			:  16px ;
+    }
+    
+.ui-menutree-icon
+   {
+   	background-image		:  url(images/ui-icons_791B36_256x240.png) ;
+   	position			:  absolute ;
+   	top				:  0px ;
+   	margin-right			:  8px ;
+    }
+    
+.ui-menutree-single > .ui-menutree-icon-single
+   {
+	background-image		:  none ;
+    }
+
+.ui-menutree-parent.ui-menutree-item-collapsed > .ui-menutree-icon
+   {
+   	background-position		:  -32px -16px;
+    }
+
+.ui-menutree-parent.ui-menutree-item-expanded > .ui-menutree-icon
+   {
+   	background-position		:  -48px -16px;
+    }
+
+.ui-menutree-item:hover
+   {
+   	cursor				:  pointer ;
+    }
+    
+li.ui-menutree-item-active > div
+   {
+   	font-weight			:  bold ;
+   	color				:  #791B36;
+    }

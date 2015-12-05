@@ -216,7 +216,8 @@
 		$('.radio'		, context). radio ( ) ;
 
 		// Calculator
-		$('.calculator'		, context). calculator ( ) ;
+		$. calculator &&
+			$('.calculator'		, context). calculator ( ) ;
 
 		// Auto-select field contents for numeric values
 		$('.integer, .float'	, context). focus
@@ -226,5 +227,8 @@
 				$(this). select ( ) ;
 			    }
 		    ) ;
+
+		// Embedded menus
+		$('.menutree'		, context). menutree ( ) ;
 	    }
     } ( jQuery ) ) ;
