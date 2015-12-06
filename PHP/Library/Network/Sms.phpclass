@@ -105,27 +105,7 @@ abstract class  SmsCenter		extends  Object
 		curl_exec ( $rs ) ;
 		$status		=  curl_getinfo ( $rs, CURLINFO_HTTP_CODE ) ;
 
-		if  ( $status  ==  200 )
-			return ( true ) ;
-
-		switch  ( $status ) 
-		   {
-			case	400 :
-				error ( new SmsException ( "One required SMS parameter is missing" ) ) ;
-
-			case	402 :
-				error ( new SmsException ( "Too many SMS have been sent in too short time." ) ) ;
-
-			case	403 :
-				error ( new SmsException ( "Either the user/key combination is incorrect, or the service has not been " .
-						"activated for this subscriber." ) ) ;
-
-			case	500 :
-				error ( new SmsException ( "Server error, please try again later." ) ) ;
-
-			default :
-				error ( new SmsException ( "Unhandled error $status" ) ) ;
-		    }
+		return ( $status ) ;
 	    }
 
 
