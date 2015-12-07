@@ -11,8 +11,11 @@
         Christian Vigh, 11/2015.
 
     HISTORY
-    [Version : 1.0]    [Date : 2015/11/04]     [Author : CV]
+    [Version : 1.0]	[Date : 2015/11/04]     [Author : CV]
         Initial version.
+
+    [Version : 1.0.1]	[Date : 2015/12/07]     [Author : CV]
+	. Added the Platform keyword in crontab.ini job description.
 
  **************************************************************************************************************/
 namespace	Thrak\Administration ;
@@ -35,6 +38,11 @@ use	Thrak\Processors\IniFile ;
   ==============================================================================================================*/
 class	CrontabConfiguration		extends  Object
    {
+	// Platforms supported by a given script
+	const	PLATFORM_WINDOWS		=  0x01 ;
+	const	PLATFORM_UNIX			=  0x02 ;
+	const	PLATFORM_ALL			=  0x03 ;
+
 	// Ini file for crontab configuration
 	public		$IniFile	=  null ;
 	// Job definitions
@@ -192,6 +200,31 @@ class	CrontabConfiguration		extends  Object
 				    }
 			    }
 
+			// Get the supported platform
+			$value			=  $inifile -> GetKey ( $section_name, 'ConfigurationFile', 'All' ) ;
+
+			switch ( strtolower ( trim ( $value ) ) )
+			   {
+				case	'windows' :
+				case	'win' :
+					$supported_platform	=  self::PLATFORM_WINDOWS ;
+					break ;
+
+				case	'unix' :
+				case	'linux' :
+					$supported_platform	=  self::PLATFORM_UNIX ;
+					break ;
+
+				case	'all' :
+				case	'both' :
+				case    '' :
+					$supported_platform	=  self::PLATFORM_ALL ;
+					break ;
+
+				default :
+					error ( new \Thrak\System\InvalidArgumentException ( "Invalid platform \"$value\" specified in section [$section_name] of file \"$file\"." ) ) ;
+			    }
+
 			// Add a new cron job entry
 			$job	=
 			   [
@@ -208,7 +241,8 @@ class	CrontabConfiguration		extends  Object
 				'stock-script'		=>  $is_stocked,
 				'schedule-job'		=>  $schedule_job,
 				'variables'		=>  $variables,
-				'administrator-email'	=>  $current_email
+				'administrator-email'	=>  $current_email,
+				'platform'		=>  $supported_platform
 			    ] ;
 
 			$this -> Jobs [ $current_user ] []	=  $job ;
