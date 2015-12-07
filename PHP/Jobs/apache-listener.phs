@@ -3,10 +3,26 @@
 	/**************************************************************************************************************
 	
 	    NAME
-	        mysqlconnpurge.phs
+	        apache-listener.phs
 	
 	    DESCRIPTION
-	        Deletes old mysql connection data.
+	        A cron job that conditionnally launches an apache instance after the following steps have been completed :
+		1) The client issues an HTTP request on a given port, which is computed using the current date and time
+		   The connection is closed after that so the client will receive an error (empty response).
+		2) A new random port is picked up, this time by getting a random value from random.org.
+		   A password is also generated using random.org data.
+		3) An sms containing these random port and password is sent to the mobile specified in the Sms section 
+		   of the Thrak configuration file.
+		4) A listener task is started on this random port ; the sms receiver must then use his browser to
+		   access the website at the initial url, using the received port
+		5) The listener task sends a form where the user can type in the received password.
+		   The whole process cannot exceed the number of seconds defined in the ConnectionTimeout key of the
+		   apache-listener.ini file.
+		6) If the supplied password matches the computed password, an Apache instance is started using the
+		   same received port number.
+		   Note that the user will receive again an empty response message from his browser.
+		7) The user has to type again the url with the received port number. Only his ip address will be
+		   authorized to connect.
 	
 	    AUTHOR
 	        Christian Vigh, 11/2015.
@@ -20,10 +36,15 @@
 
 	use  Thrak\Administration\CronScript ;
 	use  Thrak\Types\DateTime ;
+	use  Thrak\Security\Random\RandomProvider ;
+	use  Thrak\Network\NetworkHelpers ;
+	use  Thrak\Network\Sms\FreeMobile ;
 
 	
 	class  Script		extends  CronScript
 	   {
+		const		MAX_PACKET_SIZE		=  1024 ;
+
 		private		$Definitions	=  <<<END
 	<command>
 		<usage>
@@ -31,59 +52,180 @@
 		</usage>
 	</command>
 END;
-		public		$MinPort		=  19991 ;
-		public		$MaxPort		=  65521 ;
-		public		$PortRange		=  45531 ;
-		public		$FallbackPort		=  6621 ;
-		public		$WaitOnFailure		=  5000 ;
-		public		$WaitBetweenAccepts	=  100 ;
+
+		// MinPort and MaxPort are numbers that are used to compute a random port number
+		// based on a given random value. for optimal distribution, these should be prime
+		// numbers. PortRange is simply equal to ( MaxPort - MinPort + 1 ).
+		private		$MinPort		=  19991 ;
+		private		$MaxPort		=  65521 ;
+		private		$PortRange		=  45531 ;
+		// Since during startup a random port number is computed, it may be assigned to another
+		// process ; in this case, the fallback port has to be used to contact the listener
+		private		$FallbackPort		=  6621 ;
+		// Number of milliseconds to sleep when a socket api call has failed
+		private		$WaitOnFailure		=  5000 ;
+		// Number of milliseconds to sleep between two asynchronous socket_accept() calls
+		private		$WaitBetweenAccepts	=  100 ;
+		// One an sms has been sent to the user, he has ConnectionTimeout seconds to connect
+		// to the specified port and type in the specified password
+		private		$ConnectionTimeout	=  60 ;
+		// Random number provider name and instance
+		private		$RandomProvider ;
+		private		$RandomProviderInstance ;
+		// Min and max length for the generated password
+		private		$MinPasswordLength,
+				$MaxPasswordLength ;
+		// Apache instance name, configuration directory and startup script
+		private		$ApacheInstance ;
+		private		$ApacheConfigurationDirectory ;
+		private		$ApacheStartupScript ;
 
 
+		/*--------------------------------------------------------------------------------------------------------------
+
+		    Constructor -
+			Initializes the object and loads script-specific parameters.
+		 
+		 *-------------------------------------------------------------------------------------------------------------*/
 		public function  __construct ( )
 		   { 
 			parent::__construct ( $this -> Definitions ) ; 
 
-			if  ( $this -> JobConfigurationData )
+
+			// Min and max random ports
+			$this -> MinPort		=  $this -> JobConfigurationData -> GetIntegerKey ( 'Settings', 'MinPort'  , null, 1, 65534 ) ;
+			$this -> MaxPort		=  $this -> JobConfigurationData -> GetIntegerKey ( 'Settings', 'MaxPort'  , null, 1, 65534 ) ;
+			$this -> PortRange		=  $this -> JobConfigurationData -> GetIntegerKey ( 'Settings', 'PortRange', null, 1, 65534 ) ;
+
+			if  ( $this -> MinPort  &&  $this -> MaxPort )
 			   {
-				$this -> MinPort		=  $this -> JobConfigurationData -> GetIntegerKey ( 'Settings', 'MinPort'  , null, 1, 65534 ) ;
-				$this -> MaxPort		=  $this -> JobConfigurationData -> GetIntegerKey ( 'Settings', 'MaxPort'  , null, 1, 65534 ) ;
-				$this -> PortRange		=  $this -> JobConfigurationData -> GetIntegerKey ( 'Settings', 'PortRange', null, 1, 65534 ) ;
+				if  ( $this -> MinPort  >  $this -> MaxPort )
+					$this -> ErrorLog ( "MinPort must be less than MaxPort in configuration file " .
+							"\"{$this -> JobConfigurationFile}\".", 'fatal' ) ;
 
-				if  ( $this -> MinPort  &&  $this -> MaxPort )
-				   {
-					if  ( $this -> MinPort  >  $this -> MaxPort )
-						$this -> ErrorLog ( "MinPort must be less than MaxPort in configuration file " .
-								"\"{$this -> JobConfigurationFile}\".", 'fatal' ) ;
-
-					$this -> PortRange	=  $this -> MaxPort - $this -> MinPort + 1 ;
-				    }
-				else if  ( $this -> MinPort  &&  $this -> PortRange )
-				   {
-					$this -> MaxPort	=  $this -> MinPort + $this -> PortRange - 1 ;
-
-					if  ( $this -> MaxPort  >  65534 )
-						$this -> ErrorLog ( "MaxPort + PortRange is greater than the max authorized value of 65534 in configuration file " .
-								"\"{$this -> JobConfigurationFile}\".", 'fatal' ) ;
-
-				    }
-				else if  ( $this -> MaxPort  &&  $this -> PortRange )
-				   {
-					if  ( $this -> MaxPort  -  $this -> PortRange + 1  <  0 )
-						$this -> ErrorLog ( "PortRange is greater than MaxPort in configuration file " .
-								"\"{$this -> JobConfigurationFile}\".", 'fatal' ) ;
-				    }
-				else
-					$this -> ErrorLog ( "At least two of the three following keys must be specified : MinPort, MaxPort, PortRange " .
-							"in configuration file \"{$this -> JobConfigurationFile}\".", 'fatal' ) ;
-
-				$this -> FallbackPort		=  $this -> JobConfigurationData -> GetIntegerKey ( 'Settings', 'FallbackPort', 6621, 1, 65534 ) ;
-				$this -> WaitOnFailure		=  $this -> JobConfigurationData -> GetIntegerKey ( 'Settings', 'WaitOnFailure', 5000, 100, null ) ;
-				$this -> WaitBetweenAccepts	=  $this -> JobConfigurationData -> GetIntegerKey ( 'Settings', 'WaitBetweenAccepts', 100, 10, null ) ;
+				$this -> PortRange	=  $this -> MaxPort - $this -> MinPort + 1 ;
 			    }
+			else if  ( $this -> MinPort  &&  $this -> PortRange )
+			   {
+				$this -> MaxPort	=  $this -> MinPort + $this -> PortRange - 1 ;
+
+				if  ( $this -> MaxPort  >  65534 )
+					$this -> ErrorLog ( "MaxPort + PortRange is greater than the max authorized value of 65534 in configuration file " .
+							"\"{$this -> JobConfigurationFile}\".", 'fatal' ) ;
+
+			    }
+			else if  ( $this -> MaxPort  &&  $this -> PortRange )
+			   {
+				if  ( $this -> MaxPort  -  $this -> PortRange + 1  <  0 )
+					$this -> ErrorLog ( "PortRange is greater than MaxPort in configuration file " .
+							"\"{$this -> JobConfigurationFile}\".", 'fatal' ) ;
+			    }
+			else
+				$this -> ErrorLog ( "At least two of the three following keys must be specified : MinPort, MaxPort, PortRange " .
+						"in configuration file \"{$this -> JobConfigurationFile}\".", 'fatal' ) ;
+
+			// General parameters
+			$this -> FallbackPort		=  $this -> JobConfigurationData -> GetIntegerKey ( 'Settings', 'FallbackPort', 6621, 1, 65534 ) ;
+			$this -> WaitOnFailure		=  $this -> JobConfigurationData -> GetIntegerKey ( 'Settings', 'WaitOnFailure', 5000, 100, null ) ;
+			$this -> WaitBetweenAccepts	=  $this -> JobConfigurationData -> GetIntegerKey ( 'Settings', 'WaitBetweenAccepts', 100, 10, null ) ;
+			$this -> ConnectionTimeout	=  $this -> JobConfigurationData -> GetIntegerKey ( 'Settings', 'ConnectionTimeout', 30, 20, null ) ;
+			$this -> MinPasswordLength	=  $this -> JobConfigurationData -> GetIntegerKey ( 'Settings', 'MinPasswordLength', 8, 4, 64 ) ;
+			$this -> MaxPasswordLength	=  $this -> JobConfigurationData -> GetIntegerKey ( 'Settings', 'MaxPasswordLength', 8, 4, 64 ) ;
+			$this -> RandomProvider		=  $this -> JobConfigurationData -> GetKey ( 'Settings', 'RandomProvider', 'random.org' ) ;
+			$this -> ApacheInstance		=  $this -> JobConfigurationData -> GetKey ( 'Settings', 'ApacheInstance' ) ;
+
+			// Check password length validity
+			if  ( $this -> MinPasswordLength  >  $this -> MaxPasswordLength ) 
+				$this -> ErrorLog ( "Min password length ({$this -> MinPasswordLength}) cannot be greater than max password length ({$this -> MaxPasswordLength}) " .
+						"in configuration file \"{$this -> JobConfigurationFile}\".", 'fatal' ) ;
+
+			// Check for the existence of the specified Apache instance
+			$instance_dir	=  '/etc/apache-' . $this -> ApacheInstance ;
+
+			if  ( ! is_dir ( $instance_dir ) )
+				$this -> ErrorLog ( "Apache instance configuration directory \"$instance_dir\" defined in " .
+						"in configuration file \"{$this -> JobConfigurationFile}\" does not exist.", 'fatal' ) ;
+
+			$instance_script =  '/etc/init.d/apache-' . $this -> ApacheInstance ; 
+
+			$this -> ApacheConfigurationDirectory	=  $instance_dir ;
+			$this -> ApacheStartupScript		=  $instance_script ;
+			
+			if  ( ! file_exists ( $instance_script ) )
+				$this -> ErrorLog ( "Apache instance startup script \"$instance_dir\" defined in " .
+						"in configuration file \"{$this -> JobConfigurationFile}\" does not exist.", 'fatal' ) ;
+
+			// Instanciate a random number provider object
+			$this -> RandomProviderInstance	=  RandomProvider::GetInstance ( $this -> RandomProvider ) ;
 		    }
 
 
-		public function  GetPort ( )
+
+		/**************************************************************************************************************
+		 **************************************************************************************************************
+		 **************************************************************************************************************
+		 ******                                                                                                  ******
+		 ******                                                                                                  ******
+		 ******                                     SUPPORT FUNCTIONS                                            ******
+		 ******                                                                                                  ******
+		 ******                                                                                                  ******
+		 **************************************************************************************************************
+		 **************************************************************************************************************
+		 **************************************************************************************************************/
+
+		/*--------------------------------------------------------------------------------------------------------------
+		 
+		    GetIdData -
+			Generate the random port and password to be sent through sms.
+		 
+		 *-------------------------------------------------------------------------------------------------------------*/
+		private function  GetIdData ( &$port, &$password )
+		   {
+			static	$cset		=  "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+-_,./" ;
+
+			$cset_length		=  strlen ( $cset ) ;
+			$first_time		=  true ;
+
+			// Randomly choose a port number until a free one is found.
+			do
+			   {
+				if  ( ! $first_time ) 
+					$this -> Log ( "Port $value already allocated, trying another one..." ) ;
+
+				$values		=  $this -> NextRandomValues ( 1 ) ;
+				$value		=  $this -> MinPort + ( abs ( $values [0] ) % $this -> PortRange ) ;
+				$first_time	=  false ;
+			    }  while ( ! NetworkHelpers::IsPortAvailable ( $value ) ) ;
+
+			$port		=  $value ;
+
+			// Generate a random password between Min/MaxPasswordLength characters
+			// We use mt_rand() for choosing the length, since using a random provider would not have
+			// a great added value
+			$password_length	=  mt_rand ( $this -> MinPasswordLength, $this -> MaxPasswordLength ) ;
+			$values			=  $this -> NextRandomValues ( $password_length, 0, $cset_length - 1 ) ;
+			$password		=  '' ;
+
+			for  ( $i = 0 ; $i  <  $password_length ; $i ++ )
+				$password	.=  $cset [ ( integer ) $values [$i] ] ;
+
+			$this -> Log ( "Allocated port $port" ) ;
+		    }
+
+
+		/*--------------------------------------------------------------------------------------------------------------
+		 
+		    GetPort -
+			Compute the current port apache-listener will listen on.
+			The computed port is either :
+			- MinPort + ( x % PortRange ), where "x" is a number formed by the current day, hour, month and minute
+			  (in this order)
+			- or FallbackPort, if the computed port is already busy
+			For safety, the current number of minutes is rounded down to a multiple of 5 (server and client times
+			may differ from 1, 2 or 3 minutes ; i hope not more...)
+		 
+		 *-------------------------------------------------------------------------------------------------------------*/
+		public function  GetPort ( $current_port )
 		   {
 			$month		=  date ( 'm' ) ;
 			$day		=  date ( 'd' ) ;
@@ -93,84 +235,435 @@ END;
 			if  ( $minute % 5 ) 
 				$minute	=  sprintf ( '%02d', $minute - ( $minute % 5 ) ) ;
 
-			$port	=  "$month$hour$minute$day" ;
+			$port	=  "$day$hour$month$minute" ;
 			$port	=  $this -> MinPort + ( $port % $this -> PortRange ) ;
 		
-			return ( ( integer ) $port ) ;
+			if  ( $current_port  ===  null  ||  $port  ==  $current_port ) 
+				return ( $port ) ;
+			else if  ( ! NetworkHelpers::IsPortAvailable ( $port ) )
+				return ( $this -> FallbackPort ) ;
+			else
+				return ( $port ) ;
 		    }
 
 
-		public function  Run ( )
-		   {
-			$address		=  '0.0.0.0' ;
-			$use_fallback_port	=  false ;
+		/*--------------------------------------------------------------------------------------------------------------
+		 
+		    NextRandomValues -
+			Retrieves the next $count random values, between $min and $max.
+			The preferred random provider is random.org, but mt_rand will be chosen if random.org quota has been
+			exhausted.
+		 
+		 *-------------------------------------------------------------------------------------------------------------*/
+		private function	NextRandomValues ( $count, $min = null, $max = null ) 
+		    {
+			static		$provider		=  null ;
+			static		$switched_provider	=  false ;
 
+			if  ( ! $provider )
+				$provider		=  RandomProvider::GetInstance ( $this -> RandomProvider ) ;
+
+			if  ( ! $switched_provider )
+			   {
+				$remaining		=  $provider -> GetRemainingQuota ( ) ;
+				$this -> Log ( "Random.org remaining quota : $remaining values" ) ;
+			    }
+
+			$values		=  $provider -> Next ( $count, $min, $max ) ;
+
+			if  ( ! $values )
+			   {
+				$provider		=  RandomProvider::GetInstance ( 'mt_rand' ) ;
+				$switched_provider	=  true ;
+				$this -> Log ( "Random.org quota = $remaining values, switching to mt_rand provider" ) ;
+
+				$values			=  $provider -> Next ( $count, $min, $max ) ;
+			    }
+
+			return ( $values ) ;
+		     }
+
+
+		/*--------------------------------------------------------------------------------------------------------------
+		 
+		    SendSms -
+			Send an sms to the target receiver, defined in the Sms entry of site configuration file.
+			For the moment, only Free Mobile has been implemented.
+		 
+		 *-------------------------------------------------------------------------------------------------------------*/
+		function  SendSms ( $text )
+		   {
+			$status		=  true ;
+
+			try 
+			   {
+				$sms = new FreeMobile ( ) ;
+				$sms -> Send ( $text ) ;
+			    }
+			catch  ( Exception  $e )
+			   {
+				$status		=  false ;
+				$this -> Log ( "Failed to send sms : " . $e -> getMessage ( ) ) ;
+			    }
+
+			return ( $status ) ;
+		    }
+
+
+		/**************************************************************************************************************
+		 **************************************************************************************************************
+		 **************************************************************************************************************
+		 ******                                                                                                  ******
+		 ******                                                                                                  ******
+		 ******                                   NETWORK SUPPORT FUNCTIONS                                      ******
+		 ******                                                                                                  ******
+		 ******                                                                                                  ******
+		 **************************************************************************************************************
+		 **************************************************************************************************************
+		 **************************************************************************************************************/
+
+		/*--------------------------------------------------------------------------------------------------------------
+		 
+		    NetworkPortChanged -
+			Checks if the port computation algorithm, which uses the current time, leads to a new value.
+			If this case, closes the previously opened port and return true.
+		 
+		 *-------------------------------------------------------------------------------------------------------------*/
+		private function  NetworkPortChanged ( $socket, $port )
+		   {
+			$new_port	=  $this -> GetPort ( $port ) ;
+
+			if  ( $port  !=  $new_port )
+			   {
+				socket_close ( $socket ) ;
+				return ( true ) ;
+			    }
+
+			return ( false ) ;
+		    }
+
+
+		/*--------------------------------------------------------------------------------------------------------------
+		 
+		    NetworkListen -
+			Allocates a port (if not specified) and starts to listen to it.
+			Returns the allocated asynchronous socket and port.
+		 
+		 *-------------------------------------------------------------------------------------------------------------*/
+		private function  NetworkListen ( $phase, $address, $async, &$socket, &$port )
+		   {
 ShootAgain :
 			if  ( ( $socket = @socket_create ( AF_INET, SOCK_STREAM, 0 ) )  <  0 ) 
 			   { 
-				$this -> Log ( "failed to create socket: " . socket_strerror ( $socket ) ) ; 
+				$this -> Log ( "phase $phase: failed to create socket: " . socket_strerror ( socket_last_error ( )  ) ) ; 
 				usleep ( $this -> WaitOnFailure * 1000 ) ;
 				goto  ShootAgain ;
 			    } 
 
-			$port	=  $this -> GetPort ( ) ;
-			$this -> Log ( "listening on port $port" ) ;
+			if  ( $port  ===  null ) 
+				$port	=  $this -> GetPort ( 0 ) ;
 
-			if  ( ( $status = @socket_bind ( $socket, $address, ( $use_fallback_port ) ?  $this -> FallbackPort : $port ) )  <  0 ) 
+			$this -> Log ( "phase $phase: listening on $address:$port" ) ;
+
+			if  ( ! @socket_bind ( $socket, $address, $port ) ) 
 			   { 
-				$this -> Log ( "failed to bind socket: " . socket_strerror ( $status ) ) ; 
+				$this -> Log ( "phase $phase: failed to bind socket: " . socket_strerror ( socket_last_error ( ) ) ) ; 
 				usleep ( $this -> WaitOnFailure * 1000 ) ;
+				socket_close ( $socket ) ;
 				goto  ShootAgain ;
 			    } 
 
-			if  ( ( $status = @socket_listen ( $socket, 0 ) )  <  0 ) 
+			if  ( ! @socket_listen ( $socket, 0 ) ) 
 			   { 
-				$this -> Log ( "failed to listen to socket: " . socket_strerror ( $status ) ) ; 
+				$this -> Log ( "phase $phase: failed to listen to socket: " . socket_strerror ( socket_last_error ( ) ) ) ; 
 				usleep ( $this -> WaitOnFailure * 1000 ) ;
+				socket_close ( $socket ) ;
 				goto  ShootAgain ;
 			    } 
 
-			socket_set_nonblock ( $socket ) ; 
+			if  ( $async )
+				socket_set_nonblock ( $socket ) ; 
 
+			return ( true ) ;
+		    }
+
+
+		/*--------------------------------------------------------------------------------------------------------------
+		 
+		    NetworkAccept -
+			Enters into an accept loop on the specified socket.
+			Returns the connection resource and peer address if succesful (NetworkAccept = true) or false.
+		 
+		 *-------------------------------------------------------------------------------------------------------------*/
+		private function  NetworkAccept ( $phase, $socket, &$connection, &$address = null )
+		   {
+			$connection	=  @socket_accept ( $socket ) ;
+   
+			if  ( $connection  ===  false ) 
+			   { 
+				usleep ( $this -> WaitBetweenAccepts * 1000 ) ; 
+
+				return ( false ) ;
+			    }
+			else
+			   { 
+				$address	=  null ;
+				socket_getpeername ( $connection, $address ) ;
+				$this -> Log ( "phase $phase: connection from $address" ) ;
+
+				socket_set_nonblock ( $connection ) ;
+
+				return ( true ) ;
+			    }
+		    }
+
+
+		/*--------------------------------------------------------------------------------------------------------------
+		 
+		    NetworkRead -
+			Reads incoming network data and logs it.
+		 
+		 *-------------------------------------------------------------------------------------------------------------*/
+		private function  NetworkRead ( $phase, $connection, $size, $logdata = true )
+		   {
+			$data		=  socket_read ( $connection, $size ) ;
+			$data_length	=  strlen ( $data ) ;
+			$data		=  trim ( $data ) ;
+
+			if  ( $data_length )
+			   {
+				$message	=  "$data_length bytes received"  ;
+				
+				if  ( $logdata )
+					$message	.=  " :\n\t" . str_replace ( "\n", "\n\t", $data ) ;
+				else
+					$message	.=  " (not displayed)" ;
+			    }
+			else
+				$message	=  "empty packet received" ;
+
+			$this -> Log ( "phase $phase: $message" ) ;
+
+			return ( $data ) ;
+		    }
+
+
+		/*--------------------------------------------------------------------------------------------------------------
+		 
+		    NetworkClose -
+			Closes the specified listening socket and/or connection.
+		 
+		 *-------------------------------------------------------------------------------------------------------------*/
+		private function  NetworkClose ( $socket = null, $connection = null )
+		   {
+			if  ( $socket )
+				socket_close ( $socket ) ;
+
+			if  ( $connection )
+				socket_close ( $connection ) ;
+		    }
+
+
+		/*--------------------------------------------------------------------------------------------------------------
+		 
+		    NetworkTimeout -
+			Checks if the connection timeout has elapsed.
+		 
+		 *-------------------------------------------------------------------------------------------------------------*/
+		private function  NetworkTimeout ( $start_time )
+		   {
+			if  ( time ( ) - $start_time  >  $this -> ConnectionTimeout )
+			   {
+				$this -> Log ( "phase 2: connection timed out" ) ;
+				return ( true ) ;
+			    }
+
+			return ( false ) ;
+		    }
+
+
+		/**************************************************************************************************************
+		 **************************************************************************************************************
+		 **************************************************************************************************************
+		 ******                                                                                                  ******
+		 ******                                                                                                  ******
+		 ******                                  HANDSHAKING PROCESS FUNCTIONS                                   ******
+		 ******                                                                                                  ******
+		 ******                                                                                                  ******
+		 **************************************************************************************************************
+		 **************************************************************************************************************
+		 **************************************************************************************************************/
+
+		/*--------------------------------------------------------------------------------------------------------------
+		 
+		    Run -
+			Listens on a computed port, chose a random port and password, sends an sms then call the RunConnector()
+			method to listen on this random port.
+		 
+		 *-------------------------------------------------------------------------------------------------------------*/
+		public function  Run ( )
+		   {
+ListenLoop :
+			// Loop until a port has been allocated for listening on.
+			// At that stage, only socket api failures amay justify this loop
+			do
+			   {
+				$port		=  null ;
+				$socket		=  null ;
+			    }  while  ( ! $this -> NetworkListen ( '1', '0.0.0.0', true, $socket, $port ) ) ;
+
+			// Asynchronously listen to the compute port
 			while  ( true )
 			   {
-				$new_port	=  $this -> GetPort ( ) ;
+				// Time has elapsed, a new port number has been compute : restart everything
+				if  ( $this -> NetworkPortChanged ( $socket, $port ) )
+					goto  ListenLoop ;
 
-				if  ( $port  !=  $new_port )
-				   {
-					socket_close ( $socket ) ;
-					$use_fallback_port	=  false ;
-					goto  ShootAgain ;
-				    }
+				// Check if we have an incoming connection, otherwise loop again
+				$connection	=  null ;
+				$peer_address	=  null ;
 
-				$connection	=  @socket_accept ( $socket ) ;
-   
-				if  ( $connection  ===  false ) 
-				   { 
-					usleep ( $this -> WaitBetweenAccepts * 1000 ) ; 
-				    }
-				else
-				   { 
-					$address	=  null ;
-					socket_getpeername ( $connection, $address ) ;
+				if  ( ! $this -> NetworkAccept ( 1, $socket, $connection, $peer_address ) )
+					continue ;
 
-					$message	=  "connection from $address" ;
+				// Connection received ; read the first MAX_PACKET_SIZE bytes 
+				$this -> NetworkRead ( '1', $connection, self::MAX_PACKET_SIZE ) ;
 
-					$data		=  socket_read ( $connection, 8192 ) ;
-					$data_length	=  strlen ( $data ) ;
-					$data		=  trim ( $data ) ;
+				// Close the listening socket and connection ; we're over with this listening process
+				$this -> NetworkClose ( $socket, $connection ) ;
 
-					if  ( $data_length )
-						$message	.=  ", $data_length bytes received :"  ;
+				// Get random port and password and send them over sms
+				$this -> GetIdData ( $new_port, $password ) ;
+				$status		=  $this -> SendSms ( "$new_port\n$password" ) ;
 
-					if  ( $data )
-						$message	.=  "\t" . str_replace ( "\n", "\n\t", $data ) ;
+				// Sometimes, the sms center can fail... then end user will not receive anything so
+				// silently start again
+				if  ( $status ) 
+					$this -> RunConnector ( $peer_address, $new_port, $password ) ;
 
-					$this -> Log ( $message ) ;
-
-					socket_close ( $connection ) ;
-				    }
+				goto  ListenLoop ;
 			    }
+		    }
+
+
+
+		/*--------------------------------------------------------------------------------------------------------------
+		 
+		    RunConnector -
+			Start a new listening process on the specified port.
+			Upon incoming connection, send a form to the user, who has to enter a password.
+			Checks the specified password when the form is received.
+			Abandon if ConnectionTimeout seconds have elapsed.
+		 
+		 *-------------------------------------------------------------------------------------------------------------*/
+		function  RunConnector ( $address, $port, $password )
+		   {
+			$start_time		=  time ( ) ;
+
+ListenLoop :
+			// Allocate a socket for listening
+			do
+			   {
+				$socket		=  null ;
+
+				if  ( $this -> NetworkTimeout ( $start_time ) )
+					return ( false ) ;
+
+			    }  while  ( ! $this -> NetworkListen ( '2', '0.0.0.0', true, $socket, $port ) ) ;
+
+			// Loop until an incoming connection has been made
+WriteFormLoop :
+			// Check that timeout has not elapsed
+			if  ( $this -> NetworkTimeout ( $start_time ) )
+				return ( false ) ;
+
+			// Check for incoming connections
+			$connection	=  null ;
+
+			if  ( ! $this -> NetworkAccept ( 2, $socket, $connection, $peer_address ) )
+					goto WriteFormLoop ;
+
+			// Peer address must be the same as the one used for the very first connection
+			if  ( $peer_address  !=  $address )
+			   {
+				$this -> Log ( "phase 2: connection abandoned : peer address $peer_address different from connection address $address" ) ;
+				return ( false ) ;
+			    }
+
+			// Read data and discard it (it should be a basic http request)
+			$this -> NetworkRead ( 2, $connection, self::MAX_PACKET_SIZE ) ;
+
+			// Send the form for entering password
+			$data	=  <<<END
+					<!doctype html>
+					<html lang="fr">
+					<head></head>
+					<body>
+					<form method="post" name="ZEUFORM">
+						<input name="f1" type="password"/>
+						<input name="f2" type="password"/>
+						<input name="s" type="submit"/>
+					</form>
+					</body>
+					</html>
+END;
+			$status	=  @socket_write ( $connection, $data ) ;
+
+			if  ( $status  ===  false )
+				$this -> Log ( "phase 2: failed to send data: " . socket_strerror ( socket_last_error ( ) ) ) ; 
+			else 
+				$this -> Log ( "phase 2: sent connection data. Waiting for answer" ) ;
+
+			// At that stage, the current connection with the peer is no longer needed
+			$this -> NetworkClose ( null, $connection ) ;
+
+			// Now it's time to await for form response data
+ReadFormLoop :
+			// Continue to check if the connection timeout has elapsed
+			if  ( $this -> NetworkTimeout ( $start_time ) )
+				return ( false ) ;
+
+			// And wait until we receive an incoming connection
+			$connection	=  null ;
+
+			if  ( ! $this -> NetworkAccept ( 2, $socket, $connection, $peer_address ) )
+				goto  ReadFormLoop ;
+
+			$data		=  trim ( $this -> NetworkRead ( 2, $connection, self::MAX_PACKET_SIZE, false ) ) ;
+
+			// Only POST requests are parsed
+			if  ( strncasecmp ( $data, "POST", 4 ) )
+				goto  ReadFormLoop ;
+
+			// We can safely close the connection
+			$this -> NetworkClose ( $socket, $connection ) ;
+
+			// The last non empty line is the form data in url format
+			$lines		=  explode ( "\n", $data ) ;
+			$form_data	=  array_pop ( $lines ) ;
+			$params		=  [] ;
+			parse_str ( $form_data, $params ) ; 
+			
+			$keyword	=  isset ( $params [ 'f1' ] ) ?  $params [ 'f1' ] : '' ;
+			$user_password	=  isset ( $params [ 'f2' ] ) ?  $params [ 'f2' ] : '' ;
+
+			// Now check for password ; if ok, process the form data
+			if  ( $user_password  ==  $password ) 
+				$this -> RunConnection ( $keyword, $port ) ;
+			else
+				$this -> Log ( 'phase 2: password mismatch, connection abandoned' ) ;
+		    }
+
+
+		/*--------------------------------------------------------------------------------------------------------------
+		 
+		    RunConnection -
+			Process the action determined by the supplied form data, which mainly leads to starting an apache
+			instance.
+
+		 *-------------------------------------------------------------------------------------------------------------*/
+		private function  ProcessConnection ( $keyword, $port )
+		   {
 		    }
 	    }
 
