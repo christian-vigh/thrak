@@ -418,7 +418,7 @@ class	Database  extends  Object
 	 --------------------------------------------------------------------------------------------*/
 	private function  __EnsureConnected ( )
 	   {
-		if  ( ! $this -> Connection )
+		if  ( ! $this -> IsConnected ( ) )
 		   {
 			$this -> Connect ( $this -> DatabaseUser, $this -> DatabasePassword,
 					   $this -> DatabaseHost, $this -> DatabasePort,

@@ -117,10 +117,10 @@ class	mysqli  extends  DatabaseDriver
 		if  ( $persistent )
 			$hostname	=  "p:$hostname" ;
 
-		$status = @mysqli_connect ( $hostname, $user, $password, null, $port ) ;
+		$status = mysqli_connect ( $hostname, $user, $password, null, $port ) ;
 
-		$this -> Parent -> LastErrorNumber 	=  mysqli_connect_errno ( $status ) ;
-		$this -> Parent -> LastErrorMessage	=  mysqli_connect_error ( $status ) ;
+		$this -> Parent -> LastErrorNumber 	=  mysqli_connect_errno ( ) ;
+		$this -> Parent -> LastErrorMessage	=  mysqli_connect_error ( ) ;
 
 		return ( $status ) ;
 	    }

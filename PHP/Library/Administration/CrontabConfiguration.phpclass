@@ -201,7 +201,7 @@ class	CrontabConfiguration		extends  Object
 			    }
 
 			// Get the supported platform
-			$value			=  $inifile -> GetKey ( $section_name, 'ConfigurationFile', 'All' ) ;
+			$value			=  $inifile -> GetKey ( $section_name, 'Platform', 'All' ) ;
 
 			switch ( strtolower ( trim ( $value ) ) )
 			   {

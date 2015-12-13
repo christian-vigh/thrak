@@ -75,7 +75,7 @@ class  StringStore		extends  Table
 	   {
 		$this -> StringSize		=  $string_size ;
 		$this -> StringIndexSize	=  $string_index_size ;
-		
+
 		parent::__construct ( $table_name, $comment, $database, $recreate ) ;
 	    }
 	
