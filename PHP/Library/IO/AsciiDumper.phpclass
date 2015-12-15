@@ -2,7 +2,7 @@
 /**************************************************************************************************************
 
     NAME
-        DataDumper.phpclass
+        AsciiDumper.phpclass
 
     DESCRIPTION
         A class to provide a with a dump of binary data.
@@ -168,7 +168,7 @@ abstract class  AsciiDumper		extends		Object
 			- %c :
 				Ascii characters.
 		 
-	 *-------------------------------------------------------------------------------------------------------------*/
+	 -------------------------------------------------------------------------------------------------------------*/
 	public function  __construct ( $flags = self::DUMP_FLAG_NONE, $bytes_per_line = 16, $format = "%o:  %b  %c" )
 	   {
 		parent::__construct ( ) ;
