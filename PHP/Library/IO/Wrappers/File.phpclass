@@ -14,6 +14,9 @@
     [Version : 1.0]		[Date : 2012/10/08]		[Author : CV]
 	Initial release.
 
+    [Version : 1.0.1]		[Date : 2015/12/15]		[Author : CV]
+	. Stream parameters passed to the Register() method could be overridden by default parameters.
+
  ***************************************************************************************************/
 namespace 	Thrak\IO\Wrappers ;
 
@@ -45,6 +48,7 @@ class  FileWrapper	extends  GenericWrapper
    	public function  __construct ( )
    	   {
    	   	$this -> Features 	=  SW_SUPPORT_MASK_ALL ;
+		parent::__construct ( ) ;
    	    }
 
 
@@ -59,7 +63,7 @@ class  FileWrapper	extends  GenericWrapper
    		if  ( $parameters  ==  null )
    			$parameters = array ( ) ;
 
-   		$parameters = array_merge ( $parameters, array ( 'read-buffer-size' => 16384, 'write-buffer-size' => 16384 ) ) ;
+   		$parameters = array_merge ( [ 'read-buffer-size' => 16384, 'write-buffer-size' => 16384 ], $parameters ) ;
    		parent::Register ( $wrapper_name, $parameters, $flags ) ;
    	    }
 
@@ -270,13 +274,12 @@ class  FileWrapper	extends  GenericWrapper
    	   	else
    	   	   {
    	   	   	// Set the read and write buffer sizes
-
-   	   	   	$size 	=  FileWrapper::GetStreamOption ( $url [ 'scheme-name' ], 'read-buffer-size' ) ;
+   	   	   	$size 	=  self::GetStreamOption ( $url [ 'scheme-name' ], 'read-buffer-size' ) ;
 
    	   	   	if  ( $size  !==  null )
    	   	   		stream_set_read_buffer ( $this -> Handle, $size ) ;
 
-   	   	   	$size 	=  FileWrapper::GetStreamOption ( $url [ 'scheme-name' ], 'write-buffer-size' ) ;
+   	   	   	$size 	=  self::GetStreamOption ( $url [ 'scheme-name' ], 'write-buffer-size' ) ;
 
    	   	   	if  ( $size  !==  null )
    	   	   		stream_set_write_buffer ( $this -> Handle, $size ) ;
@@ -288,6 +291,8 @@ class  FileWrapper	extends  GenericWrapper
 
    	// StreamRead -
    	//	Reads from the currently opened stream.
+	//	As of PHP 5.6.16, the $count parameter is always 8192, whatever the size you specified
+	//	to the fread()-style calls.
    	public function  StreamRead  ( $count )
    	   {
    	   	$this -> Position += $count ;
@@ -378,7 +383,7 @@ class  FileWrapper	extends  GenericWrapper
 	protected function  GetPath ( $url )
 	   {
 	   	$path 		=  parent::GetPath ( $url ) ;
-	   	$root 		=  FileWrapper::GetStreamOption ( $url [ 'scheme-name' ], 'root' ) ;
+	   	$root 		=  self::GetStreamOption ( $url [ 'scheme-name' ], 'root' ) ;
 
 	   	if  ( $root  !==  NULL )
 	   		$path 	=  $root . '/' . $path ;
@@ -392,7 +397,7 @@ class  FileWrapper	extends  GenericWrapper
 	protected function  GetRealPath ( $url )
 	   {
 	   	$path 		=  parent::GetRealPath ( $url ) ;
-	   	$root 		=  FileWrapper::GetStreamOption ( $url [ 'scheme-name' ], 'root' ) ;
+	   	$root 		=  self::GetStreamOption ( $url [ 'scheme-name' ], 'root' ) ;
 
 	   	if  ( $root  !==  NULL )
 	   		$path 	=  $root . '/' . $path ;
