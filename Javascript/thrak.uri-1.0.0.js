@@ -1,4 +1,4 @@
-/**************************************************************************************************************
+	/**************************************************************************************************************
 
     NAME
         thrak.uri-1.0.0.js
@@ -15,14 +15,14 @@
 	The following properties are available ; the examples given within parentheses are based on the 
 	following uri :
 
-		http://testuser:foobar@www.example.com:80/path/subdir/test.html?param=value&param2=value2#anchor
+		http://testuser:foobar@www.example.com:80/path/subdir/test.html?param=value&param2=value2&local_parameter=local_value#anchor
 
 	- anchor ( [value] ) :
 		Gets/sets the optional anchor (#anchor).
 
 	- anchorParameters ( ) :
-		Allows anchors to hold "param1=value1&param2=value2..." parameters, which are parsed in the same way
-		as query parameters.
+		Allows anchors to hold parameters of the form "param1=value1&param2=value2..." , which are parsed 
+		the same way as query parameters.
 		This trick can be useful when frames or ajax requests are used, to add a new url to the history without
 		reloading everything.
 
@@ -37,9 +37,48 @@
 		Gets/sets the hostname (www.example.com).
 
 	- href ( [value] ) :
-		The whole uri (http://user:password@www.example.com:80/path/subdir/test.html?param=value&param2=value2#anchor).
+		Gets/sets the whole uri (http://user:password@www.example.com:80/path/subdir/test.html?param=value&param2=value2#anchor).
 		If a value is specified, then all the individual properties will be assigned with the various
 		parts of the uri value.
+		The returned value does not include local parameters.
+
+	- hrefLocal ( ) :
+		Returns the whole href value, including the parameters declared to be local (see locals()).
+		Using our example, this will return :
+
+			http://testuser:foobar@www.example.com:80/path/subdir/test.html?param=value&param2=value2&local_parameter=local_value#anchor
+
+	- hrefGlobal ( ) :
+		Alias : returns href().
+
+	- locals ( ) :
+		Sometimes you need to reload your page, passing it an additional parameter, depending on
+		user interaction. Suppose for example that your initial page is :
+
+			home.php?param=value
+
+		then the user clicks on some "display details" link and you need to reload your page with an
+		additional parameter :
+
+			home.php?param=value&details=1
+
+		then the user clicks a "login" link which redirects to page "login.php" ; you want all the 
+		page parameters to be passed to "login.php", but not this extra parameter, "details=1", which
+		was meant only for the "home.php" page.
+
+		The locals() method is there to specify which query parameters should be considered as "local"
+		to the current page, and not included in the value returned by the href() and
+		query() methods. The following example redirects to "login.php?param=value" :
+
+			window. location. href	=  "login.php" + window. url. query ( ) ;
+
+		To define local parameters, either specify an array of strings :
+
+			url. locals ( [ 'display', 'localaparam1', 'localparam2' ] ) ;
+
+		or a string specifying space- or comma-separated values :
+			
+			url. locals ( 'display localparam1 localparam2' ) ;
 
 	- page ( [value] ) : 
 		Gets/sets the requested page (test.html).
@@ -61,13 +100,13 @@
 		- remove ( name ) :
 			Removes the specified parameter. Equivalent to set ( name ) without any 
 			associated value.
-			Returns true if the parameter existed, false otherwise.
+			Returns true if the parameter existed before removal, false otherwise.
 
 		- set ( name, value ) :
 			Replaces the value of an existing parameter or creates a new one if it does not exist.
 
 		- toString ( ) :
-			Assembles the various uri components and returns the full uri.
+			Assembles the various uri components and returns the full query string.
 
 		The parameters() function can also be called as :
 
@@ -94,6 +133,15 @@
 	- query ( [value] ) :
 		Gets/sets the query string. The supplied value can include an optional leading quotation
 		mark (?param=value&param2=value2).
+		The returned value does not include local parameters.
+
+	- queryLocal ( ) :
+		Returns the query string including local parameters. Using our example, this will return :
+
+			?param=value&param2=value2&local_parameter=local_value
+
+	- queryGlobal ( ) :
+		Alias : returns query().
 
 	- user ( [value] ) :
 		Gets/sets the optional user (testuser).
@@ -105,11 +153,22 @@
         Christian Vigh, 04/2015.
 
     HISTORY
-    [Version : 1.0]	[Date : 2015/04/24]     [Author : CV]
+    [Version : 1.0]		[Date : 2015/04/24]     [Author : CV]
         Initial version.
 
-    [Version : 1.0.1]	[Date : 2015/10/03]     [Author : CV]
+    [Version : 1.0.1]		[Date : 2015/10/03]     [Author : CV]
 	. Modified the path() function, which did not return the page name.
+
+    [Version : 1.0.1.0]		[Date : 2015/12/17]     [Author : CV]
+	. Updated documentation comments, where some object members were missing.
+	. Changed the locals() method to accept either an array of parameter names, or a space- or comma-
+	  separated string giving a list of parameter names.
+	. The port() method was not implemented (!)
+	. Added the queryLocal() method.
+	. Redefined the semantics of href/hrefLocal and query/queryLocal. Now href() and query() return a value
+	  NOT including the local parameters. hrefLocal() and queryLocal() will return a value including local
+	  parameters.
+	. Removed extraneous '=' sign to anchors when used as query string.
 
  **************************************************************************************************************/
  
@@ -394,8 +453,8 @@
 
 
 			// Rebuild the query string
-			rebuild_query_string ( $this, '?', 'query' , 'queryLocal', '__parameters' ) ;
-			rebuild_query_string ( $this, '#', 'anchor', undefined   , '__anchorParameters' ) ;
+			rebuild_query_string ( $this, '?', 'queryLocal' , 'query', '__parameters', true ) ;
+			rebuild_query_string ( $this, '#', 'anchor', undefined   , '__anchorParameters', false ) ;
 
 			// Rebuild the whole url
 			if  ( components. protocol )
@@ -442,14 +501,14 @@
 				localUrl	+=  components. anchor ;
 			    }
 
-			components. href	=  url ;
-			components. hrefLocal	=  localUrl ;
+			components. href	=  localUrl ;
+			components. hrefLocal	=  url ;
 		    }
 
 
 		// rebuild_query_string -
 		//	Rebuilds the query string. Works for both query and "pseudo" anchor parameters.
-		function  rebuild_query_string ( $this, prefix, member_name, local_member_name, parameters_array_name )
+		function  rebuild_query_string ( $this, prefix, member_name, local_member_name, parameters_array_name, equal_sign_for_empty_value )
 		   {
 			var	components	=  $this. __components ;
 			var	parameters	=  $this [ parameters_array_name ] ;
@@ -464,7 +523,8 @@
 					var	string_parameter	=  parameters [i] ;
 					var	value			=  string_parameter. name ;
 
-					if  ( string_parameter. value  !==  undefined )
+					if  ( ( string_parameter. value  !==  undefined  &&  string_parameter. value. trim ( )  !=  '' )  ||
+							equal_sign_for_empty_value )
 						value	+=  '=' + encodeURI ( string_parameter. value ) ;
 
 					string_parameters. push ( value ) ;
@@ -521,8 +581,8 @@
 		    }
 
 
-		// Anchor parameters
-		//	Implements a parameter list after the anchor sign (#), much in the way of a query string.
+		// anchorParameters
+		//	Implements a parameter list after the anchor sign (#), much in the same way as a query string.
 		prototype. anchorParameters	= function ( )
 		   {
 			if  ( arguments. length  >  0 )
@@ -615,10 +675,7 @@
 			    }
 			else
 			   {
-				if  ( this. __components. locals. length )
-					return ( this. __components. href ) ;
-				else
-					return ( this. __components. hrefLocal ) ;
+				return ( this. __components. href ) ;
 			    }
 		    }
 
@@ -642,13 +699,8 @@
 		//	Gets/sets the query parameters that are local to this page.
 		prototype. locals	=  function  ( value )
 		   {
-			if  ( typeof ( value )  ==  'object' )		// Check for array argument
-			   {
-				if  ( ! value. length )			// Object given : what the hell could we do with that ?
-					value	=  [] ;
-			    }
-			else						// Scalar value
-				value	=  [ value. toString ( ) ] ;
+			if  ( typeof ( value )  ===  'string' )
+				value	=  value. split ( /[ \t,]/ ) ;
 
 			return ( set_value ( this, 'locals', value ) ) ;
 		    }
@@ -659,6 +711,14 @@
 		prototype. page	=  function  ( value )
 		   {
 			return ( set_value ( this, 'page', value ) ) ;
+		    }
+
+
+		// port -
+		//	Gets/sets the port part for this uri.
+		prototype. port	=  function  ( value )
+		   {
+			return ( set_value ( this, 'port', value ) ) ;
 		    }
 
 
@@ -754,15 +814,31 @@
 		    }
 
 
+		// queryLocal -
+		//	Gets the query string without local parameters.
+		prototype. queryLocal	=  function ( query )
+		   {
+			return  ( this. __components. queryLocal ) ;
+		    }
+
+
+		// queryGlobal -
+		//	Alias to query().
+		prototype. query	=  function ( query )
+		   {
+			return  ( this. __components. query ) ;
+		    }
+
+
 		// samePath -
 		//	Checks if this object has the same path after the domain part as the specified one.
-		//	To understand the comparison performed, consider the following urls :
+		//	To understand how the comparison performed, consider the following urls :
 		//		(1) www.example.com
 		//		(2) www.example.com/
 		//	In example (1), the directory(), page() and path() methods will return undefined.
 		//	In example (2) however, directory() and path() will return "/" (page() will still be
 		//	undefined).
-		//	samePath() allows to consider urls (1) and (2) and the same during the comparison,
+		//	samePath() allows to consider that urls (1) and (2) are the same during the comparison,
 		//	and returns true if they are equal.
 		prototype. samePath	=  function  ( other, use_host )
 		   {
@@ -789,7 +865,7 @@
 
 
 		// toString -
-		//	Returns the string represnetation of the complete uri. If modifications have occurred on individual properties
+		//	Returns the string representation of the complete uri. If modifications have occurred on individual properties
 		//	then the full uri string is rebuilt before returning any value.
 		prototype. toString	=  function ( )
 		   {
