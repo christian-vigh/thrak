@@ -24,8 +24,12 @@
         Christian Vigh, 11/2013.
 
     HISTORY
-    [Version : 1.0]    [Date : 2013/11/09]     [Author : CV]
+    [Version : 1.0.0]		[Date : 2013/11/09]     [Author : CV]
         Initial version.
+
+    [Version : 1.0.0.1]		[Date : 2013/12/17]     [Author : CV]
+	. Removed browser-specific dependencies to properly align the footer to the bottom of the browser window
+	  and added a manual call to the resize() event instead, which did the trick.
 
  **************************************************************************************************************/
 
