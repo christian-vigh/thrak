@@ -37,7 +37,7 @@
 		var	them		=  this ;
 
 		
-		// The function them does the real sticky job...
+		// The function stick() does the real sticky job...
 		function  stick ( $this )     
 		   {
 			// Where are we ?
@@ -51,15 +51,16 @@
 				var	delta		=  0 ;
 				var	margin_top	=  document_height - footer_top ;  
 			
-				// The question here is : why ?
-				// Moreover, if you display a real javascript alert() message, the footer will even be shifted by a few pixels !
-				if  ( $. browser. chrome  ||  $. browser. opera )
-					delta	=  -4 ;
-
 				margin_top += delta ;
 
 				$this. css ( 'margin-top', margin_top + 'px' ) ;				
+
+				// A "fake" resizing event is needed, otherwise the stickybottom element will end a few pixels before the
+				// end of the window (why ???)
+				$(window). trigger ( 'resize' ) ;
 			    }
+			else 
+				$this. css ( 'margin-top', '0px' ) ;
 		     }
 
 		
