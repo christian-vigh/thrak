@@ -278,7 +278,8 @@ class  WhoisRIPEInformation		extends  WhoisProviderInformation
 							    ],
 							self::NETTYPE_ASSIGNED_PORTABLE		=> 
 							   [
-								'ASSIGNED PORTABLE' 
+								'ASSIGNED PORTABLE',
+								'ASSIGNED  PORTABLE' 
 							    ],
 							self::NETTYPE_REASSIGNED		=> 
 							   [
