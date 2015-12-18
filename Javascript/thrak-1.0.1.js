@@ -94,7 +94,7 @@
 		    }
 
 		// Set the default locale
-		if  ( language  &&  context  !==  undefined )
+		if  ( language )
 			$. locale ( language ) ;
 
 		// Make all buttons cancel the default button action
