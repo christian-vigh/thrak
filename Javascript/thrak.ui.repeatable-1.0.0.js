@@ -99,7 +99,7 @@
 					var	lang		=  ( $. locale ) ?  $. locale ( ) : 'en' ;
 					var	template	=  this. options. data. defaultButtonsetTemplate
 									.replace ( /#target/, this_id )
-									.replace ( /#add/, this. messages [ lang ]. addButtonTooltip )
+									.replace ( /#add/   , this. messages [ lang ]. addButtonTooltip )
 									.replace ( /#delete/, this. messages [ lang ]. deleteButtonTooltip ) ;
 
 					if  ( this. options. data. defaultButtonsetPosition  ==  'last' )
@@ -122,7 +122,7 @@
 
 					// Save the repeatable buttonset template and a flag indicating whether it's inside or outside
 					// the repetable construct
-					this. options. data. buttonsetTemplate	=  $buttonset. outerHtml ( ) ;
+					this. options. data. buttonsetTemplate		=  $buttonset. outerHtml ( ) ;
 					this. options. data. repeatableButtonset	=  is_inside ;
 				    }
 

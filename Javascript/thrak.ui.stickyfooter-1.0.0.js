@@ -52,16 +52,12 @@
 			// If page height is less than screen height, we need to make some adjustments
 			if  ( footer_top  <  document_height )
 			   {
-				var	delta		=  0 ;
+				var	delta		=  -4 ;
 				var	margin_top	=  document_height - footer_top ;  
 			
 				margin_top += delta ;
 
 				$this. css ( 'margin-top', margin_top + 'px' ) ;				
-
-				// A "fake" resizing event is needed, otherwise the stickybottom element will end a few pixels before the
-				// end of the window (why ???)
-				$(window). trigger ( 'resize' ) ;
 			    }
 			else 
 				$this. css ( 'margin-top', '0px' ) ;
@@ -91,8 +87,9 @@
 		    ) ;
 		    
 
-		// Initialization code. Stick all selected elements
-		apply ( them ) ;
+		// A "fake" resizing event is needed, otherwise the stickybottom element will end a few pixels before the
+		// end of the window (why ???)
+		$(window). trigger ( 'resize' ) ;
 	
 		return ( them ) ;
 	    }

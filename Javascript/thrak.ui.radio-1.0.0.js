@@ -34,7 +34,7 @@
 				if  ( label  ==  ''  ||  label  ==  undefined )
 					label	=  $label. outerHtml ( ) ;
 				else
-					label	=  '<label for="' + label + '">' + label + '</label>' ;
+					label	=  '<label for="' + this_id + '">' + label + '</label>' ;
 
 				$label. remove ( ) ;
 
