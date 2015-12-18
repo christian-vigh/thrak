@@ -34,12 +34,9 @@
 	doNotTrack -
 		True if "do no track" settings are enabled on this browser.
 
-	javaEnabled -
-		True if the Java runtime is enabled on this browser.
-
 	language -
 		A structure containing the following properties that specifies the browser's language :
-		. language	: language code, such as "fr", "en", etc.
+		. code		: language code, such as "fr", "en", etc.
 		. variant	: Country variant. For the "en" language, for example, it could be "US",
 				  "CA", etc. This field may be undefined.
 		This structure can be casted to a string, to obtain something like, for example, "fr-FR".
@@ -64,9 +61,6 @@
 		. buildId	:  Product build id.
 		This structure can be casted to a string which will result in the product name.
 
-	taintEnabled -
-		To be documented.
-
 	vendor -
 		A structure describing vendor information :
 		. name		:  Vendor name.
@@ -85,12 +79,14 @@
 			alert ( "Version : " + $. browser. version ) ;
 
     METHODS -
-	$.browser.showBrowserInformation ( ) -
-		Opens a dialog box showing your current browser's information.
-
 	$.browser.prop ( name )  or  $.browser. val ( name ) -
 		Retrieves a browser's property, whose name is given as a string. 
+		A browser property is nothing more that a property that needs to execute some code for
+		computing to retrieve the actual value.
 		The following properties can be retrieved :
+
+		. javaEnabled -
+			True if the Java runtime is enabled on this browser.
 
 		. scrollbarWidth -
 			Width, in pixels, of a vertical scrollbar.
@@ -98,16 +94,23 @@
 		. scrollbarHeight -
 			Height, in pixels, of a horizontal scrollbar.
 
+		. taintEnabled -
+			To be documented.
+
     AUTHOR
         Christian Vigh, 11/2013.
 
     HISTORY
-    [Version : 1.0]    [Date : 2013/11/27]     [Author : CV]
+    [Version : 1.0]		[Date : 2013/11/27]     [Author : CV]
         Initial version.
 
-    [Version : 1.0.1]  [Date : 2013/12/06]     [Author : CV]
+    [Version : 1.0.1]		[Date : 2013/12/06]     [Author : CV]
         Added the prop() and val() functions to $.browser, along with the 'scrollbarWidth' and 'scrollbarHeight'
 	properties.
+
+    [Version : 1.0.1.1]		[Date : 2015/12/18]     [Author : CV]
+        . Moved the javaEnabled() and taintEnabled() functions to properties accessible with the prop() function.
+	. Renamed the 'language' member of the 'language' object to 'code'.
 
  **************************************************************************************************************/
 
@@ -304,7 +307,7 @@
 		// Structure to be included into $.browser
 		var	language_elements	=
 		   {
-			language		:  undefined,
+			code			:  undefined,
 			variant			:  undefined,
 			toString		:  function ( )
 			   {
@@ -343,8 +346,8 @@
 			    }
 			
 			// Save the results 
-			language_elements. language		=  item1 ;
-			language_elements. variant		=  item2 ;
+			language_elements. code		=  item1 ;
+			language_elements. variant	=  item2 ;
 			
 			$. browser. language	=  language_elements ;
 		    }
@@ -482,47 +485,6 @@
 			doNotTrack	=  ( navigator. doNotTrack  !==  0 ) ?  true : false ;
 		    
 		$. browser. doNotTrack		=  doNotTrack ;
-		
-		// javaEnabled
-		var  javaEnabled ;
-
-		if   ( navigator. javaEnabled  ===  undefined )
-		    {
-			javaEnabled	=  function  ( )
-			   {
-				return ( undefined ) ;
-			    }
-		    }
-		else
-		    {
-			javaEnabled	=  function  ( )
-			   {
-				return ( navigator. javaEnabled ( ) ) ;
-			    }
-		    }
-			
-		$. browser. javaEnabled		=  javaEnabled ;
-		
-		// taintEnabled
-		var  taintEnabled ;
-
-		if   ( navigator. taintEnabled  ===  undefined )
-		    {
-			taintEnabled	=  function  ( )
-			   {
-				return ( undefined ) ;
-			    }
-		    }
-		else
-		    {
-			taintEnabled	=  function  ( )
-			   {
-				return ( navigator. taintEnabled ( ) ) ;
-			    }
-		    }
-			
-		$. browser. taintEnabled		=  taintEnabled ;
-
 
 		// showBrowserInformation -
 		//	Displays information about the current browser.
@@ -806,9 +768,28 @@
 	    }
 
 
-	// Browser object properties 
+	// Browser object properties - contains properties that need some function calls to compute
+	// their current value
 	var	properties	=
 	   {
+		// javaEnabled
+		javaEnabled	:  function ( )
+		   {
+			if  ( navigator. javaEnabled  ===  undefined )
+				return ( false ) ;
+			else 
+				return ( ( navigator. javaEnabled ( ) ) ?  true : false ) ;
+		    },
+		
+		// taintEnabled
+		taintEnabled	:  function ( )
+		   {
+			if  ( navigator. taintEnabled  ===  undefined )
+				return ( false ) ;
+			else 
+				return ( ( navigator. taintEnabled ( ) ) ?  true : false ) ;
+		    },
+
 		// Browser scrollbar width
 		scrollbarWidth		:  function ( )
 		   {
@@ -842,6 +823,7 @@
 			document. body. removeChild ( outer ) ;
 			return ( width_before - width_after ) ;
 		    },
+
 		// Browser scrollbar height
 		scrollbarHeight		:  function ( )
 		   {
