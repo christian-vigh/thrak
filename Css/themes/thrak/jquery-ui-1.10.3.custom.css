@@ -1237,7 +1237,7 @@ body .ui-tooltip {
 
 .ui-icon-closethick
    {
-   	background-image		:  url(/public/images/icon-close.png) !important ;
+   	background-image		:  url(images/icon-close.png) !important ;
    	background-color		:  #CFA6B2 ;
    	background-position-x		:  0 ;
    	background-position-y		:  0 ;
