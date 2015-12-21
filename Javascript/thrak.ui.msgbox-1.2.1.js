@@ -766,6 +766,7 @@
 			if  ( $waitDialog  !==  undefined )
 			   {
 				$waitDialog. dialog ( 'destroy' ) ;
+				$waitDialog. remove ( ) ;
 				$waitDialog	=  undefined ;
 			    }
 
