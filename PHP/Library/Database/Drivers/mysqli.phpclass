@@ -23,6 +23,9 @@
    [Version : 2.0.2]	[Date : 2015/11/23]		[Author : CV]
 	. Changed db_connect() to handle persistent connections.
 
+   [Version : 2.0.3]	[Date : 2015/12/25]		[Author : CV]
+	. Implemented the db_fetch_all() function.
+
  ***************************************************************************************************/
 namespace  	Thrak\Database\Drivers ;
 
@@ -233,6 +236,15 @@ class	mysqli  extends  DatabaseDriver
 		$this -> db_set_error ( ) ;
 
 		return ( $row ) ;
+	    }
+
+	// Fetches all results from a recordset
+	public function  db_fetch_all ( $resource, $recordset, $assoc = false )
+	   {
+		$rows = mysqli_fetch_all ( $recordset, ( $assoc ) ?  MYSQLI_ASSOC : MYSQLI_NUM ) ;
+		$this -> db_set_error ( ) ;
+
+		return ( $rows ) ;
 	    }
 
 	// Get rows affected by last update

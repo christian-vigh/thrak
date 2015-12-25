@@ -43,6 +43,9 @@
    [Version : 2.0.9]	[Date : 2015/11/23]		[Author : CV]
 	. Added the 'persistent' entry in database configuration.
 
+   [Version : 2.0.10]	[Date : 2015/12/25]		[Author : CV]
+	. Added the LoadAllRows() method.
+
  ***************************************************************************************************/
 namespace 	Thrak\Database ;
 
@@ -1057,6 +1060,44 @@ class	Database  extends  Object
 		    }
 		else
 			return ( $status ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		LoadAllRows - Loads all the rows retrieved by a request.
+
+	    PROTOTYPE
+	    	$count = $database -> LoadAllRows ( $query_params = null, $assoc = false ) ;
+
+	    DESCRIPTION
+	    	Loads at once all the rows retrieved by a request.
+
+	    RETURNS
+		Array of rows.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  LoadAllRows ( $assoc = false, $query_params = null )
+	   {
+		$this -> __EnsureConnected ( ) ;
+
+		// Run the query and check the results
+		$recordset  =  $this -> Query ( $query_params ) ;
+
+		if  ( $recordset  ===  false )
+			return ( false ) ;	// $EnableDatabaseDebug has already been checked in Query()
+
+		// Get resulting rows
+		$result		=  $this -> DatabaseDriver -> db_fetch_all ( $this -> Connection, $recordset, $assoc ) ;
+
+		// Free the recordset
+		$status = $this -> DatabaseDriver -> db_free_query ( $this -> Connection, $recordset ) ;
+
+		if  ( $status )
+			return ( $result ) ;
+		else
+			return ( false ) ;
 	    }
 
 
