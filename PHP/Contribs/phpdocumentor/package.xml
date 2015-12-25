@@ -1,0 +1,3326 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<package packagerversion="1.8.1" version="2.0" xmlns="http://pear.php.net/dtd/package-2.0" xmlns:tasks="http://pear.php.net/dtd/tasks-1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://pear.php.net/dtd/tasks-1.0 http://pear.php.net/dtd/tasks-1.0.xsd http://pear.php.net/dtd/package-2.0 http://pear.php.net/dtd/package-2.0.xsd">
+ <name>PhpDocumentor</name>
+ <channel>pear.php.net</channel>
+ <summary>The phpDocumentor package provides automatic documenting of php api directly from the source.</summary>
+ <description>The phpDocumentor tool is a standalone auto-documentor similar to JavaDoc
+written in PHP.  It differs from PHPDoc in that it is MUCH faster, parses a much
+wider range of php files, and comes with many customizations including 11 HTML
+templates, windows help file CHM output, PDF output, and XML DocBook peardoc2
+output for use with documenting PEAR.  In addition, it can do PHPXref source
+code highlighting and linking.
+
+Features (short list):
+-output in HTML, PDF (directly), CHM (with windows help compiler), XML DocBook
+-very fast
+-web and command-line interface
+-fully customizable output with Smarty-based templates
+-recognizes JavaDoc-style documentation with special tags customized for PHP 4
+-automatic linking, class inheritance diagrams and intelligent override
+-customizable source code highlighting, with phpxref-style cross-referencing
+-parses standard README/CHANGELOG/INSTALL/FAQ files and includes them
+ directly in documentation
+-generates a todo list from @todo tags in source
+-generates multiple documentation sets based on @access private, @internal and
+ {@internal} tags
+-example php files can be placed directly in documentation with highlighting
+ and phpxref linking using the @example tag
+-linking between external manual and API documentation is possible at the
+ sub-section level in all output formats
+-easily extended for specific documentation needs with Converter
+-full documentation of every feature, manual can be generated directly from
+ the source code with &quot;phpdoc -c makedocs&quot; in any format desired.
+-current manual always available at http://www.phpdoc.org/manual.php
+-user .ini files can be used to control output, multiple outputs can be
+ generated at once
+ 
+**WARNING**:
+To use the web interface, you must set PEAR&apos;s data_dir to a subdirectory of
+document root.
+
+If browsing to http://localhost/index.php displays /path/to/htdocs/index.php,
+set data_dir to a subdirectory of /path/to/htdocs:
+
+$ pear config-set data_dir /path/to/htdocs/pear
+$ pear install PhpDocumentor
+
+http://localhost/pear/PhpDocumentor is the web interface</description>
+ <lead>
+  <name>Joshua Eichorn</name>
+  <user>jeichorn</user>
+  <email>jeichorn@JoshuaEichorn.com</email>
+  <active>no</active>
+ </lead>
+ <lead>
+  <name>Greg Beaver</name>
+  <user>cellog</user>
+  <email>greg@chiaraquartet.net</email>
+  <active>no</active>
+ </lead>
+ <lead>
+  <name>Chuck Burgess</name>
+  <user>ashnazg</user>
+  <email>demon.gene@gmail.com</email>
+  <active>yes</active>
+ </lead>
+ <developer>
+  <name>Andrew Morton</name>
+  <user>drewish</user>
+  <email>drewish@katherinehouse.com</email>
+  <active>no</active>
+ </developer>
+ <date>2012-09-01</date>
+ <version>
+  <release>1.5.0a1</release>
+  <api>1.5.0</api>
+ </version>
+ <stability>
+  <release>alpha</release>
+  <api>stable</api>
+ </stability>
+ <license uri="http://www.opensource.org/licenses/lgpl-license.php">LGPL</license>
+ <notes>
+This release includes a new --charset runtime option.
+
+This release will also see and document "RIC" files (Readme/Changelog/Install) in project subdirectories,
+rather than only seeing them in the project root.
+
+* Bug #12733: Warning in error.html file with XML:DocBook:peardoc2 [ashnazg]
+* Bug #16784: CHM: files are duplicated in the [FILES] section of the project file. [ashnazg]
+* Bug #19197: Fatal Error on building documentation [ashnazg]
+* Bug #19243: Tutorials are not honoring ordered vs unordered lists [ashnazg|lapistano]
+* Bug #19410: Sourcecode Option does not work [ashnazg|rhorber]
+
+* Req #4960: support for different encoding [ashnazg|miau]
+* Req #12236: Allow RIC files in all directory [ashnazg|yunosh]
+* Req #19242: Allow images in tutorials [ashnazg|lapistano]
+ </notes>
+ <contents>
+  <dir baseinstalldir="PhpDocumentor" name="/">
+   <dir name="docbuilder">
+    <dir name="images">
+     <file baseinstalldir="PhpDocumentor" name="rc-gui-install-24.png" role="data" />
+     <file baseinstalldir="PhpDocumentor" name="ss_CHM_default_default.png" role="data" />
+     <file baseinstalldir="PhpDocumentor" name="ss_HTML_frames_default.png" role="data" />
+     <file baseinstalldir="PhpDocumentor" name="ss_HTML_frames_DOM-default.png" role="data" />
+     <file baseinstalldir="PhpDocumentor" name="ss_HTML_frames_DOM-earthli.png" role="data" />
+     <file baseinstalldir="PhpDocumentor" name="ss_HTML_frames_DOM-l0l33t.png" role="data" />
+     <file baseinstalldir="PhpDocumentor" name="ss_HTML_frames_DOM-phpdoc.de.png" role="data" />
+     <file baseinstalldir="PhpDocumentor" name="ss_HTML_frames_DOM-phphtmllib.png" role="data" />
+     <file baseinstalldir="PhpDocumentor" name="ss_HTML_frames_earthli.png" role="data" />
+     <file baseinstalldir="PhpDocumentor" name="ss_HTML_frames_l0l33t.png" role="data" />
+     <file baseinstalldir="PhpDocumentor" name="ss_HTML_frames_phpdoc.de.png" role="data" />
+     <file baseinstalldir="PhpDocumentor" name="ss_HTML_frames_phpedit.png" role="data" />
+     <file baseinstalldir="PhpDocumentor" name="ss_HTML_frames_phphtmllib.png" role="data" />
+     <file baseinstalldir="PhpDocumentor" name="ss_HTML_Smarty_default.png" role="data" />
+     <file baseinstalldir="PhpDocumentor" name="ss_HTML_Smarty_HandS.png" role="data" />
+     <file baseinstalldir="PhpDocumentor" name="ss_HTML_Smarty_PHP.png" role="data" />
+     <file baseinstalldir="PhpDocumentor" name="ss_PDF_default_default.png" role="data" />
+     <file baseinstalldir="PhpDocumentor" name="ss_XML_DocBook-peardoc2_default.png" role="data" />
+    </dir> <!-- /docbuilder/images -->
+    <dir name="includes">
+     <file baseinstalldir="PhpDocumentor" name="tab.webfx.css" role="data" />
+     <file baseinstalldir="PhpDocumentor" name="tabpane.js" role="data" />
+     <file baseinstalldir="PhpDocumentor" name="utilities.php" role="data">
+      <tasks:replace from="@DATA-DIR@" to="data_dir" type="pear-config" />
+     </file>
+    </dir> <!-- /docbuilder/includes -->
+    <file baseinstalldir="PhpDocumentor" name="actions.php" role="data">
+     <tasks:replace from="@WEB-DIR@" to="data_dir" type="pear-config" />
+    </file>
+    <file baseinstalldir="PhpDocumentor" name="blank.html" role="data" />
+    <file baseinstalldir="PhpDocumentor" name="builder.php" role="data">
+     <tasks:replace from="@DATA-DIR@" to="data_dir" type="pear-config" />
+    </file>
+    <file baseinstalldir="PhpDocumentor" name="config.php" role="data">
+     <tasks:replace from="@DATA-DIR@" to="data_dir" type="pear-config" />
+     <tasks:replace from="@WEB-DIR@" to="data_dir" type="pear-config" />
+    </file>
+    <file baseinstalldir="PhpDocumentor" name="file_dialog.php" role="data">
+     <tasks:replace from="@DATA-DIR@" to="data_dir" type="pear-config" />
+     <tasks:replace from="@WEB-DIR@" to="data_dir" type="pear-config" />
+    </file>
+    <file baseinstalldir="PhpDocumentor" name="index.html" role="data" />
+    <file baseinstalldir="PhpDocumentor" name="top.php" role="data">
+     <tasks:replace from="@DATA-DIR@" to="data_dir" type="pear-config" />
+    </file>
+   </dir> <!-- /docbuilder -->
+   <dir name="Documentation">
+    <dir name="Release-old">
+     <file baseinstalldir="PhpDocumentor" name="Release-0.2.4" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="Release-0.2.5" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="Release-0.2.6" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="Release-0.3.0" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="Release-0.4.0" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="Release-0.4.1" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="Release-0.4.2" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="Release-1.0.0" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="Release-1.0.0rc1" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="Release-1.1.0" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="Release-1.1.0rc1" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="Release-1.1.0rc2" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="Release-1.2.0" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="Release-1.2.0beta1" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="Release-1.2.0beta2" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="Release-1.2.0beta3" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="Release-1.2.0rc1" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="Release-1.2.0rc2" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="Release-1.2.1" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="Release-1.2.2" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="Release-1.2.3" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="Release-1.2.3.1" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="Release-1.3.0" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="Release-1.3.1" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="Release-1.3.2" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="Release-1.4.0" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="Release-1.4.0alpha1" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="Release-1.4.0alpha2" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="Release-1.4.0rc1" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="Release-1.4.0rc2" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="Release-1.4.1" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="Release-1.4.2" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="Release-1.4.3" role="doc" />
+    </dir> <!-- /Documentation/Release-old -->
+    <dir name="tests">
+     <dir name="bug-557861">
+      <file baseinstalldir="PhpDocumentor" name="bug-557861.php" role="doc" />
+     </dir> <!-- /Documentation/tests/bug-557861 -->
+     <file baseinstalldir="PhpDocumentor" name="bug-441275.php" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="bug-441278.php" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="bug-441287.php" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="bug-441289.php" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="bug-441433.php" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="bug-443153.php" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="bug-445298.php" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="bug-445305.php" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="bug-445820.php" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="bug-489398.php" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="bug-540341.php" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="bug-540368.php" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="bug-541886.php" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="bug-542586.php" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="bug-548331.php" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="bug-550489.php" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="bug-551120.php" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="bug-553137.php" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="bug-553138.php" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="bug-553560.php" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="bug-553607.php" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="bug-554712.php" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="bug-555768.php" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="bug-556031-01.php" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="bug-556031.php" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="bug-556860.php" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="bug-556894.php" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="bug-557390.php" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="bug-558031.php" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="bug-558051.php" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="bug-559467.php" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="bug-559494.php" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="bug-559668.php" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="bug-560532.php" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="bug-560578.php" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="bug-560595.php" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="bug-561101.php" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="bug-562997.php" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="bug-566200.php" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="bug-566600.php" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="bug-567059.php" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="bug-587733.php" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="bug-645588.php" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="bug-698356.php" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="bug-772441.php" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="bug-904820.php" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="bug-authoremail.php" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="bug-defineparse.php" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="bug-eofquotes.php" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="bug-escaping.php" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="bug-loseprocedural.php" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="bug-loseunknowntags.php" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="bug-pageleveldocsblocks.php" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="bug-quote_new_parser.php" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="bug-shortdesc.php" role="doc" />
+    </dir> <!-- /Documentation/tests -->
+    <file baseinstalldir="PhpDocumentor" name="RoadMap" role="doc" />
+    <file baseinstalldir="PhpDocumentor" name="TODO" role="doc" />
+   </dir> <!-- /Documentation -->
+   <dir name="HTML_TreeMenu-1.1.2">
+    <dir name="images">
+     <file baseinstalldir="PhpDocumentor" name="branch.gif" role="data" />
+     <file baseinstalldir="PhpDocumentor" name="branchbottom.gif" role="data" />
+     <file baseinstalldir="PhpDocumentor" name="branchtop.gif" role="data" />
+     <file baseinstalldir="PhpDocumentor" name="folder.gif" role="data" />
+     <file baseinstalldir="PhpDocumentor" name="line.gif" role="data" />
+     <file baseinstalldir="PhpDocumentor" name="linebottom.gif" role="data" />
+     <file baseinstalldir="PhpDocumentor" name="minus.gif" role="data" />
+     <file baseinstalldir="PhpDocumentor" name="minusbottom.gif" role="data" />
+     <file baseinstalldir="PhpDocumentor" name="minustop.gif" role="data" />
+     <file baseinstalldir="PhpDocumentor" name="plus.gif" role="data" />
+     <file baseinstalldir="PhpDocumentor" name="plusbottom.gif" role="data" />
+     <file baseinstalldir="PhpDocumentor" name="plustop.gif" role="data" />
+    </dir> <!-- /HTML_TreeMenu-1.1.2/images -->
+    <file baseinstalldir="PhpDocumentor" name="TreeMenu.js" role="data" />
+    <file baseinstalldir="PhpDocumentor" name="TreeMenu.php" role="php" />
+   </dir> <!-- /HTML_TreeMenu-1.1.2 -->
+   <dir name="phpDocumentor">
+    <dir name="Converters">
+     <dir name="CHM">
+      <dir name="default">
+       <dir name="templates">
+        <dir name="default">
+         <dir name="templates">
+          <dir name="media">
+           <file baseinstalldir="PhpDocumentor" name="bg_left.png" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="stylesheet.css" role="data" />
+          </dir> <!-- /phpDocumentor/Converters/CHM/default/templates/default/templates/media -->
+          <file baseinstalldir="PhpDocumentor" name="basicindex.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="blank.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="class.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="classleft.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="classtrees.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="const.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="contents.hhc.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="define.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="docblock.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="elementindex.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="errors.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="fileleft.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="filesource.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="footer.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="function.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="global.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="header.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="hhp.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="include.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="index.hhk.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="index.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="method.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="packages.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="page.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="pkgelementindex.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="ric.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="tocentry.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="todolist.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="tutorial.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="tutorial_toc.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="tutorial_tree.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="var.tpl" role="data" />
+         </dir> <!-- /phpDocumentor/Converters/CHM/default/templates/default/templates -->
+         <file baseinstalldir="PhpDocumentor" name="options.ini" role="data" />
+        </dir> <!-- /phpDocumentor/Converters/CHM/default/templates/default -->
+       </dir> <!-- /phpDocumentor/Converters/CHM/default/templates -->
+       <file baseinstalldir="PhpDocumentor" name="CHMdefaultConverter.inc" role="php" />
+      </dir> <!-- /phpDocumentor/Converters/CHM/default -->
+     </dir> <!-- /phpDocumentor/Converters/CHM -->
+     <dir name="HTML">
+      <dir name="frames">
+       <dir name="templates">
+        <dir name="default">
+         <dir name="templates">
+          <dir name="media">
+           <file baseinstalldir="PhpDocumentor" name="banner.css" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="stylesheet.css" role="data" />
+          </dir> <!-- /phpDocumentor/Converters/HTML/frames/templates/default/templates/media -->
+          <file baseinstalldir="PhpDocumentor" name="basicindex.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="blank.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="class.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="classtrees.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="const.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="define.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="docblock.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="elementindex.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="errors.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="examplesource.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="filesource.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="footer.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="function.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="global.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="header.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="include.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="index.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="left_frame.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="method.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="page.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="pkgelementindex.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="ric.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="todolist.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="top_frame.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="tutorial.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="tutorial_nav.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="tutorial_toc.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="tutorial_tree.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="var.tpl" role="data" />
+         </dir> <!-- /phpDocumentor/Converters/HTML/frames/templates/default/templates -->
+         <file baseinstalldir="PhpDocumentor" name="options.ini" role="data" />
+        </dir> <!-- /phpDocumentor/Converters/HTML/frames/templates/default -->
+        <dir name="DOM">
+         <dir name="default">
+          <dir name="templates">
+           <dir name="media">
+            <dir name="images">
+             <file baseinstalldir="PhpDocumentor" name="blank.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="empty.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="I.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="L.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="Lminus.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="Lplus.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="minus.gif" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="plus.gif" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="T.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="Tminus.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="Tplus.png" role="data" />
+            </dir> <!-- /phpDocumentor/Converters/HTML/frames/templates/DOM/default/templates/media/images -->
+            <dir name="lib">
+             <file baseinstalldir="PhpDocumentor" name="classTree.js" role="data" />
+            </dir> <!-- /phpDocumentor/Converters/HTML/frames/templates/DOM/default/templates/media/lib -->
+            <file baseinstalldir="PhpDocumentor" name="banner.css" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="stylesheet.css" role="data" />
+           </dir> <!-- /phpDocumentor/Converters/HTML/frames/templates/DOM/default/templates/media -->
+           <file baseinstalldir="PhpDocumentor" name="basicindex.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="blank.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="class.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="classtrees.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="const.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="define.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="docblock.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="elementindex.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="errors.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="examplesource.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="filesource.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="footer.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="function.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="global.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="header.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="include.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="index.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="left_frame.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="method.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="page.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="pkgelementindex.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="ric.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="todolist.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="top_frame.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="tutorial.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="tutorial_nav.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="tutorial_toc.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="tutorial_tree.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="var.tpl" role="data" />
+          </dir> <!-- /phpDocumentor/Converters/HTML/frames/templates/DOM/default/templates -->
+          <file baseinstalldir="PhpDocumentor" name="options.ini" role="data" />
+         </dir> <!-- /phpDocumentor/Converters/HTML/frames/templates/DOM/default -->
+         <dir name="earthli">
+          <dir name="templates">
+           <dir name="media">
+            <dir name="images">
+             <file baseinstalldir="PhpDocumentor" name="AbstractClass.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="AbstractClass_logo.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="AbstractMethod.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="AbstractPrivateClass.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="AbstractPrivateClass_logo.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="AbstractPrivateMethod.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="blank.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="Class.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="class_folder.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="Class_logo.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="Constant.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="Constructor.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="Destructor.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="empty.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="file.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="folder.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="Function.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="function_folder.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="Global.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="I.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="Index.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="Interface.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="Interface_logo.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="L.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="Lminus.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="Lplus.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="Method.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="minus.gif" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="next_button.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="next_button_disabled.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="package.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="package_folder.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="Page.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="Page_logo.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="plus.gif" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="previous_button.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="previous_button_disabled.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="PrivateClass.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="PrivateClass_logo.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="PrivateMethod.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="PrivateVariable.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="private_class_logo.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="StaticMethod.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="StaticVariable.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="T.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="Tminus.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="Tplus.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="tutorial.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="tutorial_folder.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="up_button.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="Variable.png" role="data" />
+            </dir> <!-- /phpDocumentor/Converters/HTML/frames/templates/DOM/earthli/templates/media/images -->
+            <dir name="lib">
+             <file baseinstalldir="PhpDocumentor" name="classTree.js" role="data" />
+            </dir> <!-- /phpDocumentor/Converters/HTML/frames/templates/DOM/earthli/templates/media/lib -->
+            <file baseinstalldir="PhpDocumentor" name="banner.css" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="stylesheet.css" role="data" />
+           </dir> <!-- /phpDocumentor/Converters/HTML/frames/templates/DOM/earthli/templates/media -->
+           <file baseinstalldir="PhpDocumentor" name="basicindex.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="blank.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="class.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="classtrees.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="const.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="define.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="docblock.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="elementindex.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="errors.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="examplesource.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="filesource.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="footer.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="function.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="global.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="header.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="include.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="index.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="left_frame.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="method.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="page.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="pkgelementindex.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="ric.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="todolist.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="top_frame.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="tutorial.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="tutorial_nav.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="tutorial_toc.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="tutorial_tree.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="var.tpl" role="data" />
+          </dir> <!-- /phpDocumentor/Converters/HTML/frames/templates/DOM/earthli/templates -->
+          <file baseinstalldir="PhpDocumentor" name="options.ini" role="data" />
+         </dir> <!-- /phpDocumentor/Converters/HTML/frames/templates/DOM/earthli -->
+         <dir name="l0l33t">
+          <dir name="templates">
+           <dir name="media">
+            <dir name="images">
+             <file baseinstalldir="PhpDocumentor" name="blank.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="empty.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="I.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="L.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="Lminus.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="Lplus.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="T.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="Tminus.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="Tplus.png" role="data" />
+            </dir> <!-- /phpDocumentor/Converters/HTML/frames/templates/DOM/l0l33t/templates/media/images -->
+            <dir name="lib">
+             <file baseinstalldir="PhpDocumentor" name="classTree.js" role="data" />
+            </dir> <!-- /phpDocumentor/Converters/HTML/frames/templates/DOM/l0l33t/templates/media/lib -->
+            <file baseinstalldir="PhpDocumentor" name="banner.css" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="bg_left.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="minus.gif" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="plus.gif" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="stylesheet.css" role="data" />
+           </dir> <!-- /phpDocumentor/Converters/HTML/frames/templates/DOM/l0l33t/templates/media -->
+           <file baseinstalldir="PhpDocumentor" name="basicindex.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="blank.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="class.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="classtrees.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="const.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="define.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="docblock.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="elementindex.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="errors.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="examplesource.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="filesource.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="footer.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="function.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="global.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="header.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="include.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="index.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="left_frame.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="method.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="page.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="pkgelementindex.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="ric.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="todolist.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="top_frame.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="tutorial.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="tutorial_nav.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="tutorial_toc.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="tutorial_tree.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="var.tpl" role="data" />
+          </dir> <!-- /phpDocumentor/Converters/HTML/frames/templates/DOM/l0l33t/templates -->
+          <file baseinstalldir="PhpDocumentor" name="options.ini" role="data" />
+         </dir> <!-- /phpDocumentor/Converters/HTML/frames/templates/DOM/l0l33t -->
+         <dir name="phpdoc.de">
+          <dir name="templates">
+           <dir name="media">
+            <dir name="images">
+             <file baseinstalldir="PhpDocumentor" name="blank.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="empty.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="I.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="L.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="Lminus.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="Lplus.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="minus.gif" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="plus.gif" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="T.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="Tminus.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="Tplus.png" role="data" />
+            </dir> <!-- /phpDocumentor/Converters/HTML/frames/templates/DOM/phpdoc.de/templates/media/images -->
+            <dir name="lib">
+             <file baseinstalldir="PhpDocumentor" name="classTree.js" role="data" />
+            </dir> <!-- /phpDocumentor/Converters/HTML/frames/templates/DOM/phpdoc.de/templates/media/lib -->
+            <file baseinstalldir="PhpDocumentor" name="banner.css" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="stylesheet.css" role="data" />
+           </dir> <!-- /phpDocumentor/Converters/HTML/frames/templates/DOM/phpdoc.de/templates/media -->
+           <file baseinstalldir="PhpDocumentor" name="basicindex.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="blank.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="class.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="classtrees.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="const.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="define.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="docblock.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="elementindex.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="errors.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="examplesource.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="filesource.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="footer.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="function.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="global.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="header.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="include.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="index.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="left_frame.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="method.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="page.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="pkgelementindex.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="ric.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="todolist.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="top_frame.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="tutorial.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="tutorial_nav.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="tutorial_toc.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="tutorial_tree.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="var.tpl" role="data" />
+          </dir> <!-- /phpDocumentor/Converters/HTML/frames/templates/DOM/phpdoc.de/templates -->
+          <file baseinstalldir="PhpDocumentor" name="options.ini" role="data" />
+         </dir> <!-- /phpDocumentor/Converters/HTML/frames/templates/DOM/phpdoc.de -->
+         <dir name="phphtmllib">
+          <dir name="templates">
+           <dir name="media">
+            <dir name="images">
+             <file baseinstalldir="PhpDocumentor" name="blank.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="empty.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="I.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="L.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="Lminus.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="Lplus.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="minus.gif" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="plus.gif" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="T.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="Tminus.png" role="data" />
+             <file baseinstalldir="PhpDocumentor" name="Tplus.png" role="data" />
+            </dir> <!-- /phpDocumentor/Converters/HTML/frames/templates/DOM/phphtmllib/templates/media/images -->
+            <dir name="lib">
+             <file baseinstalldir="PhpDocumentor" name="classTree.js" role="data" />
+            </dir> <!-- /phpDocumentor/Converters/HTML/frames/templates/DOM/phphtmllib/templates/media/lib -->
+            <file baseinstalldir="PhpDocumentor" name="banner.css" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="stylesheet.css" role="data" />
+           </dir> <!-- /phpDocumentor/Converters/HTML/frames/templates/DOM/phphtmllib/templates/media -->
+           <file baseinstalldir="PhpDocumentor" name="basicindex.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="blank.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="class.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="classtrees.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="const.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="define.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="docblock.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="elementindex.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="errors.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="examplesource.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="filesource.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="footer.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="function.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="global.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="header.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="include.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="index.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="left_frame.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="method.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="page.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="pkgelementindex.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="ric.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="todolist.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="top_frame.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="tutorial.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="tutorial_nav.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="tutorial_toc.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="tutorial_tree.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="var.tpl" role="data" />
+          </dir> <!-- /phpDocumentor/Converters/HTML/frames/templates/DOM/phphtmllib/templates -->
+          <file baseinstalldir="PhpDocumentor" name="options.ini" role="data" />
+         </dir> <!-- /phpDocumentor/Converters/HTML/frames/templates/DOM/phphtmllib -->
+        </dir> <!-- /phpDocumentor/Converters/HTML/frames/templates/DOM -->
+        <dir name="earthli">
+         <dir name="templates">
+          <dir name="media">
+           <dir name="images">
+            <file baseinstalldir="PhpDocumentor" name="AbstractClass.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="AbstractClass_logo.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="AbstractMethod.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="AbstractPrivateClass.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="AbstractPrivateClass_logo.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="AbstractPrivateMethod.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="blank.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="Class.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="class_folder.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="Class_logo.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="Constant.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="Constructor.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="Destructor.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="empty.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="file.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="folder.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="Function.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="function_folder.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="Global.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="I.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="Index.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="Interface.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="Interface_logo.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="L.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="Lminus.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="Lplus.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="Method.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="next_button.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="next_button_disabled.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="package.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="package_folder.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="Page.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="Page_logo.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="previous_button.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="previous_button_disabled.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="PrivateClass.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="PrivateClass_logo.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="PrivateMethod.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="PrivateVariable.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="private_class_logo.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="StaticMethod.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="StaticVariable.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="T.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="Tminus.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="Tplus.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="tutorial.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="tutorial_folder.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="up_button.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="Variable.png" role="data" />
+           </dir> <!-- /phpDocumentor/Converters/HTML/frames/templates/earthli/templates/media/images -->
+           <file baseinstalldir="PhpDocumentor" name="banner.css" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="stylesheet.css" role="data" />
+          </dir> <!-- /phpDocumentor/Converters/HTML/frames/templates/earthli/templates/media -->
+          <file baseinstalldir="PhpDocumentor" name="basicindex.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="blank.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="class.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="classtrees.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="const.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="define.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="docblock.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="elementindex.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="errors.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="examplesource.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="filesource.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="footer.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="function.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="global.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="header.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="include.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="index.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="left_frame.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="method.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="page.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="pkgelementindex.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="ric.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="todolist.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="top_frame.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="tutorial.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="tutorial_nav.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="tutorial_toc.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="tutorial_tree.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="var.tpl" role="data" />
+         </dir> <!-- /phpDocumentor/Converters/HTML/frames/templates/earthli/templates -->
+         <file baseinstalldir="PhpDocumentor" name="options.ini" role="data" />
+        </dir> <!-- /phpDocumentor/Converters/HTML/frames/templates/earthli -->
+        <dir name="l0l33t">
+         <dir name="templates">
+          <dir name="media">
+           <file baseinstalldir="PhpDocumentor" name="banner.css" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="bg_left.png" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="stylesheet.css" role="data" />
+          </dir> <!-- /phpDocumentor/Converters/HTML/frames/templates/l0l33t/templates/media -->
+          <file baseinstalldir="PhpDocumentor" name="basicindex.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="blank.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="class.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="classtrees.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="const.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="define.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="docblock.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="elementindex.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="errors.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="examplesource.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="filesource.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="footer.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="function.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="global.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="header.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="include.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="index.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="left_frame.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="method.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="page.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="pkgelementindex.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="ric.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="todolist.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="top_frame.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="tutorial.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="tutorial_nav.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="tutorial_toc.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="tutorial_tree.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="var.tpl" role="data" />
+         </dir> <!-- /phpDocumentor/Converters/HTML/frames/templates/l0l33t/templates -->
+         <file baseinstalldir="PhpDocumentor" name="options.ini" role="data" />
+        </dir> <!-- /phpDocumentor/Converters/HTML/frames/templates/l0l33t -->
+        <dir name="phpdoc.de">
+         <dir name="templates">
+          <dir name="media">
+           <file baseinstalldir="PhpDocumentor" name="banner.css" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="stylesheet.css" role="data" />
+          </dir> <!-- /phpDocumentor/Converters/HTML/frames/templates/phpdoc.de/templates/media -->
+          <file baseinstalldir="PhpDocumentor" name="basicindex.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="blank.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="class.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="classtrees.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="const.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="define.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="docblock.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="elementindex.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="errors.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="examplesource.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="filesource.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="footer.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="function.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="global.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="header.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="include.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="index.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="left_frame.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="method.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="page.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="pkgelementindex.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="ric.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="todolist.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="top_frame.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="tutorial.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="tutorial_nav.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="tutorial_toc.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="tutorial_tree.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="var.tpl" role="data" />
+         </dir> <!-- /phpDocumentor/Converters/HTML/frames/templates/phpdoc.de/templates -->
+         <file baseinstalldir="PhpDocumentor" name="options.ini" role="data" />
+        </dir> <!-- /phpDocumentor/Converters/HTML/frames/templates/phpdoc.de -->
+        <dir name="phpedit">
+         <dir name="templates">
+          <dir name="media">
+           <dir name="images">
+            <file baseinstalldir="PhpDocumentor" name="blank.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="Class.gif" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="classFolder.gif" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="Constant.gif" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="Constants.gif" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="Constructor.gif" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="Destructor.gif" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="Disk.gif" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="error.gif" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="file.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="FolderClosed.gif" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="foldericon.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="FolderOpened.gif" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="Functions.gif" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="GhostClass.gif" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="I.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="L.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="Lminus.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="Lplus.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="minus.gif" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="msgError.gif" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="msgFatalError.gif" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="msgHint.gif" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="msgInformation.gif" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="msgWarning.gif" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="openfoldericon.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="plus.gif" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="PrivateDataMember.gif" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="PrivateMethod.gif" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="PrivateProperty.gif" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="ProtectedDataMember.gif" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="ProtectedMethod.gif" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="ProtectedProperty.gif" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="PublicDataMember.gif" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="PublicMethod.gif" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="PublicProperty.gif" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="spacer.gif" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="T.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="Tminus.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="Tplus.png" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="Types.gif" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="Variable.gif" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="Vars.gif" role="data" />
+           </dir> <!-- /phpDocumentor/Converters/HTML/frames/templates/phpedit/templates/media/images -->
+           <dir name="lib">
+            <file baseinstalldir="PhpDocumentor" name="classTree.js" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="tab.webfx.css" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="tabpane.js" role="data" />
+            <file baseinstalldir="PhpDocumentor" name="ua.js" role="data" />
+           </dir> <!-- /phpDocumentor/Converters/HTML/frames/templates/phpedit/templates/media/lib -->
+           <file baseinstalldir="PhpDocumentor" name="stylesheet.css" role="data" />
+          </dir> <!-- /phpDocumentor/Converters/HTML/frames/templates/phpedit/templates/media -->
+          <file baseinstalldir="PhpDocumentor" name="basicindex.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="blank.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="class.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="classtrees.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="const.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="define.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="docblock.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="elementindex.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="errors.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="examplesource.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="filesource.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="footer.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="function.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="global.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="header.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="include.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="index.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="left_frame.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="method.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="page.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="pkgelementindex.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="ric.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="todolist.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="top_frame.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="tutorial.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="tutorial_toc.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="tutorial_tree.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="var.tpl" role="data" />
+         </dir> <!-- /phpDocumentor/Converters/HTML/frames/templates/phpedit/templates -->
+         <file baseinstalldir="PhpDocumentor" name="options.ini" role="data" />
+        </dir> <!-- /phpDocumentor/Converters/HTML/frames/templates/phpedit -->
+        <dir name="phphtmllib">
+         <dir name="templates">
+          <dir name="media">
+           <file baseinstalldir="PhpDocumentor" name="banner.css" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="stylesheet.css" role="data" />
+          </dir> <!-- /phpDocumentor/Converters/HTML/frames/templates/phphtmllib/templates/media -->
+          <file baseinstalldir="PhpDocumentor" name="basicindex.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="blank.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="class.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="classtrees.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="const.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="define.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="docblock.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="elementindex.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="errors.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="examplesource.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="filesource.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="footer.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="function.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="global.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="header.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="include.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="index.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="left_frame.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="method.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="page.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="pkgelementindex.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="ric.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="todolist.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="top_frame.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="tutorial.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="tutorial_nav.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="tutorial_toc.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="tutorial_tree.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="var.tpl" role="data" />
+         </dir> <!-- /phpDocumentor/Converters/HTML/frames/templates/phphtmllib/templates -->
+         <file baseinstalldir="PhpDocumentor" name="options.ini" role="data" />
+        </dir> <!-- /phpDocumentor/Converters/HTML/frames/templates/phphtmllib -->
+       </dir> <!-- /phpDocumentor/Converters/HTML/frames/templates -->
+       <file baseinstalldir="PhpDocumentor" name="HTMLframesConverter.inc" role="php" />
+      </dir> <!-- /phpDocumentor/Converters/HTML/frames -->
+      <dir name="Smarty">
+       <dir name="templates">
+        <dir name="default">
+         <dir name="templates">
+          <dir name="media">
+           <file baseinstalldir="PhpDocumentor" name="layout.css" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="print.css" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="style.css" role="data" />
+          </dir> <!-- /phpDocumentor/Converters/HTML/Smarty/templates/default/templates/media -->
+          <file baseinstalldir="PhpDocumentor" name="basicindex.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="blank.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="class.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="classleft.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="classtrees.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="const.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="define.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="docblock.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="elementindex.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="errors.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="examplesource.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="fileleft.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="filesource.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="footer.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="function.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="global.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="header.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="include.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="index.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="layout.css" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="method.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="packages.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="page.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="pkgelementindex.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="ric.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="style.css" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="todolist.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="tutorial.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="tutorial_toc.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="tutorial_tree.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="var.tpl" role="data" />
+         </dir> <!-- /phpDocumentor/Converters/HTML/Smarty/templates/default/templates -->
+         <file baseinstalldir="PhpDocumentor" name="options.ini" role="data" />
+        </dir> <!-- /phpDocumentor/Converters/HTML/Smarty/templates/default -->
+        <dir name="HandS">
+         <dir name="templates">
+          <dir name="media">
+           <file baseinstalldir="PhpDocumentor" name="background.png" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="empty.png" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="logo.png" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="style.css" role="data" />
+          </dir> <!-- /phpDocumentor/Converters/HTML/Smarty/templates/HandS/templates/media -->
+          <file baseinstalldir="PhpDocumentor" name="basicindex.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="blank.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="class.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="classleft.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="classtags.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="classtrees.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="const.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="define.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="docblock.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="elementindex.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="errors.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="examplesource.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="fileleft.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="filesource.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="filetags.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="footer.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="function.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="global.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="header.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="include.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="index.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="method.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="packages.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="page.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="pkgelementindex.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="ric.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="tags.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="todolist.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="tutorial.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="tutorial_toc.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="tutorial_tree.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="var.tpl" role="data" />
+         </dir> <!-- /phpDocumentor/Converters/HTML/Smarty/templates/HandS/templates -->
+         <file baseinstalldir="PhpDocumentor" name="options.ini" role="data" />
+        </dir> <!-- /phpDocumentor/Converters/HTML/Smarty/templates/HandS -->
+        <dir name="PEAR">
+         <dir name="templates">
+          <dir name="media">
+           <file baseinstalldir="PhpDocumentor" name="background.png" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="empty.png" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="pear.gif" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="style.css" role="data" />
+          </dir> <!-- /phpDocumentor/Converters/HTML/Smarty/templates/PEAR/templates/media -->
+          <file baseinstalldir="PhpDocumentor" name="basicindex.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="blank.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="class.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="classleft.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="classtrees.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="define.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="docblock.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="elementindex.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="errors.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="examplesource.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="fileleft.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="filesource.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="footer.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="function.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="global.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="header.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="include.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="index.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="method.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="packages.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="page.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="pkgelementindex.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="ric.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="todolist.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="tutorial.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="tutorial_toc.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="tutorial_tree.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="var.tpl" role="data" />
+         </dir> <!-- /phpDocumentor/Converters/HTML/Smarty/templates/PEAR/templates -->
+         <file baseinstalldir="PhpDocumentor" name="options.ini" role="data" />
+        </dir> <!-- /phpDocumentor/Converters/HTML/Smarty/templates/PEAR -->
+        <dir name="PHP">
+         <dir name="templates">
+          <dir name="media">
+           <file baseinstalldir="PhpDocumentor" name="background.png" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="empty.png" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="style.css" role="data" />
+          </dir> <!-- /phpDocumentor/Converters/HTML/Smarty/templates/PHP/templates/media -->
+          <file baseinstalldir="PhpDocumentor" name="basicindex.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="blank.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="class.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="classleft.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="classtrees.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="const.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="define.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="docblock.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="elementindex.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="errors.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="examplesource.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="fileleft.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="filesource.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="footer.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="function.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="global.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="header.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="include.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="index.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="method.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="packages.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="page.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="pkgelementindex.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="ric.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="todolist.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="tutorial.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="tutorial_toc.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="tutorial_tree.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="var.tpl" role="data" />
+         </dir> <!-- /phpDocumentor/Converters/HTML/Smarty/templates/PHP/templates -->
+         <file baseinstalldir="PhpDocumentor" name="options.ini" role="data" />
+        </dir> <!-- /phpDocumentor/Converters/HTML/Smarty/templates/PHP -->
+       </dir> <!-- /phpDocumentor/Converters/HTML/Smarty/templates -->
+       <file baseinstalldir="PhpDocumentor" name="HTMLSmartyConverter.inc" role="php" />
+      </dir> <!-- /phpDocumentor/Converters/HTML/Smarty -->
+     </dir> <!-- /phpDocumentor/Converters/HTML -->
+     <dir name="PDF">
+      <dir name="default">
+       <dir name="templates">
+        <dir name="default">
+         <dir name="templates">
+          <dir name="media">
+           <file baseinstalldir="PhpDocumentor" name="logo.jpg" role="data" />
+          </dir> <!-- /phpDocumentor/Converters/PDF/default/templates/default/templates/media -->
+          <file baseinstalldir="PhpDocumentor" name="appendix_title_page.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="class.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="classtree.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="const.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="define.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="docblock.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="examplesource.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="filesource.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="footer.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="function.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="global.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="include.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="index.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="method.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="newpackage_header.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="packagepage.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="page.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="pagenumbering.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="params.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="ric.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="ric_title_page.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="source_loop.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="source_title_page.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="title_page.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="toc.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="todolist.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="tutorial.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="var.tpl" role="data" />
+         </dir> <!-- /phpDocumentor/Converters/PDF/default/templates/default/templates -->
+         <file baseinstalldir="PhpDocumentor" name="options.ini" role="data" />
+        </dir> <!-- /phpDocumentor/Converters/PDF/default/templates/default -->
+        <dir name="fonts">
+         <file baseinstalldir="PhpDocumentor" name="Courier-Bold.afm" role="data" />
+         <file baseinstalldir="PhpDocumentor" name="Courier-BoldOblique.afm" role="data" />
+         <file baseinstalldir="PhpDocumentor" name="Courier-Oblique.afm" role="data" />
+         <file baseinstalldir="PhpDocumentor" name="Courier.afm" role="data" />
+         <file baseinstalldir="PhpDocumentor" name="Helvetica-Bold.afm" role="data" />
+         <file baseinstalldir="PhpDocumentor" name="Helvetica-BoldOblique.afm" role="data" />
+         <file baseinstalldir="PhpDocumentor" name="Helvetica-Oblique.afm" role="data" />
+         <file baseinstalldir="PhpDocumentor" name="Helvetica.afm" role="data" />
+         <file baseinstalldir="PhpDocumentor" name="php_Courier-Bold.afm" role="data" />
+         <file baseinstalldir="PhpDocumentor" name="php_Courier-BoldOblique.afm" role="data" />
+         <file baseinstalldir="PhpDocumentor" name="php_Courier-Oblique.afm" role="data" />
+         <file baseinstalldir="PhpDocumentor" name="php_Courier.afm" role="data" />
+         <file baseinstalldir="PhpDocumentor" name="php_Helvetica-Bold.afm" role="data" />
+         <file baseinstalldir="PhpDocumentor" name="php_Helvetica-BoldOblique.afm" role="data" />
+         <file baseinstalldir="PhpDocumentor" name="php_Helvetica-Oblique.afm" role="data" />
+         <file baseinstalldir="PhpDocumentor" name="php_Helvetica.afm" role="data" />
+         <file baseinstalldir="PhpDocumentor" name="php_Symbol.afm" role="data" />
+         <file baseinstalldir="PhpDocumentor" name="php_Times-Bold.afm" role="data" />
+         <file baseinstalldir="PhpDocumentor" name="php_Times-BoldItalic.afm" role="data" />
+         <file baseinstalldir="PhpDocumentor" name="php_Times-Italic.afm" role="data" />
+         <file baseinstalldir="PhpDocumentor" name="php_Times-Roman.afm" role="data" />
+         <file baseinstalldir="PhpDocumentor" name="php_ZapfDingbats.afm" role="data" />
+         <file baseinstalldir="PhpDocumentor" name="Symbol.afm" role="data" />
+         <file baseinstalldir="PhpDocumentor" name="Times-Bold.afm" role="data" />
+         <file baseinstalldir="PhpDocumentor" name="Times-BoldItalic.afm" role="data" />
+         <file baseinstalldir="PhpDocumentor" name="Times-Italic.afm" role="data" />
+         <file baseinstalldir="PhpDocumentor" name="Times-Roman.afm" role="data" />
+         <file baseinstalldir="PhpDocumentor" name="ZapfDingbats.afm" role="data" />
+        </dir> <!-- /phpDocumentor/Converters/PDF/default/templates/fonts -->
+       </dir> <!-- /phpDocumentor/Converters/PDF/default/templates -->
+       <file baseinstalldir="PhpDocumentor" name="class.ezpdf.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="class.pdf.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="class.phpdocpdf.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="ParserPDF.inc" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="PDFdefaultConverter.inc" role="php" />
+      </dir> <!-- /phpDocumentor/Converters/PDF/default -->
+     </dir> <!-- /phpDocumentor/Converters/PDF -->
+     <dir name="XML">
+      <dir name="DocBook">
+       <dir name="peardoc2">
+        <dir name="templates">
+         <dir name="default">
+          <dir name="templates">
+           <file baseinstalldir="PhpDocumentor" name="category.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="class.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="class_summary.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="constants.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="docblock.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="errors.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="footer.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="globals.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="header.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="imethods.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="ivars.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="method.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="package.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="tutorial.tpl" role="data" />
+           <file baseinstalldir="PhpDocumentor" name="var.tpl" role="data" />
+          </dir> <!-- /phpDocumentor/Converters/XML/DocBook/peardoc2/templates/default/templates -->
+          <file baseinstalldir="PhpDocumentor" name="options.ini" role="data" />
+         </dir> <!-- /phpDocumentor/Converters/XML/DocBook/peardoc2/templates/default -->
+        </dir> <!-- /phpDocumentor/Converters/XML/DocBook/peardoc2/templates -->
+        <file baseinstalldir="PhpDocumentor" name="Beautifier.php" role="php" />
+        <file baseinstalldir="PhpDocumentor" name="Plain.php" role="php" />
+        <file baseinstalldir="PhpDocumentor" name="Tokenizer.php" role="php" />
+        <file baseinstalldir="PhpDocumentor" name="XMLDocBookpeardoc2Converter.inc" role="php" />
+       </dir> <!-- /phpDocumentor/Converters/XML/DocBook/peardoc2 -->
+       <dir name="templates">
+        <dir name="peardoc2">
+         <dir name="templates">
+          <file baseinstalldir="PhpDocumentor" name="class_summary.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="ivars.tpl" role="data" />
+          <file baseinstalldir="PhpDocumentor" name="tutorial.tpl" role="data" />
+         </dir> <!-- /phpDocumentor/Converters/XML/DocBook/templates/peardoc2/templates -->
+        </dir> <!-- /phpDocumentor/Converters/XML/DocBook/templates/peardoc2 -->
+       </dir> <!-- /phpDocumentor/Converters/XML/DocBook/templates -->
+       <file baseinstalldir="PhpDocumentor" name="XMLDocBookConverter.inc" role="php" />
+      </dir> <!-- /phpDocumentor/Converters/XML/DocBook -->
+     </dir> <!-- /phpDocumentor/Converters/XML -->
+    </dir> <!-- /phpDocumentor/Converters -->
+    <dir name="Smarty-2.6.0">
+     <dir name="libs">
+      <dir name="core">
+       <file baseinstalldir="PhpDocumentor" name="core.assemble_plugin_filepath.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="core.assign_smarty_interface.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="core.create_dir_structure.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="core.display_debug_console.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="core.get_include_path.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="core.get_microtime.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="core.get_php_resource.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="core.is_secure.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="core.is_trusted.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="core.load_plugins.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="core.load_resource_plugin.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="core.process_cached_inserts.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="core.process_compiled_include.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="core.read_cache_file.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="core.rmdir.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="core.rm_auto.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="core.run_insert_handler.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="core.smarty_include_php.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="core.write_cache_file.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="core.write_compiled_include.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="core.write_compiled_resource.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="core.write_file.php" role="php" />
+      </dir> <!-- /phpDocumentor/Smarty-2.6.0/libs/core -->
+      <dir name="plugins">
+       <file baseinstalldir="PhpDocumentor" name="block.strip.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="block.textformat.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="function.assign.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="function.assign_debug_info.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="function.config_load.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="function.counter.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="function.cycle.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="function.debug.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="function.eval.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="function.fetch.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="function.html_checkboxes.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="function.html_image.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="function.html_options.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="function.html_radios.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="function.html_select_date.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="function.html_select_time.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="function.html_table.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="function.mailto.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="function.math.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="function.popup.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="function.popup_init.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="function.var_dump.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="modifier.capitalize.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="modifier.cat.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="modifier.count_characters.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="modifier.count_paragraphs.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="modifier.count_sentences.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="modifier.count_words.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="modifier.date_format.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="modifier.debug_print_var.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="modifier.default.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="modifier.escape.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="modifier.htmlentities.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="modifier.indent.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="modifier.lower.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="modifier.nl2br.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="modifier.rawurlencode.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="modifier.regex_replace.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="modifier.replace.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="modifier.spacify.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="modifier.string_format.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="modifier.strip.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="modifier.strip_tags.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="modifier.truncate.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="modifier.upper.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="modifier.wordwrap.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="outputfilter.trimwhitespace.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="shared.escape_special_chars.php" role="php" />
+       <file baseinstalldir="PhpDocumentor" name="shared.make_timestamp.php" role="php" />
+      </dir> <!-- /phpDocumentor/Smarty-2.6.0/libs/plugins -->
+      <file baseinstalldir="PhpDocumentor" name="Config_File.class.php" role="php" />
+      <file baseinstalldir="PhpDocumentor" name="debug.tpl" role="php" />
+      <file baseinstalldir="PhpDocumentor" name="Smarty.class.php" role="php" />
+      <file baseinstalldir="PhpDocumentor" name="Smarty_Compiler.class.php" role="php" />
+     </dir> <!-- /phpDocumentor/Smarty-2.6.0/libs -->
+     <dir name="misc">
+      <file baseinstalldir="PhpDocumentor" name="smarty_icon.gif" role="data" />
+      <file baseinstalldir="PhpDocumentor" name="smarty_icon.README" role="data" />
+     </dir> <!-- /phpDocumentor/Smarty-2.6.0/misc -->
+     <file baseinstalldir="PhpDocumentor" name="BUGS" role="data" />
+     <file baseinstalldir="PhpDocumentor" name="ChangeLog" role="data" />
+     <file baseinstalldir="PhpDocumentor" name="COPYING.lib" role="data" />
+     <file baseinstalldir="PhpDocumentor" name="FAQ" role="data" />
+     <file baseinstalldir="PhpDocumentor" name="INSTALL" role="data" />
+     <file baseinstalldir="PhpDocumentor" name="NEWS" role="data" />
+     <file baseinstalldir="PhpDocumentor" name="README" role="data" />
+     <file baseinstalldir="PhpDocumentor" name="RELEASE_NOTES" role="data" />
+     <file baseinstalldir="PhpDocumentor" name="TODO" role="data" />
+    </dir> <!-- /phpDocumentor/Smarty-2.6.0 -->
+    <file baseinstalldir="PhpDocumentor" name="Classes.inc" role="php">
+     <tasks:replace from="@VER@" to="version" type="package-info" />
+    </file>
+    <file baseinstalldir="PhpDocumentor" name="clone.inc.php" role="php" />
+    <file baseinstalldir="PhpDocumentor" name="clone5.inc.php" role="php" />
+    <file baseinstalldir="PhpDocumentor" name="common.inc.php" role="php">
+     <tasks:replace from="@VER@" to="version" type="package-info" />
+     <tasks:replace from="@PEAR-DIR@" to="php_dir" type="pear-config" />
+    </file>
+    <file baseinstalldir="PhpDocumentor" name="Converter.inc" role="php">
+     <tasks:replace from="@DATA-DIR@" to="data_dir" type="pear-config" />
+    </file>
+    <file baseinstalldir="PhpDocumentor" name="DescHTML.inc" role="php">
+     <tasks:replace from="@VER@" to="version" type="package-info" />
+    </file>
+    <file baseinstalldir="PhpDocumentor" name="DocBlockTags.inc" role="php">
+     <tasks:replace from="@VER@" to="version" type="package-info" />
+    </file>
+    <file baseinstalldir="PhpDocumentor" name="Errors.inc" role="php">
+     <tasks:replace from="@VER@" to="version" type="package-info" />
+    </file>
+    <file baseinstalldir="PhpDocumentor" name="EventStack.inc" role="php">
+     <tasks:replace from="@VER@" to="version" type="package-info" />
+    </file>
+    <file baseinstalldir="PhpDocumentor" name="find_phpdoc.php" role="php" />
+    <file baseinstalldir="PhpDocumentor" name="HighlightParser.inc" role="php">
+     <tasks:replace from="@VER@" to="version" type="package-info" />
+    </file>
+    <file baseinstalldir="PhpDocumentor" name="InlineTags.inc" role="php">
+     <tasks:replace from="@VER@" to="version" type="package-info" />
+    </file>
+    <file baseinstalldir="PhpDocumentor" name="IntermediateParser.inc" role="php">
+     <tasks:replace from="@VER@" to="version" type="package-info" />
+     <tasks:replace from="@PEAR-DIR@" to="php_dir" type="pear-config" />
+    </file>
+    <file baseinstalldir="PhpDocumentor" name="Io.inc" role="php" />
+    <file baseinstalldir="PhpDocumentor" name="LinkClasses.inc" role="php">
+     <tasks:replace from="@VER@" to="version" type="package-info" />
+    </file>
+    <file baseinstalldir="PhpDocumentor" name="PackagePageElements.inc" role="php">
+     <tasks:replace from="@VER@" to="version" type="package-info" />
+    </file>
+    <file baseinstalldir="PhpDocumentor" name="Parser.inc" role="php" />
+    <file baseinstalldir="PhpDocumentor" name="ParserData.inc" role="php">
+     <tasks:replace from="@VER@" to="version" type="package-info" />
+    </file>
+    <file baseinstalldir="PhpDocumentor" name="ParserDescCleanup.inc" role="php" />
+    <file baseinstalldir="PhpDocumentor" name="ParserDocBlock.inc" role="php" />
+    <file baseinstalldir="PhpDocumentor" name="ParserElements.inc" role="php" />
+    <file baseinstalldir="PhpDocumentor" name="phpdoc.inc" role="php" />
+    <file baseinstalldir="PhpDocumentor" name="phpDocumentorTParser.inc" role="php">
+     <tasks:replace from="@VER@" to="version" type="package-info" />
+    </file>
+    <file baseinstalldir="PhpDocumentor" name="phpDocumentorTWordParser.inc" role="php">
+     <tasks:replace from="@VER@" to="version" type="package-info" />
+    </file>
+    <file baseinstalldir="PhpDocumentor" name="ProceduralPages.inc" role="php">
+     <tasks:replace from="@VER@" to="version" type="package-info" />
+    </file>
+    <file baseinstalldir="PhpDocumentor" name="Publisher.inc" role="php">
+     <tasks:replace from="@VER@" to="version" type="package-info" />
+    </file>
+    <file baseinstalldir="PhpDocumentor" name="Setup.inc.php" role="php">
+     <tasks:replace from="@DATA-DIR@" to="data_dir" type="pear-config" />
+    </file>
+    <file baseinstalldir="PhpDocumentor" name="TutorialHighlightParser.inc" role="php">
+     <tasks:replace from="@VER@" to="version" type="package-info" />
+    </file>
+    <file baseinstalldir="PhpDocumentor" name="WordParser.inc" role="php">
+     <tasks:replace from="@VER@" to="version" type="package-info" />
+    </file>
+    <file baseinstalldir="PhpDocumentor" name="XMLpackagePageParser.inc" role="php">
+     <tasks:replace from="@VER@" to="version" type="package-info" />
+    </file>
+   </dir> <!-- /phpDocumentor -->
+   <dir name="scripts">
+    <file baseinstalldir="PhpDocumentor" name="add_cvs.php" role="php" />
+    <file baseinstalldir="PhpDocumentor" name="create_examples.php" role="php" />
+    <file baseinstalldir="PhpDocumentor" name="create_package.xml.php" role="php" />
+    <file baseinstalldir="PhpDocumentor" name="makedoc.sh" role="php" />
+    <file baseinstalldir="PhpDocumentor" name="tokenizer_test.php" role="php" />
+   </dir> <!-- /scripts -->
+   <dir name="tests">
+    <file baseinstalldir="PhpDocumentor" name="AllTests.php" role="test" />
+    <file baseinstalldir="PhpDocumentor" name="HighlightParserGetInlineTagsTest.php" role="test" />
+    <file baseinstalldir="PhpDocumentor" name="IntermediateParserAddPrivatePageTest.php" role="test" />
+    <file baseinstalldir="PhpDocumentor" name="ParserClassGetSourceLocationTest.php" role="test" />
+    <file baseinstalldir="PhpDocumentor" name="ParserPageGetSourceLocationTest.php" role="test" />
+    <file baseinstalldir="PhpDocumentor" name="SetupCleanConverterNamePieceTest.php" role="test" />
+    <file baseinstalldir="PhpDocumentor" name="SetupDecideOnOrOffTest.php" role="test" />
+    <file baseinstalldir="PhpDocumentor" name="TParserGetInlineTagsTest.php" role="test" />
+    <file baseinstalldir="PhpDocumentor" name="helper.inc" role="test">
+     <tasks:replace from="@php_dir@" to="php_dir" type="pear-config" />
+    </file>
+   </dir> <!-- /tests -->
+   <dir name="tutorials">
+    <dir name="Converters">
+     <dir name="CHMdefault">
+      <file baseinstalldir="PhpDocumentor" name="CHMdefaultConverter.cls" role="doc" />
+     </dir> <!-- /tutorials/Converters/CHMdefault -->
+     <dir name="HTMLframes">
+      <file baseinstalldir="PhpDocumentor" name="HTMLframesConverter.cls" role="doc" />
+     </dir> <!-- /tutorials/Converters/HTMLframes -->
+     <dir name="HTMLSmarty">
+      <file baseinstalldir="PhpDocumentor" name="HTMLSmartyConverter.cls" role="doc" />
+     </dir> <!-- /tutorials/Converters/HTMLSmarty -->
+     <dir name="PDFdefault">
+      <file baseinstalldir="PhpDocumentor" name="PDFdefaultConverter.cls" role="doc" />
+      <file baseinstalldir="PhpDocumentor" name="PDFParser.cls" role="doc" />
+     </dir> <!-- /tutorials/Converters/PDFdefault -->
+     <dir name="XMLDocBook">
+      <file baseinstalldir="PhpDocumentor" name="XMLDocBookConverter.cls" role="doc" />
+     </dir> <!-- /tutorials/Converters/XMLDocBook -->
+     <file baseinstalldir="PhpDocumentor" name="Converter.cls" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="Converter.cls.ini" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="Converter.methods.cls" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="Converters.pkg" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="template.vars.cls" role="doc" />
+    </dir> <!-- /tutorials/Converters -->
+    <dir name="phpDocumentor">
+     <dir name="examples">
+      <file baseinstalldir="PhpDocumentor" name="sample1.php" role="doc" />
+      <file baseinstalldir="PhpDocumentor" name="sample2.php" role="doc" />
+      <file baseinstalldir="PhpDocumentor" name="sample3.php" role="doc" />
+     </dir> <!-- /tutorials/phpDocumentor/examples -->
+     <file baseinstalldir="PhpDocumentor" name="elements.pkg" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="inlinetags.pkg" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="inlinetags.pkg.ini" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="manual.pkg" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="manual.pkg.ini" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="phpDocumentor.howto.pkg" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="phpDocumentor.howto.pkg.ini" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="phpDocumentor.pkg" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="phpDocumentor.pkg.ini" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="phpDocumentor.quickstart.pkg" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="phpDocumentor.quickstart.pkg.ini" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="sample1.pkg" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="sample2.pkg" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="sample3.pkg" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="tags.abstract.pkg" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="tags.access.pkg" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="tags.author.pkg" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="tags.category.pkg" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="tags.copyright.pkg" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="tags.deprecated.pkg" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="tags.example.pkg" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="tags.filesource.pkg" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="tags.final.pkg" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="tags.global.pkg" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="tags.ignore.pkg" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="tags.inlineexample.pkg" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="tags.inlineid.pkg" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="tags.inlineinheritdoc.pkg" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="tags.inlineinternal.pkg" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="tags.inlinelink.pkg" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="tags.inlinesource.pkg" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="tags.inlinetoc.pkg" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="tags.inlinetutorial.pkg" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="tags.internal.pkg" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="tags.license.pkg" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="tags.link.pkg" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="tags.method.pkg" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="tags.name.pkg" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="tags.package.pkg" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="tags.param.pkg" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="tags.pkg" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="tags.pkg.ini" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="tags.property.pkg" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="tags.return.pkg" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="tags.see.pkg" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="tags.since.pkg" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="tags.static.pkg" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="tags.staticvar.pkg" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="tags.subpackage.pkg" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="tags.todo.pkg" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="tags.tutorial.pkg" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="tags.uses.pkg" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="tags.var.pkg" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="tags.version.pkg" role="doc" />
+     <file baseinstalldir="PhpDocumentor" name="tutorials.pkg" role="doc" />
+    </dir> <!-- /tutorials/phpDocumentor -->
+   </dir> <!-- /tutorials -->
+   <dir name="user">
+    <file baseinstalldir="PhpDocumentor" name="default.ini" role="data" />
+    <file baseinstalldir="PhpDocumentor" name="demo.ini" role="data" />
+    <file baseinstalldir="PhpDocumentor" name="error.ini" role="data" />
+    <file baseinstalldir="PhpDocumentor" name="makedocs.ini" role="data" />
+    <file baseinstalldir="PhpDocumentor" name="pear-makedocs.ini" role="data">
+     <tasks:replace from="@PEAR-DIR@" to="php_dir" type="pear-config" />
+     <tasks:replace from="@DOC-DIR@" to="doc_dir" type="pear-config" />
+     <tasks:replace from="@VER@" to="version" type="package-info" />
+    </file>
+    <file baseinstalldir="PhpDocumentor" name="testdocbook.ini" role="data" />
+   </dir> <!-- /user -->
+   <file baseinstalldir="PhpDocumentor" name="Authors" role="doc" />
+   <file baseinstalldir="PhpDocumentor" name="ChangeLog" role="doc" />
+   <file baseinstalldir="PhpDocumentor" name="FAQ" role="doc" />
+   <file baseinstalldir="PhpDocumentor" name="index.html" role="data" />
+   <file baseinstalldir="PhpDocumentor" name="INSTALL" role="doc" />
+   <file baseinstalldir="PhpDocumentor" name="LICENSE" role="doc" />
+   <file baseinstalldir="PhpDocumentor" name="new_phpdoc.php" role="data" />
+   <file baseinstalldir="/" name="pear-phpdoc" role="script">
+    <tasks:replace from="@PHP-BIN@" to="php_bin" type="pear-config" />
+    <tasks:unixeol />
+   </file>
+   <file baseinstalldir="/" name="pear-phpdoc.bat" role="script">
+    <tasks:replace from="@PHP-BIN@" to="php_bin" type="pear-config" />
+    <tasks:replace from="@BIN-DIR@" to="bin_dir" type="pear-config" />
+    <tasks:replace from="@PEAR-DIR@" to="php_dir" type="pear-config" />
+    <tasks:replace from="@DATA-DIR@" to="data_dir" type="pear-config" />
+    <tasks:windowseol />
+   </file>
+   <file baseinstalldir="PhpDocumentor" name="phpdoc" role="data">
+    <tasks:unixeol />
+   </file>
+   <file baseinstalldir="PhpDocumentor" name="phpdoc.bat" role="data">
+    <tasks:windowseol />
+   </file>
+   <file baseinstalldir="PhpDocumentor" name="phpdoc.php" role="data" />
+   <file baseinstalldir="PhpDocumentor" name="phpDocumentor.ini" role="data" />
+   <file baseinstalldir="PhpDocumentor" name="poweredbyphpdoc.gif" role="data" />
+   <file baseinstalldir="PhpDocumentor" name="README" role="doc">
+    <tasks:replace from="@VER@" to="version" type="package-info" />
+    <tasks:replace from="@STABILITY@" to="state" type="package-info" />
+   </file>
+  </dir> <!-- / -->
+ </contents>
+ <dependencies>
+  <required>
+   <php>
+    <min>4.2.0</min>
+   </php>
+   <pearinstaller>
+    <min>1.4.6</min>
+   </pearinstaller>
+  </required>
+  <optional>
+   <package>
+    <name>XML_Beautifier</name>
+    <channel>pear.php.net</channel>
+    <min>1.1</min>
+   </package>
+  </optional>
+ </dependencies>
+ <phprelease>
+  <installconditions>
+   <os>
+    <name>windows</name>
+   </os>
+  </installconditions>
+  <filelist>
+   <install as="phpdoc" name="pear-phpdoc" />
+   <install as="phpdoc.bat" name="pear-phpdoc.bat" />
+   <install as="user/makedocs.ini" name="user/pear-makedocs.ini" />
+   <ignore name="phpdoc" />
+   <ignore name="phpdoc.bat" />
+   <ignore name="user/makedocs.ini" />
+   <ignore name="scripts/makedoc.sh" />
+  </filelist>
+ </phprelease>
+ <phprelease>
+  <filelist>
+   <install as="phpdoc" name="pear-phpdoc" />
+   <install as="user/makedocs.ini" name="user/pear-makedocs.ini" />
+   <ignore name="phpdoc" />
+   <ignore name="phpdoc.bat" />
+   <ignore name="user/makedocs.ini" />
+   <ignore name="pear-phpdoc.bat" />
+  </filelist>
+ </phprelease>
+ <changelog>
+  <release>
+   <version>
+    <release>1.1.0</release>
+    <api>1.1.0</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <date>2002-11-22</date>
+   <license uri="http://www.php.net/license">PHP License</license>
+   <notes>
+This is the initial PEAR package.xml release of the phpDocumentor package.
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>1.2.0beta1</release>
+    <api>1.2.0beta1</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <date>2003-01-03</date>
+   <license uri="http://www.php.net/license">PHP License</license>
+   <notes>
+This is the first attempt at a PEAR package.xml release of the
+phpDocumentor package.  We are very pleased to present this release to
+the PEAR community.  In it, there is a number of great enhancements
+that should make documenting very productive.
+
+We have included the beta of the new XML:DocBook:peardoc2 converter, and
+there are many problems with it.  Those of you who are familiar with
+peardoc2, please help us out by running a test of peardoc2 on the output
+from a sample and tell us where we need to fix things to make it better
+at the bug tracker
+
+http://sourceforge.net/tracker/?group_id=11194&amp;atid=111194
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>1.2.0beta1a</release>
+    <api>1.2.0beta1a</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <date>2003-01-08</date>
+   <license uri="http://www.php.net/license">PHP License</license>
+   <notes>
+This is the third attempt at a PEAR package.xml release of the
+phpDocumentor package.  Thanks to fixes in Archive_Tar it should install
+properly with any luck.
+
+We are very pleased to present this release to the PEAR community.
+In it, there is a number of great enhancements that should make
+documenting very productive.
+
+We have included the beta of the new XML:DocBook:peardoc2 converter, and
+there are many problems with it.  Those of you who are familiar with
+peardoc2, please help us out by running a test of peardoc2 on the output
+from a sample and tell us where we need to fix things to make it better
+at the bug tracker
+
+http://sourceforge.net/tracker/?group_id=11194&amp;atid=111194
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>1.2.0beta1b</release>
+    <api>1.2.0beta1b</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <date>2003-01-08</date>
+   <license uri="http://www.php.net/license">PHP License</license>
+   <notes>
+This is the fourth attempt at a PEAR package.xml release of the
+phpDocumentor package.  Thanks to fixes in Archive_Tar it should install
+properly with any luck.
+
+This version adds one new feature, --pear
+
+We are very pleased to present this release to the PEAR community.
+In it, there is a number of great enhancements that should make
+documenting very productive.
+
+We have included the beta of the new XML:DocBook:peardoc2 converter, and
+there are many problems with it.  Those of you who are familiar with
+peardoc2, please help us out by running a test of peardoc2 on the output
+from a sample and tell us where we need to fix things to make it better
+at the bug tracker
+
+http://sourceforge.net/tracker/?group_id=11194&amp;atid=111194
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>1.2.0beta2</release>
+    <api>1.2.0beta2</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <date>2003-01-18</date>
+   <license uri="http://www.php.net/license">PHP License</license>
+   <notes>
+This is the fifth attempt at a PEAR package.xml release of the
+phpDocumentor package.  Thanks to fixes in Archive_Tar it should install
+properly with any luck.  If they get around to fixing the bug on
+pear.php.net (someday pear will be bug-free and we&apos;ll all be happy).
+
+This version adds several new features suggested by Darren Cook:
+- command-line --ignore-tags to exclude standard tags from output for
+  particular usage like @todo
+- @example tag for parsing external example files and including
+  highlighted source code in documentation
+- @filesource tag for parsing the full source of the current file
+  and including it in the documentation
+- @internal/{@internal}} tag/inline tag for marking text that should only
+  be parsed for advanced developers or for internal company documentation
+
+We are very pleased to present this release to the PEAR community.
+In it, there is a number of great enhancements that should make
+documenting very productive.
+
+We have included the beta of the new XML:DocBook:peardoc2 converter, and
+there are many problems with it.  Those of you who are familiar with
+peardoc2, please help us out by running a test of peardoc2 on the output
+from a sample and tell us where we need to fix things to make it better
+at the bug tracker
+
+http://sourceforge.net/tracker/?group_id=11194&amp;atid=111194
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>1.2.0beta3</release>
+    <api>1.2.0beta3</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <date>2003-02-02</date>
+   <license uri="http://www.php.net/license">PHP License</license>
+   <notes>
+This is the sixth attempt at a PEAR package.xml release of the
+phpDocumentor package.  Thanks to fixes in Archive_Tar it should install
+properly with any luck.
+
+This version adds a new converter written by Harald Fielker:
+ - a CSV converter for the dia2code tool, to allow generation of UML
+   diagrams from the code.
+   
+In addition, many bugs are fixed, and features stablized
+
+We are very pleased to present this release to the PEAR community.
+In it, there is a number of great enhancements that should make
+documenting very productive.
+
+We have included the beta of the new XML:DocBook:peardoc2 converter, and
+there are many problems with it.  Those of you who are familiar with
+peardoc2, please help us out by running a test of peardoc2 on the output
+from a sample and tell us where we need to fix things to make it better
+at the bug tracker
+
+http://sourceforge.net/tracker/?group_id=11194&amp;atid=111194
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>1.2.0rc1</release>
+    <api>1.2.0rc1</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <date>2003-04-17</date>
+   <license uri="http://www.php.net/license">PHP License</license>
+   <notes>
+We have included the final of the new XML:DocBook/peardoc2:default
+converter, and fixed all known bugs.  Post any new bugs at:
+
+http://sourceforge.net/tracker/?group_id=11194&amp;atid=111194
+
+new features since beta 3:
+-@license tag
+-link to element definition in highlighted source code from @filesource
+ generated sourcecode
+-phpEdit-style smart list support
+-starting/ending line numbers for docblocks/classes/methods
+-syntax highlighting for tutorial &lt;programlisting role=&quot;php&quot;&gt;
+-phpXref-style cross-referencing in source highlighting
+
+All major features have been implemented.  There will be few changes
+before 1.2.0STABLE
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>1.2.0rc2</release>
+    <api>1.2.0rc2</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <date>2003-04-28</date>
+   <license uri="http://www.php.net/license">PHP License</license>
+   <notes>
+We have included the final of the new XML:DocBook/peardoc2:default
+converter, and fixed all known bugs.  Post any new bugs at:
+
+http://sourceforge.net/tracker/?group_id=11194&amp;atid=111194
+
+All major features have been implemented.  There will be few changes
+before 1.2.0STABLE
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>1.2.0a</release>
+    <api>1.2.0a</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <date>2003-06-04</date>
+   <license uri="http://www.php.net/license">PHP License</license>
+   <notes>
+This release marks the first stable release of phpDocumentor through
+PEAR.
+
+utilities.php, missing from docbuilder, has been added to the archive
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>1.2.0</release>
+    <api>1.2.0</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <date>2003-06-04</date>
+   <license uri="http://www.php.net/license">PHP License</license>
+   <notes>
+This release marks the first stable release of phpDocumentor through
+PEAR.
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>1.2.1</release>
+    <api>1.2.1</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <date>2003-07-03</date>
+   <license uri="http://www.php.net/license">PHP License</license>
+   <notes>
+This is a bugfix release
+
+@example tag has been enhanced to be more intelligent
+several other minor bugfixes, see Release-1.2.1 file for information
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>1.2.2</release>
+    <api>1.2.2</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <date>2003-08-19</date>
+   <license uri="http://www.php.net/license">PHP License</license>
+   <notes>
+Bugfix release
+
+From both Windows and Unix, both the command-line version
+of phpDocumentor and the web interface will work
+out of the box by using command phpdoc - guaranteed :)
+
+If you wish to use the web interface, you must upgrade to
+PEAR 1.2b4, and pear config-set publicweb_dir to a
+subdirectory of your web server&apos;s document root
+
+- WARNING: phpDocumentor installs phpdoc in the
+  scripts directory, and this will conflict with PHPDoc,
+  you can&apos;t have both installed at the same time
+- fixed minor problems with --ignore option
+- DocBook/peardoc2 converter outputs valid DocBook
+- CHM:default converter outputs valid CHM file
+- PDF:default converter outputs a great file
+  including color source-highlighting!
+- fixed Page-Level DocBlock issues, now a page-level
+  docblock is the first docblock in a file if it contains
+  a @package tag, UNLESS the next element is a class.  Warnings
+  raised are much more informative
+- removed erroneous warning of duplicate @package tag in certain cases
+- fixed these bugs:
+ [ 765455 ] phpdoc can&apos;t find php if it is in /usr/local/bin
+ [ 767251 ] broken links when no files in default package
+ [ 768947 ] Multiple vars not recognised
+ [ 772441 ] nested arrays fail parser
+ [ 778920 ] tutorial link warning
+ [ 779552 ] &quot;Documention&quot; instead of &quot;Documentation&quot; in generated pages
+ [ 780332 ] {@link} is closing the link prematurely when a &apos;,&apos; is found
+ [ 781913 ] usedby not when @uses at class level
+ [ 784810 ] stat failing.
+ [ 786180 ] simple lists fail if line starts with an inline tag
+ [ 788251 ] {@link function blah()} and {@link object blah} fail
+ [ 788271 ] HighlightParser links to methods before classes
+ [ 790685 ] HighlightParser doesn&apos;t link class::method() outside methods
+ [ 791023 ] bug in output: &lt;br;&amp;nbsp;/&gt;
+ [ 791030 ] old PHP version bug /t and &apos; becomes to &amp;quot;
+ [ 791131 ] old PHP version bug in output, if define contains &quot;(&quot;
+ [ 791291 ] ignoretags handling incorrectly looks for ignore-tags
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>1.2.2.1</release>
+    <api>1.2.2.1</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <date>2003-08-29</date>
+   <license uri="http://www.php.net/license">PHP License</license>
+   <notes>
+Bugfix release
+
+From both Windows and Unix, both the command-line version
+of phpDocumentor and the web interface will work
+out of the box by using command phpdoc - guaranteed :)
+
+Note: the web interface will not work out of the box in PEAR.  Unfortunately,
+the file role needed to make this possible is still pending, but planned for
+addition in PEAR 1.3.  If you wish to use the web interface, you must
+download phpDocumentor 1.2.2 from http://www.phpdoc.org.
+
+- WARNING: phpDocumentor installs phpdoc in the
+  scripts directory, and this will conflict with PHPDoc,
+  you can&apos;t have both installed at the same time
+- fixed minor problems with --ignore option
+- DocBook/peardoc2 converter outputs valid DocBook
+- CHM:default converter outputs valid CHM file
+- PDF:default converter outputs a great file
+  including color source-highlighting!
+- fixed Page-Level DocBlock issues, now a page-level
+  docblock is the first docblock in a file if it contains
+  a @package tag, UNLESS the next element is a class.  Warnings
+  raised are much more informative
+- removed erroneous warning of duplicate @package tag in certain cases
+- fixed these bugs:
+ [ 765455 ] phpdoc can&apos;t find php if it is in /usr/local/bin
+ [ 767251 ] broken links when no files in default package
+ [ 768947 ] Multiple vars not recognised
+ [ 772441 ] nested arrays fail parser
+ [ 778920 ] tutorial link warning
+ [ 779552 ] &quot;Documention&quot; instead of &quot;Documentation&quot; in generated pages
+ [ 780332 ] {@link} is closing the link prematurely when a &apos;,&apos; is found
+ [ 781913 ] usedby not when @uses at class level
+ [ 784810 ] stat failing.
+ [ 786180 ] simple lists fail if line starts with an inline tag
+ [ 788251 ] {@link function blah()} and {@link object blah} fail
+ [ 788271 ] HighlightParser links to methods before classes
+ [ 790685 ] HighlightParser doesn&apos;t link class::method() outside methods
+ [ 791023 ] bug in output: &lt;br;&amp;nbsp;/&gt;
+ [ 791030 ] old PHP version bug /t and &apos; becomes to &amp;quot;
+ [ 791131 ] old PHP version bug in output, if define contains &quot;(&quot;
+ [ 791291 ] ignoretags handling incorrectly looks for ignore-tags
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>1.2.3</release>
+    <api>1.2.3</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <date>2003-10-12</date>
+   <license uri="http://www.php.net/license">PHP License</license>
+   <notes>
+Bugfix release
+
+From both Windows and Unix, both the command-line version
+of phpDocumentor and the web interface will work
+out of the box by using command phpdoc - guaranteed :)
+
+WARNING: in order to use the web interface through PEAR, you must set your
+data_dir to a subdirectory of your document root.
+
+$ pear config-set data_dir /path/to/public_html/pear
+
+on Windows with default apache setup, it might be
+
+C:\&gt; pear config-set data_dir &quot;C:\Program Files\Apache\htdocs\pear&quot;
+
+After this, install/upgrade phpDocumentor
+
+$ pear upgrade phpDocumentor
+
+and you can browse to:
+
+http://localhost/pear/PhpDocumentor/
+
+for the web interface
+
+- WARNING: phpDocumentor installs phpdoc in the
+  scripts directory, and this will conflict with PHPDoc,
+  you can&apos;t have both installed at the same time
+- fixed these bugs:
+ [ 731750 ] Links to unparsed includes shown (2nd time reopened)
+ [ 771531 ] body styles not explicitly white
+ [ 795095 ] top_frame.tpl doesn&apos;t output single RIC element
+ [ 797066 ] HighlightParser stuffs whitespace in start of string in func
+ [ 802891 ] Inline link text does not show up
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>1.2.3.1</release>
+    <api>1.2.3.1</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <date>2003-10-19</date>
+   <license uri="http://www.php.net/license">PHP License</license>
+   <notes>
+Bugfix release
+
+From both Windows and Unix, both the command-line version
+of phpDocumentor and the web interface will work
+out of the box by using command phpdoc - guaranteed :)
+
+WARNING: in order to use the web interface through PEAR, you must set your
+data_dir to a subdirectory of your document root.
+
+$ pear config-set data_dir /path/to/public_html/pear
+
+on Windows with default apache setup, it might be
+
+C:\&gt; pear config-set data_dir &quot;C:\Program Files\Apache\htdocs\pear&quot;
+
+After this, install/upgrade phpDocumentor
+
+$ pear upgrade phpDocumentor
+
+and you can browse to:
+
+http://localhost/pear/PhpDocumentor/
+
+for the web interface
+
+- WARNING: phpDocumentor installs phpdoc in the
+  scripts directory, and this will conflict with PHPDoc,
+  you can&apos;t have both installed at the same time
+- fixed these bugs:
+ [ 822373 ] global instruction in function, &apos;,&apos; and &apos;;&apos; missing
+ [ 823018 ] &lt;code&gt; in list not processed
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>1.3.0RC1</release>
+    <api>1.3.0RC1</api>
+   </version>
+   <stability>
+    <release>beta</release>
+    <api>beta</api>
+   </stability>
+   <date>2004-02-08</date>
+   <license uri="http://www.php.net/license">PHP License</license>
+   <notes>
+PHP 5 support and more, fix bugs
+
+This will be the last release in the 1.x series.  2.0 is next
+
+Features added to this release include:
+
+ * Full PHP 5 support, phpDocumentor both runs in and parses Zend Engine 2
+   language constructs.  Note that you must be running phpDocumentor in
+   PHP 5 in order to parse PHP 5 code
+ * inline {@example} tag - this works just like {@source} except that
+   it displays the contents of another file.  In tutorials, it works
+   like &lt;programlisting&gt;
+ * customizable README/INSTALL/CHANGELOG files
+ * phpDocumentor tries to run .ini files out of the current directory
+   first, to allow you to put them anywhere you want to
+ * multi-national characters are now allowed in package/subpackage names
+
+From both Windows and Unix, both the command-line version
+of phpDocumentor and the web interface will work
+out of the box by using command phpdoc - guaranteed :)
+
+WARNING: in order to use the web interface through PEAR, you must set your
+data_dir to a subdirectory of your document root.
+
+$ pear config-set data_dir /path/to/public_html/pear
+
+on Windows with default apache setup, it might be
+
+C:\&gt; pear config-set data_dir &quot;C:\Program Files\Apache\htdocs\pear&quot;
+
+After this, install/upgrade phpDocumentor
+
+$ pear upgrade phpDocumentor
+
+and you can browse to:
+
+http://localhost/pear/PhpDocumentor/
+
+for the web interface
+
+------
+WARNING: The PDF Converter will not work in PHP5.  The PDF library that it relies upon
+segfaults with the simplest of files.  Generation still works great in PHP4
+------
+
+- WARNING: phpDocumentor installs phpdoc in the
+  scripts directory, and this will conflict with PHPDoc,
+  you can&apos;t have both installed at the same time
+- Switched to Smarty 2.6.0, now it will work in PHP 5.  Other
+  changes made to the code to make it work in PHP 5, including parsing
+  of private/public/static/etc. access modifiers
+- fixed these bugs:
+ [ 834941 ] inline @link doesn&apos;t work within &lt;b&gt;
+ [ 839092 ] CHM:default:default produces bad links
+ [ 839466 ] {$array[&apos;Key&apos;]} in heredoc
+ [ 840792 ] File Missing XML:DocBook/peardoc2:default &quot;errors.tpl&quot;
+ [ 850731 ] No DocBlock template after page-level DocBlock?
+ [ 850767 ] MHW Reference wrong
+ [ 854321 ] web interface errors with template directory
+ [ 856310 ] HTML:frames:DOM/earthli missing Class_logo.png image
+ [ 865126 ] CHM files use hard paths
+ [ 875525 ] &lt;li&gt; escapes &lt;pre&gt; and ignores paragraphs
+ [ 876674 ] first line of pre and code gets left trimmed
+ [ 877229 ] PHP 5 incompatibilities bork tutorial parsing
+ [ 877233 ] PHP 5 incompatibilities bork docblock source highlighting
+ [ 878911 ] [PHP 5 incompatibility] argv
+ [ 879068 ] var arrays tripped up by comments
+ [ 879151 ] HTML:frames:earthli Top row too small for IE
+ [ 880070 ] PHP5 visability for member variables not working
+ [ 880488 ] &apos;0&apos; file stops processing
+ [ 884863 ] Multiple authors get added in wrong order.
+ [ 884869 ] Wrong highligthing of object type variables
+ [ 892305 ] peardoc2: summary require_once Path/File.php is PathFile.php
+ [ 892306 ] peardoc2: @see of method not working
+ [ 892479 ] {@link} in // comment is escaped
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>1.3.0RC2</release>
+    <api>1.3.0RC2</api>
+   </version>
+   <stability>
+    <release>beta</release>
+    <api>beta</api>
+   </stability>
+   <date>2004-02-12</date>
+   <license uri="http://www.php.net/license">PHP License</license>
+   <notes>
+PHP 5 support and more, fix bugs
+
+This will be the last release in the 1.x series.  2.0 is next
+
+Features added to this release include:
+
+ * Full PHP 5 support, phpDocumentor both runs in and parses Zend Engine 2
+   language constructs.  Note that you must be running phpDocumentor in
+   PHP 5 in order to parse PHP 5 code
+ * inline {@example} tag - this works just like {@source} except that
+   it displays the contents of another file.  In tutorials, it works
+   like &lt;programlisting&gt;
+ * customizable README/INSTALL/CHANGELOG files
+ * phpDocumentor tries to run .ini files out of the current directory
+   first, to allow you to put them anywhere you want to
+ * multi-national characters are now allowed in package/subpackage names
+
+From both Windows and Unix, both the command-line version
+of phpDocumentor and the web interface will work
+out of the box by using command phpdoc - guaranteed :)
+
+WARNING: in order to use the web interface through PEAR, you must set your
+data_dir to a subdirectory of your document root.
+
+$ pear config-set data_dir /path/to/public_html/pear
+
+on Windows with default apache setup, it might be
+
+C:\&gt; pear config-set data_dir &quot;C:\Program Files\Apache\htdocs\pear&quot;
+
+After this, install/upgrade phpDocumentor
+
+$ pear upgrade phpDocumentor
+
+and you can browse to:
+
+http://localhost/pear/PhpDocumentor/
+
+for the web interface
+
+------
+WARNING: The PDF Converter will not work in PHP5.  The PDF library that it relies upon
+segfaults with the simplest of files.  Generation still works great in PHP4
+------
+
+- WARNING: phpDocumentor installs phpdoc in the
+  scripts directory, and this will conflict with PHPDoc,
+  you can&apos;t have both installed at the same time
+- Switched to Smarty 2.6.0, now it will work in PHP 5.  Other
+  changes made to the code to make it work in PHP 5, including parsing
+  of private/public/static/etc. access modifiers
+- fixed these bugs:
+ [ 834941 ] inline @link doesn&apos;t work within &lt;b&gt;
+ [ 839092 ] CHM:default:default produces bad links
+ [ 839466 ] {$array[&apos;Key&apos;]} in heredoc
+ [ 840792 ] File Missing XML:DocBook/peardoc2:default &quot;errors.tpl&quot;
+ [ 850731 ] No DocBlock template after page-level DocBlock?
+ [ 850767 ] MHW Reference wrong
+ [ 854321 ] web interface errors with template directory
+ [ 856310 ] HTML:frames:DOM/earthli missing Class_logo.png image
+ [ 865126 ] CHM files use hard paths
+ [ 875525 ] &lt;li&gt; escapes &lt;pre&gt; and ignores paragraphs
+ [ 876674 ] first line of pre and code gets left trimmed
+ [ 877229 ] PHP 5 incompatibilities bork tutorial parsing
+ [ 877233 ] PHP 5 incompatibilities bork docblock source highlighting
+ [ 878911 ] [PHP 5 incompatibility] argv
+ [ 879068 ] var arrays tripped up by comments
+ [ 879151 ] HTML:frames:earthli Top row too small for IE
+ [ 880070 ] PHP5 visability for member variables not working
+ [ 880488 ] &apos;0&apos; file stops processing
+ [ 884863 ] Multiple authors get added in wrong order.
+ [ 884869 ] Wrong highligthing of object type variables
+ [ 892305 ] peardoc2: summary require_once Path/File.php is PathFile.php
+ [ 892306 ] peardoc2: @see of method not working
+ [ 892479 ] {@link} in // comment is escaped
+ [ 893470 ] __clone called directly in PackagePageElements.inc
+ [ 895656 ] initialized private variables not recognized as private
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>1.3.0RC3</release>
+    <api>1.3.0RC3</api>
+   </version>
+   <stability>
+    <release>beta</release>
+    <api>beta</api>
+   </stability>
+   <date>2004-04-10</date>
+   <license uri="http://www.php.net/license">PHP License</license>
+   <notes>
+PHP 5 support and more, fix bugs
+
+This will be the last release in the 1.x series.  2.0 is next
+
+Features added to this release include:
+
+ * Full PHP 5 support, phpDocumentor both runs in and parses Zend Engine 2
+   language constructs.  Note that you must be running phpDocumentor in
+   PHP 5 in order to parse PHP 5 code
+ * XML:DocBook/peardoc2:default converter now beautifies the source using
+   PEAR&apos;s XML_Beautifier if available
+ * inline {@example} tag - this works just like {@source} except that
+   it displays the contents of another file.  In tutorials, it works
+   like &lt;programlisting&gt;
+ * customizable README/INSTALL/CHANGELOG files
+ * phpDocumentor tries to run .ini files out of the current directory
+   first, to allow you to put them anywhere you want to
+ * multi-national characters are now allowed in package/subpackage names
+ * images in tutorials with the &lt;graphic&gt; tag
+ * un-modified output with &lt;programlisting role=&quot;html&quot;&gt;
+ * html/xml source highlighting with &lt;programlisting role=&quot;tutorial&quot;&gt;
+
+From both Windows and Unix, both the command-line version
+of phpDocumentor and the web interface will work
+out of the box by using command phpdoc - guaranteed :)
+
+WARNING: in order to use the web interface through PEAR, you must set your
+data_dir to a subdirectory of your document root.
+
+$ pear config-set data_dir /path/to/public_html/pear
+
+on Windows with default apache setup, it might be
+
+C:\&gt; pear config-set data_dir &quot;C:\Program Files\Apache\htdocs\pear&quot;
+
+After this, install/upgrade phpDocumentor
+
+$ pear upgrade phpDocumentor
+
+and you can browse to:
+
+http://localhost/pear/PhpDocumentor/
+
+for the web interface
+
+------
+WARNING: The PDF Converter will not work in PHP5.  The PDF library that it relies upon
+segfaults with the simplest of files.  Generation still works great in PHP4
+------
+
+- WARNING: phpDocumentor installs phpdoc in the
+  scripts directory, and this will conflict with PHPDoc,
+  you can&apos;t have both installed at the same time
+- Switched to Smarty 2.6.0, now it will work in PHP 5.  Other
+  changes made to the code to make it work in PHP 5, including parsing
+  of private/public/static/etc. access modifiers
+- fixed these bugs:
+ [ 834941 ] inline @link doesn&apos;t work within &lt;b&gt;
+ [ 839092 ] CHM:default:default produces bad links
+ [ 839466 ] {$array[&apos;Key&apos;]} in heredoc
+ [ 840792 ] File Missing XML:DocBook/peardoc2:default &quot;errors.tpl&quot;
+ [ 850731 ] No DocBlock template after page-level DocBlock?
+ [ 850767 ] MHW Reference wrong
+ [ 854321 ] web interface errors with template directory
+ [ 856310 ] HTML:frames:DOM/earthli missing Class_logo.png image
+ [ 865126 ] CHM files use hard paths
+ [ 875525 ] &lt;li&gt; escapes &lt;pre&gt; and ignores paragraphs
+ [ 876674 ] first line of pre and code gets left trimmed
+ [ 877229 ] PHP 5 incompatibilities bork tutorial parsing
+ [ 877233 ] PHP 5 incompatibilities bork docblock source highlighting
+ [ 878911 ] [PHP 5 incompatibility] argv
+ [ 879068 ] var arrays tripped up by comments
+ [ 879151 ] HTML:frames:earthli Top row too small for IE
+ [ 880070 ] PHP5 visability for member variables not working
+ [ 880488 ] &apos;0&apos; file stops processing
+ [ 884863 ] Multiple authors get added in wrong order.
+ [ 884869 ] Wrong highligthing of object type variables
+ [ 892305 ] peardoc2: summary require_once Path/File.php is PathFile.php
+ [ 892306 ] peardoc2: @see of method not working
+ [ 892479 ] {@link} in // comment is escaped
+ [ 893470 ] __clone called directly in PackagePageElements.inc
+ [ 895656 ] initialized private variables not recognized as private
+ [ 904823 ] IntermediateParser fatal error
+ [ 910676 ] Fatal error: Smarty error: unable to write to $compile_dir
+ [ 915770 ] Classes in file not showing
+ [ 924313 ] Objec access on array
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>1.3.0RC4</release>
+    <api>1.3.0RC4</api>
+   </version>
+   <stability>
+    <release>beta</release>
+    <api>beta</api>
+   </stability>
+   <date>2005-12-01</date>
+   <license>PHP License</license>
+   <notes>
+PHP 5 support and more, fix bugs
+
+This will be the last release in the 1.x series.  2.0 is next
+
+Features added to this release include:
+
+ * Full PHP 5 support, phpDocumentor both runs in and parses Zend Engine 2
+   language constructs.  Note that you must be running phpDocumentor in
+   PHP 5 in order to parse PHP 5 code
+ * XML:DocBook/peardoc2:default converter now beautifies the source using
+   PEAR&apos;s XML_Beautifier if available
+ * inline {@example} tag - this works just like {@source} except that
+   it displays the contents of another file.  In tutorials, it works
+   like &lt;programlisting&gt;
+ * customizable README/INSTALL/CHANGELOG files
+ * phpDocumentor tries to run .ini files out of the current directory
+   first, to allow you to put them anywhere you want to
+ * multi-national characters are now allowed in package/subpackage names
+ * images in tutorials with the &lt;graphic&gt; tag
+ * un-modified output with &lt;programlisting role=&quot;html&quot;&gt;
+ * html/xml source highlighting with &lt;programlisting role=&quot;tutorial&quot;&gt;
+
+From both Windows and Unix, both the command-line version
+of phpDocumentor and the web interface will work
+out of the box by using command phpdoc - guaranteed :)
+
+WARNING: in order to use the web interface through PEAR, you must set your
+data_dir to a subdirectory of your document root.
+
+$ pear config-set data_dir /path/to/public_html/pear
+
+on Windows with default apache setup, it might be
+
+C:\&gt; pear config-set data_dir &quot;C:\Program Files\Apache\htdocs\pear&quot;
+
+After this, install/upgrade phpDocumentor
+
+$ pear upgrade phpDocumentor
+
+and you can browse to:
+
+http://localhost/pear/PhpDocumentor/
+
+for the web interface
+
+------
+WARNING: The PDF Converter will not work in PHP5.  The PDF library that it relies upon
+segfaults with the simplest of files.  Generation still works great in PHP4
+------
+
+- WARNING: phpDocumentor installs phpdoc in the
+  scripts directory, and this will conflict with PHPDoc,
+  you can&apos;t have both installed at the same time
+- Switched to Smarty 2.6.0, now it will work in PHP 5.  Other
+  changes made to the code to make it work in PHP 5, including parsing
+  of private/public/static/etc. access modifiers
+- fixed these bugs:
+ [ not entered ] XMLDocBookpeardoc2 beautifier removes comments
+ [ 896444 ] Bad line numbers
+ [ 937235 ] duplicated /** after abstract method declaration
+ [ 962319 ] Define : don&apos;t show the assigned value
+ [ 977674 ] Parser error
+ [ 989258 ] wrong interfaces parsing
+ [ 1150809 ] Infinite loop when class extends itself
+ [ 1151196 ] PHP Fatal error: Cannot re-assign $this
+ [ 1151650 ] UTF8 decoding for DocBook packages
+ [ 1152781 ] PHP_NOTICE: Uninitialized string offset in ParserDescCleanup
+ [ 1153593 ] string id=&quot;....&quot; in tutorials
+ [ 1164253 ] Inherited Class Constants are not displayed
+ [ 1171583 ] CHM wrong filesource
+ [ 1180200 ] HighlightParser does not handle Heredoc Blocks.
+ [ 1202772 ] missing parentheses in Parser.inc line 946
+ [ 1203445 ] Call to a member function on a non-object in Parser.inc
+ [ 1203451 ] array to string conversion notice in InlineTags.inc
+- fixed these bugs reported in PEAR:
+ Bug #2288: Webfrontend ignores more than one dir in &quot;Files to ignore&quot;
+ Bug #5011: PDF generation warning on uksort
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>1.3.0RC5</release>
+    <api>1.3.0</api>
+   </version>
+   <stability>
+    <release>beta</release>
+    <api>beta</api>
+   </stability>
+   <date>2006-02-22</date>
+   <license uri="http://www.php.net/license">PHP License</license>
+   <notes>
+PHP 5 support and more, fix bugs
+
+This release fixes the broken &quot;phpdoc&quot; script in unix, and is
+otherwise functionally identical to 1.3.0RC4
+
+This will be the last release in the 1.x series.  2.0 is next
+
+Features added to this release include:
+
+ * Full PHP 5 support, phpDocumentor both runs in and parses Zend Engine 2
+   language constructs.  Note that you must be running phpDocumentor in
+   PHP 5 in order to parse PHP 5 code
+ * XML:DocBook/peardoc2:default converter now beautifies the source using
+   PEAR&apos;s XML_Beautifier if available
+ * inline {@example} tag - this works just like {@source} except that
+   it displays the contents of another file.  In tutorials, it works
+   like &lt;programlisting&gt;
+ * customizable README/INSTALL/CHANGELOG files
+ * phpDocumentor tries to run .ini files out of the current directory
+   first, to allow you to put them anywhere you want to
+ * multi-national characters are now allowed in package/subpackage names
+ * images in tutorials with the &lt;graphic&gt; tag
+ * un-modified output with &lt;programlisting role=&quot;html&quot;&gt;
+ * html/xml source highlighting with &lt;programlisting role=&quot;tutorial&quot;&gt;
+
+From both Windows and Unix, both the command-line version
+of phpDocumentor and the web interface will work
+out of the box by using command phpdoc - guaranteed :)
+
+WARNING: in order to use the web interface through PEAR, you must set your
+data_dir to a subdirectory of your document root.
+
+$ pear config-set data_dir /path/to/public_html/pear
+
+on Windows with default apache setup, it might be
+
+C:\&gt; pear config-set data_dir &quot;C:\Program Files\Apache\htdocs\pear&quot;
+
+After this, install/upgrade phpDocumentor
+
+$ pear upgrade phpDocumentor
+
+and you can browse to:
+
+http://localhost/pear/PhpDocumentor/
+
+for the web interface
+
+------
+WARNING: The PDF Converter will not work in PHP5.  The PDF library that it relies upon
+segfaults with the simplest of files.  Generation still works great in PHP4
+------
+
+- WARNING: phpDocumentor installs phpdoc in the
+  scripts directory, and this will conflict with PHPDoc,
+  you can&apos;t have both installed at the same time
+- Switched to Smarty 2.6.0, now it will work in PHP 5.  Other
+  changes made to the code to make it work in PHP 5, including parsing
+  of private/public/static/etc. access modifiers
+- fixed these bugs:
+ [ not entered ] phpdoc script broken on unix
+ [ not entered ] XMLDocBookpeardoc2 beautifier removes comments
+ [ 896444 ] Bad line numbers
+ [ 937235 ] duplicated /** after abstract method declaration
+ [ 962319 ] Define : don&apos;t show the assigned value
+ [ 977674 ] Parser error
+ [ 989258 ] wrong interfaces parsing
+ [ 1150809 ] Infinite loop when class extends itself
+ [ 1151196 ] PHP Fatal error: Cannot re-assign $this
+ [ 1151650 ] UTF8 decoding for DocBook packages
+ [ 1152781 ] PHP_NOTICE: Uninitialized string offset in ParserDescCleanup
+ [ 1153593 ] string id=&quot;....&quot; in tutorials
+ [ 1164253 ] Inherited Class Constants are not displayed
+ [ 1171583 ] CHM wrong filesource
+ [ 1180200 ] HighlightParser does not handle Heredoc Blocks.
+ [ 1202772 ] missing parentheses in Parser.inc line 946
+ [ 1203445 ] Call to a member function on a non-object in Parser.inc
+ [ 1203451 ] array to string conversion notice in InlineTags.inc
+- fixed these bugs reported in PEAR:
+ Bug #2288: Webfrontend ignores more than one dir in &quot;Files to ignore&quot;
+ Bug #5011: PDF generation warning on uksort
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>1.3.0RC6</release>
+    <api>1.3.0</api>
+   </version>
+   <stability>
+    <release>beta</release>
+    <api>beta</api>
+   </stability>
+   <date>2006-04-30</date>
+   <license uri="http://www.opensource.org/licenses/lgpl-license.php">LGPL</license>
+   <notes>
+PHP 5 support and more, fix bugs
+
+This release fixes a large number of bugs, and switches
+to the LGPL license instead of the PHP License.
+
+This will be the last release in the 1.x series.  2.0 is next
+
+Features added to this release include:
+
+ * Full PHP 5 support, phpDocumentor both runs in and parses Zend Engine 2
+   language constructs.  Internal classes are recognized and inheritance is
+   documented.  Note that you must be running phpDocumentor in
+   PHP 5 in order to parse PHP 5 code
+ * XML:DocBook/peardoc2:default converter now beautifies the source using
+   PEAR&apos;s XML_Beautifier if available
+ * inline {@example} tag - this works just like {@source} except that
+   it displays the contents of another file.  In tutorials, it works
+   like &lt;programlisting&gt;
+ * customizable README/INSTALL/CHANGELOG files
+ * phpDocumentor tries to run .ini files out of the current directory
+   first, to allow you to put them anywhere you want to
+ * multi-national characters are now allowed in package/subpackage names
+ * images in tutorials with the &lt;graphic&gt; tag
+ * un-modified output with &lt;programlisting role=&quot;html&quot;&gt;
+ * html/xml source highlighting with &lt;programlisting role=&quot;tutorial&quot;&gt;
+
+From both Windows and Unix, both the command-line version
+of phpDocumentor and the web interface will work
+out of the box by using command phpdoc - guaranteed :)
+
+WARNING: in order to use the web interface through PEAR, you must set your
+data_dir to a subdirectory of your document root.
+
+$ pear config-set data_dir /path/to/public_html/pear
+
+on Windows with default apache setup, it might be
+
+C:\&gt; pear config-set data_dir &quot;C:\Program Files\Apache\htdocs\pear&quot;
+
+After this, install/upgrade phpDocumentor
+
+$ pear upgrade phpDocumentor
+
+and you can browse to:
+
+http://localhost/pear/PhpDocumentor/
+
+for the web interface
+
+------
+WARNING: The PDF Converter will not work in PHP5.  The PDF library that it relies upon
+segfaults with the simplest of files.  Generation still works great in PHP4
+------
+
+- WARNING: phpDocumentor installs phpdoc in the
+  scripts directory, and this will conflict with PHPDoc,
+  you can&apos;t have both installed at the same time
+- Switched to Smarty 2.6.0, now it will work in PHP 5.  Other
+  changes made to the code to make it work in PHP 5, including parsing
+  of private/public/static/etc. access modifiers
+- fixed these bugs:
+ [ not entered ] phpdoc script broken on unix
+ [ not entered ] XMLDocBookpeardoc2 beautifier removes comments
+ [ 893186 ] HTMLframes converter sometimes misses package level docs
+ [ 896444 ] Bad line numbers
+ [ 907734 ] Exception Class is builtin to PHP5
+ [ 924760 ] source rendering in FireFox contains extra newlines
+ [ 937235 ] duplicated /** after abstract method declaration
+ [ 944149 ] Apostrophe in DocBook name breaks DOM/earthli tree index
+ [ 952217 ] HTML:frames:earthli
+ [ 962319 ] Define : don&apos;t show the assigned value
+ [ 964248 ] Convert invalid characters in package/subpackage names to _
+ [ 977674 ] Parser error
+ [ 986622 ] parserClass::setModifiers is incorrecrly documented
+ [ 989258 ] wrong interfaces parsing
+ [ 995731 ] {@internal}}-tag shows }} in HTML-doc
+ [ 1016927 ] no highlight for paramtype in header of function
+ [ 1043330 ] Make Command Line Parser support shorter syntax
+ [ 1044486 ] duplicate parameters
+ [ 1046856 ] Small filesource link bug under windows
+ [ 1051941 ] private variables on same line not recognized
+ [ 1079637 ] Use of realpath() leads to empty $dir
+ [ 1081396 ] Display of inline {@link} tags with PHP functions
+ [ 1090009 ] @uses doesn&apos;t generate @usedby link when linking to file.ext
+ [ 1108018 ] Bad source code after /**#@-*/
+ [ 1145403 ] Call to a member function on a non-object 
+ [ 1150809 ] Infinite loop when class extends itself
+ [ 1151196 ] PHP Fatal error: Cannot re-assign $this
+ [ 1151650 ] UTF8 decoding for DocBook packages
+ [ 1152286 ] 1.3.0RC3 - PHP5 - Smarty template doesn&apos;t work properly?
+ [ 1152316 ] 1.3RC3 - PHP5 - HTML:frames:* - Welcome to default!=@package
+ [ 1152781 ] PHP_NOTICE: Uninitialized string offset in ParserDescCleanup
+ [ 1153593 ] string id=&quot;....&quot; in tutorials
+ [ 1156816 ] undeliverable email addresses for doc/tutorial authors
+ [ 1164253 ] Inherited Class Constants are not displayed
+ [ 1171583 ] CHM wrong filesource
+ [ 1180200 ] HighlightParser does not handle Heredoc Blocks.
+ [ 1202772 ] missing parentheses in Parser.inc line 946
+ [ 1203445 ] Call to a member function on a non-object in Parser.inc
+ [ 1203451 ] array to string conversion notice in InlineTags.inc
+ [ 1224317 ] functions refers to wrong line
+ [ 1230004 ] Undefined index in class phpDocumentorTParser
+ [ 1255692 ] Support for &quot;--&quot; argument
+ [ 1261287 ] @filesource bug?
+ [ 1348852 ] Call to function Convert() on a non-object + DocBlockTags
+ [ 1366260 ] Default 0 parameter in method is not displayed
+ [ 1373244 ] Undefined variable: root_dir in docbuilder/file_dialog.php
+ [ 1380845 ] @uses tags not sorting
+ [ 1391432 ] Too many underscores in include links.
+ [ 1393998 ] HTMLSmartyConverter Fatal error (line 627) fix
+ [ 1398977 ] @return is not merged when using DocBlock Templates
+ [ 1428660 ] Confusing error when using {@link} in @uses
+ [ 1456144 ] @global oddities
+ [ 1459955 ] @todo tags are sorted descending instead of ascending
+ [ 1462690 ] PHP Notices
+ [ 1466205 ] more usedby than uses
+ [ 1473272 ] Update references of phpdoc to pear-phpdoc
+- fixed these bugs reported in PEAR:
+ Bug #2122: No tree menu for file identifier begining with a number
+ Bug #2288: Webfrontend ignores more than one dir in &quot;Files to ignore&quot;
+ Bug #2294: @toc tag is incompatible when XML prolog exists
+ Bug #5011: PDF generation warning on uksort
+ Bug #6305: array typehints break the parser
+ Bug #6306: Tokenizer doesn&apos;t read &quot;....&lt;%{$key}&gt;...&quot; properly
+ Bug #6389: Private classes are not used during grouping for class trees
+ Bug #6805: Rendering bug for verbatim HTML tags
+ Bug #6848: Reference Patch
+ Bug #6952: Update Install docs to tell correct package.xml location
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>1.3.0</release>
+    <api>1.3.0</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>beta</api>
+   </stability>
+   <date>2006-08-17</date>
+   <license uri="http://www.opensource.org/licenses/lgpl-license.php">LGPL</license>
+   <notes>
+PHP 5 support and more, fix bugs
+
+This release fixes a large number of bugs, and switches
+to the LGPL license instead of the PHP License.
+
+This will be the last release in the 1.x series.  2.0 is next
+
+Features added to this release include:
+
+ * Full PHP 5 support, phpDocumentor both runs in and parses Zend Engine 2
+   language constructs.  Internal classes are recognized and inheritance is
+   documented.  Note that you must be running phpDocumentor in
+   PHP 5 in order to parse PHP 5 code
+ * XML:DocBook/peardoc2:default converter now beautifies the source using
+   PEAR&apos;s XML_Beautifier if available
+ * inline {@example} tag - this works just like {@source} except that
+   it displays the contents of another file.  In tutorials, it works
+   like &lt;programlisting&gt;
+ * customizable README/INSTALL/CHANGELOG files
+ * phpDocumentor tries to run .ini files out of the current directory
+   first, to allow you to put them anywhere you want to
+ * multi-national characters are now allowed in package/subpackage names
+ * images in tutorials with the &lt;graphic&gt; tag
+ * un-modified output with &lt;programlisting role=&quot;html&quot;&gt;
+ * html/xml source highlighting with &lt;programlisting role=&quot;tutorial&quot;&gt;
+
+From both Windows and Unix, both the command-line version
+of phpDocumentor and the web interface will work
+out of the box by using command phpdoc - guaranteed :)
+
+WARNING: in order to use the web interface through PEAR, you must set your
+data_dir to a subdirectory of your document root.
+
+$ pear config-set data_dir /path/to/public_html/pear
+
+on Windows with default apache setup, it might be
+
+C:\&gt; pear config-set data_dir &quot;C:\Program Files\Apache\htdocs\pear&quot;
+
+After this, install/upgrade phpDocumentor
+
+$ pear upgrade phpDocumentor
+
+and you can browse to:
+
+http://localhost/pear/PhpDocumentor/
+
+for the web interface
+
+------
+WARNING: The PDF Converter will not work in PHP5.  The PDF library that it relies upon
+segfaults with the simplest of files.  Generation still works great in PHP4
+------
+
+- WARNING: phpDocumentor installs phpdoc in the
+  scripts directory, and this will conflict with PHPDoc,
+  you can&apos;t have both installed at the same time
+- Switched to Smarty 2.6.0, now it will work in PHP 5.  Other
+  changes made to the code to make it work in PHP 5, including parsing
+  of private/public/static/etc. access modifiers
+- fixed these bugs since 1.3.0RC6:
+ [ 941146 ] Repeated sub-tutorials
+ [ 1223413 ] improper load sequence when using custom templatebase
+ [ 1481118 ] Tags with more than one attribute keep only the first one.
+ [ 1485448 ] Mixing {@toc} and DOCTYPE for DocBook gives PHP fatal error
+ [ 1486304 ] unexpected parameter type mixed
+ [ 1490000 ] Javascript in header.tpl cause httpd log: File not found
+ [ 1491119 ] Inexistant --directory leads to obscure error message
+ [ 1492100 ] Warning: fread(): Length parameter must be greater than 0
+ [ 1492101 ] Object of class parserLinkInlineTag could not be converted
+ [ 1492538 ] ERROR: Converter X specified by ... is not a class
+ [ 1492608 ] PHP Notices in current CVS
+ [ 1497452 ] Fatal error: Call to undefined method parserFunction::setMo
+ [ 1503927 ] Wrong &apos;--&apos; suffix on some files
+ [ 1512969 ] Call to a member function cantSource() on a non-object
+ [ 1516781 ] Use of undefined constant T_ML_COMMENT - assumed &apos;T_ML_COMME
+ [ 1524102 ] Weird include documentation
+ [ 1528752 ] Trivial typo in &quot;phpDocumentor Inline tags&quot; documentation
+ [ 1533361 ] trailing comments stop phpdoc on source generation
+ [ 1532841 ] &apos;%&apos; in function parameter default value causes errors
+ [ 1540233 ] memory exshausted
+ Bug #6844: phpDocumentor doesn&apos;t show classes in file
+ Bug #7554: Call to undefined method ReflectionClass::hasMethod()
+ Bug #7577: Notice error for undefined _pv_function_param property
+ Bug #7686: phpdoc not run in dos box
+ Bug #7773: &quot;nothing parsed&quot; error when parsing in a directory under &quot;tutorials&quot;
+ Bug #7938: @todo does not work on include elements
+ Bug #8111: Fatal error: ReflectionClass::hasProperty()
+ Bug #8290: @param bug when description is on its own line
+- fixed these bugs since 1.2.3.1:
+ [ not entered ] phpdoc script broken on unix
+ [ not entered ] XMLDocBookpeardoc2 beautifier removes comments
+ [ 893186 ] HTMLframes converter sometimes misses package level docs
+ [ 834941 ] inline @link doesn&apos;t work within &lt;b&gt;
+ [ 839092 ] CHM:default:default produces bad links
+ [ 839466 ] {$array[&apos;Key&apos;]} in heredoc
+ [ 840792 ] File Missing XML:DocBook/peardoc2:default &quot;errors.tpl&quot;
+ [ 850731 ] No DocBlock template after page-level DocBlock?
+ [ 850767 ] MHW Reference wrong
+ [ 854321 ] web interface errors with template directory
+ [ 856310 ] HTML:frames:DOM/earthli missing Class_logo.png image
+ [ 865126 ] CHM files use hard paths
+ [ 869803 ] bad md5sum
+ [ 871764 ] @global doesn&apos;t work properly with whitespace after the $var
+ [ 875525 ] &lt;li&gt; escapes &lt;pre&gt; and ignores paragraphs
+ [ 876674 ] first line of pre and code gets left trimmed
+ [ 877229 ] PHP 5 incompatibilities bork tutorial parsing
+ [ 877233 ] PHP 5 incompatibilities bork docblock source highlighting
+ [ 878911 ] [PHP 5 incompatibility] argv
+ [ 879068 ] var arrays tripped up by comments
+ [ 879151 ] HTML:frames:earthli Top row too small for IE
+ [ 880070 ] PHP5 visability for member variables not working
+ [ 880488 ] &apos;0&apos; file stops processing
+ [ 884863 ] Multiple authors get added in wrong order.
+ [ 884869 ] Wrong highligthing of object type variables
+ [ 892305 ] peardoc2: summary require_once Path/File.php is PathFile.php
+ [ 892306 ] peardoc2: @see of method not working
+ [ 892479 ] {@link} in // comment is escaped
+ [ 893470 ] __clone called directly in PackagePageElements.inc
+ [ 895656 ] initialized private variables not recognized as private
+ [ 896444 ] Bad line numbers
+ [ 904823 ] IntermediateParser fatal error
+ [ 907734 ] Exception Class is builtin to PHP5
+ [ 910676 ] Fatal error: Smarty error: unable to write to $compile_dir
+ [ 915770 ] Classes in file not showing
+ [ 924313 ] Objec access on array
+ [ 924760 ] source rendering in FireFox contains extra newlines
+ [ 937235 ] duplicated /** after abstract method declaration
+ [ 941146 ] Repeated sub-tutorials
+ [ 944149 ] Apostrophe in DocBook name breaks DOM/earthli tree index
+ [ 952217 ] HTML:frames:earthli
+ [ 962319 ] Define : don&apos;t show the assigned value
+ [ 964248 ] Convert invalid characters in package/subpackage names to _
+ [ 977674 ] Parser error
+ [ 986622 ] parserClass::setModifiers is incorrecrly documented
+ [ 989258 ] wrong interfaces parsing
+ [ 995731 ] {@internal}}-tag shows }} in HTML-doc
+ [ 1016927 ] no highlight for paramtype in header of function
+ [ 1043330 ] Make Command Line Parser support shorter syntax
+ [ 1044486 ] duplicate parameters
+ [ 1046856 ] Small filesource link bug under windows
+ [ 1051941 ] private variables on same line not recognized
+ [ 1081396 ] Display of inline {@link} tags with PHP functions
+ [ 1090009 ] @uses doesn&apos;t generate @usedby link when linking to file.ext
+ [ 1108018 ] Bad source code after /**#@-*/
+ [ 1145403 ] Call to a member function on a non-object 
+ [ 1150809 ] Infinite loop when class extends itself
+ [ 1151196 ] PHP Fatal error: Cannot re-assign $this
+ [ 1151650 ] UTF8 decoding for DocBook packages
+ [ 1152286 ] 1.3.0RC3 - PHP5 - Smarty template doesn&apos;t work properly?
+ [ 1152316 ] 1.3RC3 - PHP5 - HTML:frames:* - Welcome to default!=@package
+ [ 1152781 ] PHP_NOTICE: Uninitialized string offset in ParserDescCleanup
+ [ 1153593 ] string id=&quot;....&quot; in tutorials
+ [ 1156816 ] undeliverable email addresses for doc/tutorial authors
+ [ 1164253 ] Inherited Class Constants are not displayed
+ [ 1171583 ] CHM wrong filesource
+ [ 1180200 ] HighlightParser does not handle Heredoc Blocks.
+ [ 1202772 ] missing parentheses in Parser.inc line 946
+ [ 1203445 ] Call to a member function on a non-object in Parser.inc
+ [ 1203451 ] array to string conversion notice in InlineTags.inc
+ [ 1223413 ] improper load sequence when using custom templatebase
+ [ 1224317 ] functions refers to wrong line
+ [ 1230004 ] Undefined index in class phpDocumentorTParser
+ [ 1255692 ] Support for &quot;--&quot; argument
+ [ 1261287 ] @filesource bug?
+ [ 1348852 ] Call to function Convert() on a non-object + DocBlockTags
+ [ 1366260 ] Default 0 parameter in method is not displayed
+ [ 1373244 ] Undefined variable: root_dir in docbuilder/file_dialog.php
+ [ 1380845 ] @uses tags not sorting
+ [ 1391432 ] Too many underscores in include links.
+ [ 1393998 ] HTMLSmartyConverter Fatal error (line 627) fix
+ [ 1398977 ] @return is not merged when using DocBlock Templates
+ [ 1428660 ] Confusing error when using {@link} in @uses
+ [ 1456144 ] @global oddities
+ [ 1459955 ] @todo tags are sorted descending instead of ascending
+ [ 1462690 ] PHP Notices
+ [ 1466205 ] more usedby than uses
+ [ 1473272 ] Update references of phpdoc to pear-phpdoc
+ [ 1481118 ] Tags with more than one attribute keep only the first one.
+ [ 1485448 ] Mixing {@toc} and DOCTYPE for DocBook gives PHP fatal error
+ [ 1486304 ] unexpected parameter type mixed
+ [ 1490000 ] Javascript in header.tpl cause httpd log: File not found
+ [ 1491119 ] Inexistant --directory leads to obscure error message
+ [ 1492100 ] Warning: fread(): Length parameter must be greater than 0
+ [ 1492101 ] Object of class parserLinkInlineTag could not be converted
+ [ 1492538 ] ERROR: Converter X specified by ... is not a class
+ [ 1492608 ] PHP Notices in current CVS
+ [ 1497452 ] Fatal error: Call to undefined method parserFunction::setMo
+ [ 1503927 ] Wrong &apos;--&apos; suffix on some files
+ [ 1512969 ] Call to a member function cantSource() on a non-object
+ [ 1516781 ] Use of undefined constant T_ML_COMMENT - assumed &apos;T_ML_COMME
+ [ 1524102 ] Weird include documentation
+ [ 1528752 ] Trivial typo in &quot;phpDocumentor Inline tags&quot; documentation
+ [ 1533361 ] trailing comments stop phpdoc on source generation
+ [ 1532841 ] &apos;%&apos; in function parameter default value causes errors
+ [ 1540233 ] memory exshausted
+- fixed these bugs reported in PEAR:
+ Bug #2122: No tree menu for file identifier begining with a number
+ Bug #2288: Webfrontend ignores more than one dir in &quot;Files to ignore&quot;
+ Bug #2294: @toc tag is incompatible when XML prolog exists
+ Bug #5011: PDF generation warning on uksort
+ Bug #6305: array typehints break the parser
+ Bug #6306: Tokenizer doesn&apos;t read &quot;....&lt;%{$key}&gt;...&quot; properly
+ Bug #6389: Private classes are not used during grouping for class trees
+ Bug #6805: Rendering bug for verbatim HTML tags
+ Bug #6844: phpDocumentor doesn&apos;t show classes in file
+ Bug #6848: Reference Patch
+ Bug #6952: Update Install docs to tell correct package.xml location
+ Bug #7554: Call to undefined method ReflectionClass::hasMethod()
+ Bug #7577: Notice error for undefined _pv_function_param property
+ Bug #7686: phpdoc not run in dos box
+ Bug #7773: &quot;nothing parsed&quot; error when parsing in a directory under &quot;tutorials&quot;
+ Bug #7938: @todo does not work on include elements
+ Bug #8111: Fatal error: ReflectionClass::hasProperty()
+ Bug #8290: @param bug when description is on its own line
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>1.3.1</release>
+    <api>1.3.0</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <date>2006-10-24</date>
+   <license uri="http://www.opensource.org/licenses/lgpl-license.php">LGPL</license>
+   <notes>
+- fixed these bugs reported at sourceforge
+[ 1544977 ] Command line arguments split by spaces (fix included)
+[ 1545927 ] HTMLSmartyConverter logo not in package
+[ 1573807 ] CHM Convertor does not strip full path for all TOC entries
+[ 1575145 ] &apos;-q on&apos; quiet mode not fully quiet
+[ 1581487 ] subdirectory include another subdirectory doc error.
+- fixed these bugs reported in PEAR:
+ Bug #8520: Broken XML when XML_Beautifier is installed
+ Bug #8533: require() broken in a lot of places - cannot run!
+ Bug #8539: Parser error in create_examples.php
+ Bug #8746: XML:DocBook generates warning with function/parameters without @param tag
+ Bug #8773: PDF Convertor fails due to being unable to find fonts
+ Bug #8914: returning non varibale reference ParserData.inc#500
+ 
+The peardoc2 converter no longer uses funky PHP source highlighting, leaving
+that to the peardoc build instead.
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>1.3.2</release>
+    <api>1.3.0</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <date>2007-04-05</date>
+   <license uri="http://www.opensource.org/licenses/lgpl-license.php">LGPL</license>
+   <notes>
+- fixed these bugs reported in Sourceforge:
+[ 1667333 ] Mishandled Param = 0 Default in Converters
+[ 1656902 ] Error when converting class that extends Exception
+[ 1640392 ] docBuilder user directory
+[ 1634369 ] @global syntax in @name example
+[ 1633275 ] Update TODO Links to SF/PEAR Buglists
+[ 1631553 ] Docs Say TODO on INCLUDE Is OK
+[ 1620470 ] Ensure No Pathing Given in Output Converter Name
+[ 1620396 ] INSTALL is wrong and outdated
+[ 1614286 ] Fix Indexing of Constants
+[ 1611861 ] Fix --hidden flag handling
+[ 1611847 ] Fix PEAR Bug #9366
+[ 1602961 ] &quot;--hidden off&quot; / &quot;-dh off&quot; results in hidden=true
+[ 1590240 ] Double Tab-Count after Shell # Comment in SourceCode
+[ 1589650 ] Segfault with PHP 5.2
+[ 1588175 ] const elements sorting incorrectly
+[ 1586917 ] Object of class parserLinkInlineTag could not be converted
+[ 1585879 ] Fix the error text for Includes without docblock
+[ 1585875 ] Error text for Includes without docblock is incorrect
+[ 1583877 ] tagsort corrections in ParserDocBlock.inc
+[ 1583850 ] &quot;Created by PhpDoc&quot;, not &quot;Somesite&quot;
+[ 1573816 ] CHM default template does not set help file title
+[ 1570942 ] Grammar/Typo Corrections in Tutorial
+[ 1548910 ] Do not copy \\&quot;.svn\\&quot; and \\&quot;CVS\\&quot; dirs from media fol
+[ 1545418 ] Duplicated title in generated tutorials (docbook)
+[ 1544661 ] bteer line number alignment in smarty::php html template
+[ 1543686 ] Doesn&apos;t treat interface level docblock like class level docb
+[ 1525150 ] tag information displayed in random order
+[ 1518565 ] &quot;-q off&quot; different then not passing it
+[ 1348589 ] @copyright bug?
+- fixed these bugs reported in PEAR:
+ Bug # 9151:  ReflectionException when documenting classes derived from PHP internal classes
+ Bug # 9366:  Last line with comment in &amp;lt;code&amp;gt; disappears
+ Bug # 9673:  potential major security issue
+ Bug # 9915:  PHP Notice in PDF Converter
+ Bug # 9937:  Security Exploit CVE-2005-4593
+ Bug #10266:  List in @todo tags not processed correctly
+ Bug #10289:  Hangs at &quot;Converting tutorials&quot;
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>1.4.0a1</release>
+    <api>1.4.0</api>
+   </version>
+   <stability>
+    <release>alpha</release>
+    <api>alpha</api>
+   </stability>
+   <date>2007-04-25</date>
+   <license uri="http://www.opensource.org/licenses/lgpl-license.php">LGPL</license>
+   <notes>
+Includes these PEAR items:
+Req #10670: Don&apos;t Die on Empty Tag Descriptions
+Doc #10675: Clear some errors.html items
+Doc #10730: Replace Sourceforge Trackers with PEAR
+
+Includes these Sourceforge items:
+- [1647423] memory_limit: bad if-clause
+- [1622538] List undocumented classes/functions
+- [1602988] Added --ignore-symlinks option
+- [1588942] Allow memory_limit setting in phpdoc.ini
+- [1588936] Show INI Path at Startup
+- [1585840] Refactored RETURNs #3
+- [1574047] Refactored RETURNs #2
+- [1574043] Refactored RETURNs #1
+- [1543289] Apply ignore patterns to subdir of dir, instead of full path
+- [1543287] Use predefined PHP env var in phpdoc script
+- [1540666] patch for @property, @property-read and @property-write tags
+- [1044752] List undocumented classes/functions
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>1.4.0a2</release>
+    <api>1.4.0</api>
+   </version>
+   <stability>
+    <release>alpha</release>
+    <api>alpha</api>
+   </stability>
+   <date>2007-06-01</date>
+   <license uri="http://www.opensource.org/licenses/lgpl-license.php">LGPL</license>
+   <notes>
+Includes these PEAR items:
+Bug #10864: PhpDocumentor dies when parsing illegal page-level docblock
+Bug #10870: Dead links generated with HTML:Smarty:PHP
+Bug #10871: Wrong rendering of inline {@internal}}
+Bug #10910: DOM templates create incorrect trees
+Doc #10914: Can&apos;t use nested tags inside &lt;kbd&gt; or &lt;samp&gt;
+Doc #10972: @method does not work
+Doc #11032: param type1|type2 not documented
+Doc #11143: Provide a Minimal Tutorial File Setup Example
+
+Includes no Sourceforge items.
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>1.4.0RC1</release>
+    <api>1.4.0</api>
+   </version>
+   <stability>
+    <release>beta</release>
+    <api>beta</api>
+   </stability>
+   <date>2007-06-25</date>
+   <license uri="http://www.opensource.org/licenses/lgpl-license.php">LGPL</license>
+   <notes>
+Includes these PEAR items:
+Bug #11409: PHP Notices accompany Global Never Found errors
+
+Includes these Sourceforge items:
+- [1724990] @static tag example
+- [1724884] object return parameter value
+- [1720764] documentation update needed
+- [1672589] missing elements, bad links with HTML:Smarty:HandS
+- [1634153] require/include with concatenated file name
+- [1632496] {@internal}} becomes wrong on documentation
+- [1124133] &lt;code&gt; and @include....
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>1.4.0RC2</release>
+    <api>1.4.0</api>
+   </version>
+   <stability>
+    <release>beta</release>
+    <api>beta</api>
+   </stability>
+   <date>2007-07-08</date>
+   <license uri="http://www.opensource.org/licenses/lgpl-license.php">LGPL</license>
+   <notes>
+Includes no PEAR items:
+
+Includes these Sourceforge items:
+- [1733938] regression: &quot;-&quot; not allowed anymore in converter (file)name
+- [1733936] &quot;phpdoc&quot; does not return with error code &quot;0&quot; on success
+- [1733345] inline @link tag renders wrong way
+- [1722096] DocBlock template example does not work
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>1.4.0</release>
+    <api>1.4.0</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <date>2007-11-18</date>
+   <license uri="http://www.opensource.org/licenses/lgpl-license.php">LGPL</license>
+   <notes>
+Includes these PEAR items:
+Req #10670: Don&amp;apos;t Die on Empty Tag Descriptions
+Bug #10864: PhpDocumentor dies when parsing illegal page-level docblock
+Bug #10870: Dead links generated with HTML:Smarty:PHP
+Bug #10871: Wrong rendering of inline {@internal}}
+Bug #10910: DOM templates create incorrect trees
+Bug #11409: PHP Notices accompany Global Never Found errors
+Doc #10675: Clear some errors.html items
+Doc #10730: Replace Sourceforge Trackers with PEAR
+Doc #10914: Can&amp;apos;t use nested tags inside &amp;lt;kbd&amp;gt; or &amp;lt;samp&amp;gt;
+Doc #10972: @method does not work
+Doc #11032: param type1|type2 not documented
+Doc #11143: Provide a Minimal Tutorial File Setup Example
+
+Includes these Sourceforge items:
+- [1733938] regression: &amp;quot;-&amp;quot; not allowed anymore in converter (file)name
+- [1733936] &amp;quot;phpdoc&amp;quot; does not return with error code &amp;quot;0&amp;quot; on success
+- [1733345] inline @link tag renders wrong way
+- [1724990] @static tag example
+- [1724884] object return parameter value
+- [1722096] DocBlock template example does not work
+- [1720764] documentation update needed
+- [1672589] missing elements, bad links with HTML:Smarty:HandS
+- [1647423] memory_limit: bad if-clause
+- [1634153] require/include with concatenated file name
+- [1632496] {@internal}} becomes wrong on documentation
+- [1622538] List undocumented classes/functions
+- [1602988] Added --ignore-symlinks option
+- [1588942] Allow memory_limit setting in phpdoc.ini
+- [1588936] Show INI Path at Startup
+- [1585840] Refactored RETURNs #3
+- [1574047] Refactored RETURNs #2
+- [1574043] Refactored RETURNs #1
+- [1543289] Apply ignore patterns to subdir of dir, instead of full path
+- [1543287] Use predefined PHP env var in phpdoc script
+- [1540666] patch for @property, @property-read and @property-write tags
+- [1124133] &amp;lt;code&amp;gt; and @include....
+- [1044752] List undocumented classes/functions
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>1.4.1</release>
+    <api>1.4.0</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <date>2008-03-27</date>
+   <license uri="http://www.opensource.org/licenses/lgpl-license.php">LGPL</license>
+   <notes>
+Includes these PEAR items:
+Req #11755: Remove Unused DocBlock_Lexer and PHPT Tests [ashnazg]
+Req #11757: Move PhpUnit Tests into new tests dir [ashnazg]
+Bug #10909: PHP Notice in PDF Converter line 210 [ashnazg]
+Bug #11613: -q flag is not honoured [ashnazg]
+Bug #11683: examples displayed using earthli style are not rendered properly [ashnazg|kguest]
+Bug #11788: Two failing unit tests [ashnazg]
+Bug #11809: Incorrect @name usage causes fatal crash [ashnazg]
+Bug #12121: phpdoc.bat cannot launch php.exe [ashnazg|kalvaro]
+Bug #12172: media files are not being copied [ashnazg|nemesis]
+Bug #12201: Misleading error message [ashnazg|yunosh]
+Doc #12459: @subpackage does not fix name conflicts [ashnazg]
+
+Includes these Sourceforge items:
+- [1846302] php version &gt; 4.3.0 and tokenizer [ashnazg]
+- [1845584] File suffix should be lowercase [ashnazg]
+- [1842595] makedoc.sh doesn&apos;t like embedded blanks in paths [ashnazg|munroe_r]
+- [1839924] addErrorDie has to exit with non-zero return code! [ashnazg|blueyed]
+- [1826342] Data-dependent endless(?) loop in parser [ashnazg]
+- [1733936] &quot;phpdoc&quot; does not return with error code &quot;0&quot; on success [ashnazg|blueyed]
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>1.4.2</release>
+    <api>1.4.0</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <date>2008-03-30</date>
+   <license uri="http://www.opensource.org/licenses/lgpl-license.php">LGPL</license>
+   <notes>
+Includes these PEAR items:
+Bug #12361: missing links to the filesource
+Bug #12699: makedocs.sh script needs a better install location
+Bug #12929: paramete &apos;ignore&apos; oper mistake
+Doc #12764: Update INSTALL for web docbuilder
+
+Includes these Sourceforge items:
+- [1829133] Progress display not happening until conversion finished [ashnazg]
+- [1779257] ignore=.. option not working correctly on Win | fix attaced [ashnazg|mrasnika]
+
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>1.4.3</release>
+    <api>1.4.0</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <date>2008-03-30</date>
+   <license uri="http://www.opensource.org/licenses/lgpl-license.php">LGPL</license>
+   <notes>
+Includes these PEAR items:
+Bug #12361: missing links to the filesource
+Bug #12699: makedocs.sh script needs a better install location
+Bug #12929: paramete &apos;ignore&apos; oper mistake
+Doc #12764: Update INSTALL for web docbuilder
+
+Includes these Sourceforge items:
+- [1829133] Progress display not happening until conversion finished [ashnazg]
+- [1779257] ignore=.. option not working correctly on Win | fix attaced [ashnazg|mrasnika]
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>1.4.4</release>
+    <api>1.4.0</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <date>2011-12-03</date>
+   <license uri="http://www.opensource.org/licenses/lgpl-license.php">LGPL</license>
+   <notes>
+Includes these PEAR items:
+ * Fix Bug #11543: empty @todo tags/comments shouldn&apos;t be included in TODO list [ashnazg]
+ * Fix Bug #12704: XML/Beautifier removed comment in XML Docbook peardoc2 converter
+   template [ashnazg]
+ * Fix Bug #13606: parameter name and description do not line up in generated docs [ashnazg]
+ * Fix Bug #13653: Media file copy - copies incorrect file [ashnazg]
+ * Fix Bug #14201: templatebase not working as intended [ashnazg]
+ * Fix Bug #14640: class witch extending DOMDocument [ashnazg]
+ * Fix Bug #16279: Type Hints in Function Signature Cause Loss of @param type [ashnazg]
+ * Fix Bug #16546: Default parser uses php 4.0 standards [ashnazg]
+ * Fix Bug #16825: Templates Point to Nonexistent Image Files [ashnazg]
+ * Fix Bug #16826: Unused media folder and files exist [ashnazg]
+ * Fix Bug #17395: Fatal Error when trying to run document [ashnazg]
+ * Fix Bug #18058: Patch: fix some notices (which may cause a crash of other tools) [ashnazg]
+ * Fix Bug #18100: phpdocu-general@sourceforge.net bounces [ashnazg]
+ * Fix Bug #18220: Truncated filenames in Converter files [ashnazg]
+ * Fix Bug #18782: class tree generation mistake [ashnazg]
+ * Fix Bug #18870: Class tree wont shows implemented interfaces if class has no childs [ashnazg]
+ * Fix Bug #18871: Class tree wont shows internal PHP interfaces [ashnazg]
+ * Fix Bug #18872: Class tree puts comma uncorrectly in interfaces list [ashnazg]
+ * Fix Bug #19017: remove error_reporting (for PEAR QA team) [ashnazg]
+ * Implement Feature #12211: @inheritdoc not working for child methods &amp; variables [ashnazg]
+ * Implement Feature #15580: Add link back from api document to pear website or package website [ashnazg]
+ * Implement Feature #17906: Please, consider realising &apos;Plain.php&apos; file under PHP 3.01 license [ashnazg]
+
+Includes these Sourceforge items:
+* [2155014] fatal error when parsing 'myclass extends DOMDocument'
+   </notes>
+  </release>
+  <release>
+   <date>2012-09-01</date>
+   <version>
+    <release>1.5.0a1</release>
+    <api>1.5.0</api>
+   </version>
+   <stability>
+    <release>alpha</release>
+    <api>stable</api>
+    </stability>
+   <license uri="http://www.opensource.org/licenses/lgpl-license.php">LGPL</license>
+   <notes>
+This release includes a new --charset runtime option.
+
+This release will also see and document "RIC" files (Readme/Changelog/Install) in project subdirectories,
+rather than only seeing them in the project root.
+
+* Bug #12733: Warning in error.html file with XML:DocBook:peardoc2 [ashnazg]
+* Bug #16784: CHM: files are duplicated in the [FILES] section of the project file. [ashnazg]
+* Bug #19197: Fatal Error on building documentation [ashnazg]
+* Bug #19243: Tutorials are not honoring ordered vs unordered lists [ashnazg|lapistano]
+* Bug #19410: Sourcecode Option does not work [ashnazg|rhorber]
+
+* Req #4960: support for different encoding [ashnazg|miau]
+* Req #12236: Allow RIC files in all directory [ashnazg|yunosh]
+* Req #19242: Allow images in tutorials [ashnazg|lapistano]
+   </notes>
+  </release>
+ </changelog>
+</package>
