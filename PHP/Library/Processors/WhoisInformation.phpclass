@@ -741,8 +741,7 @@ abstract class  WhoisInformation		extends		WhoisInformationBase
 		      stripos ( $contents, 'no match found for'					)  !==  false  ||
 		      stripos ( $contents, 'no entries found'					)  !==  false  || 
 		      stripos ( $contents, 'domain not found'					)  !==  false  ||
-		      stripos ( $contents, 'Unallocated and unassigned in LACNIC block'		)  !==  false  || 
-		      stripos ( $contents, 'no match!'						)  !==  false )
+		      stripos ( $contents, 'Unallocated and unassigned in LACNIC block'		)  !==  false )
 		    {
 			$class	=  '\Thrak\Processors\Whois\WhoisNullInformation' ;
 		    }
@@ -758,7 +757,6 @@ abstract class  WhoisInformation		extends		WhoisInformationBase
 		// Ip address - extract provider information
 		else if  ( String::IsIpAddress ( $ip_or_domain ) ) 
 		   {
-			
 			if  ( ( $offset = stripos ( $contents, 'This is the RIPE Database query service' ) ) !==  false )
 			   {
 				$offset2	=  stripos ( $contents, 'ARIN WHOIS data and services are subject' ) ;
@@ -799,7 +797,10 @@ abstract class  WhoisInformation		extends		WhoisInformationBase
 			    }
 			else if  ( stripos ( $contents, 'JPNIC database' )  !==  false )
 			   {
-				$class	=  '\Thrak\Processors\Whois\WhoisJPNICInformation' ;
+				if  ( preg_match ( '/\] \s+ No \s+ match !!/imsx', $contents ) )
+					$class	=  '\Thrak\Processors\Whois\WhoisNullInformation' ;
+				else
+					$class	=  '\Thrak\Processors\Whois\WhoisJPNICInformation' ;
 			    }
 			else if  ( \Thrak\Processors\Whois\WhoisUnclassifiedInformation::IsCandidate ( $contents ) )
 			   {
