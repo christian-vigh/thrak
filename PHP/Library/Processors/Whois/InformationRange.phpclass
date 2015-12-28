@@ -47,7 +47,7 @@ class  WhoisInformationRange		extends		WhoisInformationBase
 	// Parent WhoisInformation object
 	protected		$Parent ;
 	// Information blocks
-	protected		$Blocks ;
+	public			$Blocks ;
 	// Low and high ip
 	protected		$IpLow		=  null,
 				$IpHigh		=  null ;

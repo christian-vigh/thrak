@@ -24,6 +24,7 @@ use  	Thrak\System\Object ;
 use	Thrak\IO\Path ;
 use	Thrak\Types\String ;
 use	Thrak\Processors\Whois\WhoisRIPEInformation ;
+use	Thrak\Processors\WhoisInformationException ;
 
 
 /*==============================================================================================================
@@ -32,10 +33,220 @@ use	Thrak\Processors\Whois\WhoisRIPEInformation ;
         A class for handling whois data coming from ARIN servers.
 
   ==============================================================================================================*/
-class  WhoisJPNICInformation		extends  WhoisAPNICInformation
+class  WhoisJPNICInformation		extends  WhoisKRNICInformation
    {
 	public function  __construct ( $queried_ip, $contents )
 	   {
 		parent::__construct ( $queried_ip, $contents ) ;
 	    }
+
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    Parse -
+		Converts contents (which quite follows the syntax of a .ini file) to RIPE entries, before calling the
+		real, parent, parse function.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function Parse ( $contents )
+	   {
+error ( new WhoisInformationException ( "JPNIC parser not yet implemented" ) ) ;
+		// Strings that cannot be interpreted by the IniFile class and must be removed from the input contents
+		static		$searches	=
+		   [
+			'/KRNIC is not an ISP.*?\n/i',
+			'/^\-+\r?\n/ms',
+			'/- KISA\/KRNIC WHOIS Service -/i'
+		    ] ;
+
+		// Usually, the first part is in Korean, so jump to the english part
+		if  ( ( $index = stripos ( $contents, '# ENGLISH' ) )  !==  false )
+			$contents	=  substr ( $contents, $index ) ;
+
+		// This string separates two net ranges
+		$parts		=  preg_split ( '/More \s+ specific \s+ assignment \s+ information.*? \./imsx', $contents ) ;
+
+		// Loop through net ranges
+		$text		=  '' ;
+		
+		foreach  ( $parts  as $part )
+		   {
+			// Replace strings that cannot be interpreted by the IniFile class
+			$part	 =  preg_replace ( $searches, '', $part ) ;
+			$ini	 =  IniFile::LoadFromString ( $part, ':' ) ;
+			$text	.=  "# start\n" ;
+
+			// Loop through each section of the current net range
+			foreach  ( $ini -> GetSections ( )  as  $section )
+			   {
+				// Get key list
+				$keys	 =  $ini -> GetKeys ( $section ) ;
+
+				// Interpret each section
+				switch  ( strtolower ( $section ) )
+				   {
+					// Network information : equivalent of ARIN #start/#end entries
+					case  'network information' :
+						foreach  ( $keys  as  $key => $value )
+						   {
+							switch ( strtolower ( $key ) )
+							   {
+								case  'ipv4 address' :
+									$value	 =  preg_replace ( '/\s+ \( [^)]+ \)/imsx', '', $value ) ;
+									$text	.=  "NetRange: $value" ;
+									break ;
+
+								case  'service name' :
+								case  'network name' :
+									$text	.=  "NetName: $value" ;
+									break ;
+
+								case  'organization name' :
+									$text	.=  "Organization: $value" ;
+									break ;
+
+								case  'organization id' :
+									$text	.=  "NetHandle: $value" ;
+									break ;
+
+								case   'address' :
+								case   'zip code' :
+									$text	.=  "Address: $value" ;
+									break ;
+
+								case   'registration date' :
+									$text	.=  "RegDate: $value" ;
+									break ;
+
+								case	'publishes' :
+									break ;
+
+								default :
+									error ( new WhoisInformationException ( "Keyword '$key' is not defined for block " .
+											"'$section' of class {$this -> MyClass}.", $contents ) ) ;
+							    }
+
+							$text	.=  "\n" ;
+						    }
+
+						break ;
+
+					// Admin contact information
+					case	'admin contact information' :
+						foreach  ( $keys  as  $key => $value )
+						   {
+							switch ( strtolower ( $key ) )
+							   {
+								case	'name' :
+									$text	.=  "OrgTechName: $value" ;
+									break ;
+
+
+								case	'phone' :
+									$text	.=  "OrgTechPhone: $value" ;
+									break ;
+
+								case	'e-mail' :
+									$text	.=  "OrgTechEmail: $value" ;
+									break ;
+
+								default :
+									error ( new WhoisInformationException ( "Keyword '$key' is not defined for block " .
+											"'$section' of class {$this -> MyClass}.", $contents ) ) ;
+							    }
+
+							$text	.=  "\n" ;
+						    }
+
+						break ;
+
+					// Technical contact information
+					case	'tech contact information' :
+					case	'technical contact information' :
+						foreach  ( $keys  as  $key => $value )
+						   {
+							switch ( strtolower ( $key ) )
+							   {
+								case	'name' :
+									$text	.=  "OrgTechName: $value" ;
+									break ;
+
+
+								case	'phone' :
+									$text	.=  "OrgTechPhone: $value" ;
+									break ;
+
+								case	'e-mail' :
+									$text	.=  "OrgTechEmail: $value" ;
+									break ;
+
+
+								case	'organization name' :
+									$text	.=  "OrgTechOrg: $value" ;
+									break ;
+
+								case	'address' :
+								case	'zip code' :
+									$text	.=  "OrgTechAddress: $value" ;
+									break ;
+
+								default :
+									error ( new WhoisInformationException ( "Keyword '$key' is not defined for block " .
+											"'$section' of class {$this -> MyClass}.", $contents ) ) ;
+							    }
+
+							$text	.=  "\n" ;
+						    }
+
+						break ;
+
+					// Network abuse contact information
+					case	'network abuse contact information' :
+						foreach  ( $keys  as  $key => $value )
+						   {
+							switch ( strtolower ( $key ) )
+							   {
+								case	'name' :
+									$text	.=  "OrgTechName: $value" ;
+									break ;
+
+
+								case	'phone' :
+									$text	.=  "OrgTechPhone: $value" ;
+									break ;
+
+								case	'e-mail' :
+									$text	.=  "OrgTechEmail: $value" ;
+									break ;
+							
+								default :
+									error ( new WhoisInformationException ( "Keyword '$key' is not defined for block " .
+											"'$section' of class {$this -> MyClass}.", $contents ) ) ;
+							    }
+
+							$text	.=  "\n" ;
+						    }
+
+						break ;
+
+					// Section does not exist
+					default :
+						if  ( $section )
+							error ( new WhoisInformationException ( "No section '$section' is authorized for " .
+									"class {$this -> MyClass}.", $contents ) ) ;
+						// When $section is empty, this means that KRNIC output does not contain any whois server information at all
+						else
+							$this -> Flags	|=  WhoisInformation::WHOIS_FLAGS_SERVER_NOT_FOUND ;
+				    }
+
+				$text	.=  "\n" ;
+			    }
+
+			$text   .=  "\n# end\n\n" ;
+		    }
+
+		parent::Parse ( $text ) ;
+	    }
+
     }

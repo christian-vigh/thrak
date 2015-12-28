@@ -46,6 +46,9 @@
    [Version : 2.0.10]	[Date : 2015/12/25]		[Author : CV]
 	. Added the LoadAllRows() method.
 
+   [Version : 2.0.11]	[Date : 2015/12/28]		[Author : CV]
+	. Performed some optimizations in Query() and __ExplodeStatements().
+
  ***************************************************************************************************/
 namespace 	Thrak\Database ;
 
@@ -1465,7 +1468,10 @@ class	Database  extends  Object
 		    }
 
 		// Since we are allowing for running several SQL statements, split them
-		$statements = $this -> __ExplodeStatements ( $this -> SQLQuery ) ;
+		if  ( strpos ( $this -> SQLQuery, ';' )  !==  false )
+			$statements =  $this -> __ExplodeStatements ( $this -> SQLQuery ) ;
+		else
+			$statements =  [ $this -> SQLQuery ] ;
 
 		// Process individual statements
 		foreach ( $statements  as  $statement )

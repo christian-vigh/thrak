@@ -46,6 +46,12 @@
 	  - To access array elements using case-insensitive keys, a separate array (now named "ArrayKeys") is 
 	    managed ; the new version only rebuilds it when needed (for example, when several new elements have
 	    been added THEN the value of one of them is retrieved).
+ 
+    [Version : 2.0.1]	[Date : 2015/12/28]     [Author : CV]
+	. __rebuild_keys() is now conditionnally called instead of being systematically invoked. This saves
+	  useless function calls.
+	. The offsetSet() and offsetUnset() methods now directly update the $DataKeys member instead of setting
+	  the $RebuildKeys flag saying that the next array access function should rebuild the keys first.
   
  **************************************************************************************************************/
 namespace 	Thrak\Types ;
@@ -126,7 +132,8 @@ class  AssociativeArray		extends		Object
 	  ==============================================================================================================*/
 	public function  __get ( $member )
 	   {
-		$this -> __rebuild_keys ( ) ;
+		if  ( $this -> RebuildKeys )
+			$this -> __rebuild_keys ( ) ;
 
 		$lcmember	=  strtolower ( $member ) ;
 		
@@ -161,7 +168,9 @@ class  AssociativeArray		extends		Object
 	  ==============================================================================================================*/
 	public function  ensure_exists ( $required_keys, $default_keys )
 	   {
-		$this -> __rebuild_keys ( ) ;
+		if  ( $this -> RebuildKeys )
+			$this -> __rebuild_keys ( ) ;
+
 		$missing_keys	=  [] ;
 		
 		foreach  ( $required_keys  as  $required_key )
@@ -201,7 +210,8 @@ class  AssociativeArray		extends		Object
 	  ==============================================================================================================*/
 	public function  keyname ( $index ) 
 	   {
-		$this -> __rebuild_keys ( ) ;
+		if  ( $this -> RebuildKeys )
+			$this -> __rebuild_keys ( ) ;
 
 		if  ( is_numeric ( $index )  &&  $index  >=  0  &&  $index  <  count ( $this -> Data ) )
 		   {
@@ -224,14 +234,17 @@ class  AssociativeArray		extends		Object
 	  ==============================================================================================================*/
 	public function  in_array ( $value )
 	   {
-		$this -> __rebuild_keys ( ) ;
+		if  ( $this -> RebuildKeys )
+			$this -> __rebuild_keys ( ) ;
+
 		return  ( in_array ( $value, $this -> Data ) ) ;
 	    }
 	
 	
 	public function  iin_array ( $value )
 	   {
-		$this -> __rebuild_keys ( ) ;
+		if  ( $this -> RebuildKeys )
+			$this -> __rebuild_keys ( ) ;
 
 		foreach  ( $this -> Data  as  $item )
 		   {
@@ -245,7 +258,8 @@ class  AssociativeArray		extends		Object
 	
 	public function  in_subarray ( $key, $value )
 	   {
-		$this -> __rebuild_keys ( ) ;
+		if  ( $this -> RebuildKeys )
+			$this -> __rebuild_keys ( ) ;
 
 		foreach  ( $this -> Data  as  $index => $item )
 		   {
@@ -262,7 +276,9 @@ class  AssociativeArray		extends		Object
 	
 	public function  iin_subarray ( $key, $value )
 	   {
-		$this -> __rebuild_keys ( ) ;
+		if  ( $this -> RebuildKeys )
+			$this -> __rebuild_keys ( ) ;
+
 		$index	=  0 ;
 		
 		foreach  ( $this -> Data  as  $index => $item )
@@ -350,7 +366,8 @@ class  AssociativeArray		extends		Object
 	//	Checks if the specified offset exists.
 	public function  offsetExists ( $member )
 	   {
-  		$this -> __rebuild_keys ( ) ;
+		if  ( $this -> RebuildKeys )
+	  		$this -> __rebuild_keys ( ) ;
 
 		return ( isset ( $this -> DataKeys [ strtolower ( $member ) ] ) ) ; 
 	    }
@@ -360,7 +377,9 @@ class  AssociativeArray		extends		Object
 	//	Return the value at the specified offset or key.
 	public function  offsetGet ( $member )
 	   {
-		$this -> __rebuild_keys ( ) ;
+		if  ( $this -> RebuildKeys )
+			$this -> __rebuild_keys ( ) ;
+
 		$lcmember	=  strtolower ( $member ) ;
 		
 		if  ( isset ( $this -> DataKeys [ $lcmember ] ) )
@@ -396,8 +415,8 @@ class  AssociativeArray		extends		Object
 		// Assignment to a new key
 		else 
 		   {
-			$this -> Data [ $member ]	=  $value ;
-			$this -> RebuildKeys		=  true ;
+			$this -> Data [ $member ]			=  $value ;
+			$this -> DataKeys [ strtolower ( $member ) ]	=  $member ;
 		    }
 	    }
 	
@@ -412,7 +431,7 @@ class  AssociativeArray		extends		Object
 		   {
 			$index			=  $this -> DataKeys [ $lcmember ] ;
 			unset ( $this -> Data [ $index ] ) ;
-			$this -> RebuildKeys	=  true ;
+			unset ( $this -> DataKeys [ strtolower ( $index ) ] ) ;
 		    }
 	    }
 	
