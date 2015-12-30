@@ -112,7 +112,8 @@ class  WhoisRIPEInformation		extends  WhoisProviderInformation
 			'ReferralServer:',
 			'connect: Connection timed out',
 			'connect: Connection refused',
-			'fgets: Connection reset by peer'
+			'fgets: Connection reset by peer',
+			'201: access denied'
 		    ],
 		'data-blocks'			=>
 		   [
@@ -313,6 +314,10 @@ class  WhoisRIPEInformation		extends  WhoisProviderInformation
 							self::NETTYPE_ASSIGNED_ANYCAST		=> 
 							   [
 								'ASSIGNED ANYCAST' 
+							    ],
+							self::NETTYPE_RIPE_NCC		=> 
+							   [
+								'Allocated to RIPE NCC' 
 							    ]
 						    ]
 					 ],

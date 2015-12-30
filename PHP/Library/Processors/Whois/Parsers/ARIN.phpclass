@@ -172,7 +172,8 @@ class  WhoisARINInformation		extends  WhoisProviderInformation
 			'connect: Connection refused',
 			'fgets: Connection reset by peer', 
 			'/Host \s+ [^\s] \s+ not \s+ found/imsx',
-			'Name or service not known'
+			'Name or service not known',
+			'201: access denied'
 		    ],
 		'data-blocks'			=>
 		   [
@@ -250,6 +251,10 @@ class  WhoisARINInformation		extends  WhoisProviderInformation
 							self::NETTYPE_ALLOCATED_UNSPECIFIED	=> 
 							   [
 								'Allocated to APNIC'
+							    ],
+							self::NETTYPE_RIPE_NCC		=> 
+							   [
+								'Allocated to RIPE NCC' 
 							    ]
 						    ]
 					 ],
@@ -294,6 +299,13 @@ class  WhoisARINInformation		extends  WhoisProviderInformation
 					[ 
 						'name'			=>  [ 'Address' ],
 						'type'			=>  self::TYPE_PROVIDER_ADDRESS,
+						'value-type'		=>  self::VALUE_TYPE_STRING,
+						'multiple'		=>  true
+					 ],
+					self::TYPE_PROVIDER_TECHNAME		=>
+					[ 
+						'name'			=>  [ 'Name' ],
+						'type'			=>  self::TYPE_PROVIDER_TECHNAME,
 						'value-type'		=>  self::VALUE_TYPE_STRING,
 						'multiple'		=>  true
 					 ],

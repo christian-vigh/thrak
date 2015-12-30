@@ -51,7 +51,10 @@ class  WhoisJPNICInformation		extends  WhoisKRNICInformation
 	 *-------------------------------------------------------------------------------------------------------------*/
 	public function Parse ( $contents )
 	   {
-error ( new WhoisInformationException ( "JPNIC parser not yet implemented" ) ) ;
+warning ( new WhoisInformationException ( "JPNIC parser not yet implemented" ) ) ;
+output ( $contents ) ;
+return ( parent::Parse ( $contents ) ) ;
+
 		// Strings that cannot be interpreted by the IniFile class and must be removed from the input contents
 		static		$searches	=
 		   [

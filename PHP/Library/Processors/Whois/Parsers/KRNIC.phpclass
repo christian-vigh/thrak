@@ -168,6 +168,14 @@ class  WhoisKRNICInformation		extends  WhoisARINInformation
 									$text	.=  "NetName: $value" ;
 									break ;
 
+								case  'name' :
+									$text	.=  "Name: $value" ;
+									break ;
+
+								case  'network type' :
+									$text	.=  "NetName: $value" ;
+									break ;
+
 								case  'organization name' :
 									$text	.=  "Organization: $value" ;
 									break ;
@@ -176,8 +184,10 @@ class  WhoisKRNICInformation		extends  WhoisARINInformation
 									$text	.=  "NetHandle: $value" ;
 									break ;
 
-								case   'address' :
-								case   'zip code' :
+								case    'address' :
+								case    'zip code' :
+								case    'phone' :
+								case	'e-mail' :
 									$text	.=  "Address: $value" ;
 									break ;
 

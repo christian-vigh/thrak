@@ -139,6 +139,7 @@ abstract class  WhoisInformation		extends		WhoisInformationBase
 	const   TYPE_PROVIDER_DS_STATUS			=  1041 ;
 	const   TYPE_PROVIDER_DS_RECORD			=  1042 ;
 	const   TYPE_PROVIDER_DS_LAST_OK		=  1043 ;
+	const   TYPE_PROVIDER_TECHNAME			=  1044 ;
 
 	const   TYPE_CUSTOMER_NAME			=  1100 ;		// Customer information
 	const   TYPE_CUSTOMER_ADDRESS			=  1101 ;
@@ -328,6 +329,9 @@ abstract class  WhoisInformation		extends		WhoisInformationBase
 	const   NETTYPE_PORTABLE			= 103 ;			// Ip addresses are portable
 	const   NETTYPE_IANA_SPECIAL_USE		= 104 ;			// Reserved
 
+	// Misc constants
+	const   NETTYPE_RIPE_NCC			= 200 ;			// Allocated to RIPE NCC
+
 	// Whois string store entry types
 	const	WHOIS_STRING_STORE_KEYWORD		=   1 ; 
 	const	WHOIS_STRING_STORE_TEXT			=   2 ;
@@ -366,7 +370,7 @@ abstract class  WhoisInformation		extends		WhoisInformationBase
 	// List of strings that introduce referral data, which may be present in some whois output data
 	protected static	$ReferralDefinitions	=
 	   [
-		'Found a referral to'
+		[ 'regex' => false, 'value' => 'Found a referral to' ]
 	    ] ;
 
 
@@ -454,12 +458,23 @@ abstract class  WhoisInformation		extends		WhoisInformationBase
 		else
 			$definitions [ 'ignore' ]	=  [] ;
 
-		// Range definitions - make sure the array exists and that at least the 'drop' entry also exists
-		if  ( ! isset ( $definitions [ 'range-definitions' ] ) )
-			$definitions [ 'range-definitions' ]	=  [] ;
+		foreach  ( $definitions [ 'ignore' ]   as  &$ignored )
+			$ignored	=  [ 'regex' => String::IsRegex ( $ignored ), 'value' => $ignored ] ;
 
-		if  ( ! isset ( $definitions [ 'range-definitions' ] [ 'drop' ] ) )
-			$definitions [ 'range-definitions' ] [ 'drop' ]		=  false ;
+		// Range definitions - make sure the array exists and that at least the 'drop' entry also exists
+		if  ( ! isset ( $definitions [ 'range-definition' ] ) )
+			$definitions [ 'range-definition' ]	=  [] ;
+
+		if  ( ! isset ( $definitions [ 'range-definition' ] [ 'drop' ] ) )
+			$definitions [ 'range-definition' ] [ 'drop' ]		=  false ;
+
+		if  ( isset ( $definitions [ 'range-definition' ] [ 'start' ] ) ) 
+			$definitions [ 'range-definition' ] [ 'regex-start' ]		=  
+				String::IsRegex ( $definitions [ 'range-definition' ] [ 'start' ] ) ;
+
+		if  ( isset ( $definitions [ 'range-definition' ] [ 'end' ] ) ) 
+			$definitions [ 'range-definition' ] [ 'regex-end' ]		=  
+				String::IsRegex ( $definitions [ 'range-definition' ] [ 'end' ] ) ;
 
 		// Check each individual 'data-block' entry
 		foreach  ( $definitions [ 'data-blocks' ]  as  $key => &$data_block )
@@ -521,6 +536,9 @@ abstract class  WhoisInformation		extends		WhoisInformationBase
 			else
 				$data_block [ 'ignore']		=  [] ;
 
+			foreach  ( $data_block [ 'ignore' ]   as  &$ignored )
+				$ignored	=  [ 'regex' => String::IsRegex ( $ignored ), 'value' => $ignored ] ;
+
 			// Check individual keyword entries 
 			foreach  ( $data_block [ 'keywords' ]  as  $index => &$keyword_entry )
 			   {
@@ -534,6 +552,13 @@ abstract class  WhoisInformation		extends		WhoisInformationBase
 
 				// Remove duplicate names
 				$keyword_entry [ 'name' ]	=  ArrayHelpers::Unique ( $keyword_entry [ 'name' ], true ) ;
+
+				// Get lowercase version of keywords - this will allow us to later use the builtin function
+				// in_array to perform searches
+				$keyword_entry [ 'lcname' ]	=  [] ;
+
+				foreach  ( $keyword_entry [ 'name' ]  as  $name )
+					$keyword_entry [ 'lcname' ] []	=  strtolower ( $name ) ;
 
 				// 'type' entries default to the keyword entry index
 				if  ( ! isset ( $keyword_entry [ 'type' ] ) )
@@ -599,10 +624,8 @@ abstract class  WhoisInformation		extends		WhoisInformationBase
 			// Check for duplicate keyword name definitions
 			foreach  ( $block_data [ 'keywords' ]  as  $keyword_id => $keyword_data )
 			   {
-				foreach  ( $keyword_data [ 'name' ]  as  $name )
+				foreach  ( $keyword_data [ 'lcname' ]  as  $lcname )
 				   {
-					$lcname		=  strtolower ( $name ) ;
-
 					if  ( isset ( $keyword_names [ $lcname ] ) )
 						error ( new \Thrak\System\DataStructureException ( "Keyword name '$name' (block entry #$block_id, keyword entry #$keyword_id) " .
 								"conflicts with block entry #{$keyword_names [ $lcname ] [0]}, keyword entry #{$keyword_names [ $lcname ] [1]} " .
@@ -741,6 +764,7 @@ abstract class  WhoisInformation		extends		WhoisInformationBase
 		      stripos ( $contents, 'no match found for'					)  !==  false  ||
 		      stripos ( $contents, 'no entries found'					)  !==  false  || 
 		      stripos ( $contents, 'domain not found'					)  !==  false  ||
+		      stripos ( $contents, 'Name or service not known'				)  !==  false  ||
 		      stripos ( $contents, 'Unallocated and unassigned in LACNIC block'		)  !==  false )
 		    {
 			$class	=  '\Thrak\Processors\Whois\WhoisNullInformation' ;
@@ -976,7 +1000,9 @@ abstract class  WhoisInformation		extends		WhoisInformationBase
 
 			foreach ( $block [ 'data' ] as  $value )
 			   {
-				if  ( ArrayHelpers::InArray ( $keyword_definition [ 'name' ], $value [ 'keyword' ] ) )
+				$str		=  strtolower ( $value [ 'keyword' ] ) ;
+
+				if  ( in_array ( $str, $keyword_definition [ 'lcname' ] ) )
 				   {
 					$found	=  true ;
 					break ;
@@ -1328,12 +1354,12 @@ abstract class  WhoisInformation		extends		WhoisInformationBase
 	   {
 		foreach  ( $this -> ClassDefinitions [ 'ignore' ]  as  $search )
 		   {
-			if  ( String::IsRegex ( $search ) )
+			if  ( $search [ 'regex' ] )
 			   {
-				if  ( preg_match ( $search, $line ) )
+				if  ( preg_match ( $search [ 'value' ], $line ) )
 					return ( true ) ;
 			    }
-			else if  ( stripos ( $line, $search )  !==  false )
+			else if  ( stripos ( $line, $search [ 'value' ] )  !==  false )
 				return ( true ) ;
 		    }
 
@@ -1355,7 +1381,7 @@ abstract class  WhoisInformation		extends		WhoisInformationBase
 		   {
 			$search		=  $this -> ClassDefinitions [ 'range-definition' ] [ 'start' ] ;
 
-			if  ( String::IsRegex ( $search ) )
+			if  ( $this -> ClassDefinitions [ 'range-definition' ] [ 'regex-start' ] )
 			   {
 				if  ( preg_match ( $search, $line ) )
 					return ( true ) ;
@@ -1382,7 +1408,7 @@ abstract class  WhoisInformation		extends		WhoisInformationBase
 		   {
 			$search		=  $this -> ClassDefinitions [ 'range-definition' ] [ 'end' ] ;
 
-			if  ( String::IsRegex ( $search ) )
+			if  ( $this -> ClassDefinitions [ 'range-definition' ] [ 'regex-end' ] )
 			   {
 				if  ( preg_match ( $search, $line ) )
 					return ( true ) ;
@@ -1405,12 +1431,12 @@ abstract class  WhoisInformation		extends		WhoisInformationBase
 	   {
 		foreach  ( self::$ReferralDefinitions  as  $search )
 		   {
-			if  ( String::IsRegex ( $search ) )
+			if  ( $search [ 'regex' ] )
 			   {
-				if  ( preg_match ( $search, $line ) )
+				if  ( preg_match ( $search [ 'value' ], $line ) )
 					return ( true ) ;
 			    }
-			else if  ( stripos ( $line, $search )  !==  false )
+			else if  ( stripos ( $line, $search [ 'value' ] )  !==  false )
 				return ( true ) ;
 		    }
 
