@@ -68,6 +68,10 @@
 	. The Generate() method does not display column headers anymore if there is no data to 
 	  display.
 	. Added the $display parameter to the Generate() method.
+
+    [Version : 2.0.10]		[Date : 2016/01/13]		[Author : CV]
+	. Corrected the Summary() method : the first words of the singular form were not put in the
+	  plural form.
   
  ***************************************************************************************************/
 namespace 	Thrak\IO ;
@@ -522,6 +526,13 @@ class  AsciiReport		extends  Object
 			// Otherwise, add trailing 's' for unmatched words
 			else if  ( ! String::EndsWith ( $low_singular, 's' ) )
 				$plural		=  $singular . 's' ;
+
+			// If the singular form contains several words, don't forget to put them in the plural form
+			if  ( count ( $words )  >  1 )
+			   {
+				array_pop ( $words ) ;
+				$plural		=  implode ( ' ', $words ) . ' ' . $plural ; 
+			    }
 		    }
 
 		// Now, try to display a proper message taking element count into account
