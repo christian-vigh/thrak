@@ -1690,10 +1690,8 @@ class  	Path	extends  Object
 			
 				$current_path	.=  $parts [$i] ;
 			
-				output ( "CUR = $current_path" ) ;
 				if  ( ! file_exists ( $current_path ) )
 				   {
-				output ( "CREATED $current_path" ) ;
 					if  ( ! mkdir ( $current_path, $mode ) )
 						return ( false ) ;
 					
