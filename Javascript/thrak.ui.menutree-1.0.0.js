@@ -32,11 +32,6 @@
 				//	To be implemented.
 				method		:  'inline',
 
-				// select -
-				//	Called when a tree item is selected by the user.
-				select		:  function  ( obj )
-				   { this. instance. _select ( obj ) ; },
-
 				// titleSelector -
 				//	If not undefined, identifies a DOM element somewhere in the page that
 				//	will be refreshed using the "title" attribute of the <li> node that has
@@ -49,6 +44,17 @@
 				//	DOM element where the html content corresponding to the currently selected
 				//	node will be put.
 				contentSelector	:  undefined
+			    },
+
+			// select -
+			//	Called when a tree item is selected by the user.
+			select		:  function  ( obj )
+			   { 
+				if  ( typeof ( obj )  ==  'string' )
+					obj	=  $('li[href="' + obj + '"]' ) ;
+
+				this. options. instance. _click ( obj, null, false ) ; 
+				this. options. instance. _select ( obj ) ;
 			    },
 
 			// _create -
@@ -75,25 +81,21 @@
 				// - The 2nd one is called when the user clicks on the collapse/expand icon : the 
 				//   collapse/expand state of the node is then changed, independently of whether it was the
 				//   active node or not.
-				$('li'     , $widget). click ( function ( e ) { $this_widget. _click ( $this_widget, $(this), e, false ) ; } ) ;
-				$('li span', $widget). click ( function ( e ) { $this_widget. _click ( $this_widget, $(this). parent (), e, true  ) ; } ) ;
+				$('li'     , $widget). click ( function ( e ) { $this_widget. _click ( $(this), e, false ) ; } ) ;
+				$('li span', $widget). click ( function ( e ) { $this_widget. _click ( $(this). parent (), e, true  ) ; } ) ;
 			    },
 
 
-			    // Options handling
-			    _setOption		: function ( key, value ) 
-			        {
-					this. _super ( key, value ) ;
+			// Options handling
+			_setOption		: function ( key, value ) 
+			    {
+				this. _super ( key, value ) ;
+ 		             },
 
-			         },
-
-			    _setOptions		: function ( options ) 
-			       {
-					this. _super ( options ) ;
-			        },
-
-  
-
+			_setOptions		: function ( options ) 
+			   {
+				this. _super ( options ) ;
+			    },
 
 			// _wrap_li -
 			//	Transforms each list item into a stylable entry
@@ -154,8 +156,9 @@
 
 			// _click -
 			//	Handles a click on a list item.
-			_click			:  function ( $widget, $this, e, force_collapse )
+			_click			:  function ( $this, e, force_collapse )
 			   {
+				var		$widget		=  this. option. instance ;
 				var		is_active	=  $this. hasClass ( 'ui-menutree-item-active' ) ;
 
 
@@ -184,7 +187,7 @@
 				    }
 
 				if  ( ! force_collapse )
-					$widget. options. select  &&  $widget. options. select ( $this ) ; 
+					this. _select ( $this ) ; 
 			    }
 
 
