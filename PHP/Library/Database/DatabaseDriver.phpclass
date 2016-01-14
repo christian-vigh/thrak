@@ -20,6 +20,9 @@
     [Version : 1.0.2]	[Date : 2015/12/25]     [Author : CV]
 	. Added the db_fetch_all() interface.
 
+    [Version : 1.0.3]	[Date : 2016/01/14]     [Author : CV]
+	. Added the $simple_query parameter to the db_run_query() function.
+
  **************************************************************************************************************/
 namespace 	Thrak\Database ;
 
@@ -70,7 +73,7 @@ abstract class  DatabaseDriver	extends  Object
 	public abstract function  db_preprocess_statement	( $resource, $statement ) ;
 
 	// Runs an SQL query
-	public abstract function  db_run_query			( $resource, $statement ) ;
+	public abstract function  db_run_query			( $resource, $statement, $simple_query = true ) ;
 
 	// Frees the results returned by an SQL query
 	public abstract function  db_free_query 		( $resource, $recordset ) ;

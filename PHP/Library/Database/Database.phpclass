@@ -49,6 +49,9 @@
    [Version : 2.0.11]	[Date : 2015/12/28]		[Author : CV]
 	. Performed some optimizations in Query() and __ExplodeStatements().
 
+   [Version : 2.0.12]	[Date : 2015/12/28]		[Author : CV]
+	. Removed the call to __ExplodeStatements() for simple queries.
+
  ***************************************************************************************************/
 namespace 	Thrak\Database ;
 
@@ -118,6 +121,7 @@ class	Database  extends  Object
 	// $SQLQuery -
 	//	Last defined SQL query.
 	public		$SQLQuery		=  "" ;
+	public		$IsSimpleQuery		=  false ;
 	// $QueryLimit -
 	//	Maximum number of rows to be returned by an SQL query.
 	public		$QueryLimit		=  0 ;
@@ -1468,7 +1472,7 @@ class	Database  extends  Object
 		    }
 
 		// Since we are allowing for running several SQL statements, split them
-		if  ( strpos ( $this -> SQLQuery, ';' )  !==  false )
+		if  ( ! $this -> IsSimpleQuery  &&  strpos ( $this -> SQLQuery, ';' )  !==  false )
 			$statements =  $this -> __ExplodeStatements ( $this -> SQLQuery ) ;
 		else
 			$statements =  [ $this -> SQLQuery ] ;
@@ -1536,7 +1540,7 @@ class	Database  extends  Object
 			    }
 			else				// Non parameterized query
 			   {
-				$recordset =  $this -> DatabaseDriver -> db_run_query ( $this -> Connection, $sql ) ;
+				$recordset =  $this -> DatabaseDriver -> db_run_query ( $this -> Connection, $sql, $this -> IsSimpleQuery ) ;
 			    }
 
 			// Track timing information
@@ -1657,7 +1661,8 @@ class	Database  extends  Object
 	   {
 		$this -> __EnsureConnected ( ) ;
 
-		$this -> SQLQuery 	= $this -> __ReplacePrefix ( $sql, $prefix, $this -> DatabaseTablePrefix ) ;
+		$this -> SQLQuery 	=  $this -> __ReplacePrefix ( $sql, $prefix, $this -> DatabaseTablePrefix ) ;
+		$this -> IsSimpleQuery	=  false ;
 		$this -> QueryLimit 	=  ( integer ) $limit ;
 		$this -> QueryOffset	=  ( integer ) $offset ;
 	    }
@@ -1668,6 +1673,7 @@ class	Database  extends  Object
 		$this -> __EnsureConnected ( ) ;
 
 		$this -> SQLQuery 	=  $sql ;
+		$this -> IsSimpleQuery	=  true ;
 		$this -> QueryLimit 	=  0 ;
 		$this -> QueryOffset	=  0 ;
 	    }
