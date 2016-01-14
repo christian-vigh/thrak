@@ -17,6 +17,9 @@
     [Version : 1.0.1]   [Date : 2015/11/10]     [Author : CV]
 	. Adapted for the new TrackerStringStore class
 
+    [Version : 1.0.2]   [Date : 2016/01/14]     [Author : CV]
+	. Handled the new htta_tracking_buffer_id field.
+
  **************************************************************************************************************/
 namespace 	Thrak\Security ;
 
@@ -121,7 +124,7 @@ class  HttpRequestTracker	extends  BufferedTracker
 	    }
 
 
-	protected function  BatchProcessRow ( $data )
+	protected function  BatchProcessRow ( $data, $buffer_id )
 	   {
 		// Ignore $_SERVER variables that may change at any invocation (so its wasteful to store them in a string
 		// store). They will be rather stored in the http access table, not in the server vars tables.
@@ -167,6 +170,7 @@ class  HttpRequestTracker	extends  BufferedTracker
 					INSERT INTO $http_access_table
 					SET
 						htta_request_time	=  '$timestring',
+						htta_tracking_buffer_id	=  $buffer_id,
 						htta_url_id		=  $url_id,
 						htta_query_id		=  $query_id,
 						htta_local_ip_id	=  $local_ip_id,

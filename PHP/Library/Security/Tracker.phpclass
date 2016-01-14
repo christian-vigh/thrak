@@ -18,6 +18,10 @@
     [Version : 1.0.1]	[Date : 2015/11/10]     [Author : CV]
 	. Added the TrackerStringStore class.
 
+    [Version : 1.0.2]   [Date : 2016/01/14]     [Author : CV]
+	. Handled the new htta_tracking_buffer_id field.
+	. Changed the Track() method to return the id of the row inserted into the tracking_buffer table
+
  **************************************************************************************************************/
 namespace 	Thrak\Security ;
 
@@ -110,6 +114,8 @@ abstract class  BufferedTracker		extends  Tracker
 		$data	=  $db -> Escape ( $this -> GetRawData ( ) ) ;
 		$query	=  "INSERT DELAYED INTO " . self::TABLE_TRACKING_BUFFER . " SET data = '$data', type = $type" ;
 		$db -> Execute ( $query ) ;
+
+		return ( $db -> GetLastInsertId ( ) ) ;
 	    }
 
 
@@ -141,11 +147,11 @@ abstract class  BufferedTracker		extends  Tracker
 
 		// Now select them - other processes are free to add new records, they will ignored here but they will 
 		// be processed by the next batch run
-		$rs	=  $db -> Execute ( "SELECT data FROM $table WHERE processed = 1" ) ;
+		$rs	=  $db -> Execute ( "SELECT id, data FROM $table WHERE processed = 1" ) ;
 
 		while  ( $row = $db -> GetNextRow ( $rs ) )
 		   {
-			$this -> BatchProcessRow ( $row [ 'data' ] ) ;
+			$this -> BatchProcessRow ( $row [ 'data' ], $row [ 'id' ] ) ;
 			$this -> BatchProcessedRows ++ ;
 		    }
 
@@ -172,7 +178,7 @@ abstract class  BufferedTracker		extends  Tracker
 		$this -> Database -> Execute ( "OPTIMIZE TABLE " . self::TABLE_TRACKING_BUFFER ) ;
 	    }
 
-	protected abstract function  BatchProcessRow ( $data ) ;
+	protected abstract function  BatchProcessRow ( $data, $id ) ;
     }
 
 

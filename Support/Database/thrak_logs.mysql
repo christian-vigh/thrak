@@ -29,6 +29,8 @@ DROP TABLE IF EXISTS  tracking_buffer ;
 
 CREATE TABLE  tracking_buffer
    (
+	id 			INT UNSIGNED 		NOT NULL AUTO_INCREMENT
+							COMMENT 'Unique id for this entry',
 	processed 		TINYINT 		NOT NULL DEFAULT 0
 							COMMENT 'Must be set to 1 by the batch job before starting any processing',
 	type 			TINYINT 		NOT NULL DEFAULT 0
@@ -36,6 +38,7 @@ CREATE TABLE  tracking_buffer
 	data 			LONGTEXT 		NOT NULL
 							COMMENT 'Raw data',
 							
+	PRIMARY KEY 		( id ),
 	KEY 			( processed )
 							
     )  ENGINE = MyIsam CHARSET latin1 COMMENT 'A buffer table for fast insertion or raw http access data, to be processed later by a batch job' ;
@@ -53,6 +56,8 @@ CREATE TABLE  http_access_log
    (
 	htta_id 			INT UNSIGNED 			NOT NULL AUTO_INCREMENT
 									COMMENT 'Unique id for this entry',
+	htta_tracking_buffer_id 	INT UNSIGNED 			NOT NULL DEFAULT 0
+									COMMENT 'Id in the tracking_buffer table of the row used to generate this entry',
 	htta_request_time 		TIMESTAMP(6) 			NOT NULL DEFAULT 0
 									COMMENT 'Request timestamp',
 	htta_url_id 			INT UNSIGNED 			NOT NULL DEFAULT 0
@@ -80,7 +85,8 @@ CREATE TABLE  http_access_log
 				
 	PRIMARY KEY 			( htta_id ),
 	KEY 				( htta_request_time DESC ),
-	KEY 				( htta_remote_ip_id, htta_request_time DESC )
+	KEY 				( htta_remote_ip_id, htta_request_time DESC ),
+	KEY USING HASH 			( htta_tracking_buffer_id )
     )  ENGINE = MyIsam CHARSET latin1 COMMENT 'Records http accesses' ;
     
   
@@ -256,3 +262,43 @@ CREATE
 		authenticated_user_id 	=  @AuthenticatedUserId ;
    END //
 DELIMITER ;
+
+/*==============================================================================================================
+
+    mail_log -
+	Tracks contact requests sent by mail.
+	
+  ==============================================================================================================*/
+DROP TABLE IF EXISTS  mail_log ;
+
+CREATE TABLE 	mail_log 
+   (
+	mail_id 			INT UNSIGNED 			NOT NULL AUTO_INCREMENT
+									COMMENT 'Mail id',
+	mail_tracking_buffer_id 	INT UNSIGNED 			NOT NULL DEFAULT 0
+									COMMENT 'Tracking buffer id',
+	mail_time 			TIMESTAMP(6)			NOT NULL DEFAULT 0
+									COMMENT 'Mail submission time',
+	mail_type 			TINYINT 			NOT NULL DEFAULT 0
+									COMMENT 'Mail type : 0 = contact request',
+	mail_delivery_status 		TINYINT 			NOT NULL DEFAULT 0
+									COMMENT 'Mail status : 0 = ok, 1 = error occurred',
+	mail_delivery_status_message 	VARCHAR(1024)			NOT NULL DEFAULT ''
+									COMMENT 'Error message when mail delivery failed',
+	mail_sender 			VARCHAR(1024)			NOT NULL DEFAULT ''
+									COMMENT 'Sender email',
+	mail_recipient 			VARCHAR(1024)			NOT NULL DEFAULT ''
+									COMMENT 'Recipient email',
+	mail_subject 			VARCHAR(1024)			NOT NULL DEFAULT ''
+									COMMENT 'Mail subject',
+	mail_contents 			LONGTEXT 			NOT NULL
+									COMMENT 'Mail contents',
+	mail_object 			LONGBLOB 			NOT NULL
+									COMMENT 'Mail object contents',
+
+	PRIMARY KEY 			( mail_id ),
+	KEY 				( mail_time ),
+	KEY 				( mail_sender(64) ),
+	KEY 				( mail_recipient(64) ),
+	KEY USING HASH 			( mail_tracking_buffer_id )
+    )  ENGINE = MyIsam CHARSET latin1 COMMENT 'Mail log' ;

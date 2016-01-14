@@ -11,8 +11,12 @@
         Christian Vigh, 11/2015.
 
     HISTORY
-    [Version : 1.0]    [Date : 2015/11/10]     [Author : CV]
+    [Version : 1.0]	[Date : 2015/11/10]     [Author : CV]
         Initial version.
+
+    [Version : 1.0.1]	[Date : 2016/01/14]     [Author : CV]
+	. Added the TrackingBufferId member.
+	. Added the MailLog() method.
 
  **************************************************************************************************************/
 namespace 	Thrak\Web ;
@@ -28,6 +32,7 @@ use	Thrak\Security\BlacklistedEmailTracker ;
 use	Thrak\Security\ErrorHandlers ;
 use	Thrak\Security\WaitErrorHandler ;
 use	Thrak\Security\HttpPageErrorHandler ;
+use	Thrak\Internet\Mail ;
 
 
 /*==============================================================================================================
@@ -38,11 +43,19 @@ use	Thrak\Security\HttpPageErrorHandler ;
   ==============================================================================================================*/
 class	WebSecurity		extends  Object
    {
+	// Mail type
+	const	MAIL_TYPE_CONTACT	=  0 ;			// Contact request
+
 	// Indicates whether http requests should be tracked or not
 	public		$TrackHttpRequests ;
 	// Indicates whether blacklisted domains and emails should be checked or not
 	public		$TrackedBlacklistedDomains,
 			$TrackedBlacklistedEmails ;
+	// Tracking buffer id allocated by the PageCheck() method
+	// This id is stored for example in the http_access and mail_log tables. It allows to identify records in
+	// different tables that have the same origin, although the original entry in the tracking_buffer table is
+	// lost.
+	public		$TrackingBufferId ;
 
 
 
@@ -149,6 +162,65 @@ class	WebSecurity		extends  Object
 
 
 	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        MailLog - Logs mail data
+	
+	    PROTOTYPE
+	        $WebSecurity -> MailLog ( $mail, $type   = WebSecurity::MAIL_TYPE_CONTACT, $success = true,
+						$error_message = null ) ;
+	
+	    DESCRIPTION
+	        Logs data coming from the specified mail.
+	
+	    PARAMETERS
+	        $mail (Thrak\Internet\Mail) -
+	                Mail whose contents are to be logged.
+
+		$type (integer) -
+			Mail type. The following constants are supported :
+			- WebSecurity::MAIL_TYPE_CONTACT :
+				The mail is a contact request.
+			Well, to tell the truth, any value between 0 and 255 is supported.
+
+		$success (boolean) -
+			A boolean value indicating whether the mail was successfully sent.
+
+		$error_message (string) -
+			Optional error message.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  MailLog ( $mail, $type = WebSecurity::MAIL_TYPE_CONTACT, $success = true, $error_message = null )
+	   {
+		global		$Database ;
+
+		$success		=  ( $success ) ?  "1" : "0" ;
+		$escaped_error_message	=  $Database -> Escape ( $error_message ) ;
+		$escaped_sender		=  $Database -> Escape ( $mail -> From ) ;
+		$escaped_recipient	=  $Database -> Escape ( $mail -> To [0] ) ;
+		$escaped_subject	=  $Database -> Escape ( $mail -> Subject ) ;
+		$escaped_contents	=  $Database -> Escape ( $mail -> Html ) ;
+		$escaped_object		=  $Database -> Escape ( serialize ( $mail ) ) ;
+		$query			=  "
+						INSERT INTO thrak_logs. mail_log
+						SET
+							mail_tracking_buffer_id		=  {$this -> TrackingBufferId},
+							mail_time			=  NOW(),
+							mail_type			=  $type,
+							mail_delivery_status		=  $success,
+							mail_delivery_status_message	=  '$escaped_error_message',
+							mail_sender			=  '$escaped_sender',
+							mail_recipient			=  '$escaped_recipient',
+							mail_subject			=  '$escaped_subject',
+							mail_contents			=  '$escaped_contents',
+							mail_object			=  '$escaped_object'
+					   " ;
+
+		$Database -> Execute ( $query ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
 	 
 	    NAME
 	        PageCheck - Security checkings on current page.
@@ -166,8 +238,8 @@ class	WebSecurity		extends  Object
 	   {
 		if  ( $this -> TrackHttpRequests )
 		   {
-			$tracker	=  new  HttpRequestTracker ( ) ;
-			$tracker -> Track ( ) ;
+			$tracker			=  new  HttpRequestTracker ( ) ;
+			$this -> TrackingBufferId	=  $tracker -> Track ( ) ;
 		    }
 
 		$this -> BlacklistedDomainCheck ( ) ;
