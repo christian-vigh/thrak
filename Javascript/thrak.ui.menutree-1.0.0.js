@@ -68,7 +68,7 @@
 
 				// Style each menu item
 				$widget. addClass ( "ui-menutree ui-thrak-menutree" ) ;
-				$('li', $widget). each ( this. _wrap_li ) ;	
+				$('>li', $widget). each ( this. _wrap_li ) ;	
 
 				// Collapse submenus
 				$('li>ul', $widget). css ( 'display', 'none' ) ;	
@@ -102,29 +102,46 @@
 			_wrap_li		:  function ( index, object )
 			   {
 				var	$this		=  $(object) ;
-				var	item		=  $this. textAt ( 0 ) ;
-				var	$children	=  $('>ul', $this). first ( ) ;
-				var	has_children	=  $('>ul', $this). length ;
+				var	$ul		=  $('>ul', $this). first ( ) ;
+				var	is_menu		=  ( $ul. length  >  0 ) ;
 				var	icon_class	=  '' ;
+
 
 				$this. addClass ( 'ui-menutree-item' ) ;
 
-				if  ( has_children  ===  0 ) 
-				   {
-					$this. addClass ( 'ui-menutree-single' ) ;
-					icon_class		=  'ui-menutree-icon-single' ;
-				    }
-				else
+				if  ( is_menu ) 
 				   {
 					$this. addClass ( 'ui-menutree-parent ui-menutree-item-collapsed' ) ;
 					icon_class		=  'ui-menutree-icon-parent' ;
 				    }
-				
-				if  ( $this. attr ( 'title' )  ===  undefined )
-					$this. attr ( 'title', item. text ( ). trim ( ) ) ;
+				else
+				   {
+					$this. addClass ( 'ui-menutree-single' ) ;
+					icon_class		=  'ui-menutree-icon-single' ;
+				    }
 
-				$children. addClass ( 'ui-menutree-children' ) ;
-				item [0]. replaceWith ( '<span class="ui-icon ui-menutree-icon ' + icon_class + '"></span><div>' + item. text ( ) + '</div>' ) ;
+				var	contents	=  '',
+					submenu		=  '' ;
+
+				$this. contents ( ). each
+				   (
+					function ( )
+					   {
+						var	$item		=  $(this) ;
+
+						if  ( submenu  ==  ''  &&  $item. tag ( )  ==  'ul' )
+							submenu		 =  $item. outerHtml ( ) ;
+						else
+							contents	+=  $item. outerHtml ( ) ;
+					    }
+				    ) ;
+
+				if  ( $this. attr ( 'item-title' )  ===  undefined )
+					$this. attr ( 'item-title', contents ) ;
+
+				$this. html ( '<span class="ui-icon ui-menutree-icon ' + icon_class + '"></span><div>' + contents + '</div>' + submenu ) ;
+				$('>ul', $this). first ( ). addClass ( 'ui-menutree-children' ) ;
+				$('li', $this). each ( arguments. callee ) ;	
 			    },
 
 
@@ -145,7 +162,7 @@
 				    }
 
 				if  ( this. options. titleSelector )
-					$(this. options. titleSelector). html ( obj. attr ( 'title' ) ) ;
+					$(this. options. titleSelector). html ( obj. attr ( 'item-title' ) ) ;
 
 				var	html		=  $(obj. attr ( 'href' ) ). html ( ) ;
 
