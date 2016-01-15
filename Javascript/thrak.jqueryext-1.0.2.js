@@ -47,7 +47,12 @@
 	$. fn. outerHtml	=  function ( html )
 	   { 
 		if  ( arguments. length  ===  0 )
-			return ( this [0]. outerHTML ) ; 
+		   {
+			if  ( this [0]. nodeType  ==  3 )
+				return ( this [0]. nodeValue ) ;
+			else
+				return ( this [0]. outerHTML ) ; 
+		    }
 		else
 			this. replaceWith ( html ) ;
 	    }
@@ -206,6 +211,17 @@
 	     } ;
 
 	__attr ( $. fn. attr ) ;
+
+
+	// tag -
+	//	Returns the name of the tag in lowercase for the specified node.
+	$. fn. tag	=  function ( index )
+	   {
+		if  ( this [0]. tagName )
+			return ( this [0]. tagName. toLowerCase ( ) ) ;
+		else
+			return ( undefined ) ;
+	    }
 
 
 	// killEvent -
