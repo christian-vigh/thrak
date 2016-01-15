@@ -87,6 +87,11 @@
 					language	=  arguments [0] ;
 					context 	=  arguments [1] ;
 				    }
+				else if  ( arguments [0]  ==  undefined  &&  typeof ( arguments [1] )  ==  'object' )
+				   {
+					language	=  $. locale ( ). language ;
+					context 	=  arguments [1] ;
+				    }
 				else
 					throw ( "You must specify a language string and a language options object when calling the thrak() function " +
 						"with two arguments." ) ;
