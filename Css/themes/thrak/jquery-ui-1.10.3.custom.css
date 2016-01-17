@@ -1752,7 +1752,7 @@ input.hasDatepicker
     
 .ui-menutree-single > .ui-menutree-icon-single
    {
-	background-image		:  none ;
+	background-position		:  1000px 1000px ;
     }
 
 .ui-menutree-parent.ui-menutree-item-collapsed > .ui-menutree-icon
