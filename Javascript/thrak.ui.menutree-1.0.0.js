@@ -53,6 +53,16 @@
 				if  ( typeof ( obj )  ==  'string' )
 					obj	=  $('li[href="' + obj + '"]' ) ;
 
+				// Recursively expand parent <ul>'s
+				var	parent_li	=  obj. parent ( ). closest ( 'li' ) ;
+
+				while  ( parent_li. length  >  0 )
+				   {
+					parent_li. removeClass ( 'ui-menutree-item-collapsed' ). addClass ( 'ui-menutree-item-expanded' ) ;
+					$('>ul', parent_li). css ( 'display', 'list-item' ) ;
+					parent_li	=  parent_li. parent ( ). closest ( 'li' ) ;
+				    }
+
 				this. options. instance. _click ( obj, null, false ) ; 
 				this. options. instance. _select ( obj ) ;
 			    },
@@ -82,7 +92,29 @@
 				//   collapse/expand state of the node is then changed, independently of whether it was the
 				//   active node or not.
 				$('li'     , $widget). click ( function ( e ) { $this_widget. _click ( $(this), e, false ) ; } ) ;
-				$('li span', $widget). click ( function ( e ) { $this_widget. _click ( $(this). parent (), e, true  ) ; } ) ;
+				$('li>span', $widget). click ( function ( e ) { $this_widget. _click ( $(this). parent (), e, true  ) ; } ) ;
+
+				// Links with the 'ui-menutree-goto' class will automatically select the specified menu tree id
+				// We need a listener on the whole document since contents are reassigned to the contentSelector option
+				// each time a click is made
+				$(document). ready
+				   (
+					function ( )
+					   {
+						$(document). on
+						   (
+							'click',
+							'a.ui-menutree-goto',
+							function  ( e )
+							   {
+								$this_widget. select ( $(this). attr ( 'href' ) ) ;
+								e. preventDefault ( ) ;
+
+								return ( true ) ;
+							    }
+						    ) ;
+					    }
+				    ) ;
 			    },
 
 
@@ -98,7 +130,9 @@
 			    },
 
 			// _wrap_li -
-			//	Transforms each list item into a stylable entry
+			//	Transforms each list item into a stylable entry.
+			//	Since the DOM is modified by this function, only the first-level descendents are handled
+			//	here. The function is then recursively called on inner children.
 			_wrap_li		:  function ( index, object )
 			   {
 				var	$this		=  $(object) ;
@@ -107,8 +141,12 @@
 				var	icon_class	=  '' ;
 
 
+				// Every <li> of a menu tree has the ui-menutree-item class
 				$this. addClass ( 'ui-menutree-item' ) ;
 
+				// <li> items that embed a <ul> will hve the ui-menutree-parent class. The ui-menutree-item-collapsed
+				// class is added by default, because submenu items do not appear.
+				// Other <li> items without <ul> will have the ui-menutree-single class.
 				if  ( is_menu ) 
 				   {
 					$this. addClass ( 'ui-menutree-parent ui-menutree-item-collapsed' ) ;
@@ -120,6 +158,7 @@
 					icon_class		=  'ui-menutree-icon-single' ;
 				    }
 
+				// For <li> items that have a submenu, isolate non <ul> contents
 				var	contents	=  '',
 					submenu		=  '' ;
 
@@ -136,12 +175,20 @@
 					    }
 				    ) ;
 
+				// The title for an <li> item is built from the non <ul> items within the <li>.
+				// However, a title can be specified through the "item-title" attribute
 				if  ( $this. attr ( 'item-title' )  ===  undefined )
 					$this. attr ( 'item-title', contents ) ;
 
+				// Wrap the <li> contents ; we have first an icon to display if the <li> has a submenu, then for convenience
+				// reasons, we wrap the non <ul> contents inside a <div>
 				$this. html ( '<span class="ui-icon ui-menutree-icon ' + icon_class + '"></span><div>' + contents + '</div>' + submenu ) ;
+
+				// If there is a submenu (<ul>), add the class ui-menutree-children to it
 				$('>ul', $this). first ( ). addClass ( 'ui-menutree-children' ) ;
-				$('li', $this). each ( arguments. callee ) ;	
+
+				// Recursively call this function if we have a submenu with <li> items
+				$('ul>li', $this). each ( arguments. callee ) ;	
 			    },
 
 
