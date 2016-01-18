@@ -112,7 +112,7 @@ abstract class  BufferedTracker		extends  Tracker
 		$type	=  ( count ( $argv ) ) ?  $argv [0] : 0 ;
 		$db	=  $this -> Database ;
 		$data	=  $db -> Escape ( $this -> GetRawData ( ) ) ;
-		$query	=  "INSERT DELAYED INTO " . self::TABLE_TRACKING_BUFFER . " SET data = '$data', type = $type" ;
+		$query	=  "INSERT INTO " . self::TABLE_TRACKING_BUFFER . " SET data = '$data', type = $type" ;
 		$db -> Execute ( $query ) ;
 
 		return ( $db -> GetLastInsertId ( ) ) ;
@@ -206,7 +206,7 @@ abstract class  UnbufferedTracker	extends  Tracker
 	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  Track ( )
 	   {
-		call_user_func_array ( [ $this, 'Log' ], func_get_args ( ) ) ;
+		return ( call_user_func_array ( [ $this, 'Log' ], func_get_args ( ) ) ) ;
 	    }
 
 
