@@ -218,7 +218,7 @@ class  ArrayHelpers		extends  Object
 		array, false otherwise.
 	
 	  ==============================================================================================================*/
-	public static function  __crossref_find ( $ref, $key, $compare_function )
+	private static function  __crossref_find ( $ref, $key, $compare_function )
 	   {
 		$index		=  0 ;
 		
