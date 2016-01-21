@@ -52,6 +52,9 @@
    [Version : 2.0.12]	[Date : 2015/12/28]		[Author : CV]
 	. Removed the call to __ExplodeStatements() for simple queries.
 
+   [Version : 2.0.13]	[Date : 2016/01/21]		[Author : CV]
+	. Added the $mono_statement parameter to Execute() and SetSimpleQuery().
+
  ***************************************************************************************************/
 namespace 	Thrak\Database ;
 
@@ -864,11 +867,11 @@ class	Database  extends  Object
 		the results are to be discarded.
 
 	 --------------------------------------------------------------------------------------------*/
-	public function  Execute ( $query )
+	public function  Execute ( $query, $mono_statement = true )
 	   {
 		$this -> __EnsureConnected ( ) ;
 
-		$this -> SetSimpleQuery ( $query ) ;
+		$this -> SetSimpleQuery ( $query, $mono_statement ) ;
 		$result		=  $this -> Query ( ) ;
 		
 		return ( $result ) ;
@@ -1668,12 +1671,12 @@ class	Database  extends  Object
 	    }
 
 
-	public function  SetSimpleQuery ( $sql ) 
+	public function  SetSimpleQuery ( $sql, $mono_statement = true ) 
 	   {
 		$this -> __EnsureConnected ( ) ;
 
 		$this -> SQLQuery 	=  $sql ;
-		$this -> IsSimpleQuery	=  true ;
+		$this -> IsSimpleQuery	=  $mono_statement ;
 		$this -> QueryLimit 	=  0 ;
 		$this -> QueryOffset	=  0 ;
 	    }
