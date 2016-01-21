@@ -14,6 +14,9 @@
     [Version : 1.0]	[Date : 2015/07/28]     [Author : CV]
         Initial version.
 
+    [Version : 1.1]		[Date : 2016/01/19]     [Author : CV]
+	. Some rewriting due to the optimizations on the BufferedOperation class.
+
  **************************************************************************************************************/
 namespace	Thrak\Database ;
 
@@ -36,10 +39,6 @@ use	Thrak\Database\BufferedOperation ;
   ==============================================================================================================*/
 class  BufferedLoadFile		extends  BufferedOperation
    {
-	// List of field names
-	public		$FieldNames ;
-	
-	
 	/*--------------------------------------------------------------------------------------------------------------
 	
 	    NAME
@@ -66,43 +65,14 @@ class  BufferedLoadFile		extends  BufferedOperation
 	 		Database object. If not specified, the global $Database object will be used.
 	
 	 *-------------------------------------------------------------------------------------------------------------*/
-	public function  __construct ( $table_name, $field_names, $buffer_size = 4096, $database = null )
+	public function  __construct ( $table_name, $field_names, $buffer_size = 4096, $db = null )
 	   {
 		global		$Database ;
 		
 		
-		parent::__construct ( $table_name, $buffer_size, $database ) ;
-		
-		$this -> FieldNames	=  $field_names ;
+		parent::__construct ( $table_name, $field_names, $buffer_size, $db ) ;
 	    }
-	
-	
-	/*--------------------------------------------------------------------------------------------------------------
-	
-	    NAME
-	        CanAddToQuery - Checks if a row can be added to a query.
-	
-	    PROTOTYPE
-	        $status =	$inserter -> CanAddToQuery ( $values ) ;
-	
-	    DESCRIPTION
-	       Checks if a row can be added to a query.
-	
-	    PARAMETERS
-	        $values (array) -
-	                Array of record values to be added to the buffer (key is field name, value is field value).
 
-	    RETURN VALUE 
-		Returns true if the row can be added to the query, false otherwise.
-	
-	 *-------------------------------------------------------------------------------------------------------------*/
-	protected function  CanAddToQuery ( &$values ) 
-	   {
-		$this -> ValidateFieldNames ( $this -> FieldNames, $values ) ;
-  		
-		return ( true ) ;
-	    }
-	
 
 	/*--------------------------------------------------------------------------------------------------------------
 	
@@ -110,38 +80,72 @@ class  BufferedLoadFile		extends  BufferedOperation
 	        BuildQuery - Builds the final query.
 	
 	 *-------------------------------------------------------------------------------------------------------------*/
+	private		$CsvFile		=  false ;
+
 	public function  BuildQuery ( )
 	   {
-		$rows	=  [] ;
-			
+		$csvfile	=  str_replace ( '\\', '/', tempnam ( sys_get_temp_dir ( ), "mys" ) . ".csv" ) ;
+		$fp		=  fopen ( $csvfile, "w" ) ;
+		$value		=  '' ;
+
 		// Collect rows and build csv file contents
+		$index		=  0 ;
+
 		foreach  ( $this -> Rows  as  $row )
 		   {
-			$values		=  [] ;
-				
-			foreach  ( $row  as  $field )
-				$values []	=   '"' . $this -> Database -> Escape ( $field ) . '"' ;
-				
-			$rows []	=  implode ( ';', $values ) ;
+			$first_field	=  true ;
+			$index ++ ;
+   
+			foreach  ( $this -> FieldNames  as  $field_name )
+			   {
+				if  ( ! $first_field )
+					$value		.=  ';' ;
+				else
+					$first_field	 =  false ;
+
+				// Check that the current field name has been specified for this row
+				if  ( isset ( $row [ 'columns' ] [ $field_name ] ) )
+					$value		.=  '"' . $this -> Database -> Escape ( $row [ 'columns' ] [ $field_name ] ) . '"' ;
+				else
+					error ( new \Thrak\System\DatabaseException ( "DbBufferedLoadFile : row #$index missing column '$field_name'." ) ) ;
+			    }
+			
+			$value	.=  "\n" ;
 		    }
 
-		$csvfile	=  "volatile://dbbuffer." . sprintf ( '%08X', rand ( 1, PHP_INT_MAX ) ) . ".csv" ;
-		$fp		=  fopen ( $csvfile, "w" ) ;
-
-		fwrite ( $fp, implode ( "\n", $rows ) ) ;
+		fwrite ( $fp, $value ) ;
 		fclose ( $fp ) ;
 
-		$csvfile	=  Path::ToUnix ( Path::RealPath ( $csvfile ) ) ;
-
 		// Build the query
-		$query		=  "
+		$query		 =  "
 					LOAD DATA LOCAL INFILE '$csvfile'
 					INTO TABLE {$this -> TableName}
-					FIELDS TERMINATED BY ';' OPTIONALLY ENCLOSED BY '\"'
+					FIELDS TERMINATED BY ';' 
+						OPTIONALLY ENCLOSED BY '\"'
+						ESCAPED BY '\"'
 					LINES  TERMINATED BY '\\n'
-				   " ;
-		$query	.= '(' . implode ( ',', $this -> FieldNames ) . ')' ;
+				    " ;
+		$query		.=  '(' . implode ( ',', $this -> FieldNames ) . ')' ;
+
+		// Remember the generated csv file for later cleaning
+		$this -> CsvFile =  $csvfile ;
 
 		return ( $query ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        Cleanup - Cleans up the temp file created by BuildQuery().
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  Cleanup ( )
+	   {
+		if  ( $this -> CsvFile )
+		   {
+			@unlink ( $this -> CsvFile ) ;
+			$this -> CsvFile	=  false ;
+		    }
 	    }
     }

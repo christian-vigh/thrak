@@ -22,6 +22,9 @@
     [Version : 1.0]    [Date : 2015/06/09]     [Author : CV]
         Initial version.
 
+    [Version : 1.1]		[Date : 2016/01/19]     [Author : CV]
+	. Some rewriting due to the optimizations on the BufferedOperation class.
+
  **************************************************************************************************************/
 namespace	Thrak\Database ;
 
@@ -45,15 +48,13 @@ use	Thrak\Database\BufferedOperation ;
   ==============================================================================================================*/
 class  BufferedUpdate		extends  BufferedOperation
    {
-	// Buffered update flags
-	const		UPDATE_FLAGS_BY_ID		=  1 ;			// No particular option
-	
+	// Fields used to identify the appropriate record in the WHERE clause
+	protected 	$WhereFieldNames ;
+	// Field names (not including WhereFieldNames)
+	protected	$UpdateFieldNames ;
 
-	// Id field name
-	public		$IdField ;
-	// Insert flags
-	public		$Flags ;
-	
+	protected	$InnerBufferSize		=  64 ;
+
 	
 	/*--------------------------------------------------------------------------------------------------------------
 	
@@ -61,8 +62,8 @@ class  BufferedUpdate		extends  BufferedOperation
 	        Constructor - Builds a BufferedInsert object
 	
 	    PROTOTYPE
-	        $inserter	=  new BufferedInsert ( $table_name, $id_field, $buffer_size = 100, 
-							$flags = self::UPDATE_FLAGS_BY_ID, $database = null ) ;
+	        $inserter	=  new BufferedInsert ( $table_name, $where_fields, $column_fields, $buffer_size = 100, 
+								$database = null ) ;
 	
 	    DESCRIPTION
 	        Builds a BufferedUpdate object.
@@ -71,154 +72,210 @@ class  BufferedUpdate		extends  BufferedOperation
 	        $table_name (string) -
 	                Name of the underlying table.
 	  
-	 	$id_field (string) -
-	 		Field names.
+	 	$where_fields (string or array of strings) -
+	 		Field names to be used for locating a row in a WHERE clause.
+
+		$column_fields (array of strings) -
+			Names of the fields to be updated.
 	  
 	 	$buffer_size (integer) -
 	 		Number of rows to be buffered before an INSERT statement is issued.
-	  
-	 	$flags (integer) -
-	 		A combination of the following flags :
-	 		- UPDATE_FLAGS_BY_ID :
-	 			Default value. Specifies that updates are based on the id field specified to the
-				constructor.
 	  
 	 	$database (Database) -
 	 		Database object. If not specified, the global $Database object will be used.
 	
 	 *-------------------------------------------------------------------------------------------------------------*/
-	public function  __construct ( $table_name, $id_field, $buffer_size = 100, $flags = self::UPDATE_FLAGS_BY_ID, $database = null )
+	public function  __construct ( $table_name, $where_fields, $field_names, $buffer_size = 100, $db = null )
 	   {
-		parent::__construct ( $table_name, $buffer_size, $database ) ;
+		if  ( ! is_array ( $where_fields ) )
+			$where_fields	=  [ $where_fields ] ;
+
+		parent::__construct ( $table_name, array_merge ( $where_fields, $field_names ), $buffer_size, $db ) ;
 		
-		$this -> IdField	=  $id_field ;
-		$this -> Flags		=  $flags ;
+		$this -> WhereFieldNames	=  $where_fields ;
+		$this -> UpdateFieldNames	=  $field_names ;
+		$this -> MultiQuery		=  true ;
+
+		if  ( $this -> InnerBufferSize  >  $this -> BufferSize )
+			$this -> InnerBufferSize	=  $this -> BufferSize ;
 	    }
 	
 	
 	/*--------------------------------------------------------------------------------------------------------------
 	
-	    NAME
-	        CanAddToQuery - Checks if a row can be added to a query.
-	
-	    PROTOTYPE
-	        $status		=  $updater -> AddToQuery ( $values ) ;
-	
-	    DESCRIPTION
-	        Checks if a row can be added to a query.
-	
-	    PARAMETERS
-	        $values (array) -
-	                An array whose keys are the value of the id field specified when calling the constructor. 
-			Each array element is an association of field names/values.
-			For example :
-			[
-				1 =>
-				   [
-					[ 'field1' => 'value1' ],
-					...
-					[ 'fieldn' => 'valuen' ]
-				    ],
-				...
-				n =>
-				   [
-					...
-				    ]
-			 ]
+	    getter and setter -
+		Gives readonly access to the following properties :
+		- WhereFieldNames
+		- UpdateFieldNames
 
-	    RETURN VALUE 
-		Returns true if the row can be added to the query, false otherwise.
-	
 	 *-------------------------------------------------------------------------------------------------------------*/
-	protected function  CanAddToQuery ( &$values ) 
+	public function  __get ( $member )
 	   {
-		foreach  ( $values  as  $key => $fields )
+		switch  ( $member )
 		   {
-			if  ( $this -> Flags  &  self::UPDATE_FLAGS_BY_ID )
-			   {
-				if  ( ! is_numeric ( $key ) )
-					error ( new \Thrak\System\RuntimeException ( "Expected a numeric key value, \"$key\" was supplied." ) ) ;
-
-				foreach ( $fields  as  $name => $value )
-				   {
-					if  ( ! is_string ( $name ) )
-						error ( new \Thrak\System\RuntimeException ( "Expected a database field name, \"$name\" was supplied." ) ) ;
-				    }
-			    }
+			case	'WhereFieldNames'	:  return ( $this -> WhereFieldNames ) ;
+			case	'UpdateFieldNames'	:  return ( $this -> UpdateFieldNames ) ;
+			default :
+				error ( new \Thrak\System\UndefinedPropertyException ( $member ) ) ;
 		    }
-
-		return ( true ) ;
 	    }
-	
 
+
+	public function  __set  ( $member, $value )
+	   {
+		switch  ( $member )
+		   {
+			case	'WhereFieldNames'	:
+			case	'UpdateFieldNames'	:
+				error ( new \Thrak\System\ReadOnlyPropertyException ( $member ) ) ;
+				break ;
+
+			default :
+				parent::__set ( $member, $value ) ;
+		    }
+	    }
+
+	
 	/*--------------------------------------------------------------------------------------------------------------
 	
 	    NAME
 	        BuildQuery - Builds the final query.
 	
 	 *-------------------------------------------------------------------------------------------------------------*/
-	public function  BuildQuery ( )
+	protected function  BuildQuery ( )
 	   {
-		if  ( $this -> Flags  &  self::UPDATE_FLAGS_BY_ID )
+		$single_key		=  ( count ( $this -> WhereFieldNames )  ==  1 ) ;
+		$super_query		=  '' ;
+		$row_count		=  count ( $this -> Rows ) ;
+		$not_first_inner_query	=  false ;
+
+		// Global loop : build UPDATE queries for InnerBufferSize rows, and catenate them until
+		// all the collected rows have been processed
+		for  ( $i = 0 ; $i < $row_count ; $i += $this -> InnerBufferSize )
 		   {
-			$query		=  "
-						UPDATE {$this -> TableName}
-						SET
-					   " ;
-			$ids		=  [] ;
-			$field_data	=  [] ;
+			if  ( $not_first_inner_query )
+				$super_query		.=  ";\n" ;
+			else
+				$not_first_inner_query	 =  true ;
 
-			// Loop through rows
-			foreach  ( $this -> Rows  as  $row )
+			// Build the SET clauses
+			$not_first_field	=  false ;
+			$escaped_key_rows	=  [] ;
+
+			$query			=  "UPDATE {$this -> TableName} SET\n" ;
+
+			foreach  ( $this -> UpdateFieldNames  as  $field_name )
 			   {
-				// Loop through field assignments : we will have to collect ids and values per field name
-				foreach  ( $row  as  $id => $fields )
+				if  ( $not_first_field )
+					$query			.=  ",\n" ;
+				else
+					$not_first_field	 =  true ;
+
+				$query			.=  "$field_name = CASE\n" ;
+				$not_first_id_field	 =  false ;
+
+				// Loop through buffered rows 
+				$index		=  0 ;
+				$upper_index	=  min ( $i + $this -> InnerBufferSize, $row_count ) ;
+
+				for ( $j = $i ; $j  <  $upper_index ; $j ++ )
 				   {
-					foreach  ( $fields  as  $name => $value )
+					$row			=  $this -> Rows [$j] ;
+					$not_first_id_field	=  false ;
+
+					$query		.=  'WHEN (' ;
+					$index ++ ;
+
+					// Each field in the WhereFieldNames array will generate a "WHEN ... THEN" subclause within  "CASE ... END"
+					foreach  ( $this -> WhereFieldNames  as  $id_name )
 					   {
-						if  ( ! in_array ( $id, $ids ) )
-							$ids []		=  $id ;
+						if  ( $not_first_id_field ) 
+							$query			.=  ' AND ' ;
+						else
+							$not_first_id_field	 =  true ;
 
-						$field_data [ $name ] [ 'ids' ] []	=  $id ;
-						$field_data [ $name ] [ 'values' ] []	=  $this -> Database -> Escape ( $value ) ;
+						// Check that the current key name has been specified for this row
+						if  ( isset ( $row [ 'keys' ] [ $id_name ] ) ) 
+							$escaped_key	=  $this -> Database -> Escape ( $row [ 'keys' ] [ $id_name ] ) ; 
+						else
+							error ( new \Thrak\System\DatabaseException (  "DbBufferedUpdate : row #$index missing key column '$id_name'." ) ) ;
+
+						// Add this key to the query 
+						$escaped_key_rows [ $index - 1 ] [ $id_name ]	 =  $escaped_key ;
+						$query						.=  "$id_name = '$escaped_key'" ;
 					    }
+
+					if  ( isset ( $row [ 'columns' ] [ $field_name ] ) ) 
+						$value		=  "'" . $this -> Database -> Escape ( $row [ 'columns' ] [ $field_name ] ) . "'" ;
+					else if  ( isset ( $row [ 'computed-columns' ] [ $field_name ] ) ) 
+						$value		=  $row [ 'computed-columns' ] [ $field_name ] ;
+					else
+						error ( new \Thrak\System\DatabaseException ( "DbBufferedUpdate : row #$index missing key column '$field_name'." ) ) ;
+
+					$query		.=  ") THEN $value\n" ;
 				    }
+
+				$query  .=  "END" ;
 			    }
 
-			// Part of the WHERE clause that selects all the ids
-			$where_ids	=  $this -> IdField . ' IN (' . implode ( ',', $ids ) . ')' ;
-
-			// Loop through each id/value pair per field name and build an assignment clause using CASE..WHEN construct
-			$case_data	=  [] ;
-
-			foreach  ( $field_data  as  $field => $data )
+			// Second loop : build the WHERE clause. Two cases are distinguished :
+			// - The key only uses one field. The WHERE clause will contain only one part :
+			//	WHERE key IN ( list )
+			// - The key covers several fields. The WHERE clause will contain several subparts :
+			//	WHERE
+			//		( key1 = kv11 AND key2 = kv12 AND ... keyn = kv1n ) OR
+			//		( key1 = kv21 AND key2 = kv22 AND ... keyn = kv2n ) OR
+			if  ( $single_key )
 			   {
-				$when_data	=  [] ;
-				$assignment	=  "\n$field = CASE" ;
-				$count		=  count ( $data [ 'ids' ] ) ;
-			
-				for  ( $i = 0 ; $i < $count ; $i ++ )
-				   {
-					$id		=  $data [ 'ids' ] [$i] ;
-					$value		=  $data [ 'values' ] [$i] ;
+				reset ( $this -> WhereFieldNames ) ;
+				$where_clause		=  current ( $this -> WhereFieldNames ) . ' IN (' ;
+				$not_first_clause	=  false ;
 
-					$when_data []	=  "WHEN {$this -> IdField} = $id THEN '$value'" ;
+				foreach  ( $escaped_key_rows  as  $key_row ) 
+				   {
+					if  ( $not_first_clause )
+						$where_clause		.=  ',' ;
+					else
+						$not_first_clause	 =  true ;
+
+					$where_clause	.=  current ( $key_row ) ;
 				    }
 
-				$assignment	.=  "\n\t" . implode ( "\n\t", $when_data ) ;
-				$case_data []	 =  $assignment . "\nEND" ;
+				$where_clause	.=  ')' ;
+			    }
+			else
+			   {
+				$where_clause		=  '' ;
+				$not_first_clause	=  false ;
+
+				foreach  ( $escaped_key_rows  as  $key_row ) 
+				   {
+					if  ( $not_first_clause )
+						$where_clause		.=  ' OR ' ;
+					else
+						$not_first_clause	 =  true ;
+
+					$where_clause		.=  '(' ;
+					$first_field		 =  true ;
+
+					foreach ( $this -> WhereFieldNames  as  $key_field )
+					   {
+						if  ( ! $first_field )
+							$where_clause	.=  ' AND ' ;
+						else
+							$first_field	 =  false ;
+
+						$where_clause	.=  $key_field . "='" . $key_row [ $key_field ] . "'" ;
+					    }
+
+					$where_clause		.=  ')' ;
+				    }
 			    }
 
-			// Build the final query
-			$cases   =  implode ( ',', $case_data ) ;
-			$query	.=  "
-					$cases
-					WHERE 
-						$where_ids
-				    " ;
+			// Final query
+			$super_query	.=  "\n$query\nWHERE $where_clause" ;
+		    }
 
-			// All done, return 
-			return ( $query ) ;
-		   }
+		return ( $super_query ) ;
 	    }
     }

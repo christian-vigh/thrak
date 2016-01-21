@@ -39,14 +39,23 @@ use     Thrak\Types\ArrayHelpers ;
   ==============================================================================================================*/
 abstract class  BufferedOperation	extends  Object
    {
-	// Related database table
-	public		$TableName ;
+ 	// Related database table
+	protected		$TableName ;
 	// Number of rows to be buffered before being flushed through an INSERT statement
-	public		$BufferSize ;
+	protected		$BufferSize ;
 	// Database object
-	public		$Database ;
+	protected		$Database ;
+	// List of field names
+	protected		$FieldNames ;
 	// Buffered rows
-	public		$Rows		=  [] ;
+	protected		$Rows		=  [] ;
+	// To be set by derived classes if a mysqli_multi_query() should be used instead of mysql_query()
+	protected		$MultiQuery	=  false ;
+	// This is a little optimization that allows to gain a few cycles ; normally, count ( $this -> Rows ) could be
+	// called whenever we need to check if a flush operation is needed. However, since the only operations performed
+	// on the Rows array are appending a new item to it or setting it to an empty array, it is faster to manage a
+	// counter
+	private			$RowCount	=  0 ;
 
 
 	/*--------------------------------------------------------------------------------------------------------------
@@ -55,7 +64,7 @@ abstract class  BufferedOperation	extends  Object
 	        Constructor - Builds a BufferedOperation object
 	
 	    PROTOTYPE
-	        $inserter	=  new BufferedOperation ( $table_name, $buffer_size = 1024, $database = null ) ;
+	        $inserter	=  new BufferedOperation ( $table_name, $field_names, $buffer_size = 100, $database = null ) ;
 	
 	    DESCRIPTION
 	        Builds a BufferedInsert object.
@@ -67,20 +76,18 @@ abstract class  BufferedOperation	extends  Object
 	 	$buffer_size (integer) -
 	 		Number of rows to be buffered before an INSERT statement is issued.
 	  
-	 	$database (Database) -
+	 	$database (Database object) -
 	 		Database object. If not specified, the global $Database object will be used.
 	
 	 *-------------------------------------------------------------------------------------------------------------*/
-	public function  __construct ( $table_name, $buffer_size = 100, $database = null )
+	public function  __construct ( $table_name, $field_names, $buffer_size = 100, $db = null )
 	   {
-		global		$Database ;
-		
-		
-		parent::__construct ( ) ;
-		
+		global	$Database ;
+
 		$this -> TableName	=  $table_name ;
+		$this -> FieldNames	=  $field_names ;
 		$this -> BufferSize	=  $buffer_size ;
-		$this -> Database	=  ( $database ) ?  $database : $Database ;
+		$this -> Database	=  ( $db ) ?  $db : $Database ;
 	    }
 	
 
@@ -95,6 +102,50 @@ abstract class  BufferedOperation	extends  Object
 		$this -> Flush ( ) ;
 	    }
 	
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    getter and setter -
+		Gives readonly access to the following properties :
+		- Table
+		- BufferSize
+		- Database
+		- FieldNames
+		- Rows
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __get ( $member )
+	   {
+		switch  ( $member )
+		   {
+			case	'Table'		:  return ( $this -> Table ) ;
+			case	'BufferSize'	:  return ( $this -> BufferSize ) ;
+			case	'Database'	:  return ( $this -> Database ) ;
+			case	'FieldNames'	:  return ( $this -> FieldNames ) ;
+			case	'Rows'		:  return ( $this -> Rows ) ;
+			default :
+				trigger_error ( "Undefined property '$member'." ) ;
+		    }
+	    }
+
+
+	public function  __set  ( $member, $value )
+	   {
+		switch  ( $member )
+		   {
+			case	'Table'		:
+			case	'BufferSize'	:
+			case	'Database'	:
+			case	'FieldNames'	:
+			case	'Rows'		:
+				error ( new \Thrak\System\ReadOnlyPropertyException ( $member ) ) ;
+				break ;
+
+			default :
+				error ( new \Thrak\System\UndefinedPropertyException ( $member ) ) ;
+		    }
+	    }
+
 	
 	/*--------------------------------------------------------------------------------------------------------------
 	
@@ -118,7 +169,7 @@ abstract class  BufferedOperation	extends  Object
 	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  Add ( $values ) 
 	   {
-		if  ( count ( $this -> Rows )  >=  $this -> BufferSize )
+		if  ( $this -> RowCount  >=  $this -> BufferSize )
 		   {
 			$this -> Flush ( ) ;
 			$flush_status		=  true ;
@@ -126,13 +177,28 @@ abstract class  BufferedOperation	extends  Object
 		else 
 			$flush_status		=  false ;
 
-		if  ( $this -> CanAddToQuery ( $values ) ) 
-			$this -> Rows []	=  $values ;
-		
+		$this -> Rows []	=  $values ;
+		$this -> RowCount ++ ;
 
 		return ( $flush_status ) ;
 	    }
 	
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        Cleanup - Cleans any data after a flush has been performed.
+	
+	    PROTOTYPE
+	        $buffer -> Cleanup ( ) ;
+	
+	    DESCRIPTION
+	        Flushes the currently buffered records.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  Cleanup ( )
+	   { }
+
 
 	/*--------------------------------------------------------------------------------------------------------------
 	
@@ -148,14 +214,29 @@ abstract class  BufferedOperation	extends  Object
 	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  Flush ( )
 	   {
-		if  ( count ( $this -> Rows ) )
+		if  ( $this -> RowCount )
 		   {
 			$query		=  $this -> BuildQuery ( ) ;
 
 			if  ( $query )
-				$this -> Database -> Execute ( $query ) ;
+			   {
+				try 
+				   {
+					$this -> Database -> Execute ( $query, ! $this -> MultiQuery ) ;
+				    }
+				catch ( Exception $e )
+				   {
+					$this -> Cleanup ( ) ;
+					error ( $e ) ;
+				    }
 
-			$this -> Rows	=  [] ;
+				$this -> Cleanup ( ) ;
+			    }
+			else
+				$this -> Cleanup ( ) ;
+
+			$this -> Rows		=  [] ;
+			$this -> RowCount	=  0 ;
 
 			return ( true ) ;
 		    }
@@ -164,44 +245,6 @@ abstract class  BufferedOperation	extends  Object
 	    }
 
 
-	// Checks if an item can be added to the final query. Values can be modified on the fly by the derived class.
-	abstract protected function  CanAddToQuery ( &$values ) ;
-
 	// Builds the final query
 	abstract protected function  BuildQuery ( ) ;
-
-
-	/*--------------------------------------------------------------------------------------------------------------
-	 
-	    ValidateFieldNames -
-		A helper function for derived classes that accept a field name list in their constructor.
-		It checks that the field names specified when calling the Add() method exactly match the ones specified
-		in the constructor.
-
-	 *-------------------------------------------------------------------------------------------------------------*/
-	protected function  ValidateFieldNames ( $names, $values )
-	   {
-		if  ( ! is_array ( $values )  ||  count ( $values )  !=  count ( $this -> FieldNames ) )
-			error ( new \Thrak\System\RuntimeException ( "Supplied value must be an array of " . count ( $this -> FieldNames ) . " values" ) ) ;
-
-		$status		=  ArrayHelpers::CrossReference ( $names, $values, $missing, $extra ) ;
-		
-		if  ( ! $status )
-		   {
-			$parts		=  [] ;
-			
-			if  ( count ( $missing ) )
-				$parts []	=  "The following fields are missing from the supplied values : " .	
-							implode ( ', ', $missing ) . '.' ;
-			
-			if  ( count ( $extra ) )
-				$parts []	=  "The following fields do not belong to the list of authorized fields : " .
-							implode ( ', ', array_keys ( $extra ) ) . '.' ;
-			
-			$message	=  implode ( "\n", $parts ) ;
-			
-			error ( new \Thrak\System\RuntimeException ( $message ) ) ;
-		    }
-	    }
-
     }
