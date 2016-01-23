@@ -72,6 +72,9 @@
     [Version : 2.0.10]		[Date : 2016/01/13]		[Author : CV]
 	. Corrected the Summary() method : the first words of the singular form were not put in the
 	  plural form.
+
+    [Version : 2.0.11]		[Date : 2016/01/26]		[Author : CV]
+	. Changed the meaning of the "format" attribute : it is now a callback function.
   
  ***************************************************************************************************/
 namespace 	Thrak\IO ;
@@ -185,11 +188,14 @@ class  AsciiReportColumn	extends Object
            {
 		if  ( $this -> FormatCode )
                    {
+			/*
 			$value = preg_replace ( '/\!/',
 					'"' . addslashes ( $value ) . '"',
 					$this -> FormatCode ) ;
 
 			eval ( '$value = ' . "$value ;" ) ;
+			*/
+			$value	=  call_user_func_array ( $this -> FormatCode, [ $value ] ) ;
                     }
 		
 		return ( $value ) ;
@@ -421,7 +427,7 @@ class  AsciiReport		extends  Object
 					 isset ( $def [ 'title'		] ) ? $def [ 'title'	] : '',
 					 isset ( $def [ 'align'		] ) ? $def [ 'align'	] : '',
 					 isset ( $def [ 'width'		] ) ? $def [ 'width'	] : '',
-					 isset ( $def [ 'code'		] ) ? $def [ 'code'	] : '',
+					 isset ( $def [ 'format'	] ) ? $def [ 'format'	] : '',
 					 isset ( $def [ 'overflow'	] ) ? $def [ 'overflow' ] : ''
 								) ;
 			$defs [] = $coldef ;
