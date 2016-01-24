@@ -302,3 +302,38 @@ CREATE TABLE 	mail_log
 	KEY 				( mail_recipient(64) ),
 	KEY USING HASH 			( mail_tracking_buffer_id )
     )  ENGINE = MyIsam CHARSET latin1 COMMENT 'Mail log' ;
+
+    
+/*==============================================================================================================
+
+    downloadable_files -
+        Holds download history.
+
+  ==============================================================================================================*/
+DROP TABLE IF EXISTS  download_history ;
+
+CREATE TABLE 	download_history 
+   (
+	download_id 			INT UNSIGNED 			NOT NULL AUTO_INCREMENT
+									COMMENT 'Unique id for this entry',
+	download_path 			VARCHAR(1024)			NOT NULL DEFAULT ''
+									COMMENT 'Path of downloaded file',
+	download_filename 		VARCHAR(256) 			NOT NULL DEFAULT ''
+									COMMENT 'Filename displayed to the user',
+	download_size 			INT UNSIGNED 			NOT NULL DEFAULT 0
+									COMMENT 'Downloaded file size',
+	download_filemtime 		DATETIME 			NOT NULL DEFAULT '0000-00-00 00:00:00'
+									COMMENT 'Last modification time for downloaded file',
+	download_ip 			CHAR(39)			NOT NULL DEFAULT ''
+									COMMENT 'Downloader ip address',
+	download_email 			VARCHAR(1024) 			NOT NULL DEFAULT ''
+									COMMENT 'Downloader email',
+	download_time 			DATETIME 			NOT NULL DEFAULT '0000-00-00 00:00:00'
+									COMMENT 'File download time',
+	download_tracking_buffer_id 	INT UNSIGNED 			NOT NULL DEFAULT 0
+									COMMENT 'Tracking buffer id',
+													
+	PRIMARY KEY 			( download_id ),
+	KEY 				( download_time )
+    )  ENGINE = MyIsam CHARSET latin1 COMMENT 'Download history' ;
+ 
