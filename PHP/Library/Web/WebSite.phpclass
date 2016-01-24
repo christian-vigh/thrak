@@ -30,6 +30,7 @@ use	Thrak\Web\UploadedFiles ;
 use	Thrak\Web\Cookies ;
 use	Thrak\Web\ConditionalHtml ;
 use	Thrak\Security\Session ;
+use	Thrak\Web\WebScript ;
 
 
 /*==============================================================================================================
@@ -242,6 +243,39 @@ class  WebSite			extends	Object
 		
 		// Cookies
 		$_COOKIE	=  new Cookies ( ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        method - summary
+	
+	    PROTOTYPE
+	        prototype
+	
+	    DESCRIPTION
+	        description
+	
+	    PARAMETERS
+	        $param (type) -
+	                description
+	
+	    RETURN VALUE
+	        description
+	
+	    NOTES
+	        description
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  Dispatch ( )
+	   {
+		global		$Script ;
+
+		$operation	=  isset ( $_POST [ 'operation' ] ) ?  basename ( ( string ) $_POST [ 'operation' ] ) :  '' ;
+
+		$Script		=  new WebScript ( $operation ) ;
+		echo ( $Script -> Run ( ) ) ;
 	    }
 
 
