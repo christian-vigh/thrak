@@ -35,6 +35,9 @@
 
     [Version : 1.0.7]	[Date : 2015/11/22]     [Author : CV]
 	. Added the MultiSort() method.
+
+    [Version : 1.0.8]	[Date : 2016/01/24]     [Author : CV]
+	. Added the Utf8Encode()/Utf8Decode() methods.
   
  **************************************************************************************************************/
 namespace 	Thrak\Types ;
@@ -834,5 +837,42 @@ class  ArrayHelpers		extends  Object
 			sort ( $result, SORT_FLAG_CASE | SORT_STRING ) ;
 
 		return ( $result ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        Utf8Encode, Utf8Decode - Recursively encodes/decodes array values in UTF8.
+	
+	    PROTOTYPE
+	        ArrayHelper::Utf8Encode ( &$array ) ;
+	
+	    DESCRIPTION
+	        Recursively encodes/decodes array values to and from UTF8.
+	
+	    PARAMETERS
+	        $array (array) -
+	                Array to be encoded/decoded.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public static function  Utf8Encode ( &$array )
+	   {
+		array_walk_recursive
+		   (
+			$array,
+			function  ( &$item, &$key )
+			   { $item	=  utf8_encode ( $item ) ; }
+		    ) ;
+	    }
+
+	public static function  Utf8Decode ( &$array )
+	   {
+		array_walk_recursive
+		   (
+			$array,
+			function  ( &$item, &$key )
+			   { $item	=  utf8_decode ( $item ) ; }
+		    ) ;
 	    }
     }
