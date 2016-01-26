@@ -249,23 +249,16 @@ class  WebSite			extends	Object
 	/*--------------------------------------------------------------------------------------------------------------
 	
 	    NAME
-	        method - summary
+	        Dispatch - dispatches a request
 	
 	    PROTOTYPE
-	        prototype
+	        $WebSite -> Dispatch ( ) ;
 	
 	    DESCRIPTION
-	        description
-	
-	    PARAMETERS
-	        $param (type) -
-	                description
-	
-	    RETURN VALUE
-	        description
-	
-	    NOTES
-	        description
+	        Dispatches a POST request. The $_POST array must contain an 'operation' parameter, which specifies the
+		script to be executed.
+		The script itself must be a .php script located in the path referenced by the Site/script-root
+		configuration option.
 	
 	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  Dispatch ( )
@@ -276,6 +269,73 @@ class  WebSite			extends	Object
 
 		$Script		=  new WebScript ( $operation ) ;
 		echo ( $Script -> Run ( ) ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        Download - Downloads a file.
+	
+	    PROTOTYPE
+	        $WebSite -> Download ( $file, $name = null, $local = true, $root = null ) ;
+	
+	    DESCRIPTION
+	        Downloads the specified file.
+	
+	    PARAMETERS
+	        $file (string or Sanitizer object) -
+	                File to be downloaded.
+
+		$name (string or Sanitizer object) -
+			File name, as will be presented to the user. The default is the basename
+
+		$local (boolean) -
+			When true, only files local to the website can be downloaded.
+
+		$root (string) -
+			When specified, indicates the root of the file to be downloaded, otherwise the configuration
+			option Site/download-root will be taken.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  Download ( $file, $name = null, $local = true, $root = null )
+	   {
+		global		$Configuration ;
+
+		if  ( is_string ( $file ) )
+			$file	=  Sanitizer::Wrap ( $file ) ;
+
+		if  ( ! $root )
+			$root	=  $Configuration -> Get ( 'Site/download-root' ) ;
+
+		$filename	=  $file -> file ( [ 'existing' => true, 'local' => $local, 'root' => $root ] ) ;
+
+		if  ( ! $filename )
+		   {
+			echo ( "File not found." ) ;
+			return ;
+		    }
+
+		$name	=  ( string ) $name ;
+
+		if  ( $name  == null )
+			$name	=  basename ( $filename ) ;
+
+		$command	=  "file -b --mime-type '" . $filename . "'" ;
+		exec ( $command, $output, $status ) ;
+
+		if ( $status  ==  0 )
+			$content_type	=  $output [0] ;
+		else
+			$content_type	=  'application/octet-stream' ;
+
+		@ob_clean ( ) ;
+		header ( "Content-Type: $content_type" ) ;
+		header ( "Content-Transfer-Encoding: Binary" ) ;
+		header ( "Content-length: " . filesize ( $filename ) ) ;
+		header ( "Content-disposition: attachment; filename=\"$name\""); 
+		echo readfile ( $filename ) ;
+		@ob_end_flush ( ) ;
 	    }
 
 
