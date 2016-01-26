@@ -127,27 +127,18 @@
 						// hashchange events are fired in two situations :
 						// - the window.location.hash member is assigned a new value
 						// - the user navigates back and forth the history ; in this case, the new hash gives the id
-						//   of the element currently selected in the target page. Since we use the select() function
-						//   to artifically render the selected element of the menu tree, we need a way to tell it
-						//   "don't change the hash value again" ; hence the 'hash-changed' property of the last manually
-						//   selected item
-						//
-						// For information, I tried to set a property (options.manualHashChange) in the _click() function 
-						// instead of an attribute, then reuse it here through the $this_widget.options object. 
-						// Fuck, once again this crappy javascript shits on us due to its arcane binding rules. The property
-						// changed in _click(), although visible here, will never seem to get changed.
-						// Looks like there are bindings for dom events or jquery, and bindings for the poor...
+						//   of the element currently selected in the target page. 
 						$(window). on
 						   (
 							'hashchange',
 							function ( )
 							   {
-								var	hash_origin	=  $('[hash-changed="1"]') ;
-
-								if  ( hash_origin. length  ==  0 )
-									$this_widget. select ( window. location. hash ) ;
-								else
-									hash_origin. removeAttr ( 'hash-changed' ) ;
+								var	obj	=  $('li[href="' + window. location. hash + '"]' ) ;
+								var	$this	=  $this_widget. options. instance
+								
+								$('li', $widget). removeClass ( 'ui-menutree-item-active' ) ;
+								obj. addClass ( 'ui-menutree-item-active' ) ;
+								$this. _select ( obj ) ;
 							    }
 						    ) ;
 					    }
@@ -290,8 +281,7 @@
 				if  ( ! force_collapse )
 					this. _select ( $this ) ; 
 
-				// Set the new url hash value only if we are not called because the user navigated through the history
-				$this. attr ( 'hash-changed', '1' ) ;
+				// Set the new url hash value
 				window. location. hash		=  $this. attr ( 'href' ) ;
 			    }
 		 }
