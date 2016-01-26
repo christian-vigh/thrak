@@ -10,13 +10,18 @@
           Christian Vigh, 12/2015.
   
       HISTORY
-      [Version : 1.0]	[Date : 2015/12/04]     [Author : CV]
+      [Version : 1.0]		[Date : 2015/12/04]     [Author : CV]
           Initial version.
+
+      [Version : 1.0.0.1]	[Date : 2015/01/26]     [Author : CV]
+	. Added support for updating the hash part of the current url to reflect the currently selected option.
   
    **************************************************************************************************************/
 
  ( function ( $ )
    {
+	var		manualHashChange		=  false ;
+
 	$. widget 
 	   (
 		'thrak.menutree',
@@ -48,10 +53,14 @@
 
 			// select -
 			//	Called when a tree item is selected by the user.
-			select		:  function  ( obj )
+			select		:  function  ( id, use_hash )
 			   { 
-				if  ( typeof ( obj )  ==  'string' )
-					obj	=  $('li[href="' + obj + '"]' ) ;
+				// Use the hash part of the url if 'use_hash' is true
+				if ( use_hash  ===  true  &&  window. location. hash. length  >  0 )
+					id	=  window. location. hash ;
+
+				// Get a reference to the <li> item having this id
+				var	obj	=  $('li[href="' + id + '"]' ) ;
 
 				// Recursively expand parent <ul>'s
 				var	parent_li	=  obj. parent ( ). closest ( 'li' ) ;
@@ -74,7 +83,7 @@
 				var	$this_widget	=  this ;
 				var	$widget		=  this. element ;
 
-				this. options. instance		=  $this_widget ;
+				this. options. instance			=  $this_widget ;
 
 				// Style each menu item
 				$widget. addClass ( "ui-menutree ui-thrak-menutree" ) ;
@@ -94,13 +103,14 @@
 				$('li'     , $widget). click ( function ( e ) { $this_widget. _click ( $(this), e, false ) ; } ) ;
 				$('li>span', $widget). click ( function ( e ) { $this_widget. _click ( $(this). parent (), e, true  ) ; } ) ;
 
-				// Links with the 'ui-menutree-goto' class will automatically select the specified menu tree id
-				// We need a listener on the whole document since contents are reassigned to the contentSelector option
-				// each time a click is made
+				// Install event handler
 				$(document). ready
 				   (
 					function ( )
 					   {
+						// Links with the 'ui-menutree-goto' class will automatically select the specified menu tree id
+						// We need a listener on the whole document since contents are reassigned to the contentSelector option
+						// each time a click is made
 						$(document). on
 						   (
 							'click',
@@ -111,6 +121,25 @@
 								e. preventDefault ( ) ;
 
 								return ( true ) ;
+							    }
+						    ) ;
+
+						// hashchange events are fired in two situations :
+						// - the window.location.hash member is assigned a new value
+						// - the user navigates back and forth the history ; in this case, the new hash gives the id
+						//   of the element currently selected in the target page. Since we use the select() function
+						//   to artifically render the selected element of the menu tree, we need a way to tell it
+						//   "don't change the hash value again" ; hence the preventHashChange property.
+						$(window). on
+						   (
+							'hashchange',
+							function ( )
+							   {
+								if  ( ! manualHashChange )
+								   {
+									alert ( "new hash " + window.location.hash + " change = " + manualHashChange) ;
+									$this_widget. select ( window. location. hash ) ;
+								    }
 							    }
 						    ) ;
 					    }
@@ -252,12 +281,12 @@
 
 				if  ( ! force_collapse )
 					this. _select ( $this ) ; 
+
+				// Set the new url hash value only if we are not called because the user navigated through the history
+				window. location. hash		=  $this. attr ( 'href' ) ;
 			    }
-
-
 		 }
 	    ) ;
-
 
     } ( jQuery ) ) ;
 
