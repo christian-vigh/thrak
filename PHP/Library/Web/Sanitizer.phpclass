@@ -109,6 +109,19 @@
 		Applies to email values. No special option is needed.
 		The function returns false if the supplied value is not a valid email.
 
+	- file :
+		Applies to file values. The following options are available :
+
+		- existing (boolean) :
+			The function will return false if the string value does not represent a valid filename.
+
+		- local (boolean) :
+			When true, the file must be local to the specified root.
+
+		- root (string) :
+			The string value will be evaluated relatively to the path specified by the 'root' 
+			option. False will be returned if the file points outside the specified root.
+
     AUTHOR
         Christian Vigh, 06/2015.
 
@@ -118,6 +131,9 @@
 
     [Version : 1.0.1]	[Date : 2015/11/02]     [Author : CV]
 	. Added the email() value-retrieval function.
+
+    [Version : 1.0.2]	[Date : 2016/01/26]     [Author : CV]
+	. Added the file() value-retrieval function.
 
  **************************************************************************************************************/
 namespace 	Thrak\Web ;
@@ -134,6 +150,7 @@ use	Thrak\Types\ObjectWrapper ;
 use	Thrak\Internet\Xml\Utilities ;
 use	Thrak\Html\HtmlCleaner ;
 use	Thrak\Database ;
+use	Thrak\IO\Path ;
 
 
 /*==============================================================================================================
@@ -239,6 +256,12 @@ class  ScalarSanitizer	extends  ScalarWrapper
 			//	Validates an email.
 			case	'email' :
 				$value	=  $this -> __get_email ( $value, $args, $global_defaults ) ;
+				break ;
+
+			// file -
+			//	Treats the string value as a filename.
+			case	'file' :
+				$value	=  $this -> __get_file ( $value, $args, $global_defaults ) ;
 				break ;
 		    }
 		
@@ -505,6 +528,50 @@ class  ScalarSanitizer	extends  ScalarWrapper
 		    }
 
 		return ( $email_value ) ;
+	    }
+
+
+	// __get_file -
+	//	Handles file names.
+	private function  __get_file ( $value, $args, $global_defaults ) 
+	   {
+		global		$WebSite ;
+
+		$parameters	=  $this -> __get_args 
+		   ( 
+			$args, 
+			[
+				'local'		=>  false,
+				'existing'	=>  true,
+				'root'		=>  false
+			 ],
+			$global_defaults
+		    ) ;
+
+		$root		=  $parameters [ 'root' ] ;
+		$local		=  $parameters [ 'local' ] ;
+		$existing	=  $parameters [ 'existing' ] ;
+ 
+		if  ( $root )
+			$value	=  Path::AppendDS ( $root ) . $value ;
+
+		if  ( $local ) 
+			$value	=  $WebSite -> Root . $value ;
+
+		$path	=  Path::ToUnix ( Path::RealPath ( $value ) ) ;
+
+		if  ( $existing  &&  ! file_exists ( $path ) )
+			return ( false ) ;
+
+		if  ( $local )
+		   {
+			$cmpfunc	=  ( IS_WINDOWS ) ?  'strncasecmp' : 'strncmp' ;
+
+			if  ( $cmpfunc ( $WebSite -> Root, $path, strlen ( $WebSite -> Root ) ) )
+				return ( false ) ;
+		    }
+
+		return ( $path ) ;
 	    }
     }
 
