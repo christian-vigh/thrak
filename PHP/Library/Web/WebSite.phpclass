@@ -300,7 +300,7 @@ class  WebSite			extends	Object
 	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  Download ( $file, $name = null, $local = true, $root = null )
 	   {
-		global		$Configuration ;
+		global		$Configuration, $Database, $WebSecurity ;
 
 		if  ( is_string ( $file ) )
 			$file	=  Sanitizer::Wrap ( $file ) ;
@@ -329,13 +329,36 @@ class  WebSite			extends	Object
 		else
 			$content_type	=  'application/octet-stream' ;
 
+		$filesize	=  filesize ( $filename ) ;
+
 		@ob_clean ( ) ;
 		header ( "Content-Type: $content_type" ) ;
 		header ( "Content-Transfer-Encoding: Binary" ) ;
-		header ( "Content-length: " . filesize ( $filename ) ) ;
+		header ( "Content-length: $filesize" ) ;
 		header ( "Content-disposition: attachment; filename=\"$name\""); 
 		echo readfile ( $filename ) ;
 		@ob_end_flush ( ) ;
+
+		$escaped_filename	=  $Database -> Escape ( $filename ) ;
+		$escaped_name		=  $Database -> Escape ( $name ) ;
+		$filemtime		=  date ( 'Y-m-d H:i:s', filemtime ( $filename ) ) ;
+		$ip			=  $Database -> Escape ( $_SERVER [ 'REMOTE_ADDR' ] ) ;
+		$email			=  '' ;
+		$tracking_buffer_id	=  $WebSecurity -> TrackingBufferId ;
+
+		$query			=  "
+						INSERT INTO thrak_logs.download_history
+						SET
+							download_path			=  '$escaped_filename',
+							download_filename		=  '$escaped_name',
+							download_size			=  $filesize,
+							download_filemtime		=  '$filemtime',
+							download_ip			=  '$ip',
+							download_email			=  '$email',
+							download_time			=  NOW(),
+							download_tracking_buffer_id	=  $tracking_buffer_id
+					   " ;
+		$Database -> Execute ( $query ) ;
 	    }
 
 
