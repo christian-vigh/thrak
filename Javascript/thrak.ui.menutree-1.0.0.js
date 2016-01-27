@@ -136,8 +136,23 @@
 								var	obj	=  $('li[href="' + window. location. hash + '"]' ) ;
 								var	$this	=  $this_widget. options. instance
 								
-								$('li', $widget). removeClass ( 'ui-menutree-item-active' ) ;
+								// Recursively expand parent <ul>'s
+								var	parent_li	=  obj. parent ( ). closest ( 'li' ) ;
+
+								while  ( parent_li. length  >  0 )
+								   {
+									parent_li. removeClass ( 'ui-menutree-item-collapsed' ). addClass ( 'ui-menutree-item-expanded' ) ;
+									$('>ul', parent_li). css ( 'display', 'list-item' ) ;
+									parent_li	=  parent_li. parent ( ). closest ( 'li' ) ;
+								    }
+
+								// Remove any existing active flag for menu items
+								$('li[href]', $widget). removeClass ( 'ui-menutree-item-active' ) ;
+
+								// then set the active flag for the current item of this page (given by the url hash)
 								obj. addClass ( 'ui-menutree-item-active' ) ;
+
+								// Finally update title/text contents
 								$this. _select ( obj ) ;
 							    }
 						    ) ;
