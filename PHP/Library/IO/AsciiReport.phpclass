@@ -2,7 +2,7 @@
 /***************************************************************************************************
 
     NAME
-	AsciiReport.phpclass
+	AsciiReport.phpclass 
 
     DESCRIPTION
 	Simple reporting class in Ascii mode.
