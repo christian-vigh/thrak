@@ -68,6 +68,9 @@
   
     [Version : 1.0.15]		[Date : 2015/11/09]		[Author : CV]
 	. Add the Quote() method.
+  
+    [Version : 1.0.16]		[Date : 2016/01/29]		[Author : CV]
+	. Added the PushDirectory() / PopDirectory() methods
 
  ***************************************************************************************************/
 namespace 	Thrak\IO ;
@@ -1780,7 +1783,50 @@ class  	Path	extends  Object
 		
 		return ( true ) ;
 	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
 	
+	    NAME
+	        PushDirectory, PopDirectory - Pushes/pops the current working directory.
+	
+	    PROTOTYPE
+	        Path::PushDirectory ( $directory = false ) ;
+		$status		=  Path::PopDirectory ( ) ;
+	
+	    DESCRIPTION
+	        PushDirectory() pushes the current directory (or $directory if specified) onto the directory stack.
+		PopDirectory() pops the last pushed directory from the directory stack and set it to be the current
+		working directory if the directory stack is not empty. 
+		When the directory stack is empty, PopDirectory returns false.
+		The PushDirectory method does not change the current working directory ; it is the caller responsibility
+		to perform a chdir().
+		
+	 *-------------------------------------------------------------------------------------------------------------*/
+	private		$DirectoryStack		=  [] ;
+
+	public static function  PushDirectory ( $directory = false )
+	   {
+		if  ( ! $directory )
+			$directory	=  getcwd ( ) ;
+
+		self::$DirectoryStack []	=  $directory ;
+	    }
+
+
+	public static function  PopDirectory ( )
+	   {
+		if  ( count ( self::$DirectoryStack ) )
+		   {
+			$directory	=  array_pop ( self::$DirectoryStack ) ;
+
+			chdir ( $directory ) ;
+			return ( $directory ) ;
+		    }
+		else
+			return ( false ) ;
+	    }
+
 
 	/*--------------------------------------------------------------------------------------------------------------
 	 
