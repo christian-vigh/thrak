@@ -158,7 +158,6 @@ END;
 			$this -> JobConfigurationData	=  IniFile::LoadFromFile ( $this -> JobData [ 'configuration-file' ] ) ;
 
 		// Job data information that can be put at the Script object level
-		$this -> JobData [ 'logfile' ]	=  $this -> JobData [ 'logfile' ] ;
 		$this -> Logfile		=  $this -> JobData [ 'logfile' ] ;
 		$this -> AdministratorEmail	=  $this -> JobData [ 'administrator-email' ] ;
 
