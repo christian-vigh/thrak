@@ -55,6 +55,10 @@
 	. Added the magic __get and __set properties to the XmlAttributes object, so that xml attributes can
 	  be both accessed through their index or as a pseudo-property name.
 
+    [Version : 1.0.2]    [Date : 2016/01/29]     [Author : CV]
+	. Changed the XmlDocument::Query() method to accept objects of type Thrak\Processors\Xml\XmlNode as
+	  root node.
+
  **************************************************************************************************************/
 namespace	Thrak\Processors\Xml ;
 
@@ -2048,7 +2052,10 @@ abstract class  XmlDocument	extends		XmlNodes
 	public function  Query ( $queries, $root_node = null )
 	   {
 		if  ( ! is_array ( $queries ) )
-			$queries	=  [] ;
+			$queries	=  [ $queries ] ;
+
+		if  ( is_a ( $root_node, 'Thrak\Processors\Xml\XmlNode' ) )
+			$root_node	=  $root_node -> XmlElement ;
 		
 		$query_results	=  [] ;
 		
