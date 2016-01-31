@@ -270,7 +270,8 @@ $BootSetup 		=  function  ( $debug )
 
 	// Include path
 	set_include_path ( get_include_path ( ) . PATH_SEPARATOR .
-				$GLOBALS [ 'THRAK_ROOT' ] . "PHP/Library" . PATH_SEPARATOR .
+				$GLOBALS [ 'THRAK_ROOT' ] . "PHP/Library"	. PATH_SEPARATOR .
+				$GLOBALS [ 'THRAK_ROOT' ] . "PHP"		. PATH_SEPARATOR .
 				$GLOBALS [ 'THRAK_ROOT' ] . "PHP/Scripts" ) ;
    } ;
 
