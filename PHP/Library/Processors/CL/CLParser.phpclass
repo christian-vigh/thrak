@@ -375,7 +375,7 @@ END;
 		$this -> RegisterClasses ( ) ;
 
 	   	// Create the command-line object
-		$this -> CommandLineObject =  new CL ( $this, $argv_or_string, true, $options = CL::CL_ALL_OPTIONS, false ) ;
+		$this -> CommandLineObject =  new CL ( $this, $argv_or_string, $command, $options = CL::CL_ALL_OPTIONS, false ) ;
 		$this -> CommandName	   =  $this -> CommandLineObject -> ExecutableName ;
 		$this -> CommandLine 	   =  $this -> CommandLineObject -> CommandLine ;
 		$this -> SetMaxWidth ( $max_width ) ;

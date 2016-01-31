@@ -25,6 +25,10 @@
 
    [Version : 2.0.3]	[Date : 2015/07/30]		[Author : CV]
 	. Removed environment variable expansion. Not sure it is absolutely needed.
+
+   [Version : 2.0.4]	[Date : 2016/01/31]		[Author : CV]
+	. The $command parameter of the class constructor was not prepended to the argument list
+	  if a string was specified.
  
  ***************************************************************************************************/
 namespace 	Thrak\Processors\CL ;
@@ -849,6 +853,10 @@ class CL  extends     Object
 			$arguments = String::ExplodeWithQuotedStrings ( $argv_or_string ) ;
 		else
 			error ( new CLException ( "Unexpected value type for argv_or_string" ) ) ;
+
+		// If a command has been specified, prepend it to the list of arguments
+		if  ( is_string ( $command ) )
+			$arguments	=  array_merge ( [ $command ], $arguments ) ;
 
 		// Then loop through individual arguments, to process special arguments such as --help, etc.
 		$argc = count ( $arguments ) ;
