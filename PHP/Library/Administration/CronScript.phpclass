@@ -35,8 +35,14 @@
     [Version : 1.0]	[Date : 2015/11/07]     [Author : CV]
         Initial version.
 
-    [Version : 1.0]	[Date : 2015/11/07]     [Author : CV]
+    [Version : 1.0.1]	[Date : 2015/11/07]     [Author : CV]
 	. Added running platform support.
+
+    [Version : 1.0.2]	[Date : 2016/01/30]     [Author : CV]
+	. Added the Execute() method.
+	. Splitted command line parsing in two runs :
+	  . A first run with the standard parameters (-configuration_file and -job)
+	  . A second run with the parameters defined for the job in the crontab.ini file
 
  **************************************************************************************************************/
 namespace	Thrak\Administration ;
@@ -63,6 +69,7 @@ use     Thrak\Processors\IniFile ;
 abstract class  CronScript		extends  Object
    {
 	static		$StandardParameters		=  <<<END
+	<command>
 		<file name="configuration_file, cf" disposition="existing" required="true">
 			Path of a crontab.ini configuration file.
 		</file>
@@ -70,7 +77,15 @@ abstract class  CronScript		extends  Object
 		<string name="job, j">
 			Specifies the job name for this script, as defined in the configuration file.
 		</string>
+	</command>
 END;
+
+	// Constants for the Execute() method output disposition flags
+	const		EXECUTE_DISCARD_NONE		=  0x0000 ;		// Do not discard anything
+	const		EXECUTE_DISCARD_STDOUT		=  0x0001 ;		// Discards standard output
+	const		EXECUTE_DISCARD_STDERR		=  0x0002 ;		// Discards standard error output
+	const		EXECUTE_DISCARD_OUTPUT		=  0x0003 ;		// Discards stdout and stderr
+	const		EXECUTE_REDIRECT_STDERR		=  0x0004 ;		// Redirects stderr to stdout
 
 	// Command-line object
 	protected	$CL ;
@@ -119,7 +134,7 @@ END;
 			Command-line arguments. If not specified, the global $argv variable will be used.
 	 
 	 *-------------------------------------------------------------------------------------------------------------*/
-	public function  __construct ( $definitions, $args = false )
+	public function  __construct ( $script_definitions, $args = false )
 	   {
 		global		$ScriptVariables, $argv ;
 
@@ -127,9 +142,7 @@ END;
 			$args	=  $argv ;
 
 		// Put the default CronScript parameter definitions inside the supplied ones
-		$re				=  '#(</command>|</command-line>|</options>|</parameters>|</switches>)#ix' ;
-		$definitions			=  preg_replace ( $re, "\n" . self::$StandardParameters . "\n\n" . '\1', $definitions ) ;
-		$this -> CL			=  new CLParser ( $definitions, $args ) ;
+		$this -> CL			=  new CLParser ( self::$StandardParameters, $args ) ;
 
 		// Save data related to this script 
 		$this -> ConfigurationFile	=  $this -> CL -> configuration_file ;
@@ -150,6 +163,17 @@ END;
 		else if  ( IS_WINDOWS  &&  $this -> JobData [ 'platform' ]  ==  CrontabConfiguration::PLATFORM_UNIX )
 			error ( new \Thrak\System\RuntimeException ( "Job \"{$this -> JobName}\" in crontab.ini file \"{$this -> ConfigurationFile}\"" .
 					"runs only on Unix platforms" ) ) ;
+
+		// I hate that but command-line must be parsed again, this time :
+		// - without the standard parameters definitions (-configuration_file and -job)
+		// - with the parameters defined for this job
+		// Maybe I should have developed an external script (such as "scriptrun") with the -configuration_fil and -job parameters.
+		if  ( isset ( $this -> JobData [ 'parameters' ] )  &&  $this -> JobData [ 'parameters' ] ) 
+			$parameters	=  $this -> JobData [ 'parameters' ] ;
+		else
+			$parameters	=  '' ;
+
+		$this -> CL	=  new CLParser ( $script_definitions, $parameters, $this -> CL -> CommandLineObject -> ExecutablePath ) ;
 
 		// Job-specific configuration file
 		$this -> JobConfigurationFile	=  $this -> JobData [ 'configuration-file' ] ;
@@ -213,6 +237,70 @@ END;
 		$this -> Log ( "$severity: $message" ) ;
 		$this -> Log ( "Process terminated." ) ;
 		exit ( ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        Execute - Executes a shell command
+	
+	    PROTOTYPE
+	        $script -> Execute ( $command, $options = = self::EXECUTE_DISCARD_NONE, &$output = null ) ;
+	
+	    DESCRIPTION
+	        Executes the specified command using the bash shell.
+	
+	    PARAMETERS
+	        $command (string) -
+	                Command to be executed. 
+	
+		$options (integer) -
+			Command flags. Can be any combination of the following constants :
+			- EXECUTE_DISCARD_STDOUT :
+				Discards standard output.
+			- EXECUTE_DISCARD_STDERR :
+				Discards standard error output.
+			- EXECUTE_DISCARD_OUTPUT :
+				Discards both standard output and standard error output.
+			- EXECUTE_DISCARD_NONE :
+				Do not discard anything. 
+			- EXECUTE_REDIRECT_STDERR :
+				Redirects stderr to stdout.
+
+	    RETURN VALUE
+	        description
+	
+	    NOTES
+	        Bash shell is systematically used. If you are running Windows and wonder why using bash, then keep in
+		mind the following : if you have setup your environment to run cron, then you MUST have something like
+		Cygwin installed. So, bash must also be present. Other questions ?
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  Execute ( $command, $options = self::EXECUTE_DISCARD_NONE, &$output = null )
+	   {
+		if  ( $options  &  self::EXECUTE_REDIRECT_STDERR )
+			$output_disposition	=  '2>&1' ;
+		else
+		   {
+			if  ( $options  &  self::EXECUTE_DISCARD_STDOUT )
+				$stdout_disposition	=  "1>/dev/null" ;
+			else
+				$stdout_disposition	=  '' ;
+
+			if  ( $options  &  self::EXECUTE_DISCARD_STDERR )
+				$stderr_disposition	=  "2>/dev/null" ;
+			else
+				$stderr_disposition	=  '' ;
+
+			$output_disposition	=  "$stdout_disposition $stderr_disposition" ;
+		    }
+
+		$command	=  escapeshellarg ( "$command $output_disposition" ) ;
+		$status		=  0 ;
+		exec ( "bash -c $command", $output, $status ) ;
+
+		return ( $status ) ;
 	    }
 
 
