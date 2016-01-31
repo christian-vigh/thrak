@@ -1803,7 +1803,7 @@ class  	Path	extends  Object
 		to perform a chdir().
 		
 	 *-------------------------------------------------------------------------------------------------------------*/
-	private		$DirectoryStack		=  [] ;
+	private	static 	$DirectoryStack		=  [] ;
 
 	public static function  PushDirectory ( $directory = false )
 	   {
