@@ -1750,6 +1750,11 @@ input.hasDatepicker
    	margin-right			:  8px ;
     }
     
+.ui-menutree-icon.ui-menutree-icon-information
+   {
+   	background-position		:  -16px -144px ;
+    }
+    
 .ui-menutree-single > .ui-menutree-icon-single
    {
 	background-position		:  1000px 1000px ;
@@ -1775,3 +1780,9 @@ li.ui-menutree-item-active > div
    	font-weight			:  bold ;
    	color				:  #791B36;
     }
+
+.menutree-parts
+   {
+	display				:  none ;
+    }
+
