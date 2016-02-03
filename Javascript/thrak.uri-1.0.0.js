@@ -170,6 +170,10 @@
 	  parameters.
 	. Removed extraneous '=' sign to anchors when used as query string.
 
+    [Version : 1.0.1.1]		[Date : 2016/02/03]     [Author : CV]
+	. Modified the anchor() method, which did not update the anchorParameters object when a new anchor was
+	  defined. This resulted in putting the anchor of page A when navigating from page A to page B.
+
  **************************************************************************************************************/
  
 ( function ( $ ) 
@@ -552,7 +556,7 @@
 		//	Sets the value of the specified member in the __components object
 		function  set_value ( $this, field, value )
 		   {
-			if  ( value )
+			if  ( value  !==  undefined )
 			   {
 				$this. __components [ field ]	=  value ;
 				rebuild_computed_fields ( $this ) ;
@@ -577,13 +581,19 @@
 		//	Gets/sets the anchor value for this uri.
 		prototype. anchor	=  function  ( value )
 		   {
+			if  ( value  !==  undefined )
+			   {
+				this. anchorParameters		=  [] ;
+				parse_query ( this, value, '#', 'anchor', '__anchorParameters', false, true ) ;
+			    }
+
 			return ( set_value ( this, 'anchor', value ) ) ;
 		    }
 
 
 		// anchorParameters
 		//	Implements a parameter list after the anchor sign (#), much in the same way as a query string.
-		prototype. anchorParameters	= function ( )
+		prototype. anchorParameters	=  function ( )
 		   {
 			if  ( arguments. length  >  0 )
 			   {
