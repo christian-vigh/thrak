@@ -758,6 +758,16 @@ class  ReadOnlyPropertyException		extends  RuntimeException
     }
 
 
+class  MissingParameterException		extends  RuntimeException
+   {
+	public function  __construct ( $parameter_name = false, $code = 0, Exception  $previous = null )
+	   {
+		$message	=  "Parameter \"$parameter_name\" is missing" ;
+		parent::__construct ( $message, $code, $previous ) ;
+	    }
+    }
+
+
 class  IndexOutOfRangeException		extends  RuntimeException
    {
 	public function  __construct ( $index, $code = 0, Exception  $previous = null )
