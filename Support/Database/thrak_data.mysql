@@ -85,3 +85,48 @@ LOAD DATA LOCAL INFILE 'E:\\PHP\\Frameworks\\Thrak\\Support\\Materials\\Blacklis
 UPDATE blacklisted_emails
    SET
 	crc = CRC32( name ) ;
+
+	
+
+	
+ /*==============================================================================================================
+
+    user_agent_strings -
+        Database of user agent strings.
+
+  ==============================================================================================================*/
+DROP TABLE IF EXISTS  user_agent_strings ;
+
+CREATE TABLE 	user_agent_strings
+   (
+	id 				INT UNSIGNED 			NOT NULL AUTO_INCREMENT
+									COMMENT 'Unique id for this entry',
+	agent_string	 		VARCHAR(4096) 			NOT NULL DEFAULT ''
+									COMMENT 'User agent string',
+	agent_type  			CHAR(16)			NOT NULL DEFAULT ''
+									COMMENT 'User agent type (browser, etc.)',
+	agent_name			CHAR(16) 			NOT NULL DEFAULT ''
+									COMMENT 'Agent name (Opera, etc.)',
+	agent_version	 		CHAR(12) 			NOT NULL DEFAULT ''
+									COMMENT 'Agent version',
+	os_type 			CHAR(16) 			NOT NULL DEFAULT ''
+									COMMENT 'Os type',
+	os_name 			CHAR(16) 			NOT NULL DEFAULT ''
+									COMMENT 'Os name',
+	os_version_name 		CHAR(16) 			NOT NULL DEFAULT ''
+									COMMENT 'Os version name',
+	os_version_number 		CHAR(16) 			NOT NULL DEFAULT ''
+									COMMENT 'Os version number',
+	os_producer 			CHAR(16) 			NOT NULL DEFAULT ''
+									COMMENT 'Os producer',
+	os_producer_url  		VARCHAR(1024) 			NOT NULL DEFAULT ''
+									COMMENT 'Os producer url',
+	linux_distribution 		VARCHAR(32) 			NOT NULL DEFAULT ''
+									COMMENT 'Linux distribution',
+	agent_language			CHAR(12)			NOT NULL DEFAULT ''
+									COMMENT 'Language id, such as en-US, fr-FR, etc.',
+									
+	PRIMARY KEY 			( id ),
+	KEY 				( agent_string(64) )
+    )  ENGINE = MyIsam CHARSET latin1 COMMENT 'Database of user agent strings' ;
+    
