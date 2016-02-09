@@ -1,0 +1,525 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        ApiLayer.php
+
+    DESCRIPTION
+        A base class for using the ApiLayers services.
+
+    AUTHOR
+        Christian Vigh, 02/2016.
+
+    HISTORY
+        [Version : 1.0]		[Date : 2016-02-07]     [Author : CV]
+                Initial version.
+
+ **************************************************************************************************************/
+namespace  Thrak\Internet\ApiLayers ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces and classes
+use  	Thrak\System\Object ;    
+use	Thrak\IO\Path ;
+use	Thrak\Types\String ;
+
+
+class	ApiLayersException	extends		\Thrak\System\RuntimeException		{ }
+
+
+/*==============================================================================================================
+
+    class ApiLayer -
+        Abstract base class for ApiLayers access.
+
+  ==============================================================================================================*/
+abstract class  ApiLayer		extends  Object
+   {
+	/****************************************************************************************************************
+	
+	        Type constants for parameters coming from derived classes. Note that type enforcement is not very
+		elaborated.
+	
+	 ***************************************************************************************************************/
+	// Parameter can be any string - this is the default type
+	const		APILAYER_PARAMETER_STRING		=  0x00000001 ;
+	// Parameter is either a 0 or a 1
+	const		APILAYER_PARAMETER_ZERO_ONE		=  0x00000002 ;
+	// Parameter is an integer value
+	const		APILAYER_PARAMETER_INTEGER		=  0x00000004 ;
+	// Parameter is a case-insensitive keyword that must belong to a predefined list
+	const		APILAYER_PARAMETER_KEYWORD		=  0x00000008 ;
+
+	// Required access key for all ApiLayer invocations
+	public		$AccessKey ;
+	// When true, https access will be used
+	public		$UseHttps	=  false ;
+	// Api url - must be set by derived classes
+	protected	$ApiUrl ;
+	// Extra Api parameters - must be defined by derived classes and passed to the class constructor.
+	protected	$Parameters	=  [] ;
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        Constructor
+	
+	    PROTOTYPE
+	        parent::__construct ( $api_url, $access_key, $use_https = false, $parameters = [] ) ;
+	
+	    DESCRIPTION
+	        Builds an ApiLayer object. This constructor must be called by all derived ApiLayer classes to correctly
+		initialize the object.
+	
+	    PARAMETERS
+	        $api_url (string) -
+	                Base url for the ApiLayer API implemented by the derived class (for example, 
+			api.screenshotlayer.com/api/capture). The url scheme (http://) can be omitted.
+
+		$access_key (string) -
+			Required access key. Specific to the registered user of the corresponding ApiLayer Api.
+
+		$use_https (boolean) -
+			Set this parameter to true to use the https protocol instead of http.
+			Note that no provision is made to supply trusted certificates.
+
+		$parameters (array of associative arrays) -
+			Parameter definitions implemented by the derived classes.
+			Each parameter is an associative array that can contain the following entries :
+
+			- 'name' (string) :
+				Parameter name, as it will appear in the final url.
+			- 'property' (string or array of strings) :
+				Property name(s) that will be accessible through the instanciated object. It can be either a string or
+				an array of strings that defines property names and their aliases.
+			- 'value' (string) :
+				Initial value for this parameter. The default is null, which means that the parameter will not be included
+				in the final Api layer url.
+			- 'url-parameter' (boolean) :
+				When true, the parameter value will be included in the final url.
+			- 'required' (boolean) :
+				When true, the corresponding parameter is required. An exception will be thrown if its value has not been
+				specified.
+			- 'readonly' (boolean) :
+				When true, the value cannot be set. This is used for already initialized entries, or for computed entries
+				having a callback function.
+			- 'callback' (callback) :
+				Callback function to be used for getting/setting the value. The function must have the following
+				signature :
+						string callback ( $parameter, $value, $get_or_set ) ;
+				where $parameter is the parameter definition, $value the parameter value, and $get_or_set is either 0
+				for getting the value and 1 for setting it.
+			- 'type' (one of the self::APILAYER_PARAMETER_* constants) :
+				Parameter type. Can be any one of :
+				- APILAYER_PARAMETER_STRING :
+					Parameter value can be any string.
+				- APILAYER_PARAMETER_ZERO_ONE :
+					Parameter value is a boolean expressed under the form of either 0 or 1.
+				- APILAYER_INTEGER :
+					Parameter value must be an integer.
+				- APILAYER_KEYWORD :
+					Parameter value is a case-insensitive keyword that must belong to a predefined list.
+					In this case, the 'keywords' entry must contain the list of authorized keywords.
+			- 'keywords' :
+				When the parameter type is APILAYER_KEYWORD, the 'keywords' entry is required and must contain
+				the list of authorized values. It can be either a list of strings or associative array entries ;
+				the keys give the authorized input entries, while the values give the value returned when building the
+				final url ; for example, the following entry :
+					'keywords'		=>  [ 'png', 'gif', 'jpg', 'jpeg' => 'jpg', 'jpe' => 'jpg' ]
+				will give :
+					. 'png', if the input entry is 'png', whether expressed in lowercase or uppercase (PNG).
+					. Same for 'gif'...
+					. And 'jpg', if the input is 'jpg', 'jpeg' or 'jpe'
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( $api_url, $access_key, $use_https = false, $parameters = [] )
+	   {
+		parent::__construct ( ) ;
+		
+		// Loop through derived class' parameters
+		foreach  ( $parameters  as  $parameter )
+		   {
+			// If not specified, the default value is null, meaning that no value was specified
+			if  ( ! isset ( $parameter [ 'value' ] ) )
+				$parameter [ 'value' ]		=  null ;
+
+			// All parameters are included in the final url, unless the 'url-parameter' entry is set to false.
+			// The default is true
+			if  ( ! isset ( $parameter [ 'url-parameter' ] ) )
+				$parameter [ 'url-parameter' ]	=  true ;
+
+			// Make sure the 'property' entry is an array of property name and aliases
+			if  ( ! is_array ( $parameter [ 'property' ] ) )
+				$parameter [ 'property' ]	= [ $parameter [ 'property' ] ] ;
+
+			// Parameters are not required, by default
+			if  ( ! isset ( $parameter [ 'required' ] ) )
+				$parameter [ 'required' ]	=  false ;
+
+			// The default type is string, if not specified
+			if  ( ! isset ( $parameter [ 'type' ] ) )
+				$parameter [ 'type' ]		=  self::APILAYER_PARAMETER_STRING ;
+
+			// All entries are read-write by default
+			if  ( ! isset ( $parameter [ 'readonly' ] ) )
+				$parameter [ 'readonly' ]	=  false ;
+
+			// Make sure there is a callback entry
+			if  ( ! isset ( $parameter [ 'callback' ] ) )
+				$parameter [ 'callback' ]	=  false ;
+
+			// Make sure that there is a 'keywords' entry for keyword-type parameters 
+			if  ( $parameter [ 'type' ]  &  self::APILAYER_PARAMETER_KEYWORD )
+			   {
+				if  ( ! isset ( $parameter [ 'keywords' ] ) ) 
+					error ( new ApiLayersException ( "Missing 'keywords' entry for parameter \"{$parameter[ 'name' ]}\"" ) ) ;
+
+				// Replace it with an associative array using the lowercased keyword as the key
+				// (but only for explicit associative keys)
+				$new_keywords	=  [] ;
+
+				foreach ( $parameter [ 'keywords' ]  as  $name => $value )
+				   {
+					if  ( is_numeric ( $name ) )
+						$new_keywords [ strtolower ( $value ) ]		=  $value ;
+					else
+						$new_keywords [ strtolower ( $name ) ]		=  $value ;
+				    }
+
+				$parameter [ 'keywords' ]	=  $new_keywords ;
+			    }
+
+			$this -> Parameters []	=  $parameter ;
+		    }
+
+		// Remove any scheme from the supplied api url
+		$this -> ApiUrl		=  preg_replace ( '-^[^:]+://-', '', $api_url ) ;
+
+		$this -> AccessKey	=  $access_key ;
+		$this -> UseHttps	=  $use_https ;
+
+		// Check that no parameter names or property names are defined twice
+		$parameter_count	=  count ( $this -> Parameters ) ;
+
+		for  ( $i = 0 ; $i  <  $parameter_count ; $i ++ )
+		   {
+			for  ( $j = $i + 1 ; $j  <  $parameter_count ; $j ++ )
+			   {
+				if  ( ! isset ( $this -> Parameters [ 'name' ] ) )
+					continue ;
+
+				if  ( $this -> Parameters [$i] [ 'name' ]  &&  $this -> Parameters [$j] [ 'name' ]  &&
+						$this -> Parameters [$i] [ 'name' ]  ==  $this -> Parameters [$j] [ 'name' ] )
+					error ( new ApiLayersException ( "Url parameter \"{$this -> Parameters [$j] [ 'name' ]}\" has been defined more than once" ) ) ;
+
+				foreach  ( $this -> Parameters [$j] [ 'property' ]  as  $property )
+				   {
+					if  ( in_array ( $property, $this -> Parameters [$i] [ 'property' ] ) )
+						error ( new ApiLayersException ( "Property name \"$property\" has been defined for both parameters " .
+								"\"{$this -> Parameters [$i] [ 'name' ]}\" and \"{$this -> Parameters [$i] [ 'name' ]}\"" ) ) ;
+				    }
+			    }
+		    }
+	    }
+
+
+	/**************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 ******                                         MAGIC FUNCTIONS                                          ******
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************/
+
+	// __get -
+	//	Retrieves a parameter value defined by one of its 'property' entries in the $Parameters array
+	public function  __get ( $member )
+	   {
+		foreach  ( $this -> Parameters  as  $parameter )
+		   {
+			if  ( in_array ( $member, $parameter [ 'property' ] ) )
+				return ( $this -> GetProperty ( $parameter ) ) ;
+		    }
+
+		error ( new \Thrak\System\UndefinedPropertyException ( $member ) ) ;
+	    }
+
+
+	// __set -
+	//	Sets a parameter value defined by one of its 'property' entries in the $Parameters array
+	public function  __set ( $member, $value )
+	   {
+		foreach  ( $this -> Parameters  as  &$parameter )
+		   {
+			if  ( in_array ( $member, $parameter [ 'property' ] ) )
+			   {
+				$this -> SetProperty ( $parameter, $value ) ;
+				return ;
+			    }
+		    }
+
+		error ( new \Thrak\System\UndefinedPropertyException ( $member ) ) ;
+	    }
+
+
+	// __tostring -
+	//	Returns the final url used to query the api
+	public function  __tostring ( )
+	   { return ( $this -> GetQuery ( ) ) ; }
+
+
+	/**************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 ******                                         PUBLIC FUNCTIONS                                         ******
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************/
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        GetQuery - Returns the query url
+	
+	    PROTOTYPE
+	        $url	=  $apilayer -> GetQuery ( ) ;
+	
+	    DESCRIPTION
+	        Returns the query url taking into account the query parameters defined by this class and its derived
+		classes.
+	
+	    RETURN VALUE
+	        Returns an url (including either the http:// or https:// scheme) together with the currently defined
+		parameters.
+	
+	    NOTES
+	        An ApiLayersException exception will be thrown if one of the required parameter(s) is missing.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  GetQuery ( )
+	   {
+		$scheme			=  ( $this -> UseHttps ) ?  'https' : 'http' ;
+		$url_parameters		=  [ 'access_key=' . $this -> AccessKey ] ;
+
+		// Loop through parameters
+		foreach  ( $this -> Parameters  as  $parameter )
+		   {
+			// Parameters not tagged as "url parameter" will be ignored
+			if  ( ! $parameter [ 'url-parameter' ] ) 
+				continue ;
+
+			// Check if required parameters have a value (this is the case for example with the Access key)
+			if  ( $parameter [ 'required' ] )
+			   {
+				if  ( $parameter [ 'value' ]  ===  null )
+					error ( new ApiLayersException ( $parameter [ 'name' ] ) ) ;
+			    }
+
+			// Ignore optional parameters without a value
+			$value		=  $this -> GetProperty ( $parameter ) ;
+
+			if  ( $value  ===  null )
+				continue ;
+			
+			// Collect this parameter
+			$url_parameters []	=   $parameter [ 'name' ] . '=' . urlencode ( $value ) ;
+		    }
+
+		// Build the final url
+		$url	=  $scheme . '://' . $this -> ApiUrl . '?' . implode ( '&', $url_parameters ) ;
+
+		// All done, return
+		return ( $url ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        Execute - Executes an ApiLayer query.
+	
+	    PROTOTYPE
+	        $result		=  $apilayer -> Execute ( $query = null ) ;
+	
+	    DESCRIPTION
+	        Executes the specified query, or the query returned by the GetQuery() method if $query is empty.
+	
+	    PARAMETERS
+	        $query (string) -
+	                Query string to be executed. If not specified, the GetQuery() method will be used to form the
+			final query.
+	
+	    RETURN VALUE
+	        Returns the contents of the query execution.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  Execute ( $query = false )
+	   {
+		if  ( ! $query )
+			$query	=  $this -> GetQuery ( ) ;
+
+		output ( $query ) ;
+		// Curl is used here, because we may have to set options specific to https access
+		$curl	=  curl_init ( ) ;
+		curl_setopt ( $curl, CURLOPT_URL, $query ) ;
+		curl_setopt ( $curl, CURLOPT_RETURNTRANSFER, true ) ;
+
+		if  ( $this -> UseHttps )
+			curl_setopt ( $curl, CURLOPT_SSL_VERIFYPEER, false ) ;
+
+		$result =  curl_exec ( $curl ) ;
+		curl_close ( $curl ) ;
+
+		// Perform checkings specific to the derived class
+		$this -> CheckResult ( $result, $query ) ;
+
+		// All done, return
+		return ( $result ) ;
+	    }
+
+
+	/**************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 ******                                       PROTECTED FUNCTIONS                                        ******
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************/
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        CheckResult - Checks a query execution result.
+	
+	    PROTOTYPE
+	        $apilayer -> CheckResult ( $result, $query ) ;
+	
+	    DESCRIPTION
+	        Checks the execution result of the specified query. Throws an exception if an error occurred.
+		This method can be overridden by derived classes to perform specific result checks, but the derived
+		class CheckResult() method should call its parent one.
+	
+	    PARAMETERS
+	        $result (string) -
+	                Resulting contents returned by the execution of a query.
+
+		$query (string) -
+			Query url.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  CheckResult ( $result, $query )
+	   {
+		if  ( empty ( $result ) )
+			error ( new ApiLayersException ( "Unexpected empty response received for request :\n\t$query" ) ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        GetProperty - Gets a property value.
+	
+	    PROTOTYPE
+	        $value	= $apilayer -> GetProperty ( $parameter ) ;
+	
+	    DESCRIPTION
+	        Gets a property value (properties are defined through the $Parameters member).
+		Derived classes can override this method to perform special processing before returning a parameter
+		value.
+	
+	    PARAMETERS
+	        $parameter (associative array) -
+	                Parameter definition array.
+	
+	    RETURN VALUE
+	        The property value. 
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  GetProperty ( $entry )
+	   {
+		if  ( $entry [ 'callback' ] )
+		   {
+			$callback	=  $entry [ 'callback' ] ;
+			$value		=  $callback ( $entry, $entry [ 'value' ], 0 ) ;
+		    }
+		else
+			$value		=  $entry [ 'value' ] ;
+
+		return ( $value ) ; 
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        SetProperty - Sets a property value.
+	
+	    PROTOTYPE
+	        $apilayer -> SetProperty ( &$parameter, $value ) ;
+	
+	    DESCRIPTION
+	        Sets the 'value' entry of the specified parameter to $value.
+		Derived classes can override this method to perform special processing before setting a parameter
+		value. 
+	
+	    PARAMETERS
+	        $parameter (associative array) -
+	                Parameter definition array.
+
+		$value (string) -
+			Value to be assigned to the specified parameter.
+	
+	    NOTES
+	        The standard Setroperty() method checks that the parameter value is conformant to its type (ie, one of
+		the APILAYER_PARAMETER_* constants). If a derived class implements this method for parameter-specific
+		purpose, the parent method must called anyway for non-specific parameters.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  SetProperty ( &$entry, $value )
+	   {
+		if  ( $entry [ 'readonly' ] )
+			error ( new ApiLayersException ( "The \"{$entry [ 'name' ]}\" parameter is read-only" ) ) ;
+
+		if  ( $entry [ 'callback' ] )
+		   {
+			$callback	=  $entry [ 'callback' ] ;
+			$value		=  $callback ( $entry, $value, 1 ) ;
+		    }
+
+		if  ( $entry [ 'type' ]  &  self::APILAYER_PARAMETER_ZERO_ONE )
+			$entry [ 'value' ]	=  ( $value ) ?  "1" : "0" ;
+		else if  ( $entry [ 'type' ]  &  self::APILAYER_PARAMETER_INTEGER )
+		   {
+			if  ( ! is_numeric  ( $value )  ||  ( integer ) $value  !=  $value )
+				error ( new ApiLayersException ( "Invalid integer value '$value' for the \"{$entry [ 'name' ]}\" parameter" ) ) ;
+
+			$entry [ 'value' ]	=  ( integer ) $value ;
+		    }
+		else if  ( $entry [ 'type' ]  &  self::APILAYER_PARAMETER_KEYWORD )
+		   {
+			$lcvalue	=  strtolower ( $value ) ;
+
+			if  ( ! isset ( $entry [ 'keywords' ] [ $lcvalue ] ) ) 
+				error ( new ApiLayersException ( "Invalid keyword '$value' for the \"{$entry [ 'name' ]}\" parameter" ) ) ;
+
+			$entry [ 'value' ]	=  $lcvalue ;
+		    }
+		else
+			$entry [ 'value' ]	=  $value ;
+	    }
+    }

@@ -1,0 +1,363 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        ScreenshotLayer.php
+
+    DESCRIPTION
+        Implements access to the ApiLayers Screenshot API.
+	Using the ScreenShotLayer object is pretty simple. Just instantiate an object, define the required 
+	properties, and call one of the ScreenshotLayer methods ; the following example will capture a 
+	screenshot from http://www.google.com and return the image contents in the $capture
+	variable (if an error occurs, an ApiLayersException exception will be thrown) :
+
+		$screenshot		=  new ScreenshotLayer ( $my_secret_key ) ;
+		$capture		=  $screenshot -> CapturePage ( "http://www.google.com" ) ;
+
+	Various properties may be assigned ; they mimic their counterpart in the screenshot layer api but 
+	aliases are also available ; they are listed below :
+
+	- accept_lang or accept_language or AcceptLanguage (string) :
+		specify a custom Accept-Language HTTP header to send with your request. For example :
+		'fr', 'en', 'en-US', etc.
+
+	- AccessKey (string) :
+		Specify the access key attributed by the Apilayers site and available in your dashboard.
+
+	- css_url or CssUrl (string) :
+		Attaches an URL containing a custom CSS stylesheet.
+
+	- delay or Delay (integer) :
+		Specifies a delay in seconds before a screenshot is captured.
+
+	- export or ExportTo (string) :
+		Exports snapshot via custom ftp path or using your AWS S3 user details.
+
+	- force or Force (boolean of the form zero or one) :
+		Set to "1" if you want the capture to be refreshed.
+	
+	- format or Format (keyword) :
+		Specifies image format : "png" (default), "gif" or "jpg"/"jpe"/"jpeg".
+
+	- fullpage or FullPage (boolean of the form zero or one) :
+		Set to "1" if you want to capture the full height of the target website.
+
+	- placeholder or PlaceHolder ("1" or url) :
+		Attach an URL containing a custom placeholder image or set to "1" to use default placeholder.
+
+	- SecretPassword (string) :
+		Well, this property should be called "secret_key", but I wanted to preserve an exact 
+		match between property names and apilayer url parameters. Since "secret_key" is a
+		computed value, I chosed SecretPassword to store the secret key that you my have activated
+		in your dashboard.
+
+	- secret_key or SecretKey (string) :
+		If you have activated your secret key in the screenshotlayer api, then you will have to
+		set the SecretPassword property to that key.
+		The SecretKey readonly property will return your own secret key for the given url,
+		which is the md5 hash of the requested url catenated with your secret key (set through
+		the SecretPassword property).
+
+	- ttl or Ttl (integer) :
+		Defines the time (in seconds) your snapshot should be cached. The default is 2592000 (30 days).
+
+	- UseHttps (boolean) :
+		Set to true if you want access through secure http. The default is false (use regular
+		http protocol).
+		Note that no provision is currently made for supporting CA certificates.
+
+	- url or Url (string) :
+		Url of the web page to be captured.
+
+	- user_agent or UserAgent (string) :
+		Specifies a custom User-Agent HTTP header to send with your request.
+		You can use one of the ScreenshotLayer::USER_AGENT_* strings for that, or use your own
+		user agent string.
+
+	- viewport or Viewport (string) :
+		Specifies preferred viewport dimensions in pixels (default : 1440x900).
+
+	- width or Width (integer) :
+		Specifies preferred screenshot width.
+
+	Note that the Capture property will contain image data after a successful call to CapturePage().
+		
+    AUTHOR
+        Christian Vigh, 02/2016.
+
+    HISTORY
+        [Version : 1.0]		[Date : 2016-02-07]     [Author : CV]
+                Initial version.
+
+ **************************************************************************************************************/
+namespace  Thrak\Internet\ApiLayers ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+
+// Used namespaces and classes
+use  	Thrak\System\Object ;    
+use	Thrak\IO\Path ;
+use	Thrak\Types\String ;
+
+
+/*==============================================================================================================
+
+    class ScreenshotLayer -
+        Encapsulates access to the screenshot api from ApiLayers.
+
+  ==============================================================================================================*/
+class	ScreenshotLayer		extends		ApiLayer
+   {
+	// "Standard" user agent strings, for convenience purposes
+	const		USER_AGENT_IE11			=  'Mozilla/5.0 (Windows NT 6.1; WOW64; Trident/7.0; rv:11.0) like Gecko' ;
+	const		USER_AGENT_FIREFOX_WIN		=  'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:26.0) Gecko/20100101 Firefox/26.0' ;
+	const		USER_AGENT_CHROME_WIN		=  'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.103 Safari/537.36' ;
+	const		USER_AGENT_SAFARI_WIN		=  'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/534.57.2 (KHTML, like Gecko) Version/5.1.7 Safari/534.57.2' ;
+	const		USER_AGENT_OPERA_WIN		=  'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.63 Safari/537.36 OPR/18.0.1284.68' ;
+
+	// Last retrieved screen capture
+	public		$Capture	=  null ;
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        Constructor
+	
+	    PROTOTYPE
+	        $screenshot	=  new ScreenshotLayer ( $access_key, $use_https = false ) ;
+	
+	    DESCRIPTION
+	        Initializes a ScreenShot layer api object.
+	
+	    PARAMETERS
+	        $access_key (string) -
+	                Access key, as provided on your apilayers.com dashboard.
+
+		$use_https (boolean) -
+			Indicates whether secure http should be used or not.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( $access_key, $use_https = false )
+	   {
+		$parameters	=
+		   [
+			   [ 
+				'name'			=>  'url', 
+				'property'		=>  [ 'url', 'Url' ],
+				'required'		=>  true
+			    ], 
+			   [
+				'name'			=>  'secret_key',
+				'property'		=>  [ 'secret_key', 'SecretKey' ],
+				'readonly'		=>  true,
+				'callback'		=>  function ( $parameter, $value, $get_or_set ) 
+				   { 
+					$key	=  md5 ( $this -> Url . $this -> SecretPassword ) ;
+
+					return ( $key ) ;
+				    }
+			    ], 
+			   [ 
+				'property'		=>  [ 'SecretPassword' ],
+				'url-parameter'		=>  false
+			    ], 
+			   [
+				'name'			=>  'fullpage',
+				'property'		=>  [ 'fullpage', 'FullPage' ],
+				'type'			=>  self::APILAYER_PARAMETER_ZERO_ONE
+			    ], 
+			   [
+				'name'			=>  'force',
+				'property'		=>  [ 'force', 'Force' ],
+				'type'			=>  self::APILAYER_PARAMETER_ZERO_ONE
+			    ], 
+			   [
+				'name'			=>  'delay',
+				'property'		=>  [ 'delay', 'Delay' ],
+				'type'			=>  self::APILAYER_PARAMETER_INTEGER
+			    ], 
+			   [
+				'name'			=>  'ttl',
+				'property'		=>  [ 'ttl', 'Ttl' ],
+				'type'			=>  self::APILAYER_PARAMETER_INTEGER
+			    ], 
+			   [
+				'name'			=>  'width',
+				'property'		=>  [ 'width', 'Width' ],
+				'type'			=>  self::APILAYER_PARAMETER_INTEGER
+			    ], 
+			   [
+				'name'			=>  'accept_lang',
+				'property'		=>  [ 'accept_lang', 'accept_language', 'AcceptLanguage' ]
+			    ], 
+			   [
+				'name'			=>  'format',
+				'property'		=>  [ 'format', 'Format' ],
+				'type'			=>  self::APILAYER_PARAMETER_KEYWORD,
+				'keywords'		=>  [ 'png', 'gif', 'jpg', 'jpeg' => 'jpg', 'jpe' => 'jpg' ]
+			    ], 
+			   [
+				'name'			=>  'css_url',
+				'property'		=>  [ 'css_url', 'CssUrl' ]
+			    ], 
+			   [
+				'name'			=>  'placeholder',
+				'property'		=>  [ 'placeholder', 'PlaceHolder' ]
+			    ], 
+			   [
+				'name'			=>  'export',
+				'property'		=>  [ 'export', 'ExportTo', 'FtpExportTo' ]
+			    ], 
+			   [
+				'name'			=>  'user_agent',
+				'property'		=>  [ 'user_agent', 'UserAgent' ]
+			    ], 
+			   [
+				'name'			=>  'viewport',
+				'property'		=>  [ 'viewport', 'Viewport' ]
+			    ]
+		    ] ;
+
+		parent::__construct ( 'api.screenshotlayer.com/api/capture', $access_key, $use_https, $parameters ) ;
+	    }
+
+
+	/**************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 ******                                         PUBLIC FUNCTIONS                                         ******
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************/
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        CapturePage - Captures a page
+	
+	    PROTOTYPE
+	        $data	=  $screenshot -> CapturePage ( $url = false ) ;
+	
+	    DESCRIPTION
+	        Captures a screenshot of the specified url.
+	
+	    PARAMETERS
+	        $url (string) -
+	                Web page to be captured. If not specified, the contents of the Url property will be used.
+	
+	    RETURN VALUE
+	        Returns the binary data corresponding to the requested page.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  CapturePage ( $url = false )
+	   {
+		if  ( $url )
+			$this -> Url	=  $url ;
+
+		$result			=  $this -> Execute ( ) ;
+		$this -> Capture	=  $result ;
+
+		return ( $this -> Capture ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        DownloadPage - Downloads a screenshot-ed page.
+	
+	    PROTOTYPE
+	        $screenshot -> DownloadPage ( $url = false, $filename = false ) ;
+	
+	    DESCRIPTION
+	        Downloads a screenshot image.
+	
+	    PARAMETERS
+	        $url (string) -
+	                Url to capture. If not specified, the Url property will be used.
+
+		$filename (string) -
+			Default name of the downloaded file. If not specified, a filename will be built from the
+			domain and path parts of the url.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  DownloadPage  ( $url = false, $filename = false )
+	   {
+		if  ( $url )
+			$this -> Url	=  $url ;
+		else 
+			$url		=  $this -> Url ;
+
+		$result			=  $this -> Execute ( ) ;
+		$size			=  strlen ( $result ) ;
+
+		switch  ( strtolower ( $this -> format ) )
+		   {
+			case	'png'		:  $content_type	=  'image/png'  ; break ;
+			case	'gif'		:  $content_type	=  'image/gif'  ; break ;
+			case	'jpg'		:  $content_type	=  'image/jpeg' ; break ;
+			default			:  $content_type	=  'binary' ;
+		    }
+
+		if  ( ! $filename )
+		   {
+			$parts		=  parse_url ( $url ) ;
+			$filename	=  '' ;
+
+			if  ( isset ( $parts [ 'host'] ) )
+				$filename	.= $parts [ 'host' ] ;
+
+			if  ( isset ( $parts [ 'path' ] ) )
+				$filename	.=  str_replace ( '/', '_', $parts [ 'path' ] ) ;
+		    }
+
+		@ob_clean ( ) ;
+		header ( "Content-Type: $content_type" ) ;
+		header ( "Content-Transfer-Encoding: Binary" ) ;
+		header ( "Content-length: $size" ) ;
+		header ( "Content-disposition: attachment; filename=\"$filename\""); 
+		echo $result ;
+		@ob_end_flush ( ) ;
+	    }
+
+
+	/**************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 ******                                        INTERNAL FUNCTIONS                                        ******
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************/
+
+	// CheckResult -
+	//	Checks that the result of the specified query execution is not empty and does not contain json data
+	//	(in which case it means that an error has been returned).
+	//	Throws an exception in case of error.
+	protected function  CheckResult ( $result, $query )
+	   {
+		parent::CheckResult ( $result, $query ) ;
+
+		$status		=  json_decode ( $result ) ;
+
+		if  ( $status  !==  null )
+		   {
+			if  ( ! isset ( $status -> error -> info ) ) 
+				$status -> error -> info	=  $status -> error -> type ;
+
+			error ( new ApiLayersException ( "Unable to capture page $query :\n{$status -> error -> info} " .
+					"(code = {$status -> error -> code}, type = {$status -> error -> type})" ) ) ;
+		    }
+	    }
+
+
+    }
