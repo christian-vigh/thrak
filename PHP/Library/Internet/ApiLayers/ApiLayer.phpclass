@@ -55,11 +55,28 @@ abstract class  ApiLayer		extends  Object
 	// Required access key for all ApiLayer invocations
 	public		$AccessKey ;
 	// When true, https access will be used
-	public		$UseHttps	=  false ;
+	public		$UseHttps		=  false ;
 	// Api url - must be set by derived classes
 	protected	$ApiUrl ;
 	// Extra Api parameters - must be defined by derived classes and passed to the class constructor.
-	protected	$Parameters	=  [] ;
+	protected	$Parameters		=  [] ;
+	// Last query result, in json format, having the following properties :
+	// - $result -> status (boolean) :
+	// 	A boolean status indicating whether the last operation was successful or not.
+	// 	The initial value (before the very first operation) is always true.
+	// 	
+	// - $result -> error (structure) :
+	// 	A structure providing error data. If the 'status' field is true, this structure will be set to
+	// 	null, otherwise it will contain the following fields :
+	// 	- error (integer) :
+	// 		An http error code.
+	// 	- type (string) :
+	// 		Error type (usually a constant).
+	// 	- info (string) :
+	// 		Error message.
+	// 
+	// Additional fields can be present but they depend on the requested operation.
+	public		$LastResult ;
 
 
 	/*--------------------------------------------------------------------------------------------------------------
@@ -200,6 +217,7 @@ abstract class  ApiLayer		extends  Object
 
 		$this -> AccessKey	=  $access_key ;
 		$this -> UseHttps	=  $use_https ;
+		$this -> SetResult ( ) ;
 
 		// Check that no parameter names or property names are defined twice
 		$parameter_count	=  count ( $this -> Parameters ) ;
@@ -364,12 +382,11 @@ abstract class  ApiLayer		extends  Object
 	        Returns the contents of the query execution.
 	
 	 *-------------------------------------------------------------------------------------------------------------*/
-	protected function  Execute ( $query = false )
+	public function  Execute ( $query = false )
 	   {
 		if  ( ! $query )
 			$query	=  $this -> GetQuery ( ) ;
 
-		output ( $query ) ;
 		// Curl is used here, because we may have to set options specific to https access
 		$curl	=  curl_init ( ) ;
 		curl_setopt ( $curl, CURLOPT_URL, $query ) ;
@@ -426,6 +443,14 @@ abstract class  ApiLayer		extends  Object
 	   {
 		if  ( empty ( $result ) )
 			error ( new ApiLayersException ( "Unexpected empty response received for request :\n\t$query" ) ) ;
+
+		$this -> SetResult ( ) ;
+	    }
+
+
+	protected function  SetResult  ( $result = '{ "status" : true, "error" : null }' )
+	   {
+		$this -> LastResult	=  json_decode ( $result ) ;
 	    }
 
 

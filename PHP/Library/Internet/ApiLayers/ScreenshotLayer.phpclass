@@ -126,7 +126,7 @@ class	ScreenshotLayer		extends		ApiLayer
 	        Constructor
 	
 	    PROTOTYPE
-	        $screenshot	=  new ScreenshotLayer ( $access_key, $use_https = false ) ;
+	        $screenshot	=  new ScreenshotLayer ( $access_key, $secret_key = false, $use_https = false ) ;
 	
 	    DESCRIPTION
 	        Initializes a ScreenShot layer api object.
@@ -139,7 +139,7 @@ class	ScreenshotLayer		extends		ApiLayer
 			Indicates whether secure http should be used or not.
 	
 	 *-------------------------------------------------------------------------------------------------------------*/
-	public function  __construct ( $access_key, $use_https = false )
+	public function  __construct ( $access_key, $secret_key = false, $use_https = false )
 	   {
 		$parameters	=
 		   [
@@ -221,6 +221,9 @@ class	ScreenshotLayer		extends		ApiLayer
 		    ] ;
 
 		parent::__construct ( 'api.screenshotlayer.com/api/capture', $access_key, $use_https, $parameters ) ;
+
+		if  ( $secret_key )
+			$this -> SecretPassword		=  $secret_key ;
 	    }
 
 
@@ -257,11 +260,18 @@ class	ScreenshotLayer		extends		ApiLayer
 	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  CapturePage ( $url = false )
 	   {
+		if  ( $this -> ExportTo )
+			error ( new ApiLayersException ( "A page cannot be captured if you use the 'export' option" ) ) ;
+
 		if  ( $url )
 			$this -> Url	=  $url ;
 
-		$result			=  $this -> Execute ( ) ;
-		$this -> Capture	=  $result ;
+		if  ( ! $this -> Url )
+			error ( new ApiLayersException ( "No url specified for capture" ) ) ;
+
+		$result				=  $this -> Execute ( ) ;
+		$this -> Capture		=  $result ;
+		$this -> LastResult -> data	=  $result ;
 
 		return ( $this -> Capture ) ;
 	    }
@@ -289,10 +299,16 @@ class	ScreenshotLayer		extends		ApiLayer
 	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  DownloadPage  ( $url = false, $filename = false )
 	   {
+		if  ( $this -> ExportTo )
+			error ( new ApiLayersException ( "A page cannot be downloaded if you use the 'export' option" ) ) ;
+
 		if  ( $url )
 			$this -> Url	=  $url ;
 		else 
 			$url		=  $this -> Url ;
+
+		if  ( ! $this -> Url )
+			error ( new ApiLayersException ( "No url specified for capture" ) ) ;
 
 		$result			=  $this -> Execute ( ) ;
 		$size			=  strlen ( $result ) ;
@@ -317,6 +333,9 @@ class	ScreenshotLayer		extends		ApiLayer
 				$filename	.=  str_replace ( '/', '_', $parts [ 'path' ] ) ;
 		    }
 
+		$this -> Capture	=  false ;
+		$this -> LastResult	=  $result ;
+
 		@ob_clean ( ) ;
 		header ( "Content-Type: $content_type" ) ;
 		header ( "Content-Transfer-Encoding: Binary" ) ;
@@ -324,6 +343,56 @@ class	ScreenshotLayer		extends		ApiLayer
 		header ( "Content-disposition: attachment; filename=\"$filename\""); 
 		echo $result ;
 		@ob_end_flush ( ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        ExportCapture - Exports a capture to a remote server.
+	
+	    PROTOTYPE
+	        $filename	=  $screenshot -> ExportCapture ( $url = false, $export_url = false ) ;
+	
+	    DESCRIPTION
+	        Captures a web page and exports it to an ftp or amazon S3 server.
+	
+	    PARAMETERS
+	        $url (string) -
+	                Url of the page to be captured. If this parameter is not specified, the $Url property will be
+			used.
+
+		$export_url (string) -
+			Address, containing ftp/amazon credentials, where the capture is to be transferred.
+			If this parameter is not specified, the $ExportTo property will be used.
+	
+	    RETURN VALUE
+	        Returns the exported filename.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  ExportCapture ( $url = false, $export_url = false )
+	   {
+		if  ( $export_url )
+		   {
+			$this -> ExportTo	=  $export_url ;
+		    }
+		else
+		   {
+			if  ( ! $this -> ExportTo )
+				error ( new ApiLayersException ( "Cannot export capture, no export url specified." ) ) ;
+		    }
+
+		if  ( $url )
+			$this -> Url	=  $url ;
+
+		if  ( ! $this -> Url )
+			error ( new ApiLayersException ( "No url specified for capture" ) ) ;
+
+		$this -> Capture	=  false ;
+		$result			=  $this -> Execute ( ) ;
+		$this -> SetResult ( $result ) ;
+
+		return ( $this -> LastResult -> file_name ) ;
 	    }
 
 
@@ -347,16 +416,23 @@ class	ScreenshotLayer		extends		ApiLayer
 	   {
 		parent::CheckResult ( $result, $query ) ;
 
-		$status		=  json_decode ( $result ) ;
+		$status			=  json_decode ( $result ) ;
 
-		if  ( $status  !==  null )
+		if  ( $status  !==  null  )
 		   {
-			if  ( ! isset ( $status -> error -> info ) ) 
-				$status -> error -> info	=  $status -> error -> type ;
+			$this -> LastResult	=  $status ;
 
-			error ( new ApiLayersException ( "Unable to capture page $query :\n{$status -> error -> info} " .
-					"(code = {$status -> error -> code}, type = {$status -> error -> type})" ) ) ;
+			if  ( ! $status -> success )
+			   {
+				if  ( ! isset ( $status -> error -> info ) ) 
+					$status -> error -> info	=  $status -> error -> type ;
+
+				error ( new ApiLayersException ( "Unable to capture page $query :\n{$status -> error -> info} " .
+						"(code = {$status -> error -> code}, type = {$status -> error -> type})" ) ) ;
+			    }
 		    }
+		else
+			$this -> SetResult ( ) ;
 	    }
 
 
