@@ -280,6 +280,87 @@ class	ScreenshotLayer		extends		ApiLayer
 	/*--------------------------------------------------------------------------------------------------------------
 	
 	    NAME
+	        CapturePages - Captures a set of pages.
+	
+	    PROTOTYPE
+	        $result		=  $screenshot -> CapturePages ( $url_list, $output_directory, $prefix = 'capture.' ) ;
+	
+	    DESCRIPTION
+	        Captures a set of pages given by the $url_list array.
+	
+	    PARAMETERS
+	        $url_list (array of strings) -
+	                List of urls to be captured.
+
+		$output_directory (string) -
+			Directory where the captures are to be put. This directory must exist.
+
+		$prefix (string) -
+			Prefix for the captured file names. A sequential index and the format extension ('png', 'gif' 
+			or 'jpg') are added to the final filename.
+			Thus, if the output directory is 'screenshots' and the prefix is 'capture.', the following
+			files will be generated (for a format of type 'png') :
+
+				screenshots/capture.1.png
+				screenshots/capture.2.png
+				...
+	
+	    RETURN VALUE
+	        The returned value is an array of strings giving the generated filenames.
+	
+	    NOTES
+	        An exception is thrown if one or more captures could not be achieved.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  CapturePages ( $url_list, $output_directory, $prefix = 'capture.' )
+	   {
+		// Check that the supplied output directory exists
+		if  ( ! is_dir ( $output_directory ) )
+			error ( new ApiLayersException ( "Output directory \"$output_directory\" does not exist for batch page capture" ) ) ;
+
+		$errors		=  [] ;
+		$filenames	=  [] ;
+		$index		=  0 ;
+		$format		=  $this -> Format ;
+
+		if  ( ! $format )
+			$format		=  'png' ;
+
+		// Loop through url list
+		foreach  ( $url_list  as  $url )
+		   {
+			// Generate the appropriate capture filename, using a sequential index
+			$index ++ ;
+			$filename	=  "$output_directory/$prefix$index.$format" ;
+
+			// Capture the screenshot
+			try 
+			   {
+				$capture	=  $this -> CapturePage ( $url ) ;
+				file_put_contents ( $filename, $capture ) ;
+				$filenames []	=  $filename ;
+			    }
+			// In case of failure, collect the error
+			catch  ( ApiLayersException  $e )
+			   {
+				$errors []	=  "\t. " . $e -> getMessage ( ) ;
+			    }
+		    }
+
+		// Throw an exception if one or more errors occured
+		$error_count	=  count ( $errors ) ;
+
+		if  ( $error_count )
+			error ( new ApiLayersException ( "$error_count error(s) have been encountered during capture :\n" . implode ( "\n", $errors ) ) ) ;
+
+		// No error occurred : return the list of generated filenames
+		return ( $filenames ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
 	        DownloadPage - Downloads a screenshot-ed page.
 	
 	    PROTOTYPE
@@ -393,6 +474,76 @@ class	ScreenshotLayer		extends		ApiLayer
 		$this -> SetResult ( $result ) ;
 
 		return ( $this -> LastResult -> file_name ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        ExportCaptures - Exports a set of captures to a remote server.
+	
+	    PROTOTYPE
+	        $filename	=  $screenshot -> ExportCapture ( $url_list, $export_url = false ) ;
+	
+	    DESCRIPTION
+	        Captures a set of web pages and exports them to an ftp or amazon S3 server.
+	
+	    PARAMETERS
+	        $url_list (array of strings) -
+	                Url of the page to be captured.
+
+		$export_url (string) -
+			Address, containing ftp/amazon credentials, where the capture is to be transferred.
+			If this parameter is not specified, the $ExportTo property will be used.
+	
+	    RETURN VALUE
+	        Returns the exported filenames.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  ExportCaptures ( $url_list, $export_url )
+	   {
+		$errors		=  [] ;
+		$filenames	=  [] ;
+		$index		=  0 ;
+		$format		=  $this -> Format ;
+
+		if  ( ! $format )
+			$format		=  'png' ;
+
+		if  ( $export_url )
+		   {
+			$this -> ExportTo	=  $export_url ;
+		    }
+		else
+		   {
+			if  ( ! $this -> ExportTo )
+				error ( new ApiLayersException ( "Cannot export capture, no export url specified." ) ) ;
+		    }
+
+		// Loop through url list
+		foreach  ( $url_list  as  $url )
+		   {
+			// Capture the screenshot
+			try 
+			   {
+				$result		=  $this -> ExportCapture ( $url, $export_url ) ;
+				$filenames []	=  $result ;
+			    }
+			// In case of failure, collect the error
+			catch  ( ApiLayersException  $e )
+			   {
+				$errors []	=  "\t. " . $e -> getMessage ( ) ;
+			    }
+		    }
+
+		// Throw an exception if one or more errors occured
+		$error_count	=  count ( $errors ) ;
+
+		if  ( $error_count )
+			error ( new ApiLayersException ( "$error_count error(s) have been encountered during export :\n" . implode ( "\n", $errors ) ) ) ;
+
+		// No error occurred : return the list of generated filenames
+		return ( $filenames ) ;
 	    }
 
 

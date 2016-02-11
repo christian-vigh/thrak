@@ -116,7 +116,9 @@ abstract class  ApiLayer		extends  Object
 				Initial value for this parameter. The default is null, which means that the parameter will not be included
 				in the final Api layer url.
 			- 'url-parameter' (boolean) :
-				When true, the parameter value will be included in the final url.
+				When true, the parameter value will be included in the final url. The default is true.
+			- 'url-encode' (boolean) :
+				When true (the default), the parameter value will be usrl-encoded.
 			- 'required' (boolean) :
 				When true, the corresponding parameter is required. An exception will be thrown if its value has not been
 				specified.
@@ -167,6 +169,10 @@ abstract class  ApiLayer		extends  Object
 			// The default is true
 			if  ( ! isset ( $parameter [ 'url-parameter' ] ) )
 				$parameter [ 'url-parameter' ]	=  true ;
+
+			// Url parameters are encoded by default
+			if  ( ! isset ( $parameter [ 'url-encode' ] ) )
+				$parameter [ 'url-encode' ]	=  true ;
 
 			// Make sure the 'property' entry is an array of property name and aliases
 			if  ( ! is_array ( $parameter [ 'property' ] ) )
@@ -351,7 +357,12 @@ abstract class  ApiLayer		extends  Object
 				continue ;
 			
 			// Collect this parameter
-			$url_parameters []	=   $parameter [ 'name' ] . '=' . urlencode ( $value ) ;
+			if  ( $parameter [ 'url-encode' ] )
+				$url_value	=  urlencode ( $value ) ;
+			else
+				$url_value	=  $value ;
+
+			$url_parameters []	=   $parameter [ 'name' ] . '=' . $url_value ;
 		    }
 
 		// Build the final url
@@ -452,6 +463,8 @@ abstract class  ApiLayer		extends  Object
 	   {
 		$this -> LastResult	=  json_decode ( $result ) ;
 	    }
+
+
 
 
 	/*--------------------------------------------------------------------------------------------------------------
