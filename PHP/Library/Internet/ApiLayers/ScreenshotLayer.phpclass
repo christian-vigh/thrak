@@ -6,12 +6,13 @@
 
     DESCRIPTION
         Implements access to the ApiLayers Screenshot API.
+
 	Using the ScreenShotLayer object is pretty simple. Just instantiate an object, define the required 
-	properties, and call one of the ScreenshotLayer methods ; the following example will capture a 
+	properties, and call one of the ScreenshotLayer public methods ; the following example will capture a 
 	screenshot from http://www.google.com and return the image contents in the $capture
 	variable (if an error occurs, an ApiLayersException exception will be thrown) :
 
-		$screenshot		=  new ScreenshotLayer ( $my_secret_key ) ;
+		$screenshot		=  new ScreenshotLayer ( $my_access_key ) ;
 		$capture		=  $screenshot -> CapturePage ( "http://www.google.com" ) ;
 
 	Various properties may be assigned ; they mimic their counterpart in the screenshot layer api but 
@@ -134,6 +135,10 @@ class	ScreenshotLayer		extends		ApiLayer
 	    PARAMETERS
 	        $access_key (string) -
 	                Access key, as provided on your apilayers.com dashboard.
+
+		$secret_key (string) -
+			If you have defined a secret key in your screenshotlayer account, then you should specify it
+			here or later set the SecretPassword property.
 
 		$use_https (boolean) -
 			Indicates whether secure http should be used or not.
@@ -504,7 +509,6 @@ class	ScreenshotLayer		extends		ApiLayer
 	   {
 		$errors		=  [] ;
 		$filenames	=  [] ;
-		$index		=  0 ;
 		$format		=  $this -> Format ;
 
 		if  ( ! $format )
