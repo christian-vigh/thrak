@@ -347,7 +347,7 @@ abstract class  ApiLayer		extends  Object
 			if  ( $parameter [ 'required' ] )
 			   {
 				if  ( $parameter [ 'value' ]  ===  null )
-					error ( new ApiLayersException ( $parameter [ 'name' ] ) ) ;
+					error ( new ApiLayersException ( "Missing required parameter \"{$parameter [ 'name' ]}\"" ) ) ;
 			    }
 
 			// Ignore optional parameters without a value
