@@ -10,7 +10,7 @@
 	Using the ScreenShotLayer object is pretty simple. Just instantiate an object, define the required 
 	properties, and call one of the ScreenshotLayer public methods ; the following example will capture a 
 	screenshot from http://www.google.com and return the image contents in the $capture
-	variable (if an error occurs, an ApiLayersException exception will be thrown) :
+	variable (if an error occurs, an ApiLayerException exception will be thrown) :
 
 		$screenshot		=  new ScreenshotLayer ( $my_access_key ) ;
 		$capture		=  $screenshot -> CapturePage ( "http://www.google.com" ) ;
@@ -45,12 +45,6 @@
 
 	- placeholder or PlaceHolder ("1" or url) :
 		Attach an URL containing a custom placeholder image or set to "1" to use default placeholder.
-
-	- SecretPassword (string) :
-		Well, this property should be called "secret_key", but I wanted to preserve an exact 
-		match between property names and apilayer url parameters. Since "secret_key" is a
-		computed value, I chosed SecretPassword to store the secret key that you my have activated
-		in your dashboard.
 
 	- secret_key or SecretKey (string) :
 		If you have activated your secret key in the screenshotlayer api, then you will have to
@@ -156,27 +150,24 @@ class	ScreenshotLayer		extends		ApiLayer
 			   [
 				'name'			=>  'secret_key',
 				'property'		=>  [ 'secret_key', 'SecretKey' ],
-				'readonly'		=>  true,
-				'callback'		=>  function ( $parameter, $value, $get_or_set ) 
+				'url-encode'		=>  false,
+				'type'			=>  self::APILAYER_PARAMETER_FLAG_COMPUTED,
+				'queryget'		=>  function ( $parameter ) 
 				   { 
-					$key	=  md5 ( $this -> Url . $this -> SecretPassword ) ;
+					$key	=  md5 ( $this -> Url . $this -> SecretKey ) ;
 
 					return ( $key ) ;
 				    }
 			    ], 
-			   [ 
-				'property'		=>  [ 'SecretPassword' ],
-				'url-parameter'		=>  false
-			    ], 
 			   [
 				'name'			=>  'fullpage',
 				'property'		=>  [ 'fullpage', 'FullPage' ],
-				'type'			=>  self::APILAYER_PARAMETER_ZERO_ONE
+				'type'			=>  self::APILAYER_PARAMETER_BOOLEAN
 			    ], 
 			   [
 				'name'			=>  'force',
 				'property'		=>  [ 'force', 'Force' ],
-				'type'			=>  self::APILAYER_PARAMETER_ZERO_ONE
+				'type'			=>  self::APILAYER_PARAMETER_BOOLEAN
 			    ], 
 			   [
 				'name'			=>  'delay',
@@ -227,8 +218,7 @@ class	ScreenshotLayer		extends		ApiLayer
 
 		parent::__construct ( 'api.screenshotlayer.com/api/capture', $access_key, $use_https, $parameters ) ;
 
-		if  ( $secret_key )
-			$this -> SecretPassword		=  $secret_key ;
+		$this -> SecretKey	=  $secret_key ;
 	    }
 
 
@@ -266,17 +256,16 @@ class	ScreenshotLayer		extends		ApiLayer
 	public function  CapturePage ( $url = false )
 	   {
 		if  ( $this -> ExportTo )
-			error ( new ApiLayersException ( "A page cannot be captured if you use the 'export' option" ) ) ;
+			error ( new ApiLayerException ( "You cannot call the CapturePage() method if you use the 'export' option" ) ) ;
 
 		if  ( $url )
 			$this -> Url	=  $url ;
 
 		if  ( ! $this -> Url )
-			error ( new ApiLayersException ( "No url specified for capture" ) ) ;
+			error ( new ApiLayerException ( "No url specified for capture" ) ) ;
 
 		$result				=  $this -> Execute ( ) ;
 		$this -> Capture		=  $result ;
-		$this -> LastResult -> data	=  $result ;
 
 		return ( $this -> Capture ) ;
 	    }
@@ -321,7 +310,7 @@ class	ScreenshotLayer		extends		ApiLayer
 	   {
 		// Check that the supplied output directory exists
 		if  ( ! is_dir ( $output_directory ) )
-			error ( new ApiLayersException ( "Output directory \"$output_directory\" does not exist for batch page capture" ) ) ;
+			error ( new ApiLayerException ( "Output directory \"$output_directory\" does not exist for batch page capture" ) ) ;
 
 		$errors		=  [] ;
 		$filenames	=  [] ;
@@ -346,9 +335,9 @@ class	ScreenshotLayer		extends		ApiLayer
 				$filenames []	=  $filename ;
 			    }
 			// In case of failure, collect the error
-			catch  ( ApiLayersException  $e )
+			catch  ( ApiLayerException  $e )
 			   {
-				$errors []	=  "\t. " . $e -> getMessage ( ) ;
+				$errors []	=  ". " . str_replace ( "\n", "\n\t", $e -> getMessage ( ) ) ;
 			    }
 		    }
 
@@ -356,7 +345,10 @@ class	ScreenshotLayer		extends		ApiLayer
 		$error_count	=  count ( $errors ) ;
 
 		if  ( $error_count )
-			error ( new ApiLayersException ( "$error_count error(s) have been encountered during capture :\n" . implode ( "\n", $errors ) ) ) ;
+			error ( new ApiLayerException ( "$error_count error(s) have been encountered during capture :\n" . implode ( "\n", $errors ) ) ) ;
+
+		// Save the list of filenames as the query result
+		$this -> QueryResult -> Data	=  $filenames ;
 
 		// No error occurred : return the list of generated filenames
 		return ( $filenames ) ;
@@ -386,7 +378,7 @@ class	ScreenshotLayer		extends		ApiLayer
 	public function  DownloadPage  ( $url = false, $filename = false )
 	   {
 		if  ( $this -> ExportTo )
-			error ( new ApiLayersException ( "A page cannot be downloaded if you use the 'export' option" ) ) ;
+			error ( new ApiLayerException ( "A page cannot be downloaded if you use the 'export' option" ) ) ;
 
 		if  ( $url )
 			$this -> Url	=  $url ;
@@ -394,7 +386,7 @@ class	ScreenshotLayer		extends		ApiLayer
 			$url		=  $this -> Url ;
 
 		if  ( ! $this -> Url )
-			error ( new ApiLayersException ( "No url specified for capture" ) ) ;
+			error ( new ApiLayerException ( "No url specified for capture" ) ) ;
 
 		$result			=  $this -> Execute ( ) ;
 		$size			=  strlen ( $result ) ;
@@ -420,7 +412,7 @@ class	ScreenshotLayer		extends		ApiLayer
 		    }
 
 		$this -> Capture	=  false ;
-		$this -> LastResult	=  $result ;
+		$this -> QueryResult	=  $result ;
 
 		@ob_clean ( ) ;
 		header ( "Content-Type: $content_type" ) ;
@@ -465,20 +457,22 @@ class	ScreenshotLayer		extends		ApiLayer
 		else
 		   {
 			if  ( ! $this -> ExportTo )
-				error ( new ApiLayersException ( "Cannot export capture, no export url specified." ) ) ;
+				error ( new ApiLayerException ( "Cannot export capture, no export url specified." ) ) ;
 		    }
 
 		if  ( $url )
 			$this -> Url	=  $url ;
 
 		if  ( ! $this -> Url )
-			error ( new ApiLayersException ( "No url specified for capture" ) ) ;
+			error ( new ApiLayerException ( "No url specified for capture" ) ) ;
 
 		$this -> Capture	=  false ;
 		$result			=  $this -> Execute ( ) ;
-		$this -> SetResult ( $result ) ;
+		$json_result		=  json_decode ( $result ) ;
 
-		return ( $this -> LastResult -> file_name ) ;
+		$this -> QueryResult -> Data	=  $json_result -> file_name ;
+
+		return ( $this -> QueryResult -> Data ) ;
 	    }
 
 
@@ -521,7 +515,7 @@ class	ScreenshotLayer		extends		ApiLayer
 		else
 		   {
 			if  ( ! $this -> ExportTo )
-				error ( new ApiLayersException ( "Cannot export capture, no export url specified." ) ) ;
+				error ( new ApiLayerException ( "Cannot export capture, no export url specified." ) ) ;
 		    }
 
 		// Loop through url list
@@ -534,7 +528,7 @@ class	ScreenshotLayer		extends		ApiLayer
 				$filenames []	=  $result ;
 			    }
 			// In case of failure, collect the error
-			catch  ( ApiLayersException  $e )
+			catch  ( ApiLayerException  $e )
 			   {
 				$errors []	=  "\t. " . $e -> getMessage ( ) ;
 			    }
@@ -544,51 +538,12 @@ class	ScreenshotLayer		extends		ApiLayer
 		$error_count	=  count ( $errors ) ;
 
 		if  ( $error_count )
-			error ( new ApiLayersException ( "$error_count error(s) have been encountered during export :\n" . implode ( "\n", $errors ) ) ) ;
+			error ( new ApiLayerException ( "$error_count error(s) have been encountered during export :\n" . implode ( "\n", $errors ) ) ) ;
+
+		// Save the filename list as the last query result
+		$this -> QueryResult -> Data	=  $filenames ;
 
 		// No error occurred : return the list of generated filenames
 		return ( $filenames ) ;
 	    }
-
-
-	/**************************************************************************************************************
-	 **************************************************************************************************************
-	 **************************************************************************************************************
-	 ******                                                                                                  ******
-	 ******                                                                                                  ******
-	 ******                                        INTERNAL FUNCTIONS                                        ******
-	 ******                                                                                                  ******
-	 ******                                                                                                  ******
-	 **************************************************************************************************************
-	 **************************************************************************************************************
-	 **************************************************************************************************************/
-
-	// CheckResult -
-	//	Checks that the result of the specified query execution is not empty and does not contain json data
-	//	(in which case it means that an error has been returned).
-	//	Throws an exception in case of error.
-	protected function  CheckResult ( $result, $query )
-	   {
-		parent::CheckResult ( $result, $query ) ;
-
-		$status			=  json_decode ( $result ) ;
-
-		if  ( $status  !==  null  )
-		   {
-			$this -> LastResult	=  $status ;
-
-			if  ( ! $status -> success )
-			   {
-				if  ( ! isset ( $status -> error -> info ) ) 
-					$status -> error -> info	=  $status -> error -> type ;
-
-				error ( new ApiLayersException ( "Unable to capture page $query :\n{$status -> error -> info} " .
-						"(code = {$status -> error -> code}, type = {$status -> error -> type})" ) ) ;
-			    }
-		    }
-		else
-			$this -> SetResult ( ) ;
-	    }
-
-
     }
