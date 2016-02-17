@@ -208,7 +208,7 @@ class	MailboxLayer		extends		ApiLayer
 			    }
 			catch  ( ApiLayerException  $e )
 			   {
-				$errors []		=  "\t. " . $e -> getMessage ( ) ;
+				$errors []		=  ". " . str_replace ( "\n", "\n\t", $e -> getMessage ( ) ) ;
 			    }
 		    }
 

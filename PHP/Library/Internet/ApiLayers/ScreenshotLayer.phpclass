@@ -104,13 +104,6 @@ use	Thrak\Types\String ;
   ==============================================================================================================*/
 class	ScreenshotLayer		extends		ApiLayer
    {
-	// "Standard" user agent strings, for convenience purposes
-	const		USER_AGENT_IE11			=  'Mozilla/5.0 (Windows NT 6.1; WOW64; Trident/7.0; rv:11.0) like Gecko' ;
-	const		USER_AGENT_FIREFOX_WIN		=  'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:26.0) Gecko/20100101 Firefox/26.0' ;
-	const		USER_AGENT_CHROME_WIN		=  'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.103 Safari/537.36' ;
-	const		USER_AGENT_SAFARI_WIN		=  'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/534.57.2 (KHTML, like Gecko) Version/5.1.7 Safari/534.57.2' ;
-	const		USER_AGENT_OPERA_WIN		=  'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.63 Safari/537.36 OPR/18.0.1284.68' ;
-
 	// Last retrieved screen capture
 	public		$Capture	=  null ;
 
@@ -138,7 +131,7 @@ class	ScreenshotLayer		extends		ApiLayer
 			Indicates whether secure http should be used or not.
 	
 	 *-------------------------------------------------------------------------------------------------------------*/
-	public function  __construct ( $access_key, $secret_key = false, $use_https = false )
+	public function  __construct ( $access_key, $secret_key = null, $use_https = false )
 	   {
 		$parameters	=
 		   [
@@ -150,7 +143,6 @@ class	ScreenshotLayer		extends		ApiLayer
 			   [
 				'name'			=>  'secret_key',
 				'property'		=>  [ 'secret_key', 'SecretKey' ],
-				'url-encode'		=>  false,
 				'type'			=>  self::APILAYER_PARAMETER_FLAG_COMPUTED,
 				'queryget'		=>  function ( $parameter ) 
 				   { 
@@ -172,12 +164,14 @@ class	ScreenshotLayer		extends		ApiLayer
 			   [
 				'name'			=>  'delay',
 				'property'		=>  [ 'delay', 'Delay' ],
-				'type'			=>  self::APILAYER_PARAMETER_INTEGER
+				'type'			=>  self::APILAYER_PARAMETER_INTEGER,
+				'range'			=>  [ 1, 20 ]
 			    ], 
 			   [
 				'name'			=>  'ttl',
-				'property'		=>  [ 'ttl', 'Ttl' ],
-				'type'			=>  self::APILAYER_PARAMETER_INTEGER
+				'property'		=>  [ 'ttl', 'Ttl', 'TTL' ],
+				'type'			=>  self::APILAYER_PARAMETER_INTEGER,
+				'range'			=>  [ 1, 2592000 ]
 			    ], 
 			   [
 				'name'			=>  'width',
@@ -212,7 +206,8 @@ class	ScreenshotLayer		extends		ApiLayer
 			    ], 
 			   [
 				'name'			=>  'viewport',
-				'property'		=>  [ 'viewport', 'Viewport' ]
+				'property'		=>  [ 'viewport', 'Viewport' ],
+				'type'			=>  self::APILAYER_PARAMETER_VIEWPORT
 			    ]
 		    ] ;
 

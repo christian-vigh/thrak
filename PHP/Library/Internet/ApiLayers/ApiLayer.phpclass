@@ -37,6 +37,14 @@ class	ApiLayerException	extends		\Thrak\System\RuntimeException		{ }
   ==============================================================================================================*/
 abstract class  ApiLayer		extends  Object
    {
+	// "Standard" user agent strings, for convenience purposes
+	const		USER_AGENT_IE11			=  'Mozilla/5.0 (Windows NT 6.1; WOW64; Trident/7.0; rv:11.0) like Gecko' ;
+	const		USER_AGENT_FIREFOX_WIN		=  'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:26.0) Gecko/20100101 Firefox/26.0' ;
+	const		USER_AGENT_CHROME_WIN		=  'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.103 Safari/537.36' ;
+	const		USER_AGENT_SAFARI_WIN		=  'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/534.57.2 (KHTML, like Gecko) Version/5.1.7 Safari/534.57.2' ;
+	const		USER_AGENT_OPERA_WIN		=  'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.63 Safari/537.36 OPR/18.0.1284.68' ;
+
+
 	/****************************************************************************************************************
 	
 	        Type constants for parameters coming from derived classes. Note that type enforcement is not very
@@ -44,18 +52,26 @@ abstract class  ApiLayer		extends  Object
 	
 	 ***************************************************************************************************************/
 	// Parameter can be any string - this is the default type
-	const		APILAYER_PARAMETER_STRING		=  0x00000001 ;
+	const		APILAYER_PARAMETER_STRING		=  0x00000000 ;
 	// Parameter is either a 0 or a 1
-	const		APILAYER_PARAMETER_BOOLEAN		=  0x00000002 ;
+	const		APILAYER_PARAMETER_BOOLEAN		=  0x00000001 ;
 	// Parameter is an integer value
-	const		APILAYER_PARAMETER_INTEGER		=  0x00000004 ;
+	const		APILAYER_PARAMETER_INTEGER		=  0x00000002 ;
 	// Parameter is a case-insensitive keyword that must belong to a predefined list
-	const		APILAYER_PARAMETER_KEYWORD		=  0x00000008 ;
+	const		APILAYER_PARAMETER_KEYWORD		=  0x00000003 ;
+	// Parameter is a viewport dimensions (eg, 1400x900)
+	const		APILAYER_PARAMETER_VIEWPORT		=  0x00000004 ;
 	// The parameter value specified for a query url is different from the property value.
 	// This is the case for example of the secret_key parameter : its property value is the secret key you
 	// defined in your screenshotlayer dashboard. However, the value specified on the query url is actually
 	// the md5 hash of the captured url + secret key strings.
 	const		APILAYER_PARAMETER_FLAG_COMPUTED	=  0x10000000 ;
+	// Parameters that require a POST request
+	const		APILAYER_PARAMETER_FLAG_POST		=  0x20000000 ;
+	// Options to be applied to string parameters
+	const		APILAYER_PARAMETER_FLAG_UTF8_ENCODE	=  0x01000000 ;		// Convert string to utf8 (default : on)
+	const		APILAYER_PARAMETER_FLAG_HTML_ENTITIES	=  0x02000000 ;		// Interpret html entities before utf8 encoding (default : on)
+	const		APILAYER_PARAMETER_FLAG_NO_URL_ENCODE	=  0x04000000 ;		// Do not urlencode() this parameter
 
 	// A mask to isolate flags from parameter type.
 	const		APILAYER_PARAMETER_TYPE_MASK		=  0xFFFF ;
@@ -64,6 +80,8 @@ abstract class  ApiLayer		extends  Object
 	public		$AccessKey ;
 	// When true, https access will be used
 	public		$UseHttps		=  false ;
+	// Set to true for using POST requests instead of GET
+	public		$Post			=  false ;
 	// Api url - must be set by derived classes
 	protected	$ApiUrl ;
 	// Extra Api parameters - must be defined by derived classes and passed to the class constructor.
@@ -73,9 +91,9 @@ abstract class  ApiLayer		extends  Object
 	// 	A boolean status indicating whether the last operation was successful or not.
 	// 	The initial value (before the very first operation) is always true.
 	// 	
-	// - $result -> Error (structure) :
+	// - $result -> Error (ApiLayerResultError object) :
 	// 	A structure providing error data. If the 'status' field is true, this structure will be set to
-	// 	null, otherwise it will contain the following fields :
+	// 	null, otherwise it will contain the following properties :
 	// 	- Code (integer) :
 	// 		An http error code.
 	// 	- Type (string) :
@@ -88,6 +106,8 @@ abstract class  ApiLayer		extends  Object
 	public		$QueryResult ;
 	// Last executed query
 	public		$LastQuery ;
+	// Http query data - http headers sent during the last query
+	public		$HttpQueryData ;
 
 
 	/*--------------------------------------------------------------------------------------------------------------
@@ -128,8 +148,6 @@ abstract class  ApiLayer		extends  Object
 				in the final Api layer url.
 			- 'url-parameter' (boolean) :
 				When true, the parameter value will be included in the final url. The default is true.
-			- 'url-encode' (boolean) :
-				When true (the default), the parameter value will be usrl-encoded.
 			- 'required' (boolean) :
 				When true, the corresponding parameter is required. An exception will be thrown if its value has not been
 				specified.
@@ -183,10 +201,6 @@ abstract class  ApiLayer		extends  Object
 			if  ( ! isset ( $parameter [ 'url-parameter' ] ) )
 				$parameter [ 'url-parameter' ]	=  true ;
 
-			// Url parameters are encoded by default
-			if  ( ! isset ( $parameter [ 'url-encode' ] ) )
-				$parameter [ 'url-encode' ]	=  true ;
-
 			// Make sure the 'property' entry is an array of property name and aliases
 			if  ( ! is_array ( $parameter [ 'property' ] ) )
 				$parameter [ 'property' ]	= [ $parameter [ 'property' ] ] ;
@@ -216,7 +230,9 @@ abstract class  ApiLayer		extends  Object
 				$parameter [ 'queryget' ]	=  false ;
 
 			// Make sure that there is a 'keywords' entry for keyword-type parameters 
-			if  ( $parameter [ 'type' ]  &  self::APILAYER_PARAMETER_KEYWORD )
+			$type	=  $parameter [ 'type' ]  &  self::APILAYER_PARAMETER_TYPE_MASK ;
+
+			if  ( $type  ==  self::APILAYER_PARAMETER_KEYWORD )
 			   {
 				if  ( ! isset ( $parameter [ 'keywords' ] ) ) 
 					error ( new ApiLayerException ( "Missing 'keywords' entry for parameter \"{$parameter[ 'name' ]}\"" ) ) ;
@@ -234,6 +250,16 @@ abstract class  ApiLayer		extends  Object
 				    }
 
 				$parameter [ 'keywords' ]	=  $new_keywords ;
+			    }
+			// Integer values must have a 'range' entry
+			else if  ( $type  ==  self::APILAYER_PARAMETER_INTEGER )
+			   {
+				if  ( ! isset ( $parameter [ 'range' ] ) )
+					$parameter [ 'range' ]	=  [ PHP_INT_MIN, PHP_INT_MAX ] ;
+				else if  ( ! is_array ( $parameter [ 'range' ] )  ||  count ( $parameter [ 'range' ] )  !=  2 )
+					error ( new ApiLayerException ( "The 'range' entry for parameter \"{$parameter[ 'name' ]}\" must be an array containing 2 values" ) ) ;
+				else if  ( $parameter [ 'range' ] [0]  > $parameter [ 'range' ] [1] )
+					error ( new ApiLayerException ( "The first element of the 'range' entry for parameter \"{$parameter[ 'name' ]}\" must be less than its second element" ) ) ;
 			    }
 
 			$this -> Parameters []	=  $parameter ;
@@ -335,18 +361,19 @@ abstract class  ApiLayer		extends  Object
 	/*--------------------------------------------------------------------------------------------------------------
 	
 	    NAME
-	        GetQuery - Returns the query url
+	        GetQuery, GetQueryParameters, GetQueryUrl - Returns the query url
 	
 	    PROTOTYPE
-	        $url	=  $apilayer -> GetQuery ( ) ;
+	        $query	=  $apilayer -> GetQuery ( ) ;
+		$params	=  $apilayer -> GetQueryParameters ( ) ;
+		$url	=  $apilayer -> GetQueryUrl ( ) ;
 	
 	    DESCRIPTION
 	        Returns the query url taking into account the query parameters defined by this class and its derived
 		classes.
-	
-	    RETURN VALUE
-	        Returns an url (including either the http:// or https:// scheme) together with the currently defined
-		parameters.
+		GetQuery() returns the whole query that can be used in a GET request.
+		GetQueryParameters() returns the parameter part of the query.
+		GetQueryUrl() returns only the url part, without parameters.
 	
 	    NOTES
 	        An ApiLayerException exception will be thrown if one of the required parameter(s) is missing.
@@ -355,6 +382,23 @@ abstract class  ApiLayer		extends  Object
 	public function  GetQuery ( )
 	   {
 		$scheme			=  ( $this -> UseHttps ) ?  'https' : 'http' ;
+		$url	=  $scheme . '://' . $this -> ApiUrl . '?' . $this -> GetQueryParameters ( ) ;
+
+		return ( $url ) ;
+	    }
+
+
+	public function  GetQueryUrl ( )
+	   {
+		$scheme			=  ( $this -> UseHttps ) ?  'https' : 'http' ;
+		$url	=  $scheme . '://' . $this -> ApiUrl ;
+
+		return ( $url ) ;
+	    }
+
+
+	public function  GetQueryParameters ( $post = false )
+	   {
 		$url_parameters		=  [ 'access_key=' . $this -> AccessKey ] ;
 
 		// Loop through parameters
@@ -362,6 +406,14 @@ abstract class  ApiLayer		extends  Object
 		   {
 			// Parameters not tagged as "url parameter" will be ignored
 			if  ( ! $parameter [ 'url-parameter' ] ) 
+				continue ;
+
+			// POST parameters requested : ignore non-POST ones
+			if  ( $post  &&  ! ( $parameter [ 'type' ]  &  self::APILAYER_PARAMETER_FLAG_POST ) )
+				continue ;
+
+			// GET parameters requested : ignore POST parameters
+			if  ( ! $post  &&  ( $parameter [ 'type' ]  &  self::APILAYER_PARAMETER_FLAG_POST ) )
 				continue ;
 
 			// Check if required parameters have a value (this is the case for example with the Access key)
@@ -378,19 +430,10 @@ abstract class  ApiLayer		extends  Object
 				continue ;
 			
 			// Collect this parameter
-			if  ( $parameter [ 'url-encode' ] )
-				$url_value	=  urlencode ( $value ) ;
-			else
-				$url_value	=  $value ;
-
-			$url_parameters []	=   $parameter [ 'name' ] . '=' . $url_value ;
+			$url_parameters []	=   $parameter [ 'name' ] . '=' . $value ;
 		    }
 
-		// Build the final url
-		$url	=  $scheme . '://' . $this -> ApiUrl . '?' . implode ( '&', $url_parameters ) ;
-
-		// All done, return
-		return ( $url ) ;
+		return ( implode ( '&', $url_parameters ) ) ;
 	    }
 
 
@@ -419,22 +462,64 @@ abstract class  ApiLayer		extends  Object
 		if  ( ! $query )
 			$query	=  $this -> GetQuery ( ) ;
 
+		$post	=  $this -> HasPostParameters ( ) ;
+
 		// Save this query
 		$this -> LastQuery	=  $query ;
 
+		// Get query charset
+		$charset		=  $this -> QueryCharset ;
+
+		// Give derived classes a chance to perform pre-checks before issuing the query
+		$this -> OnBeforeQuery ( ) ;
+
 		// Curl is used here, because we may have to set options specific to https access
 		$curl	=  curl_init ( ) ;
-		curl_setopt ( $curl, CURLOPT_URL, $query ) ;
+
+//curl_setopt ( $curl, CURLOPT_VERBOSE, true ) ;
+//curl_setopt ( $curl, CURLOPT_STDERR, 'c:/temp/zz.log' ) ;
+		if  ( $post )
+		   {
+			curl_setopt ( $curl, CURLOPT_URL, $query ) ;
+			curl_setopt ( $curl, CURLOPT_POST, 1 ) ;
+
+			$params		=  $this -> GetQueryParameters ( true ) ;
+			curl_setopt ( $curl, CURLOPT_POSTFIELDS, $params ) ;
+
+			if  ( $charset )
+				curl_setopt ( $curl, CURLOPT_HTTPHEADER, [ "Content-type: multipart/form-data; charset=$charset" ] ) ;
+		    }
+		else
+		   {
+			curl_setopt ( $curl, CURLOPT_URL, $query ) ;
+
+			if  ( $charset )
+				curl_setopt ( $curl, CURLOPT_HTTPHEADER, [ "Content-type: text/html; charset=$charset" ] ) ;
+		    }
+
+		// Say that we want to retrieve query response
 		curl_setopt ( $curl, CURLOPT_RETURNTRANSFER, true ) ;
 
+		// Perform https requests without verifying originating CA authority
 		if  ( $this -> UseHttps )
 			curl_setopt ( $curl, CURLOPT_SSL_VERIFYPEER, false ) ;
 
+		// We will save the http request contents, so enable the option
+		curl_setopt ( $curl, CURLINFO_HEADER_OUT, true ) ;
+
+		// Execute the request
 		$result =  curl_exec ( $curl ) ;
+
+		// Save the contents of the headers sent
+		$this -> HttpQueryData	=  curl_getinfo ( $curl, CURLINFO_HEADER_OUT ) ;
+
 		curl_close ( $curl ) ;
 
 		// Perform checkings specific to the derived class
 		$this -> CheckResult ( $result ) ;
+
+		// Be consistent : give derived classes a chance to perform post-checks after the query has been issued
+		$this -> OnAfterQuery ( ) ;
 
 		// All done, return
 		return ( $result ) ;
@@ -476,43 +561,64 @@ abstract class  ApiLayer		extends  Object
 	 *-------------------------------------------------------------------------------------------------------------*/
 	protected function  CheckResult ( $result )
 	   {
-		$json_result	=  json_decode ( $result ) ;
-		$class		=  basename ( get_called_class ( ) ) ;
-
 		if  ( empty ( $result ) )
 		   {
-			$this -> SetResult ( [ 'success' => false, 'error' => [ 'code' => -1, 'type' => 'empty_response', 'message' => 'Empty message' ] ] ) ;
-			$this -> QueryResult -> ThrowException ( "Unexpected empty response received from $class" ) ;
+			$class		=  basename ( get_called_class ( ) ) ;
+			$this -> SetError ( -1, 'empty_response', 'Empty message', "Unexpected empty response received from $class" ) ;
 		    }
-		else if  ( isset ( $json_result -> success ) )
+		else 
 		   {
-			$this -> SetResult ( $json_result ) ;
-			$this -> QueryResult -> ThrowException ( "Unexpected $class error" ) ;
-		    }
-		else
-		   {
-			$this -> SetResult ( [ 'success' => true, 'error' => null, 'data' => $json_result ] ) ;
+			$json_result	=  json_decode ( $result ) ;
+
+			if  ( isset ( $json_result -> success ) )
+			   {
+				$this -> SetResult ( $json_result ) ;
+				$this -> QueryResult -> ThrowException ( ) ;
+			    }
+			else
+			   {
+				$this -> SetResult ( [ 'success' => true, 'error' => null, 'data' => $json_result ] ) ;
+			    }
 		    }
 	    }
 
 
-	// SetResult -
-	//	Sets the result object for an api request. The accepted format can either be an stdClass object or an array,
-	//	since it can be called for a json_decode() object or an array that sets initial values to 'success'.
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        SetResult - Assigns the result of the last executed query.
+	
+	    PROTOTYPE
+	        $apilayer -> SetResult ( $result ) ;
+	
+	    DESCRIPTION
+		Sets the QueryResult object for an api request. The accepted format can either be an stdClass object or 
+		an array, or a string, since it can be called for a json_decode() object or an array that sets initial 
+		values to 'success', or even with an http request result.
+	
+	    PARAMETERS
+	        $result (null or json object or json string or array) -
+	                A thing that will be used to set the QueryResult property, ensuring that there are three 
+			"standard" fields : 'success', 'error' and 'data'.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
 	protected function  SetResult  ( $result = null )
 	   {
+		// No result provided means everything is ok
 		if  ( $result  ===  null )
 		   {
 			$success	=  true ;
 			$error		=  null ;
 			$data		=  null ;
 		    }
+		// Results is an array
 		else if  ( is_array ( $result ) ) 
 		   {
 			$success	=  $result [ 'success' ] ;
 			$error		=  $result [ 'error' ] ;
 			$data		=  $result [ 'data' ] ;
 		    }
+		// Result is either a json string or a json object (stdClass)
 		else
 		   {
 			if  ( is_string ( $result ) ) 
@@ -520,12 +626,14 @@ abstract class  ApiLayer		extends  Object
 			else
 				$json_result	=  $result ;
 
+			// Either a json object was provided, or the supplied json string could be decoded successfully
 			if  ( $json_result )
 			   {
 				$success	=  $json_result -> success ;
 				$error		=  ( isset ( $json_result -> error ) ) ?  $json_result -> error : null ;
 				$data		=  ( isset ( $json_result -> data  ) ) ?  $json_result -> data  : null ;
 			    }
+			// The supplied json string was invalid
 			else
 			   {
 				$success	=  true ;
@@ -534,10 +642,51 @@ abstract class  ApiLayer		extends  Object
 			    }
 		    }
 
+		// All done, build the query result object
 		$this -> QueryResult	=  new ApiLayerResult ( $this, $success, $error, $data ) ;
 	    }
 
 
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        SetError - Sets an error condition during an apilayer query.
+	
+	    PROTOTYPE
+	        $apilayer -> SetError ( $code, $type, $info, $throw = true ) ;
+	
+	    DESCRIPTION
+	        Sets an error condition during an apilayer query. This function is aimed at derived classes that need
+		to report (and optionally throw) an error.
+		The $code, $type and $info parameters are here to mimic as much as possible the errors that can be
+		returned by the ApiLayers api.
+	
+	    PARAMETERS
+	        $code (integer) -
+	                Error code. 
+
+		$type (string) -
+			Error type (a string that represents a keywords).
+
+		$info (string) -
+			Error message.
+
+		$throw (boolean) -
+			When true, an exception will be thrown after setting the QueryResult property.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  SetError ( $code, $type, $info, $throw = true )
+	   {
+		$error		=  new \stdClass ( ) ;
+		$error -> code	=  $code ;
+		$error -> type	=  $type ;
+		$error -> info	=  $info ;
+
+		$this -> SetResult ( [ false, $error, null ] ) ;
+
+		if  ( $throw )
+			$this -> QueryResult -> ThrowException ( ) ;
+	    }
 
 
 	/*--------------------------------------------------------------------------------------------------------------
@@ -569,16 +718,43 @@ abstract class  ApiLayer		extends  Object
 	   {
 		if  ( $url_value  &&  ( $entry [ 'type' ]  &  self::APILAYER_PARAMETER_FLAG_COMPUTED )  &&  $entry [ 'queryget' ] ) 
 		   {
-			$callback	=  $entry [ 'queryget' ] ;
-			$value		=  $callback ( $entry ) ;
+			if  ( $entry [ 'value' ]  !==  null )
+			   {
+				$callback	=  $entry [ 'queryget' ] ;
+				$value		=  $callback ( $entry ) ;
+			    }
+			else
+				$value		=  null ;
 		    }
 		else if  ( $entry [ 'get' ] )
 		   {
-			$callback	=  $entry [ 'get' ] ;
-			$value		=  $callback ( $entry ) ;
+			if  ( $entry [ 'value' ]  !==  null )
+			   {
+				$callback	=  $entry [ 'get' ] ;
+				$value		=  $callback ( $entry ) ;
+			    }
+			else
+				$value		=  null ;
 		    }
 		else
 			$value		=  $entry [ 'value' ] ;
+
+		// Non-null string values may require additional character processing
+		if  ( $value  !==  null )
+		   {
+			if  ( ( $entry [ 'type' ]  &  self::APILAYER_PARAMETER_TYPE_MASK )  ==  self::APILAYER_PARAMETER_STRING )
+			   {
+				if  ( $entry [ 'type' ]  &  self::APILAYER_PARAMETER_FLAG_UTF8_ENCODE )
+					$value		=  utf8_encode ( $value ) ;
+
+				if  ( $entry [ 'type' ]  &  self::APILAYER_PARAMETER_FLAG_HTML_ENTITIES )
+					$value		=  html_entity_decode ( $value ) ;
+			    }
+		    }
+
+		// Urlencode the value unless otherwise specified
+		if  ( $entry [ 'value' ]  !==  null   &&  $url_value  &&  ! ( $entry [ 'type' ] & self::APILAYER_PARAMETER_FLAG_NO_URL_ENCODE ) )
+			$value	=  urlencode ( $value ) ;
 
 		return ( $value ) ; 
 	    }
@@ -623,27 +799,106 @@ abstract class  ApiLayer		extends  Object
 			return ;
 		    }
 
-		if  ( $entry [ 'type' ]  &  self::APILAYER_PARAMETER_BOOLEAN )
-			$entry [ 'value' ]	=  ( $value ) ?  "1" : "0" ;
-		else if  ( $entry [ 'type' ]  &  self::APILAYER_PARAMETER_INTEGER )
+		// Apply value checking depending on parameter type
+		$type		=  $entry [ 'type' ]  &  self::APILAYER_PARAMETER_TYPE_MASK ;
+
+		switch  ( $type ) 
 		   {
-			if  ( ! is_numeric  ( $value )  ||  ( integer ) $value  !=  $value )
-				error ( new ApiLayerException ( "Invalid integer value '$value' for the \"{$entry [ 'name' ]}\" parameter" ) ) ;
+			// Boolean parameters are either "0" or "1"
+			case	self::APILAYER_PARAMETER_BOOLEAN :
+				$entry [ 'value' ]	=  ( $value ) ?  "1" : "0" ;
+				break ;
 
-			$entry [ 'value' ]	=  ( integer ) $value ;
+			// Integer type : check that the supplied value is an integer
+			case	self::APILAYER_PARAMETER_INTEGER :
+				if  ( ! is_numeric  ( $value )  ||  ( integer ) $value  !=  $value )
+					error ( new ApiLayerException ( "Invalid integer value '$value' for the \"{$entry [ 'name' ]}\" parameter" ) ) ;
+
+				if  ( $value  <  $entry [ 'range' ] [0]  ||  $value  >  $entry [ 'range' ] [1] )
+					error ( new ApiLayerException ( "The integer value '$value' for the \"{$entry [ 'name' ]}\" parameter " .
+							"must be in the range [{$entry [ 'range' ] [0]}..{$entry [ 'range' ] [1]}]" ) ) ;
+
+				$entry [ 'value' ]	=  ( integer ) $value ;
+				break ;
+
+			// Keyword type : check that the supplied value is in the list of authorized keywords
+			case	self::APILAYER_PARAMETER_KEYWORD :
+				$lcvalue	=  strtolower ( $value ) ;
+
+				if  ( ! isset ( $entry [ 'keywords' ] [ $lcvalue ] ) ) 
+					error ( new ApiLayerException ( "Invalid keyword '$value' for the \"{$entry [ 'name' ]}\" parameter" ) ) ;
+
+				$entry [ 'value' ]	=  $entry [ 'keywords' ] [ $lcvalue ] ;
+				break ;
+
+			// Viewport type : the value must be of the form "int1xint2"
+			case	self::APILAYER_PARAMETER_VIEWPORT :
+				if  ( preg_match ( '/ (?P<width> \d+) x (?P<height> \d+)/imsx', $value, $match ) )
+					$entry [ 'value' ]	=  $value ;
+				else
+					error ( new ApiLayerException ( "Invalid viewport dimensions '$value' for the \"{$entry [ 'name' ]}\" parameter" ) ) ;
+				break ;
+
+			// For all other kind of values, no special processing is required
+			default :
+				$entry [ 'value' ]	=  $value ;
 		    }
-		else if  ( $entry [ 'type' ]  &  self::APILAYER_PARAMETER_KEYWORD )
-		   {
-			$lcvalue	=  strtolower ( $value ) ;
-
-			if  ( ! isset ( $entry [ 'keywords' ] [ $lcvalue ] ) ) 
-				error ( new ApiLayerException ( "Invalid keyword '$value' for the \"{$entry [ 'name' ]}\" parameter" ) ) ;
-
-			$entry [ 'value' ]	=  $lcvalue ;
-		    }
-		else
-			$entry [ 'value' ]	=  $value ;
 	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        HasPostParameters - Checks if there are any POST parameters for the current query.
+	
+	    PROTOTYPE
+	        $status		=  $apilayer -> HasPostParameters ( ) ;
+	
+	    DESCRIPTION
+	        Checks if there are any POST parameters for the current query. This method is used by the Execute()
+		method to determine whether a POST or GET query should be issued.
+	
+	    RETURN VALUE
+	        True if there is at least one parameter definition requiring that a POST request be issued, false
+		otherwise.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  HasPostParameters ( )
+	   {
+		foreach  ( $this -> Parameters  as  $parameter )
+		   {
+			if  ( $parameter [ 'url-parameter' ]  &&  $parameter [ 'value' ]  !==  null  &&
+					( $parameter [ 'type' ]  &&  self::APILAYER_PARAMETER_FLAG_POST ) )
+				return ( true ) ;
+		    }
+
+		return ( false ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        OnBeforeQuery, OnAfterQuery - Perform pre- and post-query checks.
+	
+	    PROTOTYPE
+	        $apilayer -> OnBeforeQuery ( ) ;
+		$apilayer -> OnAfterQuery ( ) ;
+	
+	    DESCRIPTION
+	        These two methods can be considered as "events" called before and after issuing a query. The derived
+		classes can perform further checks (other than the default ones that handle parameter definitions) and
+		throw an exception if needed.
+		This is the case for example of the PdfLayer api, where either the document_url or document_html
+		parameter is required. This case cannot be solved through simple declarative paraameter structures as 
+		they are currently implemented, thus the need to be able to take the control before it's too late.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  OnBeforeQuery ( )
+	   { }
+
+	protected function  OnAfterQuery ( ) 
+	   { }
     }
 
 
@@ -676,10 +931,18 @@ class  ApiLayerResult		extends  Object
 
 	// ThrowException -
 	//	Throws an exception if the current api call has failed.
-	public function  ThrowException ( $message )
+	public function  ThrowException ( $message = null )
 	   {
 		if  ( ! $this -> Success )
+		   {
+			if  ( ! $message )
+			   {
+				$class		=  basename ( get_class ( $this -> Parent ) ) ;
+				$message	=  "Error in the $class API" ;
+			    }
+
 			error ( new ApiLayerException ( $this -> Error -> GetMessage ( $message ) ) ) ;
+		    }
 	    }
 
 
@@ -704,6 +967,7 @@ class  ApiLayerResultError	extends  Object
 	public		$Code		=  0 ;			// Error code
 	public		$Type		=  null ;		// Error type (a keyword)
 	public		$Message	=  null ;		// Error message
+
 
 	public function  __construct ( $parent, $error )
 	   {
