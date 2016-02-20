@@ -69,8 +69,8 @@ abstract class  ApiLayer		extends  Object
 	// Parameters that require a POST request
 	const		APILAYER_PARAMETER_FLAG_POST		=  0x20000000 ;
 	// Options to be applied to string parameters
-	const		APILAYER_PARAMETER_FLAG_UTF8_ENCODE	=  0x01000000 ;		// Convert string to utf8 (default : on)
-	const		APILAYER_PARAMETER_FLAG_HTML_ENTITIES	=  0x02000000 ;		// Interpret html entities before utf8 encoding (default : on)
+	const		APILAYER_PARAMETER_FLAG_UTF8_ENCODE	=  0x01000000 ;		// Convert string to utf8 (default : off)
+	const		APILAYER_PARAMETER_FLAG_HTML_ENTITIES	=  0x02000000 ;		// Interpret html entities before utf8 encoding (default : off)
 	const		APILAYER_PARAMETER_FLAG_NO_URL_ENCODE	=  0x04000000 ;		// Do not urlencode() this parameter
 
 	// A mask to isolate flags from parameter type.
@@ -80,8 +80,8 @@ abstract class  ApiLayer		extends  Object
 	public		$AccessKey ;
 	// When true, https access will be used
 	public		$UseHttps		=  false ;
-	// Set to true for using POST requests instead of GET
-	public		$Post			=  false ;
+	// Character set to be used when issuing queries to the Apilayer API
+	public		$QueryCharset		=  false ;
 	// Api url - must be set by derived classes
 	protected	$ApiUrl ;
 	// Extra Api parameters - must be defined by derived classes and passed to the class constructor.
@@ -382,7 +382,7 @@ abstract class  ApiLayer		extends  Object
 	public function  GetQuery ( )
 	   {
 		$scheme			=  ( $this -> UseHttps ) ?  'https' : 'http' ;
-		$url	=  $scheme . '://' . $this -> ApiUrl . '?' . $this -> GetQueryParameters ( ) ;
+		$url			=  $scheme . '://' . $this -> ApiUrl . '?' . $this -> GetQueryParameters ( ) ;
 
 		return ( $url ) ;
 	    }
@@ -391,7 +391,7 @@ abstract class  ApiLayer		extends  Object
 	public function  GetQueryUrl ( )
 	   {
 		$scheme			=  ( $this -> UseHttps ) ?  'https' : 'http' ;
-		$url	=  $scheme . '://' . $this -> ApiUrl ;
+		$url			=  $scheme . '://' . $this -> ApiUrl ;
 
 		return ( $url ) ;
 	    }
@@ -476,8 +476,6 @@ abstract class  ApiLayer		extends  Object
 		// Curl is used here, because we may have to set options specific to https access
 		$curl	=  curl_init ( ) ;
 
-//curl_setopt ( $curl, CURLOPT_VERBOSE, true ) ;
-//curl_setopt ( $curl, CURLOPT_STDERR, 'c:/temp/zz.log' ) ;
 		if  ( $post )
 		   {
 			curl_setopt ( $curl, CURLOPT_URL, $query ) ;
@@ -750,11 +748,11 @@ abstract class  ApiLayer		extends  Object
 				if  ( $entry [ 'type' ]  &  self::APILAYER_PARAMETER_FLAG_HTML_ENTITIES )
 					$value		=  html_entity_decode ( $value ) ;
 			    }
-		    }
 
-		// Urlencode the value unless otherwise specified
-		if  ( $entry [ 'value' ]  !==  null   &&  $url_value  &&  ! ( $entry [ 'type' ] & self::APILAYER_PARAMETER_FLAG_NO_URL_ENCODE ) )
-			$value	=  urlencode ( $value ) ;
+			// Urlencode the value unless otherwise specified
+			if  ( $url_value  &&  ! ( $entry [ 'type' ] & self::APILAYER_PARAMETER_FLAG_NO_URL_ENCODE ) )
+				$value	=  urlencode ( $value ) ;
+		    }
 
 		return ( $value ) ; 
 	    }
@@ -971,6 +969,8 @@ class  ApiLayerResultError	extends  Object
 
 	public function  __construct ( $parent, $error )
 	   {
+		parent::__construct ( ) ;
+
 		if  ( $error )
 		   {
 			$this -> Code		=  $error -> code ;

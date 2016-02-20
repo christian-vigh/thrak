@@ -104,6 +104,11 @@ use	Thrak\Types\String ;
   ==============================================================================================================*/
 class	ScreenshotLayer		extends		ApiLayer
    {
+	// Screenshot possible image formats
+	const	FORMAT_PNG		=  'png' ;
+	const	FORMAT_JPEG		=  'jpg' ;
+	const	FORMAT_GIF		=  'gif' ;
+
 	// Last retrieved screen capture
 	public		$Capture	=  null ;
 
