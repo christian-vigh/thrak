@@ -1149,7 +1149,7 @@ abstract class  WhoisInformation		extends		WhoisInformationBase
 			//	An ip address followed by a mask. For the moment, keep it as is
 			case	self::VALUE_TYPE_NETMASK :
 				$mask		=  Convert::StringToIPV4AddressRange ( $value, true ) ;
-				$result		=  [ 'mask' => $value, 'low' => $mask [0], 'high' => $mask [1] ] ;
+				$result		=  [ 'mask' => $value, 'low' => $mask [ 'low' ], 'high' => $mask [ 'high' ] ] ;
 				break ;
 
 			// Net range -

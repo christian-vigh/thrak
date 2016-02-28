@@ -614,13 +614,13 @@ END;
 			   [
 				'low'	=>
 				   [
-					'ip-address'	=>  implode ( '.', $range [0] ),
+					'ip-address'	=>  implode ( '.', $range [ 'low' ] ),
 					'ip-version'	=>  4,
 					'ip-bytes'	=>  $range [0]
 				    ],
 				'high'	=>
 				   [
-					'ip-address'	=>  implode ( '.', $range [1] ),
+					'ip-address'	=>  implode ( '.', $range [ 'high' ] ),
 					'ip-version'	=>  4,
 					'ip-bytes'	=>  $range [1]
 				    ] 
