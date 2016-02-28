@@ -23,6 +23,9 @@
 	  using ssh2_exec() without disconnecting then reconnecting/authenticating ; but it also prevents 
 	  further SFTP file transfers.
 
+    [Version : 1.0.3]	[Date : 2016/02/28]     [Author : CV]
+	. Changed the _execute() method to remove carriage returns from command.
+
  **************************************************************************************************************/
 namespace	Thrak\Network\Ssh ;
 
@@ -295,6 +298,9 @@ class  SshSession		extends  Object
 	  ==============================================================================================================*/
 	private function  __execute ( $command, &$output, $env, $callback )
 	   {
+		// Carriage returns makes Unix going crazy when using constructs such as "command <<END"
+		$command	=  str_replace ( "\r", '', $command ) ;
+
 		// A line of the form : "echo [status=$?]" is added at the end of the command(s) to be executed
 		// It is later extracted after command(s) execution to retrieve the status of the last command executed
 		static $status_re		=  '/ \[ status = (?P<status>\d+) \] \n /imsx' ;
