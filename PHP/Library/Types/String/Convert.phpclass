@@ -52,6 +52,9 @@
      [Version : 1.0.9]		[Date : 2015/08/27]		[Author : CV]
 	. Added the ToArgv() method.
 
+     [Version : 1.0.10]		[Date : 2016/02/28]		[Author : CV]
+	. Changed the return value of the StringToIPV4AddressRange() method.
+
  ***************************************************************************************************/
 namespace 	Thrak\Types\String ;
 
@@ -1171,12 +1174,7 @@ class  	Convert		extends  Object
 	        $result		=  Convert::StringToIPV4AddressRange ( $value, $return_as_string = false ) ;
 	 
 	    DESCRIPTION
-	        Converts an IP mask in the form "1.2.3.0/24" into an ip range. For example, supplying "1.2.3.0/24" to
-		this function will return a two-elements array with the following values, when the $return_as_string
-		parameter is set to true :
-			[ "1.2.3.0", "1.2.3.255" ]
-		and the following will be returned if set to false :
-			[ [ 1, 2, 3, 0 ], [ 1, 2, 3, 255 ] ]
+	        Converts an IP mask in the form "1.2.3.0/24" into an ip range. 
 	 
 	    PARAMETERS
 	        $value (string) -
@@ -1187,12 +1185,18 @@ class  	Convert		extends  Object
 			When false, two arrays of 4-bytes values are returned.
 	 
 	    RETURN VALUE
-	        Returns a range of ip addresses.
+		this function will return an associative array with the following entries :
+		- 'ip' :
+			The initial ip specified (eg, "1.2.3.0")
+		- 'mask' :
+			The ip mask (eg, "24")
+		- 'low' :
+			Low ip of the range (eg, "1.2.3.0")
+		- 'high' :
+			High ip of the range (eg, "1.2.3.255").
 
 	    NOTES
-		Not specifying the "/length" part is equivalent to a length of 32. Thus, "1.2.3.4", which is
-		equivalent to "1.2.3.4/32", will return :
-			[ "1.2.3.4", "1.2.3.4" ]
+		Not specifying the "/length" part is equivalent to a length of 32.
 	 
 	 *-------------------------------------------------------------------------------------------------------------*/
 	static public function  StringToIPV4AddressRange ( $value, $return_as_string = false )
@@ -1251,11 +1255,22 @@ class  	Convert		extends  Object
 		// Build the end address
 		$address_high	=  [ ( $address  >>  24 ) & 0xFF, ( $address  >>  16 ) & 0xFF, ( $address  >>  8 ) & 0xFF, $address & 0xFF ] ;
 
-		// All done, return
-		if  ( $return_as_string )
-			return ( [ implode ( '.', $address_low ), implode ( '.', $address_high ) ] ) ;
+		// Build result
+		$result		=  [ 'ip' => "$b1.$b2.$b3.$b4", 'mask' => $mask ] ;
+
+		if  ( $return_as_string ) 
+		   {
+			$result [ 'low' ]	=  implode ( '.', $address_low ) ;
+			$result [ 'high' ]	=  implode ( '.', $address_high ) ;
+		    }
 		else
-			return ( [ $address_low, $address_high ] ) ;
+		   {
+			$result [ 'low' ]	=  $address_low ;
+			$result [ 'high' ]	=  $address_high ;
+		    }
+
+		// All done, return
+		return ( $result ) ;
 	    }
 
 
