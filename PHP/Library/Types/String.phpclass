@@ -161,6 +161,10 @@
      [Version : 2.0.31]	[Date : 2015/12/01]		[Author : CV]
 	. Added the SplitFields() method.
  
+     [Version : 2.0.32]	[Date : 2016/02/03]		[Author : CV]
+	. Added the FindClosingDelimiter() method.
+	. Moved the FrenchToMysqlDate() and MysqlToFrenchDate() to the Convert class.
+ 
  ***************************************************************************************************/
 namespace 	Thrak\Types ;
 
@@ -1302,50 +1306,99 @@ class String  extends  Object
 	/*-------------------------------------------------------------------------------------------
 
 	    NAME
-		FrenchToMySqlDate - Converts a french date into MySql format.
+		FindClosingDelimiter - Finds the closing delimiter in a string.
 
 	    PROTOTYPE
-		$result = String::FrenchToMySqlDate ( $date ) ;
+		$position	=  String::FindClosingDelimiter ( $text, $start = 0, $opening = '{',
+								  $closing = '}' ) ;
 
 	    DESCRIPTION
-	    	Converts a french date (dd/mm/yyyy) into MySql format (yyyy-mm-dd).
+		Some file formats contain nested constructs that can contain the same delimiters.
+		For example, the Rtf file format may contain constructs such as :
+
+			{\par {b some text}}
+
+		Sometimes, it is necessary to catch the position of the right curly brace that 
+		corresponds to the left one before the \par tag.
+		This is the purpose of this method.
 
 	    PARAMETERS
-		$date (string) -
-			Date to be converted.
+		$text (string) -
+			Text to be searched for.
+
+		$start (integer) -
+			Position, in $text, that starts the first opening delimiter. The specified
+			position MUST be the start of the first character of the opening delimiter,
+			otherwise a negative error code will be returned.
+
+		$opening, $closing (string) -
+			Opening and closing delimiters. These can be strings of arbitrary length.
 
 	    RETURN VALUE
-		The converted date.
+		Returns a positive integer value giving the position of the first character of the
+		closing delimiter. The function will return the following negative error codes in
+		case of error :
+		. -1 : The string at the position given by the $start parameter does not correspond
+		       to the opening delimiter.
+		. -2 : No ending delimiter found.
 
 	    NOTES
-	    	Extra hours, minutes and seconds are ignored.
-	    	This function also accepts dates in the 'dd/mm/yy' format.
+		The character offset returned by this method starts from offset 0 of the string, not 
+		from the offset specified by the $start parameter.
 
 	 --------------------------------------------------------------------------------------------*/
-	public static function  FrenchToMySqlDate ( $date )
+	public static function  FindClosingDelimiter ( $text, $start = 0, $opening = '{', $closing = '}' )
 	   {
-		$date 	=  substr ( $date, 0, 10 ) ;
+		// To be able to handle variable-length delimiters while trying to preserve performance
+		// (using the strcspn() function), we will have to collect some quantities
+		$opening_char		=  $opening [0] ;
+		$opening_length		=  strlen ( $opening ) ;
+		$closing_char		=  $closing [0] ;
+		$closing_length		=  strlen ( $closing ) ;
+		$text_length		=  strlen ( $text ) ;
 
-		if  ( ! $date )
-			return ( '' ) ;
+		// Searched characters will be the sum of the first character of the opening and closing delimiters
+		$searched_chars		=  $opening_char . $closing_char ;
 
-		$parts 	=  explode ( '/', $date ) ;
+		// The start position must point to the opening delimiter
+		if  ( substr_compare ( $text, $opening, $start, $opening_length ) )
+			return ( -1 ) ;
 
-		if  ( strlen ( $parts [2] )  ==  2 )
+		// Search is over when nesting level is zero. It is initially set to 1 because we already have an opening delimiter
+		$nesting_level		=  1 ;
+
+		// Start the search after the initial opening delimiter
+		$position		=  $start + $opening_length ;
+
+		// Loop through the supplied string, trying to find next opening or closing delimiter
+		while  ( $position  <  $text_length  &&  ( $length = strcspn ( $text, $searched_chars, $position ) )  >=  0 )
 		   {
-		   	$year		=  date ( 'y' ) ;
-		   	$century	=  substr ( date ( 'Y', 0, 2 ) ) ;
-			$delta 		=  $parts [2] - $year ;
+			// Update current position according to the number of characters skipped
+			$position	+=  $length ;
 
-			// If specified year is greater than current year, consider we're in the current century
-			// Consider arbitrarily that year greater that current year + 10 are in the past century
-			if  ( $delta  <  0  ||  ( $delta  >=  0  &&  $delta  <=  $year + 10 ) )
-				$parts [2] 	.=  $century + $parts  [2] ;
-			else
-				$parts [2] 	.=  ( $century - 1 ) + $parts [2] ;
+			// Opening delimiter found
+			if  ( ! substr_compare ( $text, $opening, $position, $opening_length ) )
+			   {
+				$nesting_level ++ ;					// Update nesting level
+				$position	+=  $length + $opening_length ;		// Update current position to start after the opening delimiter
+			    }
+			// Closing delimiter found
+			else if  ( ! substr_compare ( $text, $closing, $position, $closing_length ) )
+			   {
+				$nesting_level -- ;					// Update nesting level
+
+				// Nesting level is zero : we have found the matching closing delimiter
+				if  ( ! $nesting_level )
+					return ( $position ) ;
+
+				$position	+=  $length + $closing_length ;		// Update current position to start after the opening delimiter
+			    }
+			// Found character did not start neither an opening delimiter nor a closing one ; just go past this character
+			else 
+				$position ++ ;
 		    }
 
-		return ( $parts  [2] . '-' . $parts [1] . '-' . $parts [0] ) ;
+		return ( -2 ) ;
 	    }
 
 
@@ -2456,41 +2509,6 @@ class String  extends  Object
 	    }
 
 	
-	/*-------------------------------------------------------------------------------------------
-
-	    NAME
-		MySqlToFrenchDate - Converts a Mysql date into the french format.
-
-	    PROTOTYPE
-		$result = String::MySqlToFrenchDate ( $date ) ;
-
-	    DESCRIPTION
-	    	Converts a MySql date (yyyy-mm-dd) to french format (dd/mm/yyyy).
-
-	    PARAMETERS
-		$date (string) -
-			Date to be converted.
-
-	    RETURN VALUE
-		The converted date.
-
-	    NOTES
-	    	Extra hours, minutes and seconds are ignored.
-
-	 --------------------------------------------------------------------------------------------*/
-	public static function  MySqlToFrenchDate ( $date )
-	   {
-		$date 	=  substr ( $date, 0, 10 ) ;
-
-		if  ( $date  ==  '0000-00-00' )
-			return ( '' ) ;
-
-		$parts 	=  explode ( '-', $date ) ;
-
-		return ( $parts [2] . '/' . $parts [1] . $parts [0] ) ;
-	    }
-
-
 	/*-------------------------------------------------------------------------------------------
 
 	    NAME
