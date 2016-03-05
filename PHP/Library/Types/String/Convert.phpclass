@@ -55,6 +55,9 @@
      [Version : 1.0.10]		[Date : 2016/02/28]		[Author : CV]
 	. Changed the return value of the StringToIPV4AddressRange() method.
 
+     [Version : 1.0.11]		[Date : 2016/03/02]		[Author : CV]
+	. Moved here the String::FrenchToMySqlDate() and MySqlToFrenchDate() methods.
+
  ***************************************************************************************************/
 namespace 	Thrak\Types\String ;
 
@@ -734,6 +737,91 @@ class  	Convert		extends  Object
    		// Compute the result
    		$result 	=  array_sum ( $values ) ;
    		return ( $result ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		FrenchToMysqlDate - Converts a french date into MySql format.
+
+	    PROTOTYPE
+		$result = String::FrenchToMySqlDate ( $date ) ;
+
+	    DESCRIPTION
+	    	Converts a french date (dd/mm/yyyy) into MySql format (yyyy-mm-dd).
+
+	    PARAMETERS
+		$date (string) -
+			Date to be converted.
+
+	    RETURN VALUE
+		The converted date.
+
+	    NOTES
+	    	Extra hours, minutes and seconds are ignored.
+	    	This function also accepts dates in the 'dd/mm/yy' format.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  FrenchToMysqlDate ( $date )
+	   {
+		$date 	=  substr ( $date, 0, 10 ) ;
+
+		if  ( ! $date )
+			return ( '' ) ;
+
+		$parts 	=  explode ( '/', $date ) ;
+
+		if  ( strlen ( $parts [2] )  ==  2 )
+		   {
+		   	$year		=  date ( 'y' ) ;
+		   	$century	=  substr ( date ( 'Y', 0, 2 ) ) ;
+			$delta 		=  $parts [2] - $year ;
+
+			// If specified year is greater than current year, consider we're in the current century
+			// Consider arbitrarily that year greater that current year + 10 are in the past century
+			if  ( $delta  <  0  ||  ( $delta  >=  0  &&  $delta  <=  $year + 10 ) )
+				$parts [2] 	.=  $century + $parts  [2] ;
+			else
+				$parts [2] 	.=  ( $century - 1 ) + $parts [2] ;
+		    }
+
+		return ( $parts  [2] . '-' . $parts [1] . '-' . $parts [0] ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+	    NAME
+		MySqlToFrenchDate - Converts a Mysql date into the french format.
+
+	    PROTOTYPE
+		$result = String::MysqlToFrenchDate ( $date ) ;
+
+	    DESCRIPTION
+	    	Converts a MySql date (yyyy-mm-dd) to french format (dd/mm/yyyy).
+
+	    PARAMETERS
+		$date (string) -
+			Date to be converted.
+
+	    RETURN VALUE
+		The converted date.
+
+	    NOTES
+	    	Extra hours, minutes and seconds are ignored.
+
+	 --------------------------------------------------------------------------------------------*/
+	public static function  MysqlToFrenchDate ( $date )
+	   {
+		$date 	=  substr ( $date, 0, 10 ) ;
+
+		if  ( $date  ==  '0000-00-00' )
+			return ( '' ) ;
+
+		$parts 	=  explode ( '-', $date ) ;
+
+		return ( $parts [2] . '/' . $parts [1] . $parts [0] ) ;
 	    }
 
 
