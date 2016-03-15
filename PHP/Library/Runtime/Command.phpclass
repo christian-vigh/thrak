@@ -627,7 +627,7 @@ class  AsynchronousCommand 		extends  Object
 							$this -> Cwd, $this -> Environment ) ;
 							
 		if  ( $this -> Process  ===  false )
-			error ( new \thrak\System\RuntimeException ( "Unable to start process." ) ) ;
+			error ( new \Thrak\System\RuntimeException ( "Unable to start process." ) ) ;
 		
 		// Useless on Windows :
 		stream_set_blocking ( $this -> Pipes [1], 1 ) ;

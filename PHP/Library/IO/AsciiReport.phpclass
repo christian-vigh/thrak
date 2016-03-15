@@ -512,7 +512,8 @@ class  AsciiReport		extends  Object
 		   {
 			// Plural form is reserved only to the very last word of the singular form
 			$words		=  explode ( ' ', $singular ) ;
-			$low_singular	=  strtolower ( $words [ count ( $words ) - 1 ] ) ;
+			$singular	=  array_pop ( $words ) ;
+			$low_singular	=  strtolower ( $singular ) ;
 			
 			// A plural form exists ; validate it
 			if  ( isset ( self::$PluralForms [ $low_singular ] ) )
@@ -534,9 +535,8 @@ class  AsciiReport		extends  Object
 				$plural		=  $singular . 's' ;
 
 			// If the singular form contains several words, don't forget to put them in the plural form
-			if  ( count ( $words )  >  1 )
+			if  ( count ( $words ) )
 			   {
-				array_pop ( $words ) ;
 				$plural		=  implode ( ' ', $words ) . ' ' . $plural ; 
 			    }
 		    }
