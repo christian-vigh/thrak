@@ -31,7 +31,7 @@
 		</usage>
 
 		<integer name="days, d" default="1">
-			Number of past day connections to be reported.
+			Number of past day connections to be reported. 
 		</integer>
 
 		<flag name="include_today, it, today, t">

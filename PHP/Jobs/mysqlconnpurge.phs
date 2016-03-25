@@ -35,7 +35,7 @@
 		</integer>
 
 		<email name="send_to, st">
-			Specifies an email address for the report recipient.
+			Specifies an email address for the report recipient. 
 		</email>
 	</command>
 END;
