@@ -18,6 +18,9 @@
 	. Added the TrackingBufferId member.
 	. Added the MailLog() method.
 
+    [Version : 1.0.2]	[Date : 2016/03/26]     [Author : CV]
+	. Added the BannedUrlCheck() method.
+
  **************************************************************************************************************/
 namespace 	Thrak\Web ;
 
@@ -97,6 +100,43 @@ class	WebSecurity		extends  Object
 	 **************************************************************************************************************
 	 **************************************************************************************************************
 	 **************************************************************************************************************/
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
+	        BannedUrlCheck - Checks for banned urls.
+	 
+	    PROTOTYPE
+	        $websecurity -> BannedUrlCheck ( $check_only = true ) ;
+	 
+	    DESCRIPTION
+		Uses the error-redirect.php mechanism for checking for banned urls. If a file named ".error-redirect.php"
+		exists in the domain root, it will be included to verify the requested url and check that it does not 
+		belong to the list of banned urls.
+
+	    PARAMETERS
+		$check_only (boolean) -
+			When true, the requesting user will experience a slight delay before control returns.
+			When false, an HTTP 404 error page will be displayed.
+
+	    NOTES
+		This method is meant to be used by error handler pages defined in the .htaccess file.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  BannedUrlCheck ( $check_only = true )
+	   {
+		$error_redirect_include		=  $_SERVER [ 'DOCUMENT_ROOT' ] . '/.error-redirect.php' ;
+
+		if  ( file_exists ( $error_redirect_include ) ) 
+		   {
+			global		$__ERROR_REDIRECT_CHECK_ONLY__ ;
+
+			$__ERROR_REDIRECT_CHECK_ONLY__ =  1 ;
+
+			include ( $error_redirect_include ) ;
+		    }
+	    }
+
 
 	/*--------------------------------------------------------------------------------------------------------------
 	 
