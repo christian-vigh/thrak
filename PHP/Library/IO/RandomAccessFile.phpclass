@@ -50,10 +50,10 @@ class  RandomAccessFile		extends		Object
 	/*--------------------------------------------------------------------------------------------------------------
 	
 	    CONSTRUCTOR -
-	        Instantiates a RandomFile object, without opening the specified file.
+	        Instantiates a RandomAccessFile object, without opening the specified file.
 	
 	    PROTOTYPE
-	        $rf	=  new  RandomFile ( $filename, $record_size, $cache_size = false, $filler = "\0" ) ;
+	        $rf	=  new  RandomAccessFile ( $filename, $record_size, $cache_size = false, $filler = "\0" ) ;
 	
 	    PARAMETERS
 	        $filename (string) -
@@ -329,7 +329,7 @@ class  RandomAccessFile		extends		Object
 	        Returns the number of records effectively copied. This value can be lower than the specified number of
 		records if :
 		- $from + $count - 1 goes past the end of file
-		- A read or write error during the copy (consider this as a paranoid check)
+		- A read or write error occurred during the copy (consider this as a paranoid check)
 	
 	    NOTES
 	        . The $to parameter can be specified past the end of file. In this case intermediate records will be 
@@ -525,7 +525,7 @@ class  RandomAccessFile		extends		Object
 			Number of records to be swapped.
 	
 	    RETURN VALUE
-	        True if the operation succeeded, false otherwise.
+	        Returns the actual number of records swapped.
 
 	    NOTES
 		Results may seem counter-intuitive when the source and destination ranges overlap. This feature may be
@@ -562,7 +562,7 @@ class  RandomAccessFile		extends		Object
 		else
 			$incr     =  1 ;
 
-		$copied_records	=  0 ;
+		$swapped_records	=  0 ;
 		$file_expanded	=  ( $to + $count  >=  $max ) ;
 
 		// Swap loop - break it on whatever error could be encountered during copy 
@@ -591,7 +591,7 @@ class  RandomAccessFile		extends		Object
 			$from       +=  $incr ;
 			$to         +=  $incr ;
 
-			$copied_records ++ ;
+			$swapped_records ++ ;
 		     }
 
 		// Our stat information may not be accurate now...
@@ -599,7 +599,7 @@ class  RandomAccessFile		extends		Object
 			$this -> StatInfo	=  null ;
 
 		// All done, return the number of records copied
-		return ( $copied_records ) ;
+		return ( $swapped_records ) ;
 	    }
 
 
@@ -662,8 +662,9 @@ class  RandomAccessFile		extends		Object
 	
 	    NOTES
 	        The last record of an existing file can be incomplete (such a situation is allowed for example when you
-		use the RandomFile class for fast access to existing text files). If the specified record number is past
-		the end of file, then the last incomplete record (if any) will be filled using the filler character.
+		use the RandomAccessFile class for fast access to existing text files). 
+		If the specified record number is the end of file, then the last incomplete record (if any) will be 
+		filled using the filler character.
 	
 	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  Write ( $record, $data ) 
