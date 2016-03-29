@@ -655,6 +655,9 @@ class  DomainException				extends  LogicException		{ }
 class  ExecutionException			extends  RuntimeException	{ }
 class  FileNotDirectoryException		extends  RuntimeException	{ }
 class  FileNotFoundException			extends  RuntimeException	{ }
+class  FileIOException				extends  RuntimeException	{ }
+class  FileCloseException			extends  RuntimeException	{ }
+class  FileOpenException			extends  RuntimeException	{ }
 class  FileReadException			extends  RuntimeException	{ }
 class  FileWriteException			extends  RuntimeException	{ }
 class  HttpException				extends  RuntimeException	{ }
