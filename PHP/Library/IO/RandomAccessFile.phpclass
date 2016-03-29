@@ -497,7 +497,7 @@ class  RandomAccessFile		extends		Object
 		$max	=  $this -> __get_record_count ( ) ;
 
 		if  ( $record  <  0  &&  $record  >=  $max )
-			error ( \Thrak\System\IndexOutOfRangeException ( $record ) ) ;
+			error ( new \Thrak\System\IndexOutOfRangeException ( $record ) ) ;
 
 		return  ( $this -> __read_record ( $record ) ) ;
 	    }
