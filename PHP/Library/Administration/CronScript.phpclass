@@ -77,6 +77,8 @@ abstract class  CronScript		extends  Object
 		<string name="job, j">
 			Specifies the job name for this script, as defined in the configuration file.
 		</string>
+
+		[SCRIPTPARAMS]
 	</command>
 END;
 
@@ -142,7 +144,9 @@ END;
 			$args	=  $argv ;
 
 		// Put the default CronScript parameter definitions inside the supplied ones
-		$this -> CL			=  new CLParser ( self::$StandardParameters, $args ) ;
+		$script_definitions		=  preg_replace ( '#<command>(?P<params>.*?)</command>#imsx', "\\1", $script_definitions ) ;
+		$definitions			=  str_replace ( '[SCRIPTPARAMS]', $script_definitions, self::$StandardParameters ) ;
+		$this -> CL			=  new CLParser ( $definitions, $args ) ;
 
 		// Save data related to this script 
 		$this -> ConfigurationFile	=  $this -> CL -> configuration_file ;
@@ -163,17 +167,6 @@ END;
 		else if  ( IS_WINDOWS  &&  $this -> JobData [ 'platform' ]  ==  CrontabConfiguration::PLATFORM_UNIX )
 			error ( new \Thrak\System\RuntimeException ( "Job \"{$this -> JobName}\" in crontab.ini file \"{$this -> ConfigurationFile}\"" .
 					"runs only on Unix platforms" ) ) ;
-
-		// I hate that but command-line must be parsed again, this time :
-		// - without the standard parameters definitions (-configuration_file and -job)
-		// - with the parameters defined for this job
-		// Maybe I should have developed an external script (such as "scriptrun") with the -configuration_fil and -job parameters.
-		if  ( isset ( $this -> JobData [ 'parameters' ] )  &&  $this -> JobData [ 'parameters' ] ) 
-			$parameters	=  $this -> JobData [ 'parameters' ] ;
-		else
-			$parameters	=  '' ;
-
-		$this -> CL	=  new CLParser ( $script_definitions, $parameters, $this -> CL -> CommandLineObject -> ExecutablePath ) ;
 
 		// Job-specific configuration file
 		$this -> JobConfigurationFile	=  $this -> JobData [ 'configuration-file' ] ;
