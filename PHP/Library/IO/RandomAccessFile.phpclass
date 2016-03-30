@@ -664,7 +664,8 @@ class  RandomAccessFile		extends		Object
 	        The last record of an existing file can be incomplete (such a situation is allowed for example when you
 		use the RandomAccessFile class for fast access to existing text files). 
 		If the specified record number is the end of file, then the last incomplete record (if any) will be 
-		filled using the filler character.
+		filled using the filler character and intermediate records initialized with the filler character will 
+		be inserted as needed.
 	
 	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  Write ( $record, $data ) 
