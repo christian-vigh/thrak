@@ -61,7 +61,7 @@ if  ( ! strncasecmp ( php_uname ( 's' ), 'windows', 7 ) )
      }
 
 // Determine if we run locally (ie, on a standalone PC, not a server)
-if  ( ! isset ( $_SERVER [ 'SERVER_ADDR' ] )  ||  ( $_SERVER [ 'SERVER_ADDR' ]  ==  '127.0.0.1'  &&  $_SERVER [ 'REMOTE_ADDR' ]  ==  '127.0.0.1' ) )
+if  ( ! isset ( $_SERVER [ 'SERVER_ADDR' ] )  ||  ( $_SERVER [ 'SERVER_ADDR' ]  ==  '127.0.0.1'  ||  $_SERVER [ 'SERVER_ADDR' ]  ==  '::1' ) )
 	define ( 'IS_LOCAL'		,  1 ) ;
 else
 	define ( 'IS_LOCAL'		,  0 ) ;
