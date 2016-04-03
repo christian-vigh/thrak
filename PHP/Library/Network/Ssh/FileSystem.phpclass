@@ -558,6 +558,9 @@ class  SshFileSystem		extends  Object
 	//	Sends a file to the remote server.
 	public function  send ( $local_file, $remote_file, $mode = 0644 )
 	   {
+		output ( "FileSystem.phpclass line 561") ;
+		dump ( $this -> Session -> Connection -> GetResource ( ) ) ;
+		output ( "ssh2_scp_send ( $local_file, " . $this -> __get_path ( $remote_file ) . ", " . sprintf ( '0%3o', $mode ) . " )" ) ;
 		$status		=  @ssh2_scp_send ( $this -> Session -> Connection -> GetResource ( ), $local_file, 
 							$this -> __get_path ( $remote_file ), $mode ) ;
 		
