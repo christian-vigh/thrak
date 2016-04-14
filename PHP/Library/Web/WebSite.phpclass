@@ -42,42 +42,83 @@ use	Thrak\Web\WebScript ;
 class  WebSite			extends	Object 
    {
 	// Site running modes
-	const		SITE_MODE_PRODUCTION		=  0 ;		// Reduced error messages
-	const		SITE_MODE_MAINTENANCE		=  1 ;		// Displays a maintenance message, unless the "debug" GET parameter is set
-	const		SITE_MODE_DEBUG			=  2 ;		// Like "Production", with debug messages enabled
+	const			SITE_MODE_PRODUCTION		=  0 ;		// Reduced error messages
+	const			SITE_MODE_MAINTENANCE		=  1 ;		// Displays a maintenance message, unless the "debug" GET parameter is set
+	const			SITE_MODE_DEBUG			=  2 ;		// Like "Production", with debug messages enabled
 
 	// Common session variables for site settings
-	const		SITE_VAR_LANGUAGE		=  '__SITE_LANGUAGE__' ;
+	const			SITE_VAR_LANGUAGE		=  '__SITE_LANGUAGE__' ;
+
+	// Http error codes and descriptions
+	protected static	$HttpErrorCodes 		= 
+	   [
+		'200' => [ 'short' => 'OK'				, 'long' => 'OK'							],
+		'201' => [ 'short' => 'Created'				, 'long' => 'Created'							],
+		'202' => [ 'short' => 'Accepted'			, 'long' => 'Accepted'							],
+		'203' => [ 'short' => 'Non-Authorative Information'	, 'long' => 'Non-Authorative Information'				],
+		'204' => [ 'short' => 'No Content'			, 'long' => 'No Content'						],
+		'205' => [ 'short' => 'Reset Content'			, 'long' => 'Reset Content'						],
+		'206' => [ 'short' => 'Partial Content'			, 'long' => 'Partial Content'						],
+		'300' => [ 'short' => 'Multiple Choices'		, 'long' => 'Multiple Choices'						],
+		'301' => [ 'short' => 'Moved Permanently'		, 'long' => 'Moved Permanently'						],
+		'302' => [ 'short' => 'Moved Temporarily'		, 'long' => 'Moved Temporarily'						],
+		'303' => [ 'short' => 'See Other'			, 'long' => 'See Other'							],
+		'304' => [ 'short' => 'Not Modified'			, 'long' => 'Not Modified'						],
+		'305' => [ 'short' => 'Use Proxy'			, 'long' => 'Use Proxy'							],
+		'400' => [ 'short' => 'Bad Request'			, 'long' => 'Bad Request'						],
+		'401' => [ 'short' => 'Authorization Required'		, 'long' => 'Authorization Required'					],
+		'402' => [ 'short' => 'Payment Required (not used yet]'	, 'long' => 'Payment Required (not used yet]'				],
+		'403' => [ 'short' => 'Forbidden'			, 'long' => 'Forbidden'							],
+		'404' => [ 'short' => 'Not Found'			, 'long' => 'The requested URL was not found on this server.'		],
+		'405' => [ 'short' => 'Method Not Allowed'		, 'long' => 'Method Not Allowed'					],
+		'406' => [ 'short' => 'Not Acceptable (encoding]'	, 'long' => 'Not Acceptable (encoding]'					],
+		'407' => [ 'short' => 'Proxy Authentication Required'	, 'long' => 'Proxy Authentication Required'				],
+		'408' => [ 'short' => 'Request Timed Out'		, 'long' => 'Request Timed Out'						],
+		'409' => [ 'short' => 'Conflicting Request'		, 'long' => 'Conflicting Request'					],
+		'410' => [ 'short' => 'Gone'				, 'long' => 'Gone'							],
+		'411' => [ 'short' => 'Content Length Required'		, 'long' => 'Content Length Required'					],
+		'412' => [ 'short' => 'Precondition Failed'		, 'long' => 'Precondition Failed'					],
+		'413' => [ 'short' => 'Request Entity Too Long'		, 'long' => 'Request Entity Too Long'					],
+		'414' => [ 'short' => 'Request URI Too Long'		, 'long' => 'Request URI Too Long'					],
+		'415' => [ 'short' => 'Unsupported Media Type'		, 'long' => 'Unsupported Media Type'					],
+		'500' => [ 'short' => 'Internal Server Error'		, 'long' => 'Internal Server Error'					],
+		'501' => [ 'short' => 'Not Implemented'			, 'long' => 'Not Implemented'						],
+		'502' => [ 'short' => 'Bad Gateway'			, 'long' => 'Bad Gateway'						],
+		'503' => [ 'short' => 'Service Unavailable'		, 'long' => 'Service Unavailable'					],
+		'504' => [ 'short' => 'Gateway Timeout'			, 'long' => 'Gateway Timeout'						],
+		'505' => [ 'short' => 'HTTP Version Not Supported'	, 'long' => 'HTTP Version Not Supported'				]
+	    ] ;
+
 
 	// Site root
-	public		$Root ;
+	public			$Root ;
 	// Site domain
-	public		$Domain ;
+	public			$Domain ;
 	// Email contacts
-	public		$Emails ;
+	public			$Emails ;
 	// Site running mode
-	public		$Mode ;
+	public			$Mode ;
 	// Maintenance mode parameters
-	public		$MaintenanceMessage ;
-	public		$MaintenanceUntil ;
-	public		$MaintenancePage ;
+	public			$MaintenanceMessage ;
+	public			$MaintenanceUntil ;
+	public			$MaintenancePage ;
 	// Default page
-	public		$DefaultPage ;
+	public			$DefaultPage ;
 	// "Under construction" page
-	public		$UnderConstructionPage ;
+	public			$UnderConstructionPage ;
 	// Error page
-	public		$ErrorPage ;
+	public			$ErrorPage ;
 	// Client language
-	public		$Language ;
+	public			$Language ;
 	// User and group 
-	public		$User ;
-	public		$Group ;
+	public			$User ;
+	public			$Group ;
 	// Page and scripts roots
-	public		$PageRoot ;
-	public		$ScriptRoot ;
+	public			$PageRoot ;
+	public			$ScriptRoot ;
 	// Character set and additional headers
-	public		$CharacterSet ;
-	public		$Headers ;
+	public			$CharacterSet ;
+	public			$Headers ;
 	
 
 	/*--------------------------------------------------------------------------------------------------------------
@@ -298,23 +339,12 @@ class  WebSite			extends	Object
 			option Site/download-root will be taken.
 
 	 *-------------------------------------------------------------------------------------------------------------*/
-	public function  Download ( $file, $name = null, $local = true, $root = null )
+	public function  Download ( $filename, $name = null, $local = true, $root = null )
 	   {
 		global		$Configuration, $Database, $WebSecurity ;
 
-		if  ( is_string ( $file ) )
-			$file	=  Sanitizer::Wrap ( $file ) ;
-
-		if  ( ! $root )
-			$root	=  $Configuration -> Get ( 'Site/download-root' ) ;
-
-		$filename	=  $file -> file ( [ 'existing' => true, 'local' => $local, 'root' => $root ] ) ;
-
 		if  ( ! $filename )
-		   {
-			echo ( "File not found." ) ;
-			return ;
-		    }
+			$this -> ErrorPage ( 404 ) ;
 
 		$name	=  ( string ) $name ;
 
@@ -359,6 +389,87 @@ class  WebSite			extends	Object
 							download_tracking_buffer_id	=  $tracking_buffer_id
 					   " ;
 		$Database -> Execute ( $query ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        ErrorPage - Generates an error page 
+	
+	    PROTOTYPE
+	        $WebSite -> ErrorPage ( $error_code, $error_message = false ) ;
+	
+	    DESCRIPTION
+	        Generates an http error page for the specified http code.
+	
+	    PARAMETERS
+	        $error_code (integer) -
+	                Http error code.
+
+		$error_message (string) -
+			Error message. If not supplied, a standard error message will be displayed.
+	
+	    RETURN VALUE
+	        This function never returns. Bye bye...
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  ErrorPage ( $error_code, $error_message = false )
+	   {
+		// Variables referenced in Html code and headers
+		if  ( isset ( self::$HttpErrorCodes [ $error_code ] ) )
+		   {
+			$http_error 		=  self::$HttpErrorCodes [ $error_code ] [ 'short' ] ;
+			$http_error_description =  self::$HttpErrorCodes [ $error_code ] [ 'long' ] ;
+		    }
+		else
+		   {
+			$http_error 		=  
+			$http_error_description =  "Unkown error $error_code" ;
+		    }
+
+		$apache_version		=  apache_get_version ( ) ;
+		$server_name 		=  $_SERVER [ 'SERVER_NAME' ] ;
+		$server_port 		=  $_SERVER [ 'SERVER_PORT' ] ;
+		$date 			=  date ( 'r' ) ;
+
+		// Generate the final html code that mimics an error page
+		$html 	=  <<<END
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
+<html><head>
+<title>$error_code $http_error</title>
+</head><body>
+<h1>$http_error</h1>
+<p>$http_error_description</p>
+<hr>
+<address>$apache_version at $server_name Port $server_port</address>
+</body></html>
+
+END;
+		$length	=  strlen ( $html ) ;
+
+		// Mimic an error page
+		@ob_clean ( ) ;
+
+		/***
+			Yet another quirk :
+			- When header ( "Connection: Keep-Alive" ) is called, the client receives "Connection: Keep-Alive, Keep-Alive"
+			- When this function is not called, the "Connection: Keep-Alive" is sent, but an extra "X-Pad:avoid browser bug"
+			  header is sent. This header is not present in the headers_list(), and trying to remove it from .htaccess or
+			  Apache configuration files does not work either.
+			This will be the only difference with a regular 404 error page.
+		 ***/
+		//header ( "Connection: Keep-Alive" ) ;
+		header ( "HTTP/1.0 $error_code $http_error" ) ; 
+		header ( "Content-Encoding: gzip" ) ;
+		header ( "Content-Length: $length" ) ;
+		header ( "Content-Type: text/html; charset=iso-8859-1" ) ;
+		header ( "Date: $date" ) ;
+		header ( "Keep-Alive: timeout=5, max=100" ) ;
+		header ( "Server: $apache_version" ) ;
+		header ( "Vary: Accept-Encoding" ) ;
+		echo ( gzencode ( $html ) ) ;
+		exit ;
 	    }
 
 
