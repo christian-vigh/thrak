@@ -6,34 +6,34 @@
 
     DESCRIPTION
     	A set of classes to process Rtf documents.
-    	
+
     	The key objectives when designing the class hierarchy were :
-    	
+
     	1) To be able to process Rtf contents either from a string or from a file.
-    	 
-    	   Of course, it would have been difficult to design a single class that could handle both cases ; 
-    	   multiple inheritance should have done the job but due to lack of PHP support for this, it has been 
+
+    	   Of course, it would have been difficult to design a single class that could handle both cases ;
+    	   multiple inheritance should have done the job but due to lack of PHP support for this, it has been
     	   simulated using the RtfStringSupport and RtfFileSupport traits.
     	   RtfDocument is an abstract base class that implements all the properties and methods common to
-    	   derived classes handling Rtf contents. Abstract classes that inherit from it must use either the 
+    	   derived classes handling Rtf contents. Abstract classes that inherit from it must use either the
     	   RtfStringSupport or RtfFileSupport.
-    	   
+
 	   Why such a dichotomy ?
-	   
+
 	   Consider the case of the RtfStringBeautifier and RtfFileBeautifier classes. They have eveything in
 	   common, except that the first one is working on a string, and the second one on a file. So, having
 	   a linear class hierarchy would have led to :
-	   
+
 	   			     RtfDocumentBase
 	   			    /		      \
 	   		     	    |		      |
 	   		    RtfStringBeautifier  RtfFileBeautifier
-	   		    
+
 	   But where to put the code in common in such a case ? well, you'll have to duplicate it.
 	   This situation has been avoided by implementing an abstract RtfBeautifier class, and making the
 	   the RtfStringBeautifier and RtfFileBeautifier classes use the "string" and "file" traits,
 	   respectively :
-	   
+
 	   				RtfDocument
 	   				     |
 	   			       RtfBeautifier
@@ -41,35 +41,35 @@
 	   		     	    |		      |
 	   		    RtfStringBeautifier  RtfFileBeautifier
 	   		    (use "string" trait) (use "file" trait)
-    	   
+
     	2) To be able to process Rtf file contents, even for files that are bigger than the available memory.
-    	  
+
     	   This has been achieved using the SearchableFile class.
-    	   
+
     	3) The file version should no add too much overhead compared to the string version.
-    	
+
     	   This is actually the case ; the performances of both classes are quite similar (there is a small
     	   difference of a few milliseconds on 40Mb and more files in favor of the string version).
-    	   
+
     	   Although intuition could say that the file version would be slower than the string version, the
-    	   reality is that the string version does many more string concatenations than the file version. 
-    	   This causes PHP to allocate a new block of memory to hold the existing string with the catenated 
+    	   reality is that the string version does many more string concatenations than the file version.
+    	   This causes PHP to allocate a new block of memory to hold the existing string with the catenated
     	   contents, copy existing string contents + catenated string to the new block, and free the old
     	   one. Such a process becomes expensive on large files.
-    	   
+
     	   Here also, the SearchableFile class has been of great help.
-    	   
+
     	4) Whatever the access method is (either from a string or from a file), Rtf data should be accessed
     	   more or less as a string. This means that if $rtfdoc is an instance of an RtfDocument class, you
     	   can write :
     	   		$length 	=  count ( $rtfdoc ) ;
-    	   		
+
     	    		for  ( $i = 0 ; $i  <  $length ; $i ++
     	    		   {
     	    		   	$ch 	=  $rtfdoc [$i] ;
     	    		   	...
-    	    		    } 
-    	    		    
+    	    		    }
+
     	   It also provides a few functions to manipulate strings and perform searches.
 
     AUTHOR
@@ -91,33 +91,40 @@
 interface  IRtfDocument extends 	\ArrayAccess, \Countable, \Iterator
    {
 	/*--------------------------------------------------------------------------------------------------------------
-	
+
 		Abstract methods related to string manipulation.
-	
+
 	 *-------------------------------------------------------------------------------------------------------------*/
-	 
+
+   	// to_closing_delimiter -
+   	//	Finds the closing delimiter.
+   	function  to_closing_delimiter 	( $start = 0 ) ;
+
 	// strchr -
 	//	This method is actually using the strcspn() function.
-	function  strchr  	( $cset, $start = 0 ) ;
-	
+	function  strchr  		( $cset, $start = 0 ) ;
+
 	// substr -
 	//	Extracts a substring from Rtf contents. Works like the substr() function.
-	function  substr 	( $start, $length = false ) ;
-	
-	
+	function  substr 		( $start, $length = false ) ;
+
+	// write -
+	//	Writes data to a stream/file resource.
+	function  write ( $fp, $start, $end ) ;
+
 	/*--------------------------------------------------------------------------------------------------------------
-	
+
 		Interfaces methods, implemented by the RtfStringSupport and RtfFileSupport traits, for the
 		ArrayAccess, Countable and Iterator interfaces.
-	
+
 	 *-------------------------------------------------------------------------------------------------------------*/
 	function  count 	( ) ;
-	
+
 	function  offsetExists 	( $offset ) ;
 	function  offsetGet 	( $offset ) ;
 	function  offsetSet 	( $offset, $value ) ;
 	function  offsetUnset 	( $offset ) ;
-	
+
 	function  key 		( ) ;
 	function  rewind 	( ) ;
 	function  next 		( ) ;
@@ -151,8 +158,10 @@ abstract class  RtfDocument	//extends 	Object
 	// of data, to avoid too much memory reallocations. The default "record size" for a string is 4Mb, and 16Kb
 	// for a file.
 	protected 	$RecordSize ;
-	
-	
+	// Name (either a file name or the string "(string contents)"
+	public 		$Name ;
+
+
 	/*--------------------------------------------------------------------------------------------------------------
 
 	    NAME
@@ -174,65 +183,10 @@ abstract class  RtfDocument	//extends 	Object
 	public function  __destruct ( )
 	   {
 		if  ( method_exists ( $this, '__specialized_destruct' ) )
-			call_user_func_array ( [ $this, ], '__specialized_destruct', func_get_args ( ) ) ;
+			call_user_func_array ( [ $this, '__specialized_destruct' ], func_get_args ( ) ) ;
 	    }
 
 
-	/*---------------------------------------------------------------------------------------------------*
-
-	    METHOD
-		integer 	FindClosingDelimiter ( $text, $start = 0 ) ;
-
-	    DESCRIPTION
-		Finds the closing curly brace corresponding to the opening one located at the given index
-		$start in Rtf contents $text.
-		This function takes into account braces nesting level.
-
-	    PARAMETERS
-		$text (string) -
-			Rtf data to be scanned.
-
-	 	$start (integer) -
-	 		Index of the opening brace whose closing delimiter is to be found.
-
-	    RETURN VALUE
-		Returns the index of the closing brace corresponding to the one specified or one of the
-		following values if an error occurs :
-		. -1 :
-			The character $text [$start] is not an opening curly brace.
-		. -2 :
-			The corresponding closing delimiter was not found.
-
-	 *---------------------------------------------------------------------------------------------------*/
-	public function  FindClosingDelimiter ( $text, $start = 0 )
-	   {
-		$text_length 	=  strlen ( $text ) ;
-		$remaining 	=  $text_length - $start ;
-
-		if  ( $remaining  <  0  ||  $text [ $start ]  !=  '{' )
-			return ( -1 ) ;
-
-		$end 		=  $start + 1 ;
-		$nesting_level 	=  1 ;
-
-		while  ( $end  <  $text_length  &&  $nesting_level  !=  0 )
-		   {
-			$length		=  strcspn ( $text, '{}', $end ) ;
-			$ch 		=  $text [ $end + $length ] ;
-
-			if  ( $ch  ==  '{' )
-				$nesting_level ++ ;
-			else
-				$nesting_level -- ;
-
-			$end 	+=  $length + 1 ;
-		    }
-
-		if  ( $end  <  $text_length )
-			return ( $end ) ;
-		else
-			return ( -2 ) ;
-	    }
     }
 
 
@@ -247,27 +201,71 @@ trait  RtfStringSupport
     {
 	// Rtf contents
 	protected 	$RtfData ;
+	// For IO functions
+	private 	$Offset 	=  0 ;
 
 
 	/*--------------------------------------------------------------------------------------------------------------
-	
+
    	    __specialized_construct :
 		"trait constructor" called by the constructor of the RtfDocument class.
-	
+
 	 *-------------------------------------------------------------------------------------------------------------*/
 	protected function  __specialized_construct ( $rtfdata, $chunk_size )
 	   {
 		$this -> RtfData	=  $rtfdata ;
 		$this -> RtfDataLength	=  strlen ( $rtfdata ) ;
 		$this -> RecordSize 	=  $chunk_size ;
+		$this -> Name 		=  '(string contents)' ;
+	    }
+
+
+	/*---------------------------------------------------------------------------------------------------*
+
+	    to_closing_delimiter -
+		Finds the closing curly brace corresponding to the opening one located at the given index
+		$start (or before $start) in Rtf contents .
+		This function takes into account braces nesting level.
+		Returns the index of the closing brace corresponding to the one specified or false if no
+		corresponding closing delimiter was found.
+
+	 *---------------------------------------------------------------------------------------------------*/
+	public function  to_closing_delimiter ( $start = 0 )
+	   {
+		$text_length 	=  strlen ( $this -> RtfData ) ;
+		$remaining 	=  $text_length - $start ;
+
+		if  ( $remaining  <  0 )
+			return ( false ) ;
+
+		$end 		=  $start ;
+		$nesting_level 	=  1 ;
+
+		while  ( $end  <  $text_length  &&  $nesting_level  !=  0 )
+		   {
+			$length		=  strcspn ( $this -> RtfData, '{}', $end ) ;
+			$ch 		=  $this -> RtfData [ $end + $length ] ;
+
+			if  ( $ch  ==  '{' )
+				$nesting_level ++ ;
+			else
+				$nesting_level -- ;
+
+			$end 	+=  $length + 1 ;
+		    }
+
+		if  ( $end  <  $text_length )
+			return ( $end ) ;
+		else
+			return ( false ) ;
 	    }
 
 
 	/*--------------------------------------------------------------------------------------------------------------
-	
+
    	    strchr :
 		Actually uses the strcspn() function.
-	
+
 	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  strchr ( $cset, $start =  0 )
 	   {
@@ -278,13 +276,13 @@ trait  RtfStringSupport
 		else
 			return ( $start + $length ) ;
 	    }
-	    
+
 
 	/*--------------------------------------------------------------------------------------------------------------
-	
+
    	    substr :
 		Implements the substr() function on Rtf contents.
-	
+
 	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  substr ( $start, $length =  false )
 	   {
@@ -296,9 +294,40 @@ trait  RtfStringSupport
 
 
 	/*--------------------------------------------------------------------------------------------------------------
-	
+
+   	    write :
+		Writes data between offset $start and $end to the specified file resource.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  write ( $output, $start, $end = false )
+	   {
+		if  ( $end  ===  false )
+			$end 	=  strlen ( $this -> RtfData ) - 1 ;
+
+		if  ( is_resource ( $output ) )
+			$callable 	=  false ;
+		else if  ( is_callable ( $output ) )
+			$callable 	=  true ;
+		else
+			error ( new \Thrak\System\InvalidArgumentException ( "The '\$ouput' parameter of the write() method must either be a valid file resource or a callback." ) ) ;
+
+		if  ( $end  <  $start )
+			error ( new \Thrak\System\InvalidArgumentException( "The '\$end' parameter of the Write() method must be greater than or equal to " .
+								"the '\$start' parameter." ) ) ;
+
+		$data 	=  substr ( $this -> RtfData, $start, $end - $start + 1 ) ;
+
+		if  ( $callable )
+			$output ( $data ) ;
+		else
+			fwrite ( $output, $data ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+
 		Interfaces implementations.
-	
+
 	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  count 	( )
 	   { return ( strlen ( $this -> RtfData ) ) ; }
@@ -310,10 +339,10 @@ trait  RtfStringSupport
 	   { return ( $this -> RtfData [ $offset ] ) ; }
 
 	public function  offsetSet 	( $offset, $value )
-	   { throw ( new \RuntimeException ( "Unsupported operation." ) ) ; }
+	   { error ( new \Thrak\System\UnsupportedOperation ( "Unsupported operation." ) ) ; }
 
 	public function  offsetUnset 	( $offset )
-	   { throw ( new \RuntimeException ( "Unsupported operation." ) ) ; }
+	   { error ( new \Thrak\System\UnsupportedOperation ( "Unsupported operation." ) ) ; }
 
 	private 	$string_position ;
 	private 	$string_length ;
@@ -345,40 +374,99 @@ trait  RtfStringSupport
  trait  RtfFileSupport
    {
  	// File name
-	protected 	$File ;
+	public  	$File ;
 	// An instance of a SearchableFile class for that filename.
-	protected 	$SearchableFile ;
+	public	 	$SearchableFile ;
+	// File descriptor, when using the IO functions
+	private 	$fp 		=  false ;
+	private		$Offset 	=  0 ;
 
 
 	/*--------------------------------------------------------------------------------------------------------------
-	
+
    	    __specialized_construct :
 		"trait constructor" called by the constructor of the RtfDocument class.
-	
+
 	 *-------------------------------------------------------------------------------------------------------------*/
-	protected function  __specialized_construct ( $rtffile, $record_size = 16384 )
+	protected function  __specialized_construct ( $rtffile, $record_size = 16384, $cache_size = 8 )
 	   {
 		$this -> File 		=  $rtffile ;
-		$this -> SearchableFile	=  new SearchableFile ( $rtffile, $record_size, true ) ;
+		$this -> SearchableFile	=  new SearchableFile ( $record_size, $cache_size ) ;
 		$this -> RecordSize 	=  $record_size ;
+		$this -> Name 		=  $rtffile ;
+
+		$this -> SearchableFile -> Open ( $rtffile ) ;
 	    }
 
 
 	/*--------------------------------------------------------------------------------------------------------------
-	
+
+   	    __specialized_destruct :
+		"trait destructor" that closes any opened file.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  __specialized_destruct ( )
+	   {
+		$this -> SearchableFile -> Close ( ) ;
+	    }
+
+
+ 	/*---------------------------------------------------------------------------------------------------*
+
+	    to_closing_delimiter -
+		Finds the closing curly brace corresponding to the opening one located at the given index
+		$start (or before $start) in Rtf contents .
+		This function takes into account braces nesting level.
+		Returns the index of the closing brace corresponding to the one specified or false if no
+		corresponding closing delimiter was found.
+
+	 *---------------------------------------------------------------------------------------------------*/
+	public function  to_closing_delimiter ( $start = 0 )
+	   {
+		$text_length 	=  count ( $this ) ;
+		$remaining 	=  $text_length - $start ;
+
+		if  ( $remaining  <  0 )
+			return ( false ) ;
+
+		$end 		=  $start ;
+		$nesting_level 	=  1 ;
+
+		while  ( $end  <  $text_length  &&  $nesting_level  !=  0 )
+		   {
+			$end		=  $this -> strchr ( '{}', $end ) ;
+			$ch 		=  $this [ $end ] ;
+
+			if  ( $ch  ==  '{' )
+				$nesting_level ++ ;
+			else
+				$nesting_level -- ;
+
+			$end ++ ;
+		    }
+
+		if  ( $end  <  $text_length )
+			return ( $end ) ;
+		else
+			return ( false ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+
    	    strchr :
 		Uses the strchr() method of the SearchableFile class.
-	
+
 	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  strchr ( $cset, $start =  0 )
 	   { return ( $this -> SearchableFile -> strchr ( $cset, $start ) ) ; }
 
-	   
+
 	/*--------------------------------------------------------------------------------------------------------------
-	
+
    	    substr :
 		Uses the substr() method of the SearchableFile class.
-	
+
 	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  substr ( $start, $length = false )
 	   {
@@ -390,9 +478,21 @@ trait  RtfStringSupport
 
 
 	/*--------------------------------------------------------------------------------------------------------------
-	
+
+   	    write :
+		Writes data between offset $start and $end to the specified file resource.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  write ( $output, $start, $end = false )
+	   {
+		$this -> SearchableFile -> Write ( $output, $start, $end ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+
 		Interfaces implementations.
-	
+
 	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  count 	( )
 	   { return ( count ( $this -> SearchableFile ) ) ; }
@@ -404,10 +504,10 @@ trait  RtfStringSupport
 	   { return ( $this -> SearchableFile [ $offset ] ) ; }
 
 	public function  offsetSet 	( $offset, $value )
-	   { throw ( new \RuntimeException ( "Unsupported operation." ) ) ; }
+	   { error ( new \Thrak\System\UnsupportedOperation ( "Unsupported operation." ) ) ; }
 
 	public function  offsetUnset 	( $offset )
-	   { throw ( new \RuntimeException ( "Unsupported operation." ) ) ; }
+	   { error ( new \Thrak\System\UnsupportedOperation ( "Unsupported operation." ) ) ; }
 
 	public function  key 		( )
 	   { return ( $this -> SearchableFile -> key ( ) ) ; }
@@ -426,3 +526,37 @@ trait  RtfStringSupport
     }
 
 
+
+/*==============================================================================================================
+
+    RtfStringDocument class -
+        Implements in-memory Rtf contents.
+
+  ==============================================================================================================*/
+class  RtfStringDocument 	extends 	RtfDocument
+   {
+	use 	RtfStringSupport ;
+
+	public function  __construct ( $rtfdata, $chunk_size = 4 * 1024 * 1024 )
+	   {
+		parent::__construct ( $rtfdata, $chunk_size ) ;
+	    }
+    }
+
+
+
+/*==============================================================================================================
+
+    RtfFileDocument class -
+        Implements in-file Rtf contents.
+
+  ==============================================================================================================*/
+ class  RtfFileDocument 	extends 	RtfDocument
+   {
+    	use 	RtfFileSupport ;
+
+    	public function  __construct ( $file, $record_size = 16384 )
+    	   {
+    		parent::__construct ( $file, $record_size ) ;
+    	    }
+    }
