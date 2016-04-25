@@ -47,7 +47,9 @@ class  SearchableFile			implements 	\ArrayAccess, \Countable, \Iterator
 	// File descriptor
 	public 		$fp ;
 	// Number of cache misses
-	public		$CacheMisses		=  [] ;
+	// Number of cache hits/misses
+	public 		$CacheHits ;
+	public		$CacheMisses ;
 
 
 	/*--------------------------------------------------------------------------------------------------------------
@@ -86,6 +88,8 @@ class  SearchableFile			implements 	\ArrayAccess, \Countable, \Iterator
 		$this -> Filesize	=  false ;
 		$this -> Cache		=  false ;
 		$this -> fp		=  false ;
+		$this -> CacheMisses 	=  0 ;
+		$this -> CacheHits 	=  0 ;
 	    }
 
 
@@ -139,6 +143,8 @@ class  SearchableFile			implements 	\ArrayAccess, \Countable, \Iterator
 		$this -> Filename	=  $filename ;
 		$this -> Filesize 	=  $info [ 'size' ] ;
 		$this -> Cache		=  new SearchableFileCache ( $this, $this -> CacheSize ) ;
+		$this -> CacheMisses 	=  0 ;
+		$this -> CacheHits 	=  0 ;
 	    }
 
 
@@ -1181,6 +1187,7 @@ class  SearchableFile			implements 	\ArrayAccess, \Countable, \Iterator
 		if  ( isset ( $this -> BufferPool [ $record_offset ] ) ) 
 		   {
 			$this -> LastBuffer			=  $this -> BufferPool [ $record_offset ] ;
+			$this -> Parent -> CacheHits ++ ;
 		    }
 		// Requested offset is not in the last read record so we may have to add another one in the pool, if not full
 		else if  ( $pool_size  <  $this -> CacheSize )
@@ -1325,7 +1332,7 @@ class  SearchableFile			implements 	\ArrayAccess, \Countable, \Iterator
 		$this -> Offset 	=  $new_offset ;
 		$this -> Timestamp	=  microtime ( true ) ;
 
-		$this -> Parent -> CacheMisses []	=  $new_offset ;
+		$this -> Parent -> CacheMisses ++ ;
 	    }
 
 
