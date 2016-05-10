@@ -33,7 +33,8 @@ use		Thrak\System\Object			as  Object ;
         Allows to perform string search operations on big files that do not fit into memory.
 
   ==============================================================================================================*/
-class  SearchableFile			implements 	\ArrayAccess, \Countable, \Iterator
+class  SearchableFile		extends		Object	
+				implements 	\ArrayAccess, \Countable, \Iterator
    {
 	// Name of the file whose contents are to be searched
 	public 		$Filename ;
@@ -75,6 +76,8 @@ class  SearchableFile			implements 	\ArrayAccess, \Countable, \Iterator
 	 *-------------------------------------------------------------------------------------------------------------*/
 	 public function  __construct  ( $record_size = 16384, $cache_size = 8 )
 	   {
+		 parent::__construct ( ) ;
+
 		 $this -> RecordSize	=  $record_size ;
 		 $this -> CacheSize	=  $cache_size ;
 
@@ -1124,7 +1127,7 @@ class  SearchableFile			implements 	\ArrayAccess, \Countable, \Iterator
         Implements a buffer cache.
 
   ==============================================================================================================*/
- class  SearchableFileCache	// extends object
+ class  SearchableFileCache	extends object
    {
 	// Pool of buffer data
 	public		$BufferPool		=  [] ;
@@ -1144,6 +1147,8 @@ class  SearchableFile			implements 	\ArrayAccess, \Countable, \Iterator
 	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  __construct ( $parent, $cache_size )
 	   {
+		parent::__construct ( ) ;
+
 		$this -> Parent		=  $parent ;
 		$this -> CacheSize	=  $cache_size ;
 	    }
@@ -1281,7 +1286,7 @@ class  SearchableFile			implements 	\ArrayAccess, \Countable, \Iterator
         Implements a buffer in the buffer cache.
 
   ==============================================================================================================*/
- class  SearchableFileBuffer	// extends object
+ class  SearchableFileBuffer	extends object
    {
 	// Record data
 	public 		$Data ;
@@ -1318,6 +1323,8 @@ class  SearchableFile			implements 	\ArrayAccess, \Countable, \Iterator
 	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  __construct ( $parent, $offset )
 	   {
+		parent::__construct ( ) ;
+
 		if  ( ! $offset )
 			$offset		=  0 ;
 
