@@ -79,7 +79,14 @@
 	[Version : 1.0]    [Date : 2016/04/08]     [Author : CV]
 	Initial version.
 
-**************************************************************************************************************/
+ **************************************************************************************************************/
+namespace 	Thrak\Processors\Rtf ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces & objects
+use 		Thrak\System\Object ;
+use		Thrak\IO\SearchableFile ;
 
 
 /*==============================================================================================================
@@ -139,19 +146,29 @@ interface  IRtfDocument extends 	\ArrayAccess, \Countable, \Iterator
         Abstract class for each specialized Rtf handling class.
 
   ==============================================================================================================*/
-abstract class  RtfDocument	//extends 	Object
+abstract class  RtfDocument	extends 	Object
 				implements 	IRtfDocument
    {
-	// Tokens or else that can be encountered in Rtf data
-	const 	TOKEN_UNKNOWN 			=  0 ;		// Reserved for initial values
-	const 	TOKEN_LBRACE 			=  1 ;		// Left brace
-	const 	TOKEN_RBRACE 			=  2 ;		// Right brace
-	const 	TOKEN_WORD			=  3 ;		// Control word (eg, \par)
-	const 	TOKEN_SYMBOL 			=  4 ;		// Control symbol ; eg: \*, \~ (uncuttable space), \{ \} \\ (escaped special characters), etc.
-	const 	TOKEN_CHAR 			=  5 ;		// A character using a 1-byte hex representation (eg, \'ae)
-	const 	TOKEN_PCDATA 			=  6 ;		// Free form text, without control words
-	const 	TOKEN_SDATA 			=  7 ;		// Hexadecimal data, such as the one that can follow a picture control word (\pict)
-	const 	TOKEN_BDATA 			=  8 ;		// Binary data, such as the one that can follow a \bin control word
+	// Constantes de conversion
+	const 	TWIPS_PER_CM 			=  566.9291338583 ;
+
+   	// Tokens or else that can be encountered in Rtf data
+	const 	TOKEN_INVALID 			=   0 ;		// An invalid character has been encountered in the input stream
+	const 	TOKEN_LBRACE 			=   1 ;		// Left brace
+	const 	TOKEN_RBRACE 			=   2 ;		// Right brace
+	const 	TOKEN_CONTROL_WORD		=   3 ;		// Control word (eg, \par)
+	const 	TOKEN_CONTROL_SYMBOL		=   4 ;		// Control symbol ; eg: \~, \-, \_, etc.
+	const 	TOKEN_CHAR 			=   5 ;		// A character using a 1-byte hex representation (eg, \'ae)
+	const 	TOKEN_ESCAPED_CHAR		=   6 ;		// Escaped characters : \\, \{ and \}
+
+	// These ones are not really tokens but represent free form text (PCDATA), hexadecimal data for images (SDATA) or binary
+	// data (BDATA, for \bin control words)
+	const 	TOKEN_PCDATA 			=   7 ;		// Free form text, without control words
+	const 	TOKEN_SDATA 			=   8 ;		// Hexadecimal data, such as the one that can follow a picture control word (\pict)
+	const 	TOKEN_BDATA 			=   9 ;		// Binary data, such as the one that can follow a \bin control word
+
+	// Other pseudo-tokens
+	const 	TOKEN_NEWLINE 			=   10 ;	// A newline token, that is not really PCDATA
 
 
 	// Whatever the underlying object is handling (a string or a file), all data is read and written in chunks
@@ -173,7 +190,8 @@ abstract class  RtfDocument	//extends 	Object
 	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  __construct ( )
 	   {
-		// parent::__construct ( ) ;
+		parent::__construct ( ) ;
+
 		// Call the "constructor" of the specialized used by the derived class
 		if  ( method_exists ( $this, '__specialized_construct' ) )
 			call_user_func_array ( [ $this, '__specialized_construct' ], func_get_args ( ) ) ;
@@ -187,6 +205,16 @@ abstract class  RtfDocument	//extends 	Object
 	    }
 
 
+	/*--------------------------------------------------------------------------------------------------------------
+
+	    NAME
+	        TwipsToCm - Converts twips to centimeters.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  TwipsToCm ( $twips )
+	   {
+		return ( round ( $twips / self::TWIPS_PER_CM, 2 ) ) ;
+	    }
     }
 
 
@@ -201,6 +229,7 @@ trait  RtfStringSupport
     {
 	// Rtf contents
 	protected 	$RtfData ;
+	protected	$RtfDataLength ;
 	// For IO functions
 	private 	$Offset 	=  0 ;
 
@@ -339,10 +368,10 @@ trait  RtfStringSupport
 	   { return ( $this -> RtfData [ $offset ] ) ; }
 
 	public function  offsetSet 	( $offset, $value )
-	   { error ( new \Thrak\System\UnsupportedOperation ( "Unsupported operation." ) ) ; }
+	   { error ( new \Thrak\System\UnsupportedOperationException ( ) ) ; }
 
 	public function  offsetUnset 	( $offset )
-	   { error ( new \Thrak\System\UnsupportedOperation ( "Unsupported operation." ) ) ; }
+	   { error ( new \Thrak\System\UnsupportedOperationException ( ) ) ; }
 
 	private 	$string_position ;
 	private 	$string_length ;
@@ -504,10 +533,10 @@ trait  RtfStringSupport
 	   { return ( $this -> SearchableFile [ $offset ] ) ; }
 
 	public function  offsetSet 	( $offset, $value )
-	   { error ( new \Thrak\System\UnsupportedOperation ( "Unsupported operation." ) ) ; }
+	   { error ( new \Thrak\System\UnsupportedOperationException ( ) ) ; }
 
 	public function  offsetUnset 	( $offset )
-	   { error ( new \Thrak\System\UnsupportedOperation ( "Unsupported operation." ) ) ; }
+	   { error ( new \Thrak\System\UnsupportedOperationException ( ) ) ; }
 
 	public function  key 		( )
 	   { return ( $this -> SearchableFile -> key ( ) ) ; }
