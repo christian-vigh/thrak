@@ -104,8 +104,10 @@ class  WebSite			extends	Object
 	public			$MaintenancePage ;
 	// Default page
 	public			$DefaultPage ;
-	// "Under construction" page
-	public			$UnderConstructionPage ;
+	// "Under construction" pages
+	public			$PageUnderConstruction ;
+	public			$SiteUnderContruction ;
+	public			$SiteUnderMaintenance ;
 	// Error page
 	public			$ErrorPage ;
 	// Client language
@@ -207,9 +209,10 @@ class  WebSite			extends	Object
 		//	Default error page to be displayed when an invalid page was specified.
 		$this -> ErrorPage		=  $Configuration -> Get ( 'Site/error-page', '/error.php' ) ;
 		
-		// Configuration : Site/under-construction-page -
+		// Configuration : Site/page-under-construction, site-under-construction -
 		//	Default page to be displayed for pages that are under construction.
-		$this -> UnderConstructionPage		=  $Configuration -> Get ( 'Site/under-construction-page', '/error.php' ) ;
+		$this -> PageUnderConstruction		=  $Configuration -> Get ( 'Site/page-under-construction', '/error.php' ) ;
+		$this -> SiteUnderConstruction		=  $Configuration -> Get ( 'Site/site-under-construction', '/error.php' ) ;
 		
 		// Headers
 		$this -> Headers			=  $Configuration -> Get ( 'Site/headers', [] ) ;
@@ -599,7 +602,7 @@ END;
 
 	/*--------------------------------------------------------------------------------------------------------------
 	 
-	    PageUnderConstruction - 
+	    PageUnderConstruction, SiteUnderConstruction - 
 		Displays the "Under construction" page.	 
 	 
 	 *-------------------------------------------------------------------------------------------------------------*/
@@ -607,7 +610,15 @@ END;
 	   {
 		global		$Locale ;
 
-		require ( $this -> UnderConstructionPage ) ;
+		require ( $this -> PageUnderConstruction ) ;
+	    }
+
+
+	public function  SiteUnderConstruction ( )
+	   {
+		global		$Locale ;
+
+		require ( $this -> SiteUnderConstruction ) ;
 	    }
 
 
