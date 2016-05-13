@@ -37,6 +37,9 @@
     [Version : 1.0.6]		[Date : 2015/10/21]		[Author : CV]
 	. Called @iconv() instead of iconv()
 
+    [Version : 1.0.7]		[Date : 2016/05/13]		[Author : CV]
+	. Fixed the __Output() method, which added unnecessary newlines in command-line mode.
+
  ***************************************************************************************************/
 namespace 	Thrak\IO ;
 
@@ -352,34 +355,32 @@ class  Console 		extends  Object
 			was provided.
 
 	    NOTES
-	    	This function works both for tetx and html output.
+	    	This function works both for text and html output.
 
 	 --------------------------------------------------------------------------------------------*/
         private static function  __Output ( $fp, $value )
            {
-	   	if  ( IS_STANDALONE )
-	   	   {
-	   		$replace_from		=  "\n" ;
-	   		$replace_with 		=  "\r\n" ;
-	   		$newline 		=  "\r\n" ;
-	   	    }
-		else
-	   	   {
-	   		$replace_from		=  array ( "\r", "\n" ) ;
-	   		$replace_with 		=  array ( "", "<br/>" ) ;
-	   		$newline 		=  "<br/>" ;
-
-	   	    }
-
         	foreach  ( $value  as  $message )
         	   {
         		if  ( is_array ( $message ) )
-        			self::__Output ( $fp, $message, $replace_from, $replace_from, $newline ) ;
+        			self::__Output ( $fp, $message ) ;
         		else
         		   {
-        		   	$message 	=  str_replace ( $replace_from, $replace_with, $message ) ;
+				$need_newline	=  ( substr ( $message, -1, 1 )  !=  "\n" ) ;
 
-        		   	if  ( substr ( $message, -1, 1 )  !=  "\n" )
+				if  ( IS_STANDALONE ) 
+				   {
+					$message	=  str_replace ( "\r", '', $message ) ;
+					$message	=  str_replace ( "\n", PHP_EOL, $message ) ;
+					$newline	=  PHP_EOL ;
+				    }
+				else
+				   {
+					$message	=  str_replace ( [ "\r", "\n" ], [ '', '<br/>' ], $message ) ;
+					$newline	=  '<br/>' ;
+				    }
+
+        		   	if  ( $need_newline )
         		   		$message .= $newline ;
 
 				if  ( IS_WINDOWS  &&  IS_CLI )
