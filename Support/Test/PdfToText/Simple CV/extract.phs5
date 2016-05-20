@@ -1,0 +1,14 @@
+<?php
+	include ( '../../PdfToText.phpclass' ) ;
+
+	if  ( isset ( $argv [1] ) )
+		$file 	=  $argv [1] ;
+	else
+		$file 	=  'sample.pdf' ;
+
+	$pdf 	=  new PdfToText ( $file ) ;
+	$text 	=  file_get_contents ( 'sample.txt' ) ;
+
+	echo "------------------------------------------------ Original :\n$text" ;
+	echo "------------------------------------------------ Extracted :\n" ;
+	echo $pdf ;
