@@ -1,0 +1,2337 @@
+{\rtf1\adeflang1025\ansi\ansicpg1252\uc1\adeff0\deff0\stshfdbch0\stshfloch0\stshfhich0\stshfbi0\deflang1036\deflangfe1036{\fonttbl{\f0\froman\fcharset0\fprq2{\*\panose 02020603050405020304}Times New Roman;}{\f2\fmodern\fcharset0\fprq1{\*\panose 02070309020205020404}Courier New;}
+{\f13\fnil\fcharset134\fprq2{\*\panose 02010600030101010101}SimSun{\*\falt \'cb\'ce\'cc\'e5};}{\f214\fnil\fcharset134\fprq2{\*\panose 02010600030101010101}@SimSun;}{\f381\froman\fcharset238\fprq2 Times New Roman CE;}
+{\f382\froman\fcharset204\fprq2 Times New Roman Cyr;}{\f384\froman\fcharset161\fprq2 Times New Roman Greek;}{\f385\froman\fcharset162\fprq2 Times New Roman Tur;}{\f386\fbidi \froman\fcharset177\fprq2 Times New Roman (Hebrew);}
+{\f387\fbidi \froman\fcharset178\fprq2 Times New Roman (Arabic);}{\f388\froman\fcharset186\fprq2 Times New Roman Baltic;}{\f389\froman\fcharset163\fprq2 Times New Roman (Vietnamese);}{\f401\fmodern\fcharset238\fprq1 Courier New CE;}
+{\f402\fmodern\fcharset204\fprq1 Courier New Cyr;}{\f404\fmodern\fcharset161\fprq1 Courier New Greek;}{\f405\fmodern\fcharset162\fprq1 Courier New Tur;}{\f406\fbidi \fmodern\fcharset177\fprq1 Courier New (Hebrew);}
+{\f407\fbidi \fmodern\fcharset178\fprq1 Courier New (Arabic);}{\f408\fmodern\fcharset186\fprq1 Courier New Baltic;}{\f409\fmodern\fcharset163\fprq1 Courier New (Vietnamese);}{\f513\fnil\fcharset0\fprq2 SimSun Western{\*\falt \'cb\'ce\'cc\'e5};}
+{\f2523\fnil\fcharset0\fprq2 @SimSun Western;}}{\colortbl;\red0\green0\blue0;\red0\green0\blue255;\red0\green255\blue255;\red0\green255\blue0;\red255\green0\blue255;\red255\green0\blue0;\red255\green255\blue0;\red255\green255\blue255;\red0\green0\blue128;
+\red0\green128\blue128;\red0\green128\blue0;\red128\green0\blue128;\red128\green0\blue0;\red128\green128\blue0;\red128\green128\blue128;\red192\green192\blue192;}{\stylesheet{
+\ql \li0\ri0\widctlpar\wrapdefault\aspalpha\aspnum\faauto\adjustright\rin0\lin0\itap0 \rtlch\fcs1 \af0\afs24\alang1025 \ltrch\fcs0 \fs24\lang1036\langfe1036\cgrid\langnp1036\langfenp1036 \snext0 Normal;}{\*\cs10 \additive \ssemihidden 
+Default Paragraph Font;}{\*\ts11\tsrowd\trftsWidthB3\trpaddl108\trpaddr108\trpaddfl3\trpaddft3\trpaddfb3\trpaddfr3\trcbpat1\trcfpat1\tblind0\tblindtype3\tscellwidthfts0\tsvertalt\tsbrdrt\tsbrdrl\tsbrdrb\tsbrdrr\tsbrdrdgl\tsbrdrdgr\tsbrdrh\tsbrdrv 
+\ql \li0\ri0\widctlpar\wrapdefault\aspalpha\aspnum\faauto\adjustright\rin0\lin0\itap0 \rtlch\fcs1 \af0\afs20 \ltrch\fcs0 \fs20\lang1024\langfe1024\cgrid\langnp1024\langfenp1024 \snext11 \ssemihidden Normal Table;}{
+\s15\ql \li0\ri0\widctlpar\wrapdefault\aspalpha\aspnum\faauto\adjustright\rin0\lin0\itap0 \rtlch\fcs1 \af2\afs20\alang1025 \ltrch\fcs0 \f2\fs20\lang1036\langfe1036\cgrid\langnp1036\langfenp1036 \sbasedon0 \snext15 Plain Text;}}
+{\*\latentstyles\lsdstimax156\lsdlockeddef0}{\*\revtbl {Unknown;}}{\*\rsidtbl \rsid459168\rsid7742121\rsid11809300\rsid12073897}{\*\generator Microsoft Word 11.0.0000;}{\info{\title ----------------------------------- UNICODE CMAP #11}{\author Christian}
+{\operator Christian}{\creatim\yr2016\mo5\dy26\hr12\min19}{\revtim\yr2016\mo5\dy26\hr12\min19}{\version2}{\edmins0}{\nofpages43}{\nofwords6569}{\nofchars36133}{\*\company Home}{\nofcharsws42617}{\vern24617}{\*\password 00000000}}{\*\xmlnstbl {\xmlns1 http
+://schemas.microsoft.com/office/word/2003/wordml}}\paperw11906\paperh16838\margl1152\margr1152\margt1417\margb1417\gutter0\ltrsect 
+\deftab708\widowctrl\ftnbj\aenddoc\hyphhotz425\donotembedsysfont0\donotembedlingdata0\grfdocevents0\validatexml1\showplaceholdtext0\ignoremixedcontent0\saveinvalidxml0\showxmlerrors1\noxlattoyen\expshrtn
+\noultrlspc\dntblnsbdb\nospaceforul\formshade\horzdoc\dgmargin\dghspace180\dgvspace180\dghorigin1152\dgvorigin1417\dghshow1\dgvshow1
+\jexpand\viewkind1\viewscale100\pgbrdrhead\pgbrdrfoot\splytwnine\ftnlytwnine\htmautsp\nolnhtadjtbl\useltbaln\alntblind\lytcalctblwd\lyttblrtgr\lnbrkrule\nobrkwrptbl\snaptogridincell\allowfieldendsel\wrppunct
+\asianbrkrule\rsidroot12073897\newtblstyruls\nogrowautofit \fet0{\*\wgrffmtfilter 013f}\ilfomacatclnup0\ltrpar \sectd \ltrsect\linex0\headery708\footery708\colsx708\endnhere\sectlinegrid360\sectdefaultcl\sectrsid4335906\sftnbj {\*\pnseclvl1
+\pnucrm\pnstart1\pnindent720\pnhang {\pntxta .}}{\*\pnseclvl2\pnucltr\pnstart1\pnindent720\pnhang {\pntxta .}}{\*\pnseclvl3\pndec\pnstart1\pnindent720\pnhang {\pntxta .}}{\*\pnseclvl4\pnlcltr\pnstart1\pnindent720\pnhang {\pntxta )}}{\*\pnseclvl5
+\pndec\pnstart1\pnindent720\pnhang {\pntxtb (}{\pntxta )}}{\*\pnseclvl6\pnlcltr\pnstart1\pnindent720\pnhang {\pntxtb (}{\pntxta )}}{\*\pnseclvl7\pnlcrm\pnstart1\pnindent720\pnhang {\pntxtb (}{\pntxta )}}{\*\pnseclvl8\pnlcltr\pnstart1\pnindent720\pnhang 
+{\pntxtb (}{\pntxta )}}{\*\pnseclvl9\pnlcrm\pnstart1\pnindent720\pnhang {\pntxtb (}{\pntxta )}}\pard\plain \ltrpar\s15\ql \li0\ri0\widctlpar\wrapdefault\aspalpha\aspnum\faauto\adjustright\rin0\lin0\itap0\pararsid4335906 \rtlch\fcs1 \af2\afs20\alang1025 
+\ltrch\fcs0 \f2\fs20\lang1036\langfe1036\cgrid\langnp1036\langfenp1036 {\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 ----------------------------------- UNICODE CMAP #11
+\par /CIDInit/ProcSet findresource begin
+\par 12 dict begin
+\par begincmap
+\par /CIDSystemInfo<<
+\par /Registry (Adobe)
+\par /Ordering (UCS)
+\par /Supplement 0
+\par >> def
+\par /CMapName/Adobe-Identity-UCS def
+\par /CMapType 2 def
+\par 1 begincodespacerange
+\par <00> <FF>
+\par endcodespacerange
+\par 79 beginbfchar
+\par <01> <0054>
+\par <02> <0068>
+\par <03> <0069>
+\par <04> <0073>
+\par <05> <0020>
+\par <06> <0061>
+\par <07> <0064>
+\par <08> <0075>
+\par <09> <006D>
+\par <0A> <0079>
+\par <0B> <0066>
+\par <0C> <006C>
+\par <0D> <0065>
+\par <0E> <0074>
+\par <0F> <006F>
+\par <10> <0063>
+\par <11> <006B>
+\par <12> <0072>
+\par <13> <006E>
+\par <14> <0053>
+\par <15> <0070>
+\par <16> <002D>
+\par <17> <0050>
+\par <18> <0044>
+\par <19> <0046>
+\par <1A> <0076>
+\par <1B> <002E>
+\par <1C> <0041>
+\par <1D> <0062>
+\par <1E> <0077>
+\par <1F> <0031>
+\par <20> <0032>
+\par <21> <0035>
+\par <22> <0036>
+\par <23> <0043>
+\par <24> <0067>
+\par <25> <0033>
+\par <26> <0049>
+\par <27> <004C>
+\par <28> <0034>
+\par <29> <0039>
+\par <2A> <0030>
+\par <2B> <002C>
+\par <2C> <004F>
+\par <2D> <004D>
+\par <2E> <0412>
+\par <2F> <0438>
+\par <30> <043F>
+\par <31> <0420>
+\par <32> <0430>
+\par <33> <0441>
+\par <34> <043A>
+\par <35> <0440>
+\par <36> <0443>
+\par <37> <0442>
+\par <38> <043C>
+\par <39> <044B>
+\par <3A> <0439>
+\par <3B> <0434>
+\par <3C> <0436>
+\par <3D> <0435>
+\par <3E> <043B>
+\par <3F> <044E>
+\par <40> <0431>
+\par <41> <043D>
+\par <42> <0045>
+\par <43> <0444>
+\par <44> <043E>
+\par <45> <0432>
+\par <46> <0437>
+\par <47> <0446>
+\par <48> <044F>
+\par <49> <0445>
+\par <4A> <0433>
+\par <4B> <0047>
+\par <4C> <0038>
+\par <4D> <0037>
+\par <4E> <0048>
+\par <4F> <0055>
+\par endbfchar
+\par endcmap
+\par CMapName currentdict /CMap defineresource pop
+\par end
+\par end
+\par ----------------------------------- FONT #12
+\par <</BaseFont/BAAAAA+ArialMT/FirstChar 0/FontDescriptor 10 0 R/LastChar 79/Subtype/TrueType/ToUnicode 11 0 R/Type/Font/Widths[750 610 556 222 500 277 556 556 556 833 500 277
+ 222 556 277 556 500 500 333 556 666 556 333 666 722 610 500 277 666 556 722 556 556 556 556 722 556 556 277 556 556 556 556 277 777 833 666 558 541 666 556 500 437 556 500 458 687 718 558 583 668 556 583 750 572 552 666 822 556 531 458 572 541 500 364 77
+7 556 556 722 722]>>----------------------------------- UNICODE CMAP #15
+\par /CIDInit/ProcSet findresource begin
+\par 12 dict begin
+\par begincmap
+\par /CIDSystemInfo<<
+\par /Registry (Adobe)
+\par /Ordering (UCS)
+\par /Supplement 0
+\par >> def
+\par /CMapName/Adobe-Identity-UCS def
+\par /CMapType 2 def
+\par 1 begincodespacerange
+\par <00> <FF>
+\par endcodespacerange
+\par 55 beginbfchar
+\par <01> <0633>
+\par <02> <0643>
+\par <03> <0630>
+\par <04> <0648>
+\par <05> <062B>
+\par <06> <0631>
+\par <07> <0644>
+\par <08> <0627>
+\par <09> <0020>
+\par <0A> <002C>
+\par <0B> <0629>
+\par <0C> <0637>
+\par <0D> <0628>
+\par <0E> <064A>
+\par <0F> <0645>
+\par <10> <062E>
+\par <11> <0641>
+\par <12> <0627>
+\par <13> <0642>
+\par <14> <062B>
+\par <15> <0633>
+\par <16> <0645>
+\par <17> <0623>
+\par <18> <062A>
+\par <19> <0642>
+\par <1A> <0636>
+\par <1B> <062A>
+\par <1C> <0633>
+\par <1D> <0641>
+\par <1E> <062D>
+\par <1F> <05E2>
+\par <20> <05E7>
+\par <21> <05E8>
+\par <22> <05D9>
+\par <23> <05DC>
+\par <24> <05D1>
+\par <25> <05DD>
+\par <26> <05D5>
+\par <27> <05D7>
+\par <28> <05DE>
+\par <29> <05E6>
+\par <2A> <05D2>
+\par <2B> <05DB>
+\par <2C> <05D0>
+\par <2D> <05EA>
+\par <2E> <05E4>
+\par <2F> <05E1>
+\par <30> <05D4>
+\par <31> <002E>
+\par <32> <05D3>
+\par <33> <05E0>
+\par <34> <05D6>
+\par <35> <05D8>
+\par <36> <05DF>
+\par <37> <05E9>
+\par endbfchar
+\par endcmap
+\par CMapName currentdict /CMap defineresource pop
+\par end
+\par end
+\par ----------------------------------- FONT #16
+\par <</BaseFont/CAAAAA+Tahoma/FirstChar 0/FontDescriptor 14 0 R/LastChar 55/Subtype/TrueType/ToUnicode 15 0 R/Type/Font/Widths[1000 1294 479 467 443 279 416 280 241 312 302 574 704 279 35
+1 606 680 410 295 503 351 1061 509 241 937 410 767 351 979 503 659 648 677 569 273 621 639 684 273 684 684 591 470 621 672 708 651 730 684 302 600 400 311 699 361 815]>>----------------------------------- UNICODE CMAP #19
+\par /CIDInit/ProcSet findresource begin
+\par 12 dict begin
+\par begincmap
+\par /CIDSystemInfo<<
+\par /Registry (Adobe)
+\par /Ordering (UCS)
+\par /Supplement 0
+\par >> def
+\par /CMapName/Adobe-Identity-UCS def
+\par /CMapType 2 def
+\par 1 begincodespacerange
+\par <00> <FF>
+\par endcodespacerange
+\par 40 beginbfchar
+\par <01> <0629>
+\par <02> <064A>
+\par <03> <0627>
+\par <04> <0639>
+\par <05> <0631>
+\par <06> <0020>
+\par <07> <002C>
+\par <08> <0637>
+\par <09> <0628>
+\par <0A> <0627>
+\par <0B> <0633>
+\par <0C> <0626>
+\par <0D> <062B>
+\par <0E> <062D>
+\par <0F> <0646>
+\par <10> <0646>
+\par <11> <0633>
+\par <12> <0641>
+\par <13> <0642>
+\par <14> <062B>
+\par <15> <0631>
+\par <16> <0645>
+\par <17> <0644>
+\par <18> <062F>
+\par <19> <002E>
+\par <1A> <0644>
+\par <1B> <0641>
+\par <1C> <0639>
+\par <1D> <0648>
+\par <1E> <0647>
+\par <1F> <064A>
+\par <20> <062A>
+\par <21> <0621>
+\par <22> <0645>
+\par <23> <0644>
+\par <24> <0628>
+\par <25> <0635>
+\par <26> <0624>
+\par <27> <0634>
+\par <28> <0629>
+\par endbfchar
+\par endcmap
+\par CMapName currentdict /CMap defineresource pop
+\par end
+\par end
+\par ----------------------------------- FONT #20
+\par <</BaseFont/DAAAAA+SegoeUI/FirstChar 0/FontDescriptor 18 0 R/LastChar 40/Subtype/TrueType/ToUnicode 19 0 R/Type/Font/Widths[645 381 244 233 542 484 273 216 580 244 233 824 244 714 542 244 529 604 290 295 244 484 3
+92 215 339 216 215 295 392 423 450 591 244 412 339 509 714 845 423 604 310]>>----------------------------------- UNICODE CMAP #23
+\par /CIDInit/ProcSet findresource begin
+\par 12 dict begin
+\par begincmap
+\par /CIDSystemInfo<<
+\par /Registry (Adobe)
+\par /Ordering (UCS)
+\par /Supplement 0
+\par >> def
+\par /CMapName/Adobe-Identity-UCS def
+\par /CMapType 2 def
+\par 1 begincodespacerange
+\par <00> <FF>
+\par endcodespacerange
+\par 100 beginbfchar
+\par <01> <548C>
+\par <02> <8BA1>
+\par <03> <0020>
+\par <04> <7B97>
+\par <05> <6240>
+\par <06> <5176>
+\par <07> <4ED6>
+\par <08> <9879>
+\par <09> <514D>
+\par <0A> <8D39>
+\par <0B> <53D1>
+\par <0C> <5E03>
+\par <0D> <7684>
+\par <0E> <6210>
+\par <0F> <679C>
+\par <10> <88AB>
+\par <11> <4E2D>
+\par <12> <5916>
+\par <13> <5A92>
+\par <14> <4F53>
+\par <15> <5E7F>
+\par <16> <6CDB>
+\par <17> <5730>
+\par <18> <62A5>
+\par <19> <9053>
+\par <1A> <FF0C>
+\par <1B> <622A>
+\par <1C> <6B62>
+\par <1D> <5230>
+\par <1E> <6708>
+\par <1F> <6765>
+\par <20> <81EA>
+\par <21> <4E8E>
+\par <22> <56FD>
+\par <23> <3001>
+\par <24> <65E5>
+\par <25> <672C>
+\par <26> <65B0>
+\par <27> <52A0>
+\par <28> <5761>
+\par <29> <97E9>
+\par <2A> <7F8E>
+\par <2B> <4EE5>
+\par <2C> <53CA>
+\par <2D> <5BB6>
+\par <2E> <533A>
+\par <2F> <591A>
+\par <30> <4F4D>
+\par <31> <7814>
+\par <32> <7A76>
+\par <33> <4EBA>
+\par <34> <5458>
+\par <35> <5546>
+\par <36> <4E1A>
+\par <37> <673A>
+\par <38> <6784>
+\par <39> <4E0B>
+\par <3A> <8F7D>
+\par <3B> <4F7F>
+\par <3C> <7528>
+\par <3D> <3002>
+\par <3E> <6211>
+\par <3F> <4EEC>
+\par <40> <4E3A>
+\par <41> <5E76>
+\par <42> <80FD>
+\par <43> <5E2E>
+\par <44> <52A9>
+\par <45> <6237>
+\par <46> <89E3>
+\par <47> <51B3>
+\par <48> <6587>
+\par <49> <8BCD>
+\par <4A> <6CD5>
+\par <4B> <95EE>
+\par <4C> <9898>
+\par <4D> <800C>
+\par <4E> <6DF1>
+\par <4F> <611F>
+\par <50> <8363>
+\par <51> <5E78>
+\par <52> <FF01>
+\par <53> <6C49>
+\par <54> <8BED>
+\par <55> <5206>
+\par <56> <6790>
+\par <57> <7CFB>
+\par <58> <7EDF>
+\par <59> <540C>
+\par <5A> <65F6>
+\par <5B> <8FD8>
+\par <5C> <63D0>
+\par <5D> <4F9B>
+\par <5E> <4E00>
+\par <5F> <5957>
+\par <60> <5B8C>
+\par <61> <6574>
+\par <62> <52A8>
+\par <63> <6001>
+\par <64> <8FDE>
+\par endbfchar
+\par 42 beginbfchar
+\par <65> <63A5>
+\par <66> <5E93>
+\par <67> <7EC4>
+\par <68> <4EF6>
+\par <69> <76F8>
+\par <6A> <5E94>
+\par <6B> <6982>
+\par <6C> <7387>
+\par <6D> <5178>
+\par <6E> <5F00>
+\par <6F> <8005>
+\par <70> <53EF>
+\par <71> <5168>
+\par <72> <5FFD>
+\par <73> <7565>
+\par <74> <76F4>
+\par <75> <5728>
+\par <76> <5DF1>
+\par <77> <8C03>
+\par <78> <6839>
+\par <79> <636E>
+\par <7A> <9700>
+\par <7B> <8981>
+\par <7C> <8F93>
+\par <7D> <51FA>
+\par <7E> <4E2A>
+\par <7F> <9AD8>
+\par <80> <7ED3>
+\par <81> <683C>
+\par <82> <5F0F>
+\par <83> <4E5F>
+\par <84> <5B9A>
+\par <85> <5236>
+\par <86> <6027>
+\par <87> <6807>
+\par <88> <6CE8>
+\par <89> <57FA>
+\par <8A> <7840>
+\par <8B> <4E0A>
+\par <8C> <7EE7>
+\par <8D> <7EED>
+\par <8E> <5C42>
+\par endbfchar
+\par endcmap
+\par CMapName currentdict /CMap defineresource pop
+\par end
+\par end
+\par ----------------------------------- FONT #24
+\par <</BaseFont/EAAAAA+SimSun/FirstChar 0/FontDescriptor 22 0 R/LastChar 142/Subtyp
+e/TrueType/ToUnicode 23 0 R/Type/Font/Widths[1000 1000 1000 500 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1
+0
+00 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 10
+00 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000]>>-----
+------------------------------ UNICODE CMAP #32
+\par /CIDInit/ProcSet findresource begin
+\par 12 dict begin
+\par begincmap
+\par /CIDSystemInfo<<
+\par /Registry (Adobe)
+\par /Ordering (UCS)
+\par /Supplement 0
+\par >> def
+\par /CMapName/Adobe-Identity-UCS def
+\par /CMapType 2 def
+\par 1 begincodespacerange
+\par <00> <FF>
+\par endcodespacerange
+\par 36 beginbfchar
+\par <01> <03A3>
+\par <02> <03C4>
+\par <03> <03BF>
+\par <04> <03C0>
+\par <05> <0020>
+\par <06> <03C3>
+\par <07> <03B7>
+\par <08> <03BD>
+\par <09> <03C1>
+\par <0A> <03B2>
+\par <0B> <03BB>
+\par <0C> <03AE>
+\par <0D> <03BC>
+\par <0E> <03C5>
+\par <0F> <03B9>
+\par <10> <03BA>
+\par <11> <03CE>
+\par <12> <03AF>
+\par <13> <03B5>
+\par <14> <0392>
+\par <15> <03B1>
+\par <16> <03AD>
+\par <17> <0059>
+\par <18> <006F>
+\par <19> <0075>
+\par <1A> <0054>
+\par <1B> <0062>
+\par <1C> <0065>
+\par <1D> <03AC>
+\par <1E> <03B4>
+\par <1F> <03BE>
+\par <20> <03C2>
+\par <21> <03B3>
+\par <22> <03CD>
+\par <23> <03CC>
+\par <24> <03C9>
+\par endbfchar
+\par endcmap
+\par CMapName currentdict /CMa\ltrpar p defineresource pop
+\par end
+\par end
+\par ----------------------------------- FONT #33
+\par <</BaseFont/FAAAAA+Verdana/FirstChar 0/FontDescriptor 31 0 R/LastChar 36/Subtype/TrueType/ToUnicode 32 0 R/Type/Font/Widths[1000 672 496 606 637 351 630 632 591 625 620 591 632 639 
+631 274 591 813 274 512 685 623 512 615 606 632 616 623 595 623 607 502 507 591 631 606 813]>>----------------------------------- TEXT #25
+\par 0.1 w
+\par q 0 0.1 595.2 841.8 re
+\par W* n
+\par q 0 0 0 rg
+\par BT
+\par 84.3 774 Td /F1 12 Tf[<01>2<02>-1<03>-2<0405>2<03>-2<0405>2<06>-1<05
+>2<07>6<08>-1<0909>-16<0A>17<05>-5<0B>2<03>5<0C>-2<0D>-1<05>-5<0E>2<0F>-1<05>2<1002>6<0D>-1<101105>-5<100F>-1<1212>8<0D>-1<100E>-5<05>2<0B>2<08>-1<13>-1<100E>2<03>-2<0F>6<13>-1<05>-5<0F>-1<0B>2<05>2<0E>2<02>-1<0D>-1<05>2<1415>-1<02>6<03>-2<07>-1<0D>-1<121
+615>6<0C>-2<08>-1<0405>2<1718>-2<19>2<05>-5<10>8<0F>-1<13>-10<1A>8<0D>-1<120E>2<0D>-1<12>58<1B>]TJ
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 56.8 739.1 Td /F1 10 Tf[<1C>-3<12>13<06>-3<1D>-3<03>2<1005>-2<1E>12<03>-7<13>-3<07>6<0F>-13<1E>12<0416>-6<1F>6<20>-3<21>6<22>]TJ
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 57 710.6 Td /F2 12 Tf[<01>2<02>-3<0304>1<05>4<0607>-2<08>8<09>-12<0A>10<09>-12<0B0C>4<0D>4<080607>-2<08>8<09>-12<0A>10<09>-12<01>2<0E>1<0F>-1<10>5<07>-2<08>8<09>-12<0A>10<09>-4<0B11>2<12>-4<13>3<14>1<07>-2<08>8<09>-12<0A>10<09>-12<0B0E>1<15>3<16>1
+<17>8<09>-12<0A>10<09>-12<01>2<16>1<17>8<09>-4<0A>2<09>-4<18>-4<16>1<12>3<19>2<1709>-4<0A>2<09>-4<18>4<11>2<12>-4<1A1B>1<1C>4<1709>-4<0A>2<09>-4<0B1D>3<19>2<12>-4<1C>4<1709>-4<0A>2<0B0E>1<07>-2<12>-4<1D>3<1B>1<1E>1<17>]TJ
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 56.8 690.4 Td /F2 12 Tf[<0A>2<09>]TJ
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 161.6 690.4 Td /F3 12 Tf[<01>-1<02>2<030405>1<06>-1<0701>-1<08>-2<09>2<0A05>1<06>-1<070B02>2<0C>2<05>1<06>-1<070D>-2<02>2<0E06>-9<07030F>2<0E06>-1<0710>-3<02>2<11>4<0E06>-1<0701>-1<02>2<12>-1<0313>-4<14>2<06>-1<0710
+>-3<0A15>1<08>5<1617>-1<0A06>-1<070B18>-2<13>3<17>-1<0A06>-9<07191901>-1<02>2<0F>2<02>2<08>-2<11>4<1A>-1<1B>-4<17>-1<0A>8<06>-9<071901>-1<02>2<09>2<15>1<1C17>-1<0A>]TJ
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 489.5 690.4 Td /F2 12 Tf<0A>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 163.8 670.3 Td /F3 
+12 Tf[<05>1<0302>2<18>-2<17>-1<0A1D>6<06>-9<07031E15>1<13>3<1606>-1<071F20>2<1B>-4<1606>-1<0721>4<0311>-3<1606>-1<0718>-2<160E1606>-1<0722>-2<1D>-1<15>1<1A>7<17>-1<06>-1<071F12>-1<06>-1<0723>1<0308>-2<0406>-1<0724>-2<15>1<0406>-1<0701>-1<1625>3<030406>-1<
+0710>-3<1D>6<26>-1<27>-3<06>-1<0728>2<18>-2<0302>2<11>4<06>-9<0701>-1<02>2<08>5<11>-3<09>2<11>]TJ
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 520 670.3 Td /F2 12 Tf<0A>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 56.8 632.6 Td /F1 10 Tf[<23>2<02>-3<03>12<13>-3<0D>-3<040D>-3<05>7<24>6<1D>-3<20>-3<25>6<1F>-3<20>]TJ
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 56.8 608.1 Td /F1 10 Tf[<26>-2<23>12<01>-9<23>2<27>6<1C>-3<14>]TJ
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 101.1 608.1 Td /F4 10 Tf<01>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 111.1 608.1 Td /F4 10 Tf<020304>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 136.1 608.1 Td /F4 10 Tf<04>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 146.1 608.1 Td /F4 10 Tf<05>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 156.1 608.1 Td /F4 10 Tf ----------------------------------- TEXT #26
+\par <05>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 166.1 608.1 Td /F4 10 Tf<06>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 176.1 608.1 Td /F4 10 Tf<06>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 186.1 608.1 Td /F4 10 Tf<07>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 196.1 608.1 Td /F4 10 Tf<07>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 208.1 608.1 Td /F1 10 Tf[<1F>-3<28>6<05>]TJ
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 222 608.1 Td /F4 10 Tf<0803>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 237 608.1 Td /F4 10 Tf<09>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 247 608.1 Td /F4 10 Tf<0A030B030C>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 287 608.1 Td /F4 10 Tf<0C>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 297 608.1 Td /F4 10 Tf<0D>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 307 608.1 Td /F4 10 Tf<0D>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 317 608.1 Td /F4 10 Tf<0E>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 327 608.1 Td /F4 10 Tf<0E>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 337 608.1 Td /F4 10 Tf<0F>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 347 608.1 Td /F4 10 Tf<0F>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 357 608.1 Td /F4 10 Tf<10>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 367 608.1 Td /F4 10 Tf<10>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 377 608.1 Td /F4 10 Tf<11>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 387 608.1 Td /F4 10 Tf<11>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 397 608.1 Td /F4 10 Tf<12>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 407 608.1 Td /F4 10 Tf<12>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 417 608.1 Td /F4 10 Tf<13>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 427 608.1 Td /F4 10 Tf<13>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 437 608.1 Td /F4 10 Tf<14>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 447 608.1 Td /F4 10 Tf<14>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 457 608.1 Td /F4 10 Tf<15>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 467 608.1 Td /F4 10 Tf<15>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 477 608.1 Td /F4 10 Tf<16>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 487 608.1 Td /F4 10 Tf<16>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 497 608.1 Td /F4 10 Tf<17>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 507 608.1 Td /F4 10 Tf<17>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 517 608.1 Td /F4 10 Tf<1803>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 56.8 595.1 Td /F4 10 Tf<19>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 66.8 595.1 Td /F4 10 Tf<19>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 76.8 595.1 Td /F4 10 Tf<1A>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 86.8 595.1 Td /F4 10 Tf<1A>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 96.8 595.1 Td /F4 10 Tf<1B>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 106.8 595.1 Td /F4 10 Tf<1B>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 116.8 595.1 Td /F4 10 Tf<1C>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 126.8 595.1 Td /F4 10 Tf<1C>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 136.8 595.1 Td /F4 10 Tf<1D>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 146.8 595.1 Td /F4 10 Tf<1D>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 158.8 595.1 Td /F1 10 Tf<29>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 166.4 595.1 Td /F4 10 Tf<1E1A>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 186.4 595.1 Td /F1 10 Tf[<26>-2<23>2<01>-9<23>12<27>-3<1C>-3<14>]TJ
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 230.6 595.1 Td /F4 10 Tf<101F202111>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 56.8 582.1 Td /F4 10 Tf<222324252326272823>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 146.8 582.1 Td /F4 10 Tf<290322>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 171.8 582.1 Td /F4 10 Tf<22>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par  ----------------------------------- TEXT #27
+\par 181.8 582.1 Td /F4 10 Tf<23>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 191.8 582.1 Td /F4 10 Tf<23>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 201.8 582.1 Td /F4 10 Tf<2A>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 211.8 582.1 Td /F4 10 Tf<2A>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 221.8 582.1 Td /F4 10 Tf<22>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 231.8 582.1 Td /F4 10 Tf<22>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 241.8 582.1 Td /F4 10 Tf<2B>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 251.8 582.1 Td /F4 10 Tf<2B>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 261.8 582.1 Td /F4 10 Tf<2C>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 271.8 582.1 Td /F4 10 Tf<2C>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 281.8 582.1 Td /F4 10 Tf<06>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 291.8 582.1 Td /F4 10 Tf<06>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 301.8 582.1 Td /F4 10 Tf<07>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 311.8 582.1 Td /F4 10 Tf<07>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 321.8 582.1 Td /F4 10 Tf<22>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 331.8 582.1 Td /F4 10 Tf<22>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 341.8 582.1 Td /F4 10 Tf<2D>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 351.8 582.1 Td /F4 10 Tf<2D>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 361.8 582.1 Td /F4 10 Tf<01>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 371.8 582.1 Td /F4 10 Tf<01>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 381.8 582.1 Td /F4 10 Tf<17>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 391.8 582.1 Td /F4 10 Tf<17>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 401.8 582.1 Td /F4 10 Tf<2E>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 411.8 582.1 Td /F4 10 Tf<2E>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 421.8 582.1 Td /F4 10 Tf<0D>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 431.8 582.1 Td /F4 10 Tf<0D>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 443.8 582.1 Td /F1 10 Tf[<25>6<2A>-3<2A>6<2A>-3<2A>]TJ
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 473.6 582.1 Td /F4 10 Tf<2F30313233>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 523.6 582.1 Td /F4 10 Tf<3403>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 56.8 569.1 Td /F4 10 Tf<01>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 66.8 569.1 Td /F4 10 Tf<01>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 76.8 569.1 Td /F4 10 Tf<35>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 86.8 569.1 Td /F4 10 Tf<35>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 96.8 569.1 Td /F4 10 Tf<360337>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 121.8 569.1 Td /F4 10 Tf<37>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 131.8 569.1 Td /F4 10 Tf<38>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 141.8 569.1 Td /F4 10 Tf<38>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 151.8 569.1 Td /F4 10 Tf<39>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 161.8 569.1 Td /F4 10 Tf<39>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 171.8 569.1 Td /F4 10 Tf<3A033B>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 196.8 569.1 Td /F4 10 Tf<3B>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 56.8 556.1 Td /F4 10 Tf<3C3D3E>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 86.8 556.1 Td /F4 10 Tf<3F03400309>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 126.8 556.1 Td /F4 10 Tf<09>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 136.8 556.1 Td /F4 10 Tf<0A030B030C>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 176.8 556.1 Td /F4 10 Tf<0C>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 188.8 556.1 Td /F1 10 Tf[<26>-2<23>12<01>-9<23>2<27>6<1C>-3<14>]TJ
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 233.1 556.1 Td /F4 10 Tf<414243443C>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 283.1 556.1 Td  ----------------------------------- TEXT #28
+\par /F4 10 Tf<450346>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 308.1 556.1 Td /F4 10 Tf<46>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 318.1 556.1 Td /F4 10 Tf<47>Tj
+\par ET
+\par Q
+\par q 0 0\ltrpar  0 rg
+\par BT
+\par 328.1 556.1 Td /F4 10 Tf<47>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 338.1 556.1 Td /F4 10 Tf<11>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 348.1 556.1 Td /F4 10 Tf<11>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 358.1 556.1 Td /F4 10 Tf<48>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 368.1 556.1 Td /F4 10 Tf<48>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 378.1 556.1 Td /F4 10 Tf<49034A>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 403.1 556.1 Td /F4 10 Tf<4A>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 413.1 556.1 Td /F4 10 Tf<4B034C034D>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 453.1 556.1 Td /F4 10 Tf<4D>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 463.1 556.1 Td /F4 10 Tf<4E>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 473.1 556.1 Td /F4 10 Tf<4E>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 483.1 556.1 Td /F4 10 Tf<4F>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 493.1 556.1 Td /F4 10 Tf<4F>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 503.1 556.1 Td /F4 10 Tf<50>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 513.1 556.1 Td /F4 10 Tf<50>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 523.1 556.1 Td /F4 10 Tf<51>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 56.8 543.1 Td /F4 10 Tf<51>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 66.8 543.1 Td /F4 10 Tf<52>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 76.8 543.1 Td /F4 10 Tf<52>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 56.8 530.1 Td /F4 10 Tf<0203>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 71.8 530.1 Td /F4 10 Tf<0405>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 91.8 530.1 Td /F4 10 Tf<5303540349034A>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 146.8 530.1 Td /F4 10 Tf<4A>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 156.8 530.1 Td /F4 10 Tf<55>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 166.8 530.1 Td /F4 10 Tf<5556>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 186.8 530.1 Td /F4 10 Tf<56>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 196.8 530.1 Td /F4 10 Tf<57>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 206.8 530.1 Td /F4 10 Tf<57035803>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 236.8 530.1 Td /F1 10 Tf[<26>-2<23>12<01>-9<23>2<27>6<1C>-3<14>]TJ
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 281.1 530.1 Td /F4 10 Tf<59>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 291.1 530.1 Td /F4 10 Tf<5A035B035C>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 331.1 530.1 Td /F4 10 Tf<5C>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 341.1 530.1 Td /F4 10 Tf<5D>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 351.1 530.1 Td /F4 10 Tf<5D>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 361.1 530.1 Td /F4 10 Tf<5E>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 371.1 530.1 Td /F4 10 Tf<5E>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 381.1 530.1 Td /F4 10 Tf<5F>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 391.1 530.1 Td /F4 10 Tf<5F>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 401.1 530.1 Td /F4 10 Tf<60>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 411.1 530.1 Td /F4 10 Tf<60>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 421.1 530.1 Td /F4 10 Tf<61>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 431.1 530.1 Td /F4 10 Tf<61>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 441.1 530.1 Td /F4 10 Tf<0D>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 451.1 530.1 Td /F4 10 Tf<0D>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 461.1 530.1 Td /F4 10 Tf<62036303640365>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 516.1 530.1 Td /F4 10 Tf<65>Tj
+\par  ----------------------------------- TEXT #29
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 526.1 530.1 Td /F4 10 Tf<66>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 56.8 517.1 Td /F1 10 Tf[<26>-2<23>12<01>-9<23>2<27>6<1C>-3<14>-3<1B>7<07>-3<0C>2<0C>2<2B>-2<23>2<2C>-2<2D>]TJ
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 139.9 517.1 Td /F4 10 Tf<6703>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 154.9 517.1 Td /F4 10 Tf<680169>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 184.9 517.1 Td /F4 10 Tf<6A030D>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 209.9 517.1 Td /F4 10 Tf<0D>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 219.9 517.1 Td /F4 10 Tf<6B>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 229.9 517.1 Td /F4 10 Tf<6B>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 56.8 504.1 Td /F4 10 Tf<6C>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 66.8 504.1 Td /F4 10 Tf<49036D>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 91.8 504.1 Td /F4 10 Tf<6D>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 101.8 504.1 Td /F1 10 Tf<2B>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 104.6 504.1 Td /F4 10 Tf<6E>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 114.6 504.1 Td /F4 10 Tf<0B036F>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 139.6 504.1 Td /F4 10 Tf<6F>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 149.6 504.1 Td /F4 10 Tf<70>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 159.6 504.1 Td /F4 10 Tf<70>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 169.6 504.1 Td /F4 10 Tf<2B>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 179.6 504.1 Td /F4 10 Tf<2B>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 189.6 504.1 Td /F4 10 Tf<60>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 199.6 504.1 Td /F4 10 Tf<60>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 209.6 504.1 Td /F4 10 Tf<71>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 219.6 504.1 Td /F4 10 Tf<71>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 229.6 504.1 Td /F4 10 Tf<72>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 239.6 504.1 Td /F4 10 Tf<72>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 249.6 504.1 Td /F4 10 Tf<73>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 259.6 504.1 Td /F4 10 Tf<73>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 269.6 504.1 Td /F4 10 Tf<5303540349034A>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 324.6 504.1 Td /F4 10 Tf<4A>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 334.6 504.1 Td /F4 10 Tf<55>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 344.6 504.1 Td /F4 10 Tf<55>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 354.6 504.1 Td /F4 10 Tf<56>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 364.6 504.1 Td /F4 10 Tf<56>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 374.6 504.1 Td /F4 10 Tf<1A>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 384.6 504.1 Td /F4 10 Tf<1A>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 394.6 504.1 Td /F4 10 Tf<74>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 404.6 504.1 Td /F4 10 Tf<74>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 414.6 504.1 Td /F4 10 Tf<65>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 424.6 504.1 Td /F4 10 Tf<65>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 434.6 504.1 Td /F4 10 Tf<75>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 444.6 504.1 Td /F4 10 Tf<75>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 454.6 504.1 Td /F4 10 Tf<20>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 464.6 504.1 Td /F4 10 Tf<20>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 474.6 504.1 Td /F4 10 Tf<76>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 484.6 504.1 Td /F4 10 Tf<76>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 494.6 504.1 Td /F4 10 Tf<0D>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 504.6 504.1 Td /F4 10 Tf<0D>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 514.6 504.1 Td /F4 10 Tf<57>Tj
+\par  ----------------------------------- TEXT #34
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 524.6 504.1 Td /F4 10 Tf<57>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 56.8 491.1 Td /F4 10 Tf<580311>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 81.8 491.1 Td /F4 10 Tf<11>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 91.8 491.1 Td /F4 10 Tf<77033C>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 116.8 491.1 Td /F4 10 Tf<3C>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 128.8 491.1 Td /F1 10 Tf[<26>-2<23>12<01>-9<23>2<27>6<1C>-3<14>]TJ
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 171.1 491.1 Td /F4 10 Tf<1A>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 181.1 491.1 Td /F1 10 Tf[<26>-2<23>2<01>-9<23>12<27>-3<1C>-3<14>]TJ
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 225.3 491.1 Td /F4 10 Tf<702B78797A7B>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 285.3 491.1 Td /F4 10 Tf<7C>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 56.8 478.1 Td /F4 10 Tf<7D2F7E7F6B6C0D>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 126.8 478.1 Td /F4 10 Tf<80030F>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 151.8 478.1 Td /F4 10 Tf<0F>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 161.8 478.1 Td /F4 10 Tf<1A>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 171.8 478.1 Td /F4 10 Tf<1A>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 181.8 478.1 Td /F4 10 Tf<7C037D>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 206.8 478.1 Td /F4 10 Tf<7D>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 216.8 478.1 Td /F4 10 Tf<81>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 226.8 478.1 Td /F4 10 Tf<81>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 236.8 478.1 Td /F4 10 Tf<82>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 246.8 478.1 Td /F4 10 Tf<82>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 256.8 478.1 Td /F4 10 Tf<83>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 266.8 478.1 Td /F4 10 Tf<83>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 276.8 478.1 Td /F4 10 Tf<70>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 286.8 478.1 Td /F4 10 Tf<70>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 296.8 478.1 Td /F4 10 Tf<2B>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 306.8 478.1 Td /F4 10 Tf<2B>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 316.8 478.1 Td /F4 10 Tf<84>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 326.8 478.1 Td /F4 10 Tf<84>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 336.8 478.1 Td /F4 10 Tf<85>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 346.8 478.1 Td /F4 10 Tf<85>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 356.8 478.1 Td /F4 10 Tf<1A>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 366.8 478.1 Td /F4 10 Tf<1A>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 376.8 478.1 Td /F4 10 Tf<6E>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 386.8 478.1 Td /F4 10 Tf<6E>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 396.8 478.1 Td /F4 10 Tf<0B036F>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 421.8 478.1 Td /F4 10 Tf<6F>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 431.8 478.1 Td /F4 10 Tf<75>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 441.8 478.1 Td /F4 10 Tf<75>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 451.8 478.1 Td /F4 10 Tf<55>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 461.8 478.1 Td /F4 10 Tf<55>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 471.8 478.1 Td /F4 10 Tf<490301>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 496.8 478.1 Td /F4 10 Tf<01>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 506.8 478.1 Td /F4 10 Tf<490386>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 56.8 465.1 Td /F4 10 Tf<86>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 66.8 465.1 Td /F4 10 Tf<870388>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 91.8 465.1 Td /F4 10 Tf<88>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 101.8 465.1 Td /F4  ----------------------------------- TEXT #35
+\par 10 Tf<0D>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 111.8 465.1 Td /F4 10 Tf<0D>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 121.8 465.1 Td /F4 10 Tf<89>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 131.8 465.1 Td /F4 10 Tf<89>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 141.8 465.1 Td /F4 10 Tf<8A038B>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 166.8 465.1 Td /F4 10 Tf<8B>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 176.8 465.1 Td /F4 10 Tf<8C038D038B>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 216.8 465.1 Td /F4 10 Tf<8B>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 226.8 465.1 Td /F4 10 Tf<8E036E>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 251.8 465.1 Td /F4 10 Tf<6E>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 261.8 465.1 Td /F4 10 Tf<0B>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 56.8 430.6 Td /F1 10 Tf[<23>2<0A12>3<03>2<0C>-7<0C>2<03>2<1005>-2<1E>2<03>2<13>-3<07>6<0F>-13<1E>12<0416>-6<1F>6<20>-\ltrpar 3<21>6<1F>]TJ
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 56.8 407.6 Td /F1 10 Tf[<2E>6<2F>-1<30>1<31>36<32>-3<3334>-2<35>6<36>10<37>-1<34>-22<32>-3<05>-2<16>3<05>-2<33>10<32>-3<38>-2<39>-1<3A>-1<05>-2<3B>13<35>-3<363C>-1<3D>26<3E>3<3F40>2<41>2<39>-1<3A>-1<05>-2<14>-3<42>6<2C>-2<0
+5>-2<43>2<44>6<35>-3<36>20<38>-2<05>-2<31>-3<36>10<41>2<3D>26<37>18<32>-3<2B>-2<05>-2<45>11<33>10<3D>-3<05>-2<44>-3<05>7<35>-3<32>-3<33>10<34>-2<35>6<36>10<37>-1<34>-12<3D>-3<05>-2<2F>-1<05>7<44>-3<30>1<37>-1<2F>-1<38>7<2F>-1<46>-1<32>-3<47>2<2F>-1<2F>-1<
+05>7<3332>-3<3A>-1<37>18<44>-3<45>1<2B>]TJ
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 56.8 396.1 Td /F1 10 Tf[<3B>3<44>6<35>-3<45>11<3D>-3<48>1<49>10<2B>-12<05>-2<46>8<32>-3<35>6<32>-3<40>2<44>16<37>-1<34>-2<3D>-3<05>-2<45>1<05>-2<2F>-1<41>2<37>18<3D>-3<35>-3<41>12<3D>26<37>8<3D>6
+<2B>-2<05>-2<30>1<32>6<35>16<37>-1<41>2<3D>-3<35>-3<33>10<34>-2<2F>-11<49>10<05>-2<30>1<35>6<44>-3<4A>4<35>-3<32>-3<38>7<38>-2<32>-3<49>10<2B>-12<05>7<040D>-3<0F>-3<05>7<3334>-2<35>-3<2F>-1<30>11<37>8<32>-13<49>10<05>-2<2F>-1<05>7<33>-9<44>-3<43>22<37>18<
+3D>]TJ
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 56.8 361.6 Td /F1 10 Tf[<4B>-2<12>13<0D>-3<0D>-3<1105>-2<26>7<14>-3<2C>-2<16>3<4C>-3<4C>6<21>-3<29>-3<16>3<4D>]TJ
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 56.8 339 Td /F5 9 Tf[<01>5<02>-3<03>-4<04>4<05>-4<06>8<02>-3<0708>2<05>-4<04>4<09>3<03>-4<0A>9<03>
+-4<0B>2<0C>-11<05>7<0D>-4<03>6<0E>-1<06>-2<0F>7<10>-8<11>2<08>2<05>-4<0A>-1<12>7<08>2<02>-3<13>1<03>-4<05>-4<06>8<02>-3<0705>-4<14>-3<09>3<13>1<02>-3<15>1<08>2<12>7<15>-9<05>7<16>1<0A>-1<15>1<0B>2<13>-9<05>-4<06>8<0C0D>-4<13>1<09>3<15>1<05>-4<02>7<03>-4<0
+5>-4<17>4<18>-4<191A>5<191B>1<1C>-4<05>7<0D>-4<13>1<02>-3<1D>1<05>-4<02>7<03>-4<05>-4<15>12<1E>-14<0F>7<16>1<1F>2<03>-4<1E>7<03>-4<05>-4<06>-2<02>-3<0F>7<20>]TJ
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 56.8 328 Td /F5 9 Tf[<1E>-3<0F>7<15>1<04>4<09>3<15>-9<21>2<0D>-4<15>1<02>-3<1
+3>1<22>9<06>-2<13>-9<0F>7<20>-3<05>7<0D>-4<13>1<05>-4<02>7<03>-4<08>2<05>-4<03>-4<09>3<21>2<15>1<08>2<0F>7<06>-2<0D>-4<23>-4<05>-4<13>1<12>7<06>-2<04>4<09>3<15>-9<1F>2<0720>-3<05>7<04>-6<08>2<13>1<0E>-1<0D>-4<15>12<02>-14<0F>7<10>2<11>2<08>-8<05>7<1E>-3<0
+F>-3<10>2<15>1<0F>-3<24>2<0D>-4<1D>12<02>-3<24>2<08>-8<05>-4<21>2<0F>7<15>-9<05>7<02>-3<0705>-4<0D>6<03>-4<0E>9<06>-2<0F>-3<10>2<0C>] ----------------------------------- TEXT #36
+\par TJ
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 56.8 293.7 Td /F1 10 Tf[<4E>2<0D>6<1D>-3<12>3<0D>-13<1E>12<05>-2<4F>2<01>-9<1916>3<4C>]TJ
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 56.9 265.2 Td /F2 12 Tf[<09>-4<1F>-1<20>2<21>2<09>-4<22>-1<23>4<1F>-1<24>6<09>-4<25>1<22>-1<24>-2<24>-2<26>-1<27>9<09>-4<25>1<22>-1<28>1<23>-3<29>8<23>-3<09>-4<25>-7<2A>12<09>-4<26>-1<28>1<2B>4<09>-4<25>
+1<26>-1<23>-3<22>6<2924>-2<09>-4<1F>-1<20>2<21>11<09>-4<2C>-2<23>4<23>-3<09>-4<25>1<22>-1<23>4<22>-1<27>1<2D28>1<09>-4<25>1<22>-1<28>1<23>-3<29>8<23>-3<09>-4<25>1<22>-1<28>1<22>-1<2C>5<2D28>1<26>-1<09>-4<25>1<22>-1<2E>1<22>-1<20>2<28>1<26>]TJ
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 56.9 245.1 Td /F2 12 Tf[<2F>-2<21>2<26>-1<20>2<30>1<09>-4<31>-5<25>1<3220>2<2D28>9<09>-4<321F>-1<09>-4<22>-1<3326>-1<3322>6<24>]TJ
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 56.9 224.9 Td /F2 12 Tf[<09>-4<30>1<3326>-1<28>1<2D>8<09>-4<2D22>-1<22>-1<3324>6<23>-3<09>-4<25>1<22
+>-1<22>-1<23>4<2C>-2<26>-1<34>3<22>-1<26>6<09>-12<25>1<22>6<1F>-1<2928>1<2C>-2<26>6<09>-12<2D26>-1<3326>-1<21>2<20>2<1F>6<09>-12<0A>2<25>1<22>-1<22>-1<2D26>-1<3328>1<2C>5<30>1<26>-1<09>-4<25>1<22>-1<22>-1<332B>4<3530>1<09>-4<0A>2<25>1<26>-1<23>-3<22>-1<29
+30>9<09>-4<2D26>-1<3226>-1<2F>-2<22>6<24>-2<09>-4<20>2<2F>-2<26>6<1F>]TJ
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 56.9 204.8 Td /F2 12 Tf[<2D2B>-3<22>-1<21>2<1F>6<09>-12<2D332B>4<26>-1<2D24>6<09>-4<36>3<2B>-3<26>6<09>-12<21>2<2D26>-1<22>6<09>-4<30>1<24>-2<26>-1<35>]TJ
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 56.9 184.6 Td /F2 12 Tf[<09>-4<3227>1<2C>5<09>-4<23>4<2B>-3<23>4<09>-12<2D21>2<37>-1<2E>1<2C>-2<28>9<09>-4<21>2<26>-1<1F>-1<22>-1<37>7<23>-3<09>-4<21>2<26>-1<1F>-1<22>-1<37>-1<28>9<09>-4<2F>-2<21>2<26>-1<20>2<24>6<09>-12<2D332D22>-1<3330>9<09>-4<2
+D26>-1<3226>-1<24>-2<1F>-1<30>9<09>-12<2D21>2<26>-1<20>2<22>6<24>-2<09>-4<31>2<2E>1<26>-1<37>-1<26>-1<3526>-1<2E>9<09>-12<2D26>-1<3326>-1<28>1<2D30>]TJ
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 56.9 164.5 Td /F2 12 Tf[<2D2C>-2<09>-4<21>2<2E>1<37>-1<23>-3<26>6<09>-4<22>-1<37>-1<22>6<2C>-2<09>-4<24>-2<29>8<20>2<24>-2<09>-4<25>-7<3220>2<2D30>9<23>]TJ
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 56.8 144.3 Td /F1 9 Tf<1B>Tj
+\par ET
+\par Q
+\par q 0 0 0 rg
+\par BT
+\par 59.4 144.3 Td /F2 12 Tf[<22>-1<2D26>-1<1F>-1<28>1<37>-1<28>9<09>-12<36>3<2E>1<26>-1<2C>5<24>-2<09>-4<26>-1<22>-1<28>1<26>6<23>-3<22>-1<29>]TJ
+\par ET
+\par Q
+\par Q  
+\par This is a dummy file to check correct function of the Sphider-plus PDF converter.
+\par Arabic windows-1256
+\par }{\rtlch\fcs1 \af407 \ltrch\fcs0 \f407\insrsid459168\charrsid459168 \'d3\'df\'d0\'e6\'cb\'d1\'e1\'c7 , \'c9\'d8\'c8\'c7\'d1\'e1\'c7 , \'d3\'ed\'e3\'ce\'e1\'c7 , \'c9\'dd\'c7\'de\'cb\'e1\'c7 , \'c9\'ed\'d3\'e3\'c3 , \'d3\'e3\'c3 , \'ca\'e3\'c7\'de\'c3 , 
+\'ca\'dd\'c7\'d6\'ca\'d3\'c3 , \'c9\'dd\'de\'c7\'d3\'c3 ,\'c9\'ed\'e1\'c7\'dd\'ca\'cd\'c3
+\par }{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 , 
+\par }{\rtlch\fcs1 \af407 \ltrch\fcs0 \f407\insrsid459168\charrsid459168 \'c9\'ed\'c7\'da\'d1 ,\'c9\'d8\'c8\'c7\'d1 ,\'d3\'ed\'c6\'d1 ,\'cb\'ed\'cd ,\'c7\'e4\'cd ,\'e4\'ed\'d3\'cd ,\'c9\'ed\'dd\'c7\'de\'cb ,\'e4\'c7\'d1\'d8\'e3\'e1\'c7 ,\'d3\'cf\'de\'e1\'c7
+ ,..\'c9\'ed\'e4\'ed\'d8\'d3\'e1\'dd\'e1\'c7 ,.\'c9\'ed\'c8\'d1\'da\'e1\'c7}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par ,
+\par }{\rtlch\fcs1 \af407 \ltrch\fcs0 \f407\insrsid459168\charrsid459168 \'d1\'c7\'ed\'cf\'e1\'c7\'e6 ,\'c7\'e5\'d1\'de\'e3 ,\'ed\'ca\'dd\'e3 ,\'c1\'c7\'d3\'e3 ,\'cf\'e3\'cd\'e3 ,\'e3\'e6\'d1\'e1\'e1 ,\'ed\'dd ,\'e1\'c7\'d8\'da ,\'c8\'d1\'da ,\'c9\'e3\'d5\'c7
+\'da ,\'e4\'e6\'c4\'d4 ,\'c9\'cf\'c7\'ed\'d3 ,\'c9\'ed\'d8\'d3\'c8\'d3
+\par }{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 ,
+\par Chinese gb2312
+\par ICTCLAS
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u21644\'ba\'cd}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u-29791\'bc\'c6}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168  }{\rtlch\fcs1 \af13 \ltrch\fcs0 
+\loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u31639\'cb\'e3}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u31639\'cb\'e3}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u25152\'cb\'f9}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 \page }{\rtlch\fcs1 \af13 \ltrch\fcs0 
+\loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u25152\'cb\'f9}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u20854\'c6\'e4}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u20854\'c6\'e4}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u20182\'cb\'fb}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u20182\'cb\'fb}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par 14 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u-26503\'cf\'ee}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168  
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u20813\'c3\'e2}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u-29383\'b7\'d1}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168  }{\rtlch\fcs1 \af13 \ltrch\fcs0 
+\loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u21457\'b7\'a2}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168  }{\rtlch\fcs1 \af13 \ltrch\fcs0 
+\loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u24067\'b2\'bc}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u24067\'b2\'bc}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u30340\'b5\'c4}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u30340\'b5\'c4}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u25104\'b3\'c9}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u25104\'b3\'c9}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u26524\'b9\'fb}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u26524\'b9\'fb}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u-30549\'b1\'bb}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u-30549\'b1\'bb}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u20013\'d6\'d0}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u20013\'d6\'d0}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u22806\'cd\'e2}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u22806\'cd\'e2}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u23186\'c3\'bd}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u23186\'c3\'bd}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u20307\'cc\'e5}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u20307\'cc\'e5}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u24191\'b9\'e3}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u24191\'b9\'e3}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u27867\'b7\'ba}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u27867\'b7\'ba}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u22320\'b5\'d8}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u22320\'b5\'d8}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u25253\'b1\'a8}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168  
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u-28589\'b5\'c0}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u-28589\'b5\'c0}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u-244\'a3\'ac}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u-244\'a3\'ac}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u25130\'bd\'d8}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u25130\'bd\'d8}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u27490\'d6\'b9}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u27490\'d6\'b9}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u21040\'b5\'bd}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u21040\'b5\'bd}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par 9
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u26376\'d4\'c2\u-244\'a3\'ac}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par ICTCLAS
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u-30549\'b1\'bb\u26469\'c0\'b4\u-32278\'d7\'d4\u20110\'d3\'da\u20013\'d6\'d0}{\rtlch\fcs1 \af2 \ltrch\fcs0 
+\insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u22269\'b9\'fa\u12289\'a1\'a2\u26085\'c8\'d5\u26412\'b1\'be\u12289\'a1\'a2\u26032\'d0\'c2\u21152\'bc\'d3\u22369\'c6\'c2\u12289
+\'a1\'a2}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u-26647\'ba\'ab}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168  }{\rtlch\fcs1 \af13 \ltrch\fcs0 
+\loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u22269\'b9\'fa}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u22269\'b9\'fa}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 \page 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u12289\'a1\'a2}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u12289\'a1\'a2}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u32654\'c3\'c0}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u32654\'c3\'c0}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u22269\'b9\'fa}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u22269\'b9\'fa}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u20197\'d2\'d4}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u20197\'d2\'d4}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u21450\'bc\'b0}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u21450\'bc\'b0}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u20854\'c6\'e4}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u20854\'c6\'e4}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u20182\'cb\'fb}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u20182\'cb\'fb}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u22269\'b9\'fa}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u22269\'b9\'fa}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u23478\'bc\'d2}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u23478\'bc\'d2}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u21644\'ba\'cd}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u21644\'ba\'cd}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u22320\'b5\'d8}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u22320\'b5\'d8}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u21306\'c7\'f8}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u21306\'c7\'f8}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u30340\'b5\'c4}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u30340\'b5\'c4}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par 30000
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u22810\'b6\'e0\u20301\'ce\'bb\u30740\'d1\'d0\u31350\'be\'bf\u20154\'c8\'cb}{\rtlch\fcs1 \af2 \ltrch\fcs0 
+\insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u21592\'d4\'b1}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168  
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u21644\'ba\'cd}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u21644\'ba\'cd}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u21830\'c9\'cc}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u21830\'c9\'cc}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u19994\'d2\'b5}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168  }{\rtlch\fcs1 \af13 \ltrch\fcs0 
+\loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u26426\'bb\'fa}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u26426\'bb\'fa}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u26500\'b9\'b9}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u26500\'b9\'b9}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u19979\'cf\'c2}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u19979\'cf\'c2}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u-28803\'d4\'d8}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168  }{\rtlch\fcs1 \af13 \ltrch\fcs0 
+\loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u20351\'ca\'b9}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u20351\'ca\'b9}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u29992\'d3\'c3\u12290\'a1\'a3\u25105\'ce\'d2}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u20204\'c3\'c7}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168  }{\rtlch\fcs1 \af13 \ltrch\fcs0 
+\loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u20026\'ce\'aa}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168  }{\rtlch\fcs1 \af13 \ltrch\fcs0 
+\loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u20813\'c3\'e2}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u20813\'c3\'e2}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u-29383\'b7\'d1}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168  }{\rtlch\fcs1 \af13 \ltrch\fcs0 
+\loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u21457\'b7\'a2}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168  }{\rtlch\fcs1 \af13 \ltrch\fcs0 
+\loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u24067\'b2\'bc}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u24067\'b2\'bc}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par ICTCLAS
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u24182\'b2\'a2\u-32515\'c4\'dc\u24110\'b0\'ef\u21161\'d6\'fa\u29992\'d3\'c3}{\rtlch\fcs1 \af2 \ltrch\fcs0 
+\insrsid459168\charrsid459168 \page 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u25143\'bb\'a7}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168  }{\rtlch\fcs1 \af13 \ltrch\fcs0 
+\loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u-30237\'bd\'e2}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u-30237\'bd\'e2}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u20915\'be\'f6}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u20915\'be\'f6}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u20013\'d6\'d0}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u20013\'d6\'d0}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u25991\'ce\'c4}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u25991\'ce\'c4}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u-29747\'b4\'ca}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168  }{\rtlch\fcs1 \af13 \ltrch\fcs0 
+\loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u27861\'b7\'a8}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u27861\'b7\'a8}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u-27154\'ce\'ca}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168  }{\rtlch\fcs1 \af13 \ltrch\fcs0 
+\loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u-26472\'cc\'e2}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168  }{\rtlch\fcs1 \af13 \ltrch\fcs0 
+\loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u-32756\'b6\'f8}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u-32756\'b6\'f8}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u28145\'c9\'ee}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u28145\'c9\'ee}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u24863\'b8\'d0}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u24863\'b8\'d0}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u-31901\'c8\'d9}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u-31901\'c8\'d9}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u24184\'d0\'d2}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u24184\'d0\'d2}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u-255\'a3\'a1}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u-255\'a3\'a1}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u-29791\'bc\'c6}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168  
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u31639\'cb\'e3\u25152\'cb\'f9}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u27721\'ba\'ba}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168  }{\rtlch\fcs1 \af13 \ltrch\fcs0 
+\loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u-29715\'d3\'ef}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168  }{\rtlch\fcs1 \af13 \ltrch\fcs0 
+\loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u-29747\'b4\'ca}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168  }{\rtlch\fcs1 \af13 \ltrch\fcs0 
+\loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u27861\'b7\'a8}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u27861\'b7\'a8}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u20998\'b7\'d6}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u20998\'b7\'d6\u26512\'ce\'f6}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u26512\'ce\'f6}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u31995\'cf\'b5}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u31995\'cf\'b5}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168  }{\rtlch\fcs1 \af13 \ltrch\fcs0 
+\loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u32479\'cd\'b3}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168  
+\par ICTCLAS
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u21516\'cd\'ac}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u26102\'ca\'b1}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168  }{\rtlch\fcs1 \af13 \ltrch\fcs0 
+\loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u-28712\'bb\'b9}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168  }{\rtlch\fcs1 \af13 \ltrch\fcs0 
+\loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u25552\'cc\'e1}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u25552\'cc\'e1}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u20379\'b9\'a9}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u20379\'b9\'a9}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u19968\'d2\'bb}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u19968\'d2\'bb}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u22871\'cc\'d7}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u22871\'cc\'d7}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u23436\'cd\'ea}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u23436\'cd\'ea}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u25972\'d5\'fb}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u25972\'d5\'fb}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u30340\'b5\'c4}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u30340\'b5\'c4}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u21160\'b6\'af}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168  }{\rtlch\fcs1 \af13 \ltrch\fcs0 
+\loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u24577\'cc\'ac}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168  }{\rtlch\fcs1 \af13 \ltrch\fcs0 
+\loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u-28706\'c1\'ac}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168  }{\rtlch\fcs1 \af13 \ltrch\fcs0 
+\loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u25509\'bd\'d3}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u25509\'bd\'d3}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 \page 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u24211\'bf\'e2}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par ICTCLAS.dll,COM
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u32452\'d7\'e9}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168  
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u20214\'bc\'fe\u21644\'ba\'cd\u30456\'cf\'e0}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u24212\'d3\'a6}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168  }{\rtlch\fcs1 \af13 \ltrch\fcs0 
+\loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u30340\'b5\'c4}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u30340\'b5\'c4}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u27010\'b8\'c5}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u27010\'b8\'c5}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u29575\'c2\'ca}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u-29747\'b4\'ca}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168  }{\rtlch\fcs1 \af13 \ltrch\fcs0 
+\loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u20856\'b5\'e4}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u20856\'b5\'e4}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par ,
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u24320\'bf\'aa}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u21457\'b7\'a2}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168  }{\rtlch\fcs1 \af13 \ltrch\fcs0 
+\loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u-32763\'d5\'df}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u-32763\'d5\'df}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u21487\'bf\'c9}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u21487\'bf\'c9}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u20197\'d2\'d4}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u20197\'d2\'d4}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u23436\'cd\'ea}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u23436\'cd\'ea}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u20840\'c8\'ab}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u20840\'c8\'ab}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u24573\'ba\'f6}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u24573\'ba\'f6}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u30053\'c2\'d4}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u30053\'c2\'d4}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u27721\'ba\'ba}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168  }{\rtlch\fcs1 \af13 \ltrch\fcs0 
+\loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u-29715\'d3\'ef}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168  }{\rtlch\fcs1 \af13 \ltrch\fcs0 
+\loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u-29747\'b4\'ca}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168  }{\rtlch\fcs1 \af13 \ltrch\fcs0 
+\loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u27861\'b7\'a8}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u27861\'b7\'a8}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u20998\'b7\'d6}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u20998\'b7\'d6}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u26512\'ce\'f6}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u26512\'ce\'f6}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u-244\'a3\'ac}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u-244\'a3\'ac}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u30452\'d6\'b1}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u30452\'d6\'b1}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u25509\'bd\'d3}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u25509\'bd\'d3}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u22312\'d4\'da}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u22312\'d4\'da}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u-32278\'d7\'d4}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u-32278\'d7\'d4}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u24049\'bc\'ba}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u24049\'bc\'ba}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u30340\'b5\'c4}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u30340\'b5\'c4}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u31995\'cf\'b5}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 \page 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u31995\'cf\'b5}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u32479\'cd\'b3}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168  }{\rtlch\fcs1 \af13 \ltrch\fcs0 
+\loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u20013\'d6\'d0}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u20013\'d6\'d0}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u-29693\'b5\'f7}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168  }{\rtlch\fcs1 \af13 \ltrch\fcs0 
+\loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u29992\'d3\'c3}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u29992\'d3\'c3}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par ICTCLAS
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u-244\'a3\'ac}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par ICTCLAS
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u21487\'bf\'c9\u20197\'d2\'d4\u26681\'b8\'f9\u25454\'be\'dd\u-26880\'d0\'e8\u-30335\'d2\'aa}{\rtlch\fcs1 \af2 \ltrch\fcs0 
+\insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u-28781\'ca\'e4}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u20986\'b3\'f6\u22810\'b6\'e0\u20010\'b8\'f6\u-25896\'b8\'df\u27010\'b8\'c5\u29575\'c2\'ca\u30340\'b5\'c4}{\rtlch\fcs1 \af2 
+\ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u32467\'bd\'e1}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168  }{\rtlch\fcs1 \af13 \ltrch\fcs0 
+\loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u26524\'b9\'fb}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u26524\'b9\'fb}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u-244\'a3\'ac}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u-244\'a3\'ac}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u-28781\'ca\'e4}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168  }{\rtlch\fcs1 \af13 \ltrch\fcs0 
+\loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u20986\'b3\'f6}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u20986\'b3\'f6}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u26684\'b8\'f1}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u26684\'b8\'f1}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u24335\'ca\'bd}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u24335\'ca\'bd}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u20063\'d2\'b2}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u20063\'d2\'b2}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u21487\'bf\'c9}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u21487\'bf\'c9}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u20197\'d2\'d4}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u20197\'d2\'d4}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u23450\'b6\'a8}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u23450\'b6\'a8}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u21046\'d6\'c6}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u21046\'d6\'c6}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u-244\'a3\'ac}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u-244\'a3\'ac}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u24320\'bf\'aa}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u24320\'bf\'aa}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u21457\'b7\'a2}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168  }{\rtlch\fcs1 \af13 \ltrch\fcs0 
+\loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u-32763\'d5\'df}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u-32763\'d5\'df}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u22312\'d4\'da}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u22312\'d4\'da}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u20998\'b7\'d6}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u20998\'b7\'d6}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u-29747\'b4\'ca}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168  }{\rtlch\fcs1 \af13 \ltrch\fcs0 
+\loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u21644\'ba\'cd}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u21644\'ba\'cd}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u-29747\'b4\'ca}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168  }{\rtlch\fcs1 \af13 \ltrch\fcs0 
+\loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u24615\'d0\'d4}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u24615\'d0\'d4}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u26631\'b1\'ea}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168  }{\rtlch\fcs1 \af13 \ltrch\fcs0 
+\loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u27880\'d7\'a2}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u27880\'d7\'a2}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 \page 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u30340\'b5\'c4}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u30340\'b5\'c4}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u22522\'bb\'f9}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u22522\'bb\'f9}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u30784\'b4\'a1}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168  }{\rtlch\fcs1 \af13 \ltrch\fcs0 
+\loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u19978\'c9\'cf}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u19978\'c9\'cf}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u32487\'bc\'cc}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168  }{\rtlch\fcs1 \af13 \ltrch\fcs0 
+\loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u32493\'d0\'f8}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168  }{\rtlch\fcs1 \af13 \ltrch\fcs0 
+\loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u19978\'c9\'cf}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u19978\'c9\'cf}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u23618\'b2\'e3}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168  }{\rtlch\fcs1 \af13 \ltrch\fcs0 
+\loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u24320\'bf\'aa}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u24320\'bf\'aa}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af13 \ltrch\fcs0 \loch\af13\hich\af13\dbch\af13\insrsid459168\charrsid459168 \loch\af13\hich\af13\dbch\f13 \uc2\u21457\'b7\'a2}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par Cyrillic windows-1251
+\par }{\rtlch\fcs1 \af402 \ltrch\fcs0 \f402\insrsid459168\charrsid459168 \'c2\'e8\'ef\'d0\'e0\'f1\'ea\'f0\'f3\'f2\'ea\'e0 - \'f1\'e0\'ec\'fb\'e9 \'e4\'f0\'f3\'e6\'e5\'eb\'fe\'e1\'ed\'fb\'e9 SEO \'f4\'ee\'f0\'f3\'ec \'d0\'f3\'ed\'e5\'f2\'e0, \'e2\'f1\'e5 \'ee 
+\'f0\'e0\'f1\'ea\'f0\'f3\'f2\'ea\'e5 \'e8 \'ee\'ef\'f2\'e8\'ec\'e8\'e7\'e0\'f6\'e8\'e8 \'f1\'e0\'e9\'f2\'ee\'e2,
+\par \'e4\'ee\'f0\'e2\'e5\'ff\'f5, \'e7\'e0\'f0\'e0\'e1\'ee\'f2\'ea\'e5 \'e2 \'e8\'ed\'f2\'e5\'f0\'ed\'e5\'f2\'e5, \'ef\'e0\'f0\'f2\'ed\'e5\'f0\'f1\'ea\'e8\'f5 \'ef\'f0\'ee\'e3\'f0\'e0\'ec\'ec\'e0\'f5, seo \'f1\'ea\'f0\'e8\'ef\'f2\'e0\'f5 \'e8 \'f1\'ee\'f4\'f2
+\'e5}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par Greek ISO-8859-7
+\par }{\rtlch\fcs1 \af404 \ltrch\fcs0 \f404\insrsid459168\charrsid459168 \'d3\'f4\'ef\'f0 \'f3\'f4\'e7\'ed \'f0\'f1\'ef\'e2\'ef\'eb\'de \'ec\'ef\'f5\'f3\'e9\'ea\'fe\'ed \'e2\'df\'ed\'f4\'e5\'ef \'f3\'f4\'e7 \'c2\'f1\'e5\'f4\'e1\'ed\'df\'e1 \'dd\'e2\'e1\'eb\'e5
+ \'f3\'de\'ec\'e5\'f1\'e1 \'f4\'ef YouTube \'ec\'e5\'f4\'dc \'f4\'ef \'e1\'e4\'e9\'dd\'ee\'ef\'e4\'ef \'f3\'f4\'e9\'f2
+\par \'e4\'e9\'e1\'f0\'f1\'e1\'e3\'ec\'e1\'f4\'e5\'fd\'f3\'e5\'e9\'f2 \'ec\'e5 \'f4\'ef\'ed \'ef\'f1\'e3\'e1\'ed\'e9\'f3\'ec\'fc \'e5\'df\'f3\'f0\'f1\'e1\'ee\'e7\'f2 \'f0\'ed\'e5\'f5\'ec\'e1\'f4\'e9\'ea\'fe\'ed \'e4\'e9\'ea\'e1\'e9\'f9\'ec\'dc\'f4\'f9\'ed \'e3
+\'e9\'e1 \'f4\'e7 \'ec\'ef\'f5\'f3\'e9\'ea\'de\page 
+\par }{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 Hebrew UTF-8
+\par }{\rtlch\fcs1 \af406 \ltrch\fcs0 \f406\insrsid459168\charrsid459168  \'f2\'f7\'f8 \'e9\'ec\'f2\'e1 \'ed\'e9\'e1\'e1\'e5\'e7 \'ed\'e9\'ee\'ec\'f6\'ec \'ed\'e2 \'e5\'ee\'eb \'ed\'e5\'ec\'e9\'f6\'e1 \'f2\'f7\'f8 \'e0\'ec\'ec \'ed\'e9\'ec\'e9\'e7\'fa\'ee \'ed
+\'e9\'ee\'ec\'f6\'ec \'ed\'e9\'ee\'e9\'e0\'fa\'ee\'e5 \'ed\'e9\'f4\'e9\'f7\'ee\'e5}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af406 \ltrch\fcs0 \f406\insrsid459168\charrsid459168 \'f1\'f8\'e5\'f7\'e4 .\'ed\'e3\'f7\'fa\'ee \'e3\'f2 \'e9\'f0\'e5\'f0\'e9\'e1
+\par  \'e4\'f0\'e5\'ee\'fa \'fa\'e9\'e9\'f0\'e1\'ec \'ed\'e9\'e9\'ec\'e0\'e5\'e6\'e9\'e5 \'ed\'e9\'f2\'f6\'ee\'e0\'e5 \'fa\'e5\'f0\'e5\'f8\'f7\'f2 ,\'ed\'e9\'e9\'fa\'e5\'f0\'ee\'e0\'e4\'e5 \'ed\'e9\'e9\'f0\'eb\'e8\'e4 ,\'ed\'e5\'ec\'e9\'f6\'e4 \'fa\'e5\'e3\'e5
+\'f1\'e9\'e1 \'f7\'f1\'e5\'f2
+\par \'fa\'eb\'e9\'f8\'f2 \'fa\'f0\'eb\'e5\'fa\'e1 \'ef\'eb\'e5 \'f8\'fa\'e5\'e9 \'e4\'e1\'e5\'e8
+\par  \'e3\'e7\'e0 \'ec\'eb\'ec \'fa\'f8\'f9\'f4\'e0\'ee \'f8\'e5\'f2\'e9\'f9\'ec \'f8\'e5\'f2\'e9\'f9\'ee \'f1\'f8\'e5\'f7\'e1 \'fa\'f0\'fa\'e9\'f0\'e4 \'fa\'e5\'e3\'e5\'e1\'f2\'e4 \'fa\'f8\'e5\'f7\'e9\'e1 .\'f4\'e5\'f9\'e5\'e8\'e5\'f4 \'fa\'e5\'f0\'e5\'ee
+\'fa\'e4}{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 
+\par }{\rtlch\fcs1 \af406 \ltrch\fcs0 \f406\insrsid459168\charrsid459168 \'fa\'e0 \'f8\'f4\'f9\'ec\'e5 \'e9\'f9\'e9\'e0 \'e1\'f6\'f7\'e1 \'ed\'e3\'f7\'fa\'e4\'ec
+\par }{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168 .
+\par }{\rtlch\fcs1 \af406 \ltrch\fcs0 \f406\insrsid459168\charrsid459168 \'e9\'fa\'e5\'f2\'ee\'f9\'ee \'ef\'f4\'e5\'e0\'e1 \'e5\'e9\'ee\'e5\'ec\'e9\'f6$pdf -> Pages = array[8]
+\par }{\rtlch\fcs1 \af2 \ltrch\fcs0 \insrsid459168\charrsid459168    \{
+\par         [2] => (string[601]) "\\r\\nThis is a dummy file to check correct function of the Sphider-plus PDF converter.\\r\\nArabic windows-1256\\r\\n\\xD8\\xB3\\xD9\\x83\\xD8\\xB0\\xD9\\x88\\xD8\\xAB\\xD8\\xB1\\xD9\\x84\\xD8\\xA7 , \\xD8\\xA9\\xD8\\xB7\\
+xD8\\xA8\\xD8\\xA7\\xD8\\xB1\\xD9\\x84\\xD8\\xA7 , \\xD8\\xB3\\xD9\\x8A\\xD9\\x85\\xD8\\xAE\\xD9\\x84\\xD8\\xA7 , \\xD8\\xA9\\xD9\\x81\\xD8\\xA7\\xD9\\x82\\xD8\\xAB\\xD9\\x84\\xD8\\xA7 , \\xD8\\xA9\\xD9\\x8A\\xD8\\xB3\\xD9\\x85\\xD8\\xA3 , \\xD8\\xB3\\xD9
+\\x85\\xD8\\xA3 , \\xD8\\xAA\\xD9\\x85\\xD8\\xA7\\xD9\\x82\\xD8\\xA3 , \\xD8\\xAA\\xD9\\x81\\xD8\\xA7\\xD8\\xB6\\xD8\\xAA\\xD8\\xB3\\xD8\\xA3 , \\xD8\\xA9\\xD9\\x81\\xD9\\x82\\xD8\\xA7\\xD8\\xB3\\xD8\\xA3 ,\\xD8\\xA9\\xD9\\x8A\\xD9\\x84\\xD8\\xA7\\xD9\\
+x81\\xD8\\xAA\\xD8\\xAD\\xD8\\xA3\\r\\n, \\r\\n\\xD8\\xA9\\xD9\\x8A\\xD8\\xA7\\xD8\\xB9\\xD8\\xB1 ,\\xD8\\xA9\\xD8\\xB7\\xD8\\xA8\\xD8\\xA7\\xD8\\xB1 ,\\xD8\\xB3\\xD9\\x8A\\xD8\\xA6\\xD8\\xB1 ,\\xD8\\xAB\\xD9\\x8A\\xD8\\xAD ,\\xD8\\xA7\\xD9\\x86\\xD8\\
+xAD ,\\xD9\\x86\\xD9\\x8A\\xD8\\xB3\\xD8\\xAD ,\\xD8\\xA9\\xD9\\x8A\\xD9\\x81\\xD8\\xA7\\xD9\\x82\\xD8\\xAB ,\\xD9\\x86\\xD8\\xA7\\xD8\\xB1\\xD8\\xB7\\xD9\\x85\\xD9\\x84\\xD8\\xA7 ,\\xD8\\xB3\\xD8\\xAF\\xD9\\x82\\xD9\\x84\\xD8\\xA7 ,..\\xD8\\xA9\\xD9\\x8A
+\\xD9\\x86\\xD9\\x8A\\xD8\\xB7\\xD8\\xB3\\xD9\\x84\\xD9\\x81\\xD9\\x84\\xD8\\xA7 ,.\\xD8\\xA9\\xD9\\x8A\\xD8\\xA8\\xD8\\xB1\\xD8\\xB9\\xD9\\x84\\xD8\\xA7\\r\\n,\\r\\n\\xD8\\xB1\\xD8\\xA7\\xD9\\x8A\\xD8\\xAF\\xD9\\x84\\xD8\\xA7\\xD9\\x88 ,\\xD8\\xA7\\xD9\\
+x87\\xD8\\xB1\\xD9\\x82\\xD9\\x85 ,\\xD9\\x8A\\xD8\\xAA\\xD9\\x81\\xD9\\x85 ,\\xD8\\xA1\\xD8\\xA7\\xD8\\xB3\\xD9\\x85 ,\\xD8\\xAF\\xD9\\x85\\xD8\\xAD\\xD9\\x85 ,\\xD9\\x85\\xD9\\x88\\xD8\\xB1\\xD9\\x84\\xD9\\x84 ,\\xD9\\x8A\\xD9\\x81 ,\\xD9\\x84\\xD8\\xA7
+\\xD8\\xB7\\xD8\\xB9 ,\\xD8\\xA8\\xD8\\xB1\\xD8\\xB9 ,\\xD8\\xA9\\xD9\\x85\\xD8\\xB5\\xD8\\xA7\\xD8\\xB9 ,\\xD9\\x86\\xD9\\x88\\xD8\\xA4\\xD8\\xB4 ,\\xD8\\xA9\\xD8\\xAF\\xD8\\xA7\\xD9\\x8A\\xD8\\xB3 ,\\xD8\\xA9\\xD9\\x8A\\xD8\\xB7\\xD8\\xB3\\xD8\\xA8\\xD8
+\\xB3\\r\\n,\\r\\nChinese gb2\ltrpar 312\\r\\nICTCLAS\\r\\n\\xE5\\x92\\x8C\\r\\n\\xE8\\xAE\\xA1 \\xE7\\xAE\\x97\\r\\n\\xE7\\xAE\\x97\\r\\n\\xE6\\x89\\x80\\x0C"
+\par         [3] => (string[304]) "\\xE6\\x89\\x80\\r\\n\\xE5\\x85\\xB6\\r\\n\\xE5\\x85\\xB6\\r\\n\\xE4\\xBB\\x96\\r\\n\\xE4\\xBB\\x96\\r\\n14 \\r\\n\\xE9\\xA1\\xB9 \\r\\n\\xE5\\x85\\x8D\\r\\n\\xE8\\xB4\\xB9 \\xE5\\x8F\\x91 \\xE5\\xB8\\x83\\r\\n\\xE5\\xB8\\x83
+\\r\\n\\xE7\\x9A\\x84\\r\\n\\xE7\\x9A\\x84\\r\\n\\xE6\\x88\\x90\\r\\n\\xE6\\x88\\x90\\r\\n\\xE6\\x9E\\x9C\\r\\n\\xE6\\x9E\\x9C\\r\\n\\xE8\\xA2\\xAB\\r\\n\\xE8\\xA2\\xAB\\r\\n\\xE4\\xB8\\xAD\\r\\n\\xE4\\xB8\\xAD\\r\\n\\xE5\\xA4\\x96\\r\\n\\xE5\\xA4\\x96\\r
+\\n\\xE5\\xAA\\x92\\r\\n\\xE5\\xAA\\x92\\r\\n\\xE4\\xBD\\x93\\r\\n\\xE4\\xBD\\x93\\r\\n\\xE5\\xB9\\xBF\\r\\n\\xE5\\xB9\\xBF\\r\\n\\xE6\\xB3\\x9B\\r\\n\\xE6\\xB3\\x9B\\r\\n\\xE5\\x9C\\xB0\\r\\n\\xE5\\x9C\\xB0\\r\\n\\xE6\\x8A\\xA5 \\r\\n\\xE9\\x81\\x93\\r\\
+n\\xE9\\x81\\x93\\r\\n\\xEF\\xBC\\x8C\\r\\n\\xEF\\xBC\\x8C\\r\\n\\xE6\\x88\\xAA\\r\\n\\xE6\\x88\\xAA\\r\\n\\xE6\\xAD\\xA2\\r\\n\\xE6\\xAD\\xA2\\r\\n\\xE5\\x88\\xB0\\r\\n\\xE5\\x88\\xB0\\r\\n9\\r\\n\\xE6\\x9C\\x88\\xEF\\xBC\\x8C\\r\\nICTCLAS\\r\\n\\xE8\\
+xA2\\xAB\\xE6\\x9D\\xA5\\xE8\\x87\\xAA\\xE4\\xBA\\x8E\\xE4\\xB8\\xAD\\r\\n\\xE5\\x9B\\xBD\\xE3\\x80\\x81\\xE6\\x97\\xA5\\xE6\\x9C\\xAC\\xE3\\x80\\x81\\xE6\\x96\\xB0\\xE5\\x8A\\xA0\\xE5\\x9D\\xA1\\xE3\\x80\\x81\\r\\n\\xE9\\x9F\\xA9 \\xE5\\x9B\\xBD\\r\\n\\
+xE5\\x9B\\xBD\\x0C"
+\par         [4] => (string[302]) "\\r\\n\\xE3\\x80\\x81\\r\\n\\xE3\\x80\\x81\\r\\n\\xE7\\xBE\\x8E\\r\\n\\xE7\\xBE\\x8E\\r\\n\\xE5\\x9B\\xBD\\r\\n\\xE5\\x9B\\xBD\\r\\n\\xE4\\xBB\\xA5\\r\\n\\xE4\\xBB\\xA5\\r\\n\\xE5\\x8F\\x8A\\r\\n\\xE5\\x8F\\x8A\\r\\n\\xE5\\
+x85\\xB6\\r\\n\\xE5\\x85\\xB6\\r\\n\\xE4\\xBB\\x96\\r\\n\\xE4\\xBB\\x96\\r\\n\\xE5\\x9B\\xBD\\r\\n\\xE5\\x9B\\xBD\\r\\n\\xE5\\xAE\\xB6\\r\\n\\xE5\\xAE\\xB6\\r\\n\\xE5\\x92\\x8C\\r\\n\\xE5\\x92\\x8C\\r\\n\\xE5\\x9C\\xB0\\r\\n\\xE5\\x9C\\xB0\\r\\n\\xE5\\x8C
+\\xBA\\r\\n\\xE5\\x8C\\xBA\\r\\n\\xE7\\x9A\\x84\\r\\n\\xE7\\x9A\\x84\\r\\n30000\\r\\n\\xE5\\xA4\\x9A\\xE4\\xBD\\x8D\\xE7\\xA0\\x94\\xE7\\xA9\\xB6\\xE4\\xBA\\xBA\\r\\n\\xE5\\x91\\x98 \\r\\n\\xE5\\x92\\x8C\\r\\n\\xE5\\x92\\x8C\\r\\n\\xE5\\x95\\x86\\r\\n\\
+xE5\\x95\\x86\\r\\n\\xE4\\xB8\\x9A \\xE6\\x9C\\xBA\\r\\n\\xE6\\x9C\\xBA\\r\\n\\xE6\\x9E\\x84\\r\\n\\xE6\\x9E\\x84\\r\\n\\xE4\\xB8\\x8B\\r\\n\\xE4\\xB8\\x8B\\r\\n\\xE8\\xBD\\xBD \\xE4\\xBD\\xBF\\r\\n\\xE4\\xBD\\xBF\\r\\n\\xE7\\x94\\xA8\\xE3\\x80\\x82\\xE6
+\\x88\\x91\\r\\n\\xE4\\xBB\\xAC \\xE4\\xB8\\xBA \\xE5\\x85\\x8D\\r\\n\\xE5\\x85\\x8D\\r\\n\\xE8\\xB4\\xB9 \\xE5\\x8F\\x91 \\xE5\\xB8\\x83\\r\\n\\xE5\\xB8\\x83\\r\\nICTCLAS\\r\\n\\xE5\\xB9\\xB6\\xE8\\x83\\xBD\\xE5\\xB8\\xAE\\xE5\\x8A\\xA9\\xE7\\x94\\xA8\\
+x0C"
+\par         [5] => (string[310]) "\\r\\n\\xE6\\x88\\xB7 \\xE8\\xA7\\xA3\\r\\n\\xE8\\xA7\\xA3\\r\\n\\xE5\\x86\\xB3\\r\\n\\xE5\\x86\\xB3\\r\\n\\xE4\\xB8\\xAD\\r\\n\\xE4\\xB8\\xAD\\r\\n\\xE6\\x96\\x87\\r\\n\\xE6\\x96\\x87\\r\\n\\xE8\\xAF\\x8D \\xE6\\xB3\\x95\\r
+\\n\\xE6\\xB3\\x95\\r\\n\\xE9\\x97\\xAE \\xE9\\xA2\\x98 \\xE8\\x80\\x8C\\r\\n\\xE8\\x80\\x8C\\r\\n\\xE6\\xB7\\xB1\\r\\n\\xE6\\xB7\\xB1\\r\\n\\xE6\\x84\\x9F\\r\\n\\xE6\\x84\\x9F\\r\\n\\xE8\\x8D\\xA3\\r\\n\\xE8\\x8D\\xA3\\r\\n\\xE5\\xB9\\xB8\\r\\n\\xE5\\xB9
+\\xB8\\r\\n\\xEF\\xBC\\x81\\r\\n\\xEF\\xBC\\x81\\r\\n\\xE8\\xAE\\xA1 \\r\\n\\xE7\\xAE\\x97\\xE6\\x89\\x80\\r\\n\\xE6\\xB1\\x89 \\xE8\\xAF\\xAD \\xE8\\xAF\\x8D \\xE6\\xB3\\x95\\r\\n\\xE6\\xB3\\x95\\r\\n\\xE5\\x88\\x86\\r\\n\\xE5\\x88\\x86\\xE6\\x9E\\x90\\r
+\\n\\xE6\\x9E\\x90\\r\\n\\xE7\\xB3\\xBB\\r\\n\\xE7\\xB3\\xBB \\xE7\\xBB\\x9F \\r\\nICTCLAS\\r\\n\\xE5\\x90\\x8C\\r\\n\\xE6\\x97\\xB6 \\xE8\\xBF\\x98 \\xE6\\x8F\\x90\\r\\n\\xE6\\x8F\\x90\\r\\n\\xE4\\xBE\\x9B\\r\\n\\xE4\\xBE\\x9B\\r\\n\\xE4\\xB8\\x80\\r\\n
+\\xE4\\xB8\\x80\\r\\n\\xE5\\xA5\\x97\\r\\n\\xE5\\xA5\\x97\\r\\n\\xE5\\xAE\\x8C\\r\\n\\xE5\\xAE\\x8C\\r\\n\\xE6\\x95\\xB4\\r\\n\\xE6\\x95\\xB4\\r\\n\\xE7\\x9A\\x84\\r\\n\\xE7\\x9A\\x84\\r\\n\\xE5\\x8A\\xA8 \\xE6\\x80\\x81 \\xE8\\xBF\\x9E \\xE6\\x8E\\xA5\\r
+\\n\\xE6\\x8E\\xA5\\x0C"
+\par         [6] => (string[282]) "\\r\\n\\xE5\\xBA\\x93\\r\\nICTCLAS.dll,COM\\r\\n\\xE7\\xBB\\x84 \\r\\n\\xE4\\xBB\\xB6\\xE5\\x92\\x8C\\xE7\\x9B\\xB8\\r\\n\\xE5\\xBA\\x94 \\xE7\\x9A\\x84\\r\\n\\xE7\\x9A\\x84\\r\\n\\xE6\\xA6\\x82\\r\\n\\xE6\\xA6\\x82\\r\\n\\
+xE7\\x8E\\x87\\r\\n\\xE8\\xAF\\x8D \\xE5\\x85\\xB8\\r\\n\\xE5\\x85\\xB8\\r\\n,\\r\\n\\xE5\\xBC\\x80\\r\\n\\xE5\\x8F\\x91 \\xE8\\x80\\x85\\r\\n\\xE8\\x80\\x85\\r\\n\\xE5\\x8F\\xAF\\r\\n\\xE5\\x8F\\xAF\\r\\n\\xE4\\xBB\\xA5\\r\\n\\xE4\\xBB\\xA5\\r\\n\\xE5\\
+xAE\\x8C\\r\\n\\xE5\\xAE\\x8C\\r\\n\\xE5\\x85\\xA8\\r\\n\\xE5\\x85\\xA8\\r\\n\\xE5\\xBF\\xBD\\r\\n\\xE5\\xBF\\xBD\\r\\n\\xE7\\x95\\xA5\\r\\n\\xE7\\x95\\xA5\\r\\n\\xE6\\xB1\\x89 \\xE8\\xAF\\xAD \\xE8\\xAF\\x8D \\xE6\\xB3\\x95\\r\\n\\xE6\\xB3\\x95\\r\\n\\
+xE5\\x88\\x86\\r\\n\\xE5\\x88\\x86\\r\\n\\xE6\\x9E\\x90\\r\\n\\xE6\\x9E\\x90\\r\\n\\xEF\\xBC\\x8C\\r\\n\\xEF\\xBC\\x8C\\r\\n\\xE7\\x9B\\xB4\\r\\n\\xE7\\x9B\\xB4\\r\\n\\xE6\\x8E\\xA5\\r\\n\\xE6\\x8E\\xA5\\r\\n\\xE5\\x9C\\xA8\\r\\n\\xE5\\x9C\\xA8\\r\\n\\xE8
+\\x87\\xAA\\r\\n\\xE8\\x87\\xAA\\r\\n\\xE5\\xB7\\xB1\\r\\n\\xE5\\xB7\\xB1\\r\\n\\xE7\\x9A\\x84\\r\\n\\xE7\\x9A\\x84\\r\\n\\xE7\\xB3\\xBB\\x0C"
+\par         [7] => (string[309]) "\\r\\n\\xE7\\xB3\\xBB\\r\\n\\xE7\\xBB\\x9F \\xE4\\xB8\\xAD\\r\\n\\xE4\\xB8\\xAD\\r\\n\\xE8\\xB0\\x83 \\xE7\\x94\\xA8\\r\\n\\xE7\\x94\\xA8\\r\\nICTCLAS\\r\\n\\xEF\\xBC\\x8C\\r\\nICTCLAS\\r\\n\\xE5\\x8F\\xAF\\xE4\\xBB\\xA5\\xE6
+\\xA0\\xB9\\xE6\\x8D\\xAE\\xE9\\x9C\\x80\\xE8\\xA6\\x81\\r\\n\\xE8\\xBE\\x93\\r\\n\\xE5\\x87\\xBA\\xE5\\xA4\\x9A\\xE4\\xB8\\xAA\\xE9\\xAB\\x98\\xE6\\xA6\\x82\\xE7\\x8E\\x87\\xE7\\x9A\\x84\\r\\n\\xE7\\xBB\\x93 \\xE6\\x9E\\x9C\\r\\n\\xE6\\x9E\\x9C\\r\\n\\
+xEF\\xBC\\x8C\\r\\n\\xEF\\xBC\\x8C\\r\\n\\xE8\\xBE\\x93 \\xE5\\x87\\xBA\\r\\n\\xE5\\x87\\xBA\\r\\n\\xE6\\xA0\\xBC\\r\\n\\xE6\\xA0\\xBC\\r\\n\\xE5\\xBC\\x8F\\r\\n\\xE5\\xBC\\x8F\\r\\n\\xE4\\xB9\\x9F\\r\\n\\xE4\\xB9\\x9F\\r\\n\\xE5\\x8F\\xAF\\r\\n\\xE5\\x8F
+\\xAF\\r\\n\\xE4\\xBB\\xA5\\r\\n\\xE4\\xBB\\xA5\\r\\n\\xE5\\xAE\\x9A\\r\\n\\xE5\\xAE\\x9A\\r\\n\\xE5\\x88\\xB6\\r\\n\\xE5\\x88\\xB6\\r\\n\\xEF\\xBC\\x8C\\r\\n\\xEF\\xBC\\x8C\\r\\n\\xE5\\xBC\\x80\\r\\n\\xE5\\xBC\\x80\\r\\n\\xE5\\x8F\\x91 \\xE8\\x80\\x85\\r
+\\n\\xE8\\x80\\x85\\r\\n\\xE5\\x9C\\xA8\\r\\n\\xE5\\x9C\\xA8\\r\\n\\xE5\\x88\\x86\\r\\n\\xE5\\x88\\x86\\r\\n\\xE8\\xAF\\x8D \\xE5\\x92\\x8C\\r\\n\\xE5\\x92\\x8C\\r\\n\\xE8\\xAF\\x8D \\xE6\\x80\\xA7\\r\\n\\xE6\\x80\\xA7\\r\\n\\xE6\\xA0\\x87 \\xE6\\xB3\\xA8
+\\r\\n\\xE6\\xB3\\xA8\\x0C"
+\par         [8] => (string[734]) "\\r\\n\\xE7\\x9A\\x84\\r\\n\\xE7\\x9A\\x84\\r\\n\\xE5\\x9F\\xBA\\r\\n\\xE5\\x9F\\xBA\\r\\n\\xE7\\xA1\\x80 \\xE4\\xB8\\x8A\\r\\n\\xE4\\xB8\\x8A\\r\\n\\xE7\\xBB\\xA7 \\xE7\\xBB\\xAD \\xE4\\xB8\\x8A\\r\\n\\xE4\\xB8\\x8A\\r\\n\\
+xE5\\xB1\\x82 \\xE5\\xBC\\x80\\r\\n\\xE5\\xBC\\x80\\r\\n\\xE5\\x8F\\x91\\r\\nCyrillic windows-1251\\r\\n\\xD0\\x92\\xD0\\xB8\\xD0\\xBF\\xD0\\xA0\\xD0\\xB0\\xD1\\x81\\xD0\\xBA\\xD1\\x80\\xD1\\x83\\xD1\\x82\\xD0\\xBA\\xD0\\xB0 - \\xD1\\x81\\xD0\\xB0\\xD0\\
+xBC\\xD1\\x8B\\xD0\\xB9 \\xD0\\xB4\\xD1\\x80\\xD1\\x83\\xD0\\xB6\\xD0\\xB5\\xD0\\xBB\\xD1\\x8E\\xD0\\xB1\\xD0\\xBD\\xD1\\x8B\\xD0\\xB9 SEO \\xD1\\x84\\xD0\\xBE\\xD1\\x80\\xD1\\x83\\xD0\\xBC \\xD0\\xA0\\xD1\\x83\\xD0\\xBD\\xD0\\xB5\\xD1\\x82\\xD0\\xB0, \\
+xD0\\xB2\\xD1\\x81\\xD0\\xB5 \\xD0\\xBE \\xD1\\x80\\xD0\\xB0\\xD1\\x81\\xD0\\xBA\\xD1\\x80\\xD1\\x83\\xD1\\x82\\xD0\\xBA\\xD0\\xB5 \\xD0\\xB8 \\xD0\\xBE\\xD0\\xBF\\xD1\\x82\\xD0\\xB8\\xD0\\xBC\\xD0\\xB8\\xD0\\xB7\\xD0\\xB0\\xD1\\x86\\xD0\\xB8\\xD0\\xB8 \\
+xD1\\x81\\xD0\\xB0\\xD0\\xB9\\xD1\\x82\\xD0\\xBE\\xD0\\xB2,\\r\\n\\xD0\\xB4\\xD0\\xBE\\xD1\\x80\\xD0\\xB2\\xD0\\xB5\\xD1\\x8F\\xD1\\x85, \\xD0\\xB7\\xD0\\xB0\\xD1\\x80\\xD0\\xB0\\xD0\\xB1\\xD0\\xBE\\xD1\\x82\\xD0\\xBA\\xD0\\xB5 \\xD0\\xB2 \\xD0\\xB8\\xD0
+\\xBD\\xD1\\x82\\xD0\\xB5\\xD1\\x80\\xD0\\xBD\\xD0\\xB5\\xD1\\x82\\xD0\\xB5, \\xD0\\xBF\\xD0\\xB0\\xD1\\x80\\xD1\\x82\\xD0\\xBD\\xD0\\xB5\\xD1\\x80\\xD1\\x81\\xD0\\xBA\\xD0\\xB8\\xD1\\x85 \\xD0\\xBF\\xD1\\x80\\xD0\\xBE\\xD0\\xB3\\xD1\\x80\\xD0\\xB0\\xD0\\
+xBC\\xD0\\xBC\\xD0\\xB0\\xD1\\x85, seo \\xD1\\x81\\xD0\\xBA\\xD1\\x80\\xD0\\xB8\\xD0\\xBF\\xD1\\x82\\xD0\\xB0\\xD1\\x85 \\xD0\\xB8 \\xD1\\x81\\xD0\\xBE\\xD1\\x84\\xD1\\x82\\xD0\\xB5\\r\\nGreek ISO-8859-7\\r\\n\\xCE\\xA3\\xCF\\x84\\xCE\\xBF\\xCF\\x80 \\xCF
+\\x83\\xCF\\x84\\xCE\\xB7\\xCE\\xBD \\xCF\\x80\\xCF\\x81\\xCE\\xBF\\xCE\\xB2\\xCE\\xBF\\xCE\\xBB\\xCE\\xAE \\xCE\\xBC\\xCE\\xBF\\xCF\\x85\\xCF\\x83\\xCE\\xB9\\xCE\\xBA\\xCF\\x8E\\xCE\\xBD \\xCE\\xB2\\xCE\\xAF\\xCE\\xBD\\xCF\\x84\\xCE\\xB5\\xCE\\xBF \\xCF
+\\x83\\xCF\\x84\\xCE\\xB7 \\xCE\\x92\\xCF\\x81\\xCE\\xB5\\xCF\\x84\\xCE\\xB1\\xCE\\xBD\\xCE\\xAF\\xCE\\xB1 \\xCE\\xAD\\xCE\\xB2\\xCE\\xB1\\xCE\\xBB\\xCE\\xB5 \\xCF\\x83\\xCE\\xAE\\xCE\\xBC\\xCE\\xB5\\xCF\\x81\\xCE\\xB1 \\xCF\\x84\\xCE\\xBF YouTube \\xCE\\
+xBC\\xCE\\xB5\\xCF\\x84\\xCE\\xAC \\xCF\\x84\\xCE\\xBF \\xCE\\xB1\\xCE\\xB4\\xCE\\xB9\\xCE\\xAD\\xCE\\xBE\\xCE\\xBF\\xCE\\xB4\\xCE\\xBF \\xCF\\x83\\xCF\\x84\\xCE\\xB9\\xCF\\x82\\r\\n\\xCE\\xB4\\xCE\\xB9\\xCE\\xB1\\xCF\\x80\\xCF\\x81\\xCE\\xB1\\xCE\\xB3\\
+xCE\\xBC\\xCE\\xB1\\xCF\\x84\\xCE\\xB5\\xCF\\x8D\\xCF\\x83\\xCE\\xB5\\xCE\\xB9\\xCF\\x82 \\xCE\\xBC\\xCE\\xB5 \\xCF\\x84\\xCE\\xBF\\xCE\\xBD \\xCE\\xBF\\xCF\\x81\\xCE\\xB3\\xCE\\xB1\\xCE\\xBD\\xCE\\xB9\\xCF\\x83\\xCE\\xBC\\xCF\\x8C \\xCE\\xB5\\xCE\\xAF\\
+xCF\\x83\\xCF\\x80\\xCF\\x81\\xCE\\xB1\\xCE\\xBE\\xCE\\xB7\\xCF\\x82 \\xCF\\x80\\xCE\\xBD\\xCE\\xB5\\xCF\\x85\\xCE\\xBC\\xCE\\xB1\\xCF\\x84\\xCE\\xB9\\xCE\\xBA\\xCF\\x8E\\xCE\\xBD \\xCE\\xB4\\xCE\\xB9\\xCE\\xBA\\xCE\\xB1\\xCE\\xB9\\xCF\\x89\\xCE\\xBC\\xCE
+\\xAC\\xCF\\x84\\xCF\\x89\\xCE\\xBD \\xCE\\xB3\\xCE\\xB9\\xCE\\xB1 \\xCF\\x84\\xCE\\xB7 \\xCE\\xBC\\xCE\\xBF\\xCF\\x85\\xCF\\x83\\xCE\\xB9\\xCE\\xBA\\xCE\\xAE\\x0C"
+\par         [9] => (string[630]) "\\r\\nHebrew UTF-8\\r\\n \\xD7\\xA2\\xD7\\xA7\\xD7\\xA8 \\xD7\\x99\\xD7\\x9C\\xD7\\xA2\\xD7\\x91 \\xD7\\x9D\\xD7\\x99\\xD7\\x91\\xD7\\x91\\xD7\\x95\\xD7\\x97 \\xD7\\x9D\\xD7\\x99\\xD7\\x9E\\xD7\\x9C\\xD7\\xA6\\xD7\\x9C \\xD7
+\\x9D\\xD7\\x92 \\xD7\\x95\\xD7\\x9E\\xD7\\x9B \\xD7\\x9D\\xD7\\x95\\xD7\\x9C\\xD7\\x99\\xD7\\xA6\\xD7\\x91 \\xD7\\xA2\\xD7\\xA7\\xD7\\xA8 \\xD7\\x90\\xD7\\x9C\\xD7\\x9C \\xD7\\x9D\\xD7\\x99\\xD7\\x9C\\xD7\\x99\\xD7\\x97\\xD7\\xAA\\xD7\\x9E \\xD7\\x9D\\
+xD7\\x99\\xD7\\x9E\\xD7\\x9C\\xD7\\xA6\\xD7\\x9C \\xD7\\x9D\\xD7\\x99\\xD7\\x9E\\xD7\\x99\\xD7\\x90\\xD7\\xAA\\xD7\\x9E\\xD7\\x95 \\xD7\\x9D\\xD7\\x99\\xD7\\xA4\\xD7\\x99\\xD7\\xA7\\xD7\\x9E\\xD7\\x95\\r\\n\\xD7\\xA1\\x\ltrpar D7\\xA8\\xD7\\x95\\xD7\\xA7
+\\xD7\\x94 .\\xD7\\x9D\\xD7\\x93\\xD7\\xA7\\xD7\\xAA\\xD7\\x9E \\xD7\\x93\\xD7\\xA2 \\xD7\\x99\\xD7\\xA0\\xD7\\x95\\xD7\\xA0\\xD7\\x99\\xD7\\x91\\r\\n \\xD7\\x94\\xD7\\xA0\\xD7\\x95\\xD7\\x9E\\xD7\\xAA \\xD7\\xAA\\xD7\\x99\\xD7\\x99\\xD7\\xA0\\xD7\\x91\\
+xD7\\x9C \\xD7\\x9D\\xD7\\x99\\xD7\\x99\\xD7\\x9C\\xD7\\x90\\xD7\\x95\\xD7\\x96\\xD7\\x99\\xD7\\x95 \\xD7\\x9D\\xD7\\x99\\xD7\\xA2\\xD7\\xA6\\xD7\\x9E\\xD7\\x90\\xD7\\x95 \\xD7\\xAA\\xD7\\x95\\xD7\\xA0\\xD7\\x95\\xD7\\xA8\\xD7\\xA7\\xD7\\xA2 ,\\xD7\\x9D\\
+xD7\\x99\\xD7\\x99\\xD7\\xAA\\xD7\\x95\\xD7\\xA0\\xD7\\x9E\\xD7\\x90\\xD7\\x94\\xD7\\x95 \\xD7\\x9D\\xD7\\x99\\xD7\\x99\\xD7\\xA0\\xD7\\x9B\\xD7\\x98\\xD7\\x94 ,\\xD7\\x9D\\xD7\\x95\\xD7\\x9C\\xD7\\x99\\xD7\\xA6\\xD7\\x94 \\xD7\\xAA\\xD7\\x95\\xD7\\x93\\
+xD7\\x95\\xD7\\xA1\\xD7\\x99\\xD7\\x91 \\xD7\\xA7\\xD7\\xA1\\xD7\\x95\\xD7\\xA2\\r\\n\\xD7\\xAA\\xD7\\x9B\\xD7\\x99\\xD7\\xA8\\xD7\\xA2 \\xD7\\xAA\\xD7\\xA0\\xD7\\x9B\\xD7\\x95\\xD7\\xAA\\xD7\\x91 \\xD7\\x9F\\xD7\\x9B\\xD7\\x95 \\xD7\\xA8\\xD7\\xAA\\xD7\\
+x95\\xD7\\x99 \\xD7\\x94\\xD7\\x91\\xD7\\x95\\xD7\\x98\\r\\n \\xD7\\x93\\xD7\\x97\\xD7\\x90 \\xD7\\x9C\\xD7\\x9B\\xD7\\x9C \\xD7\\xAA\\xD7\\xA8\\xD7\\xA9\\xD7\\xA4\\xD7\\x90\\xD7\\x9E \\xD7\\xA8\\xD7\\x95\\xD7\\xA2\\xD7\\x99\\xD7\\xA9\\xD7\\x9C \\xD7\\xA8
+\\xD7\\x95\\xD7\\xA2\\xD7\\x99\\xD7\\xA9\\xD7\\x9E \\xD7\\xA1\\xD7\\xA8\\xD7\\x95\\xD7\\xA7\\xD7\\x91 \\xD7\\xAA\\xD7\\xA0\\xD7\\xAA\\xD7\\x99\\xD7\\xA0\\xD7\\x94 \\xD7\\xAA\\xD7\\x95\\xD7\\x93\\xD7\\x95\\xD7\\x91\\xD7\\xA2\\xD7\\x94 \\xD7\\xAA\\xD7\\xA8
+\\xD7\\x95\\xD7\\xA7\\xD7\\x99\\xD7\\x91 .\\xD7\\xA4\\xD7\\x95\\xD7\\xA9\\xD7\\x95\\xD7\\x98\\xD7\\x95\\xD7\\xA4 \\xD7\\xAA\\xD7\\x95\\xD7\\xA0\\xD7\\x95\\xD7\\x9E\\xD7\\xAA\\xD7\\x94\\r\\n\\xD7\\xAA\\xD7\\x90 \\xD7\\xA8\\xD7\\xA4\\xD7\\xA9\\xD7\\x9C\\xD7
+\\x95 \\xD7\\x99\\xD7\\xA9\\xD7\\x99\\xD7\\x90 \\xD7\\x91\\xD7\\xA6\\xD7\\xA7\\xD7\\x91 \\xD7\\x9D\\xD7\\x93\\xD7\\xA7\\xD7\\xAA\\xD7\\x94\\xD7\\x9C\\r\\n.\\r\\n\\xD7\\x99\\xD7\\xAA\\xD7\\x95\\xD7\\xA2\\xD7\\x9E\\xD7\\xA9\\xD7\\x9E \\xD7\\x9F\\xD7\\xA4\\
+xD7\\x95\\xD7\\x90\\xD7\\x91 \\xD7\\x95\\xD7\\x99\\xD7\\x9E\\xD7\\x95\\xD7\\x9C\\xD7\\x99\\xD7\\xA6"
+\par     \}
+\par 
+\par }}
