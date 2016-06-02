@@ -344,8 +344,8 @@
 	. Added more debugging messages when the $DEBUG static class variable is set to an integer value
 	  greater than 1.
 	. Character references to a CMAP can be specified as \xyz, where "xyz" are octal digits
-	. The begincmap/endcmap constructs can be omitted. Checked for the presence of beginbfchar/beginbfrange
-	  in this case.
+	. The begincmap/endcmap constructs can be omitted, which initially was the criteria to determine if the
+	  current object is a character map. Checked for the presence of beginbfchar/beginbfrange in this case.
 
  **************************************************************************************************************/
 namespace 	Thrak\Processors ;
