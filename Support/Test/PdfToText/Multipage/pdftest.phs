@@ -1,9 +1,0 @@
-<?php
-
-require ( '../PdfToText.phpclass' ) ;
-$file = "cv01.pdf" ;
-$pdf = new PdfToText ( $file ) ;
-file_put_contents ( 'pdf.txt', $pdf -> Text ) ;
-
-$pdf -> document_match ( '/Master(?P<after> ...)/', $match ) ;
-print_r ( $match ) ;
