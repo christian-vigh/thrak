@@ -400,6 +400,11 @@
 	. Added the Separator property, which can be used to separate chunks of text that are recognized to be
 	  on the same line. This is useful for pdf documents that contain mainly tabular data, but it could
 	  break words if it contains textual data.
+	. Handled a new strange way to specify font numbers (/f-x-y instead of /Fx).
+
+    [Version : 1.2.10]	[Date : 2016/06/16]     [Author : CV]
+	. The character after an octal notation was skipped. For example, (\101 X) was rendered as "AX" instead
+	  of "A X".
 
  **************************************************************************************************************/
 namespace 	Thrak\Processors ;
@@ -1730,7 +1735,7 @@ class  PdfToText 	extends PdfObjectBase
 														$ord	=  ( $ord  <<  8 ) + octdec ( $octal_value ) ;
 
 													$ch	 =  chr ( $ord ) ;
-													$i	+=  strlen ( $octal_matches [0] ) - 1 ;
+													$i	+=  strlen ( $octal_matches [0] ) - 2 ;
 												    }
 				   		   				    }
 				   		   			    }
