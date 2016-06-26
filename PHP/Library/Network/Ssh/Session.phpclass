@@ -26,6 +26,10 @@
     [Version : 1.0.3]	[Date : 2016/02/28]     [Author : CV]
 	. Changed the _execute() method to remove carriage returns from command.
 
+    [Version : 1.0.4]	[Date : 2016/06/26]     [Author : CV]
+	. Added the SSH_MAX_WRITE_SIZE constant
+	. Changed the _execute() method to send shell scripts by blocks of SSH_MAX_WRITE_SIZE bytes. 
+
  **************************************************************************************************************/
 namespace	Thrak\Network\Ssh ;
 
@@ -62,6 +66,9 @@ class  SshSession		extends  Object
 
 	// Prefix of the remote shell script when the command to execute is larger than SSH_MAX_COMMAND_LENGTH bytes
 	const		SSH_SHELL_SCRIPT_PREFIX		=  '/tmp/.s.' ;
+
+	// Buffer size used if a shell script is to be created because the command to execute is greater than SSH_MAX_COMMAND_LENGTH
+	const		SSH_MAX_WRITE_SIZE		=  32768 ;
 
 	// Ssh connection object
 	public		$Connection			=  null ;
@@ -315,13 +322,23 @@ class  SshSession		extends  Object
 		    }
 		
 		// Execute the command
-		if  ( strlen ( $command )  >  self::SSH_MAX_COMMAND_LENGTH ) 
+		$command_length		=  strlen ( $command ) ;
+
+		// When the command exceeds SSH_MAX_COMMAND_LENGTH bytes, we will have to create a remote script and execute it
+		if  ( $command_length  >  self::SSH_MAX_COMMAND_LENGTH ) 
 		   {
 			$fs		=  $this -> GetFileSystem ( ) ;
 			$remote_file	=  self::SSH_SHELL_SCRIPT_PREFIX . microtime ( true ) ;
 
 			$fp		=  $fs -> fopen ( $remote_file, 'w' ) ;
-			$fs -> fwrite ( $fp, $command ) ;
+			$pos		=  0 ;
+
+			while  ( $pos  <  $command_length )
+			   {
+				$fs -> fwrite ( $fp, substr ( $command, $pos, self::SSH_MAX_WRITE_SIZE ), self::SSH_MAX_WRITE_SIZE ) ;
+				$pos  +=  self::SSH_MAX_WRITE_SIZE ;
+			    }
+
 			$fs -> fclose ( $fp ) ;
 
 			$sh_command	=  "sh $remote_file" ;
@@ -346,6 +363,9 @@ class  SshSession		extends  Object
 			   {
 				// Read next data chunk
 				$data	=  fread ( $stdout, 8192 ) ;
+
+				if  ( ! $data )
+					break ;
 				
 				// Check if our [status=] message is present ; if yes, keep the status code and remove the message
 				if  ( preg_match ( $status_re, $data, $match ) )
