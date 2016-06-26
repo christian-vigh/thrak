@@ -19,6 +19,9 @@
 
     [Version : 1.0.2]	[Date : 2015/08/16]     [Author : CV]
 	. Changed the fopen() method to handle the case where $contents is null.
+
+    [Version : 1.0.3]	[Date : 2016/06/26]     [Author : CV]
+	. Changed the fread() method, which was improperly calling fwrite (!).
  
  **************************************************************************************************************/
 namespace	Thrak\Network\Ssh ;
@@ -309,7 +312,7 @@ class  SshFileSystem		extends  Object
 	//	fread() function, on a remote file.
 	public function  fread ( $fp, $length = null )
 	   {
-		$contents	=  @fwrite ( $fp, $length ) ;
+		$contents	=  @fread ( $fp, $length ) ;
 		
 		$this -> __check_error ( $contents ) ;
 		
