@@ -1,0 +1,461 @@
+----------------------------------- FONT #5
+
+<</Type/Font/Subtype/TrueType/Name/F1/BaseFont/TimesNewRomanPSMT/Encoding/WinAnsiEncoding/FontDescriptor 6 0 R/FirstChar 32/LastChar 120/Widths 61 0 R>>
+----------------------------------- FONT #7
+
+<</Type/Font/Subtype/TrueType/Name/F2/BaseFont/TimesNewRomanPS-BoldMT/Encoding/WinAnsiEncoding/FontDescriptor 8 0 R/FirstChar 32/LastChar 121/Widths 62 0 R>>
+----------------------------------- FONT #10
+
+<</Type/Font/Subtype/TrueType/Name/F3/BaseFont/ABCDEE+OldEnglishTextMT/Encoding/WinAnsiEncoding/FontDescriptor 11 0 R/FirstChar 32/LastChar 120/Widths 63 0 R>>
+----------------------------------- FONT #14
+
+<</Type/Font/Subtype/Type0/BaseFont/TimesNewRomanPSMT/Encoding/Identity-H/DescendantFonts 15 0 R/ToUnicode 58 0 R>>
+----------------------------------- FONT #16
+
+<</BaseFont/TimesNewRomanPSMT/Subtype/CIDFontType2/Type/Font/CIDToGIDMap/Identity/DW 1000/CIDSystemInfo 17 0 R/FontDescriptor 18 0 R/W 60 0 R>>
+----------------------------------- UNICODE CMAP #58
+/CIDInit /ProcSet findresource begin
+10 dict begin
+begincmap
+/CIDSystemInfo
+<< /Registry (Adobe)
+/Ordering (UCS)
+/Supplement 0
+>> def
+/CMapName /Adobe-Identity-UCS def
+/CMapType 2 def
+1 begincodespacerange
+<0000> <FFFF>
+endcodespacerange
+1 beginbfchar
+<00B6> <2019>
+endbfchar
+endcmap
+CMapName currentdict /CMap defineresource pop
+end
+end----------------------------------- TEXT #4
+/Artifact <</Attached [/Top]/Type/Pagination/Subtype/Header>> BDC BT
+/F1 12.96 Tf
+1 0 0 1 72.024 744.24 Tm
+0 g
+0 G
+[( )] TJ
+ET
+q
+Q
+ EMC /Artifact <</Attached [/Bottom]/Type/Pagination/Subtype/Footer>> BDC BT
+1 0 0 1 72.024 51.384 Tm
+[( )] TJ
+ET
+q
+Q
+ EMC  /P <</MCID 0>> BDC 0 g
+72 230.1 468 2.85 re
+f*
+ EMC  /P <</MCID 1>> BDC 72 154.85 468 2.85 re
+f*
+ EMC  /P <</MCID 2>> BDC BT
+/F2 14.04 Tf
+1 0 0 1 72.024 707.04 Tm
+0 g
+[(Order f)10(i)-3(l)-3(ed )] TJ
+ET
+BT
+1 0 0 1 142.94 707.04 Tm
+[(M)12(a)-3(y)-3( )11(3)4(1)-3(, )4(2)-3(0)4(1)4(6)] TJ
+ET
+BT
+1 0 0 1 222.53 707.04 Tm
+[( )] TJ
+ET
+ EMC  /P <</MCID 3>> BDC BT
+/F2 12.96 Tf
+1 0 0 1 72.024 679.3 Tm
+[( )] TJ
+ET
+ EMC  /P <</MCID 4>> BDC q
+114 0 0 114 249 550.3 cm
+/Image9 Do Q
+ EMC  /P <</MCID 5>> BDC BT
+1 0 0 1 363.07 550.3 Tm
+[( )] TJ
+ET
+ EMC  /P <</MCID 6>> BDC BT
+1 0 0 1 72.024 525.91 Tm
+[( )] TJ
+ET
+ EMC  /P <</MCID 7>> BDC BT
+/F2 14.04 Tf
+1 0 0 1 286.01 497.83 Tm
+[(I)-3(n Th)3(e)] TJ
+ET
+BT
+1 0 0 1 326.11 497.83 Tm
+[( )] TJ
+ET
+ EMC  /P <</MCID 8>> BDC q
+BT
+/F3 15.96 Tf
+1 0 0 1 251.45 466.27 Tm
+2 Tr 0.456 w
+[(Co)-2(ur)-10(t of )-5(A)15(p)-10(p)-2(ea)-5(l)-4(s)] TJ
+ET
+Q
+q
+BT
+/F3 15.96 Tf
+1 0 0 1 360.55 466.27 Tm
+2 Tr 0.456 w
+[( )] TJ
+ET
+Q
+ EMC  /P <</MCID 9>> BDC BT
+1 0 0 1 281.69 436.87 Tm
+[(F)4(o)-3(r The)] TJ
+ET
+BT
+1 0 0 1 330.31 436.87 Tm
+[( )] TJ
+ET
+ EMC  /P <</MCID 10>> BDC q
+BT
+/F3 15.96 Tf
+1 0 0 1 229.97 405.31 Tm
+2 Tr 0.456 w
+[(F)-8(irst)-3( D)-5(is)-3(tri)-3(ct)5( o)-3(f Te)-4(xa)-3(s)] TJ
+ET
+Q
+q
+BT
+/F3 15.96 Tf
+1 0 0 1 382.15 405.31 Tm
+2 Tr 0.456 w
+[( )] TJ
+ET
+Q
+ EMC  /P <</MCID 11>> BDC BT
+/F2 12.96 Tf
+1 0 0 1 270.29 376.87 Tm
+[(________)-8(___)] TJ
+ET
+BT
+1 0 0 1 341.83 376.87 Tm
+[( )] TJ
+ET
+ EMC  /P <</MCID 12>> BDC BT
+/F2 14.04 Tf
+1 0 0 1 241.73 348.77 Tm
+[(N)4(O. )4( 01)] TJ
+ET
+BT
+1 0 0 1 287.33 348.77 Tm
+[(-)] TJ
+ET
+BT
+1 0 0 1 291.89 348.77 Tm
+ 0.06 Tc[(15)] TJ
+ET
+BT
+1 0 0 1 306.05 348.77 Tm
+ 0 Tc[(-)] TJ
+ET
+BT
+1 0 0 1 310.61 348.77 Tm
+[(0)4(0)-3(6)4(4)4(2)] TJ
+ET
+BT
+1 0 0 1 345.67 348.77 Tm
+[(-)] TJ
+ET
+BT
+1 0 0 1 350.35 348.77 Tm
+ -0.177 Tc[(CR)] TJ
+ET
+BT
+1 0 0 1 370.39 348.77 Tm
+ 0 Tc[( )] TJ
+ET
+ EMC  /P <</MCID 13>> BDC BT
+/F2 12.96 Tf
+1 0 0 1 267.05 333.53 Tm
+[(________)-8(____)] TJ
+ET
+BT
+1 0 0 1 345.07 333.53 Tm
+[( )] TJ
+ET
+ EMC  /P <</MCID 14>> BDC BT
+/F2 14.04 Tf
+1 0 0 1 200.21 305.45 Tm
+[(A)4(LV)4(I)-3(N)4( P)6(ER)4(R)4(Y)4( JONES)] TJ
+ET
+BT
+1 0 0 1 345.67 305.45 Tm
+[(, )4(A)4(ppel)-3(l)4(a)-3(nt)] TJ
+ET
+BT
+1 0 0 1 411.79 305.45 Tm
+[( )] TJ
+ET
+ EMC  /P <</MCID 15>> BDC BT
+1 0 0 1 299.21 277.01 Tm
+ -0.0569 Tc[(V.)] TJ
+ET
+BT
+1 0 0 1 312.77 277.01 Tm
+ 0 Tc[( )] TJ
+ET
+ EMC  /P <</MCID 16>> BDC BT
+1 0 0 1 200.33 248.45 Tm
+[(THE )3(STA)5(TE O)3(F)4( T)11(EX)4(A)4(S, )] TJ
+ET
+BT
+1 0 0 1 359.35 248.45 Tm
+[(A)4(ppel)-3(l)-3(ee)] TJ
+ET
+BT
+1 0 0 1 411.67 248.45 Tm
+[( )] TJ
+ET
+BT
+1 0 0 1 415.03 248.45 Tm
+[( )] TJ
+ET
+ EMC  /P <</MCID 17>> BDC BT
+/F2 12.96 Tf
+1 0 0 1 306.05 220.73 Tm
+[( )] TJ
+ET
+ EMC  /P <</MCID 18>> BDC BT
+/F2 14.04 Tf
+1 0 0 1 186.98 205.01 Tm
+[(On A)7(ppea)5(l)-3( from)10( the)10( 10)-5(th D)15(i)-3(s)-3(t)8(ri)-3(ct C)14(o)] TJ
+ET
+BT
+1 0 0 1 406.39 205.01 Tm
+[(urt)] TJ
+ET
+BT
+1 0 0 1 424.99 205.01 Tm
+[( )] TJ
+ET
+ EMC  /P <</MCID 19>> BDC BT
+1 0 0 1 231.17 188.93 Tm
+[(Ga)-3(l)4(v)-3(e)8(s)-3(t)8(o)-3(n C)7(o)-3(unt)9(y)-3(, )13(Tex)4(a)-3(s)] TJ
+ET
+BT
+1 0 0 1 380.95 188.93 Tm
+[( )] TJ
+ET
+ EMC  /P <</MCID 20>> BDC BT
+1 0 0 1 206.33 172.7 Tm
+[(Tri)4(a)-3(l)-3( C)6(o)4(urt C)6(a)-3(u)9(s)-3(e )10(N)4(o)-3(. )4(1)-3(3)-3(C)4(R)13(2)-3(7)4(2)4(5)] TJ
+ET
+BT
+1 0 0 1 405.79 172.7 Tm
+[( )] TJ
+ET
+ EMC  /P <</MCID 21>> BDC BT
+/F2 12.96 Tf
+1 0 0 1 306.05 155.18 Tm
+[( )] TJ
+ET
+ EMC  /P <</MCID 22>> BDC BT
+/F2 15 Tf
+1 0 0 1 278.93 130.82 Tm
+[(OR)4(DE)5(R)] TJ
+ET
+BT
+/F1 15 Tf
+1 0 0 1 333.07 130.82 Tm
+[( )] TJ
+ET
+ EMC ----------------------------------- TEXT #13
+/Artifact <</Attached [/Top]/Type/Pagination/Subtype/Header>> BDC BT
+/F1 12.96 Tf
+1 0 0 1 72.024 744.24 Tm
+0 g
+0 G
+[( )] TJ
+ET
+q
+Q
+ EMC /Artifact <</Attached [/Bottom]/Type/Pagination/Subtype/Footer>> BDC BT
+1 0 0 1 72.024 51.384 Tm
+[( )] TJ
+ET
+q
+Q
+ EMC  /P <</MCID 0>> BDC BT
+/F1 14.04 Tf
+1 0 0 1 108.02 707.28 Tm
+[(T)4(h)-3(i)4(s)-3( )-117(c)8(o)-3(u)-3(r)8(t)-3( )-108(h)-3(a)8(s)-3( )-117(d)4(et)-3(e)8(r)8(m)17(i)-3(n)-3(ed)-4(, )-114(p)4(u)-3(rs)4(u)-3(a)8(n)4(t)-3( )-117(t)4(o)-3( )] TJ
+ET
+BT
+1 0 0 1 336.91 707.28 Tm
+[(T)] TJ
+ET
+BT
+1 0 0 1 345.31 707.28 Tm
+[(ex)-4(a)8(s)-3( )-117(R)9(u)-3(l)-3(e)8( )-117(o)-3(f)8( )-117(A)4(p)4(p)-3(el)4(l)-3(a)8(t)-3(e )-117(Pr)9(o)-3(ce)8(d)4(u)-3(re)8( )] TJ
+ET
+BT
+1 0 0 1 72.024 683.14 Tm
+[(3)-3(4)-3(.)11(5)-3(\(f\) a)9(n)4(d)-3( 3)6(4)-3(.6\()6(g)-3(\)\()8(2)4(\), )4(t)-3(h)-3(a)8(t)-3( i)7(t)-3( m)19(u)-3(s)-3(t)-3( i)7(n)-3(s)4(p)-3(e)8(ct)-3( )11(t)-3(h)-3(e )10(o)-3(r)8(i)-3(g)4(i)4(n)-3(al)-3( )11(o)-3(f )] TJ
+ET
+BT
+1 0 0 1 394.51 683.14 Tm
+[(S)9(t)-3(at)] TJ
+ET
+BT
+1 0 0 1 416.23 683.14 Tm
+[(e)] TJ
+ET
+BT
+/F4 14.04 Tf
+1 0 0 1 422.47 683.14 Tm
+[<00B6>] TJ
+ET
+BT
+/F1 14.04 Tf
+1 0 0 1 427.03 683.14 Tm
+[(s)-3( E)6(x)-3(h)-3(i)4(b)4(i)-3(t)-3( )11(#)-3(1)] TJ
+ET
+BT
+/F2 14.04 Tf
+1 0 0 1 494.98 683.14 Tm
+[(.)] TJ
+ET
+BT
+/F1 14.04 Tf
+1 0 0 1 498.34 683.14 Tm
+[( )] TJ
+ET
+ EMC  /P <</MCID 1>> BDC BT
+1 0 0 1 108.02 649.18 Tm
+[(T)4(h)-3(e )] TJ
+ET
+BT
+1 0 0 1 133.58 649.18 Tm
+[(ex)4(h)-3(i)4(b)4(i)-3(t)-3( )] TJ
+ET
+BT
+1 0 0 1 176.3 649.18 Tm
+[(c)8(l)-3(er)8(k)-3( )-14(o)-3(f )-6(t)4(h)-3(e )-14(1)4(0)-3(t)4(h)-3( )-14(D)4(i)4(s)-3(t)4(ri)-3(c)8(t)-3( )-14(Co)5(u)-3(r)8(t)-3( )-14(i)-3(s)-3( )-5(d)-3(i)4(rec)] TJ
+ET
+BT
+1 0 0 1 395.35 649.18 Tm
+[(t)-3(ed)-4( )-5(t)-3(o)-3( )-5(d)-3(e)8(l)-3(i)4(v)-3(e)8(r )-14(t)-3(o)-3( )-14(t)4(h)-3(e )-14(C)9(l)-3(er)8(k)4( )] TJ
+ET
+BT
+1 0 0 1 72.024 625.06 Tm
+[(o)-3(f )-125(t)-3(h)4(i)4(s)-3( )-134(c)8(o)-3(u)4(rt)4( )-134(t)4(h)-3(e )-126(o)-3(r)8(i)-3(g)4(i)-3(n)-3(a)8(l)-3( )-125(o)-3(f)8( )] TJ
+ET
+BT
+1 0 0 1 237.29 625.06 Tm
+[(St)-3(a)8(t)-3(e)] TJ
+ET
+BT
+/F4 14.04 Tf
+1 0 0 1 265.37 625.06 Tm
+[<00B6>] TJ
+ET
+BT
+/F1 14.04 Tf
+1 0 0 1 269.93 625.06 Tm
+[(s)-3( )-134(E)13(x)-3(h)4(i)4(b)4(i)-3(t)4( )-134(#)4(1)] TJ
+ET
+BT
+1 0 0 1 341.35 625.06 Tm
+[(, )-123(o)-3(n)4( )-134(o)-3(r)8( )-125(b)-3(ef)8(o)-3(re )] TJ
+ET
+BT
+1 0 0 1 427.63 625.06 Tm
+[(J)4(u)-3(n)4(e )-126(1)-3(0)-3(, )-123(2)4(0)-3(1)4(6)] TJ
+ET
+BT
+/F2 14.04 Tf
+1 0 0 1 509.62 625.06 Tm
+[(.)] TJ
+ET
+BT
+/F1 14.04 Tf
+1 0 0 1 513.1 625.06 Tm
+[( )] TJ
+ET
+BT
+1 0 0 1 518.5 625.06 Tm
+[(T)13(h)-3(e)8( )] TJ
+ET
+BT
+1 0 0 1 72.024 600.94 Tm
+[(Cl)-3(er)8(k)-3( )-193(o)-3(f )-185(t)-3(h)4(i)-3(s)-3( )-193(c)8(o)4(u)-3(rt)-3( )-185(i)4(s)-3( )-193(d)4(i)-3(rec)7(t)-3(e)8(d)-3( )-193(t)4(o)-3( )-193(rece)7(i)-3(v)-3(e)8(, )-200(m)17(ai)-3(n)-3(t)-3(a)8(i)-3(n)-3(, )-191(a)8(n)-3(d)-3( )-185(k)-3(ee)8(p)4( )-193(s)-3(afe )-195(t)4(h)-3(i)4(s)-3( )-193(o)-3(r)8(i)4(g)-3(i)4(n)-3(a)8(l)4( )] TJ
+ET
+BT
+1 0 0 1 72.024 576.82 Tm
+[(ex)4(h)-3(i)4(b)-3(i)4(t)4(;)-3( )-168(t)4(o)-3( )-159(d)-3(e)8(l)-3(i)4(v)-3(er)8( )-168(i)4(t)4( )-168(t)-3(o)4( )-168(t)4(h)-3(e )-168(j)13(u)-3(s)4(t)-3(i)4(ces)3( )-168(o)-3(f)8( )-168(t)4(h)4(i)-3(s)-3( )-159(co)4(u)-3(r)8(t)-3( )-168(f)8(o)-3(r )-160(t)-3(h)4(ei)-3(r)8( )-168(i)4(n)-3(s)4(p)-3(ec)8(t)-3(i)4(o)4(n)-3(;)-3( )-159(an)4(d)-3(, )-157(u)-3(p)4(o)4(n)4( )] TJ
+ET
+BT
+1 0 0 1 72.024 552.58 Tm
+[(co)-4(m)17(p)-3(l)-3(et)4(i)-3(o)4(n)] TJ
+ET
+BT
+1 0 0 1 135.14 552.58 Tm
+[( )] TJ
+ET
+BT
+1 0 0 1 138.74 552.58 Tm
+[(o)-3(f )-6(i)4(n)4(s)-3(p)4(ect)4(i)-3(o)4(n)-3(, )-3(t)-3(o)-3( )-5(re)8(t)4(u)-3(rn)-4( th)-5(e orig)6(i)-3(n)-3(a)8(l)-3( )-5(o)-3(f )] TJ
+ET
+BT
+1 0 0 1 353.83 552.58 Tm
+[(S)9(t)-3(at)4(e)] TJ
+ET
+BT
+/F4 14.04 Tf
+1 0 0 1 381.79 552.58 Tm
+[<00B6>] TJ
+ET
+BT
+/F1 14.04 Tf
+1 0 0 1 386.35 552.58 Tm
+[(s)-3( )-5(E)4(x)-3(h)-3(i)4(b)4(i)4(t)-3( )-5(#)-3(1)] TJ
+ET
+BT
+1 0 0 1 454.51 552.58 Tm
+[(, )-3(t)4(o)-3( )-5(t)4(h)-3(e )-6(cl)-3(e)8(rk)-4( )-5(o)4(f)8( )] TJ
+ET
+BT
+1 0 0 1 72.024 528.43 Tm
+[(t)-3(h)-3(e )10(1)4(0)-3(t)4(h)-3( D)6(i)4(s)-3(t)-3(r)8(i)-3(c)8(t)-3( Co)7(u)-3(r)8(t)-3(.)] TJ
+ET
+BT
+1 0 0 1 202.01 528.43 Tm
+[( )] TJ
+ET
+ EMC  /P <</MCID 2>> BDC BT
+1 0 0 1 72.024 494.59 Tm
+[( )] TJ
+ET
+ EMC  /P <</MCID 3>> BDC BT
+1 0 0 1 324.05 460.63 Tm
+[(PE)5(R CU)7(RIA)4(M)] TJ
+ET
+BT
+1 0 0 1 409.27 460.63 Tm
+[( )] TJ
+ET
+ EMC  /P <</MCID 4>> BDC BT
+/F1 12.96 Tf
+1 0 0 1 72.024 436.63 Tm
+[( )] TJ
+ET
+ EMC  /P <</MCID 5>> BDC BT
+1 0 0 1 72.024 412.87 Tm
+[( )] TJ
+ET
+ EMC  /P <</MCID 6>> BDC BT
+1 0 0 1 72.024 389.23 Tm
+[( )] TJ
+ET
+ EMC 
