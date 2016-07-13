@@ -11,8 +11,12 @@
         Christian Vigh, 03/2016.
 
     HISTORY
-        [Version : 1.0]		[Date : 2016-03-25]     [Author : CV]
-                Initial version.
+    [Version : 1.0]	[Date : 2016/03/25]     [Author : CV]
+	Initial version.
+
+    [Version : 1.1]	[Date : 2016/07/09]     [Author : CV]
+	. Handled the possibility to have a fixed-size header in the file.
+	. Added the $header_size parameter to the constructor
 
  **************************************************************************************************************/
 namespace 	Thrak\IO ;
@@ -36,6 +40,8 @@ class  RandomAccessFile		extends		Object
 	public		$RecordSize ;					// Random file record size
 	public		$CacheSize ;					// Cache size, in # of entries
 	public		$Filler ;					// Filler character
+	public		$Header			=  false ;		// Header contents
+	public		$HeaderSize		=  false ;		// Header size 
 
 	public		$CacheMisses,					// When the cache is enabled, stores the number of cache hits & misses
 			$CacheHits ;
@@ -45,6 +51,7 @@ class  RandomAccessFile		extends		Object
 	protected	$StatInfo ;					// Stat information (specially used for retrieving file size)
 	protected	$ReadOnly ;					// True if the file has been opened in read-only mode
 	protected	$EmptyRecord		=  null ;		// Data that represents a null record, containing only filler characters
+	protected	$HeaderSizeCallback	=  false ;
 
 
 	/*--------------------------------------------------------------------------------------------------------------
@@ -53,7 +60,7 @@ class  RandomAccessFile		extends		Object
 	        Instantiates a RandomAccessFile object, without opening the specified file.
 	
 	    PROTOTYPE
-	        $rf	=  new  RandomAccessFile ( $filename, $record_size, $cache_size = false, $filler = "\0" ) ;
+	        $rf	=  new  RandomAccessFile ( $filename, $record_size, $cache_size = false, $filler = "\0", $header_size = false ) ;
 	
 	    PARAMETERS
 	        $filename (string) -
@@ -62,6 +69,16 @@ class  RandomAccessFile		extends		Object
 		$record_size (integer) -
 			Size of a record.
 
+		$header_size (integer or callback) -
+			Size of an optional header or a callback which must have the following signature :
+
+				integer function  compute_size ( $fd ) ;
+
+			This allows the caller to process files having a variable-length header, whose length is
+			specified in some fixed-length part of it. The callback can then use the $fd file descriptor
+			to read the data at the offset containing the header size and return the computed size.
+			Note that when the callback is called, the offset in file is guaranteed to be at position 0.
+
 		$cache_size (integer) -
 			When not null, indicates how many records from the random file should be cached into memory.
 
@@ -69,13 +86,20 @@ class  RandomAccessFile		extends		Object
 			Character to be used for filling when an incomplete record is written.
 	
 	 *-------------------------------------------------------------------------------------------------------------*/
-	public function  __construct  ( $filename, $record_size, $cache_size = false, $filler = "\0" )
+	public function  __construct  ( $filename, $record_size, $header_size = false, $cache_size = false, $filler = "\0" )
 	   {
 		parent::__construct ( ) ;
 
 		$this -> Filename	=  $filename ;
 		$this -> RecordSize	=  $record_size ;
 		$this -> Filler		=  ( strlen ( $filler ) ) ?  substr ( $filler, 0, 1 ) : "\0" ;
+
+		if  ( is_numeric ( $header_size ) )		// Fixed header size 
+			$this -> HeaderSize	=  ( integer ) $header_size ;
+		else if  ( is_callable ( $header_size ) )	// Header size will be computed when the file will be opened
+			$this -> HeaderSizeCallback	=  $header_size ;
+		else						// No header
+			$this -> HeaderSize	=  0 ;
 
 		$this -> __set_cache_size ( $cache_size ) ;
 		$this -> __reset ( ) ;
@@ -177,10 +201,18 @@ class  RandomAccessFile		extends		Object
 		if  ( ! $this -> StatInfo )
 			$this -> __update_stat_info ( ) ;
 
-		$size		=  $this -> StatInfo [ 'size' ] ;
+		$size		=  $this -> StatInfo [ 'size' ] - $this -> HeaderSize ;
 		$records	=  ( integer ) ( ( $size + $this -> RecordSize - 1 ) / $this -> RecordSize ) ;
 
 		return ( $records ) ;
+	    }
+
+
+	// __get_record_offset -
+	//	Returns the byte offset of a record, taking into account the record size and the optional header size.
+	private function  __get_record_offset ( $record_number )
+	   {
+		return ( $this -> HeaderSize + ( $record_number * $this -> RecordSize ) ) ;
 	    }
 
 
@@ -197,7 +229,7 @@ class  RandomAccessFile		extends		Object
 		   {
 			$this -> CacheMisses ++ ;
 
-			fseek ( $this -> fd, $record * $this -> RecordSize, SEEK_SET ) ;
+			fseek ( $this -> fd, $this -> __get_record_offset ( $record ), SEEK_SET ) ;
 			$data	=  fread ( $this -> fd, $this -> RecordSize ) ;
 
 			if  ( strlen ( $data ) )
@@ -223,6 +255,7 @@ class  RandomAccessFile		extends		Object
 		$this -> ReadOnly	=  null ;
 		$this -> CacheMisses	=  0 ;
 		$this -> CacheHits	=  0 ;
+		$this -> Header		=  false ;
 	    }
 
 
@@ -250,7 +283,7 @@ class  RandomAccessFile		extends		Object
 	//	Writes a record, and add it to the cache if needed.
 	private function  __write_record ( $record, $data, $cache =  false )
 	   {
-		$offset		=  $record * $this -> RecordSize ;
+		$offset		=  $this -> __get_record_offset ( $record ) ;
 
 		fseek ( $this -> fd, $offset, SEEK_SET ) ;
 		$written	=  fwrite ( $this -> fd, $data ) ;
@@ -260,6 +293,7 @@ class  RandomAccessFile		extends		Object
 
 		return ( ( $written  ==  $this -> RecordSize ) ?  true : false ) ;
 	    }
+
 
 
 	/**************************************************************************************************************
@@ -451,6 +485,9 @@ class  RandomAccessFile		extends		Object
 	
 	    DESCRIPTION
 	        Opens the random file that has been instantiated.
+		Reads the header data if defined, otherwise calls the $HeaderSizeCallback callback, which can be
+		specified when instantiating the object, to get the real header size if the header size is contained in 
+		the header information itself.
 	
 	    PARAMETERS
 	        $read_only (boolean) -
@@ -469,6 +506,16 @@ class  RandomAccessFile		extends		Object
 
 		$this -> __update_stat_info ( ) ;
 		$this -> ReadOnly	=  $read_only ;
+
+		if  ( $this -> HeaderSizeCallback )
+		   {
+			fseek ( $this -> fd, 0, SEEK_SET ) ;
+			$callback		=  $this -> HeaderSizeCallback ;
+			$this -> HeaderSize	=  $callback ( $this -> fd ) ;
+			fseek ( $this -> fd, 0, SEEK_SET ) ;
+		    }
+
+		$this -> Header		=  fread ( $this -> fd, $this -> HeaderSize ) ;
 	    }
 
 
@@ -629,7 +676,7 @@ class  RandomAccessFile		extends		Object
 		if  ( $start_record  >=  $max )
 			return ( 0 ) ;
 
-		$status		=  ftruncate ( $this -> fd, $start_record * $this -> RecordSize ) ;
+		$status		=  ftruncate ( $this -> fd, $this -> __get_record_offset ( $start_record ) ) ;
 
 		$this -> StatInfo	=  null ;
 
@@ -677,7 +724,7 @@ class  RandomAccessFile		extends		Object
 		if  ( $record  >=  $max )
 		   {
 			// Check if the last record is partial
-			$remainder	=  $this -> StatInfo [ 'size' ] % $this -> RecordSize ;
+			$remainder	=  ( $this -> StatInfo [ 'size' ] - $this -> HeaderSize ) % $this -> RecordSize ;
 
 			// Last record is partial - write enough bytes to fit the file's record size
 			if  ( $remainder )
