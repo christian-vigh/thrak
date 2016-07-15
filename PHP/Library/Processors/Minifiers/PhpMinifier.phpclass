@@ -1,0 +1,71 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        PhpMinifier.phpclass
+
+    DESCRIPTION
+        Minifier for php sources.
+	Note that this class has only been provided for consistency with the CssMinifier and JavascriptMinifier
+	ones. However it does not use the mechanisms provided by the Minifier abstract class, but simply calls 
+	the php_strip_whitespace() function.
+
+    AUTHOR
+        Christian Vigh, 07/2016.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2016/07/13]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Processors\Minifiers ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use 	Thrak\System\Object ;
+use     Thrak\Types\String ;
+use	Thrak\Processors\Minifiers\Minifier ;
+
+
+/*==============================================================================================================
+
+    PhpMinifier class -
+        Minifier for javascript sources.
+
+  ==============================================================================================================*/
+class	PhpMinifier	extends  Minifier 
+   {
+	/*--------------------------------------------------------------------------------------------------------------
+
+	   Constructor -
+		Initializes the parent minifier class.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( )
+	   {
+		parent::__construct ( ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+
+	   MinifyData -
+		Process the input stream.
+		Since the php_strip_whitespace() function only accepts the name of an existing file, we have to write
+		the contents to a temporary file, whatever the origin of the contents (even if they come from an 
+		existing file).
+		This is a dirty solution but it wil always be faster than parsing the php source by ourselves...
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  MinifyData ( )
+	   {
+		$fp		=  tmpfile ( ) ;
+		fwrite ( $fp, $this -> Content ) ;
+		$info		=  stream_get_meta_data ( $fp ) ;
+		$path		=  $info [ 'uri' ] ;
+		$contents	=  php_strip_whitespace ( $path ) ;
+		fclose ( $fp ) ;	// Removes the temporary file
+
+		return ( $contents ) ;
+	    }
+    }
