@@ -374,7 +374,7 @@ abstract class  Minifier		extends  Object
 	                Tokens around which spaces should be eaten.
 	 
 	 *-------------------------------------------------------------------------------------------------------------*/
-	public function  SetTokens ( $tokens ) 
+	protected function  SetTokens ( $tokens ) 
 	   {
 		$this -> Tokens		=  [] ;
 
