@@ -1,0 +1,1395 @@
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #425) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(425, '\x08\xC0\xC5\xDFe\x1C~\xBC\x84\x1A\x7F\xB5+`\xA1...',  
+                3)                                                                                                  
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #404) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(404, '\xD0b&(zdM\x16\xE6-y\xBF\x1A\xF6\xB7...', 3)           
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #407) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(407, '\x92\x80\xD8?\xABC\x92{\xAB\x98\xA1\xF3z\x02\xB7...',  
+                3)                                                                                                  
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #411) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(411, '\xEA\xDE*\x17\xED\x1C{G\xD4t\xEC\x8B\xBF\xE1\x94...',  
+                3)                                                                                                  
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #423) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(423, '\xD3^\xA2\x18\xD7\xFEWE\x94\xDF\\\t\xFC\x8E;...', 3)   
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #3) :      
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(3, '1&\x9C\xA1\x9FY$\x90\xABT\xB2\x03u$\xB6...', 3)          
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #6) :      
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(6, ':\x8A\x85y#I\x83\x89'\xCDi#\x1E1?...', 3)                
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #10) :     
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(10, '\x0E\xED\xCA\xFB]\xD3\xC0\xDFK\xA8q\x1D ME...', 3)      
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #13) :     
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(13, '|)\xF95\x92\x8E\xDA\x19\x97 \xC2\x87\x93dn...', 3)      
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #16) :     
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(16, '\x1AZP3:\x03\xE6\xB9A\xE7\xDD\xACt\x0E\x02...', 3)      
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #19) :     
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(19, 'n\x1F\xA2\r>3\xABR\xB9\x9EgT\x19\xB1\xD3...', 3)        
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #22) :     
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(22, '\x18R\xABgq\x93j\xDA:\xFB_0\xD5z:...', 3)               
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #25) :     
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(25, '\x07\x01p\xD9f\x03\xE4\x10/eA\x96*\xB8!...', 3)         
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #28) :     
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(28, '0\x8DVu\xCE\xF8a\xB4U\x12\x9B\\?\x90\xEC...', 3)        
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #31) :     
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(31, '\xDDcc%M\x08v\x8C\xF0\xCE\xF9\xA6\x8Ehr...', 3)         
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #34) :     
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(34, ']\x172\x8ET\xC0\x97^#\xD4\xBD\xBCI\xDA-...', 3)         
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #37) :     
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(37, '$\xD8\x92\x8EC\xDCU\xE0g\xF7b\xA9\xD6\xE4$...', 3)      
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #40) :     
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(40, 'G\xC0\xF0\x05\x1ES/n-\xC0j\xD9\x14j\xC4...', 3)         
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #43) :     
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(43,                                                          
+                '\xEB\x92\xE0\xDF\x7F\xEB\xEF\x1FR\xFB\xC2\x14\x1E\xEAN...', 3)                                     
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #46) :     
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(46, '\x87\xD2'\xD7-\xA1'@g/\xF0\xBF\x9C\xD8\x1A...', 3)      
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #49) :     
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(49, '@\x02\xE1\xC8\xA0SE\xC3u\xB3\x90\xC7@\e\xDF...', 3)     
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #52) :     
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(52, 'o\xE3\xD9\xAA\x8C\x04v\xF5EH\xD10\xFE\xBB\x1E...', 3)   
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #55) :     
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(55, '\xEF\xFD\x8FI(|C#\xB6\x80\xBB\x1D\xE8\xE1*...', 3)      
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #58) :     
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(58, '\xD3\xD9K\xDEC\r\xD6(\x8C?s\x8FO\x96)...', 3)           
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #61) :     
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(61, '\xBD\x9F\x06\xEC@\x16\xFC\xC4G%x\x05\x18\x0E\x85...', 3)
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #64) :     
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(64, '\x16\xCE\x9D\xB7\xDA\xC9u\xDDM2\x1F\x9E\x06\x17\xB3...',
+                3)                                                                                                  
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #67) :     
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(67, 'd9\xC2\x88\xC5\v\x07\xADB=bA&\xB53...', 3)              
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #70) :     
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(70, 'v\x1D"\xD2F\x9F\xD7I\xDF\x97Z\xF2\x94\xF1Q...', 3)      
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #73) :     
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(73, '\xFBRa\xF8\x93\xA8e\x15$g\xA8\xD9\xAF\xFE\x88...', 3)   
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #76) :     
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(76, '\xEB\x05\xDD"\x80\xCA:\xC4\x02\x99\xB75P\x86\x14...', 3)
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #79) :     
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(79, '.\xB4 xW\x84\xDCzG\xDE\xF4{\xCB\xB9\xDF...', 3)         
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #82) :     
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(82, '\xB5\xE7z\x19\xFA`\xEB\xDD\xEA\xF0\xC5e\xC1\x96\xA4...',
+                3)                                                                                                  
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #85) :     
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(85, '\xBDY\x81\xD8XY\xBEK}g+\xCB\xFF\x15\xB6...', 3)         
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #88) :     
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(88, '\x81u*0X0\x92\xC4dL>\n\x14&\x82...', 3)                 
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #91) :     
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(91, '^\xB8\xAC\xDCF\xD1\x85C\x10y\xF3\x84\xDB\xEDV...', 3)   
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #94) :     
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(94, '\xC9\x93cqd\x10\xA4&\x12<o\xDDA\xCB\x1C...', 3)         
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #97) :     
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(97, '\x19\xD6\xC4\x9A\x10,\e\xB2Pt\xC2\xBDi\xCD\xF4...', 3)  
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #100) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(100, 'G\x8AH^\xFBj:\x89\\x\xB4\x06\xA3\xE9\xEB...', 3)       
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #103) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(103,                                                         
+                '\x96\xF8\x04\xBE\\\x10`\x7F\xDE\\\x80\xD2\t\xA8\x17...', 3)                                        
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #106) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(106, 'qk\x15i=iI\x1C\xEF\xB2\xD6\xC29!2...', 3)              
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #109) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(109, '\xECyyWU+d\xCA\x86\x8BDXjg=...', 3)                    
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #112) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(112, '\x02\xD7\xF1\xC9c\xD3\\\xA5\xB3_\x81\f\xC0S\xC3...', 3)
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #115) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(115,                                                         
+                'r\xE4\xC6\xCC%\x7F\xA8\x07l\x82\x10\xA0\x95\x8A\xD4...', 3)                                        
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #118) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(118, ' s,\x1E\x8AJ3K\xA5\x1A\xD2\xFD\xA2\x08\x95...', 3)     
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #121) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(121, '\x98fxZ\xE9\x8F\xE4!\xA2\xFB\xFE,U\x01\xA7...', 3)     
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #124) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(124, '\x03{\xCB\x02\xA3\xFDp0\xC4\xF4\xF4nt\xD3f...', 3)     
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #127) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(127, 'o\xD7\xDFX/\x85\xE3\xAB\r9}\xAC(\xBD~...', 3)          
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #130) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(130, '\xDD\x1E\t\x89}\xD7\xA8l\xEF\xA9\xAD\x08F\xA2k...', 3) 
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #133) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(133, '\x81\x84 \xC4\xFD\x00_m\x199"\xB31\xF3]...', 3)        
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #136) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(136, '=\xB4gT\xF3A^m\x04\xE0\t9\xE2\xD5o...', 3)             
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #139) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(139, '\xFAi\xEB\x01\xB8\x8A\xCD\xA5\x07D\xE6T\xD28K...', 3)  
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #142) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(142, '\x81E\xBD\xF0{$\xA9\xE8\xAD|Ln\xC3\xD0\x8E...', 3)     
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #147) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(147, '3\x92\x90\xC0/ G"\xBBm[-\x02\xC9\xDD...', 3)           
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #150) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(150, ':2\xE9\xA0\v\xF2}B\xAB\xAF\xC4kT\xD1\xBB...', 3)       
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #153) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(153, '\xAA5\xF7\xB6\x98\x16L\xF3\xE2\xAB"\xBD\vr\xE6...', 3) 
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #157) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(157, '\x95\xC8l:\x8A\xC2)M}\xE6\xD7\xF1A\x1D\xDD...', 3)     
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #165) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(165, '\xD5vh\xAD\xE9\x97p\xD5\x950\xBFR\x0E\x0E<...', 3)     
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #166) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(166, '\xF8{\xB5\x16A\r\x99\xAE\x9F\xD3^\x85*\x06\xB2...', 3) 
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #168) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(168, '\xC4\xC5ZW\xA6\x12\xB8\xB28";U*t\xCE...', 3)           
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #170) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(170, '\xE5D\x94\x00\xA9\x9B\xAB\x80\xEB\xAB\xBE\x9AtaL...',  
+                3)                                                                                                  
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #172) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(172, 'u\x93\xE0x\xCC\x13\x91\xA7\xD4=\xF0'\xD4JZ...', 3)     
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #177) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(177,                                                         
+                '\x0F\x08\xCB\xD7\x98K\xB4\x87\x15\xAEt\xF0\x1E\x12\xA3...', 3)                                     
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #178) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(178, '\xA6\xC9C(\xA3<\xA3p;5m\x19\xC2\xA5{...', 3)           
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #182) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(182, 'M:W:#\xE3\x7F\xC2\x01\x9A\x08V\xE5\x06\xD8...', 3)     
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #187) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(187, '#`\xAD\xA6ST\xF1\xF2cOM\xF6a\xA0\t...', 3)             
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #190) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(190, '\x82AD\xEF\x14\x1C\x91\xCB\x83#^\xE7\x14v\x84...', 3)  
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #193) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(193, '*/\xB0\xD4q\xE3\x95\xE3\xC9\xEAU\xBBX\xAC\xBF...', 3)  
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #194) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(194, '\xF5^\x1A\xB5\xB6\xF2##w\xE9\xD6\x01\x93\x0E\x84...',  
+                3)                                                                                                  
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #196) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(196, '\xFD-\xD3|\xD6B0\x93\xF4C\x9E\x0E\xFD:\xEE...', 3)     
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #200) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(200, '\xE50\xEF\x96dB\n\x1E\xAC\xBC\xB4\x86\x86|\xB7...', 3) 
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #201) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(201, '\xB0\x04\x7Fb~\x95y\xF4J\xDA.\xEB\x92H\xDA...', 3)     
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #203) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(203, '0|\x07\xF3L\xDB\x95\xE3\x04\x9D\xB8N=\xD0\xE9...', 3)  
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #209) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(209,                                                         
+                '\xA6\xC9\xED\x8C$\xD5\x15\xD2\xD3\x01\xB9b\x96R\xD0...', 3)                                        
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #212) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(212, '\xDC3\xF4\xEB\x13\xDA\xEE;\x84\f\x7FC\xC1k\xC7...', 3) 
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #215) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(215, '\xD4\x03"\x8Euo\xD1#\xD1\xC6b\xE6Zh;...', 3)           
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #218) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(218, '\xD8\xFC\x02$\xF3!\xB1 _hG\xC1\xDD\xC7\x91...', 3)     
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #222) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(222, '\xB2E\xF4\x08\x03c\xEE>\xA8\x01W\xCB%\xAFF...', 3)     
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #223) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(223, '9oJu\x8B\xB9\xFC\xD7\x8DZ@\x8E\xE1Jp...', 3)           
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #225) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(225, '\n\xE5\x89\xEE!"\x93\x8CR\xFF\f\f\xFB\f\xD3...', 3)    
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #227) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(227, ',}\x85a\xC4\x08\xD4\xCBqVz\xB5ZJ\x9E...', 3)           
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #231) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(231, '\xA5\xD5\x02\x02Fl\x12K\x9AW\xA4\x04\x1A"O...', 3)     
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #234) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(234, '\x13 h\xEC\xBF\x18\x16\xDA{\xD0\x8F@\xF9\xF8\x03...',  
+                3)                                                                                                  
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #235) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(235, '\x13\x16\xB1\xCD\xC1\x1F\x9DhV\x05\xEE\xF5\xA5i<...',  
+                3)                                                                                                  
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #237) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(237, '\xE3\xFA\x95\xDC\xE2\xB2\xED\x11x\xF5A/\xD4l\xE8...',  
+                3)                                                                                                  
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #239) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(239, 'W\xF6\xA3\xF8\xD1\xC1\xB6\rT\v\xC4\x0FX\xA1\x84...', 3)
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #243) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(243, '\xE9\xE0~\xDE\xDCX\xA9\x87'tJ\xC1\t\xE5\xBF...', 3)    
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #246) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(246, '\xFF\x88(qV\xEA\xBC}\xEByD>5\xA9G...', 3)              
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #247) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(247,                                                         
+                ',\xDC\x1A\x80k@\xCF\xCB\x8F\xA9\x80\xB2\xF0\xAA\xC8...', 3)                                        
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #249) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(249, '\xEDJ\xAB\xB7g\x0E#\xF4\x1Dbq\xC9\xC4p\x1D...', 3)     
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #251) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(251, '\xCD\x9D\xF0\xD3\xA0%\xF8LPa\xD7t\xE4\xDAB...', 3)     
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #255) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(255, '\x87\xF2\x9BP\x12\xA8r\x10\x17\xA1^\x17{O\x05...', 3)  
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #258) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(258, '\x02\xC7\x07b\xEA\x98\x9D\xF3\x07\xA8{d\xE1k=...', 3)  
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #262) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(262, '9\xBAC\x8A\x9CRD=\x94AY\xB9\xF0\x90i...', 3)           
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #263) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(263, 'Y\x97\xD0'2\x17]J.h\xE8\x12\x93b\xD9...', 3)           
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #267) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(267, '@\xA6S\xCFk2\xE1\x9DGk\xE7\x16v\xD2\x1C...', 3)        
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #268) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(268, '\x99\xFB]u\xAE:\v)\xC2\x14\xA4yi\xA7\xD9...', 3)       
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #270) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(270, '\x11\n\xD82\x1E\xB7_V\x87f\xC8\xE9l\xAD\x18...', 3)    
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #272) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(272, '\xC7\x93\xBA\xAEUf\f%\xFF \xA3\xE1\xB54\xF3...', 3)    
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #276) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(276, '=DM\xAA\x97\x00\x92\xFB\xFBXN-'\x92P...', 3)           
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #277) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(277, '\xA4Z\xBE%\x8A\x12\xBBJ\f\xEB'\xD9\x8D]\xB7...', 3)    
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #279) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(279, '\x11\x7F\xC6\x86n\t\xAC\x08;\xC8h\x04\xE5$\v...', 3)   
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #281) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(281, '7\xD8\x95\xAA\x04\xD2\xD8\n\x91H\\\xA6\xB0$a...', 3)   
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #285) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(285, '-N\xE1\xAD\xF9b"\x02\\\xEE\x16\x9C\vj\x07...', 3)      
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #288) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(288, 'r\xE67\xB8\xAB\x8B\xA7\x863\x11\x80.\xE3\xA3\x9B...',  
+                3)                                                                                                  
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #289) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(289, '\xCD\xD0\x18\r\xA7F\xD4a\xE9\x14\xD6\x82\xE4\xA7 ...', 
+                3)                                                                                                  
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #291) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(291, 'Yhoy\xF8\xE6`\x9CJ-\xBA\xCA\x1D\x07\xC2...', 3)        
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #295) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(295, '\x83\xC73\x83\x17'\x04'\x98F\xA4\xBBD\xC9\xC7...', 3)  
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #298) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(298, 'XH\x83\x17'\xA4}3\xCF96\xF0\x93\xF6}...', 3)           
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #299) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(299, 'y`\x19\xF1\xBDi\xF2\xEFs=T?\x91\xA6\xA9...', 3)        
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #303) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(303, 'uFbw\xE29\x8C\xE7\x9C\x029H\xB6\xF3\xAF...', 3)        
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #304) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(304, '\xA7J\x99\xA4\xB1QO\xD7\xBF\xCB0r7\x7FG...', 3)        
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #306) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(306, '!u:h\xF2\xFAe\xBA\x8A\xB7nwVn\x9C...', 3)              
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #308) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(308,                                                         
+                '\xDE\xCE\xEB\xA3;\xCE\xBA\xDB\xC7\xE23\xA2\x16\x921...', 3)                                        
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #312) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(312, '\xB1\xB1Nm\x95\xD2bnDvp\xCE/\x97\x9E...', 3)           
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #315) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(315, '\xD1+\r\xB0\xF3\xB3C\xBBW\xC6\xC3\x1F\xA9\t\xB6...', 3)
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #319) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(319, '\x00\xEB\x12\x80\fi\xD6\x88\x01%\x80\x16R\x12j...', 3) 
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #322) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(322, '\xE8\x93\r\x8A\xF3\xC1\x8C]3\xDC\xC0L\xB9\xF6\xFF...', 
+                3)                                                                                                  
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #327) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(327, '\xBA\xD1\x83\xA6\xD0\xD0\f\xA1Ll|\x9C\xE8_\xCE...', 3) 
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #331) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(331, 'f\xBC\xF6h@$\xABXr\xDD{_"\xB3\x81...', 3)              
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #332) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(332, 'P\x03\xD1\x99X9"S\x06\xD5*/\xA6\xE1\x11...', 3)        
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #338) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(338, '\x17\xBD\x91\xEF\xBE)\xCA\x08\x93\xC3\xF4              
+                \xDAa\x12...', 3)                                                                                   
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** exception 'Thrak\Processors\PdfToTextException' with message 'Pdf decoding error (object #344) :    
+                Invalid gzip data.' in R:\autoload\original.Processors.PdfToText.phpclass:1496                      
+                Stack trace:                                                                                        
+                #0 R:\autoload\original.Processors.PdfToText.phpclass(1084):                                        
+                Thrak\Processors\PdfToText->DecodeData(344, '\xEDX\x004\x8F\x8Dg\x8F?\xF5HGkE\xBD...', 3)           
+                #1 E:\PHP\Tools\Bin\pdftester.phs(87): Thrak\Processors\PdfToText->Load('E:\\PHP\\Framewor...')     
+                #2 {main}
+*** Warning *** Object #382 : Page count given by the /Count parameter (79) differs from the actual number of       
+                objects referenced by the /Kids parameter (9).
+*** Error *** Pdf decoding error (object #425) : Invalid gzip data.                                                   
+              (source exception : PdfToTextException)
+
+Stack trace :
+--> E:\PHP\phpclasses.org\PdfToText\PdfToText.phpclass [line 1078] PdfToText::DecodeData()
+--> E:\PHP\phpclasses.org\PdfToText\PdfToText.phpclass [line 935] PdfToText::Load()
+--> E:\PHP\Tools\Bin\pdftester.phs [line 92] PdfToText::__construct()
+----------------------------------- UNSTREAMED #394
+ <</Linearized 1/L 1229750/O 398/E 166580/N 79/T 1221806/H [ 960 1314]>>----------------------------------- UNRECOGNIZED #425 :
+
+----------------------------------- UNSTREAMED #395
+<</Length 128/Filter/Standard/O(M <ﬂçìnUøÕ!'˛?"èòèBÕ\(Ìê5Õ8‘)/P -1340/R 3/U(ﬂÎP&ıé2+ê5b<¬T¢                )/V 2>>----------------------------------- UNSTREAMED #396
+<</Metadata 392 0 R/AcroForm 397 0 R/Pages 382 0 R/Type/Catalog>>----------------------------------- UNSTREAMED #397
+<</Fields[]/DA(ÛÄ\(2Åãi#”JÌÒe$‘)/DR<</Font<</Helv 380 0 R/ZaDb 381 0 R>>/Encoding<</PDFDocEncoding 379 0 R>>>>>>----------------------------------- UNSTREAMED #398
+<</CropBox[0 0 595.22 842]/Parent 383 0 R/Contents 404 0 R/Rotate 0/BleedBox[0 0.11 595.22 842]/MediaBox[0 0 595.22 842]/TrimBox[0 0.11 595.22 842]/Resources 399 0 R/Type/Page>>----------------------------------- UNSTREAMED #399
+<</XObject<</Im10 408 0 R/Im11 410 0 R/Im12 412 0 R/Im1 413 0 R/Im2 414 0 R/Im3 415 0 R/Im4 416 0 R/Im5 417 0 R/Im6 418 0 R/Im7 420 0 R/Im8 421 0 R/Im9 422 0 R>>/ColorSpace<</Cs6 406 0 R/Cs8 400 0 R/Cs9 401 0 R/Cs10 402 0 R>>/Font<</TT2 405 0 R>>/ProcSet[/PDF/Text/ImageB/ImageC/ImageI]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNSTREAMED #400
+[/Indexed 406 0 R 25 419 0 R]----------------------------------- UNSTREAMED #401
+[/Separation/Black 406 0 R 411 0 R]----------------------------------- UNSTREAMED #402
+[/Indexed 406 0 R 19 409 0 R]----------------------------------- UNSTREAMED #403
+<</OPM 1/OP false/op false/Type/ExtGState/SA false/SM 0.02>>----------------------------------- UNRECOGNIZED #404 :
+
+----------------------------------- FONT #405
+<</Subtype/TrueType/FontDescriptor 424 0 R/LastChar 196/Widths[218 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 613 0 482 0 0 0 0 459 0 0 0 0 0 0 0 0 0 615 0 0 678 501 469 682 698 262 0 584 426 889 707 0 0 0 553 503 516 693 618 0 0 0 539 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 615]/BaseFont/KHECDM+TheSansPlain/FirstChar 32/Encoding/WinAnsiEncoding/Type/Font>>----------------------------------- UNSTREAMED #406
+[/ICCBased 407 0 R]----------------------------------- UNRECOGNIZED #407 :
+
+----------------------------------- UNRECOGNIZED #409 :
+IÔÒZW0±/IïÃeFVn#õú≈ûW‰Œ° uüÉYRiıE±ºT‚ `˙y2wG£X¸pÊ‰“À:z/
+
+----------------------------------- UNRECOGNIZED #411 :
+
+----------------------------------- UNRECOGNIZED #419 :
+—4“πüô‰¡·,'¨ã¥kyÏIî`IÆq‘öÜRÂ{%iå2¿$ pıHRÀÃßj"AôÔweÚ–{°F≥6‚ºÚåÿì`<wGy®Œê(
+
+----------------------------------- UNRECOGNIZED #423 :
+
+----------------------------------- UNSTREAMED #424
+<</StemV 90/FontName/KHECDM+TheSansPlain/FontFile2 423 0 R/FontStretch/Normal/FontWeight 400/Flags 32/Descent -315/FontBBox[-62 -315 4701 889]/Ascent 889/FontFamily('À î≥G)/XHeight 480/CapHeight 720/Type/FontDescriptor/ItalicAngle 0>>----------------------------------- UNSTREAMED #1
+<</CropBox[0 0 595.22 842]/Parent 383 0 R/Contents 3 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 2 0 R/Type/Page>>----------------------------------- UNSTREAMED #2
+<</Font<</TT2 323 0 R/TT4 324 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #3 :
+
+----------------------------------- UNSTREAMED #4
+<</CropBox[0 0 595.22 842]/Parent 383 0 R/Contents 6 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 5 0 R/Type/Page>>----------------------------------- UNSTREAMED #5
+<</Font<</TT2 323 0 R/TT4 324 0 R/TT6 328 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #6 :
+
+----------------------------------- UNSTREAMED #7
+<</StemV 0/FontName/TimesNewRoman/FontStretch/Normal/FontWeight 400/Flags 34/Descent -216/FontBBox[-568 -307 2000 1007]/Ascent 891/FontFamily(¥¶!nÈı0Äñ}_)/CapHeight 0/Type/FontDescriptor/ItalicAngle 0>>----------------------------------- UNSTREAMED #8
+<</CropBox[0 0 595.22 842]/Parent 383 0 R/Contents 10 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 9 0 R/Type/Page>>----------------------------------- UNSTREAMED #9
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/TT4 324 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #10 :
+
+----------------------------------- UNSTREAMED #11
+<</CropBox[0 0 595.22 842]/Parent 383 0 R/Contents 13 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 12 0 R/Type/Page>>----------------------------------- UNSTREAMED #12
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/TT4 324 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #13 :
+
+----------------------------------- UNSTREAMED #14
+<</CropBox[0 0 595.22 842]/Parent 384 0 R/Contents 16 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 15 0 R/Type/Page>>----------------------------------- UNSTREAMED #15
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/TT4 324 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #16 :
+
+----------------------------------- UNSTREAMED #17
+<</CropBox[0 0 595.22 842]/Parent 384 0 R/Contents 19 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 18 0 R/Type/Page>>----------------------------------- UNSTREAMED #18
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/TT4 324 0 R/F1 329 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #19 :
+
+----------------------------------- UNSTREAMED #20
+<</CropBox[0 0 595.22 842]/Parent 384 0 R/Contents 22 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 21 0 R/Type/Page>>----------------------------------- UNSTREAMED #21
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/F1 329 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #22 :
+
+----------------------------------- UNSTREAMED #23
+<</CropBox[0 0 595.22 842]/Parent 384 0 R/Contents 25 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 24 0 R/Type/Page>>----------------------------------- UNSTREAMED #24
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/F1 329 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #25 :
+
+----------------------------------- UNSTREAMED #26
+<</CropBox[0 0 595.22 842]/Parent 384 0 R/Contents 28 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 27 0 R/Type/Page>>----------------------------------- UNSTREAMED #27
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/TT4 324 0 R/F1 329 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #28 :
+
+----------------------------------- UNSTREAMED #29
+<</CropBox[0 0 595.22 842]/Parent 385 0 R/Contents 31 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 30 0 R/Type/Page>>----------------------------------- UNSTREAMED #30
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/F1 329 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #31 :
+
+----------------------------------- UNSTREAMED #32
+<</CropBox[0 0 595.22 842]/Parent 385 0 R/Contents 34 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 33 0 R/Type/Page>>----------------------------------- UNSTREAMED #33
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/F1 329 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #34 :
+
+----------------------------------- UNSTREAMED #35
+<</CropBox[0 0 595.22 842]/Parent 385 0 R/Contents 37 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 36 0 R/Type/Page>>----------------------------------- UNSTREAMED #36
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/TT4 324 0 R/F1 329 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #37 :
+
+----------------------------------- UNSTREAMED #38
+<</CropBox[0 0 595.22 842]/Parent 385 0 R/Contents 40 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 39 0 R/Type/Page>>----------------------------------- UNSTREAMED #39
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/F1 329 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #40 :
+
+----------------------------------- UNSTREAMED #41
+<</CropBox[0 0 595.22 842]/Parent 385 0 R/Contents 43 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 42 0 R/Type/Page>>----------------------------------- UNSTREAMED #42
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/TT4 324 0 R/F1 329 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #43 :
+
+----------------------------------- UNSTREAMED #44
+<</CropBox[0 0 595.22 842]/Parent 385 0 R/Contents 46 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 45 0 R/Type/Page>>----------------------------------- UNSTREAMED #45
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/F1 329 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #46 :
+
+----------------------------------- UNSTREAMED #47
+<</CropBox[0 0 595.22 842]/Parent 385 0 R/Contents 49 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 48 0 R/Type/Page>>----------------------------------- UNSTREAMED #48
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/F1 329 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #49 :
+
+----------------------------------- UNSTREAMED #50
+<</CropBox[0 0 595.22 842]/Parent 385 0 R/Contents 52 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 51 0 R/Type/Page>>----------------------------------- UNSTREAMED #51
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #52 :
+
+----------------------------------- UNSTREAMED #53
+<</CropBox[0 0 595.22 842]/Parent 385 0 R/Contents 55 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 54 0 R/Type/Page>>----------------------------------- UNSTREAMED #54
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/F1 329 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #55 :
+
+----------------------------------- UNSTREAMED #56
+<</CropBox[0 0 595.22 842]/Parent 385 0 R/Contents 58 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 57 0 R/Type/Page>>----------------------------------- UNSTREAMED #57
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/F1 329 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #58 :
+
+----------------------------------- UNSTREAMED #59
+<</CropBox[0 0 595.22 842]/Parent 386 0 R/Contents 61 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 60 0 R/Type/Page>>----------------------------------- UNSTREAMED #60
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/TT4 324 0 R/F1 329 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #61 :
+
+----------------------------------- UNSTREAMED #62
+<</CropBox[0 0 595.22 842]/Parent 386 0 R/Contents 64 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 63 0 R/Type/Page>>----------------------------------- UNSTREAMED #63
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #64 :
+
+----------------------------------- UNSTREAMED #65
+<</CropBox[0 0 595.22 842]/Parent 386 0 R/Contents 67 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 66 0 R/Type/Page>>----------------------------------- UNSTREAMED #66
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/TT4 324 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #67 :
+
+----------------------------------- UNSTREAMED #68
+<</CropBox[0 0 595.22 842]/Parent 386 0 R/Contents 70 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 69 0 R/Type/Page>>----------------------------------- UNSTREAMED #69
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/TT4 324 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #70 :
+
+----------------------------------- UNSTREAMED #71
+<</CropBox[0 0 595.22 842]/Parent 386 0 R/Contents 73 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 72 0 R/Type/Page>>----------------------------------- UNSTREAMED #72
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/TT4 324 0 R/TT8 337 0 R/TT9 335 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #73 :
+
+----------------------------------- UNSTREAMED #74
+<</CropBox[0 0 595.22 842]/Parent 386 0 R/Contents 76 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 75 0 R/Type/Page>>----------------------------------- UNSTREAMED #75
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/TT4 324 0 R/TT8 337 0 R/TT9 335 0 R/F1 329 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #76 :
+
+----------------------------------- UNSTREAMED #77
+<</CropBox[0 0 595.22 842]/Parent 386 0 R/Contents 79 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 78 0 R/Type/Page>>----------------------------------- UNSTREAMED #78
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/TT4 324 0 R/TT8 337 0 R/TT9 335 0 R/F1 329 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #79 :
+
+----------------------------------- UNSTREAMED #80
+<</CropBox[0 0 595.22 842]/Parent 386 0 R/Contents 82 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 81 0 R/Type/Page>>----------------------------------- UNSTREAMED #81
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/TT4 324 0 R/TT8 337 0 R/TT9 335 0 R/F1 329 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #82 :
+
+----------------------------------- UNSTREAMED #83
+<</CropBox[0 0 595.22 842]/Parent 386 0 R/Contents 85 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 84 0 R/Type/Page>>----------------------------------- UNSTREAMED #84
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/TT4 324 0 R/TT8 337 0 R/TT9 335 0 R/F1 329 0 R/TT11 341 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #85 :
+
+----------------------------------- UNSTREAMED #86
+<</CropBox[0 0 595.22 842]/Parent 386 0 R/Contents 88 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 87 0 R/Type/Page>>----------------------------------- UNSTREAMED #87
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/TT4 324 0 R/TT8 337 0 R/TT9 335 0 R/F1 329 0 R/TT11 341 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #88 :
+
+----------------------------------- UNSTREAMED #89
+<</CropBox[0 0 595.22 842]/Parent 387 0 R/Contents 91 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 90 0 R/Type/Page>>----------------------------------- UNSTREAMED #90
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/TT4 324 0 R/TT8 337 0 R/TT9 335 0 R/F1 329 0 R/TT11 341 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #91 :
+
+----------------------------------- UNSTREAMED #92
+<</CropBox[0 0 595.22 842]/Parent 387 0 R/Contents 94 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 93 0 R/Type/Page>>----------------------------------- UNSTREAMED #93
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/TT4 324 0 R/TT8 337 0 R/TT9 335 0 R/F1 329 0 R/TT11 341 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #94 :
+
+----------------------------------- UNSTREAMED #95
+<</CropBox[0 0 595.22 842]/Parent 387 0 R/Contents 97 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 96 0 R/Type/Page>>----------------------------------- UNSTREAMED #96
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/TT4 324 0 R/TT8 337 0 R/TT9 335 0 R/F1 329 0 R/TT11 341 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #97 :
+
+----------------------------------- UNSTREAMED #98
+<</CropBox[0 0 595.22 842]/Parent 387 0 R/Contents 100 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 99 0 R/Type/Page>>----------------------------------- UNSTREAMED #99
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/TT4 324 0 R/TT8 337 0 R/TT9 335 0 R/F1 329 0 R/TT11 341 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #100 :
+
+----------------------------------- UNSTREAMED #101
+<</CropBox[0 0 595.22 842]/Parent 387 0 R/Contents 103 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 102 0 R/Type/Page>>----------------------------------- UNSTREAMED #102
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/TT4 324 0 R/TT8 337 0 R/TT9 335 0 R/F1 329 0 R/TT11 341 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #103 :
+
+----------------------------------- UNSTREAMED #104
+<</CropBox[0 0 595.22 842]/Parent 387 0 R/Contents 106 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 105 0 R/Type/Page>>----------------------------------- UNSTREAMED #105
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/TT4 324 0 R/TT8 337 0 R/TT9 335 0 R/F1 329 0 R/TT11 341 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #106 :
+
+----------------------------------- UNSTREAMED #107
+<</CropBox[0 0 595.22 842]/Parent 387 0 R/Contents 109 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 108 0 R/Type/Page>>----------------------------------- UNSTREAMED #108
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/TT4 324 0 R/TT8 337 0 R/TT9 335 0 R/F1 329 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #109 :
+
+----------------------------------- UNSTREAMED #110
+<</CropBox[0 0 595.22 842]/Parent 387 0 R/Contents 112 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 111 0 R/Type/Page>>----------------------------------- UNSTREAMED #111
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/TT4 324 0 R/TT8 337 0 R/TT9 335 0 R/F1 329 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #112 :
+
+----------------------------------- UNSTREAMED #113
+<</CropBox[0 0 595.22 842]/Parent 387 0 R/Contents 115 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 114 0 R/Type/Page>>----------------------------------- UNSTREAMED #114
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/TT4 324 0 R/TT8 337 0 R/TT9 335 0 R/F1 329 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #115 :
+
+----------------------------------- UNSTREAMED #116
+<</CropBox[0 0 595.22 842]/Parent 387 0 R/Contents 118 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 117 0 R/Type/Page>>----------------------------------- UNSTREAMED #117
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/TT4 324 0 R/TT8 337 0 R/TT9 335 0 R/F1 329 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #118 :
+
+----------------------------------- UNSTREAMED #119
+<</CropBox[0 0 595.22 842]/Parent 388 0 R/Contents 121 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 120 0 R/Type/Page>>----------------------------------- UNSTREAMED #120
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/TT4 324 0 R/TT8 337 0 R/TT9 335 0 R/F1 329 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #121 :
+
+----------------------------------- UNSTREAMED #122
+<</CropBox[0 0 595.22 842]/Parent 388 0 R/Contents 124 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 123 0 R/Type/Page>>----------------------------------- UNSTREAMED #123
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/TT4 324 0 R/TT9 335 0 R/F1 329 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #124 :
+
+----------------------------------- UNSTREAMED #125
+<</CropBox[0 0 595.22 842]/Parent 388 0 R/Contents 127 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 126 0 R/Type/Page>>----------------------------------- UNSTREAMED #126
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/TT4 324 0 R/TT8 337 0 R/TT9 335 0 R/F1 329 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #127 :
+
+----------------------------------- UNSTREAMED #128
+<</CropBox[0 0 595.22 842]/Parent 388 0 R/Contents 130 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 129 0 R/Type/Page>>----------------------------------- UNSTREAMED #129
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/TT4 324 0 R/TT8 337 0 R/TT9 335 0 R/F1 329 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #130 :
+
+----------------------------------- UNSTREAMED #131
+<</CropBox[0 0 595.22 842]/Parent 388 0 R/Contents 133 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 132 0 R/Type/Page>>----------------------------------- UNSTREAMED #132
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/TT4 324 0 R/TT8 337 0 R/TT9 335 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #133 :
+
+----------------------------------- UNSTREAMED #134
+<</CropBox[0 0 595.22 842]/Parent 388 0 R/Contents 136 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 135 0 R/Type/Page>>----------------------------------- UNSTREAMED #135
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/TT4 324 0 R/F1 329 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #136 :
+
+----------------------------------- UNSTREAMED #137
+<</CropBox[0 0 595.22 842]/Parent 388 0 R/Contents 139 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 138 0 R/Type/Page>>----------------------------------- UNSTREAMED #138
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/TT4 324 0 R/F1 329 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #139 :
+
+----------------------------------- UNSTREAMED #140
+<</CropBox[0 0 595.22 842]/Parent 388 0 R/Contents 142 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 141 0 R/Type/Page>>----------------------------------- UNSTREAMED #141
+<</XObject<</Im4 143 0 R/Im5 144 0 R/Im6 145 0 R/Im7 146 0 R>>/ColorSpace<</Cs6 406 0 R>>/Font<</TT1 342 0 R/TT2 323 0 R/TT4 324 0 R/F1 329 0 R>>/ProcSet[/PDF/Text/ImageC]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #142 :
+
+----------------------------------- UNRECOGNIZED #147 :
+
+----------------------------------- UNSTREAMED #148
+<</StemV 88/FontName/KEHPAG+Arial/FontStretch/Normal/FontFile2 147 0 R/FontWeight 400/Flags 4/Descent -211/FontBBox[-665 -325 2000 1006]/Ascent 905/FontFamily(ùjéE\n)/CapHeight 718/XHeight 515/Type/FontDescriptor/ItalicAngle 0>>----------------------------------- FONT #149
+<</Subtype/CIDFontType2/FontDescriptor 148 0 R/BaseFont/KEHPAG+Arial/W[149[548]]/CIDSystemInfo<</Supplement 0/Ordering(ö|ê^9X)/Registry(í|ö)>>/DW 1000/Type/Font>>----------------------------------- UNRECOGNIZED #150 :
+
+----------------------------------- UNSTREAMED #151
+<</CropBox[0 0 595.22 842]/Parent 388 0 R/Contents 153 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 152 0 R/Type/Page>>----------------------------------- UNSTREAMED #152
+<</XObject<</Im8 154 0 R>>/ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/F1 329 0 R>>/ProcSet[/PDF/Text/ImageC]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #153 :
+
+----------------------------------- UNSTREAMED #155
+<</CropBox[0 0 595.22 842]/Parent 388 0 R/Contents 157 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 156 0 R/Type/Page>>----------------------------------- UNSTREAMED #156
+<</XObject<</Im10 158 0 R/Im11 159 0 R/Im12 160 0 R/Im13 161 0 R/Im9 162 0 R>>/ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/F1 329 0 R>>/ProcSet[/PDF/Text/ImageC]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #157 :
+
+----------------------------------- UNSTREAMED #163
+<</CropBox[0 0 595.22 842]/Parent 389 0 R/Contents 165 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 164 0 R/Type/Page>>----------------------------------- UNSTREAMED #164
+<</XObject<</Im14 167 0 R/Im15 169 0 R/Im16 171 0 R>>/ColorSpace<</Cs6 406 0 R/Cs9 348 0 R/Cs10 345 0 R/Cs11 346 0 R>>/Font<</TT2 323 0 R/F1 329 0 R/TT12 347 0 R>>/ProcSet[/PDF/Text/ImageC/ImageI]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #165 :
+
+----------------------------------- UNRECOGNIZED #166 :
+
+----------------------------------- UNRECOGNIZED #168 :
+
+----------------------------------- UNRECOGNIZED #170 :
+
+----------------------------------- UNRECOGNIZED #172 :
+
+----------------------------------- UNSTREAMED #173
+<</StemV 0/FontName/KEPEOO+Symbol/FontStretch/Normal/FontFile2 172 0 R/FontWeight 400/Flags 4/Descent -219/FontBBox[0 -220 1113 1005]/Ascent 1005/FontFamily(5A ã)/CapHeight 0/Type/FontDescriptor/ItalicAngle 0>>----------------------------------- FONT #174
+<</Subtype/CIDFontType2/FontDescriptor 173 0 R/BaseFont/KEPEOO+Symbol/W[0[600]]/CIDSystemInfo<</Supplement 0/Ordering(!Ë{òA∫g)/Registry(\)ËqîP)>>/DW 1000/Type/Font>>----------------------------------- UNSTREAMED #175
+<</CropBox[0 0 595.22 842]/Parent 389 0 R/Contents 177 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 176 0 R/Type/Page>>----------------------------------- UNSTREAMED #176
+<</XObject<</Im17 179 0 R>>/ColorSpace<</Cs6 406 0 R/Cs12 349 0 R>>/Font<</TT2 323 0 R/TT4 324 0 R/F1 329 0 R>>/ProcSet[/PDF/Text/ImageC/ImageI]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #177 :
+
+----------------------------------- UNRECOGNIZED #178 :
+
+----------------------------------- UNSTREAMED #180
+<</CropBox[0 0 595.22 842]/Parent 389 0 R/Contents 182 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 181 0 R/Type/Page>>----------------------------------- UNSTREAMED #181
+<</XObject<</Im18 184 0 R>>/ColorSpace<</Cs6 406 0 R/Cs13 350 0 R>>/Font<</TT2 323 0 R>>/ProcSet[/PDF/Text/ImageC/ImageI]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #182 :
+
+----------------------------------- UNRECOGNIZED #183 :
+
+‹” gØfc>Í‚“Âﬂ⁄
+
+----------------------------------- UNSTREAMED #185
+<</CropBox[0 0 595.22 842]/Parent 389 0 R/Contents 187 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 186 0 R/Type/Page>>----------------------------------- UNSTREAMED #186
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #187 :
+
+----------------------------------- UNSTREAMED #188
+<</CropBox[0 0 595.22 842]/Parent 389 0 R/Contents 190 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 189 0 R/Type/Page>>----------------------------------- UNSTREAMED #189
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/TT4 324 0 R/F1 329 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #190 :
+
+----------------------------------- UNSTREAMED #191
+<</CropBox[0 0 595.22 842]/Parent 389 0 R/Contents 193 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 192 0 R/Type/Page>>----------------------------------- UNSTREAMED #192
+<</XObject<</Im19 195 0 R/Im20 197 0 R>>/ColorSpace<</Cs6 406 0 R/Cs14 351 0 R/Cs15 352 0 R>>/Font<</TT2 323 0 R/TT4 324 0 R/F1 329 0 R>>/ProcSet[/PDF/Text/ImageC/ImageI]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #193 :
+
+----------------------------------- UNRECOGNIZED #194 :
+
+----------------------------------- UNRECOGNIZED #196 :
+
+----------------------------------- UNSTREAMED #198
+<</CropBox[0 0 595.22 842]/Parent 389 0 R/Contents 200 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 199 0 R/Type/Page>>----------------------------------- UNSTREAMED #199
+<</XObject<</Im21 202 0 R/Im22 204 0 R/Im23 206 0 R>>/ColorSpace<</Cs6 406 0 R/Cs16 353 0 R/Cs17 354 0 R/Cs18 355 0 R>>/Font<</TT2 323 0 R/F1 329 0 R>>/ProcSet[/PDF/Text/ImageC/ImageI]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #200 :
+
+----------------------------------- UNRECOGNIZED #201 :
+
+----------------------------------- UNRECOGNIZED #203 :
+
+----------------------------------- UNRECOGNIZED #205 :
+!ù†cíÀ≠¬5QXùQ´
+
+----------------------------------- UNSTREAMED #207
+<</CropBox[0 0 595.22 842]/Parent 389 0 R/Contents 209 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 208 0 R/Type/Page>>----------------------------------- UNSTREAMED #208
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/TT4 324 0 R/F1 329 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #209 :
+
+----------------------------------- UNSTREAMED #210
+<</CropBox[0 0 595.22 842]/Parent 389 0 R/Contents 212 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 211 0 R/Type/Page>>----------------------------------- UNSTREAMED #211
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/TT4 324 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #212 :
+
+----------------------------------- UNSTREAMED #213
+<</CropBox[0 0 595.22 842]/Parent 389 0 R/Contents 215 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 214 0 R/Type/Page>>----------------------------------- UNSTREAMED #214
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/TT4 324 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #215 :
+
+----------------------------------- UNSTREAMED #216
+<</CropBox[0 0 595.22 842]/Parent 390 0 R/Contents 218 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 217 0 R/Type/Page>>----------------------------------- UNSTREAMED #217
+<</XObject<</Im24 219 0 R>>/ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/TT4 324 0 R/F1 329 0 R>>/ProcSet[/PDF/Text/ImageC]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #218 :
+
+----------------------------------- UNSTREAMED #220
+<</CropBox[0 0 595.22 842]/Parent 390 0 R/Contents 222 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 221 0 R/Type/Page>>----------------------------------- UNSTREAMED #221
+<</XObject<</Im25 224 0 R/Im26 226 0 R/Im27 228 0 R>>/ColorSpace<</Cs6 406 0 R/Cs20 356 0 R/Cs21 357 0 R/Cs22 358 0 R>>/Font<</TT2 323 0 R/TT4 324 0 R>>/ProcSet[/PDF/Text/ImageC/ImageI]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #222 :
+
+----------------------------------- UNRECOGNIZED #223 :
+
+----------------------------------- UNRECOGNIZED #225 :
+
+----------------------------------- UNRECOGNIZED #227 :
+
+----------------------------------- UNSTREAMED #229
+<</CropBox[0 0 595.22 842]/Parent 390 0 R/Contents 231 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 230 0 R/Type/Page>>----------------------------------- UNSTREAMED #230
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/TT4 324 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #231 :
+
+----------------------------------- UNSTREAMED #232
+<</CropBox[0 0 595.22 842]/Parent 390 0 R/Contents 234 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 233 0 R/Type/Page>>----------------------------------- UNSTREAMED #233
+<</XObject<</Im30 236 0 R/Im28 238 0 R/Im29 240 0 R>>/ColorSpace<</Cs6 406 0 R/Cs24 360 0 R/Cs25 361 0 R/Cs26 359 0 R>>/Font<</TT2 323 0 R/TT4 324 0 R>>/ProcSet[/PDF/Text/ImageC/ImageI]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #234 :
+
+----------------------------------- UNRECOGNIZED #235 :
+
+----------------------------------- UNRECOGNIZED #237 :
+
+----------------------------------- UNRECOGNIZED #239 :
+
+----------------------------------- UNSTREAMED #241
+<</CropBox[0 0 595.22 842]/Parent 390 0 R/Contents 243 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 242 0 R/Type/Page>>----------------------------------- UNSTREAMED #242
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/TT4 324 0 R/F1 329 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #243 :
+
+----------------------------------- UNSTREAMED #244
+<</CropBox[0 0 595.22 842]/Parent 390 0 R/Contents 246 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 245 0 R/Type/Page>>----------------------------------- UNSTREAMED #245
+<</XObject<</Im31 248 0 R/Im32 250 0 R/Im33 252 0 R>>/ColorSpace<</Cs6 406 0 R/Cs28 363 0 R/Cs29 364 0 R/Cs30 362 0 R>>/Font<</TT2 323 0 R/TT4 324 0 R/F1 329 0 R>>/ProcSet[/PDF/Text/ImageC/ImageI]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #246 :
+
+----------------------------------- UNRECOGNIZED #247 :
+
+----------------------------------- UNRECOGNIZED #249 :
+
+----------------------------------- UNRECOGNIZED #251 :
+
+----------------------------------- UNSTREAMED #253
+<</CropBox[0 0 595.22 842]/Parent 390 0 R/Contents 255 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 254 0 R/Type/Page>>----------------------------------- UNSTREAMED #254
+<</XObject<</Im34 256 0 R/Im35 257 0 R/Im36 259 0 R>>/ColorSpace<</Cs6 406 0 R/Cs32 365 0 R>>/Font<</TT2 323 0 R/TT9 335 0 R/F1 329 0 R>>/ProcSet[/PDF/Text/ImageC/ImageI]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #255 :
+
+----------------------------------- UNRECOGNIZED #258 :
+
+----------------------------------- UNSTREAMED #260
+<</CropBox[0 0 595.22 842]/Parent 390 0 R/Contents 262 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 261 0 R/Type/Page>>----------------------------------- UNSTREAMED #261
+<</XObject<</Im37 264 0 R>>/ColorSpace<</Cs6 406 0 R/Cs33 366 0 R>>/Font<</TT2 323 0 R>>/ProcSet[/PDF/Text/ImageC/ImageI]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #262 :
+
+----------------------------------- UNRECOGNIZED #263 :
+
+----------------------------------- UNSTREAMED #265
+<</CropBox[0 0 595.22 842]/Parent 390 0 R/Contents 267 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 266 0 R/Type/Page>>----------------------------------- UNSTREAMED #266
+<</XObject<</Im38 269 0 R/Im39 271 0 R/Im40 273 0 R>>/ColorSpace<</Cs6 406 0 R/Cs35 367 0 R/Cs36 368 0 R/Cs37 369 0 R>>/Font<</TT2 323 0 R/TT4 324 0 R/TT9 335 0 R/F1 329 0 R>>/ProcSet[/PDF/Text/ImageC/ImageI]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #267 :
+
+----------------------------------- UNRECOGNIZED #268 :
+
+----------------------------------- UNRECOGNIZED #270 :
+
+----------------------------------- UNRECOGNIZED #272 :
+
+----------------------------------- UNSTREAMED #274
+<</CropBox[0 0 595.22 842]/Parent 390 0 R/Contents 276 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 275 0 R/Type/Page>>----------------------------------- UNSTREAMED #275
+<</XObject<</Im41 278 0 R/Im42 280 0 R/Im43 282 0 R>>/ColorSpace<</Cs6 406 0 R/Cs39 372 0 R/Cs40 370 0 R/Cs41 371 0 R>>/Font<</TT2 323 0 R/TT4 324 0 R/TT9 335 0 R/F1 329 0 R>>/ProcSet[/PDF/Text/ImageC/ImageI]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #276 :
+
+----------------------------------- UNRECOGNIZED #277 :
+
+----------------------------------- UNRECOGNIZED #279 :
+
+----------------------------------- UNRECOGNIZED #281 :
+
+----------------------------------- UNSTREAMED #283
+<</CropBox[0 0 595.22 842]/Parent 391 0 R/Contents 285 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 284 0 R/Type/Page>>----------------------------------- UNSTREAMED #284
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/TT4 324 0 R/TT9 335 0 R/F1 329 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #285 :
+
+----------------------------------- UNSTREAMED #286
+<</CropBox[0 0 595.22 842]/Parent 391 0 R/Contents 288 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 287 0 R/Type/Page>>----------------------------------- UNSTREAMED #287
+<</XObject<</Im44 290 0 R/Im45 292 0 R>>/ColorSpace<</Cs6 406 0 R/Cs43 373 0 R/Cs44 374 0 R>>/Font<</TT2 323 0 R/TT4 324 0 R/F1 329 0 R>>/ProcSet[/PDF/Text/ImageC/ImageI]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #288 :
+
+----------------------------------- UNRECOGNIZED #289 :
+
+----------------------------------- UNRECOGNIZED #291 :
+
+----------------------------------- UNSTREAMED #293
+<</CropBox[0 0 595.22 842]/Parent 391 0 R/Contents 295 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 294 0 R/Type/Page>>----------------------------------- UNSTREAMED #294
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/TT4 324 0 R/F1 329 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #295 :
+
+----------------------------------- UNSTREAMED #296
+<</CropBox[0 0 595.22 842]/Parent 391 0 R/Contents 298 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 297 0 R/Type/Page>>----------------------------------- UNSTREAMED #297
+<</XObject<</Im46 300 0 R>>/ColorSpace<</Cs6 406 0 R/Cs45 375 0 R>>/Font<</TT2 323 0 R/TT4 324 0 R/F1 329 0 R>>/ProcSet[/PDF/Text/ImageC/ImageI]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #298 :
+
+----------------------------------- UNRECOGNIZED #299 :
+
+----------------------------------- UNSTREAMED #301
+<</CropBox[0 0 595.22 842]/Parent 391 0 R/Contents 303 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 302 0 R/Type/Page>>----------------------------------- UNSTREAMED #302
+<</XObject<</Im47 305 0 R/Im48 307 0 R/Im49 309 0 R>>/ColorSpace<</Cs6 406 0 R/Cs47 378 0 R/Cs48 376 0 R/Cs49 377 0 R>>/Font<</TT2 323 0 R/TT4 324 0 R/TT9 335 0 R/F1 329 0 R>>/ProcSet[/PDF/Text/ImageC/ImageI]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #303 :
+
+----------------------------------- UNRECOGNIZED #304 :
+
+----------------------------------- UNRECOGNIZED #306 :
+
+----------------------------------- UNRECOGNIZED #308 :
+
+----------------------------------- UNSTREAMED #310
+<</CropBox[0 0 595.22 842]/Parent 391 0 R/Contents 312 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 311 0 R/Type/Page>>----------------------------------- UNSTREAMED #311
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/TT4 324 0 R/F1 329 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #312 :
+
+----------------------------------- UNSTREAMED #313
+<</CropBox[0 0 595.22 842]/Parent 391 0 R/Contents 315 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 314 0 R/Type/Page>>----------------------------------- UNSTREAMED #314
+<</XObject<</Im50 316 0 R>>/ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/TT4 324 0 R/F1 329 0 R>>/ProcSet[/PDF/Text/ImageC]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #315 :
+
+----------------------------------- UNSTREAMED #317
+<</CropBox[0 0 595.22 842]/Parent 391 0 R/Contents 319 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 318 0 R/Type/Page>>----------------------------------- UNSTREAMED #318
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/F1 329 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #319 :
+
+----------------------------------- UNSTREAMED #320
+<</CropBox[0 0 595.22 842]/Parent 391 0 R/Contents 322 0 R/Rotate 0/MediaBox[0 0 595.22 842]/Resources 321 0 R/Type/Page>>----------------------------------- UNSTREAMED #321
+<</ColorSpace<</Cs6 406 0 R>>/Font<</TT2 323 0 R/F1 329 0 R>>/ProcSet[/PDF/Text]/ExtGState<</GS1 403 0 R>>>>----------------------------------- UNRECOGNIZED #322 :
+
+----------------------------------- FONT #323
+<</Subtype/TrueType/FontDescriptor 325 0 R/LastChar 252/Widths[278 278 355 0 0 889 0 191 333 333 389 584 278 333 278 278 556 556 556 556 556 556 556 556 556 556 278 278 584 584 584 556 0 667 667 722 722 667 611 778 722 278 500 667 556 833 722 778 667 778 722 667 611 722 667 944 667 0 611 278 0 278 0 0 0 556 556 500 556 556 278 556 556 222 222 500 222 833 556 556 556 556 333 500 278 556 500 722 500 500 500 0 0 0 584 0 0 0 0 0 333 1000 0 0 0 0 0 0 0 0 0 0 0 0 0 333 0 0 556 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 333 0 0 0 0 0 0 0 0 0 0 834 0 0 0 0 0 0 667 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 778 0 0 0 0 0 722 0 0 611 0 0 0 0 556 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 556 0 0 0 0 0 556]/BaseFont/KEHPFG+Arial/FirstChar 32/Encoding/WinAnsiEncoding/Type/Font>>----------------------------------- FONT #324
+<</Subtype/TrueType/FontDescriptor 326 0 R/LastChar 252/Widths[278 0 0 0 0 0 722 0 333 333 0 584 0 333 278 278 556 556 556 556 556 556 556 556 556 556 333 0 0 0 0 0 0 722 722 722 722 667 611 778 722 278 0 722 611 833 722 778 667 0 722 667 611 722 667 944 0 0 611 0 0 0 0 0 0 556 611 556 611 556 333 611 611 278 278 556 278 889 611 611 611 0 389 556 333 611 556 778 556 0 500 0 0 0 0 0 0 0 0 0 500 0 0 0 0 0 0 0 0 0 0 0 0 0 0 500 0 0 556 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 778 0 0 0 0 0 722 0 0 611 0 0 0 0 556 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 611 0 0 0 0 0 611]/BaseFont/Arial,Bold/FirstChar 32/Encoding/WinAnsiEncoding/Type/Font>>----------------------------------- UNSTREAMED #325
+<</StemV 88/FontName/KEHPFG+Arial/FontStretch/Normal/FontFile2 327 0 R/FontWeight 400/Flags 32/Descent -211/FontBBox[-665 -325 2000 1006]/Ascent 905/FontFamily(˚Ñï)/CapHeight 718/XHeight 515/Type/FontDescriptor/ItalicAngle 0>>----------------------------------- UNSTREAMED #326
+<</StemV 138/FontName/Arial,Bold/FontStretch/Normal/FontWeight 700/Flags 32/Descent -211/FontBBox[-628 -376 2000 1010]/Ascent 905/FontFamily(É°,,%)/CapHeight 718/XHeight 515/Type/FontDescriptor/ItalicAngle 0>>----------------------------------- UNRECOGNIZED #327 :
+
+----------------------------------- FONT #328
+<</Subtype/TrueType/FontDescriptor 7 0 R/LastChar 32/Widths[250]/BaseFont/TimesNewRoman/FirstChar 32/Encoding/WinAnsiEncoding/Type/Font>>----------------------------------- FONT #329
+<</Subtype/Type1/FontDescriptor 330 0 R/LastChar 128/Widths[460]/BaseFont/KEJOMJ+Symbol/FirstChar 128/ToUnicode 332 0 R/Encoding 333 0 R/Type/Font>>----------------------------------- UNSTREAMED #330
+<</StemV 85/FontName/KEJOMJ+Symbol/FontFile3 331 0 R/Flags 4/Descent 0/FontBBox[-180 -293 1090 1010]/Ascent 0/CapHeight 0/Type/FontDescriptor/ItalicAngle 0/StemH 92/CharSet(	ÌH Öl¿Ì˝úø)>>----------------------------------- UNRECOGNIZED #331 :
+
+----------------------------------- UNRECOGNIZED #332 :
+
+----------------------------------- ENCODING CMAP #333
+<</Differences[128/bullet]/Type/Encoding>>----------------------------------- FONT #334
+<</Subtype/CIDFontType2/FontDescriptor 339 0 R/BaseFont/KEKPJF+Wingdings/W[131[457]190[794]198[979]]/CIDSystemInfo<</Supplement 0/Ordering(•rÉr4|Â)/Registry(w•xèc)>>/DW 1000/Type/Font>>----------------------------------- FONT #335
+<</Subtype/Type0/DescendantFonts[334 0 R]/BaseFont/KEKPJF+Wingdings/Encoding/Identity-H/Type/Font>>----------------------------------- UNSTREAMED #336
+<</StemV 85.863/FontName/Arial,Italic/FontStretch/Normal/FontWeight 400/Flags 96/Descent -211/FontBBox[-517 -325 1082 998]/Ascent 905/FontFamily(±lŒ€æ)/CapHeight 718/XHeight 515/Type/FontDescriptor/ItalicAngle -15>>----------------------------------- FONT #337
+<</Subtype/TrueType/FontDescriptor 336 0 R/LastChar 252/Widths[278 0 0 0 0 0 0 0 333 333 0 584 278 333 278 278 0 0 0 0 0 0 0 0 0 0 278 0 0 0 0 0 0 667 667 0 0 667 611 778 722 0 0 0 0 0 722 778 667 0 722 667 611 0 667 0 0 0 0 0 0 0 0 0 0 556 556 500 556 556 278 556 556 222 0 500 222 833 556 556 556 0 333 500 278 556 500 722 500 0 500 0 0 0 0 0 0 0 0 0 333 0 0 0 0 0 0 0 0 0 0 0 0 0 0 333 0 0 556 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 778 0 0 0 0 0 0 0 0 611 0 0 0 0 556 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 556 0 0 0 0 0 556]/BaseFont/Arial,Italic/FirstChar 32/Encoding/WinAnsiEncoding/Type/Font>>----------------------------------- UNRECOGNIZED #338 :
+
+----------------------------------- UNSTREAMED #339
+<</StemV 0/FontName/KEKPJF+Wingdings/FontStretch/Normal/FontFile2 338 0 R/FontWeight 400/Flags 4/Descent -210/FontBBox[0 -211 1359 899]/Ascent 898/FontFamily(øëqCdÉª#)/CapHeight 0/Type/FontDescriptor/ItalicAngle 0>>----------------------------------- UNSTREAMED #340
+<</StemV 133/FontName/Arial,BoldItalic/FontStretch/Normal/FontWeight 700/Flags 96/Descent -211/FontBBox[-560 -376 1157 1000]/Ascent 905/FontFamily(qV€4W)/CapHeight 0/Type/FontDescriptor/ItalicAngle -15>>----------------------------------- FONT #341
+<</Subtype/TrueType/FontDescriptor 340 0 R/LastChar 32/Widths[278]/BaseFont/Arial,BoldItalic/FirstChar 32/Encoding/WinAnsiEncoding/Type/Font>>----------------------------------- FONT #342
+<</Subtype/Type0/DescendantFonts[149 0 R]/BaseFont/KEHPAG+Arial/ToUnicode 150 0 R/Encoding/Identity-H/Type/Font>>----------------------------------- UNSTREAMED #343
+[/ICCBased 344 0 R]----------------------------------- UNRECOGNIZED #344 :
+
+----------------------------------- UNSTREAMED #345
+[/Indexed 343 0 R 252 168 0 R]----------------------------------- UNSTREAMED #346
+[/Indexed 343 0 R 225 170 0 R]----------------------------------- FONT #347
+<</Subtype/Type0/DescendantFonts[174 0 R]/BaseFont/KEPEOO+Symbol/Encoding/Identity-H/Type/Font>>----------------------------------- UNSTREAMED #348
+[/Indexed 343 0 R 247 166 0 R]----------------------------------- UNSTREAMED #349
+[/Indexed 343 0 R 100 178 0 R]----------------------------------- UNSTREAMED #350
+[/Indexed 343 0 R 4 183 0 R]----------------------------------- UNSTREAMED #351
+[/Indexed 343 0 R 255 194 0 R]----------------------------------- UNSTREAMED #352
+[/Indexed 343 0 R 255 196 0 R]----------------------------------- UNSTREAMED #353
+[/Indexed 343 0 R 255 201 0 R]----------------------------------- UNSTREAMED #354
+[/Indexed 343 0 R 255 203 0 R]----------------------------------- UNSTREAMED #355
+[/Indexed 343 0 R 4 205 0 R]----------------------------------- UNSTREAMED #356
+[/Indexed 343 0 R 209 223 0 R]----------------------------------- UNSTREAMED #357
+[/Indexed 343 0 R 142 225 0 R]----------------------------------- UNSTREAMED #358
+[/Indexed 343 0 R 169 227 0 R]----------------------------------- UNSTREAMED #359
+[/Indexed 343 0 R 120 235 0 R]----------------------------------- UNSTREAMED #360
+[/Indexed 343 0 R 157 237 0 R]----------------------------------- UNSTREAMED #361
+[/Indexed 343 0 R 188 239 0 R]----------------------------------- UNSTREAMED #362
+[/Indexed 343 0 R 238 251 0 R]----------------------------------- UNSTREAMED #363
+[/Indexed 343 0 R 78 247 0 R]----------------------------------- UNSTREAMED #364
+[/Indexed 343 0 R 226 249 0 R]----------------------------------- UNSTREAMED #365
+[/Indexed 343 0 R 195 258 0 R]----------------------------------- UNSTREAMED #366
+[/Indexed 343 0 R 15 263 0 R]----------------------------------- UNSTREAMED #367
+[/Indexed 343 0 R 110 268 0 R]----------------------------------- UNSTREAMED #368
+[/Indexed 343 0 R 105 270 0 R]----------------------------------- UNSTREAMED #369
+[/Indexed 343 0 R 89 272 0 R]----------------------------------- UNSTREAMED #370
+[/Indexed 343 0 R 162 279 0 R]----------------------------------- UNSTREAMED #371
+[/Indexed 343 0 R 46 281 0 R]----------------------------------- UNSTREAMED #372
+[/Indexed 343 0 R 111 277 0 R]----------------------------------- UNSTREAMED #373
+[/Indexed 343 0 R 194 289 0 R]----------------------------------- UNSTREAMED #374
+[/Indexed 343 0 R 156 291 0 R]----------------------------------- UNSTREAMED #375
+[/Indexed 343 0 R 15 299 0 R]----------------------------------- UNSTREAMED #376
+[/Indexed 343 0 R 69 306 0 R]----------------------------------- UNSTREAMED #377
+[/Indexed 343 0 R 64 308 0 R]----------------------------------- UNSTREAMED #378
+[/Indexed 343 0 R 85 304 0 R]----------------------------------- ENCODING CMAP #379
+<</Differences[24/breve/caron/circumflex/dotaccent/hungarumlaut/ogonek/ring/tilde 39/quotesingle 96/grave 128/bullet/dagger/daggerdbl/ellipsis/emdash/endash/florin/fraction/guilsinglleft/guilsinglright/minus/perthousand/quotedblbase/quotedblleft/quotedblright/quoteleft/quoteright/quotesinglbase/trademark/fi/fl/Lslash/OE/Scaron/Ydieresis/Zcaron/dotlessi/lslash/oe/scaron/zcaron 160/Euro 164/currency 166/brokenbar 168/dieresis/copyright/ordfeminine 172/logicalnot/.notdef/registered/macron/degree/plusminus/twosuperior/threesuperior/acute/mu 183/periodcentered/cedilla/onesuperior/ordmasculine 188/onequarter/onehalf/threequarters 192/Agrave/Aacute/Acircumflex/Atilde/Adieresis/Aring/AE/Ccedilla/Egrave/Eacute/Ecircumflex/Edieresis/Igrave/Iacute/Icircumflex/Idieresis/Eth/Ntilde/Ograve/Oacute/Ocircumflex/Otilde/Odieresis/multiply/Oslash/Ugrave/Uacute/Ucircumflex/Udieresis/Yacute/Thorn/germandbls/agrave/aacute/acircumflex/atilde/adieresis/aring/ae/ccedilla/egrave/eacute/ecircumflex/edieresis/igrave/iacute/icircumflex/idieresis/eth/ntilde/ograve/oacute/ocircumflex/otilde/odieresis/divide/oslash/ugrave/uacute/ucircumflex/udieresis/yacute/thorn/ydieresis]/Type/Encoding>>----------------------------------- FONT #380
+<</Subtype/Type1/Name/Helv/BaseFont/Helvetica/Encoding 379 0 R/Type/Font>>----------------------------------- FONT #381
+<</Subtype/Type1/Name/ZaDb/BaseFont/ZapfDingbats/Type/Font>>----------------------------------- UNSTREAMED #382
+<</Count 79/Type/Pages/Kids[383 0 R 384 0 R 385 0 R 386 0 R 387 0 R 388 0 R 389 0 R 390 0 R 391 0 R]>>----------------------------------- UNSTREAMED #383
+<</Parent 382 0 R/Count 5/Type/Pages/Kids[398 0 R 1 0 R 4 0 R 8 0 R 11 0 R]>>----------------------------------- UNSTREAMED #384
+<</Parent 382 0 R/Count 5/Type/Pages/Kids[14 0 R 17 0 R 20 0 R 23 0 R 26 0 R]>>----------------------------------- UNSTREAMED #385
+<</Parent 382 0 R/Count 10/Type/Pages/Kids[29 0 R 32 0 R 35 0 R 38 0 R 41 0 R 44 0 R 47 0 R 50 0 R 53 0 R 56 0 R]>>----------------------------------- UNSTREAMED #386
+<</Parent 382 0 R/Count 10/Type/Pages/Kids[59 0 R 62 0 R 65 0 R 68 0 R 71 0 R 74 0 R 77 0 R 80 0 R 83 0 R 86 0 R]>>----------------------------------- UNSTREAMED #387
+<</Parent 382 0 R/Count 10/Type/Pages/Kids[89 0 R 92 0 R 95 0 R 98 0 R 101 0 R 104 0 R 107 0 R 110 0 R 113 0 R 116 0 R]>>----------------------------------- UNSTREAMED #388
+<</Parent 382 0 R/Count 10/Type/Pages/Kids[119 0 R 122 0 R 125 0 R 128 0 R 131 0 R 134 0 R 137 0 R 140 0 R 151 0 R 155 0 R]>>----------------------------------- UNSTREAMED #389
+<</Parent 382 0 R/Count 10/Type/Pages/Kids[163 0 R 175 0 R 180 0 R 185 0 R 188 0 R 191 0 R 198 0 R 207 0 R 210 0 R 213 0 R]>>----------------------------------- UNSTREAMED #390
+<</Parent 382 0 R/Count 10/Type/Pages/Kids[216 0 R 220 0 R 229 0 R 232 0 R 241 0 R 244 0 R 253 0 R 260 0 R 265 0 R 274 0 R]>>----------------------------------- UNSTREAMED #391
+<</Parent 382 0 R/Count 9/Type/Pages/Kids[283 0 R 286 0 R 293 0 R 296 0 R 301 0 R 310 0 R 313 0 R 317 0 R 320 0 R]>>----------------------------------- UNRECOGNIZED #392 :
+‡n¬9äöÔ-ÙHZxé#1§∞Á@èÏ¡Ωj6&¯/Ì´ÍF” íÏ3W©Mö»DFú›@ôZ›æ	73‚ΩÈèªÑç⁄ΩÅöé≠ˇÈgÜ[üÚQ£´ò..hE]∆j_t≥%}¨+Ìè_éπ˙¨£∑—¢1¬ûN\e·ıWÏ–⁄kJ,OJ¢ ¯-cëÅ°Ï"ÿg˝ê´ßCÙË•Ù;º\À#t¡ÓIÿT˙–—Ë∑ëCã$ip⁄Og‘Ã≤#≥'∑››»ï<zu«T/?È	∆(Ë.àvƒã-6t{9ñ‡‹Mï<ˆ}:≠réW∏ö>&“ì3(Öêõ‰ÎËNß¶èª<(µçby≤˛BFz Rîp„|kπ9t»Äîˆƒ9Sk8Îp©‰◊˘èî óí‰p≤&˘o≈¥ˇ¸®Ÿ˝ÜòÚD.+$Ëô∑ıLñ±åauäogØ+ “ÑW"óê∂ùpÔ¶YÈ¶hú])vƒ˙∫%N=9–3zá¯Ÿ∫1{˙q! ÏÜÖü-f}√C„∞Å∑eæ≠ÁﬁVUì‰Ë~éô—ö;ıú†¸‡ú⁄aäü∫íøäˆÆLçxJâ»•ûrOf¬ÅKÑ∂hÊY@‰¬?B’Äd\Ô5›êºª¬jÿøwÀª„âìì⁄"n.`*;±ÖıÖ¥em´„êÿ{XæﬁÂﬁù`˜ª7tÕˇÙ^¡ª·la§]aâNÄ4óìùz|ÇÙpîfëü?2H∏S±7{«_÷Î¨≈¯∆£˘HÌ–.√ÿ—∑Àºí¨}toﬁïö†3‚‘uú2p„ /ÛÜ>ª>9™g…©b’gÁºÒªÈ°œAyt>q≠~p	Kº∂s≥Ü3)ÛµµßoÇ`ÃXFÙ (}˚Óï⁄ƒÕÅt3C§2pv.íÂ‚>ıÑJ¥∑n0@0˚…zL∏Ejç‘•L”@ú≤¿ùF ≥o∏~&;·=okí‡ﬁVÃ
+R_ÚÓ9Ø˚§ßƒ'«ˆ˛ÆD8·˚h\Ììp
+…<†‹Ó®ådúLi÷eÈÌŒÆn’]¡.∫!ÆhÖG„~‡≈œ C"∞ü5—™T‡ﬂïı¿s∆©û≤ä 3«Ä#`w9£†‚LÒ3{´W‡rÚ*W(‰iÍ$ºÂπ÷{HÒë‡[H§SêrLèàG,¸y
+À“„à,∆ R¸%™0mˇÖËAÒ{ì&ïñ8+5ÉAÔ6Ê˙ä^ºî⁄4À∆±ÌF˝0®L< 2;qÊÛ!5#äv¶ê%÷≈|·,e·≤ﬁ^˛
+U˝±z¯ÕQÊ9!Õ˙˘ @è*≈ñ ~^¸˜’˘;g&¨∆e ºÛ\∑∑tÃ‹ëaŸ–tË ÉbÁä;=µ©<j@{≠n¿`¢uÃ/3u±»í~aØâ^ÄÔBlo8èÅC(Ñ„2°©—ŒÙÚ≠(/ÄŸ±èhÒˆ"”…¡fÀú¸ê_=7vÂ¿]„ÙW‹öa◊˜ö∫TtMµH≠˝˛ò&:sWØ ª:L30Ë›É‘âïb?Ω*∂Bd+aÁ~S ﬂ$·òD˘'nAaˆ’-æÿ¨g0)-v6rAj ßWWèﬂq0ã@c%NX*·#ó:.≈A·A[ö;’ﬂã˙¿uäÒÈ9ª<6±GwF·Ÿµ‘æúˇ¡&Ë÷uiå €%n'LLax´v¿JyËhñö^4Î@¿X¡f_ªù\Øø6™Üè:û©I„5ESèöo¨l¢ıûﬁjèRÇ¿æ˝#˛∫≥~s∆ª*.¥˘Q6˛6eG¡Izt˝ƒç€Í†W}D‹RpKÛ¥é·˚‚√˛eÚ⁄ÎàPiWÀß ®ÃØÍ™Ò¥¯IÒn˝&4ÿéŒ.ñ˚…=Ω∆çÉ?®ÈıÒYÏu	πÏ¢"Òè3›:Œ ˆ}q$ï DôCàôö©˙Ì òbOJ6˜KhyÎ9$0}Í¨Øü—k;†|˙˘–†T~Zı°ﬂ‡a¨ÿî]˚î„í˛h6Ãxî.«®∑Ò∆±Oéã®#˚p±$⁄{E§√ëüél^alÁ€µ; ÊH%F˘æ;=ﬂZ!ã{Ÿ<ûW :c‰7‡bëAï('@\C˘d2øΩTwÌ√k°Î≈K}¯/ÒØ”£¡z¸ewWpP·±’ı·)¶¥
+çm:t5ûÊAÂ§∂U-±AÃéxEÆ≥c.á_3º¨¥ :ædc‹˘Ç‚c„	p¿ìFC·)v∑º·1XºÖ%∏^ÌL+˝ÇÔ<®/â§°@ √U¡ÏDÿ£å—å∆ÿûK¨œ	@â-ddÊUÉe•*íi7xváé£å‡‡yçêú§ºYûU4¶€ùV§E¶u∏82”FÂzí™¶˙¥‘≠û∂±%ˆa©t$Ü(4©±EJsrPÜÖ™([0rá≤z˘wÔïï+˝Ôw•ÊƒÉ*ß’ N∫‰∆k≥[gl}˙§◊x6/± °l‡(î€|Tî’9'üz7 Œß} ÈKS∏…òá-±Éày∑c≠Õ‹·≠”,ªGéyio4”ßÏ	¡˛…GÕTh¢s„¡‘ïNa˜‡\Ÿ≠ã]Yˇ≥-Ÿ¿_Ê“2w¸JÀYM¶Ωa¿°’#ÑÄß3˘q$Hﬂ›¡TYZzbU¸•√h1Cp1‹d)ÖZ`vú&!r‘Æ∑º˘ºµÔ¶˝üñËÀõ@7&∑!åÃBSŸì|Y¿c àU±pÁ=^‡L≤4èùﬁbb◊kö(-Xœóû/U<*Hß—√nf]¶SâJd}è:≈vœ'2èπ"/D¡¶é T≠ƒ :ÆÃfç∑G ?Sú(»Á3yÀÀÅ±ªzXãÜüh1 °äTëïEŸ$∫{L1Q»6—G?‰D)yr.ßñÅ"˚<IøPÏúçl-ñ©˝ÆˆŸê^ àá?)`¸“»Ï©á€ËÒÇdNÊAn¸Œ˝~SêåA`=÷åŒí6KΩ◊ﬁÈ¨·'EhmÕFûÖG#I0™]åeÄzaãëÛUÆúqfªz8ód[Â—nÑo8N≥fzcµæGÜæ‚qÜ…ÂIvÒ†O¯é
+ˇœ⁄
+o—abteÂªÜœCaŒÎº¡⁄ÂG«O.4h~O∑ëâù!àF™˜(ñtDñZZªäãﬂsŸÅèFt•ÌÖXŸˇnX÷€5ë~ûı-Ï4{årß8&üáﬂÌ∞î4∂æÃjØÖ˚®mV‚:®áÂ_çßœ“P±•´íÂ¸p/m∞l∂V1∞†ÉJrÈ≥:tãpÚ—$g6rŒ©¥Fê :ËK¬ÁÜZŒ‘ÊATÄBœl¥ÊÔêìaJîÙHy$»9[-˚è©Rt^òÊ”/S¿+ny„cXØ &Ïô ùwç~	Fµ®8ñèiÄ±7aHÛeê}öOÜÑ”`ı]àrŒÌ◊›‚ˇ<öäy¨h’ë›r∑±™1ºﬁí≈±Ü5ü˝ÄYn˝	^≈ÀW‰®v }œä9ÆıD§™ß•œ»íÔ{}QròÈ◊`QüèS4m´Æxìé€…®dKw÷∞ ‚´Ó¿kõN◊˛hNKÎ¸j˚Ó&_∂ï¯¥O‚ÿ.Ôçy®•ê∏b®¬ß4®¨—ı≤.)ÜáxT >òı5)1‚EjOK˛u“EBÈ⁄„®ÎÖJ °4B◊57  Àˆ5ó·ÔZÀ¡aà\êøGM˘…∏÷„~Zki≠˙Ï∞ì¡7,s
+i^…úS∂R∞$õíø(œ	›yí3ô#=0`Õ#õc”øÌä ]6L›>HB{‰O[.í{"ìÕñ>;ëøîíƒ3ºF—bŸó`Ïûﬂ/≤H≠ﬂt"˜§∞üÂ)Ÿ¶Øµõ‚ë%t?≠.Ñ∑˛>¸{[€ÛJÔˆ◊Â}v|LË j)`)µALyìõ.P¶∞øfóÌ⁄9,0à˚±ÁY)†´sç±0?uÅ„ˆÛC≠hë»ˆz«Âœ∆—v76ò=u6OO{WY¢(óWÚ‰Ó7æÓÇ/~»¿JŸ)ò5FÂGÕ7∆&éü∑X,¡•Rñ‰„ ‘àº≈XÛ^f1¸æƒ~…€!"l4¨Y˜=2˝’äÒ›XãêÓfE(F7CÀŒ“ùùπ¡Ë©%é”Yı÷Ê„V˘PÍN˛Ò1w.ûÍJ2X\„Q´:c*«Wbcb Z¸+Ò´'ìN|ˆ…ÓãMì¬8”âOªEßËÈ˚Ï£=’…Q∂ÓèjR†Ë)¡Á+¥|˙À«◊ˇ˘hÇ	≤óx◊cb@Vÿ ≈ÄCZ_ Ì·¡6÷UGô1Ã_Có^ Ù}≥;ølD^ê„⁄—N!ÎÍ g‚‘ÃDsBHπÚ¶:ç ∆kID20=£x˜‡ÄÊ¢µ ˆ"ü£∆∑™¬U>}ÎD´Ω∫JêËAI_¸◊V1ö#™ùê‡Ni–âbèq7lŒˆYæÊﬁ¬»Ï^^<F[Uÿ^a˚{å|A±#4™!àdnS<r˘ÇÏ–Áôjø–}õˇœ Â6V2˛ÿÃn√%[√«7ªHúr¶ˆfÈ˜%^P=EÅ÷˜i3∑¡ze∂û§{o3∂ó	s[Ÿ.£[L	P¥d{ªÜ‡ùÓë„ª˙˘‘q•°w™O=)gQI±µwÓ	û√πk^q
+“ßÕ\˚îZND>†πÖ£4h≤@yzBÅÉ—*¸ˇfó©ÂÁÏñlìËgm∂˙¡Ï∑E$D¬œ3k˛sç";P¯.>≤©∫è
+ÍÁ…ö0ó	Öƒa•—Ü.;êÎ˜ÎÿÛÈÂkï‡8O 
+kB¶∞f
+
+----------------------------------- UNSTREAMED #393
+<</CreationDate(E∏yî∏¸ Ú+;¸lOpã¿àÎ°uu)/Author(\r\(„%»Í°`)/Creator(,È;Õˇ∏&Ïzf°~,!E”ô÷¢±p|˚K)/Producer(\n¯&∆Ó∏3Üwyπ7\(R“–é‚°kgÈMi¿	„f\(/)/ModDate(E∏yî∏¸ Û\(;˛lLpã¿àÎ°uu)/Title(È;À¸£u∂>]¢,dÄº‹•Â#3≠ P=¯˛p5uU±˝¢ ZILÔeÉ€Pà·¿Óq©¿/)>>

@@ -1,0 +1,4060 @@
+LEITFADEN ZUM
+VERANSTALTUNGSVERKEHR
+
+STAND MÄRZ 2007
+
+Leitfaden Veranstaltungsverkehr
+
+Auftraggeber
+
+ivm GmbH
+Integriertes Verkehrsmanagement
+Region Frankfurt RheinMain
+Lyoner Straße 22
+60528 Frankfurt am Main
+Telefon: 069/660759-0
+Fax: 069/660759-90
+
+Bearbeitung
+
+ivm GmbH
+Integriertes Verkehrsmanagement
+Region Frankfurt RheinMain
+Lyoner Straße 22
+60528 Frankfurt am Main
+Dipl.-Geogr. Nora Pullmann
+
+AS&P – Albert Speer & Partner GmbH
+Hedderichstraße 108 – 110
+60596 Frankfurt am Main
+Dipl.-Ing. Michael Dinter
+Dipl.-Ing. Frank Willems
+Dipl.-Ing. Rita Jakoby
+
+Frankfurt am Main, März 2007
+
+Seite 2 von 79
+
+Leitfaden Veranstaltungsverkehr
+
+Inhaltsverzeichnis
+
+0
+
+Einleitung
+
+4
+
+1
+
+Planungsgrundlagen
+
+7
+
+2
+
+Verkehrliche Abwicklung
+
+13
+
+3
+
+Projektorganisation
+
+15
+
+4
+
+Öffentlichkeitsarbeit
+
+21
+
+Planungshilfen
+
+23
+
+Teil A:
+
+Checklisten „Verkehrliche Abwicklung“
+
+24
+
+Teil B:
+
+Planungshinweise
+
+46
+
+Teil C: Anregungen - eine fiktive Beispielveranstaltung
+
+60
+
+Seite 3 von 79
+
+Leitfaden Veranstaltungsverkehr
+
+0
+
+Einleitung
+
+Einleitung
+
+Die ivm GmbH – integriertes Verkehrsmanagement Region Frankfurt RheinMain – hat zur
+FIFA Fußball Weltmeisterschaft 2006 gemeinsam mit der Straßenverkehrsbehörde der Stadt
+Frankfurt am Main die verkehrlichen Maßnahmen koordiniert. Die Vorbereitungen umfassten
+alle Verkehrsarten und –mittel und nahmen über 1 ½ Jahre in Anspruch.
+Ansatz des Engagements der ivm war das Bewusstsein, dass die verkehrlichen Auswirkungen des Stadionbetriebs und des Public Viewing („MainArena“) die Zuständigkeiten der Ausrichtungsstadt Frankfurt am Main überschreiten werden. Hinzu kam vor allem aber auch,
+dass die Anzahl der an der verkehrlichen Abwicklung der WM 2006 beteiligten Institutionen,
+Ämter und Dienststellen erheblich war und nach einer Koordinierungsstelle verlangte, wobei
+Koordinierung in diesem Sinn vor allem in der Moderation der erforderlichen Abstimmungsprozesse und der Kommunikation zwischen den Beteiligten zu verstehen ist.
+Die verkehrliche Abwicklung der WM 2006 verlief weitgehend reibungsfrei. Anlass genug,
+Erfahrungen, die die ivm sammeln konnte, für alle anderen Gesellschafter der ivm und für
+Dritte verfügbar zu machen. Das soll mit diesem „Leitfaden zum Veranstaltungsverkehr“
+erfolgen. Und zwar in der Weise, dass Bearbeiter und Verantwortliche von (Groß-) Veranstaltungen Anregungen und Anleitung finden, wie der Weg durch den Vorbereitungs- und Planungsprozess gestaltet werden kann. Da jede (Groß-) Veranstaltung individuell zu betrachten ist, muss auf die Formulierung detaillierter Handlungs- oder Planungsempfehlungen
+verzichtet werden. Da sich aber viele Fragestellungen gleichgültig im Rahmen welcher Veranstaltung wiederholen, lassen sich die Planungs- und Entwicklungsschritte durchaus sinnvoll in einen solchen Leitfaden fassen.
+Die ivm bietet ihren Gesellschaftern darüber hinaus an, sie bei der verkehrlichen Vorbereitung von (Groß-) Veranstaltungen zu unterstützen
+In der Vorbereitung von Veranstaltungen wird oft unterstellt, dass eine störfallfreie verkehrliche Abwicklung für sich alleine das Ziel darstellt. Dieser Leitfaden versucht durch seinen
+Aufbau und durch seine Inhalte, den Fokus auch auf andere Aspekte zu lenken:
+Städte, Gemeinden und ganze Regionen nutzen Veranstaltungen zur Imagepflege und
+Standortwerbung und wollen oftmals auch internationales Publikum ansprechen. Hier überschneiden sich die Arbeitsfelder von Verkehrsplanung und Tourismus. Viele Besucher wollen
+die An- und Abreise im positiven Sinn als Teil der Veranstaltung verstehen. „Veranstaltung“
+bedeutet immer eine (positive!) Emotionalität und eine hohe Erwartungshaltung. Dies darf
+keinesfalls von einer stressigen, zeit- und nervenkostenden An- oder Abreise zerstört werden.
+Es geht bei der Planung der verkehrlichen Abwicklung also immer auch um einen gewissen
+Komfort, wobei unter „Komfort“ vor allem auch kommunikative Elemente zu verstehen sind:
+Das kann bei einer guten Wegweisung mit deutlicher und direkter Bezugnahme auf die Veranstaltung beginnen, einen ansprechend gestalteten Internetauftritt beinhalten und bei
+freundlichem, gut geschultem und mehrsprachig auftretendem Fahrgastbetreuungspersonal
+enden. Weitere Beispiele und Anregungen finden sich im vorliegenden Leitfaden.
+
+Seite 4 von 79
+
+Leitfaden Veranstaltungsverkehr
+
+Einleitung
+
+Im Kapitel 1 „ Planungsgrundlagen“ geht es darum, welche Informationen notwendig sind,
+damit Bearbeiter und Verantwortliche Art und Charakter der zu planenden Veranstaltung
+kennenlernen. Diese Fragestellung ist alles andere als banal, denn erst eine gute Kenntnis
+der bevorstehenden Veranstaltung (und ggf. des Veranstalters) ermöglicht es, effizient zielführende Planungsschritte einzuleiten. Kapitel 1 schließt mit einer Bestandsaufnahme der
+verkehrlichen Situation im Umfeld des Veranstaltungsortes. Wenn der eigentliche Planungsund Abstimmungsprozess gestartet wird, müssen die Beteiligten nicht nur über die notwendigen Ortskenntnisse verfügen, sondern sie sollten darüber hinaus auch in der Lage sein, die
+verkehrliche Situation kritisch zu bewerten und Verbesserungspotential zu definieren.
+Im Kapitel 2 „Verkehrliche Abwicklung“ wird aufbauend auf den Erfordernissen der Veranstaltung und der Ist-Situation des Veranstaltungsortes das Spektrum der (möglichen)
+verkehrsplanerischen Aufgabenfelder aufgezeigt. Hierzu wurden umfangreiche „Checklisten“
+erarbeitet, die eine Hilfestellung und Orientierung bei dem Planungsprozess geben sollen.
+Um einem Missverständnis vorzubeugen: Die erarbeiteten Checklisten sollen einer abgeschotteten „Schreibtischplanung“ keinen Vorschub leisten. Die verkehrliche Abwicklung von
+Veranstaltungsverkehr braucht nicht nur eine verkehrstechnisch korrekte Planung sondern
+auch ein gut entwickeltes Gefühl für die Umsetzung der verkehrlichen Maßnahmen vor Ort.
+Dazu ist eine enge Zusammenarbeit zwischen den Planern und den erfahrenen „Praktikern“
+unerlässlich. (Schließlich sind es genau diese vor Ort Zuständigen, die die geplanten und
+abgestimmten Maßnahmen während der Veranstaltung umsetzen!). Die Checklisten befinden sich in den Planungshilfen Teil A „Verkehrliche Abwicklung“ und stellen den zentralen
+Teil dieses Leitfadens dar.
+Im Kapitel 3 „ Projektorganisation“ wird auf projektorganisatorische Fragen eingegangen.
+Es folgen Vorschläge zum Aufbau des Projektmanagements, die sich bereits in der Praxis
+bewährt haben. In jedem Fall muss festgelegt werden, wer die koordinierenden Aufgaben
+übernimmt. Die Projektkoordinierung muss sich dafür einsetzen, dass auf freiwilliger Ebene
+einzelne Beteiligte Kompromisse eingehen, damit das (Gesamt-) Ziel eines reibungslosen
+Verkehrsablaufs auf einer möglichst hohen Komfortebene erreicht werden kann. Die gelungene verkehrliche Abwicklung einer Veranstaltung ist immer ein kollektiver Erfolg aller an der
+Planung und Umsetzung Beteiligten.
+Im Kapitel 4 „Öffentlichkeitsarbeit“ sind Wege zur Informationsweitergabe bzw. zur Öffentlichkeitsarbeit zusammengefasst. Auch hier gilt, dass jede Veranstaltung ihrer eigenen Anforderungen hat. In diesem Sinn sind die dargestellten Tabellen als hilfreiche Anregung und
+Unterstützung zu verstehen.
+Abschließend werden in den „Planungshilfen“ Unterlagen, die direkt für den Planungsprozess hilfreich sind, zusammengestellt. Im Teil A: „Checklisten Verkehrliche Abwicklung“
+sind die Tabellen, auf die sich in Kapitel 2 bezogen wird, zusammengestellt. Im Teil B: „Planungshinweise“ finden sich einige Richtlinieninformationen und Erfahrungswerte aus dem
+verkehrlichen Veranstaltungsmanagement, die eine Hilfestellung bei den konkreten Planungen im Vorfeld einer Veranstaltung geben sollen. Im Teil C: „Anregungen – eine Beispielveranstaltung“ wird schließlich anhand einer erfundenen und vereinfacht dargestellten
+„Musterveranstaltung“ in einer fiktiven „Musterstadt“ der mögliche Ablauf eines Planungsprozesses in Ansätzen durchgespielt. Diese „Musterveranstaltung“ ersetzt nicht die Arbeit mit
+den Checklisten aus dem Teil A. Sie dient vielmehr dazu, Erläuterungen und weitergehende
+Anregungen zur Verfügung zu stellen.
+
+Seite 5 von 79
+
+Einleitung
+
+Leitfaden Veranstaltungsverkehr
+
+In der nachfolgenden Abbildung sind die einzelnen Teile des Leitfadens in ihrem funktionalen
+Zusammenhang dargestellt. Die Basis stellt dabei die Zusammenstellung der Planungsgrundlagen dar. Die zentrale Aufgabe ist jedoch die Planung der verkehrlichen Abwicklung.
+Bezogen auf den Leitfaden bedeutet dies den Einsatz der in den „Planungshilfen Teil A“
+zusammengestellten Checklisten. Die Projektorganisation ist dem Planungsprozess übergeordnet, hat jedoch einen wesentlichen Einfluss auf die Planungsabläufe und muss ihrerseits
+wiederum auf Anforderungen aus der Planung reagieren. Die Aufgabe der Öffentlichkeitsarbeit steht auf einer Ebene mit der Planung der verkehrlichen Belange und wird wesentlich
+durch diese beeinflusst. Die in den „Planungshilfen Teil B und Teil C“ gegebenen Hinweise
+und das Beispiel sollen lediglich eine Hilfe für die verkehrliche Planung sein.
+Planungsgrundlagen
+
+Planung
+
+Projektorganisation
+
+Verkehrlichen Abwicklung
+Checklisten
+
+Öffentlichkeitsarbeit
+
+Planungshilfen
+Planungshinweise
+Beispielveranstaltung
+
+In der folgenden Abbildung sind die zeitlichen Zusammenhänge der einzelnen Teile des
+Leitfadens zusammengestellt. Dies soll jedoch nicht als Projektablaufplanung verstanden
+werden, sondern lediglich in Ergänzung zur obigen Abbildung eine chronologisch Einordnung
+der einzelnen Teile veranschaulichen.
+
+Planung
+Planungsgrundlagen
+Verkehrlichen Abwicklung
+Projektorganisation
+Öffentlichkeitsarbeit
+Veranstaltung
+Checklisten
+
+Zeit
+
+Planungshinweise / Beispielveranstaltung
+
+Planungshilfen
+
+Seite 6 von 79
+
+Leitfaden Veranstaltungsverkehr
+
+1
+
+Planungsgrundlagen
+
+1.1
+
+Aspekte der bevorstehenden Veranstaltung
+
+Planungsgrundlagen
+
+Ziel dieses Arbeitspakets ist es, bevorstehende Veranstaltungen kennenzulernen. Nur wer
+die bevorstehende Veranstaltung in ihren Details kennt, kann eine für diese Veranstaltung
+zugeschnittene Verkehrsplanung erarbeiten und erfolgreich im Sinne der Besucher umsetzen. Hierbei ist die Unterstützung des Veranstalters und/oder des Betreibers unerlässlich
+und muss seitens der Planer eingefordert werden.
+Die hier im Folgenden aufgelisteten Fragen sollen dazu dienen, dass die Beteiligten die
+Veranstaltung besser „fassen“ können. Es ist Aufgabe der am Projekt Beteiligten zu bewerten, welche Kriterien aus der Beschreibung der Veranstaltung welchen Einfluss auf die verkehrliche Planung haben.
+Veranstaltungsort / Charakter der Veranstaltung:
+• Wann findet die Veranstaltung statt?
+- Jahreszeit
+- Wochentag
+- Uhrzeit
+• Wie sieht das Veranstaltungsprogramm aus?
+- besondere Einzelveranstaltungen (z.B. Abendveranstaltungen)
+• Wie lange dauert die Veranstaltung?
+- mehrere Stunden
+- ein Tag
+- ein Wochenende
+- mehrere Tage (einschließlich ein Wochenende)
+• Wo findet die Veranstaltung statt?
+- Stadion, Fest- oder Konzerthalle, Messegelände
+- öffentlicher Verkehrsraum oder Grünfläche (Festwiese)
+• Handelt es sich um
+- einen in sich abgeschlossenen, umzäunten Veranstaltungsbereich oder um
+- einen offenen Veranstaltungsbereich bzw. um mehrere Veranstaltungsbereiche?
+• Benötigt die Veranstaltung
+- noch weitere Flächen im öffentlichen Raum oder
+- ist die Veranstaltung beschränkt auf einen gut abgrenzbaren Bereich?
+• Ist die Veranstaltung
+- ortsfest oder handelt es sich um
+- eine Veranstaltung, die sich fortbewegt (z.B.: Demonstration, Umzug, etc.)?
+• Müssen für die Veranstaltung
+- noch Genehmigungen eingeholt werden oder
+- ist die Veranstaltung nicht genehmigungspflichtig?
+• Ist die Veranstaltung
+- Zuschauer bezogen oder ist sie
+- Akteur bezogen (z.B.: Marathonlauf, Radrennen, etc.)?
+
+Seite 7 von 79
+
+Leitfaden Veranstaltungsverkehr
+
+Planungsgrundlagen
+
+• Wie ist der Zutritt zur Veranstaltung, bzw. die Teilnahme an der Veranstaltung geregelt?
+- ungeregelt, freier Zugang ohne Eintrittskarten
+- reglementierter oder begrenzter Zugang, Teilnahme nur mit Eintrittskarte
+• Könnten Witterungsverhältnisse die Veranstaltung beeinflussen?
+- Beschaffenheit des Veranstaltungsortes (geschlossene Räume, überdacht, unter freiem Himmel, etc)
+- (langfristiger Vor-) Verkauf von Eintrittskarten / Dauerkarten
+- traditionelle Prägung der Veranstaltung
+• Dauer der Veranstaltung:
+- Anlieferung und Aufbauphase
+- Anreise oder Zutritt der Besucher bzw. Akteure
+- Beginn der Veranstaltung
+- Ende der Veranstaltung
+- „Nachprogramm“ / Verweilmöglichkeiten am Veranstaltungsort
+- Abreise der Besucher bzw. Akteure
+- Abschluss des Abbaus und der Aufräumarbeiten
+• Welche internen Verkehrsbedürfnisse hat die Veranstaltung?
+- keine oder geringe interne Verkehrsbedürfnisse
+- hoher Logistikaufwand / komplexe interne Verkehrsabwicklung
+• Veranstalter:
+- Wer ist Veranstalter?
+- Welche Veranstaltungen hat der Veranstalter bereits organisiert?
+- Ist der Veranstalter identisch mit dem Eigentümer bzw. Besitzer des Veranstaltungsortes?
+• Wie finanziert sich die Veranstaltung?
+- öffentliche Gelder
+- Eintrittsgelder
+- Standgebühren / Startgelder
+- Sponsorengelder
+- Übertragungsrechte / Werbeeinnahmen
+• Ist die Finanzierung der Veranstaltung
+- bereits geklärt oder
+- gibt es noch offene Positionen?
+• Wiederholung / Periodizität der Veranstaltung:
+- Hat die gleiche Veranstaltung schon einmal am gleichen Veranstaltungsort stattgefunden?
+- Hat die gleiche Veranstaltung schon einmal an einem anderen Veranstaltungsort stattgefunden?
+- Gibt es bereits stattgefundene Veranstaltungen, die mit der jetzt bevorstehenden Veranstaltung vergleichbar wären?
+• Welcher Vorbereitungszeitraum ist vorzusehen?
+- Veranstaltung ist „geübt“ und es kann auf Organisationsstrukturen und Konzepte zurückgegriffen werden
+- Veranstaltung ist neu, Organisationsstrukturen und Konzepte müssen noch erarbeitet
+werden
+
+Seite 8 von 79
+
+Leitfaden Veranstaltungsverkehr
+
+Planungsgrundlagen
+
+• Gibt es Parallelveranstaltungen?
+- Parallelveranstaltungen in der Region / in der Gemeinde, die Einfluss auf die vorzubereitende Veranstaltung haben
+- Parallelveranstaltungen, die aber ohne Einfluss auf die Veranstaltung sind
+- keine Parallelveranstaltung
+• Besonderheiten des Veranstaltungsortes:
+- Lage des Veranstaltungsortes innerhalb der Stadt
+- Entfernung des Veranstaltungsortes zur Innenstadt / Vergnügungsviertel
+- Entfernung des Veranstaltungsortes zur Wohnbebauung
+- Raum- und Platzverhältnisse des Veranstaltungsortes und seiner unmittelbaren Umgebung
+- Flächenverfügbarkeit / Flächeninanspruchnahme durch den Veranstalter
+- Lage und Anzahl der Zu- und Ausgänge
+Besucher und Besucheraufkommen / Akteure:
+• Anzahl:
+- absolute Anzahl über die gesamte Veranstaltungsdauer
+- Verteilung des Besucheraufkommens über die gesamte Veranstaltungsdauer
+- erwartete Anzahl an Spitzentagen / zu den Spitzenstunden
+- Tagesganglinien
+• Relation des Besucheraufkommens:
+- zur Zahl der Einwohner
+- zur Zahl der täglichen Einpendler
+- zu anderen (Groß-)Veranstaltungen, die bereits in der Stadt stattgefunden haben
+• Herkunftsverteilung der Besucher:
+- regional
+- national
+- international
+• Besucherstruktur:
+- VIPs
+- Mobilitätsbehinderte
+- Familien
+- sozialer Status / Berufsgruppen
+- Geschäftsbesucher / Freizeitbesucher
+- Geschlechterverteilung
+- Neigung zum übermäßigen Alkoholgenuss
+- Neigung zu aggressivem (Fan-)Verhalten
+• An- und Abreiseverhalten der Besucher:
+- MIV-orientiert
+- ÖV-orientiert
+- organisierte An- und Abreise
+- frühzeitige Anreise
+- Verweilen am Veranstaltungsort nach Veranstaltungsschluss
+
+Seite 9 von 79
+
+Leitfaden Veranstaltungsverkehr
+
+Planungsgrundlagen
+
+Sicherheit:
+• Bewertung der allgemeinen aktuellen Sicherheitslage / Sicherheitseinstufung der Veranstaltung:
+- unbedenklich
+- einfache Sicherheitsvorkehrungen
+- erhebliche Sicherheitsvorkehrungen
+• Die Sicherheitsvorkehrungen sind ausgerichtet auf:
+- Bombendrohungen
+- Kanalisation von (Gegen-) Demonstrationen
+- Schutz einzelner VIPs oder Akteure
+- einzelne Randalierer
+- Trennung verfeindeter Besuchergruppen
+• Zugangs- und Sicherheitskontrollen:
+- (technische) Ausstattung der Zugangskontrollen
+- Zeitdauer der Kontrollen
+- nicht-zugelassene Gegenstände (z.B.: Flaschen, etc.)
+- Anforderungen an einzusetzendes (Ordnungs- und Sicherheits-) Personal
+• Sicherheitsvorkehrungen direkt am Veranstaltungsort:
+- Flucht- und Rettungswege / Notausgänge
+- Flächeninanspruchnahme durch Polizei und Rettungsdienste
+- besondere räumliche oder organisatorische Anforderungen der Polizei und der Rettungsdienste
+
+1.2
+
+Verkehrliche Erschließung des Veranstaltungsortes – Ist-Situation
+
+Im vorangegangen Kapitel wurde anhand von einigen Schlüsselkriterien empfohlen, die Veranstaltung in ihrer Gesamtheit zu betrachten. Ziel war es, ein möglichst umfassendes Bild
+von dem, was auf die Verantwortlichen zukommt, zu erlangen. In diesem Kapitel soll jetzt ein
+Schritt weiter gegangen werden: Wie kann die Verkehrssituation am Veranstaltungsort in
+ihrem aktuellen Zustand beschrieben werden? Hier geht es (noch) nicht um eine Wertung
+oder um die Ermittlung von Handlungsbedarf. An dieser Stelle steht die Analyse mit einer
+möglichst sachlichen Beschreibung des Ist-Zustandes. Die unten stehende Auflistung soll
+den Planern helfen, möglichst alle Kriterien zu erfassen.
+Am Ende des Kapitels sollte sich ein Bild über die verkehrliche Situation des Veranstaltungsortes herausgeprägt haben. Es sollte unbedingt erreicht werden, dass alle am weiteren
+Planungsprozess Beteiligten zu einem einheitlichen Wissens- und Kenntnisstand gelangen.
+Im Zuge der Planung wird immer wieder auf diesen Ist-Zustand zurückgegriffen werden.
+Dieser Ist-Zustand ist nicht unbedingt statisch; Änderungen, die sich im Laufe des Planungsprozesses ergeben, sind zu berücksichtigen.
+
+Seite 10 von 79
+
+Leitfaden Veranstaltungsverkehr
+
+Planungsgrundlagen
+
+Erreichbarkeit des Veranstaltungsorts durch
+• ÖV (Fernbahn, S-Bahn, Stadtbahn, Straßenbahn, Linienbus unter Berücksichtigung der
+Umsteigebeziehungen)
+- Kapazität der einzelnen Linien
+- Kapazität und Ausstattung der Haltestellen
+- Entfernung der Haltestellen vom Veranstaltungsort
+- Zustand / Qualität der Wege von den Haltestellen zum Veranstaltungsgelände
+- Zustand / Qualität / Vollständigkeit der vorhandenen Fußwegweisung
+• MIV (Pkw, Krad, Reisebusse)
+- Lage, Querschnitt der Hauptzufahrtsstraßen
+- Ablauf an den wichtigen Knotenpunkten
+- Lage und Anzahl der vorhandenen Parkbereiche (auch: Haltepunkte und Vorfahrten,
+und: P+R)
+- Stellplatzzahl (Unterscheidung Pkw und Reisebusse)
+- Entfernung der Parkbereiche vom Veranstaltungsgelände
+- Erreichbarkeit der Parkplätze
+- Zustand der zuführenden Straßen und Wege zu den Parkbereichen
+- Zustand / Ausstattung der Parkplätze
+- Zustand / Qualität der Wege von den Parkplätzen zum Veranstaltungsgelände
+- Zustand / Qualität / Vollständigkeit der vorhandenen Wegweisung (sowohl straßenseitige Wegweisung als auch Fußgängerwegweisung)
+• Fußgänger:
+- Zustand / Qualität der Fußwege
+- Zustand / Qualität / Vollständigkeit der vorhandenen Fußwegweisung
+• Radfahrer:
+- Zustand / Qualität der Radwege
+- Zustand / Qualität / Vollständigkeit der vorhandenen Radwegweisung
+- Zustand / Ausstattung der Fahrradabstellanlagen
+- Entfernung der Fahrradabstellanlagen vom Veranstaltungsgelände
+• Taxi:
+- Kapazität der (örtlichen) Taxiunternehmen
+- Kapazität des Taxistandes
+- Zustand / Ausstattung des Taxistandes
+- Entfernung des Taxistandes vom Veranstaltungsgelände
+• Zulieferer-Verkehr (Ver- und Entsorgung):
+- Zufahrtssituation
+- Abstellmöglichkeiten
+- Be- und Entladezonen
+bestehende Verkehrsbelastung / Verkehrszählungen:
+Es ist erforderlich, ein umfassendes Bild über die („normale“) Verkehrssituation, die sich
+alltäglich ohne die Veranstaltung darstellt, zu erlangen:
+• Verkehrszählungen im MIV
+• Fahrgastzählungen im ÖV
+
+Seite 11 von 79
+
+Leitfaden Veranstaltungsverkehr
+
+Planungsgrundlagen
+
+etablierte Maßnahmen / Erfahrungen aus vorangegangenen Veranstaltungen:
+Viele Veranstaltungen, die es vorzubereiten gilt, finden nicht erstmalig statt. Wo bereits
+gleiche oder gleichartige Veranstaltungen abgehalten wurden, sollten in diesem Stadium der
+Ist-Bestandsaufnahme unbedingt auch die Erfahrungswerte aus diesen früheren Veranstaltungen einfließen. Im Besonderen sollten sich die Verkehrsplaner bewusst machen, was
+• bislang zufriedenstellend funktioniert hat,
+• dazu beigetragen hat, Verkehrsstörungen zu vermieden,
+• vom Publikum gut angenommen wurde,
+• zum Gelingen der bisherigen Veranstaltungen beigetragen hat
+• und was demzufolge beibehalten werden sollte.
+
+Seite 12 von 79
+
+Leitfaden Veranstaltungsverkehr
+
+2
+
+Verkehrliche Abwicklung
+
+Verkehrliche Abwicklung
+
+Wenn es im Kapitel 1 gelungen ist, anhand der „veranstaltungsbezogenen Kriterien“ die zu
+planende Veranstaltung für alle Planungsbeteiligte erfassbar zu machen und die aktuelle
+verkehrliche „Ist-Situation“ des Veranstaltungsortes darzustellen, müssen im nächsten Schritt
+in enger Zusammenarbeit aller Beteiligten die verkehrlichen Anforderungen herausgearbeitet
+werden.
+Besucher, Akteure und sonstige bei der Veranstaltung Anwesende haben spezifische Anforderungen an die verkehrliche Erschließung bzw. Erreichbarkeit des Veranstaltungsortes.
+Diese – manchmal vielleicht auch entgegenlaufenden – Anforderungen müssen erfasst,
+eventuell gegeneinander abgewogen und bewertet werden. Am Ende des Prozesses müssen Entscheidungen, deren Dokumentation und exakte Absprachen zur operativen Umsetzung der Maßnahmen vor Ort einschließlich des erforderlichen Informationsmanagements
+stehen.
+Eine Anforderung dieses Leitfadens ist es, diese Nachfragesituation so zu strukturieren und
+inhaltlich zu unterlegen, dass sie als Checkliste für die Planung der jeweiligen Veranstaltung
+dienen kann und damit eine echte Planungshilfe bietet.
+An dieser Stelle sollte erwähnt werden, dass es durchaus auch (wenige) Veranstaltungen
+gibt, bei denen nur sehr unsichere Mengengerüste, die mehr auf Gerüchten als auf Berechnungen oder Erfahrungswerten beruhen, zur Verfügung stehen. Unter Umständen kann dann
+nur eine angebotsorientierte Planung zum Erfolg führen. Das heißt, alle Aufgabenträger im
+IV und im ÖV stellen ein in jeder Hinsicht optimiertes Angebot zur Verfügung. Es wird also
+nicht mehr auf der Basis eines Mengengerüsts der Nachfrage geplant, sondern in den Bandbreiten eines maximal möglichen Angebots. Aber auch für diesen Fall bietet die Checklisten
+in den „Planungshilfen Teil A“ eine Hilfe für den Weg durch die unterschiedlichen Arbeitsfelder.
+Die Betrachtung der Anforderungen an die verkehrliche Abwicklung einer Veranstaltung
+umfasst die folgenden Themen und Unterthemen:
+• MIV
+- allgemeine Stellplatzkapazität
+- zielgruppenspezifisches Parken
+- Beschickung der Parkplätze
+- Leistungsfähigkeit der Zuführungsrouten zu den Parkplätzen und der Abreiserouten
+• ÖV
+- ÖV-Kapazität
+- Umsteigepunkte und Haltestellen
+- Steigerung der ÖV-Kapazität
+- Shuttleverkehre
+• Radverkehr
+- Radrouten/ -wege
+- Fahrradabstellanlagen
+- „Bike and Ride“
+
+Seite 13 von 79
+
+Leitfaden Veranstaltungsverkehr
+
+Verkehrliche Abwicklung
+
+• Fußgänger
+- Fußwege vom und zum Veranstaltungsgelände
+- Fußwege auf dem Veranstaltungsgelände
+- Aufstell- oder Warteflächen
+• Taxiverkehr
+• besondere Inanspruchnahme von Verkehrsflächen
+• Anwohnerschutz
+• Störfallszenarien
+Die ausgearbeiteten Checklisten befinden sich in den „Planungshilfen Teil A: Checklisten
+Verkehrliche Abwicklung“.
+
+Seite 14 von 79
+
+Leitfaden Veranstaltungsverkehr
+
+3
+
+Projektorganisation
+
+Projektorganisation
+
+Zu Beginn des Planungsprozesses sollten einige Festlegungen zur Projektorganisation getroffen werden:
+• Auflistung der am Projekt beteiligten Ämter, Institutionen und Dienststellen
+• Einberufung einer Koordinierungsstelle und Beschreibung der Aufgaben der Koordinierungsstelle
+• Zusammensetzung von Lenkungs- und Arbeitskreisen
+• Verabredungen zur Verfahrens- und Arbeitsweise in den Lenkungs- und Arbeitskreisen
+• Umfang des Berichtswesen
+• Einrichtung und Pflege einer internetgestützte Informationsplattform
+• Qualitätsmanagement
+Diese Festlegungen können im Protokoll einer „kick-off-Sitzung“ dokumentiert werden. Alternativ dazu kann es sich besonders für die Planung und Vorbereitung von größeren und
+komplexen Veranstaltungen empfehlen, ein kurz gefasstes Projekthandbuch zu entwerfen.
+Das Protokoll bzw. das Regelwerk wird allen Partnern zur Verfügung gestellt und gilt dann
+für die Zeitdauer des Projektes als verabredete Grundlage.
+Es bedarf eines Konsenses, welcher Planungsvorlauf das Projekt benötigt. Es ist unbedingt
+erforderlich, sich frühzeitig auf den Zeitpunkt zum Beginn der Planungen und auf einen möglichst festen Sitzungsturnus zu verabreden. Auch wenn jede Veranstaltung ihre eigene Anforderung hat, sollte hier nach Möglichkeit auf Erfahrungswerte zurückgegriffen werden.
+Keinesfalls sollte der Zeitbedarf unterschätzt werden.
+am Projekt beteiligte Ämter, Institutionen und Dienststellen:
+Unmittelbar am Beginn der Projektarbeit muss die Festlegung der zu beteiligenden Partner
+stehen. Das sinnvolle Bestreben, den Kreis der Beteiligten möglichst überschaubar zu halten, darf keinesfalls dazu führen, dass einzelne Personen vergessen oder übersehen werden. Das gilt auch für diejenigen, die zwar keine planerischen, aber wichtige operative Aufgaben haben.
+Alle Institutionen, die sich mit der Ertüchtigung der Verkehrsinfrastruktur, mit der Verkehrssteuerung und -abwicklung, mit Sicherheitsfragen, mit der Bereitstellung von Verkehrsinformationen und mit Marketingkonzepten befassen, sind genauso wie politische Entscheidungsträger einzubeziehen. Dieser interdisziplinäre Ansatz umfasst den Individualverkehr und den
+öffentlichen Verkehr und gilt sowohl für die lokalen und als auch für die regionalen Aufgabenträger.
+Es empfiehlt sich, die Überlegungen zum Kreis der Beteiligten transparent zu gestalten und
+den Partnern die Möglichkeit zu geben, Wünsche zur Hinzuziehung weiterer Beteiligter zu
+äußern.
+Im Laufe des Projektes sollte der Kreis der Beteiligten überprüft werden. Gegebenenfalls hat
+ein Partner seine Aufgaben erfüllt und kann aus der Projektarbeit ausscheiden. Oder es wird
+im Zuge der voranschreitenden Projektarbeit deutlich, dass ein weiterer Partner zum Beispiel
+zur Bedienung einer kritischen Schnittstelle hinzugezogen werden muss.
+
+Seite 15 von 79
+
+Leitfaden Veranstaltungsverkehr
+
+Projektorganisation
+
+Die beteiligten Partner sollten sich über das Ziel ihrer Arbeit verständigen. Oberstes Ziel ist
+eine reibungslose verkehrliche Abwicklung (IV und ÖV) der Veranstaltung unter Beachtung
+der Sicherheitsbelange. Dieses Ziel kann präzisiert und aufgeschlüsselt werden:
+• Vermeidung von größeren Zeitverlusten und/oder Unannehmlichkeiten für die Besucher
+• umfangreiche Information für die Besucher im Vorfeld
+• gute Wegweisung und Orientierungshilfen für den an- und abreisenden Besucher
+• ggf. besondere Beachtung der Ehrengäste und VIPs
+• möglichst geringe Beeinträchtigung der Nicht-Veranstaltungsverkehre
+Darüber hinaus sollte das Ziel der Nachhaltigkeit der Maßnahmen verfolgt werden. Als weiteres Ziel ist der wirtschaftliche Einsatz von finanziellen und personellen Ressourcen zu nennen.
+Aufbau einer Koordinierungsstelle:
+Ebenfalls zu Beginn der gemeinsamen Arbeit muss geklärt werden, wer die koordinierenden
+Aufgaben übernimmt. Das kann eine am Planungsprozess beteiligte Fachdienststelle sein,
+dazu kann eine bislang nicht beteiligte Dienststelle herangezogen werden oder man bedient
+sich externer Unterstützung.
+Zwischen der Koordinierungsstelle und den übrigen Partnern sollte eine Verabredung auf
+den Umfang der Koordinierungsleistung erfolgen. Die Beteiligten sollten sich an dieser Stelle
+nicht darauf verlassen, dass sich die Zusammenarbeit zwischen Koordinierungsstelle und
+den anderen Partnern „irgendwie einspielen“ wird.
+Anbei einige Stichpunkte zum möglichen Umfang der Arbeiten einer Koordinierungsstelle:
+• fortlaufende und umfassende Geschäftsführung der Koordinierungsstelle,
+• Planungsergebnisse verkehrsträgerübergreifend zusammenführen,
+• Aufdecken von entgegenlaufenden Aktivitäten und Widersprüchen in der Definition des
+(Projekt-) Ziels,
+• Vorschläge für ein Qualitätsmanagement,
+• neue, bislang nicht erkannte oder aufgegriffene Arbeitsfelder identifizieren,
+• rechtzeitig alle am Projekt Beteiligten einbinden,
+• Beachtung von Zuständigkeiten bzw. ggf. die verbindliche Regelung von Zuständigkeiten,
+• Besetzung der Schnittstellen zu weiteren externen Partnern,
+• Förderung der Teamarbeit und der Gesprächsbereitschaft untereinander und Herbeiführung eines ganzheitlichen Planungsverständnisses,
+• Moderation und Interessensausgleich,
+• frühzeitiges Erkennen und Quantifizieren von Risiken und die Beherrschung der Risiken
+durch die Einleitung entsprechender Gegenmaßnahmen unter Beachtung der gegebenen
+Terminsetzung.
+Und:
+• Dokumentation des Projektes in Form von Niederschriften und zusammenfassenden Berichten (s.u.)
+• Betrieb einer internetgestützten Informationsplattform (s.u.).
+
+Seite 16 von 79
+
+Leitfaden Veranstaltungsverkehr
+
+Projektorganisation
+
+Die Koordinierungsstelle ist in diesem Sinn Informationsmittelpunkt zwischen allen Partnern.
+Trotzdem sind alle Beteiligten am Projekt parallel dazu auch selbst dafür verantwortlich, sich
+Informationen zu holen und dafür zu sorgen, dass andere Beteiligte die für sie notwendigen
+Informationen erhalten.
+Koordinierung sollte nicht bedeuten:
+• Übernahme der (inhaltlichen) Einzel-Projektbearbeitung und der Verantwortung
+• Änderung der bisherigen Zuständigkeiten
+• Übernahme der Planungs- und Umsetzungskosten
+In jedem Fall ist die Bereitschaft aller Beteiligten, sich in eine Koordinierung einzufügen, eine
+unbedingte Voraussetzung. Koordinierung darf nicht dominieren, muss aber umfassen und
+zusammenführen (können). Das Ausscheren einzelner Beteiligter läuft dem Gedanken einer
+projektbezogenen Koordinierung nicht nur entgegen sondern würde den Gesamterfolg verhindern.
+Aufbau von Lenkungs- und Arbeitskreisen:
+Lenkungskreise können zwei verschiedene Funktionen wahrnehmen:
+• Entscheidungsträger kommen in regelmäßigen Abständen zusammen und entscheiden
+über die Ergebnisse, die in den Arbeitskreisen vorbereitet wurden.
+• In einem Lenkungskreis sind die Institutionen vertreten, die Querschnittsaufgaben zu erfüllen haben und die in regelmäßigen Abständen zusammenfassend informiert werden
+sollten. Umgekehrt verfügen die Teilnehmer des Lenkungskreises über vielfältige Informationen, die in das Projekt eingespeist werden sollten.
+Ob ein Lenkungskreis gebildet wird und welche Aufgaben dieser Lenkungskreis übernimmt,
+ist projektindividuell zu entscheiden. Aber auch hier gilt, dass Aufgaben und Funktion des
+Lenkungskreises allen Projektbeteiligten bekannt sein sollten.
+In der Regel ist es der Projektarbeit dienlich, wenn sich die Bearbeiter in verschiedenen
+Arbeits- oder Besprechungskreisen organisieren. Ansonsten besteht die Gefahr, dass einzelne Sitzungen überfrachtet werden und/oder einzelne Partner viel Zeit in Besprechungen
+verlieren, weil von einer ganzen Reihe von Tagesordnungspunkten nur ein oder zwei Punkte
+für sie von Relevanz sind.
+Es bietet sich in der Regel an, einen Arbeitskreis für den Individualverkehr und einen Arbeitskreis für den Öffentlichen Verkehr einzurichten. Es ist Aufgabe der Koordinierungsstelle,
+für einen angemessenen Informationsaustausch zu sorgen. In jedem Fall müssen im Zusammenhang mit dem IV und dem ÖV auch
+• (allgemeine) Sicherheitsbelange,
+• die Einspeisung der festgelegten An- und Abreiserouten und weiterer Reiseinformationen
+in die (öffentlichen) Informationsmedien und
+• die operative Umsetzung der (geplanten) Maßnahmen vor Ort während der Veranstaltung/
+Überprüfung und ggf. veranstaltungsbezogene Anpassung der bestehenden Regelprozesse für Störfälle
+behandelt werden. (vgl. Planungshilfen Teil A „Checklisten Verkehrliche Abwicklung“)
+Ob diese weiterführenden Themen in den Arbeitskreisen „IV“ und „ÖV“ behandelt werden,
+oder ob dafür sinnvollerweise weitere IV- und ÖV-übergreifende Arbeitskreise gebildet wer-
+
+Seite 17 von 79
+
+Leitfaden Veranstaltungsverkehr
+
+Projektorganisation
+
+den, ist vom Charakter des Projektes abhängig, sollte aber in jedem Fall möglichst frühzeitig
+entschieden werden.
+In den Arbeitskreisen laufen Informationen, offene Fragen und konkrete Aufträge zusammen,
+hier sollen mögliche Risiken für das Projekt erkannt werden. Es sollte dabei davon ausgegangen werden, dass Informationen mit der notwendigen Sorgfalt behandelt werden, dass in
+einer offenen Atmosphäre Probleme angesprochen werden und dass alle Teilnehmer sich
+konstruktiv an Lösungen beteiligen. Die Beteiligten müssen gebeten werden, Sachstandsinformationen einzuspeisen und sich an den erforderlichen Abstimmungsverfahren zu beteiligen.
+Verfahrens- und Arbeitsweise in den Lenkungs- und Arbeitskreisen:
+Es erleichtert die Terminplanung für alle Beteiligte, wenn gleich zu Beginn ein fester Sitzungsturnus festgelegt wird, d.h. wenn die Besprechungstermine über Monate im Voraus
+feststehen. Durch den Versand der Tagesordnung etwa eine Woche vor der nächsten Besprechung werden die Beteiligten noch einmal an den nächsten anstehenden Termin erinnert.
+Zu jeder Besprechung sollte eine Niederschrift gefertigt werden. Diese Niederschrift ist durch
+die Sitzungsteilnehmer (zu Beginn der nächsten Sitzung) zu genehmigen. Näheres zu diesem Thema: siehe „Berichtswesen“.
+In den Arbeitskreisen sollte anhand und aufbauend auf der Checkliste in den „Planungshilfen
+Teil A“ dieses Leitfadens eine Aufgabenliste fortgeschrieben werden. Die Aufgaben aus der
+Aufgabenliste werden in dem jeweils thematisch zuständigen Arbeitskreis behandelt. Ist noch
+keine abschließende Klärung möglich, kann das Problem oder die Aufgabe im Moment nicht
+gelöst werden oder ergeben sich neue Erkenntnisse, die einen Abschluss der Aufgabe verzögern, dann bleibt die Aufgabe als noch nicht erledigt stehen und wird weiter verfolgt.
+Es bedarf einer Absprache, in welcher Detailtiefe inhaltliche Sachbearbeitung in den Arbeitskreisen erfolgen soll. Es ist durchaus möglich, sich darauf zu verständigen, dass in den
+Arbeitskreisen „nur“ Ergebnisse vorgestellt und abgestimmt werden und Vereinbarungen zu
+den nächsten Arbeitsschritten getroffen werden aber dass eine inhaltliche Sachbearbeitung
+nur in Ausnahmefällen in diesen Sitzungen erfolgen soll. Diese Vereinbarung würde bedeuten, dass der Sitzungsturnus relativ weit gefasst werden kann und dass sich die zuständigen
+Bearbeiter in kleinem Kreis zusätzlich noch zwischen den Terminen abzustimmen haben.
+Wichtig ist, dass man sich in der Zusammenarbeit auf einen rechtzeitigen Abschluss der
+Planungsphase verständigt. Es macht keinen Sinn, neue planerische Konzepte kurz vor der
+Veranstaltung „in die Runde zu werfen“, denn die Planung muss noch von den operativ und
+vor Ort Verantwortlichen aufgegriffen und umgesetzt werden. Wie dieses Ende der Planungsphase zu terminieren ist, hängt von der Art der Veranstaltung ab. Sollen für die bevorstehende Veranstaltung neue technische Systeme installiert werden, ist unbedingt ausreichend Zeit für eine umfassende Testphase einzuplanen.
+Berichtswesen:
+Ziel des Berichtswesens ist vor allem die Sicherstellung eines umfassenden und einheitlichen Informationsstandes von allen Beteiligten und deren Institutionen. Darüber hinaus wird
+die Verbindlichkeit von Absprachen und Beschlüssen erhöht. Außerdem kann durch das Berichtswesen die Rückkopplung von Arbeitsergebnissen zu anderen Beteiligten und Betroffenen unterstützt werden. Dem Berichtswesen kommt damit eine zentrale Rolle im Projekt zu,
+denn es begleitet jede Phase und jeden Schritt der Projektdurchführung.
+
+Seite 18 von 79
+
+Leitfaden Veranstaltungsverkehr
+
+Projektorganisation
+
+Sollte am Beginn des Projektes die Einscheidung zu Gunsten der Einrichtung einer Koordinierungsstelle gefallen sein, wäre das Berichtswesen eine zentrale Aufgabe dieser Koordinierungsstelle.
+Jede Besprechung sollte in einer Niederschrift festgehalten werden. Protokolle sind das
+einzige Mittel, Besprechungen und deren Ergebnisse auch noch Wochen nach der Besprechung für die Teilnehmer und für Dritte verfügbar zu machen. Ob diese Niederschriften in
+Textform oder tabellarisch gestaltet werden, ist nicht von grundsätzlicher Bedeutung. Wichtig
+ist aber, dass sie so verfasst werden, dass die Besprechungsergebnisse auch von Dritten,
+die bei dem Termin nicht anwesend waren, (z.B. politische Entscheidungsträger, …) nachvollzogen werden können. Ein Sitzungsprotokoll sollte innerhalb einer Woche nach dem
+Termin den Projektbeteiligten zur Verfügung gestellt werden.
+Außerdem sollte geprüft werden, ob zusammenfassende (Zwischen-) Berichte erstellt werden sollen, die den (politischen) Entscheidungsträgern und allen Projektbeteiligten zugeleitet
+werden. Wenn solche Berichte geschrieben werden, dann müssen sie den Bearbeitungsstand des Gesamtprojektes widerspiegeln, das heißt, hier werden auch mögliche Risiken
+und eventuell drohende Verzögerungen offen benannt.
+Nach Abschluss der Veranstaltung wird empfohlen, alle erarbeiteten Ergebnisse zu dokumentieren bzw. vorliegende Dokumente zu archivieren, so dass sie zu einem späteren Zeitpunkt erneut abrufbar sind.
+internetgestützte Informationsplattform:
+Für die Planung größerer Veranstaltungen sollte die Einrichtung einer internetgestützten Informationsplattform in Erwägung gezogen werden. Dabei wird im Internet eine Plattform
+eingerichtet, auf der alle Projektdokumente (z.B. Niederschriften, Berichte, allgemeine Projektunterlagen, Pläne,…) abgelegt werden. Die Internet-Plattform kann damit die Rolle einer
+Projektakte erfüllen. Über ein Passwort haben alle Projektbeteiligten Zugang bzw. ein Leserecht.
+Um eine geordnete Struktur auf der Plattform sicherzustellen, muss eine Festlegung getroffen werden, wer befugt ist, neue Dokumente einzustellen. (Für den Fall, dass für das Projekt
+eine Koordinierungsstelle eingesetzt wird, bietet es sich an, auch diese Tätigkeit der Koordinierungsstelle zu übertragen.) Parallel dazu sind alle Projektbeteiligten gebeten, sachdienliche Dokumente zur Verfügung zu stellen, damit sie in die Plattform eingestellt werden können.
+Qualitätsmanagement:
+Basis für eine Erfolgskontrolle für den Ablauf der Veranstaltung ist die Formulierung von Zielen. Auch dies gehört zu den Aufgaben einer Koordinierungsstelle. Beispiele:
+• pünktliche Anreise der Besucher / keine verspäteten Besucher auf Grund von Verkehrsbehinderungen
+• Abschluss der Abreise im Individualverkehr und im öffentlichen Verkehr bis 1 Stunde,
+maximal 1 ½ Stunden nach Ende der Veranstaltung
+Für den Fall, dass die Veranstaltung mehrere Tage dauert, sollten unbedingt am ersten
+Abend / an den ersten Abenden nach Veranstaltungsschluss alle am „operativen Geschäft“
+Beteiligten zu einer Nachbesprechung zusammenkommen. Diese Nachbesprechungen haben drei Ziele:
+• das Erreichen der o.g. Ziele zu überprüfen
+
+Seite 19 von 79
+
+Leitfaden Veranstaltungsverkehr
+
+Projektorganisation
+
+• aus den Erfahrungen des Veranstaltungstages mögliche Verbesserungen für die noch folgenden Veranstaltungstage zu erkennen
+• gegebenenfalls eine gemeinsame und abgestimmte Festlegung zu treffen, was am Abend
+bzw. am nächsten Tag der Presse berichtet werden kann oder soll
+
+Seite 20 von 79
+
+Leitfaden Veranstaltungsverkehr
+
+4
+
+Öffentlichkeitsarbeit
+
+Öffentlichkeitsarbeit
+
+Die Öffentlichkeitsarbeit im Vorfeld und auch während der Veranstaltung kann einen erheblichen Einfluss auf das Verkehrsgeschehen haben. Hierfür ist es allerdings wichtig, dass die
+folgenden Aspekte berücksichtigt werden:
+• keine Weitergabe von falschen oder veralteten Informationen
+• keine Weitergabe von widersprüchlichen Informationen
+• eindeutige Zuständigkeit für die Bereitstellung der Informationsinhalte
+• Klärung der Zuständigkeit für die Erstellung und Verteilung der Informationsmaterialien
+• Erarbeitung eines Zeitplans für die Informationsweitergabe – auch bezogen auf Detailschärfe bzw. Planungsstand
+• Konzept für die Weitergabe aktueller Meldungen bzw. von Änderungen an bereits verteilten Informationen
+• Erkennbarkeit des Bezugs der Informationen zur Veranstaltung, z.B. durch ein einheitliches Logo, Layout etc.
+Zur Gewährleistung dieser Aufgaben muss auch die Öffentlichkeitsarbeit im Rahmen einer
+Veranstaltung entsprechend koordiniert werden. Sofern eine Koordinierungsstelle eingerichtet wird (vgl. Kap. 0) könnte diese auch die Informationsweitergabe im Sinne einer Projektsteuerung koordinieren. Der inhaltliche und formale Input sowie die Erstellung und Verteilung der jeweiligen Informationen obliegt aber weiterhin den einzelnen Partnern / Institutionen.
+In den Checklisten in Kap. 0 wurde bereits die Informationsweitergabe bezogen auf die
+einzelnen Themenschwerpunkte benannt. In der nachfolgenden Tabelle sind diese Informationen bezogen auf die sich für die Nutzung anbietenden Informationsmedien zusammengestellt.
+
+Seite 21 von 79
+
+Öffentlichkeitsarbeit
+
+Leitfaden Veranstaltungsverkehr
+
+Zielgruppen
+
+Handzettel /
+Flyer
+
+Veranstaltungsprogramm
+
+Plakate /
+Aushänge
+
+X
+
+Presse
+
+Internet
+
+Rundfunk
+
+X
+
+X
+
+X
+
+Durchsagen
+
+Zielgruppenspezifische
+Stellplatzbilanz
+
+Allgemeinheit
+Parkplatzbetreiber
+Einweisungspersonal
+VIPs
+Behindertenverbände
+Reisebusunternehmer
+
+X
+
+Beschickungskonzept
+
+Parkplatzbetreiber
+Einweisungspersonal
+
+X
+
+Verkehrsführungskonzept
+An- und Abreiseinfos
+
+Allgemeinheit
+
+X
+
+X
+
+X
+
+X
+
+Haltepunkte / Vorfahrten
+
+Allgemeinheit
+Shuttle- und
+LimousinenService
+Behindertenverbände
+
+X
+
+X
+
+X
+
+X
+
+ÖV-(Sonder)Fahrpläne
+und Umsteigepunkte
+
+Allgemeinheit
+
+X
+
+X
+
+X
+
+X
+
+X
+
+Dokumentation der
+Shuttle-Verkehre
+
+Allgemeinheit
+Shuttle-Betreiber
+
+X
+
+X
+
+X
+
+X
+
+X
+
+Radroutenplanung
+
+Allgemeinheit
+
+X
+
+X
+
+X
+
+X
+
+Fahrradabstellanlagen
+
+Allgemeinheit
+
+X
+
+X
+
+X
+
+X
+
+Bike and Ride
+
+Allgemeinheit
+
+X
+
+X
+
+X
+
+X
+
+X
+
+Fußgängerführungskonzept
+
+Allgemeinheit
+Ordnerpersonal
+Taxifahrer
+ÖV-Personal
+
+X
+
+X
+
+X
+
+X
+
+X
+
+X
+
+Internes Fußgängerführungskonzept
+
+Allgemeinheit
+Ordnerpersonal
+
+X
+
+X
+
+X
+
+X
+
+X
+
+X
+
+Taxiandienungskonzept
+
+Allgemeinheit
+Taxifahrer
+
+X
+
+X
+
+X
+
+X
+
+Inanspruchnahme von
+Verkehrsflächen
+
+Allgemeinheit
+Logistikunternehmer Aufund Abbau
+Anwohner /
+Anlieger
+
+X
+
+X
+
+X
+
+X
+
+X
+
+Anwohnerschutz
+
+Allgemeinheit
+Anwohner /
+Anlieger
+
+X
+
+X
+
+X
+
+X
+
+X
+
+X
+
+X
+
+X
+
+X
+X
+
+Seite 22 von 79
+
+Leitfaden Veranstaltungsverkehr
+
+Planungshilfen
+
+Planungshilfen
+
+Teil A: Checklisten „Verkehrliche Abwicklung“
+Teil B: Planungshinweise
+Teil C: Anregungen – eine fiktive Beispielveranstaltung
+
+Seite 23 von 79
+
+Leitfaden Veranstaltungsverkehr
+
+Teil A:
+
+Checklisten
+
+Checklisten „Verkehrliche Abwicklung“
+
+Die nachfolgenden Checklisten folgen folgendem Schema:
+
+beteiligte Partner:
+
+Die Auflistung der Beteiligten muss für die bevorstehende
+Veranstaltung detailliert werden. Dieser Leitfaden kann sich
+hier nur auf eine allgemeine Benennung beschränken. In
+Kapitel 3 „Projektorganisation“ wird genauer auf die Notwendigkeit, wirklich alle Beteiligten zu erfassen, eingegangen.
+
+Überlegungen / Aufgaben:
+
+Hier wird aufgelistet, welche Fragen in den Arbeitskreisen
+und Besprechungsrunden aufzuwerfen und zu entscheiden
+sind und welche Arbeitsergebnisse dokumentiert werden
+sollten. Viele der hier aufgeführten Aspekte treffen für die jeweils zu betrachtende (Einzel-) Veranstaltung nicht zu. Der
+Bearbeiter sollte aber jeden Punkt überprüfen und dann entscheiden, welche Aufgaben weiterzuverfolgen sind.
+
+Handlungsfelder / Strategien:
+
+In der Spalte „grundsätzliche Überlegungen / Aufgaben“ werden Prüfungen und Entscheidungen abverlangt. Für den
+Fall, dass die Prüfungen nicht positiv ausfallen, sind hier
+Ideen und Vorschläge aufgelistet, wie trotzdem weitergearbeitet werden kann, welche planerischen Auswege und Alternativen sich anbieten könnten.
+
+Nachprüfungen:
+
+Wenn man im Zuge der Bearbeitung auf die o.g. „Handlungsfelder / Strategien“ zurückgreift, sollte man zusätzlich
+zu einer laufenden Rückkopplung zu den „grundsätzlichen
+Überlegungen / Aufgaben“ unbedingt diese Spalte mit den
+„Nachprüfungen“ im Auge behalten. Es besteht ansonsten
+die Gefahr, dass geänderte oder erweiterte Planungsansätze
+und Maßnahmen ungeahnte (neue) Probleme in benachbarten Bereichen schaffen. Die „Nachprüfungen beziehen sich
+dabei immer auf konkrete „Handlungsfelder / Strategien“.
+Beispiel: Nachprüfung „c.“ bezieht sich auf Handlungsfeld /
+Strategie „c)“
+
+Seite 24 von 79
+
+Checklisten
+
+Leitfaden Veranstaltungsverkehr
+
+1.
+
+MIV
+
+1.1 Allgemeine Stellplatzkapazität
+beteiligte Partner:
+ Straßenverkehrsbehörden, Ordnungsämter
+ Straßen- oder Tiefbauämter, ggf. Grünflächenämter
+ Aufgabenträger im ÖV (bei P+R – Anlagen)
+ Betreiber Veranstaltungsort (Gebäude oder Gelände)
+ Veranstalter
+ Polizei
+ Privatpersonen / Firmen im Besitz potentieller Parkflächen
+grundsätzliche Überlegungen /
+Handlungsfelder / Strategien
+Aufgaben
+Ermittlung und Überprüfung der
+Stellplatzkapazität:
+¾ direkt am Veranstaltungsort
+¾ im Umfeld des Veranstaltungsortes
+¾ im öffentlichen Straßenraum
+¾ auf Grünflächen
+¾ in Tiefgaragen oder Parkhäusern
+¾ befestigte oder unbefestigte
+Stellplätze
+¾ Stellplätze auf Privatgelände
+(z.B.: Messeparkplatz, Supermärkte, etc.)
+¾ Flächenverfügbarkeit
+
+a) Optimierung der Beparkungsdichte
+b) Einsatz von Ordnerpersonal
+c) Befestigung von Parkbereichen
+d) Beleuchtung
+e) Vergrößerung der Parkbereiche
+f) Ausweisung weiterer Parkbereiche im Umfeld des Veranstaltungsortes
+g) Einbeziehung von P+R –
+Anlagen
+h) Maßnahmen zur Erhöhung
+des Besetzungsgrads
+i) Reduzierung der Stellplatzkapazität / Aufgabe bestehender Parkbereiche
+j) Maßnahmen zur Veränderung
+des Modal Split zugunsten
+des ÖV
+
+Nachprüfungen
+a. siehe Anlagen
+b. Finanzierung / Verfügbarkeit des
+Personals
+c. Finanzierung / Umweltschutzkriterien
+d. siehe c.
+e. siehe c.
+f. siehe c. / Nutzungsrechte
+g. Nutzung des P+R – Platzes von
+nicht-veranstaltungsbezogenem
+Verkehr / ÖV-Kapazität
+h. Parkgebühren / Werbung für
+Fahrgemeinschaften („Pendlernetz“)
+i. alternative Flächenutzung? /
+Kommunikation gegenüber (ortskundigen) Besuchern
+j. siehe ÖV
+
+Erstellung einer allgemeinen Stellplatzbilanz
+keine externe Informationsbereitstellung
+
+Seite 25 von 79
+
+Checklisten
+
+Leitfaden Veranstaltungsverkehr
+
+1.
+
+MIV
+
+1.2 Zielgruppenspezifisches Parken
+beteiligte Partner:
+ Straßenverkehrsbehörden, Ordnungsämter, Verkehrsleitzentralen
+ Straßen- oder Tiefbauämter, ggf. Grünflächenämter
+ Betreiber Veranstaltungsort (Gebäude oder Gelände)
+ Veranstalter
+ Parkplatzbetreiber
+ Polizei
+grundsätzliche Überlegungen /
+Handlungsfelder / Strategien
+Aufgaben
+Prüfung der Eignung der Parkbereiche für:
+¾ VIPs
+¾ Mobilitätsbehinderte
+¾ sonstige zu trennende Besuchergruppen („Fantrennung“)
+¾ Frauen- und Familienparkplätze
+¾ übrige Besucher
+Reisebusse
+¾ Wohnmobile / Camper
+¾ Beschäftigte
+Kriterien:
+¾ Kapazität
+¾ Beschaffenheit (z.B.: Befestigung)
+¾ Ausstattung (z.B.: WCs, Abfallbehälter, etc.)
+¾ Lage / Wegebeziehung zum
+Veranstaltungsort
+¾ Flächenverfügbarkeit
+Erstellung einer zielgruppenspezifischen Stellplatzbilanz
+Zusammenstellung der Zuordnung
+der Besuchergruppen auf die einzelnen Parkbereiche
+Informationsbereitstellung für:
+• Parkplatz-Einweisungspersonal
+• Besucher
+• Öffentlichkeit / Presse / Medien
+
+a) Befestigung einzelner Parkbereiche und Fußwege
+b) verbesserte Ausstattung
+einzelner Parkbereiche
+c) zielgruppenspezifische Wegweisung zum Veranstaltungsort und zurück
+d) Reduzierung des zielgruppenspezifischen Stellplatzbedarfs
+e) Reduzierung der zielgruppenspezifischen Anforderungen
+und Ansprüche an die Parkbereiche
+f) ausschließliche zielgruppenspezifische Nutzung der
+Parkbereiche
+
+Nachprüfungen
+a. Finanzierung / Umweltschutzkriterien
+b. Finanzierung / Gestaltung und
+Design
+c. siehe b.
+d. Parkgebühren / Werbung für
+Fahrgemeinschaften („Pendlernetz“) / siehe ÖV
+e. Art der Veranstaltung / Information an die Besucher
+f. Durchsetzbarkeit einer strikten
+Zuordnung / Kontrollmaßnahmen
+und -aufwand
+
+Seite 26 von 79
+
+Checklisten
+
+Leitfaden Veranstaltungsverkehr
+
+1.
+
+MIV
+
+1.3 Beschickung der Parkplätze
+beteiligte Partner:
+ Straßenverkehrsbehörden, Ordnungsämter, Verkehrsleitzentralen
+ Betreiber Veranstaltungsort (Gebäude oder Gelände)
+ Parkplatzbetreiber
+ Polizei
+grundsätzliche Überlegungen /
+Handlungsfelder / Strategien
+Aufgaben
+Prüfung der Fahrzeugaufstellung
+und -abfertigung und Entleerung der
+Parkplätze:
+¾ Stellplatzkapazität / Dichte der
+Beparkung
+¾ Schnelligkeit bei der Befüllung /
+Vermeidung von Rückstaus in
+den fließenden Verkehr
+¾ zügige Entleerung / Wiedereinfädelung in den fließenden Verkehr
+¾ Begegnungsverkehr (paralleler
+An- und Abreiseverkehr)
+¾ Wiederbefüllungsmöglichkeiten
+zwischenzeitlich freigewordener
+Stellplätze
+¾ Einfahrtskontrollen (ggf. Kontrolle
+der Zufahrtsberechtigung, Entrichtung der Parkgebühren, ggf.
+Sicherheitskontrollen)
+¾ Komfort für Fahrer
+Festlegung der Abfolge der Öffnung
+und Beschickung der einzelnen
+Parkplätze / Erstellung eines Beschickungskonzepts
+Informationsbereitstellung für:
+• Parkplatz-Einweisungspersonal
+
+a) Optimierung der Fahrzeugaufstellung
+b) Optimierung in der Abfolge
+Zufahrtskontrolle > Abkassieren > Fahrzeugaufstellung
+c) Absperrungen („Flatterband“)
+auf den Parkplätzen als Beparkungshilfe / Anbringen von
+Markierungen
+d) Einsatz von ParkplatzEinweisungspersonal
+e) Wegweisung zurück zum
+öffentlichen Straßennetz
+f) Erweiterung / Vermehrung der
+Parkplatzzu- oder -Ausfahrten
+g) Reduzierung der Anzahl der
+Parkplatzzu- oder -Ausfahrten
+
+Nachprüfungen
+a. siehe Anlage
+b. siehe Anlage / Vorgabe an
+Parkplatzbetreiber, wie lange der
+Abfertigungsprozess maximal
+dauern darf
+c. Finanzierung / Verfügbarkeit von
+Einweisungspersonal
+d. siehe c. / Schulungsmaßnahmen
+e. Finanzierung
+f. siehe e. / Flächenverfügbarkeit
+g. Es ist zu prüfen, ob eine Reduzierung der Anzahl der Zu- oder
+Ausfahrten die Organisation auf
+dem Parkplatz erleichtert
+und/oder evtl. bestehende Orientierungsprobleme auf den zuführenden Straßen vermeidet.
+
+Seite 27 von 79
+
+Checklisten
+
+Leitfaden Veranstaltungsverkehr
+
+1.
+
+MIV
+
+1.4 Leistungsfähigkeit der Zuführungsrouten zu den Parkplätzen
+und der Abreiserouten
+beteiligte Partner:
+ Straßenverkehrsbehörden, Ordnungsämter, Verkehrsleitzentralen
+ Straßen- oder Tiefbauämter, ggf. Grünflächenämter
+ Polizei
+ Feuerwehr und Rettungsdienste
+grundsätzliche Überlegungen /
+Handlungsfelder / Strategien
+Aufgaben
+Darstellung der zeitlichen und räumlichen Verkehrsüberlagerungen
+zusätzlich zum Veranstaltungsverkehr:
+• sonstiger Verkehr (bes. Morgenund Abendspitzenstunde)
+• andere Veranstaltungen
+Abschätzung der Leistungsfähigkeit
+der Zuführungs- und Abreiserouten:
+¾ streckenbezogene Leistungsfähigkeitsbetrachtung
+¾ Leistungsfähigkeit der Knotenpunkte
+¾ Leistungsfähigkeit der Parkplatzzufahrten
+
+a) Infrastruktur Ausbaumaßnahmen
+b) keine Aufbruchgenehmigung /
+keine Baustellen im öffentlichen Straßenraum
+c) Verkehrsregelung durch
+Polizeikräfte
+d) dynamische Straßenraumfreigabe / Wechselspursignalisierung
+e) verkehrsabhängige Signalsteuerung
+f) dynamische Wegweisung /
+Wechselwegweisung
+g) Parkleitsystem
+h) Änderung in der zielgruppenspezifischen Stellplatzzuordnung
+i) Verlagerung der nichtveranstaltungsbezogenen
+Verkehre
+j) Ausdehnung / des An- und
+Abreisezeitraums
+k) Verlagerung von Besucherverkehr zum ÖV
+
+Nachprüfungen
+
+a. Flächenverfügbarkeit / Planungsund Baurecht / Finanzierung
+b. Abstimmung mit den Gewerken
+c. Verfügbarkeit des Personals /
+Finanzierung
+d. Finanzierung / sonstiger Verkehrsablauf
+e. siehe d.
+f. siehe d. / Kommunikation gegenüber (ortskundigen) Besuchern
+g. siehe f.
+h. siehe zielgruppenspezifische
+Stellplatzzuordnung
+i. Kommunikation gegenüber
+(ortskundigen) Verkehrsteilnehmern / frühzeitige Information
+j. Vor- und Nachveranstaltungen
+auf dem Veranstaltungsgelände /
+„absichtlich“ längerer Fußweg
+vom Veranstaltungsgelände zum
+Parkbereich
+k. siehe ÖV
+
+Erstellung eines Verkehrsführungskonzepts
+Erstellung von An- und Abreiseinformationen und -plänen
+Informationsbereitstellung für:
+• Besucher
+• Öffentlichkeit / Presse / Medien
+
+Seite 28 von 79
+
+Checklisten
+
+Leitfaden Veranstaltungsverkehr
+
+1.
+
+MIV
+
+1.5 Haltepunkte / Vorfahrten (Drop-Off / Pick-Up Bereiche)
+beteiligte Partner:
+ Straßenverkehrsbehörden, Ordnungsämter, Verkehrsleitzentralen
+ Straßen- oder Tiefbauämter, ggf. Grünflächenämter
+ Betreiber Veranstaltungsort (Gebäude oder Gelände)
+ Veranstalter
+ Polizei
+grundsätzliche Überlegungen /
+Handlungsfelder / Strategien
+Aufgaben
+Darstellung der Drop-Off / Pick-Up
+Bereiche
+• (Privat-) Pkw
+• Limousinen-Service
+Prüfung der Halteplätze bzw. Vorfahrten hinsichtlich:
+¾ Kapazität
+¾ Flächenverfügbarkeit
+¾ Abfertigung der Fahrzeuge /
+Optimierung der Organisation
+¾ Sicherheit (bes. LimousinenService)
+¾ Zustand der Flächen / Ausstattung der Halteplätze und Vorfahrten
+¾ Aufstellflächen für wartende
+Besucher
+¾ Entfernung zu Ein-/ Ausgängen
+¾ Wegweisung
+¾ Freihaltung der Halteplätze und
+Vorfahrten von Fremdnutzung
+¾ Auswirkungen auf den fließenden
+Verkehr / Rückstau bei der Einfahrt in den Halteplatz oder die
+Vorfahrt
+¾ Wiedereinfädelung „abgewiesener“ Fahrzeuge in den fließenden
+Verkehr
+¾ Behinderungen des fließenden
+Verkehrs / Einfädelung bei der
+Ausfahrt
+Dokumentation der Haltepunkte /
+Vorfahrten (Drop-Off / Pick-Up
+Bereiche)
+Informationsbereitstellung für:
+• Shuttle- / Limousinen-Service
+• Besucher
+• Öffentlichkeit / Presse / Medien
+
+a) verbesserte Ausstattung der
+Halteplätze und Vorfahrten
+(z.B.: Befestigung, Beleuchtung, Witterungsschutz, etc.)
+b) Einrichtung zusätzlicher
+Halteplätze / Vorfahrten
+c) Vergrößerung bestehender
+Plätze
+d) Verlagerung bestehender
+Halteplätze / Vorfahrten
+e) Wegweisung zum Eingang
+des Veranstaltungsgeländes
+und zurück
+f) Regularien (z.B.: Zufahrtskontrollen, Wiederaufnahme der
+Besucher nur nach vorheriger
+Anforderung über Funk oder
+Handy, maximale Standzeit,
+etc.)
+g) Einsatz von Ordnungskräften /
+Polizei
+h) zeitliche Entzerrung der Anbzw. Abreise
+i) Reduzierung des Verkehrsaufkommens
+
+Nachprüfungen
+
+a. Finanzierung / Umweltschutzkriterien
+b. siehe a.
+c. siehe a.
+d. siehe a. / alternative Flächenutzung? / Kommunikation gegenüber (ortskundigen) Fahrern
+e. Finanzierung / Design und Gestaltung
+f. Kommunikation gegenüber
+(ortskundigen) Fahrern / Durchsetzbarkeit der Regularien
+g. Verfügbarkeit des Personals /
+Finanzierung
+h. Vor- oder Nachveranstaltungen
+auf dem Veranstaltungsgelände
+i. frühzeitige Kommunikation,
+ausschließlich für welchen Personenkreis Halteplätze oder Vorfahrten zur Verfügung stehen
+
+Seite 29 von 79
+
+Checklisten
+
+Leitfaden Veranstaltungsverkehr
+
+2.
+
+ÖV
+
+2.1 ÖV-Kapazität
+beteiligte Partner:
+ Straßenverkehrsbehörden, Ordnungsämter, Verkehrsleitzentralen
+ Straßen- oder Tiefbauämter, ggf. Grünflächenämter
+ Aufgabenträger im ÖV
+ Polizei (ggf. auch Bundespolizei)
+grundsätzliche Überlegungen /
+Handlungsfelder / Strategien
+Aufgaben
+Darstellung der Verkehrsüberlagerungen zusätzlich zum Veranstaltungsverkehr:
+• Normalverkehr (bes. Morgenund Abendspitzenstunde)
+• andere Veranstaltungen
+Prüfung der Kapazitäten im ÖV:
+¾ einzelne Linien der unterschiedlichen ÖV-Verkehrsmittel
+¾ Wegeketten (direkt / mit Umstieg
+/ P+R)
+¾ Anschlussmöglichkeiten
+¾ einzelne Zeitabschnitte der der
+An- und Abreise / Zeitliche Verteilung der An- und Abreise
+¾ „Spitzenstunde“
+unter Berücksichtigung der Zielgruppen:
+¾ Mobilitätsbehinderte
+¾ ggf. zu trennende Besuchergruppen (z.B. "Fantrennung")
+¾ übrige Besucher
+¾ Beschäftigte
+
+a) Taktverdichtung
+b) Ausdehnung der Betriebszeiten / Nachtverkehre
+c) Einrichtung zusätzlicher
+Sonderverkehre
+d) Zusätzliche Halte sonst durchfahrenden Züge oder Linienverlängerungen
+e) Einsatz von Langzügen /
+Doppeltraktionen
+f) Shuttlebus Angebot
+g) ÖV-Bevorrechtigung an
+Knotenpunkten
+h) Einrichtung von Busspuren
+i) Ausdehnung des An- und
+Abreisezeitraums
+j) Verlagerung auf andere ÖVVerkehrsmittel (z.B. Verlagerung von Straßenbahn auf SBahn)
+k) Verlagerung von Besucherverkehr zum MIV / Erweiterung des Parkplatzangebots
+
+Nachprüfungen
+
+a. Bestellung / Finanzierung /
+Verfügbarkeit der Verkehrsmittel
+/ Verfügbarkeit des Personals /
+freie Kapazitäten auf den Trassen
+b. siehe a.
+c. siehe a.
+d. siehe a.
+e. siehe a. / Ausbauzustand der
+Haltestellen, erforderliche Bahnsteiglänge
+f. Bestellung / Finanzierung /
+Verfügbarkeit der Verkehrsmittel
+g. Finanzierung / Verträglichkeit mit
+dem MIV
+h. siehe f.
+i. Vor- oder Nachveranstaltungen
+auf dem Veranstaltungsgelände /
+„absichtlich“ längerer Fußweg
+vom Veranstaltungsgelände zur
+ÖV-Haltestelle
+j. Informations- und Werbemaßnahmen / Verfügbarkeit der Verkehrsmittel
+k. Leistungsfähigkeit im MIV
+
+Erstellung eines ÖV-Mengengerüsts
+Fahrplangestaltung / Informationsmaterial
+Informationsbereitstellung:
+• Fahrgäste / Besucher
+• Öffentlichkeit / Presse / Medien
+
+Seite 30 von 79
+
+Checklisten
+
+Leitfaden Veranstaltungsverkehr
+
+2.
+
+ÖV
+
+2.2 Umsteigepunkte und Haltestellen
+beteiligte Partner:
+ Straßenverkehrsbehörden, Ordnungsämter
+ Straßen- oder Tiefbauämter, ggf. Grünflächenämter
+ Aufgabenträger im ÖV
+ Polizei ( ggf. auch Bundespolizei)
+grundsätzliche Überlegungen /
+Handlungsfelder / Strategien
+Aufgaben
+Darstellung der Verkehrsüberlagerungen zusätzlich zum Veranstaltungsverkehr:
+• Normalverkehr (bes. Morgenund Abendspitzenstunde)
+• andere Veranstaltungen
+Abschätzung der Leistungsfähigkeit a) ausreichend dichte Taktfolge
+der Verkehrsmittel
+der Haltestellen und Umsteigpunkte
+b) Verlagerung von nichthinsichtlich:
+veranstaltungsbezogenen
+¾ Zu- und Abgänge an den HalteVerkehren auf andere ÖVstellen
+Linien oder Haltestellen
+¾ getrennte Wege für ggf. zu
+c) Verlagerung von Umsteigetrennende Besuchergruppen
+vorgängen auf andere Halte(z.B. "Fantrennung")
+stellen
+¾ Fußwege zwischen Aus- und
+d) Verlegung von Haltestellen
+Einstiegspunkten an Umsteige) Ergänzung von Haltestellen
+punkten
+im Linienbetrieb
+¾ Aufstellflächen für wartende
+f) Sicherstellung des freien
+Fahrgäste
+Abgangs der Besucher von
+¾ Abfertigung der Fahrgäste
+den ÖV-Haltestellen
+¾ Anschlusskapazität und g) betriebliche Regelungen
+sicherung an Umsteigpunkten
+(langsame Einfahrt in Halte¾ Abfertigung der Fahrzeuge
+stellen, Anordnung zur Durch¾ Auswirkungen auf den fließenden
+fahrt ohne Halt, etc.)
+Verkehr bei Haltestellenaufenth) Ausbaumaßnahmen an ÖVhalt
+Haltestellen einschl. Signali¾ Behinderungen des fließenden
+sierungsmaßnahmen
+Verkehrs bei Ausfahrt aus der
+i) (veranstaltungsbezogene
+Haltestelle
+temporäre) Wegweisung / In¾ Freihaltung der ÖV-Haltestellen
+formationstafeln
+von Fremdnutzung
+j) Einsatz von Ordnungskräften /
+¾ Anzahl Fahrkartenautomaten /
+(Bundes-) Polizei
+sonstige Möglichkeiten zum
+k) Ausdehnung des An- und
+Fahrkartenkauf
+Abreisezeitraums
+¾ Fahrgastinformation
+
+Nachprüfungen
+
+a. Finanzierung / Fahrzeugverfügbarkeit / freie Trassenkapazitäten
+b. Kommunikation gegenüber
+(ortskundigen) Fahrgästen / sehr
+frühzeitige Informationsmaßnahmen (Flyer, Internet, Handzettel, Aushänge)
+c. Kommunikation gegenüber
+(ortskundigen) Besuchern / genaue „Vorgaben“ zur Wegekette /
+Prüfung der Leistungsfähigkeit
+der alternativen Umsteigestellen
+d. siehe b. / Flächenverfügbarkeit
+e. siehe d.
+f. Freihalten der Ab- und Ausgänge
+/ Abschluss aller Baumaßnahmen / (Sicherheits-) Kontrollpunkte erst in ausreichendem
+Abstand einrichten
+g. aktuelle Reisendeninformation
+vor Ort / Durchsagen
+h. Finanzierung / Flächenverfügbarkeit
+i. Finanzierung / ggf. Verwendung
+des Veranstaltungslogos
+j. Personalverfügbarkeit/Finanzierung
+k. Vor- oder Nachveranstaltungen
+auf Veranstaltungsgelände / „absichtlich“ längerer Fußweg zur
+ÖV-Haltestelle
+
+Dokumentation der "Umsteigepunkte
+und Haltestellen"
+Informationsbereitstellung für:
+• Fahrgäste / Besucher
+• Öffentlichkeit / Presse / Medien
+
+Seite 31 von 79
+
+Checklisten
+
+Leitfaden Veranstaltungsverkehr
+
+2.
+
+ÖV
+
+2.3 Steigerung der ÖV-Akzeptanz
+(Veränderung des Modal Split zu Gunsten des ÖV)
+beteiligte Partner:
+ Straßenverkehrsbehörden, Ordnungsämter, Verkehrsleitzentralen
+ Aufgabenträger im ÖV
+ Betreiber Veranstaltungsort (Gebäude oder Gelände)
+ Veranstalter
+grundsätzliche Überlegungen /
+Handlungsfelder / Strategien
+Aufgaben
+Motivationen zur Erhöhung ÖV:
+¾ geringe Parkplatzkapazitäten
+¾ umweltpolitische Überlegungen
+¾ Sicherheitskriterien
+
+a) Kombiticket
+b) „Werbemaßnahmen“ für das
+Kombiticket
+c) verbesserte Ausstattung der
+Haltestellen (WCs, Witterungsschutz, Sitzgelegenheiten, Rolltreppen, Aufzüge,
+etc.)
+d) Sauberkeit an den Haltestellen
+e) Serviceleistungen (z.B. Fahrgastbetreuung, Gepäckaufbewahrung, etc.)
+f) großzügiges ÖV-Angebot
+(z.B. dichte Taktfolge, Nachtverkehre, Sitzplatzangebot,
+etc.)
+g) Gestaltung der An- und Abreise als besonderen Teil des
+Events (z.B. Einsatz besonderer Züge, Kombination von
+Fahrplangestaltung und Tourismuswerbung und -aktionen,
+etc.)
+h) hohe Parkplatzgebühren
+
+Nachprüfungen
+a. Finanzierung
+b. siehe a. / Gestaltung des Tickets
+(„Sammlerwert“) / Vertrieb im
+Vorverkauf / Kombiticket als Bestandteil der Werbekampagne für
+die Veranstaltung
+c. Finanzierung
+d. siehe c.
+e. siehe c. / Verfügbarkeit des
+Personals
+f. siehe c. / Verfügbarkeit der
+Fahrzeuge / freie Kapazitäten auf
+den Trassen
+g. Finanzierung, Hinzuziehung von
+Tourismus-Fachleuten
+h. Gefahr der Verlagerung des
+ruhenden Verkehrs in umliegende Straßen / Attraktivitätsverlust
+der Veranstaltung
+
+Dokumentation der Maßnahmen
+Informationsbereitstellung für:
+• Fahrgäste / Besucher
+• Öffentlichkeit / Presse / Medien
+
+Seite 32 von 79
+
+Checklisten
+
+Leitfaden Veranstaltungsverkehr
+
+2.
+
+ÖV
+
+2.4 Shuttle-Verkehr
+beteiligte Partner:
+ Straßenverkehrsbehörden, Ordnungsämter, Verkehrsleitzentralen
+ Straßen- oder Tiefbauämter, ggf. Grünflächenämter
+ Aufgabenträger im ÖV
+ Betreiber Veranstaltungsort (Gebäude oder Gelände)
+ Veranstalter
+ Polizei (ggf. auch Bundespolizei)
+grundsätzliche Überlegungen /
+Handlungsfelder / Strategien
+Aufgaben
+
+Nachprüfungen
+
+Darstellung der Shuttleverkehre
+• P+R – Shuttle
+• Shuttlebusse von / zu Verkehrsknoten (z.B.: Bahnhöfe, etc.)
+• Shuttlebusse für spez. Besuchergruppen (z.B.: VIP, etc.)
+• Shuttle-Busse zwischen verschiedenen Veranstaltungsorten
+Prüfung der Shuttlebus-Haltestellen
+bzw. Vorfahrten hinsichtlich:
+¾ Kapazität
+¾ Abfertigung der Shuttlebusse /
+Optimierung der Organisation
+¾ Flächenverfügbarkeit
+¾ Aufstellflächen für wartende
+Fahrgäste
+¾ Entfernung zu Ein- bzw. Ausgängen
+¾ Vollständigkeit der Wegweisung
+¾ Ausstattung der ShuttlebusHaltestellen (z.B.: Witterungsschutz, Sitzgelegenheiten, etc.)
+¾ Auswirkungen auf den fließenden
+Verkehr bei Haltestellenaufenthalt
+¾ Behinderungen des fließenden
+Verkehrs bei Ausfahrt aus der
+Haltestelle
+¾ Freihaltung der ShuttlebusHaltestellen von Fremdnutzung
+
+a) Mitbenutzung von ÖVHaltestellen für Shuttlebusse
+b) verbesserte Ausstattung
+c) Einrichtung zusätzlicher
+Shuttlebus-Halteplätze / Vorfahrten
+d) Aufweitung bestehender
+Plätze / Befestigung weiterer
+Flächen
+e) Einrichtung separater Aufstellund Nachrückerplätzen
+f) Verlagerung bestehender
+Shuttlebus-Halteplätze / Vorfahrten
+g) Wegweisung zum Eingang
+des Veranstaltungsgeländes
+und zurück
+h) Regularien (z.B.: Zufahrtskontrollen, Wiederaufnahme der
+Fahrgäste nur nach vorheriger
+Anforderung über Funk oder
+Handy, max. Standzeit, etc.)
+i) besondere Verkehrsführung
+(nur) für Shuttlebusse
+j) Signalisierungsmaßnahmen
+k) Einsatz von Ordnungskräften /
+Polizei
+l) zeitliche Entzerrung der Anbzw. Abreise
+m) Reduzierung des ShuttlebusAufkommens
+
+a. Sicherstellung der freien Zufahrt
+der fahrplanmäßigen ÖVVerkehrsmittel
+b. Finanzierung
+c. siehe b. / Umweltschutzkriterien
+d. siehe c.
+e. siehe c. / logistischer Aufwand
+f. siehe c. / alternative Flächenutzung? / Kommunikation gegenüber (ortskundigen) Fahrerpersonal
+g. Finanzierung / Design und Gestaltung
+h. Kommunikation mit den Shuttlebus-Diensten / Durchsetzbarkeit
+der Regularien
+i. ggf. Kontrollaufwand
+j. Finanzierung / Verträglichkeit mit
+dem MIV
+k. Verfügbarkeit des Personals /
+Finanzierung
+l. Vor- oder Nachveranstaltungen
+auf dem Veranstaltungsgelände /
+„absichtlich“ längerer Fußweg
+vom Veranstaltungsgelände zur
+Shuttlebus-Haltestelle
+m. frühzeitige Kommunikation,
+ausschließlich für welchen Personenkreis ShuttlebusHalteplätze oder Vorfahrten zur
+Verfügung stehen
+
+Dokumentation der Shuttle-Verkehre
+Informationsbereitstellung für:
+• Shuttlebus-Dienste
+• Fahrgäste / Besucher
+• Öffentlichkeit / Presse / Medien
+
+Seite 33 von 79
+
+Checklisten
+
+Leitfaden Veranstaltungsverkehr
+
+3.
+
+Radverkehr
+
+3.1 Radrouten/-weg
+beteiligte Partner:
+ Straßenverkehrsbehörden, Ordnungsämter
+ Straßen- oder Tiefbauämter, ggf. Grünflächenämter
+ ggf. kommunaler Fahrradbeauftragter
+ Betreiber Veranstaltungsort (Gebäude oder Gelände)
+ Veranstalter
+ Polizei
+grundsätzliche Überlegungen /
+Handlungsfelder / Strategien
+Aufgaben
+Einschätzungen zum Fahrradaufkommen:
+• Wann werden wo welche Fahrradverkehre erwartet?
+Prüfung der entsprechenden Rada) Freischneiden der Radwege /
+verkehrsrouten oder Teilnetze
+Zurückschneiden von Gehinsichtlich:
+büsch u.ä.
+¾ Leistungsfähigkeit
+b) Befestigung vorhandener
+¾ Verkehrssicherheit
+Radwege
+¾ Komfort / Qualität / Attraktivität
+c) Installation (neuer) Beleuch¾ soziale Sicherheit
+tung
+d) Anbringen / Vervollständigung
+der Wegweisung / Beschilderung
+e) Neuplanung und Neuanlage
+von Radwegen
+f) alternative Radwegeführung /
+Änderung der Radwegeführung
+g) Aufgabe / Nicht-Nutzung
+einzelner Radwege
+h) Einrichtung spezieller Serviceangebote
+i) Einsatz von Ordnungskräften /
+Polizei
+Dokumentation der veranstaltungsbezogenen Radroutenplanung
+Informationsbereitstellung für:
+• Besucher
+• Öffentlichkeit / Presse / Medien
+
+Nachprüfungen
+
+a.
+b.
+c.
+d.
+e.
+f.
+g.
+h.
+i.
+
+Umweltschutzkriterien
+siehe a. / Finanzierung
+siehe a. / Design und Gestaltung
+Finanzierung / Design und Gestaltung
+Planungs- und Baurecht / Finanzierung
+siehe e. / Kommunikation gegenüber (ortskundigen) Besuchern
+alternative Flächennutzung? /
+Kommunikation gegenüber (ortskundigen) Besuchern
+Finanzierung / Verantwortliche
+für Betrieb und Unterhaltung
+Verfügbarkeit des Personals /
+Finanzierung
+
+Seite 34 von 79
+
+Checklisten
+
+Leitfaden Veranstaltungsverkehr
+
+3.
+
+Radverkehr
+
+3.2 Fahrradabstellanlagen
+beteiligte Partner:
+ Straßenverkehrsbehörden, Ordnungsämter
+ Straßen- oder Tiefbauämter, ggf. Grünflächenämter
+ ggf. kommunaler Fahrradbeauftragter
+ Betreiber Veranstaltungsort (Gebäude oder Gelände)
+ Veranstalter
+ Polizei
+grundsätzliche Überlegungen /
+Handlungsfelder / Strategien
+Aufgaben
+Einschätzungen zum Fahrradaufkommen:
+• Wie viele Fahrräder werden
+erwartet?
+• Wo sind Fahrradabstellanlagen
+erforderlich?
+Prüfung der Fahrradabstellanlagen
+hinsichtlich:
+¾ Kapazität
+¾ Flächenverfügbarkeit
+¾ Ausstattung der Abstellanlagen
+(z.B.: Anschlussmöglichkeiten/
+Diebstahlschutz, Witterungsschutz, WCs, etc.)
+¾ Bewachung
+¾ Serviceeinrichtungen
+
+a) Erweiterung vorhandener
+Fahrradabstellanlagen
+b) Verbesserung der Ausstattung vorhandener Fahrradabstellanlagen
+c) Einrichtung neuer / zusätzlicher Fahrradabstellanlagen
+d) Einsatz von Ordnungspersonal / Polizei
+e) Reduzierung der Anforderungen an Fahrradabstellanlagen
+f) besondere Serviceangebote
+g) Aufgabe bisheriger Fahrradabstellanlagen
+
+Nachprüfungen
+
+a. Finanzierung / Umweltschutzkriterien
+b. siehe a. / Design und Gestaltung
+c. siehe a. / erneute Prüfung auf
+Eignung und ggf. weitere Maßnahmen
+d. Verfügbarkeit des Personals /
+Finanzierung
+e. Art / Typ der Veranstaltung
+f. Finanzierung / Verantwortliche
+für Betrieb und Unterhaltung
+g. alternative Flächennutzung? /
+Kommunikation gegenüber (ortskundigen) Besuchern
+
+Dokumentation der Fahrradabstellanlagen
+Informationsbereitstellung für:
+• Besucher
+• Öffentlichkeit / Presse / Medien
+
+Seite 35 von 79
+
+Checklisten
+
+Leitfaden Veranstaltungsverkehr
+
+3.
+
+Radverkehr
+
+3.3 Bike and Ride
+beteiligte Partner:
+ Straßenverkehrsbehörden, Ordnungsämter
+ Straßen- oder Tiefbauämter, ggf. Grünflächenämter
+ Aufgabenträger im ÖV
+ Betreiber Veranstaltungsort (Gebäude oder Gelände)
+ Veranstalter
+ Polizei
+grundsätzliche Überlegungen /
+Handlungsfelder / Strategien
+Aufgaben
+Einschätzung:
+• erhöhtes "Bike and Ride" Aufkommen erwartet
+Prüfung der "Bike and Ride" Möglichkeiten hinsichtlich:
+¾ Erreichbarkeit
+¾ Leistungsfähigkeit
+¾ Komfort / Qualität / Attraktivität
+¾ Ticketing
+
+a) Einsatz von Sonderverkehren
+b) Erweiterung der Fahrradmitnahmemöglichkeit in den Verkehrsmitteln des ÖV
+c) Kostenlose / günstige Fahrradmitnahmemöglichkeiten
+d) besondere Serviceangebote
+e) Fahrradabstellmöglichkeiten
+an ÖV-Haltestellen
+
+Nachprüfungen
+
+a. Finanzierung / Verfügbarkeit
+geeigneter Fahrzeuge
+b. siehe a. / Auslastungsgrad der
+Verkehrsmittel
+c. siehe b.
+d. Finanzierung / Verantwortliche
+für Betrieb und Unterhaltung
+e. siehe d.
+
+Dokumentation des "Bike and Ride"
+Angebots
+Informationsbereitstellung für:
+• Besucher
+• Öffentlichkeit / Presse / Medien
+
+Seite 36 von 79
+
+Checklisten
+
+Leitfaden Veranstaltungsverkehr
+
+4.
+
+Fußgänger
+
+4.1 Fußwege vom und zum Veranstaltungsort
+beteiligte Partner:
+ Straßenverkehrsbehörden, Ordnungsämter
+ Straßen- oder Tiefbauämter, ggf. Grünflächenämter
+ Aufgabenträger im ÖV
+ Betreiber Veranstaltungsort (Gebäude oder Gelände)
+ Veranstalter
+ Polizei
+grundsätzliche Überlegungen /
+Handlungsfelder / Strategien
+Aufgaben
+Einschätzungen zum Fußgängeraufkommen:
+• Wann werden wo welche Fußgängerströme erwartet?
+Darstellung der erforderlichen Fußwegebeziehungen
+• direkt zum Veranstaltungsort
+• von und zu den Parkbereichen
+• von und zu den ÖV-Haltestellen
+• von und zu den Taxihalteplätzen
+• von und zu den Fahrradabstellanlagenn
+Prüfung der Eignung der möglichen
+Fußgängerrouten für die Zielgruppen:
+¾ VIPs
+¾ Mobilitätsbehinderte
+¾ sonstige zu trennende Besuchergruppen („Fantrennung“)
+¾ übrige Besucher
+hinsichtlich:
+¾ Entfernung / Direktheit
+¾ vorhandene Wegweisung
+¾ Zustand / Befestigung der Wege
+/ Beleuchtung
+¾ sonstige Ausstattung (z.B. WCs,
+Abfallbehälter, Sauberkeit der
+Wege, etc.)
+¾ soziale Sicherheit
+¾ Behinderung des sonstigen Anoder Abreiseverkehrs
+
+a) Freischneiden der Wege /
+Zurückschneiden von Gebüsch uä.
+b) Befestigung vorhandener
+Fußwege
+c) behindertengerechter Ausbau
+d) Neuplanung und Neuanlage
+von Fußwegen
+e) Installation (neuer) Beleuchtung
+f) Anbringen / Vervollständigung
+von Wegweisung / Beschilderung
+g) bessere Ausstattung der
+Fußwege
+h) Einsatz von Ordnungskräften /
+Polizei
+i) alternative Wegeführung /
+Änderung der Wegeführung
+j) Aufgabe / Nicht-Nutzung
+einzelner Fußwege
+
+Nachprüfungen
+
+a.
+b.
+c.
+d.
+e.
+f.
+g.
+h.
+i.
+j.
+
+Umweltschutzkriterien
+siehe a. / Finanzierung
+siehe b.
+siehe b.
+siehe b. / Design und Gestaltung
+Finanzierung / Design und Gestaltung
+siehe e.
+Verfügbarkeit des Personals /
+Finanzierung
+siehe h. / Kommunikation gegenüber (ortskundigen) Besuchern
+alternative Flächennutzung? /
+Kommunikation gegenüber (ortskundigen) Besuchern
+
+Erstellung eines externen Fußgängerführungskonzepts
+Informationsbereitstellung für:
+• Besucher
+• Öffentlichkeit, Presse, Medien
+• ÖV-Personal
+• Taxifahrer
+• Ordnerpersonal
+
+Seite 37 von 79
+
+Checklisten
+
+Leitfaden Veranstaltungsverkehr
+
+4.
+
+Fußgänger
+
+4.2 Fußwege auf dem Veranstaltungsgelände
+beteiligte Partner:
+ Straßenverkehrsbehörden, Ordnungsämter
+ Straßen- oder Tiefbauämter, ggf. Grünflächenämter
+ Aufgabenträger im ÖV
+ Betreiber Veranstaltungsort (Gebäude oder Gelände)
+ Veranstalter
+ Polizei
+grundsätzliche Überlegungen /
+Handlungsfelder / Strategien
+Aufgaben
+Darstellung der erforderlichen, intern
+auszuweisenden Fußgängerziele
+• Ausgänge
+• Parkplätze
+• ÖV-Haltestellen
+• Taxi-Halteplätze
+• Fahrradabstellanlagen
+• Fußwege z.B. zur Innenstadt
+• veranstaltungsspezifische Ziele
+(z.B. Tribünen, Festzelte, etc.)
+Prüfung der vorhandenen internen
+Wegweisung:
+¾ Vollständigkeit und Richtigkeit
+¾ Erkennbarkeit und Lesbarkeit
+(Beleuchtung!)
+
+a) Korrektur der Beschilderung
+b) Vervollständigung
+c) neue, gut lesbarere Beschilderung
+d) Installation von Beleuchtung
+e) Einsatz von Ordnungspersonal
+
+Nachprüfungen
+
+a. Design und Gestaltung / Finanzierung
+b. siehe a.
+c. siehe a.
+d. siehe a.
+e. Finanzierung / Verfügbarkeit des
+Personals
+
+Erstellung eines internen Fußgängerführungskonzepts
+Informationsbereitstellung für:
+• Besucher
+• Öffentlichkeit, Presse, Medien
+• Ordnerpersonal
+
+Seite 38 von 79
+
+Checklisten
+
+Leitfaden Veranstaltungsverkehr
+
+4.
+
+Fußgänger
+
+4.3 Aufstell- oder Warteflächen
+beteiligte Partner:
+ Straßenverkehrsbehörden, Ordnungsämter
+ Straßen- oder Tiefbauämter, ggf. Grünflächenämter
+ Aufgabenträger im ÖV
+ Taxivereinigung
+ Betreiber Veranstaltungsort (Gebäude oder Gelände)
+ Veranstalter
+ Polizei
+grundsätzliche Überlegungen /
+Handlungsfelder / Strategien
+Aufgaben
+Einschätzungen zum Fußgängeraufkommen:
+• Wann werden wo wie viele
+wartende Fußgänger / Besucher
+erwartet?
+Darstellung der Aufstell- und Warteflächen:
+• Eingangsbereiche / Kassen /
+Sicherheitskontrollen
+• ÖV-Haltestellen
+• Shuttlebus-Haltestellen
+• Taxi-Halteplätze
+• Drop-Off / Pick-Up Bereiche
+Prüfung vorhandener Aufstellflächen
+hinsichtlich:
+¾ Verfügbarkeit der Fläche
+¾ Kapazität
+¾ Ausstattung (WCs, Abfallbehälter, Witterungsschutz, etc.)
+¾ Sicherheitskriterien
+¾ konkurrierende Nutzungsansprüche
+
+a) Ausbau oder Befestigung
+vorhandener Flächen
+b) Installation von Zäunen,
+Drängelgittern, Beleuchtung
+etc.
+c) verbesserte Ausstattung
+d) Einsatz von Ordnungspersonal / Polizei
+e) Reduzierung anderer Flächenansprüche zu Gunsten
+von Aufstellflächen
+f) Verlegung der ÖV-Haltestelle
+g) Verlegung der ShuttlebusHaltestelle
+h) Verlegung der TaxiHalteplätze
+i) Verlegung der Drop-Off / PickUp Bereiche
+j) Aufgabe bisheriger Aufstellflächen
+k) Ausdehnung des An- und
+Abreisezeitraums
+
+Nachprüfungen
+
+a. Finanzierung / Umweltschutzkriterien
+b. Finanzierung / Design und Gestaltung
+c. siehe b.
+d. Verfügbarkeit des Personals /
+Finanzierung
+e. Kommunikation gegenüber
+bisherigen (Flächen-)Nutzern /
+Finanzierung
+f. Kommunikation gegenüber
+(ortskundigen) Besuchern / Finanzierung
+g. siehe f.
+h. siehe f.
+i. siehe f.
+j. alternative Flächennutzung? /
+Kommunikation gegenüber (ortskundigen) Besuchern
+k. Vor- oder Nachveranstaltungen
+auf dem Veranstaltungsgelände
+
+Dokumentation der Aufstellflächen
+Informationsbereitstellung für:
+• Besucher
+• Öffentlichkeit / Presse / Medien
+
+Seite 39 von 79
+
+Checklisten
+
+Leitfaden Veranstaltungsverkehr
+
+5.
+
+Taxiverkehr
+
+5.1 Taxiandienung
+beteiligte Partner:
+ Straßenverkehrsbehörden, Ordnungsämter
+ Straßen- oder Tiefbauämter, ggf. Grünflächenämter
+ Taxivereinigung / -verband
+ Betreiber Veranstaltungsort (Gebäude oder Gelände)
+ Veranstalter
+ Polizei
+grundsätzliche Überlegungen /
+Handlungsfelder / Strategien
+Aufgaben
+Einschätzungen zum Taxiverkehr:
+• erwartetes Taxiaufkommen /
+Nachfrage nach Taxis
+• Kapazität der ansässigen Taxiunternehmen
+Prüfung der Taxiandienung hinsichtlich:
+¾ Flächenbedarf und -verfügbarkeit
+¾ Kapazität der Taxiplätze
+¾ Organisation des Betriebs auf
+den Taxiplätzen
+¾ Auswirkungen des Taxibetriebs
+auf den fließenden Verkehr
+¾ Rückstau bei der Zufahrt
+¾ Behinderungen durch die Wiedereinfädelung / Ausfahrt
+¾ Zielführungskonzept MIV
+¾ Freihaltung der Halteplätze von
+Fremdnutzung
+¾ Lage der Taxiplätze / Entfernung
+zu Ein- bzw.- Ausgängen des
+Veranstaltungsgeländes
+¾ Fußgängerführung und wegweisung
+¾ Ausgestaltung / Qualität der
+Taxiplätze
+
+Nachprüfungen
+
+Aufstockung der Taxiflotte /
+Fahrzeuge bzw. Unternehmer
+aus dem Umland einbeziehen
+
+a) Befestigung der Taxiplätze
+b) Erweiterung bestehender
+Taxiplätze
+c) Neuordnung der betrieblichen
+Abwicklung auf den Taxiplätzen
+d) Verlegung von Taxihalteplätzen
+e) Einrichtung zusätzlicher
+Taxiplätze
+f) neue Taxivorfahrten an den
+Ein- bzw. Ausgängen
+g) Aufgabe bestehender Taxiplätze
+h) besondere Verkehrsführung
+für Taxen
+i) Unterschiedliche Taxiandienung bei An- und Abreise
+j) Ausweitung des An- und
+Abreisezeitraums
+k) Reduzierung des Taxiaufkommens / Verlagerung zum
+ÖV
+l) Taxihalte in "zweiter Reihe"
+verhindern
+m) Einsatz von Ordnungspersonal / Polizei
+n) Änderungen der Fußgängerführung
+
+a. Finanzierung / Umweltschutzkriterien
+b. siehe a.
+c. Kommunikationsaufwand gegenüber Taxifahrern
+d. siehe a. und c.
+e. siehe a. und c.
+f. siehe a. und c. / Berücksichtigung wartender Besucher vor
+den Eingängen
+g. siehe c. / alternative Flächenutzung?
+h. siehe c. / Aufwand für Wegweisung und Beschilderung
+i. siehe c.
+j. Vor- oder Nachveranstaltungen
+auf dem Veranstaltungsgelände
+k. siehe ÖV
+l. Durchsetzbarkeit der Maßnahme
+/ Kontrollaufwand
+m. Verfügbarkeit des Personals /
+Finanzierung
+n. Änderung und Ergänzung der
+Fußgängerwegweisung / Finanzierung
+
+Erstellung eines Taxiandienungskonzepts
+Informationsbereitstellung für:
+• Besucher / Taxigäste
+• Öffentlichkeit, Presse, Medien
+• Taxifahrer
+
+Seite 40 von 79
+
+Checklisten
+
+Leitfaden Veranstaltungsverkehr
+
+6.
+
+Besondere Inanspruchnahme von Verkehrsflächen
+
+beteiligte Partner:
+ Straßenverkehrsbehörden, Ordnungsämter
+ Straßen- oder Tiefbauämter, ggf. Grünflächenämter
+ Aufgabenträger im ÖV
+ Betreiber Veranstaltungsort (Gebäude oder Gelände)
+ Veranstalter
+ Polizei
+ Feuerwehr / Rettungsdienste
+ Sozialdienste
+ Ver- und Entsorgungsdienstleister
+grundsätzliche Überlegungen /
+Handlungsfelder / Strategien
+Aufgaben
+
+Nachprüfungen
+
+Darstellung der Inanspruchnahme
+von Flächen des öffentlichen Verkehrsraums hinsichtlich
+• (Mit-)Nutzung als Veranstaltungsort, d.h. Veranstaltung greift
+in den öffentlichen Verkehrsraum
+hinein
+• Veranstaltung findet im öffentlichen Verkehrsraum statt, z.B.
+Radsportveranstaltungen, Marathonlauf, etc.
+• (Zwischen-) Lagerung von Material
+• Serviceeinrichtungen
+• Park- oder Stellplätze (Rundfunkoder Fernsehübertragungswagen, Transport- oder Versorgungsfahrzeuge für Akteure, etc.)
+• Flächenbedarf für Sicherheitsund Rettungskräfte
+• Flucht- und Rettungswege
+Eine zeitliche Unterteilung erfolgt
+für:
+• Aufbau / Anlieferung
+• Veranstaltungsdauer
+• Abbau / Entsorgung
+Die Betrachtung umfasst folgende
+Bereiche:
+• Straßenraum inklusive Geh- und
+Radwege
+• Parkplätze
+• Frei- und Grünflächen
+• Linienwege / Routen des ÖV
+• Haltestellenbereiche
+• Privatflächen
+
+Seite 41 von 79
+
+Checklisten
+
+Leitfaden Veranstaltungsverkehr
+
+6.
+
+Besondere Inanspruchnahme von Verkehrsflächen (Fortsetzung)
+
+grundsätzliche Überlegungen /
+Aufgaben
+
+Handlungsfelder / Strategien
+
+Nachprüfungen
+
+Prüfung der Flächeninanspruchnahme hinsichtlich:
+¾ Flächenverfügbarkeit / evtl.
+konkurrierende Flächeninanspruchnahme
+¾ Eignung der Fläche / Beschaffenheit der Fläche
+¾ Umweltschutzkriterien
+¾ Auswirkungen auf den MIV und
+ÖV
+¾ Auswirkungen für Besucher
+¾ Konsequenzen für Anwohner /
+Anlieger
+¾ Auswirkungen auf den Ablauf der
+Veranstaltung
+
+a) Umverteilung der Flächeninanspruchnahme / Nutzung alternativer Flächen
+b) Bereitstellung von (Logistikoder Service-) Flächen im
+weiteren Umfeld
+c) Umleitung des MIV / Sperrmaßnahmen
+d) Umleitungsrouten für den ÖV
+/ Sperrmaßnahmen
+e) Umleitung der Fußgängerströme / Sperrmaßnahmen
+f) (Ausnahme-) Regelungen und
+ggf. Ausnahmegenehmigungen für Anwohner und Anlieger (und deren Besucher)
+g) Angebot Ersatzparkplätze für
+Anwohner und Anlieger
+h) Modifikation des Veranstaltungskonzeptes / Reduzierung der (externen) Flächeninanspruchnahme
+i) keine Aufbruchgenehmigung /
+keine Baustellen im öffentlichen Straßenraum
+
+a. Gleichwertigkeit der Flächen /
+Akzeptanz des Flächentauschs
+seitens der Flächennutzer
+b. Finanzierung / erhöhter logistischer Aufwand
+c. straßenverkehrsrechtliche Anordnung, Umsetzung der Sperrmaßahmen, Kontrollen
+d. siehe c.
+e. siehe c.
+f. Aufwand für der Erteilung von
+Ausnahmegenehmigungen
+g. ausreichende Verfügbarkeit und
+ggf. Finanzierung
+h. ggf. Finanzierung
+i. Abstimmung mit den Gewerken
+
+Dokumentation der Inanspruchnahme von Verkehrsflächen
+Informationsbereitstellung für:
+• Logistikunternehmer Auf- und Abbau
+• Anwohner / Anlieger
+• Besucher
+• Öffentlichkeit / Presse / Medien
+
+Seite 42 von 79
+
+Checklisten
+
+Leitfaden Veranstaltungsverkehr
+
+7.
+
+Anwohnerschutz
+
+beteiligte Partner:
+ Straßenverkehrsbehörden, Ordnungsämter
+ Straßen- oder Tiefbauämter, ggf. Grünflächenämter
+ Betreiber Veranstaltungsort (Gebäude oder Gelände)
+ Veranstalter
+ Polizei
+grundsätzliche Überlegungen /
+Handlungsfelder / Strategien
+Aufgaben
+Darstellung von zu schützenden
+Bereichen, z.B.:
+• Wohngebiete
+• Schulen, Kindergärten, Altenheime, Krankenhäuser, etc.
+• Grünanlagen, Waldwege
+• ...
+Prüfung der Belastung der zu schützenden Bereiche hinsichtlich:
+¾ Parkdruck
+¾ Durchgangsverkehr
+¾ Fußgängerströme Veranstaltungsbesucher
+
+a) temporäre Parkverbote
+b) temporäre Sperrungen für den
+Durchgangsverkehr
+c) temporäre Sperrungen für
+Fußgänger
+d) (kostenlose) Stellplätze in
+ausreichender Anzahl unmittelbar am Veranstaltungsort
+e) Änderung des Zielführungskonzeptes MIV
+f) Änderung des Fußwegekonzeptes
+g) Einsatz von Ordnungskräften,
+Polizei
+h) Verzicht auf Schutzzonen
+i) Aufstellen von WCs / Abfallbehältern in ausreichender
+Anzahl
+
+Nachprüfungen
+
+a. Aufwand bei der straßenverkehrsbehördlichen Anordnung
+und Einrichtung der Verbotszonen / Kontrollaufwand / Ausnahmeregelungen für Anlieger /
+b. siehe a.
+c. siehe a.
+d. Stellplatzbilanz / Beschickungskonzept
+e. sonstige Bestandteile des Zielführungskonzeptes MIV
+f. sonstige Bestandteile des Fußgängerwegekonzeptes
+g. Verfügbarkeit des Personals /
+Finanzierung
+h. Information an die Anwohner /
+Einladung der Anwohner zur
+(vergünstigten) Teilnahme an der
+Veranstaltung
+i. Finanzierung
+
+Dokumentation des Anwohnerschutzes
+Informationsbereitstellung für:
+• Anwohner / Anlieger
+• Besucher der Veranstaltung
+• Öffentlichkeit / Presse / Medien
+
+Seite 43 von 79
+
+Checklisten
+
+Leitfaden Veranstaltungsverkehr
+
+8.
+
+Störfallszenarien
+
+beteiligte Partner:
+ Straßenverkehrsbehörden, Ordnungsämter, Verkehrsleitzentralen
+ Straßen- oder Tiefbauämter, ggf. Grünflächenämter
+ Aufgabenträger im ÖV
+ Betreiber Veranstaltungsort (Gebäude oder Gelände)
+ Veranstalter
+ Polizei (ggf. Bundespolizei)
+ Feuerwehr / Rettungsdienste
+grundsätzliche Überlegungen /
+Handlungsfelder / Strategien
+Aufgaben
+Ursachen für Störfälle im Verkehr:
+• schlechte Witterungsverhältnisse
+• Unfall
+• Bombendrohung
+• unplanmäßiges Zuschauerverhalten
+• Feuer
+• Störung / Unplanmäßigkeit des
+Veranstaltungsablaufs
+• Demonstration
+• Streik
+• unerwartet hohes Verkehrs- oder
+Besucheraufkommen
+Darstellung möglicher Störfallszenarien:
+¾ Am Bahnhof bzw. an der ÖVHaltestelle können beim Anreiseverkehr keine Züge halten / Besucher können die Bahnsteige
+und/oder Unterführungen nicht
+benutzen
+¾ Am Bahnhof bzw. an der ÖVHaltestelle können beim Abreiseverkehr keine Züge halten / Besucher können die Bahnsteige
+und/oder Unterführungen nicht
+benutzen
+¾ Störfall während der Anreise auf
+dem Linienweg eines ÖVVerkehrsmittels
+¾ Störfall während der Abreise auf
+dem Linienweg eines ÖVVerkehrsmittels
+¾ Störfall im Zeitraum zwischen
+An- und Abreise (d.h. vor Beginn
+der Abreise) auf dem Linienweg
+eines ÖV-Verkehrsmittels
+¾ Störfall auf der BAB / Bundesstraße / An- oder Abreiseroute
+¾ (kurzfristige) Entscheidung vor
+Beginn der Anreise, dass ein
+Parkbereich, ein Parkhaus oder
+eine Tiefgarage nicht oder nur
+eingeschränkt zur Verfügung
+stehen
+
+Nachprüfungen
+
+a) Festlegung zur Kommunikati- (Für die Handlungsfelder und Straon der betroffenen Ämter und tegien der „Störfallszenarien“ gibt es
+Institutionen untereinander /
+keine „Nachprüfungen)
+(Telefon- und Handy-) Liste
+aller beteiligter Personen
+b) stichwortartige Auflistung des
+Verantwortungsbereichs der
+am Störfallmanagement Beteiligten / Liste wird wechselseitig allen Beteiligten zur
+Verfügung gestellt
+c) Vereinbarungen zur Information und Lenkung der Veranstaltungsbesucher / Besucher
+müssen bei Störfällen klare
+und widerspruchsfreie Weisungen erhalten
+d) Absprachen zur „Strategie“
+zur Behebung der Störfälle
+bzw. zum Störfallmanagement
+(z.B.: Festlegung, ob zuerst
+(technische) Maßnahmen
+eingeleitet werden oder ob
+zuerst eine Information der
+Besucher stattfinden soll, etc.)
+e) erforderliche (technische)
+Maßnahmen zur Beseitigung
+der Störung / internes Störfallmanagement der Beteiligten und zuständigen Institutionen / Dokumentation in
+Handbüchern / Ablaufplänen
+
+Seite 44 von 79
+
+Checklisten
+
+Leitfaden Veranstaltungsverkehr
+
+8.
+
+Störfallszenarien (Fortsetzung)
+
+grundsätzliche Überlegungen /
+Aufgaben
+
+Handlungsfelder / Strategien
+
+Darstellung möglicher Störfallszena- f)
+rien (Fortsetzung):
+¾ unvorhergesehene Verlängerung
+der Veranstaltung, z.B. eine
+(Fußball-) Spielverlängerung auf
+Grund einer Spielunterbrechung,
+etc.
+¾ Abbruch der Veranstaltung /
+Räumung des Veranstaltungsgeländes z.B. auf Grund einer
+Bombendrohung oder schlechter
+Witterungsverhältnisse etc.
+¾ Absage der Veranstaltung vor
+Beginn der Anreise / des Anreiseverkehrs
+¾ Absage der Veranstaltung nach
+Beginn der Anreise / des Anreiseverkehrs
+¾ Wegfall von erforderlichen Parkmöglichkeiten aufgrund äußerer
+Einflüsse bzw. der Sicherheitslage (z.B. bei Tiefgaragen)
+¾ Störfall während der Anreise auf
+einer MIV-Zuführungsroute
+¾ …
+Dokumentation der Störfallszenarien
+und des Störfallmanagements
+keine externe Informationsbereitstellung
+
+Nachprüfungen
+
+Einrichtung eines Lagezentrum oder einer Leitstelle /
+Festlegung auf eine Regie
+für die Einleitung der erforderlichen (Lenkungs-) Maßnahmen / Verfügbarkeit eines
+Raumes für die Leitstelle /
+(kommunikations-) technische Ausstattung der Räumlichkeiten
+
+Seite 45 von 79
+
+Planungshinweise
+
+Leitfaden Veranstaltungsverkehr
+
+Teil B:
+
+Planungshinweise
+
+Die nachfolgend zusammengestellten Planungshinweise sollen eine Hilfestellung bei den
+konkreten Planungen im Vorfeld einer Veranstaltung geben. Ein Anspruch auf Vollständigkeit
+wird dabei nicht erhoben.
+Die Vorgehensweise orientiert sich an den „Planungshilfen Teil A: Checklisten Verkehrliche
+Abwicklung“. Für die verschiedenen Verkehrsträger sind die wichtigsten, für die Planung
+relevanten Eckwerte zusammengestellt. Sofern es sich dabei um Richtlinienwerte handelt,
+sind die entsprechenden Quellen benannt bzw. es wird direkt auf die Richtlinie verwiesen.
+Die Planungshinweise ersetzen nicht die Arbeit mit den einschlägigen Richtlinien, sie helfen
+aber bei der Orientierung und einer ersten Abschätzung. Neben Richtlinieninformationen
+sind teilweise auch Erfahrungswerte aus dem verkehrlichen Veranstaltungsmanagement
+eingeflossen.
+An Ende dieses Kapitels sind die wichtigsten Quellen und weiterführende Literatur / Richtlinien zusammengestellt.
+
+Hinweise zum Besucheraufkommen:
+Gesamtbesuchermenge:
+
+Annahme auf Grund von Erfahrungen vorangegangener Veranstaltungen, Angaben des Veranstalters, (Sitz-) Platzkapazität, Berücksichtigung des Einzugsgebiets etc. Die Annahmen sind zu prüfen
+und zwischen allen an der Planung Beteiligten abzustimmen.
+
+Spitzentag:
+
+Die Belastung am Spitzentag ist von verschiedenen Einflüssen abhängig. Die Wesentlichen sind:
+•
+•
+•
+•
+
+Wochentag
+Witterung
+besondere Einzel- bzw. Teilveranstaltungen
+Ticketing
+
+Eine Abschätzung der Belastung am Spitzentag sollte ebenfalls auf
+Grund von Erfahrungen ähnlicher Veranstaltungen erfolgen. Bei
+großen Stadtfesten ist zum Beispiel an Wochenenden mit einer bis
+zu 2-3 fachen Besuchermenge bezogen auf den Durchschnitt während der gesamten Veranstaltung zu rechnen.
+
+Seite 46 von 79
+
+Leitfaden Veranstaltungsverkehr
+
+Planungshinweise
+
+Hinweise zum Modal Split:
+Modale Verteilung:
+
+Der Modal Split wird sich für die vorzubereitende Veranstaltung
+nicht exakt vorhersagen, geschweige denn „berechnen“ lassen.
+Trotzdem ist es absolut unerlässlich, dass hier im Kreise der Verantwortlichen eine Annahme verabredet wird, die dann als verbindliche Planungsgrundlage im IV und im ÖV dient. Dabei müssen nicht
+nur einzelne Verkehrsmittelanteile berücksichtigt werden, sondern
+auch die Kombination und Verknüpfung der Verkehrsmittel. Die
+meisten Teile der Checklisten in den „Planungshilfen Teil A“ bauen
+notwendigerweise auf solchen Annahmen auf. Gegebenenfalls
+empfiehlt es sich, sich auf „Bandbreiten“ zu verständigen und dann
+innerhalb dieser verabredeten Korridore die weiteren Planungsschritte gemäß den Checklisten vorzunehmen.
+Unter anderem über folgende Schritte kann man sich einem möglichen Mengengerüst annähern:
+• I.d.R. werden die vorhandenen Stellplatzkapazitäten weitgehend
+ausgelastet. (Ausnahme: Veranstaltungen mit hohem Anteil von
+internationalen Gästen, die nicht mit dem Pkw sondern vor allem
+mit dem Flugzeug anreisen, z.B. Großmessen, sehr große internationale Sportveranstaltungen,…)
+• Informationen über den Anteil der mit dem Reisebus anreisenden Gäste können (sehr aufwändig!) über Reiseveranstalter und
+Busunternehmen eingeholt werden. Gegebenenfalls ist zu prüfen, ob für Busse eine Voranmeldung verbindlich gemacht wird.
+• Hohe Parkgebühren besonders in Verbindung mit einem Kombiticket (Öffentlichkeitsarbeit!) sprechen für eine stärkere Verschiebung des Modal Split zu Gunsten des ÖV.
+• Ein großzügiges ÖV-Angebot und (zusätzliche) Angebote im
+Nachtverkehr einschl. der notwendigen Fahrplaninformation werden ebenfalls zu einem höheren ÖV-Anteil führen.
+• Wenn das Veranstaltungsende so spät liegt, dass zum Beispiel
+keine (Anschluss-!) Züge mehr verkehren, dann ist in jedem Fall
+mit einem sehr hohen IV-Anteil zu rechnen.
+• Bei größeren Entfernungen zwischen ÖV-Haltestelle und Veranstaltungsgelände ist ebenfalls mit einem höheren IV-Anteil zu
+rechnen. Das gilt insbesondere dann, wenn kein leistungsfähiger
+Shuttlebus-Betrieb angeboten wird.
+• Besonders bei Veranstaltungen mit einem hohen VIP-Anteil als
+auch bei (Konzert-) Veranstaltungen für vor allem jugendliche
+Besucher ist von einem starken Drop-off – und Pick-up – Verkehr auszugehen.
+• Der Krad-Anteil ist i.d.R. nicht besonders relevant, da Kräder
+normalerweise auf Pkw-Stellplätzen abgestellt werden.
+• Nachprüfung, wie sich in der Vergangenheit bei vergleichbaren
+Veranstaltungen der Modal Split dargestellt hat.
+Innerhalb des ÖV ist dann in einem nächsten weitergehenden
+Schritt eine Verteilung auf die unterschiedlichen Verkehrsmittel
+festzulegen. Hier spielen wiederum Angebot und Komfort, aber
+auch Öffentlichkeitsarbeit einschließlich Fahrplaninformation eine
+Rolle.
+
+Seite 47 von 79
+
+Planungshinweise
+
+Leitfaden Veranstaltungsverkehr
+
+Hinweise zum Parken:
+Besetzungsgrad:
+
+Abschätzung der möglichen Stellplatzkapazität
+von unmarkierten Flächen:
+
+Der Besetzungsgrad ist für jede Veranstaltung auf Basis der Erfahrungen
+ähnlicher Veranstaltungen abzuschätzen. Folgende Anhaltswerte können
+einer ersten Abschätzung dienen:
+Pkw (Besucher):
+
+2-3 Personen / Pkw
+
+Reisebus:
+
+50 Personen / Bus
+
+Taxi:
+
+1-2 Personen / Pkw
+
+Wildes Parken (in der Regel nicht zu empfehlen)
+• keine kontrollierte / geordnete Aufstellung
+• mit eingeparkten Fahrzeugen und zugeparkten Fahrgassen ist zu rechnen
+• kein Personalbedarf
+• Flächenbedarf ≥ 40 m² / Pkw-Stellplatz
+Block- bzw. Kolonnenaufstellung
+(nur in Ausnahmefällen zu empfehlen)
+• gefangene Aufstellung
+• keine individuelle Abfahrt möglich
+• geringer Personalbedarf
+• geringer Bedarf an temporären Absperrmaßnahmen
+(z.B. Flatterband)
+• Flächenbedarf ~ 15 m² / Pkw-Stellplatz
+Aufstellung in Längs- oder Querreihen
+• keine gefangene Aufstellung
+• individuelle Abfahrt möglich
+• Wiederbefüllung möglich
+• höherer Personalbedarf
+• erhöhter Bedarf an temporären
+• Absperrmaßnahmen (z.B. Flatterband)
+• Flächenbedarf ~ 20 - 30 m² / Pkw-Stellplatz
+
+Pkw-Aufstellung
+
+• Längsaufstellung
+Vorteile
+zügiges (Erst-)Beparken möglich
+„relativ“ einfaches Stellen der Fahrzeuge
+Nachteile
+hoher Flächenbedarf durch größere Anzahl an Fahrgassen
+• Schrägaufstellung
+Vorteile
+zügiges Beparken (auch bei fahrgassenbezogener Anfahrt)
+im Einrichtungsbetrieb deutlich engere Fahrgassen möglich
+Nachteile
+gleichmäßige Ausrichtung der Fahrzeuge schwierig
+Gefahr von „wandernden“ Reihen und beengten Fahrgassen
+
+Seite 48 von 79
+
+Planungshinweise
+
+Leitfaden Veranstaltungsverkehr
+
+• Senkrechtaufstellung
+Vorteile
+„relativ“ einfaches Stellen der Fahrzeuge
+gute Flächenausnutzung
+einfache Wiederbelegung
+Nachteile
+bei fahrgassenbezogener Anfahrt ggf. Verzögerungen beim
+Einparken
+Pkw – Stellplatzabmessungen (EAR 05)
+
+• Längsaufstellung:
+Breite des Parkstreifens ~ 2,00 m
+Länge pro Pkw ~ 6,00 m
+• Schrägaufstellung (schnelles Einparken):
+Tiefe des Parkstreifens ~ 5,00 m
+Breite pro Pkw ~ 2,50 m – 3,50 m
+• Senkrechtaufstellung:
+Tiefe des Parkstreifens ~ 5,00 m
+Breite pro Pkw ~ 2,50 m
+
+Parkplatzbefüllung
+
+Bei großen Parkflächen oder hohem Parkdruck
+•
+•
+•
+•
+
+ggf. Aufteilung in separat zu beschickende Parkbereiche
+parallele Befüllung mehrerer Parkreihen
+Erstbefüllung nicht über Fahrgasse sondern über die Parkfläche
+ggf. besondere Führung der Fahrzeuge (spezielle Ausfahrten für bestimmte Bereiche) während der Hauptabfahrt
+
+Bei Schräg- und Senkrechtaufstellung empfiehlt es sich, die Fahrzeuge in Doppelreihen
+aufzustellen, so dass immer jeweils zwei
+Fahrzeuge in gleicher Fahrtrichtung hintereinander parken. Hierdurch kann die Befüllung erheblich beschleunigt werden.
+
+Anfahrt
+
+Abfahrt
+
+Wiederbelegung freigewordener Stellplätze / Begegnungsverkehr
+• Stellplatzbelegungserfassung (auf Freiflächen i.d.R. durch Personal)
+• Führung der Fahrzeuge zu freien Stellplätzen (i.d.R. durch Personal)
+• Ein- und Ausfahrten räumlich getrennt
+• Fahrgassen im Einrichtungsverkehr
+
+Seite 49 von 79
+
+Leitfaden Veranstaltungsverkehr
+
+Planungshinweise
+
+Zufahrtskontrollen / Kassieren
+• kein Kassieren bei der Einfahrt sondern an gestellten Fahrzeugen
+• Wenden und Weiterleitung von „abgewiesenen Fahrzeugen“ ohne
+rangieren
+• geschultes, ggf. mehrsprachiges Personal
+• Vermeidung „längerer“ Diskussionen
+• früher Hinweis auf Kontrolle, z.B. Schild „Ticket sichtbar anbringen“
+• ausreichende Aufstell- bzw. Rückstaufläche
+Beispiel: Waldparkplatz
+an der Commerzbank
+Arena in Frankfurt am
+Main
+
+Reisebus-Aufstellung:
+
+Busse dürfen nur mit geschultem Einweiser rückwärts fahren. Zur Risikovermeidung und Minimierung der Störungen im Ablauf sollten daher in der
+Regel Parkplätze so angelegt bzw. organisiert werden, dass die Busse
+vorwärts ein- und ausfahren können. Bei nicht-gefangener Aufstellung sind
+daher jeweils zwei Fahrgassen anzuordnen.
+nicht-gefangene Aufstellung:
+• Ein- und Aussteigen der Fahrgäste möglich
+• kein Rückwärtsausfahren der Busse
+• Flächenbedarf ~ 120 - 150 m² pro Reisebus.
+
+Reisebus – Stellplatzabmessungen
+(EAR 05):
+
+• Längsaufstellung:
+Breite des Seitenstreifens mit Ein- und Ausstieg ~ 3,00 m
+Länge pro Bus:
+unabhängiges Ausfahren: 12 m Bus ~ 15,00 m
+gefangene Stellung ~ 13,00 m - 19,00 m
+vorwärts Einfahren ~ doppelte Fahrzeuglänge
+• Senkrechtaufstellung:
+Breite mit Ein- und Ausstieg ~ 3,50 m
+Tiefe - je nach Fahrzeuglänge (Länge Reisebusse: 12 – 15 m)
+
+Seite 50 von 79
+
+Planungshinweise
+
+Leitfaden Veranstaltungsverkehr
+
+• Schrägaufstellung (zügiges Einparken):
+Breite mit Ein- und Ausstieg ~ 3,50 m
+Tiefe - je nach Fahrzeuglänge und Aufstellwinkel
+12 m Busse: 5,75 m
+
+4,95m
+
+3,50m
+
+12 m Busse: 11,25 m
+
+  = 50 gon
+12 m Busse: 5,75 m
+
+Krad:
+
+In der Regel werden Krad ohne genaue Ermittlung der Stellplatzanzahl auf
+vorhandene Flächen abgestellt. Der Untergrund muss geeignet (kein Sand
+o.Ä.) sein.
+• Flächenbedarf Kradstellplätze:
+auf Pkw-Parkplätzen ~ 2-3 Krad / Pkw-Stellplatz
+auf Krad-Parkplätzen ~ 7,5 m² / Krad
+
+Senkrechtaufstellung
+Zielgruppenspezifisches
+Parken für Mobilitätsbehinderte:
+
+Schrägaufstellung
+
+• Anforderungen an einen Behindertenparkplatz (BPP): Platzierung in
+direkter Nähe zum Veranstaltungsort; ebener, harter und rutschfester
+Belag auf verdichtetem Untergrund; eindeutige Kennzeichnung, Ebenerdiges, stufen- und steigungsfreies Erreichen des Veranstaltungsortes
+muss möglich sein.
+• Mindestabmessungen von BPP:
+
+Seite 51 von 79
+
+Leitfaden Veranstaltungsverkehr
+
+Planungshinweise
+
+Hinweise zum Kfz-Verkehr:
+Wegweisung KfzVerkehr:
+
+Für das Aufstellen privater Hinweisschilder ist die Richtlinie des BMV vom
+27.1.1961 maßgebend (vgl. HAV). Abweichend hiervon haben sich jedoch
+weiße Schilder mit schwarzer Schrift oder schwarzen Symbolen durchgesetzt, wobei ein die Veranstaltung kennzeichnendes, allgemein gültiges
+Emblem, Sinn- oder Schriftbild auch in Farbe gezeigt werden darf. Die
+Schriftgröße ist entsprechend der durchschnittlichen Verkehrsgeschwindigkeit (Autobahn v=80km/h, Landstraße v=60km/h, Stadtstraße v=40km/h) zu
+dimensionieren.
+
+Hinweise zum Busverkehr:
+Kapazität d. Fahrzeuge:
+
+• Standardlinienbus (L=12m): ca. 103 Plätze, davon 32 Sitzplätze
+• Standardgelenkbus (L=18m): ca. 145 Plätze, davon 42 Sitzplätze
+• Reisebus: (L=12,3m) 48 Sitzplätze
+• Reisebus: (L=13m) 58 Sitzplätze
+
+Verkehrsräume:
+
+Begegnungsfall Bus – Bus:
+
+erforderlicher Verkehrsraum für den Begegnungsfall Bus-Bus nach EAE
+
+Größe der Busparkplätze
+
+• s. „Hinweise zum Parken“
+
+Seite 52 von 79
+
+Leitfaden Veranstaltungsverkehr
+
+Haltestellen:
+
+Planungshinweise
+
+Formen von Bushaltestellen:
+
+(Quelle: Handbuch der kommunalen Verkehrsplanung)
+
+Seite 53 von 79
+
+Planungshinweise
+
+Leitfaden Veranstaltungsverkehr
+
+3,00
+
+Für einige typische Haltestellenformen sind nachfolgend Abmessungen aufgeführt.
+Weitere Informationen zur Dimensionierung von Bushaltestellen enthalten die EAÖ
+und die EAHV (s. Literatur).
+
+2,97
+
+12,00
+
+15,00
+
+10,00
+
+2,94
+
+42,91
+(48,91)
+4 5
+,0 0
+
+Mindestabmessungen Haltestellenbucht für 12m Bus (18m Bus)
+
+Buslänge *) + 20m
+*) Normalbus 12m, Gelenkbus 18m
+3
+
+2
+
+passive Haltestellenbucht
+
+4,60 6,45
+
+11,05
+
+12m-Bus
+
+17,23m
+(22,13 m)
+
+(32,30)
+
+6,50m
+
+50
+3,
+
+50
+3,
+
+30,51
+
+6,50
+
+Haltestellentasche für 12 m Bus (18m Bus)
+
+schräge Anordnung von Bushaltestellen für 12m Bus (18m Bus)
+
+Seite 54 von 79
+
+Leitfaden Veranstaltungsverkehr
+
+Planungshinweise
+
+Hinweise zum schienengebundenen Verkehr:
+Kapazität der
+Fahrzeuge:
+
+Die nachfolgend angegebenen Kapazitäten dienen nur der Orientierung, da die
+tatsächliche Kapazität in Abhängigkeit des eingesetzten rollenden Materials vor
+allem bei der RegionalBahn bzw. dem RegionalExpress erheblich differieren kann.
+• Stadtbahn (z.B. Frankfurt am Main):
+ca. 180 – 240 Fahrgäste / Wagen
+Einsatz von max. 4-Wagen pro Zug
+• Straßenbahnen (z.B. Frankfurt am Main):
+ca. 170 – 240 Fahrgäste
+• S-Bahnen (1-stöckige Triebwagen)
+Kurzzug (1-Wagen-Zug) ca.400 Fahrgäste
+Vollzug (2-Wagen-Zug)
+ca.800 Fahrgäste
+Langzug (3-Wagen-Zug) ca.1.200 Fahrgäste
+• RegionalBahn / RegionalExpress (früher:Nahverkehrszüge)
+Doppelstockwagen: ca. 250 Fahrgäste
+1-stöckige Personenwagen: ca. 150 Fahrgäste
+Einsatz von i.d.R. 4-6 Wagen pro Zug
+
+Bahnsteige:
+
+Die Bahnsteiglänge bestimmt in der Regel die Einsatzmöglichkeiten bestimmten
+Zugkonfiguration (z.B. S-Bahn: Kurzzug – Vollzug – Langzug)
+
+Barrierefreiheit:
+
+Umfassende Informationen zum Thema Barrierefreiheit von Einrichtungen des
+öffentlichen Verkehrs finden sich in der EAÖ (s. Literatur).
+Im Rahmen des Forschungsprojektes „BeGiN - BehindertenGleichstellung im
+Nahverkehr“ des Bundesministeriums für Bildung und Forschung, das vom Institut
+Verkehr und Raum des Fachbereichs Verkehrs- und Transportwesen der Fachhochschule Erfurt bearbeitet wurde, sind ebenfalls vielseitige Informationen zu
+diesem Thema zusammengestellt worden (s. Literatur).
+
+Seite 55 von 79
+
+Planungshinweise
+
+Leitfaden Veranstaltungsverkehr
+
+Hinweise zum Radverkehr:
+Abmessungen
+von Radverkehrsflächen:
+
+• Radwege:
+Radwegbreite: 1,60 m (an gering belasteten Straßen) bis 2,00 m (an mittel- bis
+hoch belasteten Straßen). Zusätzlicher Schutzstreifen auf Fahrbahnseite: 0,75 m
+(mit Parken) bzw. 0,50 m (ohne Parken)
+• Radstreifen:
+Richtbreite für beidseitigen Radfahrstreifen bei einem Fahrstreifen pro Richtung für
+den Kraftfahrzeugverkehr:
+<= 50km/h: 2 x 1,85 m
+> 50km/h: 2 x 2,50 m
+• Mischverkehr:
+Für Radfahrer attraktiv, wenn Kfz-Geschwindigkeiten niedrig und Kfz-Aufkommen
+gering sind.
+Charakteristika verschiedener Fahrstreifenbreiten im Mischverkehr:
+
+Abstellmöglichkeiten:
+
+Fahrstreifenb
+reite
+
+Nutzungsmerkmal
+
+bis 2,75 m
+
+Überholen von Radfahrern durch Kfz kann weitgehend
+verhindert werden.
+
+3,50 m
+
+Überholvorgänge Pkw-, Radverkehr auf demselben
+Fahrstreifen möglich
+
+4,25 m
+
+Lkw oder Busse können Radfahrer auf demselben
+Fahrstreifen überholen.
+
+mind. 3,50m
+
+Ausreichend breiter „Restfahrstreifen“ neben parkenden
+Autos, wenn Fahrstreifen (zeitweilig) zum Parken
+genutzt werden.
+
+• Ausführungsform von Fahrradhaltern: Zu empfehlen sind eine höhengleiche
+Doppelaufstellung (s. unten) und Rahmenhalter, da sie einen sicheren Stand
+und einen ausreichenden Diebstahlschutz bieten.
+• Parkstandsabmessungen:
+
+höhengleiche Einzelaufstellung
+
+höhengleiche Doppelaufstellung
+
+Seite 56 von 79
+
+Planungshinweise
+
+Leitfaden Veranstaltungsverkehr
+
+Parkstandabmessungen
+Senkrechtaufstellung
+
+Wegweisung Radverkehr:
+
+Schrägaufstellung
+
+Wegweiser sollten Zielangabe und Kilometerangabe (unter 5km mit einer
+Stelle hinter dem Komma) enthalten. Deutliche Unterscheidung von StVOWegweisung durch Farbgebung (grüne Schrift auf weißem Grund). Empfohlen wird ein Wegweisungssystem aus Pfeil- Tabellen- und Zwischenwegweisern.
+
+(Quelle: ERA 95)
+
+Weitere Services für
+den Radverkehr:
+
+• überdachte, bewachte Fahrradabstellanlagen
+• Gepäckaufbewahrung für Radreisende
+
+Seite 57 von 79
+
+Planungshinweise
+
+Leitfaden Veranstaltungsverkehr
+
+Hinweise zum Fußgängerverkehr:
+Abmessungen von
+Gehwegen:
+
+• Generelle Dimensionierung von Gehwegen: B = 2,50 m
+• Zuschläge für Einbauten: Ruhebänke >= 1,00 m
+Haltestellen >= 1,50 m
+
+Kapazitäten
+(HBS):
+
+Kapazitäten von Fußwegen:
+• Gehwege, Korridore und Rampen:
+durchschnittliche Mischung: ca. 1,2 Pers. / Sec. und 1m Wegbreite
+Freizeitverkehr:
+ca. 1,0 Pers. / Sec. und 1m Wegbreite
+• Treppen:
+aufwärts:
+abwärts:
+
+ca. 0,8 Pers. / Sec. und 1m Wegbreite
+ca. 0,9 Pers. / Sec. und 1m Wegbreite
+
+Kapazitäten von Wartebereichen: ca. 3 – 6 Pers./m²
+(Bei 3 Pers./m² ist die freie Bewegung der Fußgänger stark behindert, es
+kommt in Wartebereichen zur Bildung von Reihen und Gruppen, der Verkehrszustand ist noch stabil. Bei 6 Pers./m² kommt es zu massiven Behinderungen, die Kapazitätsgrenze wird erreicht.)
+Nutzbare Gehflächenbreite: Zur Ermittlung der spezifischen Kapazität eines Weges oder eines Wartebereiches sind je nach Randbegrenzung unterschiedliche Abstände abzuziehen.
+Abstand Bs [m]
+Gehwege
+
+Abstand Bs [m]
+
+Wand
+
+0,50
+
+0,25
+
+Wand mit Schaufenstern
+
+1,00
+
+0,50
+
+Gartenzaun / Bepflanzung
+
+0,60
+
+0,60
+
+Fahrbahn (Hochbord)
+
+0,35
+
+-
+
+Handlauf
+
+-
+
+0,00
+
+Art der Begrenzung
+
+Barrierefreie Wege:
+
+Korridore, Rampen, Treppen
+
+• Die Oberfläche muss eben, stufenlos, griffig, fugenarm, rutschhemmend und taktil erkennbar sein.
+• Höhe der Bordsteinabsenkungen an Querungen: h = 3cm.
+• Mindestnutzbreite: 1,50m, Mindestgehwegbreite B = 2,50m
+• Längsneigung max. 6%, bei mehr als 3% Längsneigung Ruheplätze
+einrichten.
+
+Seite 58 von 79
+
+Leitfaden Veranstaltungsverkehr
+
+Planungshinweise
+
+Literatur:
+
+EAHV
+
+Empfehlungen für die Anlage von Hauptverkehrsstraßen - EAHV '93;
+Forschungsgesellschaft für Straßen- und Verkehrswesen; 1993
+
+EAÖ
+
+Empfehlungen für Anlagen des öffentlichen Personennahverkehrs –
+EAÖ; Forschungsgesellschaft für Straßen- und Verkehrswesen; 2003
+
+ERA 95
+
+Empfehlungen für die Anlage von Radverkehrsanlagen, Forschungsgesellschaft für Straßen- und Verkehrswesen, Köln 1995
+
+EAR 05
+
+Empfehlungen für Anlagen des ruhenden Verkehrs, Forschungsgesellschaft für Straßen- und Verkehrswesen, Köln 2005
+Handbuch der kommunalen Verkehrsplanung; Bracher, Holzapfel,
+Kiepe, Lehmbrock, Reutter, Heidelberg 2006
+
+HAV
+
+Hinweise für das Anbringen von Verkehrszeichen und Verkehrseinrichtungen, Kirschbaum Verlag Bonn 2003
+
+HBS
+
+Handbuch für die Bemessung von Straßenverkehrsanlagen, Forschungsgesellschaft für Straßen- und Verkehrswesen, Köln 2001
+Rahmenkonzeption für einen barrierefreien Verkehr in der Modellregion
+für einen barrierefreien Tourismus für Alle; Rebstock, Gather, Erfurt
+2004
+
+Seite 59 von 79
+
+Leitfaden Veranstaltungsverkehr
+
+Teil C:
+C1
+
+Beispielveranstaltung
+
+Anregungen - eine fiktive Beispielveranstaltung
+
+Einleitung
+
+Auf den folgenden Seiten werden für eine fiktive Veranstaltung verschiedene Grundlagenuntersuchungen und Planungen beispielhaft betrachtet. Die Vorgehensweise orientiert sich an
+den „Planungshilfen Teil A: Checklisten Verkehrliche Abwicklung“. Das Beispiel soll aber
+nicht als Vorlage für die Planung realer Veranstaltungen dienen, sondern lediglich die in den
+Checklisten geforderten Arbeitsschritte veranschaulichen. Weiterhin besteht bei dem im
+Folgenden dargestellten Beispiel kein Anspruch auf Konsistenz der einzelnen Planungen
+sowie einer tatsächlichen Realisierbarkeit der einzelnen Maßnahmen.
+
+C2
+C2.1
+
+Abschätzung - Mengengerüst / Modal Split
+Grundlagen:
+
+Besucheraufkommen:
+(Annahme auf Grund „veranstaltungsbezogener Kriterien“ und Erfahrungen ähnlicher Veranstaltungen sowie Vorgaben durch den Veranstalter)
+Gesamtbesuchermenge:
+
+350.000 Besucher
+
+Beschäftigte:
+
+300 Beschäftigte pro Tag (ganztags)
+
+Veranstaltungsdauer:
+
+10 Tage, täglich, Ganztagesveranstaltungen
+
+Spitzentag:
+
+50.000 Besucher, Anreise verteilt sich über mehrere Stunden
+Anreisespitze zwischen 09:00 Uhr und 11:00 Uhr
+Abreisespitze zwischen 18:00 Uhr und 20:00 Uhr
+
+Seite 60 von 79
+
+Leitfaden Veranstaltungsverkehr
+
+Beispielveranstaltung
+
+Darstellung verkehrliche Erschließung:
+
+Erreichbarkeit des Veranstaltungsorts:
+MIV:
+• BAB aus Süden, Norden und Westen, Anschlussstelle im Osten des Veranstaltungsorts
+• Bundesstraßen aus allen Richtungen
+ÖV:
+• Fern- und Regionalbahnhof in 5 km Entfernung vom Veranstaltungsort – Einsatz von
+Shuttlebussen vorgesehen
+• S-Bahn Haltestelle/Bahnhof in fußläufiger Entfernung (500m) vom Veranstaltungsort
+• zwei Buslinien
+Parken:
+• zwei Parkplätze am Veranstaltungsort
+• ein P+R-Platz in 4 km Entfernung
+
+Seite 61 von 79
+
+Beispielveranstaltung
+
+Leitfaden Veranstaltungsverkehr
+
+C2.2
+
+Modal Split:
+
+(Annahme auf Grund von veranstaltungsbezogenen Aspekten, der verkehrlichen Erschließung und Erfahrungen ähnlicher Veranstaltungen)
+MIV-Anteil (inkl. Reisebusse):
+
+50 %
+
+ÖV-Anteil:
+
+45 %
+
+Anteil „nicht-motorisierter IV“ (Radfahrer, Fußgänger): 5 %
+Reisebusse entsprechen von ihrem Charakter (Fahrtaufkommen, Abfertigung, Zielführung
+etc.) eher dem MIV als dem ÖV und werden daher auch dem MIV zugerechnet.
+MIV-Verteilung:
+Pkw-Anteil:
+Reisebus-Anteil:
+Krad-Anteil:
+„Bringer/Abholer“ (Drop-Off / Pick-Up)
+
+75 %
+22 %
+1%
+2%
+
+ÖV-Verteilung:
+
+Seite 62 von 79
+
+Beispielveranstaltung
+
+Leitfaden Veranstaltungsverkehr
+
+Betrachtung der Wegeketten (erwarteter Bedarf / Nachfrage am Spitzentag)
+Anreise
+
+Ankunft am Veranstaltungsort
+
+Fernbahn
+5 % ~ 1.125 Fahrgäste
+
+Umstieg am Fernbahnhof
+(A) in Bus Linie 1
+
+Haltestelle Linienbus
+
+Regionalbahn
+10 % ~ 2.250 Fahrgäste
+
+Umstieg am Regionalbahnhof (B) in Shuttlebus 1
+
+Haltestelle Shuttlebus
+
+S-Bahn
+75 % ~ 16.875 Fahrgäste
+
+Haltestelle Shuttlebus
+
+Bus Linie 1
+Umsteiger von Fernbahn und
+Zusteiger (2 %) ~ 450 Fahrgäste
+
+Haltestelle Linienbus
+
+Bus Linie 2
+3 % ~ 675 Fahrgäste
+
+Haltestelle Linienbus
+
+Shuttlebus 1
+Ausschließlich Umsteiger von
+Regionalbahn
+(10 %) ~ 2.250 Fahrgäste
+
+Haltestelle Shuttlebus
+
+Shuttlebus P+R
+(vgl. Stellplatzbilanz)
+1.000 Umsteiger vom Pkw
+
+Haltestelle Shuttlebus
+
+Taxi
+5 % ~ 1.125 Fahrgäste
+
+C3
+C3.1
+
+Veranstaltungsort /
+Taxihalteplatz
+
+Motorisierter Individualverkehr (MIV)
+Parken - Grundlagen
+
+Besetzungsgrad
+Pkw (Besucher):
+
+2,5 Personen/Pkw
+
+Pkw (Beschäftigte):
+
+1,5 Personen/Pkw
+
+Reisebus:
+Taxi:
+
+50,0 Personen/Bus
+2,0 Personen/Taxi
+
+Gleichzeitigkeitsfaktor:
+gleichzeitig anwesende bzw. parkende
+Besucher (Pkw und Reisebusse)
+
+80 %
+
+Allgemeiner Stellplatzbedarf:
+(aus obigen Angaben berechnet)
+Pkw:
+Reisebusse:
+Krad:
+
+6.000
+88
+250
+
+Seite 63 von 79
+
+Beispielveranstaltung
+
+Leitfaden Veranstaltungsverkehr
+
+C3.2
+
+Allgemeine Stellplatzbilanz:
+
+Vergleich allgemeiner Stellplatzbedarf – vorhandene Stellplätze
+Lage der Parkplätze:
+
+Allgemeine Stellplatzbilanz
+
+Pkw
+Reisebus
+Krad
+
+Parkplatz
+„PA“
+2.000
+
+Kapazität
+Parkplatz
+P+R
+„PB“
+„PC“
+1.500
+3.000
+100
+250
+-
+
+Summe
+6.500
+100
+250
+
+Nachfrage
+Summe
+(Besucher)
+6.000
+88
+250
+
+Seite 64 von 79
+
+Beispielveranstaltung
+
+Leitfaden Veranstaltungsverkehr
+
+C3.3
+
+Zielgruppenspezifische Stellplatzbilanz (Pkw)
+
+Nachfrage:
+• VIPs
+• Mobilitätsbehinderte
+• sonstige zu trennende Besuchergruppen („Fantrennung“)
+- Besuchergruppe A:
+
+1.000 Pkw
+500 Pkw
+-
+
+- Besuchergruppe B:
+• Beschäftigte
+• übrige Besucher
+- Frauen- und Familienparkplätze
+
+200 Pkw
+4.500 Pkw
+-
+
+• Wohnmobile / Camper
+
+-
+
+Zielgruppenspezifische Stellplatzbilanz
+Kapazität / Parkplatzangebot
+VIPs
+MobilitätsBeübrige
+behinderte
+schäftigte
+Besucher
+2.000
+Parkplatz „PA“
+1.000
+500
+Parkplatz „PB“
+200
+2.800
+P+R „PC“
+1.000
+500
+200
+4.800
+Gesamtangebot
+500
+200
+4.500
+Gesamtnachfrage 1.000
+
+C3.4
+
+Summe
+2.000
+1.500
+3.000
+6.500
+6.200
+
+Beschickung der Parkplätze:
+
+Beispiel: Parkplatz A:
+• Senkrechtaufstellung und Querreihen
+• Aufstellung in Doppelreihen
+• eine Zufahrt zum Parkplatz
+• vorgezogene Kontrolle der Zufahrtsberechtigung (für Parkplatz B – siehe Bild)
+• hoher Parkdruck während der Spitzenstunde
+• zweistreifige Zufahrt und parallele Befüllung des westlichen und östlichen Teilbereichs
+• Zufahrt über die Parkplatzfläche
+• kein Kassieren bei Einfahrt sondern am abgestellten Fahrzeug
+• Einsatz von geschultem Personal während der gesamten Veranstaltungsdauer
+• Wiederbefüllung über mittlere Fahrgasse
+• Abfahrt über umschließende Fahrgasse, besondere Regelung (z.B. Handregelung durch
+Polizei) an der Kreuzung mit den Fahrzeugen vom Parkplatz B
+
+Seite 65 von 79
+
+Leitfaden Veranstaltungsverkehr
+
+Beispielveranstaltung
+
+Beschickung Parkplatz A:
+
+C3.5
+
+Abfolge der Öffnung und Beschickung der einzelnen Parkplätze
+
+• Hauptzufluss im MIV über die BAB (vgl. Kap. C3.6)
+• VIPs, Reisebusse und Mobilitätsbehinderte immer auf Parkplatz B
+- Kapazität ausreichend
+- vorab Informationen bzgl. Parkplatzwidmung und Zuführung für VIPs (Flyer zum Ticket)
+- temporäre Beschilderung (vgl. Kap. C3.6)
+• Sonstige Besucher auf Parkplatz A, wenn belegt auf P+R-Platz C
+- temporäre Beschilderung (vgl. Kap. C3.6)
+- Klappschilder an der AS der BAB, Aktivierung durch Einsatzkräfte der Polizei
+- Wiederbelegung des Parkplatzes A wenn etwa 10% der Stellplätze wieder frei sind.
+(Aktivierung der Klappschilder durch Einsatzkräfte der Polizei)
+- Abstimmung (telefonisch) zwischen Parkplatzbetreiber und Einsatzleitung Polizei
+
+C3.6
+
+Zuführungs- und Abreiserouten
+
+Zielführungsrouten Anreise:
+• Hauptanreiseroute im MIV über die BAB (vgl. Abbildung)
+• Führung der Besucher mittels temporärer Beschilderung an jedem Entscheidungspunkt zu
+den Parkplätzen
+• Klappschilder an der BAB AS: „P Veranstaltung“ und „rechts“ bzw. „links“, Aktivierung
+durch Polizei (vgl. Kap. C3.5)
+
+Seite 66 von 79
+
+Leitfaden Veranstaltungsverkehr
+
+Beispielveranstaltung
+
+Zielführung IV und ÖV
+
+• keine Parallelveranstaltungen während der Hauptanreisezeit vorhanden
+• während der Anreisespitze kommt es im Innerortsbereich aufgrund von Überlagerungen
+mit dem Normalverkehr zur Überlastungen
+- Umleitung der Fahrzeuge auf der Autobahn aus Richtung Westen über die Anschlussstelle AS „U1“
+- Einsatz einer mobilen dynamischen Informationstafel an der AS „U1“ (aus Richtung
+Westen)
+- entsprechende Verkehrshinweise im Rundfunk (Informationsweitergabe durch Polizei)
+- Leistungsfähigkeit der Umleitungsstrecke ist ausreichend
+• erwartete Herkunftsverteilung MIV:
+- 30 % aus Norden
+- 20 % aus Süden
+- 40 % aus Westen
+- 10 % aus Osten
+Æ Verlagerungspotential ausreichend zur Entlastung des Innerortsbereichs
+
+Seite 67 von 79
+
+Leitfaden Veranstaltungsverkehr
+
+Beispielveranstaltung
+
+(Temporäre) Umleitung der Fahrzeuge aus Richtung Westen
+
+Seite 68 von 79
+
+Leitfaden Veranstaltungsverkehr
+
+Beispielveranstaltung
+
+Hauptrouten Abreise:
+
+• keine Parallelveranstaltungen während der Hauptabreise vorhanden
+• keine nennenswerte Überlagerung mit Normalverkehr
+• Verkehrspunkt 1 und 4: Handregelung durch Einsatzkräfte des Ordnungsamts
+• Verkehrspunkte 2 und 3: Schaltung besonderer Abfahrtsprogramme an den LSA
+
+C3.7
+
+Haltepunkte / Vorfahrten (Drop-Off / Pick-Up Bereiche)
+
+Für die „Bringer / Abholer“ (Drop-Off / Pick-Up) wird eine spezielle Vorfahrt eingerichtet, die
+ausschließlich von Privat-Pkw genutzt wird. Behindertentransporte können auf der gegenüberliegenden Straßenseite im Bereich der Bus-Nachrückerplätze vorfahren (vgl. Kap. C4.2).
+• Die Führung der „Bringer / Abholer“ erfolgt zusammen mit den übrigen Besuchern zum
+Veranstaltungsgelände.
+• Vor der Abfahrt zu den Parkplätzen ist die Vorfahrt (Drop-Off / Pick-Up Bereich) rechts
+neben der Fahrbahn eingerichtet und beschildert.
+• Auf der Vorfahrt darf nur zum Ein- und Aussteigen gehalten werden. Dies wird durch den
+Einsatz von Ordnungskräften sichergestellt. Ggf. ist der Einsatz von uniformierten Kräften
+erforderlich – die Entscheidung darüber erfolgt in Abhängigkeit von der aktuellen Situation.
+• Das Halten von Reisebussen wird durch den Einsatz von Ordnungskräften unterbunden.
+Für Reisebusse werden Stellplätze in ausreichender Anzahl bereitgestellt.
+• Bei der Abholung kann es aufgrund eines ungenauen zeitlichen Abpassens zu Behinderungen kommen. Sofern keine Zufahrt mehr erfolgt (Veranstaltungsende) kann der Straßenraum als Rückstaufläche mitgenutzt werden. Æ aktuelle Entscheidung durch Einsatzkräfte (Polizei/Ordnungsamt) vor Ort.
+• Die Wiedereinfädelung erfolgt in Fahrtrichtung (Einbahnstraße).
+• Zur Abschätzung der Leistungsfähigkeit wird von einer durchschnittlichen Verweildauer
+von 30 s und einem durchschnittlichen Zeitbedarf für die Zu- und Abfahrt von 15 s ausgegangen.
+• Die theoretische Leitungsfähigkeit beträgt bei 5 Stellplätzen etwa 400 Pkw / Stunde.
+
+Seite 69 von 79
+
+Beispielveranstaltung
+
+Leitfaden Veranstaltungsverkehr
+
+• Die erwartete Anzahl von „Holern / Bringern“ liegt bei etwa 500 Fahrzeugen (bei 1 Besucher / Fahrzeug). Da die Anreise über mehrere Stunden verteilt erfolgt, ist die Leistungsfähigkeit des Haltebereichs / Vorfahrt ausreichend.
+• Aufstellfläche für wartende Besucher während der Abreise ist ausreichend vorhanden
+(vgl. Kapitel C6.3).
+
+Drop-Off / Pick-Up Bereich
+35 m
+
+Durchgängige Hauptfahrbahnen
+
+C4
+C4.1
+
+Öffentlicher Verkehr
+ÖV-Kapazität
+
+• Fern- und Regionalbahn sowie Linienbusse 1 und 2
+Die Nachfrage (vgl. Kap. C2.2) ist ohne Sonderverkehre zu bewältigen.
+• S-Bahn
+Reguläre S-Bahn Anbindung: Halt von zwei Linien im Halbstundentakt (pro Fahrtrichtung)
+Æ Sonderverkehre sind erforderlich
+- Einsatz von Langzügen (Bahnsteiglänge aller angefahrenen Haltestellen ausreichend)
+- Taktverdichtung von beiden Linien auf einen Viertelstundentakt während der Anreise
+(09:00 Uhr – 11:00 Uhr) und der Abreisespitze (18:00 Uhr -20:00 Uhr)
+• Shuttlebus 1
+- Einsatz von Standardlinienbussen (~ 100 Fahrgäste)
+- Betriebszeit: 08:00 Uhr bis 22:00 Uhr
+- angestrebter Takt:
+An- und Abreisespitze: 5 min
+außerhalb der Spitzenzeiten: 10 min
+
+Seite 70 von 79
+
+Leitfaden Veranstaltungsverkehr
+
+Beispielveranstaltung
+
+- durchschnittliche Fahrzeit Regionalbahnhof – Veranstaltungsort: 8 min
+- Ein- und Aussteigezeit je 2 min
+Æ Bedarf an Standardlinienbussen für den Shuttleverkehr 1
+Spitzenzeiten: 4 Busse (~ 1.200 Fahrgäste pro Stunde)
+übrige Zeiten: 2 Busse (~ 300 Fahrgäste pro Stunde)
+• Shuttlebus P+R
+- Einsatz von Standardlinienbussen (~ 100 Fahrgäste)
+- Betriebszeit: bei Öffnung bzw. Beschickung des P+R
+- angestrebter Takt: 15 min
+- durchschnittliche Fahrzeit P+R-Platz – Veranstaltungsort: 5 min
+- Ein- und Aussteigezeit je 2 min
+Æ Bedarf an 2 Standardlinienbussen für den Shuttleverkehr P+R
+
+C4.2
+
+Umsteigepunkte und Haltestellen
+
+• besondere Umsteigepunkte sind
+- Umstieg Fernbahn in Linienbus 1
+- separater Zugang zur Fernbahn und Führung zum Linienbus
+- Anschlusssicherung: Linienbus auf Fernbahn getaktet
+- Umstieg Regionalbahn in Shuttlebus 1
+- separater Zugang zur Regionalbahn und Führung zum Shuttlebus
+- Anschlusssicherung: Shuttlebus wartet auf einfahrende Regionalbahn
+- Umstieg Pkw in Shuttlebus P+R
+- eigener Haltestellenbereich am Rand des P+R-Platzes
+- Aufstellfläche für vier Busse vorhanden
+Æ Leistungsfähigkeit der Umsteigepunkte ausreichend
+• S-Bahn Haltestelle am Veranstaltungsort
+- leistungsfähiger S-Bahnhof
+• Haltestelle für Linien- und Shuttlebusse am Veranstaltungsort:
+- räumliche Trennung von Linien- und Shuttlebussen aufgrund der örtlichen Gegebenheiten nicht möglich
+- deutliche Beschilderung und Infopersonal bei Abfahrt vor Ort
+- Haltemöglichkeit für bis zu 4 Busse
+- Linienbusse 1 und 2 nicht gleichzeitig an der Haltestelle
+- Nachrückerplätze für 7 Busse vorhanden
+- durch Personaleinsatz wird die Fremdnutzung der Haltestellen durch Reisebusse und
+durch Drop-Off / Pick-Up Vorgänge unterbunden.
+Æ Leistungsfähigkeit der Zielhaltestelle inklusive Nachrückerplätze ausreichend
+
+Seite 71 von 79
+
+Leitfaden Veranstaltungsverkehr
+
+Beispielveranstaltung
+
+Haltestellenbereich am Veranstaltungsort
+
+C4.3
+
+Shuttle-Verkehr
+
+Vgl. Kap C4.1 und C4.2
+
+C5
+C5.1
+
+Radverkehr
+Radrouten/-weg
+
+• hohes Fahrradaufkommen erwartet
+- Anteil nicht-motorisierter IV: 5% (2.500 Besucher), davon werden etwa 500 Besucher
+mit dem Fahrrad erwartet
+• Das Veranstaltungsgelände ist im Rahmen des lokalen Radwegenetzes bereits entsprechend berücksichtigt. Die Erschließung erfolgt von Norden.
+
+C5.2
+
+Bike and Ride
+
+• Im Rahmen der Veranstaltung gibt es kein gesondertes Bike and Ride Angebot.
+
+Seite 72 von 79
+
+Leitfaden Veranstaltungsverkehr
+
+C5.3
+
+Beispielveranstaltung
+
+Fahrradabstellanlagen
+
+• Anzahl der erwarteten Fahrräder ~ 500
+• Es sind mehrere Fahrradabstellanlagen mit in der Summe ausreichender Kapazität im
+Norden des Veranstaltungsorts vor dem Eingangsbereich angeordnet.
+• Die Abstellplätze sind mit Rahmenhaltern zum Anschließen der Fahrräder ausgestattet.
+
+C6
+C6.1
+
+Fußgänger
+Fußwege von und zum Veranstaltungsort
+
+Folgende Fußwegebeziehungen werden besonders berücksichtigt:
+• Parkplatz PA – Veranstaltungsort
+- 300m Fußweg zum Eingang B
+- Beschilderung (bereits auf dem Parkplatz) und Beleuchtung vorhanden
+- unbefestigter, ebener Waldweg (Wurzelweg)
+- eine Fußgängerüberführung
+- nicht behindertengerecht
+• Parkplatz PB – Veranstaltungsort
+- 30 m Fußweg zum Eingang B
+- Beschilderung nur auf den Parkplatz, Beleuchtung vorhanden
+- asphaltierter Weg
+- behindertengerecht
+• S-Bahnhof – Veranstaltungsort
+- 300 m Fußweg zum Eingang C
+- Beschilderung und Beleuchtung vorhanden
+- wassergebundene Oberfläche
+- Überquerung einer schwach belasteten Straße erforderlich
+- eingeschränkt behindertengerecht (keine abgesenkten Bordsteine)
+• Taxihalteplatz – Veranstaltungsort
+- 50 m Fußweg zum Eingang A
+- keine Beschilderung (Eingang in Sichtweite), Beleuchtung vorhanden
+- asphaltierter Weg
+- Überquerung einer für den Normalverkehr gesperrten Straße erforderlich
+- behindertengerecht
+• Haltestelle Linien- und Shuttlebusse - Veranstaltungsort
+- im direkten Vorfeld des Eingangs - keine gesonderte Fußwegebetrachtung
+• Fahrradabstellanlagen - Veranstaltungsort
+- im direkten Vorfeld des Eingangs - keine gesonderte Fußwegebetrachtung
+
+Seite 73 von 79
+
+Leitfaden Veranstaltungsverkehr
+
+Beispielveranstaltung
+
+Fußwege zum Veranstaltungsort
+
+C6.2
+
+Fußwege auf dem Veranstaltungsgelände
+
+Auf dem Veranstaltungsgelände sind in regelmäßigen Abständen und an Entscheidungspunkten Multi-Wegweiser vorhanden. Weiterhin gibt es in den Eingangsbereichen und an
+zentralen Punkten auf dem Veranstaltungsgelände Aushangpläne.
+Die Wegweisung auf dem Veranstaltungsgelände erfolgt für die folgenden Ziele:
+• Ausgänge
+• Parkplätze
+• S-Bahn
+• Bus
+• Taxi
+C6.3
+
+Aufstell- oder Warteflächen
+
+• Eingangsbereiche
+- Eingang A: Sehr großer Vorplatz (ca. 10.000 m²) mit Aufstellfläche für mehrere tausend
+Besucher vorhanden
+- Eingang B und Eingang C: Freie Fläche vor dem Eingangsbereich, kein Straßenraum
+• Haltestellen
+- Linien- und Shuttlebushaltestelle: Sehr großer Vorplatz (vgl. Eingang A) vorhanden
+- Bahnhofsvorplatz (Fern- und Regionalbahn) – ein Teil der Pkw-Stellplätze wird gesperrt, um eine Aufstellfläche für die Fahrgäste des Shuttlebusses 1 einzurichten (Flächenauslastung bis zu 4 Personen pro m²).
+• Drop-Of und Pick-Up Bereiche:
+- Vor dem Drop-Off / Pick-Up Bereich ist eine ausreichend große Fläche für die gleichzeitig wartenden Personen vorhanden.
+
+Seite 74 von 79
+
+Leitfaden Veranstaltungsverkehr
+
+Beispielveranstaltung
+
+• Taxihalteplatz:
+- Während der Abfahrt können sich die auf Taxis wartenden Besucher am nördlichen
+Rand des Taxihalteplatzes aufstellen. Sofern der hier vorhandene Platz bei der Abreisespitze nicht ausreicht, dient der Bereich gegenüber der Aufstellfläche für Nachrückerbusse als Überlauf. Zur Sicherung erfolgt der Einsatz von Ordnungskräften.
+
+C7
+
+Taxiverkehr
+
+C7.1
+
+Taxiandienung
+
+• spezieller Taxihalteplatz in unmittelbarer Nähe des Eingangs A
+• befestigte Freifläche für die Einrichtung des Taxihalteplatzes vorhanden
+• erforderliche Einbauten erfolgen mittels Kunststoffleitwänden
+• Nutzung des Taxihalteplatzes bei An- und Abreise „vorgeschrieben“ – entsprechende
+Information an Taxifahrer über Taxiverband und –Unternehmen)
+• Halten in zweiter Reihe durch Ordnungskräfte reduzieren / unterbinden
+• Kapazität
+1.125 Taxifahrgäste erwartet
+Besetzungsgrad Taxi: 2 Fahrgäste Æ knapp 600 Taxi An- und Abfahrten erwartet
+die Anreise verteilt sich über mehrere Stunden
+erwartete Spitzenbelastung: 450 Taxen/ Stunde
+Annahme für die Verweildauer eines Taxis am Halteplatz: 1 min
+Æ ~ 8 Taxiplätze erforderlich
+• für die Abfahrt gibt es einen „Nachrückerbereich“ für ca. 12 weitere Taxen
+
+Seite 75 von 79
+
+Beispielveranstaltung
+
+Leitfaden Veranstaltungsverkehr
+
+Taxihalteplatz
+
+60 m
+Taxihalteplätze
+
+14 m
+
+Nachrückerplätze
+
+C8
+
+Durchgehende Hauptfahrbahn
+
+Besondere Inanspruchnahme von Verkehrsflächen
+
+• Die Veranstaltung findet auf einem separaten Gelände statt. Eine Mitnutzung von öffentlichem Verkehrsraum für die Veranstaltung, auch für Auf- und Abbau oder Versorgung, erfolgt nicht.
+• Eine besondere Flächeninanspruchnahme erfolgt jedoch für:
+- den Taxistand (vgl. Kap. C7)
+- die Bus- und Taxi-Andienung
+- die Bus-Nachrückerplätze
+Bus- und Taxi-Andienung:
+• Einrichtung eines Durchfahrverbots (vgl. Abbildung) mit Ausnahme von Linien- und Shuttlebussen, Taxen und Behindertentransporten
+Busnachrückerplätze:
+• Sperrung einer Straße entlang des Veranstaltungsgeländes (vgl. Abbildung).
+• kontrollierte Einfahrt (Ordner) nur für Nachrückerbusse und Behindertentransporte.
+• Einrichtung von 7 Bus-Nachrückerplätzen entlang der westlichen Straßenseite (vgl. Kap.
+C4.2).
+
+Seite 76 von 79
+
+Leitfaden Veranstaltungsverkehr
+
+Beispielveranstaltung
+
+Flächeninanspruchnahme und Verkehrsregelung
+
+C9
+
+Anwohnerschutz
+
+Belastung der zu schützenden Bereiche:
+• Zielführung Anreise und Hauptrouten Abreise sowie die ausgewiesenen Fußwege führen
+nicht durch zu schützende Anwohnerbereiche.
+• Auf Grund der Bewirtschaftung der Parkplätze ist mit einem Parkverdrängungsverkehr in
+das südlich des Veranstaltungsorts gelegene Wohngebiet zu rechnen.
+Maßnahmen:
+• temporäres Parkverbot im gesamten Gebiet, Ausnahmegenehmigung für Anwohner
+• Aufstellen temporärer Beschilderung und besonderer Hinweistafeln an den Zufahrten zum
+Gebiet
+• personelle Besetzung der Zufahrten (Ordnungsamt) während der Anreisespitze
+• frühzeitige (8 Wochen) Information der Anwohner mittels Flugblättern und Medien (Rundfunk, Fernsehen, Zeitung)
+
+C10
+
+Störfallszenarien
+
+Für die geplante Veranstaltung gelten keine erhöhten Sicherheitsanforderungen. Es ist weder mit einer äußern Bedrohung (z.B. terroristischer Akt) noch mit einer inneren Bedrohung
+(z.B. rivalisierende bzw. verfeindete Besuchergruppen) zu rechnen. Es sind daher keine
+sicherheitsbezogenen Störfallszenarien erforderlich.
+
+Seite 77 von 79
+
+Leitfaden Veranstaltungsverkehr
+
+Beispielveranstaltung
+
+Da die Witterung keinen Einfluss auf das Stattfinden der Veranstaltung hat, ist auch nicht mit
+einer Absage oder einem frühzeitigen Abbruch der Veranstaltung zu rechnen.
+Die im Rahmen der Veranstaltungsplanung zu betrachtenden relevanten Störfälle sind somit:
+• Störungen bei der An- oder Abreise im ÖV
+• Störungen bei der An- oder Abreise im IV
+• Störungen bezogen auf die Parkplatzsituation
+Für diese Störfälle werden Szenarien beschrieben und die entsprechenden Maßnahmen
+geplant und ggf. vorbereitet (z.B. Vorhaltung temporärer Beschilderung). Eine besondere
+Berücksichtigung erfolgt dabei für die Kommunikation zwischen allen beteiligten Partnern bei
+einem Störfall.
+In Einzelnen sollten im Rahmen der Planung der Veranstaltung die folgenden Störfallszenarien betrachtet werden.
+ÖV-Szenarien:
+• Störfall während der Anreise auf dem Linienweg der S-Bahn
+• Störfall während der Anreise an der Zielhaltestelle der S-Bahn
+• Störfall während der Anreise auf dem Linienweg der Regionalbahn
+• Störfall während der Anreise an der Zielhaltestelle der Regionalbahn
+• Störfall während der Abreise auf dem Linienweg der S-Bahn
+• Störfall während der Abreise an der Zielhaltestelle der S-Bahn
+• Störfall während der Abreise auf dem Linienweg der Regionalbahn
+• Störfall während der Abreise an der Zielhaltestelle der Regionalbahn
+Für diese Szenarien sind Handlungskonzepte zu erarbeiten, die im Wesentlichen die folgenden Aspekte berücksichtigen sollen:
+• Störfallerkennung
+• Maßnahmen zur Störfallbeseitigung
+• Maßnahmen zur alternativen Beförderung der Besucher (z.B. Verlagerung auf anderen
+Verkehrsträger, Modifikation der Wegekette etc.)
+• Kommunikation / Meldekette
+Störfallerkennung – Maßnahmeneinleitung – Störfallbeseitigung
+• Information der Öffentlichkeit bzw. der Besucher
+IV-Szenarien:
+• Störfall während der Anreise auf der BAB mit Auswirkungen auf die AS „A1“
+• Störfall während der Abreise auf der BAB mit Auswirkungen auf die AS „A1“
+• Störfall während der Anreise auf der MIV-Zuführungsroute
+• Störfall während der Abreise auf der MIV-Zuführungsroute
+• Wegfall des Parkplatzes PA aufgrund äußerer Einflüsse
+• Wegfall des Parkplatzes PB aufgrund äußerer Einflüsse
+• Wegfall der Parkplätze PA und PB auf Grund äußerer Einflüsse
+
+Seite 78 von 79
+
+Leitfaden Veranstaltungsverkehr
+
+Beispielveranstaltung
+
+Für diese Szenarien sind Handlungskonzepte zu erarbeiten, die im Wesentlichen die folgenden Aspekte berücksichtigen sollen:
+• Störfallerkennung
+• Maßnahmen zur Störfallbeseitigung
+• Maßnahmen zur alternativen Routenführung der Besucher (z.B. Verlagerung auf andere
+Anschlussstellen, verstärkter Einsatz P+R etc.)
+• Maßnahmen zur alternativen Bereitstellung von Parkflächen (z.B. erweitertes P+RAngebot - besondere Rückkopplung mit dem ÖV)
+• Kommunikation / Meldekette
+Störfallerkennung – Maßnahmeneinleitung – Störfallbeseitigung
+• Information der Öffentlichkeit bzw. der Besucher
+
+Seite 79 von 79
+
+
