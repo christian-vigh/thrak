@@ -1,51 +1,59 @@
 Array
 (
-    [0] => Array
+    [vendor] => ACHIM   IMPORTING  CO 58   SECOND  AVENUE BROOKLYN,  NY   11215
+    [ship-to] => Maurice   Nurse 1024  Gilbert   Court  Iowa  city   IA  52240
+    [order-number] => 5106
+    [date] => 07/01/2016
+    [articles] => Array
         (
-            [article] => 431:2364Luna Woodtone 2364 Luna Woodtone
-            [quantity] => 1
-            [rate] => 7.01
-            [amount] => 7.01
-        )
+            [0] => Array
+                (
+                    [article] => 431:2364Luna Woodtone 2364 Luna Woodtone
+                    [quantity] => 1
+                    [rate] => 7.01
+                    [amount] => 7.01
+                )
 
-    [1] => Array
-        (
-            [article] => 431:2764Luna Woodtone 2764 Luna Woodton
-            [quantity] => 2
-            [rate] => 8.23
-            [amount] => 16.46
-        )
+            [1] => Array
+                (
+                    [article] => 431:2764Luna Woodtone 2764 Luna Woodton
+                    [quantity] => 2
+                    [rate] => 8.23
+                    [amount] => 16.46
+                )
 
-    [2] => Array
-        (
-            [article] => 431:3264Luna Woodtone 3264 Luna Woodtone
-            [quantity] => 1
-            [rate] => 9.75
-            [amount] => 9.75
-        )
+            [2] => Array
+                (
+                    [article] => 431:3264Luna Woodtone 3264 Luna Woodtone
+                    [quantity] => 1
+                    [rate] => 9.75
+                    [amount] => 9.75
+                )
 
-    [3] => Array
-        (
-            [article] => 431:4864Luna Woodtone 48x64Luna Woodtone, 2" Vinyl Blind
-            [quantity] => 2
-            [rate] => 16.09
-            [amount] => 32.18
-        )
+            [3] => Array
+                (
+                    [article] => 431:4864Luna Woodtone 48x64Luna Woodtone, 2" Vinyl Blind
+                    [quantity] => 2
+                    [rate] => 16.09
+                    [amount] => 32.18
+                )
 
-    [4] => Array
-        (
-            [article] => 431:3964LUNA 39 X 64 LUNA Mahogany 2" BLIND
-            [quantity] => 1
-            [rate] => 13.07
-            [amount] => 13.07
-        )
+            [4] => Array
+                (
+                    [article] => 431:3964LUNA 39 X 64 LUNA Mahogany 2" BLIND
+                    [quantity] => 1
+                    [rate] => 13.07
+                    [amount] => 13.07
+                )
 
-    [5] => Array
-        (
-            [article] => 431:6064 60x64 WHT MINI BLIND
-            [quantity] => 4
-            [rate] => 8.35
-            [amount] => 33.40
+            [5] => Array
+                (
+                    [article] => 431:6064 60x64 WHT MINI BLIND
+                    [quantity] => 4
+                    [rate] => 8.35
+                    [amount] => 33.40
+                )
+
         )
 
 )

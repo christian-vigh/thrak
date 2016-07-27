@@ -11,17 +11,32 @@
 		
 		The output of this script will be an array of associative arrays containing the following elements :
 		
-		'article' -
-			The article reference, catenated with the article description
+		- 'vendor' :
+			Vendor coordinates.
 			
-		'quantity' -
-			Article quantity.
+		- 'ship-to' :
+			Recipient name and address.
 			
-		'rate' -
-			Article price.
+		- 'order-number' :
+			Purchase order number.
 			
-		'amount' - 
-			Total price for this PO line.
+		- 'date' : 
+			Purchase order date.
+			
+		- 'articles' :
+			An array of associative arrays, one for each purchase order line, containing the following entries :
+			
+			- 'article' :
+				The article reference, catenated with the article description
+				
+			- 'quantity' :
+				Article quantity.
+				
+			- 'rate' :
+				Article price.
+				
+			- 'amount' -:
+				Total price for this PO line.
 			
 		I know that you do not require the 'rate' and 'amount' column, but since I'm using regular expressions, this was
 		absolutely necessary to recognize a PO line (ie, an article reference - with its description - followed by 3 numbers).
@@ -53,29 +68,49 @@
 	$pdf -> Load ( $file ) ;
 	
 	// Check if the current PO is for us
-	if  ( ( $start = IsValidPO ( $pdf ) )  !==  false )
+	if  ( ( $start = IsValidPO ( $pdf, $po_info ) )  !==  false )
 	   {
 		// IsValidPO() returns the text index immediately after the last column header, "AMOUNT"
 		$po_text 	=  substr ( $pdf -> Text, $start ) ;
 		
 		// Retrieve PO lines
-		$po_lines 	=  GetPOLines ( $po_text ) ;
+		GetPOLines ( $po_text, $po_info ) ;
 		
 		// Print them - that's all !
-		print_r ( $po_lines ) ;
+		print_r ( $po_info ) ;
 	    }
 	
 	
 	// The IsValidPO functino checks if the pdf contents represent a PO emitted by ISSUER and aimed at DISTRIBUTOR.
 	// It returns the index of the text immediately after the "AMOUNT" column header
-	function  IsValidPO ( $pdf )
+	function  IsValidPO ( $pdf, &$po_info )
 	   {
+		static 	$header_re 	=  '#
+						VENDOR \s+ (?P<vendor> .*?) \s+
+						SHIP \s+ TO \s+ (?P<shipto> .*? )  \s+
+						P\.O\. \s+ NO\. \s+ (?P<number> \d+) \s+
+						DATE \s+ (?P<date> \d+/\d+/\d+)
+					    #imsx' ;
+		
+		$po_info 	=  [] ;
+		
+					    
 		if  ( preg_match ( ISSUER, $pdf -> Text )  &&  preg_match ( DISTRIBUTER, $pdf -> Text ) )
 		   {
 			$index 	=  strpos ( $pdf -> Text, "AMOUNT" ) ;
 			
 			if  ( $index  !==  false )
-				return ( $index + 7 ) ;
+			   {
+				if  ( preg_match ( $header_re, $pdf -> Text, $match ) )
+				   {
+					$po_info [ 'vendor' ]		=  $match [ 'vendor' ] ;
+					$po_info [ 'ship-to' ] 		=  $match [ 'shipto' ] ;
+					$po_info [ 'order-number' ]	=  $match [ 'number' ] ;
+					$po_info [ 'date' ]		=  $match [ 'date'   ] ;
+					
+					return ( $index + 7 ) ;
+				    }
+			    }
 		    }
 		    
 		return ( false ) ;
@@ -84,7 +119,7 @@
 	    
 	// The GetPOLines() function extracts data from individual lines coming from the purchase order.
 	// See the header file comments for an explanation of the returned value.
-	function  GetPOLines ( $text )
+	function  GetPOLines ( $text, &$po_info )
 	   {
 		static 	$line_re 	=  '/
 						(?P<article> .*?)
@@ -115,5 +150,5 @@
 		    }
 		    
 		// All done, return
-		return ( $po_lines ) ;
+		$po_info [ 'articles' ] 	=  $po_lines ;
 	    }
