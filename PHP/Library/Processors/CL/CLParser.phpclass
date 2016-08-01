@@ -92,6 +92,9 @@
 	. Renamed the -helptopics standard parameter to -topics.
 	. Listing parameters per topic was not correctly enforced.
 	. Sorted topics array.
+ 
+   [Version : 2.0.13]	[Date : 2016/08/01]		[Author : CV]
+	. A PHP warning was issued when an empty string was specified for a <string> parameter
 
  ***************************************************************************************************/
 namespace 	Thrak\Processors\CL ;
@@ -1080,10 +1083,10 @@ END;
 						   {
 						   	// The $SwitchCharacters property of this object lists all the authorized
 						   	// parameter prefixes
-							$current_prefix = $argv [$j] [0] ;
+							$current_prefix		= ( isset ( $argv [$j] [0] ) ) ?  $argv [$j] [0] : '' ;
 
 							// Check that the current argument is not a switch
-							if  ( $current_parameter -> Named )
+							if  ( $current_prefix  !=  ''  &&  $current_parameter -> Named )
 							   {
 								if  ( strpos ( $this -> SwitchCharacters, $current_prefix )  !==  false )
 			    					   {
@@ -1095,7 +1098,7 @@ END;
 								else
 				    					$args []  =  $argv [$j] ;
 							    }
-							else if  ( strpos ( $this -> SwitchCharacters, $current_prefix )  !==  false )
+							else if  ( $current_prefix  !=  ''  &&  strpos ( $this -> SwitchCharacters, $current_prefix )  !==  false )
 								break ;
 							else
 								$args []	=  $argv [$j] ;
