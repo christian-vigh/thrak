@@ -584,6 +584,26 @@
 	. Character translation results are now buffered, to avoid unnecessary calls to the MapCharacter()
 	  method of the PdfTexterFontTable class.
 
+    [Version : 1.2.32]	[Date : 2016/08/05]     [Author : CV]
+	. Optimized regular expressions that remove useless Adobe Postscript instructions and added new ones.
+	. Rewrote the CodePointToUtf8() method.
+	. Handled a new way to specify font aliases : /TTx.
+
+    [Version : 1.2.33]	[Date : 2016/08/05]     [Author : CV]
+	. For optimization reasons, reduced the number of times certain methods were called (GetMapWidth, 
+	  PeekAuthorInformation, IsMapped, GetFontByMapId, __get_character_padding, ...)
+	. Removed a regular expression for reducing drawing contents size which was a little bit too greedy
+	  and caused some characters to be removed from plain text.
+
+    [Version : 1.2.34]	[Date : 2016/08/05]     [Author : CV]
+	. Reduced the number of calls to certain built-in functions (ctype_* functions)
+	. Font maps were stored using only the number part of their specification (eg, "1_0" for "/C1_0"). This
+	  led to override existing fonts using different notations (ie, "/C1_0" will override an existing font
+	  map that was declared using "/T1_0"). The consequence is that sometimes, the charater map used to
+	  translate text was not the appropriate one, hence some badly displayed characters.
+	. Fixed an "uninitialized string offset" PHP notice in the __next_token() method.
+	. Fixed some cases where too many line breaks were inserted between two lines.
+
  **************************************************************************************************************/
 namespace 	Thrak\Processors ;
 
@@ -729,7 +749,7 @@ abstract class  PdfObjectBase		extends  Object
 	 *-------------------------------------------------------------------------------------------------------------*/
 	protected function  IsFontMap ( $object_data )
 	   {
-		if  ( preg_match ( '#<< \s* ( (/F \d+) | (/f-\d+-\d+) | (/[CT]\d+_\d+) ) \s+ .* >>#msx', $object_data ) )
+		if  ( preg_match ( '#<< \s* ( (/F \d+) | (/f-\d+-\d+) | (/[CT]\d+_\d+) | (/TT \d+) ) \s+ .* >>#msx', $object_data ) )
 			return ( true ) ;
 		else
 			return ( false ) ;
@@ -995,21 +1015,16 @@ abstract class  PdfObjectBase		extends  Object
 	 *-------------------------------------------------------------------------------------------------------------*/
 	protected function  CodePointToUtf8 ( $code )
 	   {
-		// For simple case ($code <= 0xFFFF), use the mb_convert_encoding function which works well
-		if  ( $code  <=  0xFFFF )
+		if  ( $code )
 		   {
-	   		$entity 	 =  '&#' . sprintf ( "%d", $code ) .  ';' ;
+			$result		=  '' ;
 
-	   		return ( mb_convert_encoding ( $entity, 'UTF-8', 'HTML-ENTITIES' ) ) ;
-		    }
-		// For more complex cases, use a homemade solution
-		// (source : http://stackoverflow.com/questions/1805802/php-convert-unicode-codepoint-to-utf-8)
-		else if  ( $code  <  0x1FFFFF )
-		   {
-			$result		=  chr ( ( $code  >>  18 ) + 240 ) .
-					   chr ( ( ( $code >> 12 ) & 63 ) + 128 ) .
-					   chr ( ( ( $code  >>  6 ) & 63 ) + 128 ) .
-					   chr ( ( ( $code & 63 ) + 128 ) ) ;
+			while  ( $code )
+			   {
+				$entity		  =  '&#x' . sprintf ( '%x', ( $code & 0xFFFF ) ) . ';' ;
+				$result		  =  mb_convert_encoding ( $entity, 'UTF-8', 'HTML-ENTITIES' ) . $result ;
+				$code		>>=  16 ;
+			    }
 
 			return ( $result ) ;
 		    }
@@ -1036,7 +1051,7 @@ abstract class  PdfObjectBase		extends  Object
 class  PdfToText 	extends PdfObjectBase
    {
 	// Current version of the class
-	const		VERSION					=  "1.2.29" ;
+	const		VERSION					=  "1.2.34" ;
 
 	// Pdf processing options
 	const		PDFOPT_NONE				=  0x0000 ;		// No extra option
@@ -1103,22 +1118,15 @@ class  PdfToText 	extends PdfObjectBase
 	// %n - Will be replaced with a regex matching a decimal number.
 	private static  $IgnoredInstructionsTemplates	=
 	   [
-		'%n{6} c \s+',
-		'%n{6} cm \s+',
-		'%n{4} re \s+',
-		'%n{2} m \s+',
-		'%n{2} l \s+',
-		'%n{4} y \s+',
-		'%n{4} v \s+',
-		'%n{3} scn \s+',
-		'%n{3} SCN \s+',
-		'%n w \s+',
-		'%n M \s+',
-		'\b BT \s+',
-		'\b ET \s+',
-		'\b EMC \s+',
-		'\b \/CS \d+ \s+ \w+',
-		'\b \/GS \d+ \s+ \w+',
+		'%n{6} ( (c) | (cm) ) \s+',
+		'%n{4} ( (re) | (y) | (v) ) \s+',
+		'%n{3} ( (scn) | (SCN) | (r) | (rg) | (RG) ) \s+',
+		'%n{2} ( (m) | (l) ) \s+',
+		'%n ( (w) | (M) | (g) | (G) | (J) ) \s+',
+		'\b ( (BDC) | (BT) | (ET) | (EMC) ) \s+',
+		'\/( (CS \d+) | (GS \d+) | (Fm \d+) | (Im \d+) | (PlacedGraphic) ) \s+ \w+ \s*',
+		//'\s+ [fhnqQSW] [ \t]+',
+		'\/Span \s* << .*? >> [ \t\r\n>]*'
 	    ] ;
 	// Replacement regular expressions for %something constructs specified in the $IgnoredInstructions array
 	private static	$ReplacementConstructs	=
@@ -1135,6 +1143,12 @@ class  PdfToText 	extends PdfObjectBase
 	// MapCharacter method will be called 150 times, instead of 200 000...
 	private		$CharacterMapBuffer	=  [] ;
 
+	// Font information buffer - another cache used by the __next_instruction() method to avoid repeated calls
+	// to the IsMapped() and GetMapWidth() methods
+	private		$FontInformationBuffer	=  [] ;
+
+	// Map id buffer - for avoiding unneccesar calls to GetFontByMapId
+	private		$MapIdBuffer		=  [] ;
 
 
 	/*--------------------------------------------------------------------------------------------------------------
@@ -1256,6 +1270,11 @@ class  PdfToText 	extends PdfObjectBase
 		$this -> CreationDate		=  '' ;
 		$this -> ModificationDate	=  '' ;
 
+		// Also reset cached information that may come from previous runs
+		$this -> CharacterMapBuffer	=  [] ;
+		$this -> FontInformationBuffer	=  [] ;
+		$this -> MapIdBuffer		=  [] ;
+
 		// Systematically set the GET_IMAGE_DATA flag if DECODE_IMAGE_DATA is specified
 		if  ( $this -> Options  &  self::PDFOPT_DECODE_IMAGE_DATA )
 			$this -> Options	|=  self::PDFOPT_GET_IMAGE_DATA ;
@@ -1316,7 +1335,8 @@ class  PdfToText 	extends PdfObjectBase
 				$this -> PageMap -> Peek ( $object_number, $object_data ) ;
 
 				// Check if the object contais authoring information - it can appear encoded or unencoded
-				$this -> PeekAuthorInformation ( $object_number, $object_data ) ;
+				if  ( $this -> Author  ==  '' )
+					$this -> PeekAuthorInformation ( $object_number, $object_data ) ;
 
 				// Also catch the object encoding type
 				$type 		=  $this -> GetEncodingType ( $object_number, $object_data ) ;
@@ -1384,7 +1404,8 @@ class  PdfToText 	extends PdfObjectBase
 				$decoded_stream_data 	=  $this -> DecodeData ( $object_number, $stream_data, $type ) ;
 
 				// Second chance to peek author information, this time on a decoded stream data
-				$this -> PeekAuthorInformation ( $object_number, $decoded_stream_data ) ;
+				if  ( $this -> Author  ==  '' )
+					$this -> PeekAuthorInformation ( $object_number, $decoded_stream_data ) ;
 
 				// Check for character maps
 				if  ( $this -> IsCharacterMap ( $decoded_stream_data ) )
@@ -2168,7 +2189,7 @@ class  PdfToText 	extends PdfObjectBase
 		   {
 			echo "\n----------------------------------- TEXT #$object_id (size = " . strlen ( $data ) . " bytes, new size = " . strlen ( $new_data ) . " bytes)\n" ;
 			echo $data ;
-			echo "\n----------------------------------- NEWTEXT #$object_id\n" ;
+			echo "\n----------------------------------- OPTIMIZED TEXT #$object_id\n" ;
 			echo $new_data ;
 		    }
 
@@ -2194,6 +2215,24 @@ class  PdfToText 	extends PdfObjectBase
 
 		// Current font size
 		$current_font_size 		=  0 ;
+
+		// Current font map width, in bytes, plus a flag saying whether the current font is mapped or not
+		if  ( isset ( $this -> FontInformationBuffer [ $current_font ] ) )
+		   {
+			$current_font_map_width		=  $this -> FontInformationBuffer [ $current_font ] [ 'width' ] ;
+			$current_font_mapped		=  $this -> FontInformationBuffer [ $current_font ] [ 'mapped' ] ;
+		    }
+		else
+		   {
+			$current_font_map_width		=  $this -> FontTable -> GetMapWidth ( $current_font ) ;
+			$current_font_mapped		=  $this -> FontTable -> IsMapped ( $current_font ) ;
+
+			$this -> FontInformationBuffer [ $current_font ]	=
+			   [
+				'width'		=>  $current_font_map_width,
+				'mapped'	=>  $current_font_mapped
+			    ] ;
+		    }
 
 		// Extra newlines to add before the current text
 		$extra_newlines 		=  0 ;
@@ -2261,6 +2300,24 @@ class  PdfToText 	extends PdfObjectBase
 				// "/Rx" : sets the current font
 			   	case 	'resource' :
 			   		$current_font 		=  $instruction [ 'resource' ] ;
+
+					if  ( isset ( $this -> FontInformationBuffer [ $current_font ] ) )
+					   {
+						$current_font_map_width		=  $this -> FontInformationBuffer [ $current_font ] [ 'width' ] ;
+						$current_font_mapped		=  $this -> FontInformationBuffer [ $current_font ] [ 'mapped' ] ;
+					    }
+					else
+					   {
+						$current_font_map_width		=  $this -> FontTable -> GetMapWidth ( $current_font ) ;
+						$current_font_mapped		=  $this -> FontTable -> IsMapped ( $current_font ) ;
+
+						$this -> FontInformationBuffer [ $current_font ]	=
+						   [
+							'width'		=>  $current_font_map_width,
+							'mapped'	=>  $current_font_mapped
+						    ] ;
+					    }
+
 			   		break ;
 
 			   	case 	'fontsize' :
@@ -2338,7 +2395,7 @@ class  PdfToText 	extends PdfObjectBase
 					$value_index		=  0 ;
 
 					// Fonts having character maps will require some special processing
-					if  ( $this -> FontTable -> IsMapped ( $current_font ) )
+					if  ( $current_font_mapped )
 					   {
 					   	// Loop through each text value
 			   			foreach  ( $instruction [ 'values' ]  as  $text )
@@ -2352,11 +2409,9 @@ class  PdfToText 	extends PdfObjectBase
 							// into account the width we detected in the begincodespancerange construct 
 			   			   	if  ( $is_hex )
 			   			   	   {
-								$width 	=  $this -> FontTable -> GetMapWidth ( $current_font ) ;
-
-			   			   	   	for  ( $i = 0 ; $i  <  $length ; $i += $width )
+			   			   	   	for  ( $i = 0 ; $i  <  $length ; $i += $current_font_map_width )
 			   			   	   	   {
-			   			   	   	   	$value 	=  str_pad ( substr ( $text, $i, $width ), $width, '0', STR_PAD_LEFT ) ;
+			   			   	   	   	$value 	=  str_pad ( substr ( $text, $i, $current_font_map_width ), $current_font_map_width, '0', STR_PAD_LEFT ) ;
 			   			   	   	   	$ch 	=  hexdec ( $value ) ;
 
 									if  ( isset  ( $this -> CharacterMapBuffer [ $current_font ] [ $ch ] ) )
@@ -2395,7 +2450,7 @@ class  PdfToText 	extends PdfObjectBase
 											// The method used here is dirty : we build a regex to match octal character representations on a substring
 											// of the text 
 											default :
-												$width		=  $this -> FontTable -> GetMapWidth ( $current_font ) / 2 ;	// Convert to byte count
+												$width		=  $current_font_map_width / 2 ;	// Convert to byte count
 												$subtext	=  substr ( $text, $i - 1 ) ;
 												$regex		=  "#^ (\\\\ [0-7]+){1,$width} #imsx" ;
 
@@ -2429,7 +2484,8 @@ class  PdfToText 	extends PdfObjectBase
 							    }
 
 							// Handle offsets between blocks of characters
-							if  ( isset ( $instruction [ 'offsets' ] [ $value_index ] ) )
+							if  ( isset ( $instruction [ 'offsets' ] [ $value_index ] )  &&
+									abs ( $instruction [ 'offsets' ] [ $value_index ] )  >  $this -> MinSpaceWidth )
 								$result		.=  $this -> __get_character_padding ( $instruction [ 'offsets' ] [ $value_index ] ) ;
 
 							$value_index ++ ;
@@ -2485,7 +2541,8 @@ class  PdfToText 	extends PdfObjectBase
 							    }
 
 							// Handle offsets between blocks of characters
-							if  ( isset ( $instruction [ 'offsets' ] [ $value_index ] ) )
+							if  ( isset ( $instruction [ 'offsets' ] [ $value_index ] )  &&
+									abs ( $instruction [ 'offsets' ] [ $value_index ] )  >  $this -> MinSpaceWidth )
 								$result		.=  $this -> __get_character_padding ( $instruction [ 'offsets' ] [ $value_index ] ) ;
 
 							$value_index ++ ;
@@ -2554,7 +2611,7 @@ class  PdfToText 	extends PdfObjectBase
 			    }
 
 			// Floating-point number : push it onto the stack
-			if  ( ctype_digit ( $token [0] )  ||  $token [0]  ==  '-'  ||  $token [0]  ==  '+'  ||  $token [0]  ==  '.' )
+			if  ( ( $token [0]  >=  '0'  &&  $token [0]  <=  '9' )  ||  $token [0]  ==  '-'  ||  $token [0]  ==  '+'  ||  $token [0]  ==  '.' )
 				$number_stack []	=  $token ;
 			// 'Tm' instruction : return a "goto" instruction with the x and y coordinates
 			else if  ( $token  ==  'Tm' )
@@ -2586,7 +2643,7 @@ class  PdfToText 	extends PdfObjectBase
 				return ( [ 'instruction' => 'leading', 'next' => $next_index, 'size' => $number_stack [0], 'token' => $token ] ) ;
 			// Position to next line
 			else if  ( $token  ==  'T*' )
-				return ( [ 'instruction' => 'nl', 'next' => $next_index, 'conditional' => false, 'leading' => true ] ) ;
+				return ( [ 'instruction' => 'nl', 'next' => $next_index, 'conditional' => false, 'leading' => false ] ) ;
 			// Draw object ("Do"). To prevent different text shapes to appear on the same line, we return a "newline" instruction
 			// here. Note that the shape position is not taken into account here, and shapes will be processed in the order they
 			// appear in the pdf file (which is likely to be different from their position on a graphic screen).
@@ -2630,19 +2687,19 @@ class  PdfToText 	extends PdfObjectBase
 			// "/R" : Specifies the font to be used for the next text output(s)
 			else if  ( ! strncasecmp ( $token, '/R', 2 ) )
 			   {
-				$resource 	=  ( integer ) substr ( $token, 2 ) ;
-
-				return ( [ 'instruction' => 'resource', 'next' => $next_index, 'resource' => $resource, 'token' => $token ] ) ;
+				return ( [ 'instruction' => 'resource', 'next' => $next_index, 'resource' => $token, 'token' => $token ] ) ;
 			    }
 		   	// "/F" : Specifies the font to be used for the next text output(s), using an indirect id
-			else if  ( ! strncasecmp ( $token, '/F', 2 )  ||  ! strncasecmp ( $token, '/C', 2 )  ||  ! strncasecmp ( $token, '/T', 2 ) )
+			else if  ( ! strncasecmp ( $token, '/F', 2 )  ||  ! strncasecmp ( $token, '/C', 2 )  ||  ! strncasecmp ( $token, '/TT', 2 )  ||  ! strncasecmp ( $token, '/T', 2 ) )
 			   {
-				$resource 	=  substr ( $token, 2 ) ;
+				if  ( isset ( $this -> MapIdBuffer [ $token ] ) )
+					$id	=   $this -> MapIdBuffer [ $token ] ;
+				else
+				   {
+					$id 	=  $this -> FontTable -> GetFontByMapId ( $token ) ;
 
-				if  ( $resource [0]  ==  '-' )
-					$resource	=  substr ( $resource, 1 ) ;
-
-				$id 		=  $this -> FontTable -> GetFontByMapId ( $resource ) ;
+					$this -> MapIdBuffer [ $token ]	=  $id ;
+				    }
 
 				return ( [ 'instruction' => 'resource', 'next' => $next_index, 'resource' => $id, 'token' => $token ] ) ;
 			    }
@@ -2664,7 +2721,7 @@ class  PdfToText 	extends PdfObjectBase
 	function  __next_token ( $data, $data_length, $index )
 	   {
 		// Skip spaces
-		while  ( $index  <  $data_length  &&  ctype_space ( $data [ $index ] ) )
+		while  ( $index  <  $data_length  &&  ( $data [ $index ]  ==  ' '  ||  $data [ $index ]  ==  "\t"  ||  $data [ $index ]  ==  "\r"  ||  $data [ $index ]  ==  "\n" ) )
 			$index ++ ;
 
 		// End of input
@@ -2817,19 +2874,30 @@ class  PdfToText 	extends PdfObjectBase
 		   		$index ++ ;
 		   		$value 	=  $ch ;
 
-		   		if ( ctype_digit ( $ch )  ||  $ch  ==  '-'  ||  $ch  ==  '+' )
-		   		   {
-		   			while  ( $index  <  $data_length  &&
-		   					( ctype_digit ( $data [ $index ] )  ||  $data [ $index ]  ==  '.' ) )
-		   				$value 	.=  $data [ $index ++ ] ;
-		   		    }
-		   		else if  ( ctype_alpha ( $ch )  ||  $ch  ==  '/' )
-		   		   {
-					while  ( $index  <  $data_length  &&  
-						( ctype_alnum ( $data [ $index ] )  ||  
-							$data [ $index ]  ==  '*'  ||  $data [ $index ]  ==  '-'  ||  $data [ $index ]  ==  '_' ) )
-						$value 	.=  $data [ $index ++ ] ;
-		   		    }
+				if  ( isset ( $data [ $index ] ) )
+				   {
+		   			if ( ( $ch  >=  '0'  &&  $ch  <=  '9' )  ||  $ch  ==  '-'  ||  $ch  ==  '+' )
+		   			   {
+		   				while  ( $index  <  $data_length  &&
+		   						( ( $data [ $index ]  >=  '0'  &&  $data [ $index ]  <=  '9' )  ||  $data [ $index ]  ==  '.' ) )
+		   					$value 	.=  $data [ $index ++ ] ;
+		   			    }
+		   			else if  ( ( ( $ch  >=  'A'  &&  $ch  <=  'Z' )  ||  ( $ch  >=  'a'  &&  $ch  <=  'z' ) )  ||  $ch  ==  '/' )
+		   			   {
+						$ch	=  $data [ $index ] ;
+
+						while  ( $index  <  $data_length  &&  
+							( ( ( $ch  >=  'A'  &&  $ch  <=  'Z' )  ||  ( $ch  >=  'a'  &&  $ch  <=  'z' )  ||  ( $ch  >=  '0'  &&  $ch  <=  '9' ) )  ||  
+								$ch  ==  '*'  ||  $ch  ==  '-'  ||  $ch  ==  '_' ) )
+						   {
+							$value 	.=  $ch ;
+							$index ++ ;
+
+							if  ( isset ( $data [ $index ] ) )
+								$ch	=  $data [ $index ] ;
+						    }
+		   			    }
+				    }
 
 		   		return ( [ $value, $index ] ) ;
 		    }
@@ -2864,7 +2932,7 @@ class  PdfToText 	extends PdfObjectBase
 			   {
 				$value	=  '' ;
 
-				while  ( $i  <  $length  &&  ( ctype_digit ( $array [$i] )  ||  $array [$i]  ==  '-'  ||  $array [$i]  ==  '+' ) )
+				while  ( $i  <  $length  &&  ( ( $array [$i]  >=  '0'  &&  $array [$i]  <=  '9' )  ||  $array [$i]  ==  '-'  ||  $array [$i]  ==  '+' ) )
 					$value	.=  $array [$i++] ;
 
 				$offsets []	=  ( integer ) $value ;
@@ -3176,17 +3244,20 @@ class 	PdfTexterFontTable 	extends PdfObjectBase
 	//		<</C0_0 5 0 R
 	public function  AddFontMap ( $object_id, $object_data )
 	   {
-		if  ( preg_match_all ( '#/F(?P<font> \d+) \s+ (?P<object> \d+)#x', $object_data, $matches ) )
+		// The same object can hold different notations for font associations
+		if  ( preg_match_all ( '# (?P<font> / ( (F) || (TT) ) \d+) \s+ (?P<object> \d+)#x', $object_data, $matches ) )
 		   {
 		   	for ( $i = 0, $count = count ( $matches [ 'font' ] ) ; $i  <  $count ; $i ++ )
 		   		$this -> FontMap [ $matches [ 'font' ] [$i] ] 	=  $matches [ 'object' ] [$i] ;
 		    }
-		else if  ( preg_match_all ( '#/f-(?P<font> \d+ - \d+) \s+ (?P<object> \d+)#x', $object_data, $matches ) )
+
+		if  ( preg_match_all ( '# (?P<font> /f- \d+ - \d+ ) \s+ (?P<object> \d+)#x', $object_data, $matches ) )
 		   {
 		   	for ( $i = 0, $count = count ( $matches [ 'font' ] ) ; $i  <  $count ; $i ++ )
 		   		$this -> FontMap [ $matches [ 'font' ] [$i] ] 	=  $matches [ 'object' ] [$i] ;
 		    }
-		else if  ( preg_match_all ( '#/C(?P<font> \d+ _ \d+) \s+ (?P<object> \d+)#x', $object_data, $matches ) )
+
+		if  ( preg_match_all ( '# (?P<font> /[CT] \d+ _ \d+) \s+ (?P<object> \d+)#x', $object_data, $matches ) )
 		   {
 		   	for ( $i = 0, $count = count ( $matches [ 'font' ] ) ; $i  <  $count ; $i ++ )
 		   		$this -> FontMap [ $matches [ 'font' ] [$i] ] 	=  $matches [ 'object' ] [$i] ;
