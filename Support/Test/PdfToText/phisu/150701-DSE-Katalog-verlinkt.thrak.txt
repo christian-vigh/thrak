@@ -12,8 +12,8 @@ AUF 1  BLICK6
 DSE-Wien 
 Ihr Partner in der aktiven Arbeitsmarktpolitik 
 Der Wiener Dachverband für sozial-ökonomische Einrichtungen (DSE-Wien) vertritt seit 2001 Wie -ner Organisationen, die sich der Beratung, Qualifizierung, Betreuung und Beschäftigung langzeit 
--beschäftigungsloser bzw. arbeitsmarktferner Menschen verschrieben haben. Die Interessenvertretung repräsentiert 53 Betriebe und Beratungseinrichtungen, hinter denen 32 Trägerorganisationen stehen.Auf Basis seiner starken Vernetzung bietet der DSE-Wien Expertise in Belangen der aktiven Arbeitsmarktpolitik
-und ist mit seinen Mitgliedern Ansprechpartner für Fördergeber, Politik, Wissenschaft, 
+-beschäftigungsloser bzw. arbeitsmarktferner Menschen verschrieben haben. Die Interessenvertretung repräsentiert 53 Betriebe und Beratungseinrichtungen, hinter denen 32 Trägerorganisationen stehen.Auf Basis seiner starken Vernetzung bietet der DSE-Wien Expertise in Belangen der aktiven Arbeits- 
+marktpolitik und ist mit seinen Mitgliedern Ansprechpartner für Fördergeber, Politik, Wissenschaft, 
 Medien und Betroffene. 
 Aktive Arbeitsmarktpolitik
 Der DSE-Wien macht sich für die Interessen seiner – ausschließlich gemeinnützigen – Mitglieder 
@@ -99,8 +99,8 @@ Produkte & Dienstleistungen
 Qualitätsgeprüfte Second-Hand-Geräte und Servicedienstleistungen: EDV- und Audio-Geräte, Komponenten und Ersatzteile, Beratung, Reparaturen, Virenentfernung, Installationen etc.
 Entsorgungsdienstleistungen: Elektroaltgeräte- und Spermüll-Abholungen
 Unterstützungsangebot
-Durch befristete Beschäftigung im Recycling und in der Wiederverwendung von Elektrogeräten erhalten
-Arbeit suchende Menschen die Chance, in ein geregeltes Arbeitsleben zurückzufinden.D.R.Z - Demontage- und Recycling-Zentrum ist Mitglied des DSE-Wien.
+Durch befristete Beschäftigung im Recycling und in der Wiederverwendung von Elektrogeräten er-
+halten Arbeit suchende Menschen die Chance, in ein geregeltes Arbeitsleben zurückzufinden.D.R.Z - Demontage- und Recycling-Zentrum ist Mitglied des DSE-Wien.
 Finanzierung
 Arbeitsmarktservice Wien, esf, Eigenerlöse
 Zugang
@@ -125,9 +125,9 @@ Tätigkeitsfeld
 „Was für Jamie Oliver das Fifteen in London, ist für Schirmherr Bürgermeister Dr. Michael Häupl das Michl’s in Wien: ein Restaurant der anderen Art.” Das Michl’s Café Restaurant ist ein sozialöko- nomischer Betrieb, dessen Ziel es ist, arbeitsmarktfernen Personen und Menschen mit Behinderung als Gastronomische Fach- und Hilfskräfte (Küche, Service) den Wiedereinstieg in die Arbeitswelt zu ermöglichen.
 Produkte & Dienstleistungen
 Das Michl’s bietet von Montag bis Freitag 8-16 Uhr eine vielfältige Frühstücksauswahl, ein 2-gän
-giges
-Tages-á-la-carte Gericht und ein Wochengericht, sowie eine reiche Auswahl an á-la-carteSpeisen
-und abwechslungsreiche Kaffeekreationen mit dem Michl’s Gugelhupf.Dem Michl’s-Team ist es ein Anliegen, bei der Zubereitung auf Fair Trade Produkte zu achten und nachhaltig zu agieren. Das Michl’s ist als ÖkoBusinessPlan-Betrieb ausgezeichnet.
+-
+giges Tages-á-la-carte Gericht und ein Wochengericht, sowie eine reiche Auswahl an á-la-carte-
+Speisen und abwechslungsreiche Kaffeekreationen mit dem Michl’s Gugelhupf.Dem Michl’s-Team ist es ein Anliegen, bei der Zubereitung auf Fair Trade Produkte zu achten und nachhaltig zu agieren. Das Michl’s ist als ÖkoBusinessPlan-Betrieb ausgezeichnet.
 Gehobene Wiener Küche
 Frühstück
 Kulinarische Events
@@ -245,9 +245,10 @@ Finanzierung
 Arbeitsmarktservice Wien, Eigenmittel des Trägers Kolping Österreich
 Zugang
 Telefonische Zubuchung durch das AMS Wien, Erstgespräch mit der Projektkoordinatorin in der Pau
-lanergasse
-11, 1040 Wien. Bei Eignung: Zuweisung zum Arbeitstraining an einen der drei Standorte.
-Den BewerberInnen steht es zudem frei, sich für einen der beiden Bereiche (Handwerk oder 
+-
+lanergasse 11, 1040 Wien. Bei Eignung: Zuweisung zum Arbeitstraining an einen der drei Stand-
+ 
+orte. Den BewerberInnen steht es zudem frei, sich für einen der beiden Bereiche (Handwerk oder 
 Soziales) zu entscheiden. Im sozialen Bereich:
 Begleitung der älteren BewohnerInnen zu  (Gruppen-)Veranstaltungen etc.
 Beschäftigung mit älteren Menschen  (Spielen, Spazierengehen, Lesen etc.)
@@ -310,12 +311,12 @@ www.volkshilfe-beschaeftigung.at/betriebe/
 volkshilfe-proserv
 DYSONHolzmanngasse 5, 1210 WienKontakt    
 M 
-      dyson@volkshilfe-beschaeftigung.atfinungsz.  
+    dyson@volkshilfe-beschaeftigung.atfinungsz.  
  Mo, Mi, Fr   08.00 – 18.00         
 Di, Do
     08.00 – 16.30Erreichbar   
 U 
-      U1 (Aderklaaerstraße)HYGIENESERVICEHolzmanngasse 5, 1210 WienKontakt    
+    U1 (Aderklaaerstraße)HYGIENESERVICEHolzmanngasse 5, 1210 WienKontakt    
 M 
  
 hygieneservice@volkshilfe-beschaeftigung.at
@@ -344,7 +345,7 @@ Mariahilfer Straße 123/4. Stock
  
 1060 WienT  
 01 33 168 – 3800F  
-01 331 68 – 3991W www.abo-jugend.atat
+01 331 68 – 3991W www.abo-jugend.at91
 finungszeitenMo – Do   
 09.00 – 15.30
  Fr 
@@ -354,9 +355,9 @@ U3, U6 (Westbahnhof )Bim
 5, 6, 9, 18, 52, 58, (Westbahnhof)Bahn  
   S50, R50 (Station Westbahnhof)
 86Unterstützung für
-Aufbruch zu mehr ist eine Beratungs- und Betreuungseinrichtung für Personen, die beim AMS Wien vorgemerkt
-sind und eine geringfügige Beschäftigung haben, sowie Personen mit besonderem Betreuungsbedarf
-und individueller Unterstützung. 
+Aufbruch zu mehr ist eine Beratungs- und Betreuungseinrichtung für Personen, die beim AMS Wien vor-  
+gemerkt sind und eine geringfügige Beschäftigung haben, sowie Personen mit besonderem Betreuungs- 
+bedarf und individueller Unterstützung. 
 Beratungsangebot
 Das Angebot richtet sich insbesondere an arbeitsuchende Personen, die eine geringfügige Beschäfti
 -gung haben. Durch die intensive und individuelle Beratung kann auf die besondere Situation dieser Zielgruppe eingegangen werden. Die Hintergründe, wieso Personen eine geringfügige Beschäfti-gung beginnen, sind sehr vielfältig. Das Angebot der Beratungseinrichtung hat vor allem das Ziel, die Personen über ihre Situation aufzuklären, denn eine langfristige und dauerhafte geringfügige Beschäftigung bringt viele Risiken und Gefahren mit sich. Das Ziel in der Beratung ist es, für diese Personen die geringfügige Beschäftigung in ein vollversiche- rungspflichtiges Arbeitsverhältnis umzuwandeln. Durch die Nutzung von Institutionen, diversen Bera- tungsstellen und durch die Netzwerke, die die Firmengruppe Context GmbH in den letzten Jahren aufgebaut hat, erhöhen sich die Chancen, das Ziel – ein vollversicherungspflichtiges Arbeitsverhält 
@@ -369,12 +370,13 @@ Das Angebot richtet sich insbesondere an arbeitsuchende Personen, die eine gerin
 Nachbetreuung 
 Unsere Organisation
 Context Impulse am Arbeitsmarkt ist seit Jahren erfolgreicher Anbieter von Bildungsprogrammen 
-und Beratungseinrichtungen. Als Partner des Arbeitsmarktservice Österreich setzten wir die vereinbarten
-arbeitsmarktpolitischen Ziele um. Durch neue und innovative Konzepte werden wichtige Im
-pulse
-am Arbeitsmarkt gesetzt. Unser Erfolgskonzept beruht auf unserer Nähe zur Wirtschaft, un
-seren
-kompetenten MitarbeiterInnen, sowie unserer Methodik der Vermittlung von Beschäftigung. 
+und Beratungseinrichtungen. Als Partner des Arbeitsmarktservice Österreich setzten wir die verein-
+ 
+barten arbeitsmarktpolitischen Ziele um. Durch neue und innovative Konzepte werden wichtige Im
+-
+pulse am Arbeitsmarkt gesetzt. Unser Erfolgskonzept beruht auf unserer Nähe zur Wirtschaft, un
+-
+seren kompetenten MitarbeiterInnen, sowie unserer Methodik der Vermittlung von Beschäftigung. 
 Finanzierung
 Arbeitsmarktservice Wien
 Zugang
@@ -387,9 +389,9 @@ Leistungen für Unternehmen:
 bei der Personalauswahl
  Beratung und Betreuung  
 über das Probemonat hinaus
- Vernetzung mit den firmeninternen
-Projekten und Unterstützung
-bei der Besetzung  
+ Vernetzung mit den firmen- 
+internen Projekten und Unter- 
+stützung bei der Besetzung  
 des Stammpersonals
 91
 BeratungBBE Deutsch
@@ -400,7 +402,7 @@ Dresdner Straße 108, 3. Stock
  
 1200 WienLiesinger-Flur-Gasse 2c, 2. Stock 1230 WienT  
 01 688 13 68M  
-DEUTSCH_BBE@fab.atW www.fab.atat
+DEUTSCH_BBE@fab.atW www.fab.at91
 finungszeitenMo – Do   
 08.00 – 16.00
  Fr 
@@ -420,12 +422,12 @@ Die TeilnehmerInnen werden bei ihren individuellen Bedürfnissen, sowohl in ber
 Vermittlung der TeilnehmerInnen zu entsprechenden Beratungseinrichtungen
 Unsere Organisation
 Seit über 10 Jahren ist unser Menschenbild geprägt von Respekt und Wertschätzung für das In
-dividuum.
-Dadurch fühlen wir uns verpflichtet, Menschen bei der Suche nach ihren individuellen 
+-
+dividuum. Dadurch fühlen wir uns verpflichtet, Menschen bei der Suche nach ihren individuellen 
 Antworten auf die aktuellen wirtschaftlichen Herausforderungen zu unterstützen. ppc training führt 
 zahlreiche Projekte unterschiedlichster Grße für AuftraggeberInnen aus Österreich und aus an
-deren
-europäischen Ländern durch.Für die BBE Deutsch, mit der Zielgruppe max. Pflichtschule und den Berufswünschen Gastgewerbe, Büro, Handel, Gesundheit, ist ppc training an drei Standorten von Kursträgern tätig.
+-
+deren europäischen Ländern durch.Für die BBE Deutsch, mit der Zielgruppe max. Pflichtschule und den Berufswünschen Gastgewerbe, Büro, Handel, Gesundheit, ist ppc training an drei Standorten von Kursträgern tätig.
 Finanzierung
 Arbeitsmarktservice Wien, esf
 Zugang
@@ -438,7 +440,7 @@ BeratungBBE für Männer
 Männerberatung Wien
 Erlachgasse 95
  1100 WienT  
-0650 680 66 69M bbe@maenner.atW www.maenner.att
+0650 680 66 69M bbe@maenner.atW www.maenner.at1
 finungszeitenTermine nach VereinbarungErreichbarkeitU  
 U1 (Keplerplatz)
 106Unterstützung für
@@ -448,7 +450,9 @@ Das Projekt „Check In und Nutze Deine Qualifikationen“ unterstützt die Ziel
 Unsere Organisation
 Das Beratungszentrum für Migranten und Migrantinnen als etablierter Verein mit jahrzehntelanger 
 Erfahrung übernimmt in Wien eine wichtige Funktion als Experte in Integrationsfragen, reagiert auf 
-gesellschaftliche Veränderungen mit adäquaten Angeboten und fungiert als Netzwerk und Kooperationsstelle.
+gesellschaftliche Veränderungen mit adäquaten Angeboten und fungiert als Netzwerk und Koopera-
+ 
+tionsstelle.
 Finanzierung
 Arbeitsmarktservice Wien, esf, waff 
 Zugang
@@ -466,7 +470,7 @@ Simmeringer Hauptstraße 47-49
 1110 WienT  
 01/ 740 22 – 1610 oder – 2571M  
 adminbdz@bbrz.atW www.bbrz.at  
-at
+91
 finungszeitenMo – Do   
 08.00 – 15.00
  Fr 
@@ -511,8 +515,8 @@ U1, U2, U4 (Karlsplatz) Bus
 Eltern, MultiplikatorInnen, LehrerInnen und Menschen in beratenden Berufensprungbrett bietet Beratung und eine Vielzahl an Workshops. Zielsetzungen sind Stärkung & Empowerment der Mädchen und jungen Frauen, Unterstützung bei Lehrstellen- und Arbeitssuche, Berufsorientierung und bei jeglichen Fragestellungen des Erwachsen-werdens. Nähere Infos & aktuelle Termine auf www.sprungbrett.or.at
 Beratungsangebot
 Mädchen und junge Frauen erhalten bei sprungbrett Unterstützung bei Berufsorientierung, Schul
-wahl
-und Lehrstellensuche sowie bei Fragen zu Gefühlen, Schwangerschaft, Gewalterfahrungen u.a. 
+-
+wahl und Lehrstellensuche sowie bei Fragen zu Gefühlen, Schwangerschaft, Gewalterfahrungen u.a. 
 Die Beratungen sind vertraulich und kostenlos.sprungbrett ermöglicht das Kennenlernen von Handwerk & Technik in der Mädchenwerkstatt und bietet Veranstaltungen zu Körper, Selbstbehauptung und -verteidigung sowie Workshops für Schul- klassen. Mädchen-Berufs-Zentrum: Workshop-Reihe und Beratung für arbeits- und lehrstellensuchende Mäd-chen und junge Frauen mit Berufswünschen in allen (Lehr-)Berufen!spacelab_girls: für Mädchen und junge Frauen, die nicht in Ausbildung oder einem Arbeitsverhältnis sind und nicht wissen, wie es weitergehen soll.
 Unsere Organisation
 Der gemeinnützige Verein sprungbrett besteht seit 1987 und vertritt seitdem einen emanzipatorischen 
@@ -532,7 +536,7 @@ gGMBH
 Fonds Soziales Wien
 Döblerhofstraße 91030 Wien T  
 01 330 87 35 F  
-01 330 87 35-66 925W www.schuldnerberatung-wien.atat
+01 330 87 35-66 925W www.schuldnerberatung-wien.at91
 finungszeitenMo – Fr   
 08.00 – 15.30Termine nach telefonischer VereinbarungErreichbarkeitU  
 U3 (Gasometer)
@@ -548,8 +552,8 @@ Mit seinen vielfältigen Angeboten trägt FAB wesentlich zu einer erfolgreichen 
 Österreich bei. Er verfügt über jahrzehntelange Erfahrung auf dem Gebiet der Arbeitsintegration von 
 Menschen mit sozialen und/oder körperlichen Beeinträchtigungen. Er unterstützt Menschen beim 
 Zugang zum Arbeitsmarkt. Er beschäftigt, qualifiziert, begleitet und betreut Arbeit suchende Men
-schen,
-Menschen mit Beeinträchtigungen und Menschen mit weiterem Unterstützungsbedarf durch 
+-
+schen, Menschen mit Beeinträchtigungen und Menschen mit weiterem Unterstützungsbedarf durch 
 maßgeschneiderte Angebote und bietet ihnen so die nötigen Voraussetzungen für eine erfolgreiche 
 Integration.FAB step2job ist Mitglied des DSE-Wien. 
 Finanzierung
@@ -565,7 +569,7 @@ Lassallestraße 46/D3
  
 1020 WienT  
 0664 60 694 882 0M  
-step2job@volkshilfe-beschaeftigung.atW www.volkshilfe-beschaeftigung.atat
+step2job@volkshilfe-beschaeftigung.atW www.volkshilfe-beschaeftigung.at91
 finungszeitenMo – Do   
 08.00 – 16.30
  Fr 
@@ -577,8 +581,8 @@ U1 (Vorgartenstraße)Bus
 146step2job für die RGS 965 (Schönbrunner Straße)
 ibis acam Bildungsgesellschaft
 Unterstützung für
-Beim AMS vorgemerkte BezieherInnen der Bedarfsorientierten Mindestsicherung sowie arbeitsmarktferne,
-langzeitarbeitslose Männer und Frauen, im Alter zwischen 21 und 64 Jahren aus den Wiener Bezirken 12 + 23.
+Beim AMS vorgemerkte BezieherInnen der Bedarfsorientierten Mindestsicherung sowie arbeitsmarkt-
+ ferne, langzeitarbeitslose Männer und Frauen, im Alter zwischen 21 und 64 Jahren aus den Wiener Bezirken 12 + 23.
 Beratungsangebot
 Die TeilnehmerInnen werden im individuellen Einzelcoaching entweder mit einem vermittlungs -fokussierten Ansatz oder im Casemanagement betreut. Das Ziel ist eine nachhaltige Arbeitsmarktin-tegration der TeilnehmerInnen. Die Betreuung kann maximal ein Jahr dauern.Persönliche BeraterInnen helfen bei
 der Abklärung der beruflichen und persönlichen Situation
@@ -592,8 +596,8 @@ Die TeilnehmerInnen werden im individuellen Einzelcoaching entweder mit einem v
 Unsere Organisation
 Als österreichweit tätiges Bildungsinstitut mit über 800 MitarbeiterInnen an 80 Standorten kann die 
 ibis acam Bildungsgesellschaft auf langjährige Erfahrung im Bildungs- und Beratungsbereich zu
-rückgreifen.
-So können wir unseren TeilnehmerInnen die bestmögliche Unterstützung rund um den 
+-
+rückgreifen. So können wir unseren TeilnehmerInnen die bestmögliche Unterstützung rund um den 
 (Wieder-)Einstieg in den Arbeitsmarkt anbieten.
 Finanzierung
 Arbeitsmarktservice Wien, esf
@@ -624,8 +628,9 @@ Beratungsangebot
 14-tägiger Newsletter
 Unsere Organisation
 Als Portal für JungakademikerInnen aller Studienrichtungen ist UNIPORT, das Karriereservice der 
-Universität Wien, darauf ausgerichtet, Wissen und Kompetenzen der Universität aktiv mit der Berufswelt
-und der Gesellschaft zu verflechten, Kooperationen mit Unternehmen und Institutionen aller   Branchen zu initiieren und tragfähige Brücken in beide Richtungen zu bauen. Das engagierte Team verfügt über hohe fachliche Kompetenz, gepaart mit Ideenreichtum, um direkte Verbindungen zwischen dem akademischen Nachwuchs und dem Arbeitsmarkt herzustellen. 
+Universität Wien, darauf ausgerichtet, Wissen und Kompetenzen der Universität aktiv mit der Berufs-
+ 
+welt und der Gesellschaft zu verflechten, Kooperationen mit Unternehmen und Institutionen aller   Branchen zu initiieren und tragfähige Brücken in beide Richtungen zu bauen. Das engagierte Team verfügt über hohe fachliche Kompetenz, gepaart mit Ideenreichtum, um direkte Verbindungen zwischen dem akademischen Nachwuchs und dem Arbeitsmarkt herzustellen. 
 Finanzierung
 Arbeitsmarktservice Wien,  Eigenerlöse
 Zugang
@@ -638,7 +643,7 @@ Verein sprungbrett
 Hütteldorferstraße 81b/Stiege 1/Top 4
  1150 WienT  
 01 789 45 45F  
-01 789 45 45 20W www.sprungbrett.or.atat
+01 789 45 45 20W www.sprungbrett.or.at91
 finungszeiten (Telefonische Auskünfte)Mo – Do   
 09.00 – 17.00 und nach VereinbarungErreichbarkeitU  
 U3 (Johnstraße)Bim  
@@ -650,8 +655,8 @@ Beratungsangebot
 Aufbauend auf einer Klärungsphase wird gemeinsam mit der Kundin Form, Inhalt und Zielsetzung 
 der weiteren Betreuung vereinbart. Unter Einbeziehung der individuellen Lebenssituation werden 
 berufliche Veränderungsprozesse begleitet, professionelle Bewerbungsstrategien erarbeitet und um
-fassende
-Informationen zu arbeitsmarktrelevanten Fragen behandelt. Wir beraten zu Burnout Prävention und bei Burnout und unterstützen bei der Erhaltung und Förderung psychischer Stabilität in schwierigen Lebens- und Arbeitsphasen.Im Angebot für junge Frauen erhalten die Kundinnen Infos zur Rechts- und Wohnsituation, zu Berufs 
+-
+fassende Informationen zu arbeitsmarktrelevanten Fragen behandelt. Wir beraten zu Burnout Prävention und bei Burnout und unterstützen bei der Erhaltung und Förderung psychischer Stabilität in schwierigen Lebens- und Arbeitsphasen.Im Angebot für junge Frauen erhalten die Kundinnen Infos zur Rechts- und Wohnsituation, zu Berufs 
 -bildern und Kursangeboten und werden bei Recherchen zu Aus- und Fortbildungen, bei der Suche nach Lehrplätzen und Jobs sowie bei der Klärung und Lösung persönlicher Probleme unterstützt.
 Unsere Organisation
 abz*austria ist eine Non-Profit-Frauenorganisation, die sich seit ihrer Gründung im Jahr 1992 die Gleichstellung von Frauen und Männern am österreichischen Arbeitsmarkt zur Aufgabe gemacht hat.abz*austria engagiert sich in fünf Kompetenzfeldern und entwickelt Lösungen für Aufgabenstel-lungen zu „Gender Mainstreaming und Diversity Management”, „Vereinbarkeit von Beruf.Familie.Privatleben”, „Arbeit.Jugend.Alter”, „Lebenslanges Lernen” und „Arbeit.Migration.Mobilität”.abz*beratung für frauen ist Mitglied des DSE-Wien.
@@ -666,7 +671,7 @@ BeratungHaftentlassenenhilfe
 Neustart Wien
 Holzhausergasse 4
  1020 WienT  
-01 218 32 55 0W www.neustart.atat
+01 218 32 55 0W www.neustart.at91
 finungszeitenMo – Fr   
 09.00 – 13.00
  Voranmeldung nicht notwendigErreichbarkeitBim   
@@ -720,11 +725,12 @@ fix und fertig**
 78
 Beschäftigung8
 Liebe Leserin, lieber Leser!Es freut mich sehr, mich auch heuer wieder in diesem Katalog, der so übersichtlich über die Ange 
--bote sozialintegrativer Unternehmen und Beratungseinrichtungen in Wien informiert, an Sie wenden zu dürfen.Mein Ressort war in den letzten Jahren sehr intensiv bemüht, ein umfangreiches Angebot an Maßnahmen
-des Regierungsprogramms einerseits zur Verbesserung der Situation von Menschen, die 
+-bote sozialintegrativer Unternehmen und Beratungseinrichtungen in Wien informiert, an Sie wenden zu dürfen.Mein Ressort war in den letzten Jahren sehr intensiv bemüht, ein umfangreiches Angebot an Maß-
+nahmen des Regierungsprogramms einerseits zur Verbesserung der Situation von Menschen, die 
 längere Zeit ohne Beschäftigung waren, sowie andererseits zur besseren Integration von Menschen 
-mit Behinderung in den offenen Arbeitsmarkt zu realisieren. Vor allem auch durch die Beschäftigungsoffensive
-der Bundesregierung wurden zusätzliche Mittel zur Förderung der beruichen 
+mit Behinderung in den offenen Arbeitsmarkt zu realisieren. Vor allem auch durch die Beschäfti-
+ 
+gungsoffensive der Bundesregierung wurden zusätzliche Mittel zur Förderung der beruichen 
 Eingliederung zur Verfügung gestellt. Doch so sehr sich Gesetzgeber und Verwaltung bemühen, 
 die Situation von Menschen mit besonderen Bedürfnissen am Arbeitsmarkt weiter zu verbessern, 
 diese Aufgabe wäre nicht zu bewältigen ohne die Arbeit der gemeinnützigen Träger. Die staatliche 
@@ -733,13 +739,13 @@ muss aber mit diesen Trägern zusammenarbeiten. Die Trägerorganisationen erbrin
 Leistungen zur Eingliederung von Menschen mit Behinderungen, stellen Qualizierungsangebote 
 zur Verfügung, entwickeln Modelle der modularen Integration in den Arbeitsmarkt, beraten und 
 begleiten beim schwierigen Weg hinein ins Arbeitsleben oder bei der schwierigen Rückkehr nach 
-Phasen von Krankheit, Rehabilitation, Arbeitslosigkeit.Ich danke abschließend allen Mitarbeiterinnen und Mitarbeitern sowie allen Leitkräften in den jeweiligen
-Einzelorganisationen der sozial-ökonomischen Einrichtungen  sowie auch den KollegInnen im 
+Phasen von Krankheit, Rehabilitation, Arbeitslosigkeit.Ich danke abschließend allen Mitarbeiterinnen und Mitarbeitern sowie allen Leitkräften in den jewei- 
+ligen Einzelorganisationen der sozial-ökonomischen Einrichtungen  sowie auch den KollegInnen im 
 Wiener Dachverband  für ihren großartigen Einsatz und wünsche für die Bewältigung der kommen
-den
-Herausforderungen viel Kraft und Erfolg!Sozialminister Rudolf Hundstorfer
+-
+den Herausforderungen viel Kraft und Erfolg!Sozialminister Rudolf Hundstorfer
 Bundesminister für Arbeit, Soziales und Konsumentenschutz
-Vorwort  
+Vorwort33
 von Rudolf Hundstorfer
 Bundesminister für Arbeit, Soziales und Konsumentenschutz* gefördert vom AMS Wien; ** gefördert mittels AMS-Eingliederungsbeihilfe; *** Andere Förderungen
 SÖBÜ (Sozialökonomische Betriebe Überlasser)SÖB (Sozialökonomische Betriebe)
@@ -834,12 +840,13 @@ Qualifizierung durch Fachtrainings im Bereich Call Center Inbound:
 Unterstützungsangebot
 Es werden fachliche Arbeitsanleitung, Betreuung und Unterstützung durch qualifizierte Fachbetreuer -Innen angeboten. Ergänzend gibt es ein Gesundheitsangebot in einem sehr breiten Verständnis (Bewegung, Ernährung, Entspannung, Körperwahrnehmung, Psychosomatik). Weiters besteht die Möglichkeit einer arbeitsmedizinischen Beratung und Begleitung (medizinisches Leistungskalkül, Ar 
 -beitsplatzevaluierung, Dokumentation der Arbeitsbelastbarkeitsentwicklung). Für die gesamte Dauer steht den TeilnehmerInnen eine gesundheits- und sozialpädagogische Betreuung zur Verfügung. 
-Mit seinen vielfältigen Angeboten trägt FAB wesentlich zu einer erfolgreichen Arbeitsmarktpolitik in Österreich
-bei. Er verfügt über jahrzehntelange Erfahrung auf dem Gebiet der Arbeitsintegration von Menschen
-mit sozialen und/oder körperlichen Beeinträchtigungen. Er unterstützt Menschen beim Zugang zum 
+Mit seinen vielfältigen Angeboten trägt FAB wesentlich zu einer erfolgreichen Arbeitsmarktpolitik in Öster- 
+reich bei. Er verfügt über jahrzehntelange Erfahrung auf dem Gebiet der Arbeitsintegration von Men-
+schen mit sozialen und/oder körperlichen Beeinträchtigungen. Er unterstützt Menschen beim Zugang zum 
 Arbeitsmarkt. Er beschäftigt, qualifiziert, begleitet und betreut Arbeit suchende Menschen, Menschen mit 
-Beeinträchtigungen und Menschen mit weiterem Unterstützungsbedarf durch maßgeschneiderte Angebote
-und bietet ihnen so die nötigen Voraussetzungen für eine erfolgreiche Integration 
+Beeinträchtigungen und Menschen mit weiterem Unterstützungsbedarf durch maßgeschneiderte Ange-
+ 
+bote und bietet ihnen so die nötigen Voraussetzungen für eine erfolgreiche Integration 
 FAB Line ist Mitglied des DSE-Wien.
 Finanzierung
 Arbeitsmarktservice Wien, Eigenerlöse
@@ -906,8 +913,8 @@ Unterstützungsangebot
 Im Rahmen eines auf bis zu 9 Monate befristeten Dienstverhältnisses bieten wir langzeitarbeitslosen 
 Männern und Frauen ab 25 Jahre Tätigkeiten im Bereich Parkpflege und Straßenreinigung.Zusätzlich zu diesem Angebot sind Praktikanten in 4 Bezirken in Dienststellen der MA 42 und MA 48 tätig. Diese sind in die Struktur der jeweiligen Dienststellen integriert.
 Darüber hinaus bietet Volkshilfe KOMMUNA individuelle Personalentwicklung, Betriebssozialarbeit sowie 
-Unterstützung bei der Jobsuche. Durch individuelle Potenzialanalysen werden gemeinsam mit den MitarbeiterInnen
-berufliche Ziele und Qualifizierungsmöglichkeiten erarbeitet und auf Umsetzung geprüft.
+Unterstützung bei der Jobsuche. Durch individuelle Potenzialanalysen werden gemeinsam mit den Mit- 
+arbeiterInnen berufliche Ziele und Qualifizierungsmöglichkeiten erarbeitet und auf Umsetzung geprüft.
 Volkshilfe KOMMUNA ist Mitglied des DSE-Wien.
 Finanzierung
 Arbeitsmarktservice Wien, Leistungsverrechnung an MA 42, MA 48 und MA 59, esf, waff
@@ -984,8 +991,9 @@ Produkte & Dienstleistungen
 Schlüsselsafe-Montage
 Umbauten für barrierefreies Wohnen
 Unterstützungsangebot
-Wir bieten Transitarbeitskräften ein befristetes Dienstverhältnis über 7 Monate. Ziel ist die Wiedereingliederung
-in den regulären Arbeitsmarkt.Unser Betrieb bietet begleitende Maßnahmen zur beruflichen Integration:
+Wir bieten Transitarbeitskräften ein befristetes Dienstverhältnis über 7 Monate. Ziel ist die Wieder-
+ 
+eingliederung in den regulären Arbeitsmarkt.Unser Betrieb bietet begleitende Maßnahmen zur beruflichen Integration:
 Existenzsicherung
 Gewöhnung an Tagesstruktur und Arbeitsprozess
  Sozialarbeiterische Betreuung zur Aufarbeitung sozialer und gesundheitlicher Problemlagen
@@ -1077,7 +1085,7 @@ Context Impulse am Arbeitsmarkt GmbH
 Quellenstraße 2c1100 WienT  
 01 60517 – 3200
    
-0664 852 63 93W www.context.atat
+0664 852 63 93W www.context.at91
 finungszeitenMo – Fr    08.30 – 15.30ErreichbarkeitU  
 U1 (Reumannplatz)Bim   
 6 (Absberggasse)
@@ -1102,7 +1110,7 @@ Verein Projekt Integrationshaus
 Engerthstraße 163
 1020 Wien T  
 01 212 35 20M  
-info@integrationshaus.atW www.integrationshaus.att
+info@integrationshaus.atW www.integrationshaus.at1
 finungszeitenMo – Do   
 08.00 – 16.00Fr 
  
@@ -1110,8 +1118,8 @@ finungszeitenMo – Do
 U6 (Perfektastraße)Erreichbarkeit (BBE Standort update training)Bahn   
 S1, S2, S3, S7, Regionalzüge (Traisengasse)
 98Unterstützung für
-Die Volkshilfe Beschäftigung ist mit der Durchführung der BBE Deutsch für die Zielgruppe der Arbeitssuchenden,
-die „maximal Pflichtschule haben und in den Bereichen Reinigung, Lager, Bau“ einen Job suchen, betraut.Wie läuft dieses Projekt ab? Arbeitsuchende Menschen mit Migrationshintergrund haben die Möglichkeit, ein Österreichisches Sprachdiplom (ÖSD) zu erreichen. Das AMS bucht arbeitsuchend gemeldete Personen in einen Deutschkurs zu. Diese Deutschkurse werden von Instituten mit um-fangreicher Erfahrung in der Erwachsenenbildung abgehalten. Am Ende des Kurses treten die Deutschkursteilnehmenden zur ÖSD-Prüfung an.
+Die Volkshilfe Beschäftigung ist mit der Durchführung der BBE Deutsch für die Zielgruppe der Arbeits-
+ suchenden, die „maximal Pflichtschule haben und in den Bereichen Reinigung, Lager, Bau“ einen Job suchen, betraut.Wie läuft dieses Projekt ab? Arbeitsuchende Menschen mit Migrationshintergrund haben die Möglichkeit, ein Österreichisches Sprachdiplom (ÖSD) zu erreichen. Das AMS bucht arbeitsuchend gemeldete Personen in einen Deutschkurs zu. Diese Deutschkurse werden von Instituten mit um-fangreicher Erfahrung in der Erwachsenenbildung abgehalten. Am Ende des Kurses treten die Deutschkursteilnehmenden zur ÖSD-Prüfung an.
 Beratungsangebot
 Unsere Hauptaufgaben sind:
 Lernunterstützung und Prüfungsvorbereitung
@@ -1119,9 +1127,11 @@ Unsere Hauptaufgaben sind:
 Abbau von Lern- und Vermittlungshemmnissen
 Weitervermittlung und Drehscheibe zu Beratungs- und Betreuungsangeboten
 Unsere Organisation
-Die Volkshilfe Beschäftigung wurde 1997 gemeinsam von der Volkshilfe Österreich und der Volkshilfe
-Wien gegründet. Volkshilfe Beschäftigung ist ein gemeinnütziger Verein mit dem Ziel, arbeitslose
-Männer und Frauen nachhaltig in den Arbeitsmarkt zu integrieren.Wir verbinden soziale und ökonomische Prinzipien in modernen Betriebsstrukturen und Beratungs- einrichtungen. Wir bieten praktische und theoretische fachliche Qualifizierung, begleitende psycho 
+Die Volkshilfe Beschäftigung wurde 1997 gemeinsam von der Volkshilfe Österreich und der Volks-
+ 
+hilfe Wien gegründet. Volkshilfe Beschäftigung ist ein gemeinnütziger Verein mit dem Ziel, arbeits-
+ 
+lose Männer und Frauen nachhaltig in den Arbeitsmarkt zu integrieren.Wir verbinden soziale und ökonomische Prinzipien in modernen Betriebsstrukturen und Beratungs- einrichtungen. Wir bieten praktische und theoretische fachliche Qualifizierung, begleitende psycho 
 -soziale Beratung und zielorientiertes Coaching. Die berufliche Integration von Frauen und Männern aller Altersgruppen findet unter der Berücksichtigung von individuellen Hindernissen, Bedürfnissen und Fähigkeiten statt.Volkshilfe Beschäftigung BBE-Deutsch ist Mitglied des DSE-Wien.
 Finanzierung
 Arbeitsmarktservice Wien, esf
@@ -1135,7 +1145,7 @@ Verein Beratungszentrum für   Migranten und Migrantinnen
 Hoher Markt 8/Stiege 4/2. Stock
  
 1010 WienT  
-01 712 56 04M migrant@migrant.atW www.migrant.atat
+01 712 56 04M migrant@migrant.atW www.migrant.at91
 finungszeitenMo, Di, Mi, Fr  
 09.00 – 13.00 
  Do   
@@ -1157,8 +1167,8 @@ Beratungsangebot
 Unsere Organisation
 Der Verein Beratungszentrum für Migranten und Migrantinnen besteht seit 1983 und ist eine der 
 ältesten und grßten Betreuungseinrichtungen in Österreich. Seit Jänner 1993 betreibt das Bera
-tungszentrum
-mit der Frauenberatung eine eigene frauenspezifische Einrichtung.The counselling centre for immigrants was founded in 1983. Since January 1993 it provides a spe 
+-
+tungszentrum mit der Frauenberatung eine eigene frauenspezifische Einrichtung.The counselling centre for immigrants was founded in 1983. Since January 1993 it provides a spe 
 -cial counselling service for women whose major goals represent the support of an easier comeback into the job market, the possibility of further education, maintenance of work and the ability to open up new perspectives on the way to a more independent life style. All services are free, individual and cover every aspect of life.Frauenberatung – Arbeitsmarktpolitische Betreuung für Migrantinnen ist Mitglied des DSE-Wien.
 Finanzierung
 Arbeitsmarktservice Wien, esf, seit 2002 kofinanziert vom Bundesministerium für Bildung und Frauen
@@ -1176,7 +1186,7 @@ Mantlergasse 34-36/1/1
  
 1130 WienT  
 01 934 65 90W www.move-ment.at  
-at
+91
 finungszeitenMo – Do   
 08.00-16.00Fr 
  
@@ -1214,7 +1224,7 @@ Wehrgasse 26
  
 1050 WienT  
 01 581 06 60M  
-office@kinderdrehscheibe.atW www.kinderdrehscheibe.atat
+office@kinderdrehscheibe.atW www.kinderdrehscheibe.at91
 finungszeiten (Telefon- und E-Mailberatung)Mo, Do   
 09.00 – 13.00
  Di   
@@ -1222,8 +1232,8 @@ finungszeiten (Telefon- und E-Mailberatung)Mo, Do
 U4 (Kettenbrückengasse)
  
 128Unterstützung für
-In Wien gemeldete Frauen, die arbeitslos gemeldet sind, mit dem Ziel der nachhaltigen Beschäftigung
-auf dem Arbeitsmarkt. Durch kompetente BeraterInnen erfolgt ein Brückenschlag zwischen den Kulturen. Unser Firmennetzwerk bietet die Möglichkeit der Zusammenführung von diversitäts- offenen ArbeitsgeberInnen mit unseren Kundinnen.
+In Wien gemeldete Frauen, die arbeitslos gemeldet sind, mit dem Ziel der nachhaltigen Beschäfti-
+ gung auf dem Arbeitsmarkt. Durch kompetente BeraterInnen erfolgt ein Brückenschlag zwischen den Kulturen. Unser Firmennetzwerk bietet die Möglichkeit der Zusammenführung von diversitäts- offenen ArbeitsgeberInnen mit unseren Kundinnen.
 Beratungsangebot
 Beratung individuell: Gesundheit & Soziales, Bildung, Kompetenzabklärung,  Informationsdrehscheibe
 Beratung Gruppe: Infotage, Workshops (z.B. Bewerbungstraining),  Vorträge (z.B. Kinderbetreuung)
@@ -1252,7 +1262,7 @@ Schöpfleuthnergasse 25/6. OG
 Eingang: Leopold-Ferstl-Gasse 7
 1210 WienT  
 605 17-3400F  
-01 605 17-3466W www.context.atat
+01 605 17-3466W www.context.at91
 finungszeitenMo – Do   
 08.00 – 16.30
  Fr 
@@ -1292,7 +1302,7 @@ Wiedner Hauptstraße 142
 1090 WienT  
 01 36 79 565F  
 01 36 79 565 7W www.ges-aw.at  
-at
+91
 finungszeitenMo – Fr   
 08.00 – 16.00ErreichbarkeitBim  
 1, 6, 18, 62 (Matzleinsdorfer Platz)
@@ -1304,17 +1314,18 @@ Unterstützung für
 Beim AMS Huttengasse vorgemerkte BezieherInnen der Bedarfsorientierten Mindestsicherung sowie   arbeitsmarktferne Personen mit besonderen Problemlagen im Alter von 21 bis 64 Jahren, mit Hauptwohnsitz im 16., 17. oder 18. Wiener Gemeindebezirk. Die Prozessbegleitung innerhalb von step2job kann sich über einen maximalen Zeitrahmen von 12 Monaten für unsere Teilnehmer/innen erstrecken. Bei Jobantritt bieten wir auch eine Nachbetreuungszeit von 62 Tagen an.
 Beratungsangebot
 Ein multiprofessionelles Team steht unseren KundenInnen mit profunder Lebenserfahrung und fach
-lichem
-Know How auf dem Weg (zurück) in die Arbeitswelt zur Seite. Die Betreuung umfasst einerseits
-regelmßige Einzelgespräche und andererseits die Teilnahme an bedarfsorientierten Work -shops. Diese werden von unseren ExpertenInnen zu den Themen Bewerbung, Sprachen, ALVG, Persönlichkeitsentwicklung, Medienkompetenz und Gesundheit durchgeführt. Das Ziel ist es, in wertschätzender Atmosphäre durch Einzelfall-Case-Management gemeinsam Problemlösungen bei Vermittlungshemmnissen zu erarbeiten, aktive Bewerbungsunterstützung anzubieten, entsprechend Talente, Fähigkeiten und Ressourcen zu fördern, um den Einstieg in den 1. oder 2. Arbeitsmarkt zu schaffen, bzw. einen Integrationsvorschlag am Ende der Betreuungszeit abgeben zu können.
+-
+lichem Know How auf dem Weg (zurück) in die Arbeitswelt zur Seite. Die Betreuung umfasst einer-
+ 
+seits regelmßige Einzelgespräche und andererseits die Teilnahme an bedarfsorientierten Work -shops. Diese werden von unseren ExpertenInnen zu den Themen Bewerbung, Sprachen, ALVG, Persönlichkeitsentwicklung, Medienkompetenz und Gesundheit durchgeführt. Das Ziel ist es, in wertschätzender Atmosphäre durch Einzelfall-Case-Management gemeinsam Problemlösungen bei Vermittlungshemmnissen zu erarbeiten, aktive Bewerbungsunterstützung anzubieten, entsprechend Talente, Fähigkeiten und Ressourcen zu fördern, um den Einstieg in den 1. oder 2. Arbeitsmarkt zu schaffen, bzw. einen Integrationsvorschlag am Ende der Betreuungszeit abgeben zu können.
 Unsere Organisation
 BEST Institut für berufsbezogene Weiterbildung und Personaltraining GmbH ist ein anerkannter Bil
-dungs-
-und Projektträger, zu dessen wichtigsten Auftraggebern Arbeitsmarktservice-Organisationen 
+-
+dungs- und Projektträger, zu dessen wichtigsten Auftraggebern Arbeitsmarktservice-Organisationen 
 (AMS), Bundessozialamt, WAFF, Arbeitsstiftungen, Ministerien sowie EU- und Nationalagenturen 
 zählen. Das Unternehmen verfügt über umfassendes Know-How in der Konzeption und Durch
-führung
-von Aus- und Weiterbildungs-, Qualifizierungsangeboten sowie Betreuungs- und Entwick -lungs-Projekten für arbeitsuchende und berufstätige Personen als auch für Institutionen und Un-ternehmen national und international. BEST unterstützt: 
+-
+führung von Aus- und Weiterbildungs-, Qualifizierungsangeboten sowie Betreuungs- und Entwick -lungs-Projekten für arbeitsuchende und berufstätige Personen als auch für Institutionen und Un-ternehmen national und international. BEST unterstützt: 
 Jugendliche
 Langzeitarbeitslose und -beschäftigungslose Personen
 WiedereinsteigerInnen 
@@ -1370,7 +1381,7 @@ Emil-Fucik-Gasse 1
  
 1100 WienT  
 01 688 13 68M  
-zke@fab.atW www.fab.atat
+zke@fab.atW www.fab.at91
 finungszeitenMo – Do   
 08.00 – 18.00
  Fr 
@@ -1398,10 +1409,10 @@ Es wird Begleitung (Peercoaching, Selbsthilfegruppen und Mentoring) rund um das 
 Mentoring: längerfristige, zielgerichtete Einzelbegleitung durch eine/n berufs-  und krankheitserfahrene/n MentorIn zur individuellen Unterstützung
 Unsere Organisation
 pro mente Wien bietet Angebote zur sozialen Integration von Menschen mit psychischen Erkrankun
-gen
-in den Lebensbereichen Arbeit, Wohnen und Freizeit sowie Unterstützung für selbsthilfeorien
-tierte
-Projekte.pro mente – Betroffene beraten Betroffene ist Mitglied des DSE-Wien.
+-
+gen in den Lebensbereichen Arbeit, Wohnen und Freizeit sowie Unterstützung für selbsthilfeorien
+-
+tierte Projekte.pro mente – Betroffene beraten Betroffene ist Mitglied des DSE-Wien.
 Finanzierung
 Sozialministeriumservice
 Zugang
@@ -1489,14 +1500,14 @@ werden. Sie sind die Brücke auf dem Weg zurück in den Arbeitsmarkt, weil sie n
 auch tatsächlich Beschäftigung anbieten. Ein Schwerpunkt liegt dabei zu Recht auf der Unterstützung 
 von benachteiligten älteren WienerInnen, die Gefahr laufen, den Anschluss an den Arbeitsmarkt 
 zu verlieren. Gerade in wirtschaftlich schwierigen Zeiten ist diese unmittelbare Form der Beschäf
-tigungsförderung
-durch den Zweiten Arbeitsmarkt insbesondere auch für ältere Arbeitsuchende 
+-
+tigungsförderung durch den Zweiten Arbeitsmarkt insbesondere auch für ältere Arbeitsuchende 
 mitunter treffsicherer als eine Schulung oder ein Kurs.    Das hervorragende Zusammenspiel des AMS Wien mit den TrägerInnen ist jedenfalls im Kampf ge 
 -gen soziale Ausgrenzung und für erfolgreiche Arbeitsmarktintegration der Schlüssel zum Erfolg. Der DSE und seine vielen Mitgliedseinrichtungen sind dabei wichtige PartnerInnen. Dem DSE gebührt daher für den Einsatz und das Engagement seiner Einrichtungen ein großes und 
 vor allem solidarisches Dankeschön! Vizebürgermeisterin Mag.
 a
  Renate BraunerStadträtin für Finanzen, Wirtschaftspolitik und Wiener Stadtwerke
-Vorwort  
+Vorwort33
 von Mag.
 a
  Renate Brauner
@@ -1513,8 +1524,8 @@ finungszeitenMo – Fr
 08.00 – 17.00 ErreichbarkeitU   
 U6 (Dresdner Straße)Tätigkeitsfeld
 Job-TransFair ist ein gemeinnütziges Tochterunternehmen des BFI Wien mit über150 MitarbeiterInnen an 5 Standorten in Wien. Seit 2001 unterstützt Job-TransFair am Arbeitsmarkt benachteiligte Men
-schen
-dabei, eine passende Arbeitsstelle zu finden und diese langfristig zu behalten.Gemeinsam mit 1.000en Partnerunternehmen, die arbeitssuchenden Menschen eine Chance in ihrem Betrieb geben, setzt Job-TransFair auf gemeinnütziges Integrationsleasing. Das bedeutet, dass Job-TransFair die Arbeitssuchenden anstellt und maximal 12 Monate zu geförderten Bedingungen an ein Partnerunternehmen überlässt. Für Personen, die nicht mehr länger als 3,5 Jahre bis zu ihrem Pensionsantritt haben, kann sich das Dienstverhältnis über diesen gesamten Zeitraum erstrecken.Bisher wurden so mehr als 8.000 Personen FAIRmittelt!
+-
+schen dabei, eine passende Arbeitsstelle zu finden und diese langfristig zu behalten.Gemeinsam mit 1.000en Partnerunternehmen, die arbeitssuchenden Menschen eine Chance in ihrem Betrieb geben, setzt Job-TransFair auf gemeinnütziges Integrationsleasing. Das bedeutet, dass Job-TransFair die Arbeitssuchenden anstellt und maximal 12 Monate zu geförderten Bedingungen an ein Partnerunternehmen überlässt. Für Personen, die nicht mehr länger als 3,5 Jahre bis zu ihrem Pensionsantritt haben, kann sich das Dienstverhältnis über diesen gesamten Zeitraum erstrecken.Bisher wurden so mehr als 8.000 Personen FAIRmittelt!
 Produkte & Dienstleistungen
 Gemeinnütziges Integrationsleasing bedeutet bei Job-TransFair:
 Beratung zu allen Fragen rund um die Arbeitssuche im Einzelcoaching
@@ -1552,9 +1563,10 @@ finungszeitenMo – Do
  
   69A (Hüttenbrennergasse, 9 Gehminuten)Erreichbarkeit (PKW)A23 Abfahrt Landstraße, gebührenfreie Parkplätze befinden sich direkt vor Ort
 24Tätigkeitsfeld
-In den Bereichen Veranstaltungsgastronomie und Betriebsrestaurant erhalten arbeitsmarktferne Menschen
-mit psychischen Erkrankungen die Möglichkeit zur fachlichen Qualifikation und Weiterbildung als gastronomische Fach- und Hilfskräfte, Reinigungspersonal, Lager-Hilfskräfte sowie in den Bereichen
-Verkauf und Büro.
+In den Bereichen Veranstaltungsgastronomie und Betriebsrestaurant erhalten arbeitsmarktferne Men-
+schen mit psychischen Erkrankungen die Möglichkeit zur fachlichen Qualifikation und Weiterbildung als gastronomische Fach- und Hilfskräfte, Reinigungspersonal, Lager-Hilfskräfte sowie in den Berei-
+ 
+chen Verkauf und Büro.
 Produkte & Dienstleistungen
 Catering & Partyservice
 Betriebsrestaurant & Bistro im Catamaran (2. Bezirk) 
@@ -1587,8 +1599,8 @@ U4 (Meidling oder Schönbrunn)
 34Tätigkeitsfeld
 Das Michl’s Café bietet 6 Personen im Bereich Service einen Pensionstransitarbeitsplatz.
 Produkte & Dienstleistungen
-Im Foyer des Pflegewohnhauses Leopoldstadt verwöhnt das Michl’s Café generationenübergreifend
-BewohnerInnen, MitarbeiterInnen und BesucherInnen mit ausgesuchten Wiener Mehlspeisen, Kaffeespezialitäten, Snacks und Erfrischungen.
+Im Foyer des Pflegewohnhauses Leopoldstadt verwöhnt das Michl’s Café generationenübergrei-
+ fend BewohnerInnen, MitarbeiterInnen und BesucherInnen mit ausgesuchten Wiener Mehlspeisen, Kaffeespezialitäten, Snacks und Erfrischungen.
 Unterstützungsangebot
 Das Ziel des Projektes ist, motivierten arbeitsmarktfernen Personen, für die aufgrund ihres Alters und 
 eventueller gesundheitlicher Einschränkung der Zugang zum ersten Arbeitsmarkt nicht mehr möglich 
@@ -1695,8 +1707,8 @@ U1, U2, U4 (Karlsplatz)Bim
 Badner Bahn (Paulanergasse)
 64Tätigkeitsfeld
 REiNTEGRA – Berufliche Reintegration psychisch kranker Menschen bietet befristete Arbeitsplätze für Fach- und Hilfspersonal in den angeführten Dienstleistungsbereichen. Im Zentrum des Handelns stehen die Bedürf
-nisse
-psychisch schwer erkrankter Menschen. Wir verstehen uns als eine Rehabilitationseinrichtung, in der die 
+-
+nisse psychisch schwer erkrankter Menschen. Wir verstehen uns als eine Rehabilitationseinrichtung, in der die 
 Wiedererlangung der Arbeitsfähigkeit und der Erhalt der Leistungsfähigkeit die vorrangigen Ziele sind. 
 Produkte & Dienstleistungen
 Industriehandwerk
@@ -1762,7 +1774,7 @@ Arbeit, Bildung und Zukunft von Frauen
 Brünnerstraße 73 b/Top 4
 1210 WienT  
 0699 1 66 70 321M  
-fit.frauenberatung@abzaustria.atW www.abzaustria.atat
+fit.frauenberatung@abzaustria.atW www.abzaustria.at91
 finungszeitenMo – Do  
 09.00 – 15.30 Fr 
  
@@ -1812,8 +1824,8 @@ finungszeitenMo – Do
   08.00 – 14.00ErreichbarkeitU  
 U1 (Kagraner Platz)Bus 
   22A (Afritschgasse)Unterstützung für
-TeilnehmerInnen an Deutschkursen für die Zielgruppen MaturantInnen, AkademikerInnen und Führungskräfte,
-Personen mit abgeschlossener mittlerer Schule oder Lehrabschluss sowie Personen mit max. Pflichtschulabschluss im Bereich Reinigung, Lager, Bau und Baunebengewerbe, die an den Kursstandorten von bit Schulungscenter (1230 Wien, Liesinger-Flur-Gasse 2c) und update training (1200 Wien, Dresdner Straße 108) stattfinden. Durch das Beratungs- und Förderangebot vor Ort sollen die KursteilnehmerInnen bei der Erreichung des Kursziels (positive ÖSD-Prüfung) unterstützt werden. Die Angebote der BBE-Deutsch sind sowohl Beratung in beruflichen und persönlichen Angelegenheiten als auch Lernförderung (Konversations 
+TeilnehmerInnen an Deutschkursen für die Zielgruppen MaturantInnen, AkademikerInnen und Füh-
+ rungskräfte, Personen mit abgeschlossener mittlerer Schule oder Lehrabschluss sowie Personen mit max. Pflichtschulabschluss im Bereich Reinigung, Lager, Bau und Baunebengewerbe, die an den Kursstandorten von bit Schulungscenter (1230 Wien, Liesinger-Flur-Gasse 2c) und update training (1200 Wien, Dresdner Straße 108) stattfinden. Durch das Beratungs- und Förderangebot vor Ort sollen die KursteilnehmerInnen bei der Erreichung des Kursziels (positive ÖSD-Prüfung) unterstützt werden. Die Angebote der BBE-Deutsch sind sowohl Beratung in beruflichen und persönlichen Angelegenheiten als auch Lernförderung (Konversations 
 -gruppen, Einzeltraining) und der Abbau von Lern- und Vermittlungshindernissen.
 Beratungsangebot
 Das Angebot der BBE ist eine auf die individuellen Bedürfnisse der TeilnehmerInnen abgestimmte 
@@ -1839,7 +1851,7 @@ Paulanergasse 15/2
  
 1040 WienT  
 01 713 18 17M  
-euspug@euspug.atW www.euspug.atat
+euspug@euspug.atW www.euspug.at91
 finungszeitenMo – Do   
 08.30 – 17.00
  Fr 
@@ -1854,12 +1866,13 @@ Badner Bahn (Paulanergasse)
 Der Schwerpunkt liegt in der Beratung, Betreuung, Information und Unterstützung bei Fragen und Problemen im Zusammenhang mit Aufenthalt, Arbeitsmarkt, Erlangen eines Arbeits- bzw. Ausbil-dungsplatzes, Rechts- und Sozialfragen, Behörden- und Sprachproblemen.Die Beratung erfolgt in Deutsch, Arabisch, Armenisch, Bosnisch, Kroatisch, Serbisch, Englisch, Französisch, Kurdisch, Italienisch, Polnisch, Russisch, Slowakisch, Tschechisch, Hindi, Punjabi, Urdu, Persisch und Dari.Ziel ist es, jene Faktoren zu beseitigen, die den erfolgreichen (Wieder-)Einstieg von MigrantInnen in den Arbeitsmarkt, den Beruf und die Ausbildung erschweren oder gefährden. Die Beratung ist kostenlos, individuell, vertraulich, unabhängig und umfassed.
 Unsere Organisation
 Das Beratungszentrum für Migranten und Migrantinnen ist eine wichtige und unabhängige Anlauf
-stelle
-für MigrantInnen in Wien zu arbeitsmarkt-politischen, ausländerInnen- und sozialrechtlichen 
+-
+stelle für MigrantInnen in Wien zu arbeitsmarkt-politischen, ausländerInnen- und sozialrechtlichen 
 Fragen. Die BeraterInnen haben langjährige, einschlägige Erfahrung und umfangreiches ExpertIn
-nenwissen.
-Das Beratungszentrum besteht seit 1983 und ist eine der ältesten und grßten Beratungseinrichtungen
-in Österreich. The counselling centre for immigrants represents an important and independent contact point for im-migrants in Vienna. The main concerns are labour-market policy as well as immigration law and so 
+-
+nenwissen. Das Beratungszentrum besteht seit 1983 und ist eine der ältesten und grßten Beratungs-
+ 
+einrichtungen in Österreich. The counselling centre for immigrants represents an important and independent contact point for im-migrants in Vienna. The main concerns are labour-market policy as well as immigration law and so 
 -cial law. All clients have the right to obtain assistance by highly experienced experts of social matters.  Beratungszentrum für Migranten und Migrantinnen ist Mitglied des DSE-Wien.
 Finanzierung
 Arbeitsmarktservice Wien, Stadt Wien (MA 17), esf
@@ -1877,7 +1890,7 @@ Simmeringer Hauptstraße 47-49
 1110 WienT  
 01/ 740 22 – 1571 oder – 2984 M  
 adminbdz@bbrz.atW www.bbrz.at  
-at
+91
 finungszeitenMo – Do   
 08.00 – 15.00
  Fr 
@@ -1891,8 +1904,8 @@ Unterstützung für
 Alle beim AMS kurzfristig als arbeitslos vorgemerkten Personen 50+, die Unterstützung bei ihrer Arbeitsuche benötigen bzw. vor gewissen Herausforderungen stehen, die die Suche nach einer ge-eigneten Stelle erschweren, und daher Unterstützung benötigen.
 Beratungsangebot
 Die TeilnehmerInnen erhalten eine auf den persönlichen Bedarf zugeschnittene dreiwöchige Einzel
-beratung
-in Hinblick auf die Suche nach einer geeigneten Stelle. Erfahrene BeraterInnen gehen 
+-
+beratung in Hinblick auf die Suche nach einer geeigneten Stelle. Erfahrene BeraterInnen gehen 
 dabei auf die individuelle Situation jeder einzelnen Person ein und bieten Hilfestellung bei der Be -wältigung von Hemmnissen. Gemeinsam mit dem/der TeilnehmerIn werden der beste Weg für die weitere Vorgehensweise bei der Arbeitsuche erarbeitet und bei Bedarf Kontakte zu anderen Einrich-tungen hergestellt. Der/Die TeilnehmerIn erhält ein individuelles Profil seines/ihres Beschäftigungs- potenzials. Die erarbeiteten Beratungsergebnisse gehen als Empfehlung für die weitere Vorgehens 
 -weise an den/die zuständige AMS-BeraterIn.Inhalte der Abklärung
 Berufliche Orientierung
@@ -1901,8 +1914,8 @@ dabei auf die individuelle Situation jeder einzelnen Person ein und bieten Hilfe
 Beschäftigungspotenzial
 Gesundheitliche Abklärung
 Unsere Organisation
-move-ment unterstützt seit 2002 Unternehmen und arbeitsuchende Personen zu Themen der Arbeitswelt,
-die den gesamten beruflichen Arbeitslebenszyklus umfassen. Schwerpunkte sind dabei „Arbeit und Alter“ sowie gesellschaftliche und unternehmensbezogene Herausforderungen im Zuge der demografischen Entwicklung. Basierend auf Vorerfahrungen werden laufend innovative Projekte, die sich an den neuesten wissen-schaftlichen Erkenntnissen orientieren, konzipiert und qualitätsvoll umgesetzt. Dabei stehen Men-schen und Organisationen mit ihrer persönlichen, personellen und wirtschaftlichen Veränderungs- prozessen im Mittelpunkt des Interesses.
+move-ment unterstützt seit 2002 Unternehmen und arbeitsuchende Personen zu Themen der Arbeits-
+ welt, die den gesamten beruflichen Arbeitslebenszyklus umfassen. Schwerpunkte sind dabei „Arbeit und Alter“ sowie gesellschaftliche und unternehmensbezogene Herausforderungen im Zuge der demografischen Entwicklung. Basierend auf Vorerfahrungen werden laufend innovative Projekte, die sich an den neuesten wissen-schaftlichen Erkenntnissen orientieren, konzipiert und qualitätsvoll umgesetzt. Dabei stehen Men-schen und Organisationen mit ihrer persönlichen, personellen und wirtschaftlichen Veränderungs- prozessen im Mittelpunkt des Interesses.
 Finanzierung
 Arbeitsmarktservice Wien 
 Zugang
@@ -1954,7 +1967,7 @@ Emil-Fucik-Gasse 1
  
 1100 WienT  
 01 688 13 68 DW 3071M  
-monsun@fab.atW www.fab.atat
+monsun@fab.atW www.fab.at91
 finungszeitenMo – Do   
 08.00 – 18.00
  Fr 
@@ -1997,7 +2010,7 @@ Beratungstep2job für die RGS 962   (Redergasse)
 Caritas der Erzdiözese Wien
 Grohgasse 3/2, 1. Stock1050 WienT  
 01 503 21 58F  
-01 503 21 58 – 650M step2job@caritas-wien.atW www.caritas-wien.att
+01 503 21 58 – 650M step2job@caritas-wien.atW www.caritas-wien.at1
 finungszeitenMo – Do   
 09.00 – 17.00Fr 
  
@@ -2020,8 +2033,9 @@ Beratungsangebot
 Vorbereitung auf Bewerbungsgespräche
 Unsere Organisation
 Die Gesellschaft für Aus- und Weiterbildung GmbH wurde Anfang der 90er-Jahre im Zuge der 
-Personalrestrukturierungsmaßnahmen der Steyr Daimler Puch AG gegründet, um die Veränderungsprozesse
-in der Arbeitswelt zu begleiten und sowohl für die einzelnen ArbeiterInnen als auch für die 
+Personalrestrukturierungsmaßnahmen der Steyr Daimler Puch AG gegründet, um die Veränderungs-
+ 
+prozesse in der Arbeitswelt zu begleiten und sowohl für die einzelnen ArbeiterInnen als auch für die 
 Unternehmen die Zukunft mit  Perspektiven zu versehen. Den immer schärfer werdenden Wettbewerbsbedingungen am Arbeitsmarkt soll diese Methode der aufsuchenden Vermittlungsunterstützung Rechnung tragen und arbeitsuchende Personen unterstüt 
 -zen, die mit herkömmlichen Instrumentarien der Arbeitsvermittlung nicht zum Erfolg gelangt sind.Das Spezifische an dieser Methode, die von der gesaw Ende der 90er-Jahre entwickelt wurde, be- steht darin, dass die gesamte Erfolgsverantwortung der Arbeitsaufnahme bei uns liegt. Das will bedeuten, dass wir für die arbeitsuchende Person, unabhängig welcher Qualifikation bzw. ange 
 -strebten Position, den Job entwickeln. 
@@ -2066,8 +2080,8 @@ zu folgenden Themen:
 Die Gehaltsfrage: Workshop rund um Einstiegsgehälter und Gehaltsfragen im Bewerbungsinterview
 Assessment Center Basic Training: AC-Übungen in Theorie und Praxis 
 Unsere Organisation
-Das TU Career Center ist als 100%-ige Tochter der TU Wien direkt an Österreichs grßter Bildungsund
-Forschungseinrichtung für technische und technisch-naturwissenschaftliche Studienrichtungen 
+Das TU Career Center ist als 100%-ige Tochter der TU Wien direkt an Österreichs grßter Bildungs- 
+und Forschungseinrichtung für technische und technisch-naturwissenschaftliche Studienrichtungen 
 platziert und betreut mit seinen zahlreichen Serviceleistungen über 27.000 Studierende sowie rund 
 2.500 AbsolventInnen jährlich. Seit mehr als 10 Jahren unterstützt das TU Career Center KlientInnen, Studierende und AbsolventIn-nen mit individuell auf die persönlichen Bedürfnisse abgestimmten Beratungsformaten in Fragen der Laufbahnplanung sowie des Berufsein- und -umstiegs. Die Nähe zur Zielgruppe, zu Instituten bzw. assoziierten Institutionen sowie die hohe Professionalität und Leistungsbereitschaft der Mitarbeiter- Innen macht das TU Career Center zum idealen Partner beim Berufseinstieg, -umstieg, Wiederein-stieg und der Karriereplanung.
 Finanzierung
@@ -2079,7 +2093,7 @@ Beratungwoman professional
 Context Impulse am Arbeitsmarkt GmbH
 Quellenstraße 2c1100 WienT  
 01 60517 – 1200F  
-01 60517 – 1170W www.context.atat
+01 60517 – 1170W www.context.at91
 finungszeiten (Telefonische Auskünfte)Mo – Do  
 08.00 – 17.00Fr 
  
@@ -2098,8 +2112,8 @@ Mit seinen vielfältigen Angeboten trägt FAB wesentlich zu einer erfolgreichen 
 Österreich bei. Er verfügt über jahrzehntelange Erfahrung auf dem Gebiet der Arbeitsintegration von 
 Menschen mit sozialen und/oder körperlichen Beeinträchtigungen. Er unterstützt Menschen beim 
 Zugang zum Arbeitsmarkt. Er beschäftigt, qualifiziert, begleitet und betreut Arbeit suchende Men
-schen,
-Menschen mit Beeinträchtigungen und Menschen mit weiterem Unterstützungsbedarf durch 
+-
+schen, Menschen mit Beeinträchtigungen und Menschen mit weiterem Unterstützungsbedarf durch 
 maßgeschneiderte Angebote und bietet ihnen so die nötigen Voraussetzungen für eine erfolgreiche 
 Integration. Zentrum für Kompetenz und Erfahrung ist Mitglied des DSE-Wien.
 Finanzierung
@@ -2113,7 +2127,7 @@ Sucht und Beschäftigung – Standfest  Beratungsstelle des Verein Dialog
 Gudrunstraße 184
  1100 WienT  
 01 548 60 90M   
-verein@dialog-on.atW www.dialog-on.atat
+verein@dialog-on.atW www.dialog-on.at91
 finungszeitenMo, Mi  
 09.00 – 17.00 Di, Do  
 13.00 – 17.00
@@ -2134,10 +2148,10 @@ der beruflichen Integration.Das Erlernen bzw. die gezielte Verbesserung der deut
 -rufsorientierte Sprachkenntnisse und unterstützen sie bei der Suche nach dem passenden Arbeits- platz bzw. der geeigneten Aus- oder Weiterbildung.
 Unsere Organisation
 Das UKI ist ein überparteilicher, gemeinnütziger Verein, der 1993 gegründet wurde, um MigrantIn
-nen
-bei ihrer sozialen Integration zu unterstützen. Das Ziel ist die Selbstorganisation unserer Teilneh
-merInnen
-am österreichischen Arbeitsmarkt.UKI ist Mitglied des DSE-Wien.
+-
+nen bei ihrer sozialen Integration zu unterstützen. Das Ziel ist die Selbstorganisation unserer Teilneh
+-
+merInnen am österreichischen Arbeitsmarkt.UKI ist Mitglied des DSE-Wien.
 Finanzierung
 Arbeitsmarktservice Niederösterreich, Sozialministeriumservice, Bundesministerium für Unterricht,   Kunst und Kultur, esf 
 Zugang
@@ -2158,30 +2172,30 @@ Je nach Vereinbarung übernimmt das Arbeitsmarktservice befristet einen Teil der
 -teln des Arbeitsmarktservice Wien, des Bundessozialamts, des Fonds Soziales Wien, des Wiener ArbeitnehmerInnen Förderungsfonds (waff), der Wiener Sucht- und Drogenkoordination sowie des Europäischen Sozialfonds der Europäischen Union (esf).
 DSE-Wien 
 Ihr Partner in der aktiven Arbeitsmarktpolitik 10
-Wien braucht die Sozialintegrativen Unternehmen. Den Job zu verlieren, arbeitslos zu werden: Das trifft derzeit viele Menschen. Mit unserer Unterstützung
-ndet jeder vierte innerhalb von drei Monaten eine neue Beschäftigung, jeder dritte innerhalb eines halben Jahres. Unser besonders Augenmerk gehört aber jenen Menschen, die länger als 6 Mon-ate, mitunter länger als ein Jahr arbeitslos sind. Auf sie konzentrieren wir unsere Unterstützungsange 
+Wien braucht die Sozialintegrativen Unternehmen. Den Job zu verlieren, arbeitslos zu werden: Das trifft derzeit viele Menschen. Mit unserer Unterstüt- 
+ zung ndet jeder vierte innerhalb von drei Monaten eine neue Beschäftigung, jeder dritte innerhalb eines halben Jahres. Unser besonders Augenmerk gehört aber jenen Menschen, die länger als 6 Mon-ate, mitunter länger als ein Jahr arbeitslos sind. Auf sie konzentrieren wir unsere Unterstützungsange 
 -bote. Warum es nicht gelingt, auf dem Arbeitsmarkt wieder Fuß zu fassen, kann sehr unterschiedliche Gründe haben. Fast immer aber gilt: Die Betroffenen entfernen sich von der Arbeitswelt immer weiter. Und fast immer 
 ist es so, dass es nach einer besonders langen Phase der Arbeitslosigkeit schwer fällt, sich wieder in 
 den starren Tagesablauf und die xen Strukturen der Berufstätigkeit einzufügen. Um Langzeitarbeitslosen die Rückkehr ins Arbeitsleben zu ermöglichen, bietet das AMS Wien zwei 
 wesentliche Unterstützungsangebote: Zum einen ein dichtes Netz an kompetenten Beratungs- und 
 Betreuungseinrichtungen, die eine exible, sehr individuelle Beratung anbieten und alle Zielgrup 
--pen erreichen: den Über-50-Jährigen wie auch das jugendliche Mädchen, die Migrantin wie den BMS-Bezieher, den Mann mit gesundheitlichen Problemen, die Frau mit Schulden. Diese Einrichtun-gen schaffen den vertraulichen Rahmen, in dem ihre Probleme angesprochen werden können, sie informieren, beraten und begleiten durch schwierige Lebensphasen und, wo das nötig ist, auch über mehrere Monate hinweg. Zum anderen braucht es auch die Sozialökonomischen Betriebe, den sogenannten zweiten Arbeitsmarkt.
-Er macht es möglich, Junge wie auch Ältere behutsam wieder an die Arbeitswelt, an höhere 
+-pen erreichen: den Über-50-Jährigen wie auch das jugendliche Mädchen, die Migrantin wie den BMS-Bezieher, den Mann mit gesundheitlichen Problemen, die Frau mit Schulden. Diese Einrichtun-gen schaffen den vertraulichen Rahmen, in dem ihre Probleme angesprochen werden können, sie informieren, beraten und begleiten durch schwierige Lebensphasen und, wo das nötig ist, auch über mehrere Monate hinweg. Zum anderen braucht es auch die Sozialökonomischen Betriebe, den sogenannten zweiten Arbeits- 
+markt. Er macht es möglich, Junge wie auch Ältere behutsam wieder an die Arbeitswelt, an höhere 
 Belastbarkeit und Arbeitsfähigkeit heranzuführen, und zwar  das ist das Besondere  über den Weg 
 vollwertiger Beschäftigung. Mit der wiedererlangten Berufstätigkeit wächst auch das Selbstbewusst 
--sein, das nötig ist, um sich einen Job im ersten Arbeitsmarkt zuzutrauen  und bei vielen Menschen auch die Motivation, zu lernen und einen höheren Abschluss anzustreben.Jährlich ermöglicht das AMS Wien mehr als 3.000 Wienerinnen und Wienern, durch einen Sozialökonomischen
-Betrieb wieder in den ersten Arbeitsmarkt zurückzukehren. Die Beratungs- und 
+-sein, das nötig ist, um sich einen Job im ersten Arbeitsmarkt zuzutrauen  und bei vielen Menschen auch die Motivation, zu lernen und einen höheren Abschluss anzustreben.Jährlich ermöglicht das AMS Wien mehr als 3.000 Wienerinnen und Wienern, durch einen Sozial- 
+ökonomischen Betrieb wieder in den ersten Arbeitsmarkt zurückzukehren. Die Beratungs- und 
 Betreuungseinrichtungen und die Sozialökonomischen Betriebe: Gemeinsam sind sie ein unverzicht 
 -barer Teil jenes Instrumentariums geworden, das die Arbeitsmarktpolitik unserer Stadt ausmacht. Mag.
 a
  Petra DraxlGeschäftsführerin des Arbeitsmarktservice Wien
-Vorwort  
+Vorwort33
 von Mag.
 a
  Petra Draxl
 Geschäftsführerin des Arbeitsmarktservice WienTätigkeitsfeld
-Seit der Gründung im Jahr 2005 beraten und begleiten wir bei itworks Arbeit suchende Menschen bei ihrem (Wieder-)Einstieg in die Erwerbstätigkeit.itworks Personalservice und Beratung gemeinnützige GmbH ist in 6 Bundesländern im Einsatz und be-schäftigt rund 200 MitarbeiterInnen in 10 Projekten. Im Auftrag des Arbeitsmarktservice bieten wir im Rahmen eines gemeinnützigen Integrationsleasings Jobvermittlung und Beratung an und unterstützen beschäftigungslose Menschen dabei, wieder nachhaltig im Arbeitsmarkt Fuß zu fassen. Dabei arbeiten
-wir sehr eng mit Partnerunternehmen aus den unterschiedlichsten Branchen zusammen, die offen dafür sind, am Arbeitsmarkt benachteiligten Menschen eine Chance zu geben.
+Seit der Gründung im Jahr 2005 beraten und begleiten wir bei itworks Arbeit suchende Menschen bei ihrem (Wieder-)Einstieg in die Erwerbstätigkeit.itworks Personalservice und Beratung gemeinnützige GmbH ist in 6 Bundesländern im Einsatz und be-schäftigt rund 200 MitarbeiterInnen in 10 Projekten. Im Auftrag des Arbeitsmarktservice bieten wir im Rahmen eines gemeinnützigen Integrationsleasings Jobvermittlung und Beratung an und unterstützen beschäftigungslose Menschen dabei, wieder nachhaltig im Arbeitsmarkt Fuß zu fassen. Dabei arbei- 
+ ten wir sehr eng mit Partnerunternehmen aus den unterschiedlichsten Branchen zusammen, die offen dafür sind, am Arbeitsmarkt benachteiligten Menschen eine Chance zu geben.
 Produkte & Dienstleistungen
 Sozialökonomisches Integrationsleasing bei itworks bedeutet:
 Persönliche Beratung und Unterstützung zu Fragen rund um die Arbeitssuche
@@ -2225,10 +2239,10 @@ derDruck bietet „training on the job” in den Arbeitsbereichen
  Büro-/Verwaltungsbereich: Telefon/Empfang, Posteingang und Postausgang, Terminverwaltung, elektronische Datenerfassung/-bearbeitung, Ablage- und Sortierarbeiten, Botenwege, diverse administrative Tätigkeiten
 Unterstützungsangebot
 Durch Qualifizierung, Arbeitsanleitung und persönliches Coaching wird der Übertritt der Teilneh
-merInnen
-in ein Dienstverhältnis am ersten Arbeitsmarkt gefördert. So soll eine nachhaltige Teil
-nahme
-am Erwerbsleben gewährleistet werden. Ein wesentliches Instrument dabei ist die integrative, 
+-
+merInnen in ein Dienstverhältnis am ersten Arbeitsmarkt gefördert. So soll eine nachhaltige Teil
+-
+nahme am Erwerbsleben gewährleistet werden. Ein wesentliches Instrument dabei ist die integrative, 
 geförderte Arbeitskräfteüberlassung mit anschließender Fixübernahme.Das Programm beinhaltet eine vorgelagerte Vorbereitungsphase und ein auf 2 Monate befristetes Dienstverhältnis mit Qualifizierung durch Fachtrainings, Information, Beratung und Finden von individuellen Lösungsstrategien im Rahmen der sozial-pädagogischen Betreuung, Persönlichkeits- entwicklung und Outplacement.
 Finanzierung
 Arbeitsmarktservice Wien, Eigenerlöse
@@ -2262,8 +2276,9 @@ Produkte & Dienstleistungen
 Catering
 Veranstaltungen
 Unterstützungsangebot
-Das Angebot richtet sich an langzeitarbeitslose Männer und Frauen. Nach einem Arbeitstraining besteht
-die Möglichkeit einer auf sechs Monate befristeten Beschäftigung. In diesem Dienstverhältnis wird   Arbeitspraxis vermittelt sowie sozialarbeiterische Unterstützung bei der Bewältigung unterschied- licher Probleme (Schulden, ungesicherte Wohnsituation, familiäre Krisen oder andere Vermittlungs- hemmnisse) angeboten. Nach Ablauf des Dienstverhältnisses sollen die Beschäftigten in der Lage sein, einen dauerhaften Arbeitsplatz am freien Arbeitsmarkt zu finden.Schritt für Schritt zum Ziel:
+Das Angebot richtet sich an langzeitarbeitslose Männer und Frauen. Nach einem Arbeitstraining be-
+ 
+steht die Möglichkeit einer auf sechs Monate befristeten Beschäftigung. In diesem Dienstverhältnis wird   Arbeitspraxis vermittelt sowie sozialarbeiterische Unterstützung bei der Bewältigung unterschied- licher Probleme (Schulden, ungesicherte Wohnsituation, familiäre Krisen oder andere Vermittlungs- hemmnisse) angeboten. Nach Ablauf des Dienstverhältnisses sollen die Beschäftigten in der Lage sein, einen dauerhaften Arbeitsplatz am freien Arbeitsmarkt zu finden.Schritt für Schritt zum Ziel:
 Soziale Integration über Beschäftigung im Betrieb
 Existenzsicherung durch regelmßiges Einkommen
 Gestärktes Selbstvertrauen
@@ -2418,8 +2433,8 @@ U6 (Thaliastraße)Bim
 5 (Kaiserstraße/Neustiftgasse)Bus 
  
   48A (Kaiserstraße)Tätigkeitsfeld
-Unik.at wurde 2001 als Berufsintegrationsprojekt unter sozial-ökonomischen Bedingungen gegründet.
-Menschen mit mindestens 50% Behinderung (30% psychische) können hier Lehrstellen für Einzelhandel, Bürokaufmann/frau, und Systemgastronomie finden oder auf Assistenzstellen (Transit- arbeitskräfte) für Produktion (Holz, Keramik) und Verkauf tätig sein.
+Unik.at wurde 2001 als Berufsintegrationsprojekt unter sozial-ökonomischen Bedingungen gegrün-
+ det. Menschen mit mindestens 50% Behinderung (30% psychische) können hier Lehrstellen für Einzelhandel, Bürokaufmann/frau, und Systemgastronomie finden oder auf Assistenzstellen (Transit- arbeitskräfte) für Produktion (Holz, Keramik) und Verkauf tätig sein.
 Produkte & Dienstleistungen
 Produktion von Kunst und Kunsthandwerk aus Holz, Keramik, Ton, Acrylfarbe etc. 
 Lager, Logistik und Warenwirtschaft
@@ -2427,8 +2442,8 @@ Produkte & Dienstleistungen
 Unterstützungsangebot
 Motivierte, arbeitsfähige Menschen mit mindestens 50% Behinderung erhalten hier die Chance, 
 durch individuelle arbeitsspezifische Schulungs- und Qualifizierungsmaßnahmen den (Wieder-)Ein
-stieg
-in die Arbeitswelt zu schaffen. Dies geschieht sowohl durch Arbeitstraining im Haus als auch im 
+-
+stieg in die Arbeitswelt zu schaffen. Dies geschieht sowohl durch Arbeitstraining im Haus als auch im 
 Rahmen von Betriebspraktika in externen Firmen.In Zusammenarbeit mit KünstlerInnen verschiedenster Professionen werden im Arbeitstraining und in Workshops hochwertige Kunstgegenstände erzeugt, die in unserer Galerie und zahlreichen anderen Verkaufsstätten begeisterte AbnehmerInnen finden. Die Verkaufserlöse ermöglichen unik.at, 10 Lehrstellen in den Bereichen Einzelhandel und Büro 
 -kaufmann/frau sowie 2 befristete (7 bis 12 Monate) Transitarbeitsplätze in den Kunst-Produktions 
 -bereichen bzw. im Verkauf anzubieten. Lehrlinge und Transitarbeitskräfte haben nach ihrer Anstel-lungszeit Anspruch auf weiterführende Betreuung und Arbeitsplatzsuche in unserem Projekt.unik.at ist Mitglied des DSE-Wien. 
@@ -2440,12 +2455,13 @@ unik.at
 Humanisierte Arbeitsstätte
 75
 BeschäftigungUnterstützung für
-In Wien gemeldete Frauen ab 19 Jahren mit einem im FIT.Zentrum Wien erarbeiteten FIT.Karriereplan;
-Frauen, die eine FIT.Ausbildung absolvieren, und Frauen mit einer abgeschlossenen FIT.Aus 
+In Wien gemeldete Frauen ab 19 Jahren mit einem im FIT.Zentrum Wien erarbeiteten FIT.Karriere-
+ plan; Frauen, die eine FIT.Ausbildung absolvieren, und Frauen mit einer abgeschlossenen FIT.Aus 
 -bildung auf Arbeitsuche.
 Beratungsangebot
-Die Beraterinnen der abz*FIT.frauenberatung begleiten Frauen mit einem nicht traditionellen Karriereplan
-bei der Umsetzung ihrer beruflichen Vorstellungen – vor dem Ausbildungsstart, während 
+Die Beraterinnen der abz*FIT.frauenberatung begleiten Frauen mit einem nicht traditionellen Kar-
+ 
+riereplan bei der Umsetzung ihrer beruflichen Vorstellungen – vor dem Ausbildungsstart, während 
 der gesamten Ausbildungszeit und bis in den Berufseinstieg.Persönliche Beratung, individuelle Begleitung sowie Gruppentrainings unterstützen die Teilnehmerin-nen bei Themen wie etwa Vereinbarkeit von Beruf, Familie und Privatleben, Ausbildung und Lernen, Bewerbungsstrategien uvm.
 Unsere Organisation
 abz*austria ist eine Non-Profit-Frauenorganisation, die sich seit ihrer Gründung im Jahr 1992 die Gleichstellung von Frauen und Männern am österreichischen Arbeitsmarkt zur Aufgabe gemacht hat.abz*austria engagiert sich in fünf Kompetenzfeldern und entwickelt Lösungen für Aufgabenstel-lungen zu „Gender Mainstreaming und Diversity Management”, „Vereinbarkeit von Beruf.Familie.Privatleben”, „Arbeit.Jugend.Alter”, „Lebenslanges Lernen” und „Arbeit.Migration.Mobilität”.abz*FIT.frauenberatung und abz*FIT.Karriere Center sind Mitglieder des DSE-Wien.
@@ -2461,7 +2477,7 @@ Context Impulse am Arbeitsmarkt GmbH
 Schöpfleuthnergasse 25/6.OG 
  (Eingang: Leopold-Ferstl-Gasse 7)1210 WienT  
 01 605 17 – 3424F  
-01 605 17 – 3466 W www.context.atat
+01 605 17 – 3466 W www.context.at91
 finungszeitenMo – Do  
 08.00 – 16.30Fr    
 08.00 – 15.00ErreichbarkeitU  
@@ -2477,18 +2493,18 @@ Beratungsangebot
 Ziel der BBE ist eine auf die individuellen Bedürfnisse der TeilnehmerInnen abgestimmte und mit den 
 Trägern der Deutschkurse koordinierte Begleitung und Unterstützung zur Vertiefung und Festigung 
 der Deutschkenntnisse und zur Erreichung des angestrebten Kurserfolgs. Die BBE bietet den Teilneh
-merInnen
-Lernförderung und unterstützt bei motivationalen Problemen. Die BeraterInnen sind Ansprechpersonen in allen beruflichen und persönlichen Angelegenheiten,  
+-
+merInnen Lernförderung und unterstützt bei motivationalen Problemen. Die BeraterInnen sind Ansprechpersonen in allen beruflichen und persönlichen Angelegenheiten,  
  insbesondere jener, welche sich in der Gruppe schwer thematisieren lassen. Neben der Erhebung lernhemmender Faktoren und der Beseitigung von Lernhemmnissen/Vermittlungshemmnissen über 
 -nimmt die BBE Drehscheibenfunktion zu  externen Beratungsangeboten und Hilfseinrichtungen. Darüber hinaus gibt es sozialpädagogische Beratung und Betreuung zur raschen Problemlösung. Damit soll verhindert werden, dass TeilnehmerInnen aufgrund ungelöster Problemkonstellationen oder anderer persönlicher Hindernisse das Kursziel (ÖSD Prüfung) nicht erreichen können. In der letzten Phase der Teilnahme wird ein Endbericht erstellt.
 Unsere Organisation
 BEST Institut für berufsbezogene Weiterbildung und Personaltraining GmbH ist ein anerkannter Bil
-dungs-
-und Projektträger, zu dessen wichtigsten Auftraggebern Arbeitsmarktservice-Organisationen 
+-
+dungs- und Projektträger, zu dessen wichtigsten Auftraggebern Arbeitsmarktservice-Organisationen 
 (AMS), Bundessozialamt, WAFF, Arbeitsstiftungen, Ministerien sowie EU- und Nationalagenturen 
 zählen. Das Unternehmen verfügt über umfassendes Know-How in der Konzeption und Durch
-führung
-von Aus- und Weiterbildungs-, Qualifizierungsangeboten sowie Betreuungs- und Entwick -lungs-Projekten für arbeitsuchende und berufstätige Personen als auch für Institutionen und Un-ternehmen national und international. BEST unterstützt: 
+-
+führung von Aus- und Weiterbildungs-, Qualifizierungsangeboten sowie Betreuungs- und Entwick -lungs-Projekten für arbeitsuchende und berufstätige Personen als auch für Institutionen und Un-ternehmen national und international. BEST unterstützt: 
 Jugendliche
 langzeitarbeitslose & -beschäftigungslose Personen
 WiedereinsteigerInnen, 
@@ -2507,7 +2523,7 @@ Kirchengasse 3
 Handelskai 388 (Eingang Wehlistraße 299), 1020 Wien
 Quellenstraße 2c, 1100 Wien Geiselbergstraße 26-32, 1110 Wien T  
 0699 15 22 15 30M  
-c.mueller@ppctraining.atW www.ppctraining.at www.facebook.com/ppctraininggmbht
+c.mueller@ppctraining.atW www.ppctraining.at www.facebook.com/ppctraininggmbh1
 finungszeitenMo – Fr   
 08.00 – 16.30Erreichbarkeit 1020 WienU   
 U2 (Donaumarina)Erreichbarkeit 1100 WienBim   
@@ -2544,21 +2560,22 @@ Theresianumgasse 7/6
  
 1040 WienT  
 01 997 27 61 0F  
-01 997 27 61 4W www.migrant.atat
+01 997 27 61 4W www.migrant.at91
 finungszeiten (Infotag)Jeden Mo   
 09.30 – 12.30Telefonische Erreichbarkeit:Mo – Do   
 09.00 – 12.00ErreichbarkeitBim  
 D (Schloss Belvedere)
  
 110Unterstützung für
-bei den regionalen Geschäftsstellen des AMS als arbeitslos vorgemerkte KundInnen mit gesundheitlichen
-Problemen. Das Projekt richtet sich an Personen, die aufgrund gesundheitlicher Einschränkun-gen ihren bisherigen Beruf nicht mehr ausüben können und daher neue berufliche Perspektiven benötigen.
+bei den regionalen Geschäftsstellen des AMS als arbeitslos vorgemerkte KundInnen mit gesundheit-
+ lichen Problemen. Das Projekt richtet sich an Personen, die aufgrund gesundheitlicher Einschränkun-gen ihren bisherigen Beruf nicht mehr ausüben können und daher neue berufliche Perspektiven benötigen.
 Beratungsangebot
-Das Angebot der BBE umfasst eine individuelle Beratung hinsichtlich der Einsetzbarkeit am Arbeitsmarkt.
-Durch eine ganzheitliche arbeitsmedizinische und bei Bedarf fachärztliche Abklärung kann 
+Das Angebot der BBE umfasst eine individuelle Beratung hinsichtlich der Einsetzbarkeit am Arbeits-
+ 
+markt. Durch eine ganzheitliche arbeitsmedizinische und bei Bedarf fachärztliche Abklärung kann 
 ein genaues Tätigkeitsprofil erstellt werden, um eine den Ressourcen entsprechende Arbeitsauf
-nahme
-zu ermöglichen.Das Ergebnis ist ein arbeitsmedizinisches Leistungsprofil, das die TeilnehmerInnen nach beende 
+-
+nahme zu ermöglichen.Das Ergebnis ist ein arbeitsmedizinisches Leistungsprofil, das die TeilnehmerInnen nach beende 
 -ter Abklärung im Rahmen eines Abschlussgespräches erhalten. Darin enthalten sind neben einer Darstellung der körperlichen Einsetzbarkeit Empfehlungen für weitere berufliche Perspektiven sowie gesundheitliche und psychosoziale Unterstützungsmöglichkeiten. 
 Unsere Organisation
 Das Berufliche Bildungs- und Rehabilitationszentrum begleitet seit über 35 Jahren Menschen   auf ihrem Weg (zurück) ins Berufsleben, wenn sie aufgrund einer Erkrankung oder eines  
@@ -2605,8 +2622,8 @@ Job-TransFair KOMPASS unterstützt Sie mit:
  Nachbetreuung auch im Job fürs Nachfragen, Vermitteln, Probleme lösen oder einfach nur Reden
 Unsere Organisation
 Job-TransFair ist ein gemeinnütziges Tochterunternehmen des BFI Wien mit mehr als 150 Mitarbe -iterInnen an 5 Standorten in Wien. Job-TransFair KOMPASS (BBE) ist Ihr Wegweiser auf der Reise zu neuen Job-Möglichkeiten! KOMPASS bietet Ihnen Orientierung. Finden Sie heraus, wozu Sie fähig sind und entdecken Sie ungeahnte Möglichkeiten für Ihren weiteren Berufsweg. Die Job-Trans 
--Fair-Kompetenzenerfassung macht´s möglich. KOMPASS bietet Ihnen eine Übersicht über den Arbeitsmarkt
-und navigiert Sie zu passenden Jobangeboten.
+-Fair-Kompetenzenerfassung macht´s möglich. KOMPASS bietet Ihnen eine Übersicht über den Arbeits- 
+ markt und navigiert Sie zu passenden Jobangeboten.
 Durchgängige, persönliche Betreuung durch PersonalberaterInnen,   TrainerInnen und bei Bedarf auch durch SozialarbeiterInnen
 Unterstützung bei der Beseitigung von Hindernissen am Weg zum neuen Job
 Auf ihre Bedürfnisse abgestimmte Qualifizierungsmaßnahmen
@@ -2620,7 +2637,7 @@ Verein sprungbrett für mädchen
 Hütteldorferstraße 81b/Stiege 1/Top 4
  1150 WienT  
 01 789 45 45M  
-sprungbrett@sprungbrett.or.atW www.sprungbrett.or.atat
+sprungbrett@sprungbrett.or.atW www.sprungbrett.or.at91
 finungszeiten (Telefonische Auskünfte)Mo – Do   
 09.00 – 17.00 und nach VereinbarungErreichbarkeitU  
 U3 (Johnstraße)Bim  
@@ -2629,8 +2646,9 @@ U3 (Johnstraße)Bim
 130Unterstützung für
 Beim AMS Wien vorgemerkte REHA-Personen, unabhängig von ihrer Ausbildung bzw. beruflichen Qualifikation. In der Beratungs- und Betreuungseinrichtung MONSUN gilt es, mit den TeilnehmerIn-nen im kooperativen, unterstützenden Miteinander zieladäquate Schritte bzw. Teilschritte zu erarbei- ten und zu planen, um das Ziel – eine Integration in den Arbeitsmarkt – zu erwirken.
 Beratungsangebot
-MONSUN bietet Hilfestellungen durch Fach- und Einzelberatungen zur Entwicklung von Lösungsansätzen
-mit dem Ziel, die individuelle Handlungskompetenz zu erhöhen und damit einhergehend 
+MONSUN bietet Hilfestellungen durch Fach- und Einzelberatungen zur Entwicklung von Lösungs-
+ 
+ansätzen mit dem Ziel, die individuelle Handlungskompetenz zu erhöhen und damit einhergehend 
 eine ehest mögliche Re-Integration in den Arbeitsmarkt zu erzielen.Folgende Dienstleistungen bieten wir unter anderem an: 
 Herstellung von Kontakten und nach Bedarf Begleitung zu weiteren SpezialistInnen   (z.B. Schuldnerberatung, Rechts- und Drogenberatung, TherapeutInnen, Ämter und Behörden)
 Erarbeitung des zukünftigen beruflichen Einsatzbereiches
@@ -2641,8 +2659,8 @@ Mit seinen vielfältigen Angeboten trägt FAB wesentlich zu einer erfolgreichen 
 Österreich bei. Er verfügt über jahrzehntelange Erfahrung auf dem Gebiet der Arbeitsintegration von 
 Menschen mit sozialen und/oder körperlichen Beeinträchtigungen. Er unterstützt Menschen beim 
 Zugang zum Arbeitsmarkt. Er beschäftigt, qualifiziert, begleitet und betreut Arbeit suchende Men
-schen,
-Menschen mit Beeinträchtigungen und Menschen mit weiterem Unterstützungsbedarf durch 
+-
+schen, Menschen mit Beeinträchtigungen und Menschen mit weiterem Unterstützungsbedarf durch 
 maßgeschneiderte Angebote und bietet ihnen so die nötigen Voraussetzungen für eine erfolgreiche 
 Integration.FAB MONSUN ist Mitglied des DSE-Wien. 
 Finanzierung
@@ -2660,7 +2678,7 @@ Emil-Fucik-Gasse 1
  
 1100 WienT  
 01 688 13 68M  
-step2job@fab.atW www.fab.atat
+step2job@fab.atW www.fab.at91
 finungszeitenMo – Do   
 08.00 – 18.00
  Fr 
@@ -2719,8 +2737,8 @@ Unterstützung für
 oder einen speziellen Betreuungsbedarf haben   
 Beratungsangebot
 Überwinden Sie alle Stufen auf dem Weg zum neuen Arbeitsplatz – mit Job-TransFair als Ihre Hilfe! Beseitigen Sie mit der langfristigen Unterstützung der Job-TransFair Case-ManagerInnen, TrainerIn
-nen
-und SozialarbeiterInnen alle Hindernisse am Weg zum neuen Job!
+-
+nen und SozialarbeiterInnen alle Hindernisse am Weg zum neuen Job!
 Abklärung der beruflichen und persönlichen Situation
 Erfassung Ihrer Kompetenzen und Interessen
 Unterstützung bei der Überwindung von Barrieren  
@@ -2768,8 +2786,8 @@ Finanzierung
 Arbeitsmarktservice Wien
 Zugang
 Kundinnen, die zumindest über Matura und/oder mehrjährige Leitungserfahrung verfügen, können von ihren AMS-BeraterInnen zu einer der wöchentlich stattfindenden Informationsveranstaltungen zuge
-bucht
-werden. 
+-
+bucht werden. 
 woman professional 
 Context Impulse am Arbeitsmarkt GmbH
 PentaDesign und Mein Genius
@@ -2782,7 +2800,7 @@ Fockygasse 14/2/16-18
  
 1120 WienT  
 01 817 73 44M  
-beratung12@abzaustria.atW www.abzaustria.atat
+beratung12@abzaustria.atW www.abzaustria.at91
 finungszeiten (Telefonische Auskünfte)Di, Do  
 09.00 – 13.00 Persönliche Termine nach Vereinbarung. Telefonische Anmeldung unbedingt erforderlich!ErreichbarkeitBus 
   59A (Wolfganggasse/Steinbauergasse)
@@ -2794,8 +2812,8 @@ finungszeiten (Telefonische Auskünfte)Di, Do
 Beratungsangebot
 Unsere Einrichtung bietet sowohl psychosoziale als auch medizinische Beratung und Betreuung für SuchtmittelkonsumentInnen an. In der Betreuung im Einzelsetting arbeiten SozialarbeiterInnen oder PsychologInnen mit den Betroffenen an der Verbesserung ihrer Lebenssituation, mit dem Fokus auf eine mögliche (Wieder)erlangung oder Verbesserung der Arbeitsfähigkeit. Ergänzt wird das Angebot mit Sozialem Kompetenz- und Grundlagentraining, Aktivierungskursen, sowie Gruppenangeboten wie z.B. kognitives Training.Zusätzlich ist eine suchtspezifische und/oder psychiatrische Behandlung bei unseren ÄrztInnen möglich. Unser Angebot an KlientInnen aus Niederösterreich umfasst je nach Maßgabe neben Be- ratung auch berufliche Orientierung im Rahmen eines AMS-Kurses.Betreuung bieten wir Personen, die sich einer gesundheitsbezogenen Maßnahme nach SMG É unterziehen müssen.
 Unsere Organisation
-Als Projekt im Rahmen einer EU-Partnerschaft 1996 entstanden, hat sich die Einrichtung Dialog Sucht
-und Beschäftigung als arbeitsmarktpolitische Einrichtung mit dem Thema Sucht und Arbeitslo -sigkeit zwischen den Handlungsfeldern Sucht, Gesundheit und Arbeitsmarktpolitik etabliert.Der Schwerpunkt der Arbeit liegt bei Personen mit eingeschränkter Arbeitsfähigkeit. Als Teil des Vere 
+Als Projekt im Rahmen einer EU-Partnerschaft 1996 entstanden, hat sich die Einrichtung Dialog - 
+Sucht und Beschäftigung als arbeitsmarktpolitische Einrichtung mit dem Thema Sucht und Arbeitslo -sigkeit zwischen den Handlungsfeldern Sucht, Gesundheit und Arbeitsmarktpolitik etabliert.Der Schwerpunkt der Arbeit liegt bei Personen mit eingeschränkter Arbeitsfähigkeit. Als Teil des Vere 
 -in Dialog, der seit 35 Jahren in der Suchthilfe tätig und nach ISO 9001:2008 zertifiziert ist, greifen wir auf langjährige Erfahrungen und Wissen zurück.Durch die Kombination verschiedener Angebote erfüllen wir einen für unsere KlientInnen wichtigen Grundsatz, nämlich “Alles unter einem Dach” vorzufinden.  Dialog ist Mitglied des DSE-Wien.
 Finanzierung
 Sucht und Drogenkoordination Wien, Arbeitsmarktservice Wien, 
@@ -2805,27 +2823,27 @@ Institut für Suchtdiagnostik, Wiener Berufsbörse, AMS Niederösterreich, Selb
 Dialog
 Sucht und Beschäftigung – Standfest   Beratungsstelle des Verein Dialog 
 175
-Beratungibis acam
-T
-EAM 
-4     
-KÜNSTLERINNENSERVICE 
- 
- 
-Verein zur Schaffung von Arbeit  
-8010 Graz, Glacisstraße 69  1010 Wien, Salztorgassse 1 
-Tel.: +43/0316/815656  Tel: +43/01/533 38 28  - 0  
-Fax: +43/0316/815656 -4 Fax: +43/01/533 38 28 -28 
-Bankverbindung : Steiermärkische Sparkasse, BLZ  20815,  Konto Nr.  2100248604   
-         
- 
+Beratung191139991
+8
+6673
+5333 3
+727887687776786887663
+3
+3
+8111113111389191111131113619111 3
+54443719143719911111921355 3444438111438911111191111343
+811453455445454545555 38115345544445553553553 43433
+79153455445454545555 453791534554444555355355 4553
+69111119111111 538111111211119113819119111436793 5454543 7111137143 5444555545 33
+33333333 
+3
 7
 Bereits seit 2003 veröffentlicht der Dachverband für sozial-ökonomische Einrichtungen regelmßig Broschüren zu arbeitsmarktpolitischen Dienstleistern in Wien. Im Vorjahr wurde der Katalog „Sozial-integrative Unternehmen & Beratung in Wien“ präsentiert, der die Vielfalt der Beschäftigungs- und Beratungsangebote in Wien zeigt. Das Nachschlagewerk war so erfolgreich, dass der Katalog 2015 um sämtliche Nicht-DSE-Mitglieder ergänzt wurde. Damit liegt erstmals eine vollständige und aktuelle Übersicht über alle arbeitsmarktpolitischen Angebote im Bereich Beschäftigung und Beratung in Wien vor, die nun auch von den AMS-MitarbeiterInnen in der täglichen Beratung verwendet werden kann. Praxisnah gibt der Katalog einen fundierten Überblick über die Leistungen der Beschäftigungsbetriebe und gemeinnützigen Überlasser sowie der Beratungs- und Betreuungseinrichtungen und informiert gleichzeitig über die Zugangsmöglichkeiten. Im Ergebnis ist diese Zusammenarbeit des DSE-Wien mit dem AMS Wien ein umfangreiches Nachschlagewerk, das um nützliche Online-Features erweitert wurde und die Beschäftigungs- und Beratungsangebote in Wien in vergleichbarer Form darstellt.Sozial und wirtschaftlich!
 Sozialintegrative Unternehmen verfolgen soziale und wirtschaftliche Ziele, und sie erfüllen gleichzeitig 
 einen wichtigen arbeitsmarktpolitischen Auftrag. Sie denken wirtschaftlich und handeln gemeinnützig. 
 Insgesamt agieren sozialintegrative Unternehmen in verschiedenen Organisationsformen im Span
-nungsfeld
-wirtschaftlicher Erfordernisse und arbeitsmarktpolitischer Vorgaben. Sie bieten den ihnen 
+-
+nungsfeld wirtschaftlicher Erfordernisse und arbeitsmarktpolitischer Vorgaben. Sie bieten den ihnen 
 anvertrauten Personen eine befristete Anstellung, Hilfe zur Selbsthilfe und Unterstützung bei der Über 
 -nahme von Eigenverantwortung mit dem Ziel, sie dauerhaft in den Regelarbeitsmarkt zu integrieren.Vielfältige Ansätze zur Problemlösung
 Die Wiener Beratungs- und Betreuungseinrichtungen wiederum stehen ihren Kundinnen und Kunden 
@@ -2836,14 +2854,14 @@ finden. Hilfe suchende Menschen werden so in ihren Handlungskompetenzen gestär
 neue Perspektiven.Wien: starke Interessenvertretung für sozial-ökonomische Einrichtungen in Wien
 Neben der sozialen, gesellschaftlich und arbeitsmarktpolitisch wertvollen Komponente verbindet viele 
 der in dieser Broschüre vorgestellten sozialintegrativen Betriebe sowie Beratungs- und Betreuungsein
-richtungen
-ihre freiwillige Mitgliedschaft beim Wiener Dachverband für sozial-ökonomische Einrich
-tungen.
-Durch diese starke wie stabile Vernetzung ist es erst möglich, dieses Nachschlagewerk allen 
+-
+richtungen ihre freiwillige Mitgliedschaft beim Wiener Dachverband für sozial-ökonomische Einrich
+-
+tungen. Durch diese starke wie stabile Vernetzung ist es erst möglich, dieses Nachschlagewerk allen 
 interessierten und/oder betroffenen Menschen sowie den DSE-Partnerorganisationen anzubieten.Walter Wojcik, MAS  
 Mag. Christoph ParakPräsident des DSE-Wien  
 Geschäftsführer des DSE-Wien
-Vorwort  
+Vorwort33
 von Walter Wojcik, MAS  und Mag. Christoph Parak
 Präsident und Geschäftsführer des DSE-WienTätigkeitsfeld
 Service 4 ist als Teil des itworks Integrationsleasings eine hauseigene Dienstleistungsagentur, die für Unternehmen und Privatpersonen Serviceleistungen erbringt. Das Angebot reicht von Gebäude- betreuung und Reinigung über Instandhaltung und Produktionsdienstleistungen bis zu Lager und Logistik. Das Dienstleistungsangebot von greenlab (eine Abteilung von Service 4 speziell für Jugend-liche und junge Erwachsene) im Bereich Grünraumbewirtschaftung und Grünraumgestaltung wird u.a. für Firmen und Organisationen in der Seestadt Aspern angeboten, eines der derzeit grßten Stadterweiterungsprojekte Europas. Die Begleitung zu den Arbeitseinsätzen erfolgt durch unsere ArbeitsanleiterInnen.Durch praxisnahe Qualifizierung „on the job“ werden unsere Transitarbeitskräfte an bestehende ar 
@@ -2948,8 +2966,8 @@ finungszeitenTermine nach telefonischer VereinbarungErreichbarkeitBim
  
   26A, 86A, 87A, 94A, 96A (Erzherzog-Karl-Straße)Bahn   
 S 80 (Erzherzog-Karl-Straße)Tätigkeitsfeld
-Wir unterstützen arbeitsmarktferne Personen sowie TeilnehmerInnen der Beratungs- und Betreuungseinrichtung
-„step2job“ bei der Eingliederung in den ersten Arbeitsmarkt. Befristete Dienstverhältnisse werden als Regal- und ThekenbetreuerIn im Einzelhandel, als KassierIn und als Hilfskraft für die Lagerlogistik angeboten.Unser Angebot richtet sich insbesondere an Frauen und Männer ab 50 Jahre, sowie an motivierte Personen ab 25 Jahre mit ausreichenden Deutschkenntnissen.
+Wir unterstützen arbeitsmarktferne Personen sowie TeilnehmerInnen der Beratungs- und Betreuungs-
+ einrichtung „step2job“ bei der Eingliederung in den ersten Arbeitsmarkt. Befristete Dienstverhältnisse werden als Regal- und ThekenbetreuerIn im Einzelhandel, als KassierIn und als Hilfskraft für die Lagerlogistik angeboten.Unser Angebot richtet sich insbesondere an Frauen und Männer ab 50 Jahre, sowie an motivierte Personen ab 25 Jahre mit ausreichenden Deutschkenntnissen.
 Produkte & Dienstleistungen
 Der SOMA Sozialmarkt bietet Menschen mit niedrigem Einkommen die Möglichkeit, ihr Haushalts -budget durch den Erwerb von günstigen Waren zu entlasten. Angeboten werden Grundnahrungs- mittel, Hygieneartikel und Haushaltswaren zu 30-50% des Handelspreises. Für die Ausstellung einer Einkaufsberechtigung sind Einkommensnachweis und Meldezettel vorzulegen.
 Unterstützungsangebot
@@ -3121,8 +3139,8 @@ Mit seinen vielfältigen Angeboten trägt FAB wesentlich zu einer erfolgreichen 
 Österreich bei. Er verfügt über jahrzehntelange Erfahrung auf dem Gebiet der Arbeitsintegration von 
 Menschen mit sozialen und/oder körperlichen Beeinträchtigungen. Er unterstützt Menschen beim 
 Zugang zum Arbeitsmarkt. Er beschäftigt, qualifiziert, begleitet und betreut Arbeit suchende Men
-schen,
-Menschen mit Beeinträchtigungen und Menschen mit weiterem Unterstützungsbedarf durch 
+-
+schen, Menschen mit Beeinträchtigungen und Menschen mit weiterem Unterstützungsbedarf durch 
 maßgeschneiderte Angebote und bietet ihnen so die nötigen Voraussetzungen für eine erfolgreiche 
 Integration. FAB BBE Deutsch ist Mitglied des DSE-Wien. 
 Finanzierung
@@ -3138,7 +3156,7 @@ Volkshilfe Beschäftigung
 Standorte der Beratung:
  b 1100 Wien ipcenter 1120 Wien bit 1230 WienT  
 0664 60 694 8820M  
-s.waneck@volkshilfe-beschaeftigung.atW www.volkshilfe-beschaeftigung.atat
+s.waneck@volkshilfe-beschaeftigung.atW www.volkshilfe-beschaeftigung.at91
 finungszeitenMo – Do   
 08.00  16.30
  Fr 
@@ -3154,8 +3172,8 @@ Männer, die
  das Gefühl haben, dass neben den beruflichen auch andere Probleme in Angriff zu nehmen sind
  bereit sind, Hilfe in Anspruch zu nehmen, um konkrete Pläne für die Zukunft zu entwickeln
  endlich Klarheit in eine unübersichtlich gewordene Lebenssituation bringen möchten, um sich wieder einen Weg in eine Arbeitsaufnahme zu ermöglichenEin Team aus erfahrenen PsychotherapeutInnen, PsychologInnen und SozialarbeiterInnen bietet mit diesem für AMS-Kunden erstmalig männerspezifischen Angebot einen Begegnungs- und Beratungs 
--rahmen in Form von sozialtherapeutischen Kleingruppen, in denen Motivation und Lebensmut wiedererlangt,
-neue Perspektiven für die berufliche und private Zukunft ausgelotet und bisher nicht gegan-gene Wege in ein selbstbestimmtes Leben angesteuert werden können.
+-rahmen in Form von sozialtherapeutischen Kleingruppen, in denen Motivation und Lebensmut wieder- 
+ erlangt, neue Perspektiven für die berufliche und private Zukunft ausgelotet und bisher nicht gegan-gene Wege in ein selbstbestimmtes Leben angesteuert werden können.
 Beratungsangebot
 Das Programm der Männer BBE besteht aus folgenden Punkten:
  Infotreffen: Inhalt und Ablauf werden erörtert. Entscheidet sich der Mann für den freiwilligen Eintritt in das Angebot, wird er zu einem Erstgespräch eingeladen.
@@ -3168,8 +3186,8 @@ Unsere Organisation
 Die Männerberatung Wien gibt es seit dem Jahr 1984. Sie beherbergt als gemeinnütziger Verein 
 mittlerweile vier verschiedene Einrichtungen unter einem Dach: eine Beratungsstelle, die anonyme 
 Unterstützung anbietet; eine psychotherapeutische Praxisgemeinschaft, die längerfristige Hilfestel
-lungen
-gewährleistet; eine Informationsstelle, die Fortbildungen und Kurse durchführt und sich mit 
+-
+lungen gewährleistet; eine Informationsstelle, die Fortbildungen und Kurse durchführt und sich mit 
 Jugendarbeit und Opferschutz beschäftigt; eine Gewaltpräventionsstelle für Männer und männliche 
 Jugendliche. Achtsamkeit und eine differenzierte Sicht auf männliche Rollen und männliche Lebens -gestaltung verstehen wir als Voraussetzung für die Chance auf Veränderung.
 Finanzierung
@@ -3188,7 +3206,7 @@ Marc Aurel-Straße 2a/2. Stock/Tür 10
  
 1010 WienT  
 01 982 33 08M  
-migrantin@migrant.atW www.migrant.atat
+migrantin@migrant.atW www.migrant.at91
 finungszeiten (Telefonische Beratung)Di, Mi   
 13.30 – 16.00
  Do   
@@ -3226,7 +3244,7 @@ itworks Personalservice und Beratung gemeinnützige GmbH
 Favoritenstraße 82
 1100 WienMeldemannstraße 12-14/Stiege 1  1200 WienT  
 01 90611 – 0F  
-01 90611 – 5892M jobservice_wien@itworks.co.atW www.itworks.co.atat
+01 90611 – 5892M jobservice_wien@itworks.co.atW www.itworks.co.at91
 finungszeitenMo – Do   
 08.00-16.00Fr 
  
@@ -3253,8 +3271,8 @@ Wir beraten
 beim Lesen und Anfertigen von Schriftstücken und
 beim Briefverkehr und bei Telefonaten mit Ämtern und Behörden
 Unsere Organisation
-Job-TransFair TERRA ist ein Projekt der Job-TransFair GmbH, einem gemeinnützigen Tochterunternehmen
-des BFI Wien mit mehr als 150 MitarbeiterInnen an 5 Standorten in Wien Job-TransFair TERRA ist Mitglied des DSE-Wien.
+Job-TransFair TERRA ist ein Projekt der Job-TransFair GmbH, einem gemeinnützigen Tochterunter-
+ nehmen des BFI Wien mit mehr als 150 MitarbeiterInnen an 5 Standorten in Wien Job-TransFair TERRA ist Mitglied des DSE-Wien.
 Finanzierung
 Magistratsabteilung 17, Arbeitsmarktservice Wien
 Zugang
@@ -3264,7 +3282,7 @@ BeratungMigIn
 Beratung Betreuung, Begleitung, 
  Beschäftigung von Frauen mit den  Muttersprachen arabisch, bosnisch-kroatisch-serbisch, bulgarisch, persisch, russisch, türkischContext Impulse am Arbeitsmarkt GmbH
 Quellenstraße 2c1100 WienT  
-01 60517 – 3600W www.context.atat
+01 60517 – 3600W www.context.at91
 finungszeiten (Telefonische Auskünfte)Mo – Do  
 09.00 – 16.00Fr 
  
@@ -3273,8 +3291,8 @@ U1 (Reumannplatz)Bim
 6 (Absberggasse)Bus 
   69A (Hüttenbrennergasse)
 132Unterstützung für
-verschuldete und überschuldete Menschen, auch ehemals Selbstständige, Menschen mit Unterstützungsbedarf
-bei ihrer finanziellen Verwaltung (Betreutes Konto)
+verschuldete und überschuldete Menschen, auch ehemals Selbstständige, Menschen mit Unterstüt-
+ zungsbedarf bei ihrer finanziellen Verwaltung (Betreutes Konto)
 Beratungsangebot
 Budgetberatung
 Budgetanalyse
@@ -3302,7 +3320,7 @@ gemeinnützige GmbH
 Hietzinger Kai 139 2. Stock (AMS-Gebäude)
 1130 WienMeldemannstraße 12-14/Stiege 3/OG 1a  1200 WienT  
 01 90611 – 5555F  
-01 90611 – 5892M jobservice_wien@itworks.co.atW www.itworks.co.atat
+01 90611 – 5892M jobservice_wien@itworks.co.atW www.itworks.co.at91
 finungszeitenMo – Do   
 08.00 – 16.00Fr 
  
@@ -3321,9 +3339,11 @@ Beratungsangebot
 Begleitung zu Bewerbungsgesprächen
 Begleitung während des Dienstverhältnisses zur nachhaltigen Jobsicherung
 Unsere Organisation
-Die Volkshilfe Beschäftigung wurde 1997 gemeinsam von der Volkshilfe Österreich und der Volkshilfe
-Wien gegründet. Volkshilfe Beschäftigung ist ein gemeinnütziger Verein mit dem Ziel, arbeitslose
-Männer und Frauen nachhaltig in den Arbeitsmarkt zu integrieren.Wir verbinden soziale und ökonomische Prinzipien in modernen Betriebsstrukturen und Beratungs- einrichtungen. Wir bieten praktische und theoretische fachliche Qualifizierung, begleitende psycho 
+Die Volkshilfe Beschäftigung wurde 1997 gemeinsam von der Volkshilfe Österreich und der Volks-
+ 
+hilfe Wien gegründet. Volkshilfe Beschäftigung ist ein gemeinnütziger Verein mit dem Ziel, arbeits-
+ 
+lose Männer und Frauen nachhaltig in den Arbeitsmarkt zu integrieren.Wir verbinden soziale und ökonomische Prinzipien in modernen Betriebsstrukturen und Beratungs- einrichtungen. Wir bieten praktische und theoretische fachliche Qualifizierung, begleitende psycho 
 -soziale Beratung und zielorientiertes Coaching. Die berufliche Integration von Frauen und Männern aller Altersgruppen findet unter der Berücksichtigung von individuellen Hindernissen, Bedürfnissen und Fähigkeiten statt.Volkshilfe Beschäftigung step2job ist Mitglied des DSE-Wien.
 Finanzierung
 Arbeitsmarktservice Wien, esf
@@ -3375,7 +3395,7 @@ Alser Straße 24/2/5
  
 1090 WienT  
 01 533 83 80M  
-wbb@berufsboerse.atW www.berufsboerse.atat
+wbb@berufsboerse.atW www.berufsboerse.at91
 finungszeitenMo – Do   
 09.00 – 16.00
  Fr 
@@ -3410,7 +3430,7 @@ Grüngasse 16
 01 513 15 30 – 333M  
 silvia.ballauf@promente-wien.atW www.promente-wien.at  
   www.promente-wien.at/selbsthilfe  
-at
+91
 finungszeitenMo – Do   
 08.30-17.00Fr 
  

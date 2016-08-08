@@ -345,7 +345,7 @@ Mariahilfer Straße 123/4. Stock
  
 1060 WienT  
 01 33 168 – 3800F  
-01 331 68 – 3991W www.abo-jugend.atat
+01 331 68 – 3991W www.abo-jugend.at91
 finungszeitenMo – Do   
 09.00 – 15.30
  Fr 
@@ -402,7 +402,7 @@ Dresdner Straße 108, 3. Stock
  
 1200 WienLiesinger-Flur-Gasse 2c, 2. Stock 1230 WienT  
 01 688 13 68M  
-DEUTSCH_BBE@fab.atW www.fab.atat
+DEUTSCH_BBE@fab.atW www.fab.at91
 finungszeitenMo – Do   
 08.00 – 16.00
  Fr 
@@ -440,7 +440,7 @@ BeratungBBE für Männer
 Männerberatung Wien
 Erlachgasse 95
  1100 WienT  
-0650 680 66 69M bbe@maenner.atW www.maenner.att
+0650 680 66 69M bbe@maenner.atW www.maenner.at1
 finungszeitenTermine nach VereinbarungErreichbarkeitU  
 U1 (Keplerplatz)
 106Unterstützung für
@@ -470,7 +470,7 @@ Simmeringer Hauptstraße 47-49
 1110 WienT  
 01/ 740 22 – 1610 oder – 2571M  
 adminbdz@bbrz.atW www.bbrz.at  
-at
+91
 finungszeitenMo – Do   
 08.00 – 15.00
  Fr 
@@ -536,7 +536,7 @@ gGMBH
 Fonds Soziales Wien
 Döblerhofstraße 91030 Wien T  
 01 330 87 35 F  
-01 330 87 35-66 925W www.schuldnerberatung-wien.atat
+01 330 87 35-66 925W www.schuldnerberatung-wien.at91
 finungszeitenMo – Fr   
 08.00 – 15.30Termine nach telefonischer VereinbarungErreichbarkeitU  
 U3 (Gasometer)
@@ -569,7 +569,7 @@ Lassallestraße 46/D3
  
 1020 WienT  
 0664 60 694 882 0M  
-step2job@volkshilfe-beschaeftigung.atW www.volkshilfe-beschaeftigung.atat
+step2job@volkshilfe-beschaeftigung.atW www.volkshilfe-beschaeftigung.at91
 finungszeitenMo – Do   
 08.00 – 16.30
  Fr 
@@ -643,7 +643,7 @@ Verein sprungbrett
 Hütteldorferstraße 81b/Stiege 1/Top 4
  1150 WienT  
 01 789 45 45F  
-01 789 45 45 20W www.sprungbrett.or.atat
+01 789 45 45 20W www.sprungbrett.or.at91
 finungszeiten (Telefonische Auskünfte)Mo – Do   
 09.00 – 17.00 und nach VereinbarungErreichbarkeitU  
 U3 (Johnstraße)Bim  
@@ -671,7 +671,7 @@ BeratungHaftentlassenenhilfe
 Neustart Wien
 Holzhausergasse 4
  1020 WienT  
-01 218 32 55 0W www.neustart.atat
+01 218 32 55 0W www.neustart.at91
 finungszeitenMo – Fr   
 09.00 – 13.00
  Voranmeldung nicht notwendigErreichbarkeitBim   
@@ -745,7 +745,7 @@ Wiener Dachverband  für ihren großartigen Einsatz und wünsche für die Bew�
 -
 den Herausforderungen viel Kraft und Erfolg!Sozialminister Rudolf Hundstorfer
 Bundesminister für Arbeit, Soziales und Konsumentenschutz
-Vorwort  
+Vorwort33
 von Rudolf Hundstorfer
 Bundesminister für Arbeit, Soziales und Konsumentenschutz* gefördert vom AMS Wien; ** gefördert mittels AMS-Eingliederungsbeihilfe; *** Andere Förderungen
 SÖBÜ (Sozialökonomische Betriebe Überlasser)SÖB (Sozialökonomische Betriebe)
@@ -1085,7 +1085,7 @@ Context Impulse am Arbeitsmarkt GmbH
 Quellenstraße 2c1100 WienT  
 01 60517 – 3200
    
-0664 852 63 93W www.context.atat
+0664 852 63 93W www.context.at91
 finungszeitenMo – Fr    08.30 – 15.30ErreichbarkeitU  
 U1 (Reumannplatz)Bim   
 6 (Absberggasse)
@@ -1110,7 +1110,7 @@ Verein Projekt Integrationshaus
 Engerthstraße 163
 1020 Wien T  
 01 212 35 20M  
-info@integrationshaus.atW www.integrationshaus.att
+info@integrationshaus.atW www.integrationshaus.at1
 finungszeitenMo – Do   
 08.00 – 16.00Fr 
  
@@ -1145,7 +1145,7 @@ Verein Beratungszentrum für   Migranten und Migrantinnen
 Hoher Markt 8/Stiege 4/2. Stock
  
 1010 WienT  
-01 712 56 04M migrant@migrant.atW www.migrant.atat
+01 712 56 04M migrant@migrant.atW www.migrant.at91
 finungszeitenMo, Di, Mi, Fr  
 09.00 – 13.00 
  Do   
@@ -1186,7 +1186,7 @@ Mantlergasse 34-36/1/1
  
 1130 WienT  
 01 934 65 90W www.move-ment.at  
-at
+91
 finungszeitenMo – Do   
 08.00-16.00Fr 
  
@@ -1224,7 +1224,7 @@ Wehrgasse 26
  
 1050 WienT  
 01 581 06 60M  
-office@kinderdrehscheibe.atW www.kinderdrehscheibe.atat
+office@kinderdrehscheibe.atW www.kinderdrehscheibe.at91
 finungszeiten (Telefon- und E-Mailberatung)Mo, Do   
 09.00 – 13.00
  Di   
@@ -1262,7 +1262,7 @@ Schöpfleuthnergasse 25/6. OG
 Eingang: Leopold-Ferstl-Gasse 7
 1210 WienT  
 605 17-3400F  
-01 605 17-3466W www.context.atat
+01 605 17-3466W www.context.at91
 finungszeitenMo – Do   
 08.00 – 16.30
  Fr 
@@ -1302,7 +1302,7 @@ Wiedner Hauptstraße 142
 1090 WienT  
 01 36 79 565F  
 01 36 79 565 7W www.ges-aw.at  
-at
+91
 finungszeitenMo – Fr   
 08.00 – 16.00ErreichbarkeitBim  
 1, 6, 18, 62 (Matzleinsdorfer Platz)
@@ -1381,7 +1381,7 @@ Emil-Fucik-Gasse 1
  
 1100 WienT  
 01 688 13 68M  
-zke@fab.atW www.fab.atat
+zke@fab.atW www.fab.at91
 finungszeitenMo – Do   
 08.00 – 18.00
  Fr 
@@ -1507,7 +1507,7 @@ mitunter treffsicherer als eine Schulung oder ein Kurs.    Das hervorragende Zus
 vor allem solidarisches Dankeschön! Vizebürgermeisterin Mag.
 a
  Renate BraunerStadträtin für Finanzen, Wirtschaftspolitik und Wiener Stadtwerke
-Vorwort  
+Vorwort33
 von Mag.
 a
  Renate Brauner
@@ -1774,7 +1774,7 @@ Arbeit, Bildung und Zukunft von Frauen
 Brünnerstraße 73 b/Top 4
 1210 WienT  
 0699 1 66 70 321M  
-fit.frauenberatung@abzaustria.atW www.abzaustria.atat
+fit.frauenberatung@abzaustria.atW www.abzaustria.at91
 finungszeitenMo – Do  
 09.00 – 15.30 Fr 
  
@@ -1851,7 +1851,7 @@ Paulanergasse 15/2
  
 1040 WienT  
 01 713 18 17M  
-euspug@euspug.atW www.euspug.atat
+euspug@euspug.atW www.euspug.at91
 finungszeitenMo – Do   
 08.30 – 17.00
  Fr 
@@ -1890,7 +1890,7 @@ Simmeringer Hauptstraße 47-49
 1110 WienT  
 01/ 740 22 – 1571 oder – 2984 M  
 adminbdz@bbrz.atW www.bbrz.at  
-at
+91
 finungszeitenMo – Do   
 08.00 – 15.00
  Fr 
@@ -1967,7 +1967,7 @@ Emil-Fucik-Gasse 1
  
 1100 WienT  
 01 688 13 68 DW 3071M  
-monsun@fab.atW www.fab.atat
+monsun@fab.atW www.fab.at91
 finungszeitenMo – Do   
 08.00 – 18.00
  Fr 
@@ -2010,7 +2010,7 @@ Beratungstep2job für die RGS 962   (Redergasse)
 Caritas der Erzdiözese Wien
 Grohgasse 3/2, 1. Stock1050 WienT  
 01 503 21 58F  
-01 503 21 58 – 650M step2job@caritas-wien.atW www.caritas-wien.att
+01 503 21 58 – 650M step2job@caritas-wien.atW www.caritas-wien.at1
 finungszeitenMo – Do   
 09.00 – 17.00Fr 
  
@@ -2093,7 +2093,7 @@ Beratungwoman professional
 Context Impulse am Arbeitsmarkt GmbH
 Quellenstraße 2c1100 WienT  
 01 60517 – 1200F  
-01 60517 – 1170W www.context.atat
+01 60517 – 1170W www.context.at91
 finungszeiten (Telefonische Auskünfte)Mo – Do  
 08.00 – 17.00Fr 
  
@@ -2127,7 +2127,7 @@ Sucht und Beschäftigung – Standfest  Beratungsstelle des Verein Dialog
 Gudrunstraße 184
  1100 WienT  
 01 548 60 90M   
-verein@dialog-on.atW www.dialog-on.atat
+verein@dialog-on.atW www.dialog-on.at91
 finungszeitenMo, Mi  
 09.00 – 17.00 Di, Do  
 13.00 – 17.00
@@ -2189,7 +2189,7 @@ Betreuungseinrichtungen und die Sozialökonomischen Betriebe: Gemeinsam sind sie
 -barer Teil jenes Instrumentariums geworden, das die Arbeitsmarktpolitik unserer Stadt ausmacht. Mag.
 a
  Petra DraxlGeschäftsführerin des Arbeitsmarktservice Wien
-Vorwort  
+Vorwort33
 von Mag.
 a
  Petra Draxl
@@ -2477,7 +2477,7 @@ Context Impulse am Arbeitsmarkt GmbH
 Schöpfleuthnergasse 25/6.OG 
  (Eingang: Leopold-Ferstl-Gasse 7)1210 WienT  
 01 605 17 – 3424F  
-01 605 17 – 3466 W www.context.atat
+01 605 17 – 3466 W www.context.at91
 finungszeitenMo – Do  
 08.00 – 16.30Fr    
 08.00 – 15.00ErreichbarkeitU  
@@ -2523,7 +2523,7 @@ Kirchengasse 3
 Handelskai 388 (Eingang Wehlistraße 299), 1020 Wien
 Quellenstraße 2c, 1100 Wien Geiselbergstraße 26-32, 1110 Wien T  
 0699 15 22 15 30M  
-c.mueller@ppctraining.atW www.ppctraining.at www.facebook.com/ppctraininggmbht
+c.mueller@ppctraining.atW www.ppctraining.at www.facebook.com/ppctraininggmbh1
 finungszeitenMo – Fr   
 08.00 – 16.30Erreichbarkeit 1020 WienU   
 U2 (Donaumarina)Erreichbarkeit 1100 WienBim   
@@ -2560,7 +2560,7 @@ Theresianumgasse 7/6
  
 1040 WienT  
 01 997 27 61 0F  
-01 997 27 61 4W www.migrant.atat
+01 997 27 61 4W www.migrant.at91
 finungszeiten (Infotag)Jeden Mo   
 09.30 – 12.30Telefonische Erreichbarkeit:Mo – Do   
 09.00 – 12.00ErreichbarkeitBim  
@@ -2637,7 +2637,7 @@ Verein sprungbrett für mädchen
 Hütteldorferstraße 81b/Stiege 1/Top 4
  1150 WienT  
 01 789 45 45M  
-sprungbrett@sprungbrett.or.atW www.sprungbrett.or.atat
+sprungbrett@sprungbrett.or.atW www.sprungbrett.or.at91
 finungszeiten (Telefonische Auskünfte)Mo – Do   
 09.00 – 17.00 und nach VereinbarungErreichbarkeitU  
 U3 (Johnstraße)Bim  
@@ -2678,7 +2678,7 @@ Emil-Fucik-Gasse 1
  
 1100 WienT  
 01 688 13 68M  
-step2job@fab.atW www.fab.atat
+step2job@fab.atW www.fab.at91
 finungszeitenMo – Do   
 08.00 – 18.00
  Fr 
@@ -2800,7 +2800,7 @@ Fockygasse 14/2/16-18
  
 1120 WienT  
 01 817 73 44M  
-beratung12@abzaustria.atW www.abzaustria.atat
+beratung12@abzaustria.atW www.abzaustria.at91
 finungszeiten (Telefonische Auskünfte)Di, Do  
 09.00 – 13.00 Persönliche Termine nach Vereinbarung. Telefonische Anmeldung unbedingt erforderlich!ErreichbarkeitBus 
   59A (Wolfganggasse/Steinbauergasse)
@@ -2823,20 +2823,20 @@ Institut für Suchtdiagnostik, Wiener Berufsbörse, AMS Niederösterreich, Selb
 Dialog
 Sucht und Beschäftigung – Standfest   Beratungsstelle des Verein Dialog 
 175
-Beratungibis acam
-T
-EAM 
-4     
-KÜNSTLERINNENSERVICE 
- 
- 
-Verein zur Schaffung von Arbeit  
-8010 Graz, Glacisstraße 69  1010 Wien, Salztorgassse 1 
-Tel.: +43/0316/815656  Tel: +43/01/533 38 28  - 0  
-Fax: +43/0316/815656 -4 Fax: +43/01/533 38 28 -28 
-Bankverbindung : Steiermärkische Sparkasse, BLZ  20815,  Konto Nr.  2100248604   
-         
- 
+Beratung191139991
+8
+6673
+5333 3
+727887687776786887663
+3
+3
+8111113111389191111131113619111 3
+54443719143719911111921355 3444438111438911111191111343
+811453455445454545555 38115345544445553553553 43433
+79153455445454545555 453791534554444555355355 4553
+69111119111111 538111111211119113819119111436793 5454543 7111137143 5444555545 33
+33333333 
+3
 7
 Bereits seit 2003 veröffentlicht der Dachverband für sozial-ökonomische Einrichtungen regelmßig Broschüren zu arbeitsmarktpolitischen Dienstleistern in Wien. Im Vorjahr wurde der Katalog „Sozial-integrative Unternehmen & Beratung in Wien“ präsentiert, der die Vielfalt der Beschäftigungs- und Beratungsangebote in Wien zeigt. Das Nachschlagewerk war so erfolgreich, dass der Katalog 2015 um sämtliche Nicht-DSE-Mitglieder ergänzt wurde. Damit liegt erstmals eine vollständige und aktuelle Übersicht über alle arbeitsmarktpolitischen Angebote im Bereich Beschäftigung und Beratung in Wien vor, die nun auch von den AMS-MitarbeiterInnen in der täglichen Beratung verwendet werden kann. Praxisnah gibt der Katalog einen fundierten Überblick über die Leistungen der Beschäftigungsbetriebe und gemeinnützigen Überlasser sowie der Beratungs- und Betreuungseinrichtungen und informiert gleichzeitig über die Zugangsmöglichkeiten. Im Ergebnis ist diese Zusammenarbeit des DSE-Wien mit dem AMS Wien ein umfangreiches Nachschlagewerk, das um nützliche Online-Features erweitert wurde und die Beschäftigungs- und Beratungsangebote in Wien in vergleichbarer Form darstellt.Sozial und wirtschaftlich!
 Sozialintegrative Unternehmen verfolgen soziale und wirtschaftliche Ziele, und sie erfüllen gleichzeitig 
@@ -2861,7 +2861,7 @@ tungen. Durch diese starke wie stabile Vernetzung ist es erst möglich, dieses N
 interessierten und/oder betroffenen Menschen sowie den DSE-Partnerorganisationen anzubieten.Walter Wojcik, MAS  
 Mag. Christoph ParakPräsident des DSE-Wien  
 Geschäftsführer des DSE-Wien
-Vorwort  
+Vorwort33
 von Walter Wojcik, MAS  und Mag. Christoph Parak
 Präsident und Geschäftsführer des DSE-WienTätigkeitsfeld
 Service 4 ist als Teil des itworks Integrationsleasings eine hauseigene Dienstleistungsagentur, die für Unternehmen und Privatpersonen Serviceleistungen erbringt. Das Angebot reicht von Gebäude- betreuung und Reinigung über Instandhaltung und Produktionsdienstleistungen bis zu Lager und Logistik. Das Dienstleistungsangebot von greenlab (eine Abteilung von Service 4 speziell für Jugend-liche und junge Erwachsene) im Bereich Grünraumbewirtschaftung und Grünraumgestaltung wird u.a. für Firmen und Organisationen in der Seestadt Aspern angeboten, eines der derzeit grßten Stadterweiterungsprojekte Europas. Die Begleitung zu den Arbeitseinsätzen erfolgt durch unsere ArbeitsanleiterInnen.Durch praxisnahe Qualifizierung „on the job“ werden unsere Transitarbeitskräfte an bestehende ar 
@@ -3156,7 +3156,7 @@ Volkshilfe Beschäftigung
 Standorte der Beratung:
  b 1100 Wien ipcenter 1120 Wien bit 1230 WienT  
 0664 60 694 8820M  
-s.waneck@volkshilfe-beschaeftigung.atW www.volkshilfe-beschaeftigung.atat
+s.waneck@volkshilfe-beschaeftigung.atW www.volkshilfe-beschaeftigung.at91
 finungszeitenMo – Do   
 08.00  16.30
  Fr 
@@ -3206,7 +3206,7 @@ Marc Aurel-Straße 2a/2. Stock/Tür 10
  
 1010 WienT  
 01 982 33 08M  
-migrantin@migrant.atW www.migrant.atat
+migrantin@migrant.atW www.migrant.at91
 finungszeiten (Telefonische Beratung)Di, Mi   
 13.30 – 16.00
  Do   
@@ -3244,7 +3244,7 @@ itworks Personalservice und Beratung gemeinnützige GmbH
 Favoritenstraße 82
 1100 WienMeldemannstraße 12-14/Stiege 1  1200 WienT  
 01 90611 – 0F  
-01 90611 – 5892M jobservice_wien@itworks.co.atW www.itworks.co.atat
+01 90611 – 5892M jobservice_wien@itworks.co.atW www.itworks.co.at91
 finungszeitenMo – Do   
 08.00-16.00Fr 
  
@@ -3282,7 +3282,7 @@ BeratungMigIn
 Beratung Betreuung, Begleitung, 
  Beschäftigung von Frauen mit den  Muttersprachen arabisch, bosnisch-kroatisch-serbisch, bulgarisch, persisch, russisch, türkischContext Impulse am Arbeitsmarkt GmbH
 Quellenstraße 2c1100 WienT  
-01 60517 – 3600W www.context.atat
+01 60517 – 3600W www.context.at91
 finungszeiten (Telefonische Auskünfte)Mo – Do  
 09.00 – 16.00Fr 
  
@@ -3320,7 +3320,7 @@ gemeinnützige GmbH
 Hietzinger Kai 139 2. Stock (AMS-Gebäude)
 1130 WienMeldemannstraße 12-14/Stiege 3/OG 1a  1200 WienT  
 01 90611 – 5555F  
-01 90611 – 5892M jobservice_wien@itworks.co.atW www.itworks.co.atat
+01 90611 – 5892M jobservice_wien@itworks.co.atW www.itworks.co.at91
 finungszeitenMo – Do   
 08.00 – 16.00Fr 
  
@@ -3395,7 +3395,7 @@ Alser Straße 24/2/5
  
 1090 WienT  
 01 533 83 80M  
-wbb@berufsboerse.atW www.berufsboerse.atat
+wbb@berufsboerse.atW www.berufsboerse.at91
 finungszeitenMo – Do   
 09.00 – 16.00
  Fr 
@@ -3430,7 +3430,7 @@ Grüngasse 16
 01 513 15 30 – 333M  
 silvia.ballauf@promente-wien.atW www.promente-wien.at  
   www.promente-wien.at/selbsthilfe  
-at
+91
 finungszeitenMo – Do   
 08.30-17.00Fr 
  

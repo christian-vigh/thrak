@@ -27,7 +27,7 @@ Frankfurt am Main, März 2007
 
 Leitfaden Veranstaltungsverkehr 
 Seite 3 von 79 
-Inhaltsverzeichnis
+711911111111191111
 0Einleitung 4
 1Planungsgrundlagen 7
 2Verkehrliche Abwicklung 13
@@ -41,7 +41,7 @@ Teil C:Anregungen - eine fiktive Beispielveranstaltung 60
 Leitfaden Veranstaltungsverkehr 
 Seite 4 von 79 
 Einleitung
-0 Einleitung 
+4361111111113
 Die ivm GmbH  integriertes Verkehrsmanagement Region Frankfurt RheinMain  hat zur 
 FIFA Fußball Weltmeisterschaft 2006 gemeinsam mit der Straßenverkehrsbehörde der Stadt 
 Frankfurt am Main die verkehrlichen Maßnahmen koordiniert. Die Vorbereitungen umfassten 
@@ -147,8 +147,8 @@ und das Beispiel sollen lediglich eine Hilfe für die verkehrliche Planung sein.
 Planungsgrundlagen
 Projektorganisation
 Öffentlichkeitsarbeit
-Planungshilfen
-Planung
+81911111111111
+8191111
 Planungshinweise
 Beispielveranstaltung
 Verkehrlichen Abwicklung
@@ -164,8 +164,8 @@ Projektorganisation
 Verkehrlichen Abwicklung
 Öffentlichkeitsarbeit
 Zeit
-Planungshilfen
-Planung
+81911111111111
+8191111
 Veranstaltung
 Planungshinweise / Beispielveranstaltung
 Checklisten
@@ -173,8 +173,8 @@ Checklisten
 Leitfaden Veranstaltungsverkehr 
 Seite 7 von 79 
 Planungsgrundlagen
-1 Planungsgrundlagen 
-1.1 Aspekte der bevorstehenden Veranstaltung 
+438191111111111191113
+444361111113111391111111111111381191119111113
 Ziel dieses Arbeitspakets ist es, bevorstehende Veranstaltungen kennenzulernen. Nur wer 
 die bevorstehende Veranstaltung in ihren Details kennt, kann eine für diese Veranstaltung 
 zugeschnittene Verkehrsplanung erarbeiten und erfolgreich im Sinne der Besucher umset-
@@ -415,7 +415,7 @@ tungen einfließen. Im Besonderen sollten sich die Verkehrsplaner bewusst machen
 Leitfaden Veranstaltungsverkehr 
 Seite 13 von 79 
 Verkehrliche Abwicklung
-2 Verkehrliche Abwicklung 
+53811111111911369119111113
 Wenn es im Kapitel 1 gelungen ist, anhand der veranstaltungsbezogenen Kriterien die zu 
 planende Veranstaltung für alle Planungsbeteiligte erfassbar zu machen und die aktuelle 
 verkehrliche Ist-Situation des Veranstaltungsortes darzustellen, müssen im nächsten Schritt 
@@ -474,7 +474,7 @@ Verkehrliche Abwicklung.
 Leitfaden Veranstaltungsverkehr 
 Seite 15 von 79 
 Projektorganisation
-3 Projektorganisation 
+5381111111119111911113
 Zu Beginn des Planungsprozesses sollten einige Festlegungen zur Projektorganisation ge-
 troffen werden: 
   Auflistung der am Projekt beteiligten Ämter, Institutionen und Dienststellen 
@@ -825,9 +825,9 @@ Anwohner /
 Anlieger 
 X X  X X X  
 
-Leitfaden Veranstaltungsverkehr 
-Seite 23 von 79 
-Planungshilfen
+71111911138119111911111111111113
+8111135531113553
+81911111111111
 Planungshilfen
 Teil A:   Checklisten „Verkehrliche Abwicklung“ 
 Teil B:  Planungshinweise 
@@ -2511,7 +2511,7 @@ keine externe Informationsbereitstellung
 Leitfaden Veranstaltungsverkehr 
 Seite 46 von 79 
 Planungshinweise
-Teil B: Planungshinweise 
+8111365381911111111111113
 Die nachfolgend zusammengestellten Planungshinweise sollen eine Hilfestellung bei den 
 konkreten Planungen im Vorfeld einer Veranstaltung geben. Ein Anspruch auf Vollständigkeit 
 wird dabei nicht erhoben. 
@@ -2525,7 +2525,7 @@ sind teilweise auch Erfahrungswerte aus dem verkehrlichen Veranstaltungsmanageme
 eingeflossen.  
 An Ende dieses Kapitels sind die wichtigsten Quellen und weiterführende Literatur / Richtli-
 nien zusammengestellt.  
-Hinweise zum Besucheraufkommen:
+7111111131113611191119111111115
 Gesamtbesuchermenge: Annahme auf Grund von Erfahrungen vorangegangener Veranstal-
 tungen, Angaben des Veranstalters, (Sitz-) Platzkapazität, Berück-
 sichtigung des Einzugsgebiets etc. Die Annahmen sind zu prüfen 
@@ -2545,7 +2545,7 @@ rend der gesamten Veranstaltung zu rechnen.
 Leitfaden Veranstaltungsverkehr 
 Seite 47 von 79 
 Planungshinweise
-Hinweise zum Modal Split:
+7111111131113711913811115
 Modale Verteilung: Der Modal Split wird sich  für  die  vorzubereitende  Veranstaltung 
 nicht  exakt  vorhersagen,  geschweige  denn  berechnen  lassen. 
 Trotzdem ist es absolut unerlässlich, dass hier im Kreise der Ver-
@@ -2599,7 +2599,7 @@ Rolle.
 Leitfaden Veranstaltungsverkehr 
 Seite 48 von 79 
 Planungshinweise
-Hinweise zum Parken:
+71111111311138911115
 Besetzungsgrad:  Der Besetzungsgrad ist für jede Veranstaltung auf Basis der Erfahrungen 
 ähnlicher Veranstaltungen abzuschätzen. Folgende Anhaltswerte können 
 einer ersten Abschätzung dienen: 
@@ -2756,7 +2756,7 @@ muss möglich sein.
 Leitfaden Veranstaltungsverkehr 
 Seite 52 von 79 
 Planungshinweise
-Hinweise zum Kfz-Verkehr:
+7111111131113711481111115
 Wegweisung Kfz-
 Verkehr: 
 Für das Aufstellen privater Hinweisschilder ist die Richtlinie des BMV vom 
@@ -2767,7 +2767,7 @@ Emblem, Sinn- oder Schriftbild auch in Farbe gezeigt werden darf. Die
 Schriftgröße ist entsprechend der durchschnittlichen Verkehrsgeschwindig-
 keit (Autobahn v=80km/h, Landstraße v=60km/h, Stadtstraße v=40km/h) zu 
 dimensionieren.  
-Hinweise zum Busverkehr:
+711111113111361111111115
 Kapazität d. Fahrzeuge:   Standardlinienbus (L=12m): ca. 103 Plätze, davon 32 Sitzplätze 
   Standardgelenkbus (L=18m): ca. 145 Plätze, davon 42 Sitzplätze 
   Reisebus: (L=12,3m) 48 Sitzplätze 
@@ -2777,11 +2777,11 @@ erforderlicher Verkehrsraum für den Begegnungsfall Bus-Bus nach EAE
 Größe der Busparkplät-
 ze s. Hinweise zum Parken
 
-Leitfaden Veranstaltungsverkehr 
-Seite 53 von 79 
-Planungshinweise
-Haltestellen: Formen von Bushaltestellen: 
-(Quelle: Handbuch der kommunalen Verkehrsplanung) 
+71111911138119111911111111111113
+8111135531113553
+8191111111111111
+791111111111537111113111361119111111111153
+48111115379119191311131111119111381111111119111143
 
 Leitfaden Veranstaltungsverkehr 
 Seite 54 von 79 
@@ -2805,7 +2805,7 @@ schräge Anordnung von Bushaltestellen für 12m Bus (18m Bus)
 Leitfaden Veranstaltungsverkehr 
 Seite 55 von 79 
 Planungshinweise
-Hinweise zum schienengebundenen Verkehr:
+7111111131113191111111191111111381111115
 Kapazität der 
 Fahrzeuge: 
 Die nachfolgend angegebenen Kapazitäten dienen nur der Orientierung, da die 
@@ -2837,7 +2837,7 @@ diesem Thema zusammengestellt worden (s. Literatur).
 Leitfaden Veranstaltungsverkehr 
 Seite 56 von 79 
 Planungshinweise
-Hinweise zum Radverkehr:
+711111113111389111111115
 Abmessungen 
 von Radver-
 kehrsflächen: 
@@ -2948,7 +2948,7 @@ einrichten.
 Leitfaden Veranstaltungsverkehr 
 Seite 59 von 79 
 Planungshinweise
-Literatur:
+7111191115
 EAHV  Empfehlungen für die Anlage von Hauptverkehrsstraßen - EAHV '93; 
 Forschungsgesellschaft für Straßen- und Verkehrswesen; 1993 
 EAÖ  Empfehlungen  für  Anlagen  des  öffentlichen  Personennahverkehrs   
@@ -3011,7 +3011,7 @@ Parken:
 Leitfaden Veranstaltungsverkehr 
 Seite 62 von 79 
 Beispielveranstaltung
-C2.2 Modal Split: 
+654537119138111153
 (Annahme auf Grund von veranstaltungsbezogenen Aspekten, der verkehrlichen Erschlie-
 ßung und Erfahrungen ähnlicher Veranstaltungen) 
 MIV-Anteil (inkl. Reisebusse): 50 % 
@@ -3030,7 +3030,7 @@ Leitfaden Veranstaltungsverkehr
 Seite 63 von 79 
 Beispielveranstaltung
 Betrachtung der Wegeketten (erwarteter Bedarf / Nachfrage am Spitzentag) 
-Anreise   Ankunft am Veranstaltungsort 
+611111133361111113913811911191111111113
 Fernbahn  
 5 % ~ 1.125 Fahrgäste 
 Umstieg am Fernbahnhof 
@@ -3060,17 +3060,17 @@ Taxi
 5 % ~ 1.125 Fahrgäste 
 Veranstaltungsort /  
 Taxihalteplatz 
-C3 Motorisierter Individualverkehr (MIV) 
-C3.1 Parken - Grundlagen 
-Besetzungsgrad
+65371111111111113711111119111111113477843
+6544389111134371111191113
+61111111111191
 Pkw (Besucher): 2,5 Personen/Pkw 
 Pkw (Beschäftigte):  1,5 Personen/Pkw 
 Reisebus: 50,0 Personen/Bus 
 Taxi: 2,0 Personen/Taxi 
-Gleichzeitigkeitsfaktor:
+711191111111111111911115
 gleichzeitig anwesende bzw. parkende  
 Besucher (Pkw und Reisebusse) 80 % 
-Allgemeiner Stellplatzbedarf: 
+611111111113811111191191191153
 (aus obigen Angaben berechnet) 
 Pkw: 6.000 
 Reisebusse: 88 
@@ -3191,12 +3191,12 @@ Beispielveranstaltung
 Leitfaden Veranstaltungsverkehr 
 Seite 69 von 79 
 Beispielveranstaltung
-Hauptrouten Abreise: 
+791111111113691111153
   keine Parallelveranstaltungen während der Hauptabreise vorhanden 
   keine nennenswerte Überlagerung mit Normalverkehr 
   Verkehrspunkt 1 und 4: Handregelung durch Einsatzkräfte des Ordnungsamts 
 Verkehrspunkte 2 und 3: Schaltung besonderer Abfahrtsprogramme an den LSA 
-C3.7 Haltepunkte / Vorfahrten (Drop-Off / Pick-Up Bereiche) 
+654537911111111134381119111113461114711343819148136111191143
 Für die Bringer / Abholer (Drop-Off / Pick-Up) wird eine spezielle Vorfahrt eingerichtet, die 
 ausschließlich von Privat-Pkw genutzt wird. Behindertentransporte können auf der gegenü-
 berliegenden Straßenseite im Bereich der Bus-Nachrückerplätze vorfahren (vgl. Kap.  C4.2).  
@@ -3263,7 +3263,7 @@ Beispielveranstaltung
 - durchschnittliche Fahrzeit P+R-Platz  Veranstaltungsort: 5 min 
 - Ein- und Aussteigezeit je 2 min 
  Bedarf an 2 Standardlinienbussen für den Shuttleverkehr P+R 
-C4.2 Umsteigepunkte und Haltestellen 
+6545381111111111111311137911111111113
 besondere Umsteigepunkte sind  
 - Umstieg Fernbahn in Linienbus 1 
 - separater Zugang zur Fernbahn und Führung zum Linienbus 
@@ -3292,16 +3292,16 @@ Leitfaden Veranstaltungsverkehr
 Seite 72 von 79 
 Beispielveranstaltung
 Haltestellenbereich am Veranstaltungsort 
-C4.3 Shuttle-Verkehr 
+654538111111481111113
 Vgl. Kap  C4.1 und  C4.2 
-C5 Radverkehr 
-C5.1 Radrouten/-weg 
+65389111111113
+65443891111111441113
 hohes Fahrradaufkommen erwartet 
 - Anteil nicht-motorisierter IV: 5% (2.500 Besucher), davon werden etwa 500 Besucher 
 mit dem Fahrrad erwartet 
   Das Veranstaltungsgelände ist im Rahmen des lokalen Radwegenetzes bereits entspre-
 chend berücksichtigt. Die Erschließung erfolgt von Norden. 
-C5.2 Bike and Ride 
+6545361113911381113
 Im Rahmen der Veranstaltung gibt es kein gesondertes Bike and Ride Angebot. 
 
 Leitfaden Veranstaltungsverkehr 
@@ -3379,8 +3379,8 @@ Beispielveranstaltung
 Rand des Taxihalteplatzes aufstellen. Sofern der hier vorhandene Platz bei der Abrei-
 sespitze nicht ausreicht, dient der Bereich gegenüber der Aufstellfläche für Nachrü-
 ckerbusse als Überlauf. Zur Sicherung erfolgt der Einsatz von Ordnungskräften.  
-C7 Taxiverkehr 
-C7.1 Taxiandienung 
+653891111111113
+6544389119111111113
   spezieller Taxihalteplatz in unmittelbarer Nähe des Eingangs A 
   befestigte Freifläche für die Einrichtung des Taxihalteplatzes vorhanden 
   erforderliche Einbauten erfolgen mittels Kunststoffleitwänden 
