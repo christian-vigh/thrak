@@ -1,0 +1,4 @@
+File naming conventions (using PrimoPdf) :
+- "nopassword"  : file without password
+- "1" 		: Password for opening ("user" password). Value : "user"
+- "2" 		: Password for modifications ("owner" password). Value : "owner"
