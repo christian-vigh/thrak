@@ -9,9 +9,7 @@ B
 ER
 A TUNG
 AUF 1  BLICK
-==== PAGE ====
 
-==== PAGE ====
 * gefördert vom AMS Wien; ** gefördert mittels AMS-Eingliederungsbeihilfe; *** Andere Förderungen
 SÖBÜ (Sozialökonomische Betriebe Überlasser)SÖB (Sozialökonomische Betriebe)
 Itworks
@@ -57,7 +55,6 @@ fix und fertig**
 76Wohnen mit Service**    
 78
 Beschäftigung
-==== PAGE ====
 BBE (Beratungs- und Betreuungseinrichtungen)BBE (Beratungs- und Betreuungseinrichtungen)
 abz*FIT.frauenberatung & 
  abz*FIT.Karriere Center*   
@@ -116,7 +113,6 @@ abz*beratung für Frauen***
 178
 Beratung und Betreuung
 * gefördert vom AMS Wien; ** gefördert mittels AMS-Eingliederungsbeihilfe;   *** Andere Förderungen, RGS = Regionale Geschäftsstelle des AMS Wien
-==== PAGE ====
 5
 Sozialintegrative Unternehmen
 Die vom DSE-Wien vertretenen Organisationen, die Sie in diesem Katalog finden, unterstützen langzeitarbeitslose bzw. arbeitsmarktferne Personen auf vielfältige Weise. Diese gemeinnützigen Organisationen gliedern sich in Beratungsstellen, Sozial-ökonomische Betriebe, Gemeinnützige Beschäftigungsprojekte, gemeinnützige Arbeitskräfteüberlassungen sowie Unternehmen, die mittels Eingliederungsbeihilfe individuell geförderte MitarbeiterInnen beschäftigen.
@@ -129,7 +125,6 @@ Je nach Vereinbarung übernimmt das Arbeitsmarktservice befristet einen Teil der
 -teln des Arbeitsmarktservice Wien, des Bundessozialamts, des Fonds Soziales Wien, des Wiener ArbeitnehmerInnen Förderungsfonds (waff), der Wiener Sucht- und Drogenkoordination sowie des Europäischen Sozialfonds der Europäischen Union (esf).
 DSE-Wien 
 Ihr Partner in der aktiven Arbeitsmarktpolitik 
-==== PAGE ====
 6
 DSE-Wien 
 Ihr Partner in der aktiven Arbeitsmarktpolitik 
@@ -150,7 +145,6 @@ den Jahren danach seltener und weniger lang von Arbeitslosigkeit betroffen. Auch
 der Geförderten fällt deutlich höher aus: Ehemalige Transitarbeitskräfte erzielen in den folgenden 
 Jahren durchschnittlich ein um ein Drittel höheres Einkommen als vergleichbare ungeförderte Per 
 -sonen. So leisten Sozialintegrative Unternehmen einen wichtigen Beitrag zur Armutsvermeidung und zur sozialen Inklusion.
-==== PAGE ====
 7
 Bereits seit 2003 veröffentlicht der Dachverband für sozial-ökonomische Einrichtungen regelmßig Broschüren zu arbeitsmarktpolitischen Dienstleistern in Wien. Im Vorjahr wurde der Katalog „Sozial-integrative Unternehmen & Beratung in Wien“ präsentiert, der die Vielfalt der Beschäftigungs- und Beratungsangebote in Wien zeigt. Das Nachschlagewerk war so erfolgreich, dass der Katalog 2015 um sämtliche Nicht-DSE-Mitglieder ergänzt wurde. Damit liegt erstmals eine vollständige und aktuelle Übersicht über alle arbeitsmarktpolitischen Angebote im Bereich Beschäftigung und Beratung in Wien vor, die nun auch von den AMS-MitarbeiterInnen in der täglichen Beratung verwendet werden kann. Praxisnah gibt der Katalog einen fundierten Überblick über die Leistungen der Beschäftigungsbetriebe und gemeinnützigen Überlasser sowie der Beratungs- und Betreuungseinrichtungen und informiert gleichzeitig über die Zugangsmöglichkeiten. Im Ergebnis ist diese Zusammenarbeit des DSE-Wien mit dem AMS Wien ein umfangreiches Nachschlagewerk, das um nützliche Online-Features erweitert wurde und die Beschäftigungs- und Beratungsangebote in Wien in vergleichbarer Form darstellt.Sozial und wirtschaftlich!
 Sozialintegrative Unternehmen verfolgen soziale und wirtschaftliche Ziele, und sie erfüllen gleichzeitig 
@@ -178,7 +172,6 @@ Geschäftsführer des DSE-Wien
 Vorwort  
 von Walter Wojcik, MAS  und Mag. Christoph Parak
 Präsident und Geschäftsführer des DSE-Wien
-==== PAGE ====
 8
 Liebe Leserin, lieber Leser!Es freut mich sehr, mich auch heuer wieder in diesem Katalog, der so übersichtlich über die Ange 
 -bote sozialintegrativer Unternehmen und Beratungseinrichtungen in Wien informiert, an Sie wenden  zu dürfen.Mein Ressort war in den letzten Jahren sehr intensiv bemüht, ein umfangreiches Angebot an Maß-
@@ -204,7 +197,6 @@ Bundesminister für Arbeit, Soziales und Konsumentenschutz
 Vorwort  
 von Rudolf Hundstorfer
 Bundesminister für Arbeit, Soziales und Konsumentenschutz
-==== PAGE ====
 9
 Eine Gesellschaft wird zu Recht daran gemessen, wie sie mit den Schwächsten umgeht. Wien steht für soziale Gerechtigkeit, Chancengleichheit und für Wohlstand, an dem möglichst alle teilhaben können. Wir können in Wien daher auch stolz darauf sein, dass es eine so vielfältige Landschaft an Maßnahmen und Projekten für Menschen gibt, die es am Arbeitsmarkt besonders schwer haben und die daher eine spezielle Unterstützung brauchen. Gezielte Begleitung und Betreuung, wie sie im Rahmen dieser Projekte angeboten werden, sind von entscheidender Bedeutung, um Schritt für Schritt den Weg zu einer neuen Lebensperspektive schaffen zu können.    Ein Beispiel dafür sind die sozial-ökonomischen Betriebe in Wien, die aus Mitteln des AMS finanziert 
 werden. Sie sind die Brücke auf dem Weg zurück in den Arbeitsmarkt, weil sie neben Begleitung 
@@ -223,7 +215,6 @@ von Mag.
 a
  Renate Brauner
 Vizebürgermeisterin der Stadt Wien undStadträtin für Finanzen, Wirtschaftspolitik und Wiener Stadtwerke
-==== PAGE ====
 10
 Wien braucht die Sozialintegrativen Unternehmen. Den Job zu verlieren, arbeitslos zu werden: Das trifft derzeit viele Menschen. Mit unserer Unterstüt- 
  zung ndet jeder vierte innerhalb von drei Monaten eine neue Beschäftigung, jeder dritte innerhalb  eines halben Jahres. Unser besonders Augenmerk gehört aber jenen Menschen, die länger als 6 Mon-ate, mitunter länger als ein Jahr arbeitslos sind. Auf sie konzentrieren wir unsere Unterstützungsange 
@@ -247,11 +238,8 @@ von Mag.
 a
  Petra Draxl
 Geschäftsführerin des Arbeitsmarktservice Wien
-==== PAGE ====
 Sozialintegrative Unternehmen
-==== PAGE ====
 
-==== PAGE ====
 * gefördert vom AMS Wien; ** gefördert mittels AMS-Eingliederungsbeihilfe; *** Andere Förderungen
 SÖBÜ (Sozialökonomische Betriebe Überlasser)SÖB (Sozialökonomische Betriebe)
 Itworks
@@ -294,7 +282,6 @@ fix und fertig**    62Gabarage upcycling design**
 76W ohnen mit Service**    
 78
 Beschäftigung
-==== PAGE ====
 14
 SÖBÜ   Arbeitskräfteüberlassung
 itworks Personalservice und Beratung  gemeinnützige GmbH
@@ -307,7 +294,6 @@ office@itworks.co.at
 finungszeitenMo – Fr  
 08.00 – 17.00 ErreichbarkeitU   
 U6 (Dresdner Straße)
-==== PAGE ====
 Tätigkeitsfeld
 Seit der Gründung im Jahr 2005 beraten und begleiten wir bei itworks Arbeit suchende Menschen bei ihrem (Wieder-)Einstieg in die Erwerbstätigkeit.itworks Personalservice und Beratung gemeinnützige GmbH ist in 6 Bundesländern im Einsatz und be-schäftigt rund 200 MitarbeiterInnen in 10 Projekten. Im Auftrag des Arbeitsmarktservice bieten wir im Rahmen eines gemeinnützigen Integrationsleasings Jobvermittlung und Beratung an und unterstützen beschäftigungslose Menschen dabei, wieder nachhaltig im Arbeitsmarkt Fuß zu fassen. Dabei arbei- 
  ten wir sehr eng mit Partnerunternehmen aus den unterschiedlichsten Branchen zusammen, die offen dafür sind, am Arbeitsmarkt benachteiligten Menschen eine Chance zu geben.
@@ -333,7 +319,6 @@ SÖBÜ Arbeitskräfteüberlassung
 itworks Personalservice und Beratung gemeinnützige GmbH
 Beschäftigung
 15
-==== PAGE ====
 16
 Service 4
 itworks Personalservice und Beratung gemeinnützige GmbH
@@ -346,7 +331,6 @@ office@itworks.co.at
 finungszeitenMo – Fr  
 08.00 – 17.00 ErreichbarkeitU   
 U6 (Dresdner Straße)
-==== PAGE ====
 Tätigkeitsfeld
 Service 4 ist als Teil des itworks Integrationsleasings eine hauseigene Dienstleistungsagentur, die für Unternehmen und Privatpersonen Serviceleistungen erbringt. Das Angebot reicht von Gebäude- betreuung und Reinigung über Instandhaltung und Produktionsdienstleistungen bis zu Lager und Logistik. Das Dienstleistungsangebot von greenlab (eine Abteilung von Service 4 speziell für Jugend-liche und junge Erwachsene) im Bereich Grünraumbewirtschaftung und Grünraumgestaltung wird u.a. für Firmen und Organisationen in der Seestadt Aspern angeboten, eines der derzeit grßten Stadterweiterungsprojekte Europas. Die Begleitung zu den Arbeitseinsätzen erfolgt durch unsere ArbeitsanleiterInnen.Durch praxisnahe Qualifizierung „on the job“ werden unsere Transitarbeitskräfte an bestehende ar 
 -beitsmarktpolitische Angebote herangeführt und erhöhen damit  ihre Chancen auf eine Fixanstellung.
@@ -370,7 +354,6 @@ Service 4
 itworks Personalservice und Beratung gemeinnützige GmbH
 17
 Beschäftigung
-==== PAGE ====
 18
 Job-TransFair   Integrationsleasing
 Job-TransFair GmbH   Gemeinnütziges Integrationsleasing
@@ -385,7 +368,6 @@ U1, U2, U4 (Karlsplatz)Bus
 U4 (Margaretengürtel)Erreichbarkeit 1150 WienU   
 U3 (Schweglerstraße), U6 (Burggasse/Stadthalle)Erreichbarkeit 1210 WienU   
 U6 (Floridsdorf)
-==== PAGE ====
 Tätigkeitsfeld
 Job-TransFair ist ein gemeinnütziges Tochterunternehmen des BFI Wien mit über150 MitarbeiterInnen an 5 Standorten in Wien. Seit 2001 unterstützt Job-TransFair am Arbeitsmarkt benachteiligte Men
 -
@@ -413,7 +395,6 @@ Job-TransFair Integrationsleasing
 Job-TransFair GmbH   Gemeinnütziges Integrationsleasing
 19
 Beschäftigung
-==== PAGE ====
 20
 DIE KÜMMEREI
 Ein Projekt der Job-TransFair GmbH,   Gemeinnütziges Integrationsleasing
@@ -428,7 +409,6 @@ U4 (Margaretengürtel)Erreichbarkeit (Zentrale)U
 U1, U2, U4 (Karlsplatz)Bus 
  
  59A, 57A
-==== PAGE ====
 Tätigkeitsfeld
 Die KÜMMEREI ist ein Projekt der Job-TransFair GmbH, einem Tochterunternehmen des BFI Wien, kümmert sich darum Schulen auszumalen, in Kindergärten verfliesen, Lehrlinge zu verköstigen, … und vor allem darum, Ihnen die Möglichkeit zum Arbeiten und zum Lernen zu geben.
 Probieren geht über Studieren: Wir kümmern uns darum, Ihnen einen Einblick in verschieden -ste Arbeitsbereiche zu geben, damit Sie sehen können, wie Ihnen die Arbeit dort liegt. Laufend stehen über 100 Beschäftigungsplätze für Transitarbeitskräfte zur Verfügung.
@@ -471,7 +451,6 @@ Begleitendes Angebot der Personalentwicklung:
 Regelmßige Standortbestimmungen 
 Unterstützung bei der Jobsuche anhand  Ihrer Kompetenzen und Interessen
 rund 2.000 interne Jobangebote von Partnerfirmen
-==== PAGE ====
 22
 Trendwerk Wien   Gemeinnützige GmbH 
 Trendwerk Gemeinnützige GmbH
@@ -483,7 +462,6 @@ finungszeiten (Büro) Mo – Do
 08.00 – 16.00Fr 
   08.00 – 13.00ErreichbarkeitBim   
 49 (Lützowgasse)
-==== PAGE ====
 Tätigkeitsfeld
 Nachhaltige Integration von Personen (ab 50 Jahren und einer Vormerkung beim AMS Wien von mindestens 180 Tagen, sowie ab 25 Jahren, mit ausreichenden Deutschkenntnissen, die innerhalb des letzten Jahres insgesamt vier Monate beim AMS Wien als arbeitslos gemeldet waren und in diesem Zeitraum nicht länger als zwei Monate in Beschäftigung gestanden haben) in den regulären Arbeitsmarkt.
 Produkte & Dienstleistungen
@@ -505,7 +483,6 @@ Trendwerk Wien Gemeinnützige GmbH
 Trendwerk Gemeinnützige GmbH
 23
 Beschäftigung
-==== PAGE ====
 derDruck
 Trendwerk gemeinnützige GmbH   zur Förderung der Integration am  
  Arbeitsmarkt
@@ -521,7 +498,6 @@ finungszeitenMo – Do
  
  69A (Hüttenbrennergasse, 9 Gehminuten)Erreichbarkeit (PKW) A23 Abfahrt Landstraße, gebührenfreie Parkplätze befinden sich direkt vor Ort
 24
-==== PAGE ====
 Tätigkeitsfeld
 Zentrales Ziel des sozial-ökonomischen und wirtschaftlichen Betriebes derDruck ist die Förderung einer gesellschaftlichen und beruflichen (Re)Integration der TeilnehmerInnen (Transitarbeitskräfte). 
 Produkte & Dienstleistungen
@@ -544,7 +520,6 @@ derDruck
 Trendwerk – Gemeinnützige GmbH zur Förderung der   Integration am Arbeitsmarkt
 25
 Beschäftigung
-==== PAGE ====
 dieWerkstatt
 Trendwerk gemeinnützige GmbH   zur Förderung der Integration am  
  Arbeitsmarkt
@@ -559,7 +534,6 @@ finungszeitenMo – Do
  
  33B (Hofherr-Schrantz-Gasse)Erreichbarkeit (PKW) A22 Abfahrt Strebersdorf, 2 x links, 1 x rechts
 26
-==== PAGE ====
 Tätigkeitsfeld
 dieWerkstatt, ein Teilbereich von Trendwerk gemeinnützige GmbH zur Förderung der Integration am Arbeitsmarkt, repariert für einen guten Zweck. Erfahrene  KFZ-Meister arbeiten mit den Teilneh-merInnen gemeinsam am anvertrauten Kunden-KFZ (PKW/2-Rad) und machen sowohl das KFZ, aber vor allem die TeilnehmerInnen wieder fit. In einem speziell auf den automotiven Bereich abge 
 -stimmten Qualifying-Programm werden mögliche Defizite gefunden, ausgeglichen und Potenziale gefördert. Fehlende Praxis und/oder nicht mehr aktuelle fachliche Qualifikation werden unter realen Bedingungen („training on the job“) im Werkstattbetrieb wiedererlangt. Diverse Fachschulungen runden das Qualifying-Programm ab. Die dadurch gesteigerte Qualifikation der TeilnehmerInnen erhöht die Job-Chancen und sichert ein nachhaltiges Bestehen am Arbeitsmarkt.
@@ -583,7 +557,6 @@ dieWerkstatt
 Trendwerk gemeinnützige GmbH zur Förderung der   Integration am Arbeitsmarkt
 27
 Beschäftigung
-==== PAGE ====
 28
 Catering MAX
 pro mente Beschäftigungsprojekte GmbH
@@ -594,7 +567,6 @@ office@catering-max.atW www.catering-max.at
 finungszeiten Mo – Fr  
 07.00 – 15.00ErreichbarkeitU   
 U2 (Donaumarina)
-==== PAGE ====
 Tätigkeitsfeld
 In den Bereichen Veranstaltungsgastronomie und Betriebsrestaurant erhalten arbeitsmarktferne Men-
 schen mit psychischen Erkrankungen die Möglichkeit zur fachlichen Qualifikation und Weiterbildung als gastronomische Fach- und Hilfskräfte, Reinigungspersonal, Lager-Hilfskräfte sowie in den Berei-
@@ -614,7 +586,6 @@ Catering MAX
 pro mente Beschäftigungsprojekte GmbH
 29
 Beschäftigung
-==== PAGE ====
 D.R.Z – Demontage- und   Recycling-Zentrum
 Die Wiener Volkshochschulen GmbH
 Vogtgasse 29
@@ -627,7 +598,6 @@ finungszeiten (Shop)Mo – Mi
   09.00 – 12.00 ErreichbarkeitBim   
 49 (Hütteldorferstraße/Lützowgasse)
 30
-==== PAGE ====
 Tätigkeitsfeld
 Das D.R.Z – Demontage- und Recycling-Zentrum ist der sozialwirtschaftliche Betrieb der Wiener Volkshochschulen GmbH. Über Recycling und Wiederverwendung von Elektroaltgeräten erhalten arbeitsuchende Menschen im Rahmen befristeter Beschäftigungsverhältnisse die Chance, wieder in ein geregeltes Arbeitsleben zurückzufinden. Unter der Anleitung erfahrener MitarbeiterInnen werden Stärken ausgebaut, soziale Isolation abgebaut, allfällige Handicaps aufgearbeitet und aktive Unter- stützung bei der Arbeitssuche geleistet. Diese Dienstleistung erbringen wir im Auftrag des AMS-Wien. Auch mit unseren Produkten und Dienstleistungen haben wir uns als verlässlicher Partner für Unter- nehmen und die kommunale Verwaltung etabliert.
 Produkte & Dienstleistungen
@@ -645,7 +615,6 @@ D.R.Z – Demontage- und Recycling-Zentrum
 Die Wiener Volkshochschulen GmbH
 31
 Beschäftigung
-==== PAGE ====
 FAB Line
 FAB Verein zur Förderung von Arbeit   und Beschäftigung
 Emil-Fucik-Gasse 1
@@ -661,7 +630,6 @@ U1 (Reumannplatz)Bus
  
  68A, 68B (Absbergbrücke)
 32
-==== PAGE ====
 Tätigkeitsfeld
 FAB Line bietet eine Beschäftigungsperspektive im Rahmen eines Sozialökonomischen Betriebes für die Dauer von bis zu einem Jahr. Um die Beschäftigungsfähigkeit der TeilnehmerInnen zu erhöhen, wird eine parallele Vorgehensweise von gesundheitlicher Rehabilitation und beruflicher Reintegration angestrebt. In einem Testverfahren und Einzelgesprächen wird die Eignung der BewerberInnen für die Tätigkeit im Call Center ermittelt. Bei Eignung werden im Zuge einer Vorbereitungsphase für die Dauer von bis zu 8 Wochen die Leistungsfähigkeit des/der Teilnehmers/in erhoben, Arbeitsabläufe eingeübt sowie Kenntnisse und Qualifikationen erweitert. Im Anschluss kann der/die Teilnehmer/in bis zu 12 Monate ein befristetes Dienstverhältnis im Ausmaß von durchschnittlich 30 Stunden pro Woche antreten. 
 Produkte & Dienstleistungen
@@ -690,7 +658,6 @@ FAB Verein zur Förderung von Arbeit und Beschäftigung
 EDV-AnwenderInnentraining
 33
 Beschäftigung
-==== PAGE ====
 INIGO –   Restaurant, Salon, Catering
 Caritas der Erzdiözese Wien
 Restaurant
@@ -708,7 +675,6 @@ finungszeiten Mo – Fr
 12.00  19.00ErreichbarkeitU   
 U4 (Meidling oder Schönbrunn)
 34
-==== PAGE ====
 INIGO – Restaurant, Salon, Catering
 Caritas der Erzdiözese Wien
 Tätigkeitsfeld
@@ -741,7 +707,6 @@ Zubuchung: über AMS Wien, mit Zuweisung kommen die Leute zum Bewerbungstermin. 
 Ausstellungsmöglichkeit für Künstler
 35
 Beschäftigung
-==== PAGE ====
 SÖB Caritas  jobstart-jobaktiv
 Caritas der Erzdiözese Wien
 Mittersteig 10
@@ -754,7 +719,6 @@ finungszeiten Mo – Fr
  
  13A (Leibenfrostgasse)
 36
-==== PAGE ====
 Tätigkeitsfeld
 Second-Hand-Shops, Dienstleistungen und Personalangebot aus den Bereichen Handwerk, Grün
 -raum, Reinigung, Verkauf, Küche, Transport, Hausarbeit, Renovierung, Malerei, Gastronomie, Lager,  
@@ -779,7 +743,6 @@ SÖB Caritas jobstart-job aktiv
 Caritas der Erzdiözese Wien
 37
 Beschäftigung
-==== PAGE ====
 38
 SÖB Michl’s Café
 Wien Work integrative Betriebe und   AusbildungsgmbH
@@ -791,7 +754,6 @@ finungszeiten Mo – So
 10.00 – 17.00ErreichbarkeitBus 
  
  11A, 11B (Pensionsversicherungsanstalt)
-==== PAGE ====
 Tätigkeitsfeld
 Das Michl’s Café bietet 6 Personen im Bereich Service einen Pensionstransitarbeitsplatz.
 Produkte & Dienstleistungen
@@ -811,7 +773,6 @@ SÖB Michl’s Café
 Wien Work integrative Betriebe und AusbildungsgmbH
 39
 Beschäftigung
-==== PAGE ====
 40
 SÖB Michl’s Café Restaurant
 Wien Work integrative Betriebe und   AusbildungsgmbH
@@ -827,7 +788,6 @@ U2 (Schottentor)Bim
 D, 1, 37, 38, 40, 41, 42, 43, 44, 71 (Schottentor)Bus 
  
  1A, 40A (Schottentor)
-==== PAGE ====
 SÖB Michl’s Café Restaurant
 Wien Work integrative Betriebe und AusbildungsgmbH
 Tätigkeitsfeld
@@ -859,7 +819,6 @@ Die Zubuchung erfolgt über die BeraterInnen des AMS Wien
 Veranstaltungen und Seminare aller Art  (Vermietung von Räumlichkeiten auf Anfrage)
 41
 Beschäftigung
-==== PAGE ====
 42
 SÖB Michl’s Catering
 Wien Work integrative Betriebe und   AusbildungsgmbH
@@ -872,7 +831,6 @@ finungszeiten Termine nach telefonischer VereinbarungErreichbarkeitBim
  
  26A, 86A, 87A, 94A, 96A (Erzherzog-Karl-Straße)Bahn   
 S 80 (Erzherzog-Karl-Straße)
-==== PAGE ====
 Tätigkeitsfeld
 Michl’s Catering beschäftigt derzeit ca. 23 Transitarbeitskräfte im Bereich Partyservice/Catering und bie-  tet dabei Qualifizierung und Beratung für Gastronomische Fach- und Hilfskräfte (Küche und Service).
 Produkte & Dienstleistungen
@@ -901,7 +859,6 @@ SÖB Michl’s Catering
 Wien Work integrative Betriebe und AusbildungsgmbH
 43
 Beschäftigung
-==== PAGE ====
 SÖB Wiener Hilfswerk   Haus- und Heimservice
 Wiener Hilfswerk
 Schottenfeldgasse 29
@@ -914,7 +871,6 @@ finungszeiten Mo – Fr
 U3 (Zieglergasse)Bim   
 5 (Stollgasse)
 44
-==== PAGE ====
 Tätigkeitsfeld
 Als Haushaltshilfen und Reinigungskräfte erhalten arbeitsmarktferne Personen sowie Teilnehmer -Innen der Beratungs- und Betreuungseinrichtung „step2job“ Unterstützung bei der Wiedereinglie 
 -derung in den ersten Arbeitsmarkt.  Unser Angebot richtet sich insbesondere an Frauen und Männer ab 50 Jahren, sowie an motivierte Personen ab 25 Jahren mit ausreichenden Deutschkenntnissen.
@@ -946,7 +902,6 @@ SÖB Wiener Hilfswerk Haus- und Heimservice
 Wiener Hilfswerk
 45
 Beschäftigung
-==== PAGE ====
 46
 SÖB Wiener Hilfswerk  SOMA Sozialmarkt
 Wiener Hifswerk
@@ -961,7 +916,6 @@ finungszeiten (Büro) Mo – Fr
 U3 (Volkstheater)Bus 
  
  48A (Neubaugasse)
-==== PAGE ====
 Tätigkeitsfeld
 Wir unterstützen arbeitsmarktferne Personen sowie TeilnehmerInnen der Beratungs- und Betreuungs-
  einrichtung „step2job“ bei der Eingliederung in den ersten Arbeitsmarkt. Befristete Dienstverhältnisse werden als Regal- und ThekenbetreuerIn im Einzelhandel, als KassierIn und als Hilfskraft für die Lagerlogistik angeboten.Unser Angebot richtet sich insbesondere an Frauen und Männer ab 50 Jahre, sowie an motivierte Personen ab 25 Jahre mit ausreichenden Deutschkenntnissen.
@@ -986,7 +940,6 @@ SÖB Wiener Hilfswerk SOMA Sozialmarkt
 Wiener Hifswerk
 47
 Beschäftigung
-==== PAGE ====
 48
 TOP-Lokal
 die Berater® Gemeinnützige GmbH
@@ -997,7 +950,6 @@ office@top-lokal.atW www.top-lokal.at
 finungszeiten Mo – Fr  
 08.00 – 22.00ErreichbarkeitU   
 U1, U4 (Schwedenplatz), U3 (Stephansplatz)
-==== PAGE ====
 TOP-Lokal
 die Berater® gemeinnützige GmbH
 Tätigkeitsfeld
@@ -1029,7 +981,6 @@ Die KlientInnen (50+) können über alle RGSen des AMS Wien zugebucht werden.
 Nachbetreuung
 49
 Beschäftigung
-==== PAGE ====
 50
 Visitas 
 Wiener Rotes Kreuz
@@ -1044,7 +995,6 @@ finungszeiten (Büro) Mo – Do
 U3 (Hütteldorfer Straße)Bim   
 49 (Breitensee)Bahn   
 S45 (Breitensee)
-==== PAGE ====
 Tätigkeitsfeld
 Visitas wurde 2002 als sozial-ökonomischer Betrieb des Wiener Roten Kreuzes gegründet und bietet einen Besuchsdienst und persönliche Assistenz für Menschen mit Behinderungen an. Beschäftigt werden Frauen mit einer hohen sozialen Kompetenz, Interesse am mobilen Dienst, mit guten Deutschkenntnissen und einer hohen zeitlichen Flexibilität.
 Produkte & Dienstleistungen
@@ -1068,7 +1018,6 @@ Visitas
 Wiener Rotes Kreuz
 51
 Beschäftigung
-==== PAGE ====
 52
 Volkshilfe SÖB KOMMUNA 
 Volkshilfe Beschäftigung
@@ -1080,7 +1029,6 @@ finungszeiten Mo – Do
 08.00 – 15.00Fr 
   08.00 – 14.00ErreichbarkeitU   
 U1 (Nestroyplatz), U4 (Schwedenplatz)
-==== PAGE ====
 Tätigkeitsfeld
 Befristete Beschäftigung von Hilfskräften für die Reinigung von Grünächen und Straßen sowie die Betreuung von Abfallstationen 
 Produkte & Dienstleistungen
@@ -1108,7 +1056,6 @@ Volkshilfe SÖB KOMMUNA
 Volkshilfe Beschäftigung
 53
 Beschäftigung
-==== PAGE ====
 54
 Volkshilfe SÖB MERIT 
 Volkshilfe Beschäftigung
@@ -1121,7 +1068,6 @@ finungszeiten Mo – Fr
 U1 (Taubstummengasse)Bim   
 1, 62 (Paulanergasse)Bahn   
 Badner Bahn (Paulanergasse)
-==== PAGE ====
 Tätigkeitsfeld
 Befristete Beschäftigung und Qualifizierung im Bereich Schneiderei, Second-Hand und Reinigung
 Produkte & Dienstleistungen
@@ -1153,7 +1099,6 @@ Volkshilfe SÖB MERIT
 Volkshilfe Beschäftigung
 55
 Beschäftigung
-==== PAGE ====
 56
 Volkshilfe SÖB WÜRFEL
 Volkshilfe Beschäftigung
@@ -1189,7 +1134,6 @@ Bus
  32A (Strebersdorf),      33B (Scheydgasse/Autokaderstraße)      
 Bahn
  S3 (Strebersdorf)
-==== PAGE ====
 Tätigkeitsfeld
 Befristete Beschäftigung und Qualifizierung von Fach- und Hilfspersonal 
  für Verkauf, Lager, Transport und Büro
@@ -1223,7 +1167,6 @@ Volkshilfe SÖB WÜRFEL
 Volkshilfe Beschäftigung
 57
 Beschäftigung
-==== PAGE ====
 ArbeitsRaum
 Gemeinnütziges Beschäftigungsprojekt der IMPULS – Caritas und Volkshilfe  
  gemeinnützige GmbH
@@ -1238,7 +1181,6 @@ finungszeitenMo – Do
 U3 (Schweglerstraße)Bim   
 49 (Huglgasse)
 58
-==== PAGE ====
 Tätigkeitsfeld
 Das Projekt ArbeitsRaum bietet MindestsicherungsbezieherInnen im Alter zwischen 18 und 64 Jahren und arbeitsmarktfernen Personen ab 25 Jahren die Chance, dem Arbeitsmarkt näher zu kommen und in den erweiterten Arbeitsmarkt einzusteigen. Der Einstieg erfolgt stufenweise, mit steigendem Beschäftigungsausmaß und steigenden Anforderungen je nach individueller Leistungsfähigkeit. Nach einem Arbeitstraining erhalten die ProjektteilnehmerInnen befristete Dienstverträge im Aus 
 -maß von 16 bis 30 Wochenarbeitsstunden. In eigenen Werkstätten sowie in den sozialökonomischen Betrieben der Caritas und Volkshilfe Beschäftigung stehen breitgefächerte und an die Leistungs 
@@ -1264,7 +1206,6 @@ ArbeitsRaum
 Gemeinnütziges Beschäftigungsprojekt der IMPULS –   Caritas und Volkshilfe gemeinnützige GmbH
 59
 Beschäftigung
-==== PAGE ====
 60
 Handwerk
 Kolping Österreich
@@ -1279,7 +1220,6 @@ finungszeiten Mo – Do
 U1 (Taubstummengasse)Bim   
 1, 62 (Paulanergasse)Bahn   
 Badner Bahn (Paulanergasse)
-==== PAGE ====
 Handwerk Kolping Österreich
 Tätigkeitsfeld
 Transitarbeitsplätze für arbeitsmarktferne Jugendliche und junge Erwachsene im Alter von 19 bis 25 Jahren, in den Bereichen: Hausarbeit, Übersiedlungen, leichte Maler- und Renovierungsarbeiten,  
@@ -1320,7 +1260,6 @@ Soziales) zu entscheiden. Im sozialen Bereich:
 Mitarbeit im Bereich Küche und Reinigung
 61
 Beschäftigung
-==== PAGE ====
 flx und fertig
 Suchthilfe Wien gGmbH
 Rotenmühlgasse 26
@@ -1332,7 +1271,6 @@ finungszeiten Mo – Do
   08.00 – 14.00 ErreichbarkeitU   
 U4 (Meidling), U6 (Niederhofstraße)
 62
-==== PAGE ====
 Tätigkeitsfeld
 Arbeitsplatzangebot für gelernte, angelernte und ungelernte Personen in den Produktionsbereichen:
 Bau- und Baunebengewerbe 
@@ -1362,7 +1300,6 @@ Suchthilfe Wien gGmbH
 Industrielle externe Serienproduktion im Auftrag
 63
 Beschäftigung
-==== PAGE ====
 gabarage upcycling design
 social-design-business  Verein zur Förderung der Sozial- und  
  Kreativwirtschaft
@@ -1379,7 +1316,6 @@ U1, U2, U4 (Karlsplatz)Bim
  59A (Schleifmühlgasse)Bahn  
 Badner Bahn (Paulanergasse)
 64
-==== PAGE ====
 Tätigkeitsfeld
 gabarage upcycling design ist Teil des Vereins social-design-business, Verein zur Förderung der Sozial-   und Kreativwirtschaft. Mitten in Wien, in der Schleifmühlgasse 6, stehen Personen mit besonderen  Problemstellungen die Angebote von gabarage zur Verfügung. ProduktionsmitarbeiterInnen im Werk 
 -stattbereich sowie Frontoffice, Büro- und Verkaufsbereich finden hier Qualifizierungs- und befristete Beschäftigungsangebote.
@@ -1407,7 +1343,6 @@ gabarage upcycling design
 social-design-business  Verein zur Förderung der Sozial- und Kreativwirtschaft
 65
 Beschäftigung
-==== PAGE ====
 HAUS AKTIV 
 Qualiflzierung und Arbeits-  integration gemeinnützige Ges.m.b.H  
  (ehemals Rund ums Haus) DAS BAND – gemeinsam vielfältig
@@ -1422,7 +1357,6 @@ finungszeiten Mo – Do
  
  62A (Gregorygasse)
 66
-==== PAGE ====
 Tätigkeitsfeld
 HAUS AKTIV bietet Menschen mit Behinderungen und/oder gesundheitlichen Beeinträchtigungen von mind. 50% GdB Unterstützung in den Bereichen Arbeitsintegration, Clearing, Berufsorien-tierung, Bewerbung und Training an. Praktische sowie theoretische Schulungen in den Bereichen EDV, Reinigung und Handwerk bilden den Schwerpunkt. Die maximale Teilnahmedauer beträgt 52 Wochen. In einer Outplacementphase wird versucht, die TeilnehmerInnen – nach möglichen Praktika in den Betrieben und innerhalb des Projektes – gezielt und nachhaltig in den ersten Arbeitsmarkt bzw. bei Bedarf in weiterführende Maßnahmen zu vermitteln. Eine Nachbetreuung von 3 Monaten nach Austritt sowie bei Aufnahme in ein Dienstverhältnis runden das Angebot ab.
 Produkte & Dienstleistungen
@@ -1444,7 +1378,6 @@ Qualiflzierung und Arbeitsintegration   gemeinnützige Ges.m.b.H (ehemals Rund u
 Kleinproduktionen, Konfektionierung  und Fertigung
 67
 Beschäftigung
-==== PAGE ====
 68
 REiNTEGRA 
 Eine Einrichtung von REiNTEGRA   Beruiche Reintegration psychisch  
@@ -1458,7 +1391,6 @@ finungszeiten Mo – Do
   07.30 – 14.00ErreichbarkeitU   
 U6 (Floridsdorf)Bim   
 26 (Autokaderstraße)
-==== PAGE ====
 Tätigkeitsfeld
 REiNTEGRA – Berufliche Reintegration psychisch kranker Menschen bietet befristete Arbeitsplätze für Fach- und Hilfspersonal in den angeführten Dienstleistungsbereichen. Im Zentrum des Handelns stehen die Bedürf
 -
@@ -1485,7 +1417,6 @@ REiNTEGRA
 Eine Einrichtung von REiNTEGRA Beruiche Reintegration psychisch kranker Menschen gemeinnützige GmbH
 69
 Beschäftigung
-==== PAGE ====
 70
 REiNTEGRA   Schmuck-Manufaktur
 Eine Einrichtung von REiNTEGRA   Beruiche Reintegration psychisch  
@@ -1500,7 +1431,6 @@ U6 (Thaliastraße)Bim
 5 (Kaiserstraße/Neustiftgasse)Bus 
  
  48A (Kaiserstraße)
-==== PAGE ====
 REiNTEGRA Schmuck-Manufaktur
 Eine Einrichtung von REiNTEGRA   Beruiche Reintegration psychisch kranker Menschen  
  gemeinnützige GmbH
@@ -1528,7 +1458,6 @@ ICD10, nachhaltige regelmßige fachärztliche Behandlung.Terminvereinbarung: Tel
 Präsente und Giveaways für Firmen
 71
 Beschäftigung
-==== PAGE ====
 72
 team handwerK 
 Wiener Sozialdienste
@@ -1539,7 +1468,6 @@ wienersozialdienste@wiso.or.atW www.wienersozialdienste.at
 finungszeiten Mo – Do  
 07.00 – 16.00Fr 
   07.00 – 12.00
-==== PAGE ====
 Tätigkeitsfeld
 team handwerK beschäftigt Transitarbeitskräfte als MalerInnen, handwerkliche Hilfskräfte und TischlerInnen und unterstützt sie bei der Eingliederung in den ersten Arbeitsmarkt.
 Produkte & Dienstleistungen
@@ -1570,7 +1498,6 @@ team handwerK
 Wiener Sozialdienste
 73
 Beschäftigung
-==== PAGE ====
 74
 unik.at 
 Humanisierte Arbeitsstätte
@@ -1592,7 +1519,6 @@ finungszeitenMo – Fr
 2 (Lederergasse)Bus 
  
  13A (Lederergasse)
-==== PAGE ====
 Tätigkeitsfeld
 Unik.at wurde 2001 als Berufsintegrationsprojekt unter sozial-ökonomischen Bedingungen gegrün-
  det. Menschen mit mindestens 50% Behinderung (30% psychische) können hier Lehrstellen für Einzelhandel, Bürokaufmann/frau, und Systemgastronomie finden oder auf Assistenzstellen (Transit- arbeitskräfte) für Produktion (Holz, Keramik) und Verkauf tätig sein.
@@ -1616,7 +1542,6 @@ unik.at
 Humanisierte Arbeitsstätte
 75
 Beschäftigung
-==== PAGE ====
 76
 Volkshilfe Beschäftigung PROSERV 
 Volkshilfe Beschäftigung
@@ -1659,7 +1584,6 @@ Mo – Fr
   T  01 796 7892-22finungsz.   
 Mo – Fr
  10.00 – 18.00
-==== PAGE ====
 Tätigkeitsfeld
 Im Rahmen befristeter Dienstverhältnisse bieten wir Menschen mit mindestens 50% Behinderung befristete Arbeitsplätze im Bereich Sortierung, Werksverkehr und Verkauf sowie im Bereich Hygiene- service, Matratzen- und Objektreinigung und als KraftfahrerInnen, LagermitarbeiterInnen, Werkstatt- mitarbeiterInnen, Callcenter Agent, in Kundenempfang und Office. Ziel dieser Beschäftigung ist der Eintritt oder Wiedereintritt in den ersten Arbeitsmarkt.
 Produkte & Dienstleistungen
@@ -1693,7 +1617,6 @@ Volkshilfe Beschäftigung
 Produktion und Verpackung
 77
 Beschäftigung
-==== PAGE ====
 78
 Wohnen mit Service
 Volkshilfe Wien
@@ -1707,7 +1630,6 @@ finungszeiten (Büro)Mo – Do
 07.30 – 15.30Fr 
   07.30 – 13.30ErreichbarkeitU   
 U1 (Keplerplatz)
-==== PAGE ====
 Tätigkeitsfeld
 Wohnen mit Service bietet Reinigungskräften befristete Dienstverhältnisse   im Bereich Reinigung und Grünraumpflege
 Produkte & Dienstleistungen
@@ -1727,13 +1649,9 @@ Wohnen mit Service
 Volkshilfe Wien
 79
 Beschäftigung
-==== PAGE ====
 
-==== PAGE ====
 Beratung und Betreuung
-==== PAGE ====
 
-==== PAGE ====
 BBE (Beratungs- und Betreuungseinrichtungen)BBE (Beratungs- und Betreuungseinrichtungen)
 abz*FIT.frauenberatung & 
  abz*FIT.Karriere Center*   
@@ -1792,7 +1710,6 @@ abz*beratung für Frauen***
 178
 Beratung und Betreuung
 * gefördert vom AMS Wien; ** gefördert mittels AMS-Eingliederungsbeihilfe;   *** Andere Förderungen, RGS = Regionale Geschäftsstelle des AMS Wien
-==== PAGE ====
 abz*FIT.frauenberatung undabz*FIT.Karriere Center 
 abz*austria – Verein zur Förderung von 
 Arbeit, Bildung und Zukunft von Frauen
@@ -1812,7 +1729,6 @@ S6 oder S9 (Brünnerstraße. Achtung: 1/2h Takt)Erreichbarkeit (PKW)Bis zum Ende
 Brünnerstraße einbiegen – freie Parkplätze in mßiger Zahl um 
 das Schulungsgebäude vorhanden.Hinweis: Eingang 73b befindet sich stadteinwärts rechts  unmittelbar vor der grünen Eisenbahnbrücke!
 84
-==== PAGE ====
 Unterstützung für
 In Wien gemeldete Frauen ab 19 Jahren mit einem im FIT.Zentrum Wien erarbeiteten FIT.Karriere-
  plan; Frauen, die eine FIT.Ausbildung absolvieren, und Frauen mit einer abgeschlossenen FIT.Aus 
@@ -1832,7 +1748,6 @@ abz*FIT.frauenberatung und abz*FIT.Karriere Center
 abz*austria – Verein zur Förderung von   Arbeit, Bildung und Zukunft von Frauen
 85
 Beratung
-==== PAGE ====
 A|B|O Jugend   
 Arbeit|Beratung|Orientierung 
 ARGE ÖSB Consulting GmbH & 
@@ -1851,7 +1766,6 @@ U3, U6 (Westbahnhof )Bim
 5, 6, 9, 18, 52, 58, (Westbahnhof)Bahn  
  S50, R50 (Station Westbahnhof)
 86
-==== PAGE ====
 A|B|O Jugend   
 Arbeit|Beratung|Orientierung 
 ARGE ÖSB Consulting GmbH & WUK Werkstätten- und Kulturhaus
@@ -1875,7 +1789,6 @@ Zugang
 A|B|O Jugend steht Ratsuchenden im Alter von 15 – 21 Jahren offen 
 87
 Beratung
-==== PAGE ====
 akt:E Aktion Erfahrung
 Context Impulse am Arbeitsmarkt GmbH
 Quellenstraße 2c1100 WienT  
@@ -1886,7 +1799,6 @@ finungszeiten Mo – Fr    08.30 – 15.30ErreichbarkeitU
 U1 (Reumannplatz)Bim   
 6 (Absberggasse)
 88
-==== PAGE ====
 Unterstützung für
 Frauen und Männer ab 50 Jahren.akt:E versteht sich als spezielles Projekt, um diese Zielgruppe mit passenden Unternehmen  zusammenzubringen oder auf dem Weg zur Pensionierung zu begleiten.
 Beratungsangebot
@@ -1913,7 +1825,6 @@ Inhalte
 im Bedarfsfall Unterstützung bei der Einleitung der notwendigen Schritte zum Pensionsantritt
 89
 Beratung
-==== PAGE ====
 Aufbruch zu mehr 
 Context Impulse am Arbeitsmarkt GmbH
 Schöpfleuthnergasse 25/6.OG 
@@ -1929,7 +1840,6 @@ U6 (Floridsdorf)Bim
   20A, 28A, 29A, 33A, 33B, Regionalbusse (Floridsdorf)Bahn   
 S1, S2, S3, S7, Regionalzüge (Floridsdorf)
 90
-==== PAGE ====
 Unterstützung für
 Aufbruch zu mehr ist eine Beratungs- und Betreuungseinrichtung für Personen, die beim AMS Wien vor-  
 gemerkt sind und eine geringfügige Beschäftigung haben, sowie Personen mit besonderem Betreuungs- 
@@ -1971,7 +1881,6 @@ stützung bei der Besetzung
 des Stammpersonals
 91
 Beratung
-==== PAGE ====
 BBE Deutsch Clearing
 Die Wiener Volkshochschulen GmbH
 Standorte der Beratung:
@@ -1980,7 +1889,6 @@ Standorte der Beratung:
 finungszeitenMo – Fr   
 08.00  15.00zusätzlich Termine bedarfsorientiert ErreichbarkeitAlle Standorte haben eine sehr gute Anbindung an  öffentliche Verkehrsmittel.
 92
-==== PAGE ====
 Unterstützung für
 Menschen mit Migrationshintergrund, die beim AMS Wien als arbeitslos oder arbeitssuchend ge -meldet sind und die eine sprachliche Höherqualifizierung benötigen/anstreben.
 Beratungsangebot
@@ -1997,7 +1905,6 @@ BBE Deutsch Clearing
 Die Wiener Volkshochschulen GmbH
 93
 Beratung
-==== PAGE ====
 94
 BBE Deutsch
 BEST Beratung und Betreuung
@@ -2011,7 +1918,6 @@ finungszeiten Mo – Do
   08.00 – 14.00ErreichbarkeitU  
 U1 (Kagraner Platz)Bus 
  22A (Afritschgasse)
-==== PAGE ====
 Unterstützung für
 Die BBE unterstützt die Kursziele der TeilnehmerInnen der Deutschkurse. Ausgehend von den persön
 -lichen Ressourcen und Kompetenzen werden die im Alltag notwendigen Sprach- und Grundkom-petenzen im Sprechen, Lesen und Schreiben erworben. Diese bilden die Voraussetzung für eine selbstbestimmte, unabhängige Lebensführung und eine bessere Positionierung am Arbeitsmarkt.
@@ -2043,7 +1949,6 @@ BBE Deutsch
 BEST Beratung und Betreuung
 95
 Beratung
-==== PAGE ====
 BBE Deutsch
 FAB Verein zur Förderung von Arbeit 
  und Beschäftigung in Kooperation mit Verein Projekt Integrationshaus
@@ -2064,7 +1969,6 @@ U6 (Perfektastraße)Bus
  
  64A (Liesinger-Flur-Gasse)
 96
-==== PAGE ====
 Unterstützung für
 Bei den regionalen Geschäftsstellen als arbeitslos vorgemerkte MaturantInnen/AkademikerInnen und Führungskräfte; AbsolventInnen einer mittleren Schule oder mit Lehrabschluss; Personen mit maximal Pflichtschulabschluss Bereich Reinigung, Lager, Bau, welche zur Integration in den Arbeits- markt eine Verbesserung ihrer Deutschkenntnisse benötigen.
 Beratungsangebot
@@ -2087,7 +1991,6 @@ FAB Verein zur Förderung von Arbeit und Beschäftigung
  in Kooperation mit Verein Projekt Integrationshaus
 97
 Beratung
-==== PAGE ====
 BBE Deutsch
 Verein Projekt Integrationshaus 
  in Kooperation mit FAB
@@ -2102,7 +2005,6 @@ finungszeiten Mo – Do
 U6 (Perfektastraße)Erreichbarkeit (BBE Standort update training) Bahn   
 S1, S2, S3, S7, Regionalzüge (Traisengasse)
 98
-==== PAGE ====
 Unterstützung für
 TeilnehmerInnen an Deutschkursen für die Zielgruppen MaturantInnen, AkademikerInnen und Füh-
  rungskräfte, Personen mit abgeschlossener mittlerer Schule oder Lehrabschluss sowie Personen mit max. Pflichtschulabschluss im Bereich Reinigung, Lager, Bau und Baunebengewerbe, die an den Kursstandorten von bit Schulungscenter (1230 Wien, Liesinger-Flur-Gasse 2c) und update training (1200 Wien, Dresdner Straße 108) stattfinden. Durch das Beratungs- und Förderangebot vor Ort sollen die KursteilnehmerInnen bei der Erreichung des Kursziels (positive ÖSD-Prüfung) unterstützt werden. Die Angebote der BBE-Deutsch sind sowohl Beratung in beruflichen und persönlichen Angelegenheiten als auch Lernförderung (Konversations 
@@ -2125,7 +2027,6 @@ BBE Deutsch
 Verein Projekt Integrationshaus in Kooperation mit FAB
 99
 Beratung
-==== PAGE ====
 BBE Deutsch
 ppc training Rath & Artner GmbH
 Kirchengasse 3
@@ -2142,7 +2043,6 @@ U2 (Donaumarina)Erreichbarkeit 1100 WienBim
  
  69a (Geiereckstraße)
 100
-==== PAGE ====
 Unterstützung für
 Personen, die nach den erfüllten Zugangsvoraussetzungen einen Deutschkurs besuchen. Die Ver -besserung ihrer Deutschkenntnisse fördert die Integration in den Arbeitsmarkt.
 Beratungsangebot
@@ -2167,7 +2067,6 @@ BBE Deutsch
 ppc training Rath & Artner GmbH
 101
 Beratung
-==== PAGE ====
 BBE Deutsch
 Volkshilfe Beschäftigung
 Standorte der Beratung:
@@ -2183,7 +2082,6 @@ U6 (Am Schöpfwerk, Perfektastraße)Bus
  
  14A (Sonnleithnergasse)
 102
-==== PAGE ====
 Unterstützung für
 Die Volkshilfe Beschäftigung ist mit der Durchführung der BBE Deutsch für die Zielgruppe der Arbeits-
  suchenden, die „maximal Pflichtschule haben und in den Bereichen Reinigung, Lager, Bau“ einen Job suchen, betraut.Wie läuft dieses Projekt ab? Arbeitsuchende Menschen mit Migrationshintergrund haben die Möglichkeit, ein Österreichisches Sprachdiplom (ÖSD) zu erreichen. Das AMS bucht arbeitsuchend gemeldete Personen in einen Deutschkurs zu. Diese Deutschkurse werden von Instituten mit um-fangreicher Erfahrung in der Erwachsenenbildung abgehalten. Am Ende des Kurses treten die Deutschkursteilnehmenden zur ÖSD-Prüfung an.
@@ -2208,7 +2106,6 @@ BBE Deutsch
 Volkshilfe Beschäftigung
 103
 Beratung
-==== PAGE ====
 BBE für Führungskräfte 50+
 EUSPUG  – Europäisches Service 
  für Personalvermittlung und  Unternehmensgründung
@@ -2228,7 +2125,6 @@ U1 (Taubstummengasse )Bim
  59A (Schleifmühlgasse) Bahn  
 Badner Bahn (Paulanergasse)
 104
-==== PAGE ====
 Unterstützung für
 Arbeitslose männliche und weibliche Führungskräfte ab 50 Jahre, des mittleren oder oberen Managementbereichs (z.B.: AbteilungsleiterIn, GeschäftsführerIn, Vorstand, CEO, CFO, CxO), mit oder ohne akademischer Ausbildung, mit Personalverantwortung für mindestens 10  MitarbeiterInnen mit 10 Jahren Führungserfahrung mit Wohnsitz in Wien. 
 Zuweisung zu EUSPUG, wenn arbeitslos mit Wohnsitz in Wien (BBE für Führungskräfte 50+).
@@ -2251,7 +2147,6 @@ BBE für Führungskräfte 50+
 EUSPUG  – Europäisches Service für Personalvermittlung   und Unternehmensgründung
 105
 Beratung
-==== PAGE ====
 BBE für Männer
 Männerberatung Wien
 Erlachgasse 95
@@ -2260,7 +2155,6 @@ Erlachgasse 95
 finungszeitenTermine nach VereinbarungErreichbarkeitU  
 U1 (Keplerplatz)
 106
-==== PAGE ====
 Unterstützung für
 Männer, die
 sich mit Frust und Problemen nicht länger abfinden möchten
@@ -2294,7 +2188,6 @@ BBE für Männer
 Männerberatung Wien
 107
 Beratung
-==== PAGE ====
 Beratungszentrum für  Migranten und Migrantinnen
 Verein Beratungszentrum für   Migranten und Migrantinnen
 Hoher Markt 8/Stiege 4/2. Stock
@@ -2308,7 +2201,6 @@ finungszeiten Mo, Di, Mi, Fr
  1A, 3A (Hoher Markt) U  
 U1/U3 (Stephansplatz), U1/U4 (Schwedenplatz)
 108
-==== PAGE ====
 Unterstützung fürBeratungsangebot
 Der Schwerpunkt liegt in der Beratung, Betreuung, Information und Unterstützung bei Fragen und Problemen im Zusammenhang mit Aufenthalt, Arbeitsmarkt, Erlangen eines Arbeits- bzw. Ausbil-dungsplatzes, Rechts- und Sozialfragen, Behörden- und Sprachproblemen.Die Beratung erfolgt in Deutsch, Arabisch, Armenisch, Bosnisch, Kroatisch, Serbisch, Englisch, Französisch, Kurdisch, Italienisch, Polnisch, Russisch, Slowakisch, Tschechisch, Hindi, Punjabi, Urdu, Persisch und Dari.Ziel ist es, jene Faktoren zu beseitigen, die den erfolgreichen (Wieder-)Einstieg von MigrantInnen in den Arbeitsmarkt, den Beruf und die Ausbildung erschweren oder gefährden. Die Beratung ist kostenlos, individuell, vertraulich, unabhängig und umfassed.
 Unsere Organisation
@@ -2330,7 +2222,6 @@ Beratungszentrum für
 Verein Beratungszentrum für Migranten und Migrantinnen
 109
 Beratung
-==== PAGE ====
 Check In und Nutze  Deine Qualiflkationen
 Beratungszentrum für Migranten 
  
@@ -2346,7 +2237,6 @@ finungszeiten (Infotag) Jeden Mo
 D (Schloss Belvedere)
  
 110
-==== PAGE ====
 Unterstützung für
 Personen, die beim Arbeitsmarktservice Wien arbeitsuchend oder arbeitslos gemeldet sind und über eine aus dem Ausland mitgebrachte Ausbildung über die Pflichtschule hinaus (z. B. mittlere, höhere Schule, Hochschulstudium), Berufserfahrung oder eine Berufsausbildung verfügen und Interesse ha-ben, diese zu nutzen und/oder sich weiterzubilden bzw. zu qualifizieren.Die Zuwanderung sollte nicht länger als 5 – 7 Jahre zurückliegen (sinnvolle Ausnahmen möglich). Alter: 17 – 49 Jahre (sinnvolle Ausnahmen möglich).
 Beratungsangebot
@@ -2365,7 +2255,6 @@ Check In und Nutze Deine Qualiflkationen
 Beratungszentrum für Migranten und Migrantinnen
 Beratung
 111
-==== PAGE ====
 Beratungszentrum für  Migranten und Migrantinnen –  
  Frauenberatung
 Beratungszentrum für Migranten 
@@ -2387,7 +2276,6 @@ U1/U3 (Stephansplatz), U1/U4 (Schwedenplatz)Bus
  
  1A, 3A (Hoher Markt) 
 112
-==== PAGE ====
 Unterstützung für
 Die Frauenberatung für Migrantinnen bietet Frauen mit Migrationshintergrund Unterstützung beim erfolgreichen (Wieder-)Einstieg in Ausbildung, Beruf oder Arbeit.
 Beratungsangebot
@@ -2416,7 +2304,6 @@ Beratungszentrum für Migranten und
 Beratungszentrum für Migranten und Migrantinnen
 Beratung
 113
-==== PAGE ====
 BERUFSDIAGNOSE - ZENTRUM WIEN
 BBRZ – Beruiches Bildungs- und 
   Rehabilitationszentrum
@@ -2434,7 +2321,6 @@ finungszeitenMo – Do
 U3 (Zippererstraße)Bim   
 71, 6 (Zippererstraße)
 114
-==== PAGE ====
 Unterstützung für
 bei den regionalen Geschäftsstellen des AMS als arbeitslos vorgemerkte KundInnen mit gesundheit-
  lichen Problemen. Das Projekt richtet sich an Personen, die aufgrund gesundheitlicher Einschränkun-gen ihren bisherigen Beruf nicht mehr ausüben können und daher neue berufliche Perspektiven benötigen.
@@ -2465,7 +2351,6 @@ IEN
 BBRZ – Beruiches Bildungs- und Rehabilitationszentrum
 115
 Beratung
-==== PAGE ====
 BERATUNGSSTELLE   C4C 
 -P
 ERSPEKTIVENPLAN
@@ -2485,7 +2370,6 @@ finungszeitenMo – Do
 U3 (Zippererstraße)Bim   
 71, 6 (Zippererstraße)
 116
-==== PAGE ====
 Unterstützung für
 Personen, bei denen im Rahmen der Untersuchung in der Gesundheitsstraße der PVA eine Arbeits -fähigkeit festgestellt wurde und die nun aufgrund des Ergebnisses neue Perspektiven benötigen. Das  Projekt richtet sich an Personen mit gesundheitlichen und/oder psychosozialen Problemlagen und bietet eine bis zu 8-wöchige Betreuung an.
 Beratungsangebot
@@ -2509,7 +2393,6 @@ ERSPEKTIVENPLAN
 BBRZ – Beruiches Bildungs- und Rehabilitationszentrum
 117
 Beratung
-==== PAGE ====
 Early Intervention 50+
 move-ment Personal- und 
  Unternehmensberatung GmbH
@@ -2524,7 +2407,6 @@ finungszeitenMo – Do
   08.00-14.00ErreichbarkeitU   
 U4 (Ober St. Veit)
 118
-==== PAGE ====
 Early Intervention 50+
 move-ment Personal- und Unternehmensberatung GmbH
 Unterstützung für
@@ -2554,7 +2436,6 @@ Die Zubuchung zu Early Intervention 50+ erfolgt durch die zuständigen AMS-Bera
 Soziale Rahmenbedingungen
 119
 Beratung
-==== PAGE ====
 FBZ frauenberufszentrum
 abz*austria – Verein zur Förderung von   Arbeit, Bildung und Zukunft von Frauen
 Simmeringer Hauptstraße 154
@@ -2564,7 +2445,6 @@ Erstkontakt nur telefonischfinungszeitenMo – Fr
 09.00 – 13.00 Telefonische Anmeldung unbedingt erforderlich!  Individuelle TerminvereinbarungErreichbarkeitBim   
 6, 71 (Fickeystraße)
 120
-==== PAGE ====
 Unterstützung für
 In Wien gemeldete Frauen aller Alterstufen, die arbeitslos oder arbeitssuchend gemeldet sind.
 Beratungsangebot
@@ -2582,7 +2462,6 @@ FBZ frauenberufszentrum wien
 abz*austria – Verein zur Förderung von   Arbeit, Bildung und Zukunft von Frauen
 121
 Beratung
-==== PAGE ====
 Jobservice Wien
 itworks Personalservice und Beratung gemeinnützige GmbH
 Favoritenstraße 82
@@ -2597,7 +2476,6 @@ U1 (Südtiroler Platz)Bahn
 S1, S2, S3, S 60, S80, Regionalzüge (Hauptbahnhof)Erreichbarkeit 1200 Wien U   
 U6 (Dresdner Straße)
 122
-==== PAGE ====
 Jobservice Wien
 itworks Personalservice und Beratung gemeinnützige GmbH
 Unterstützung für
@@ -2624,7 +2502,6 @@ Zugang
 Die Zubuchung zum Projekt erfolgt über die AMS-BeraterInnen.
 123
 Beratung
-==== PAGE ====
 124
 Job-TransFair KOMPASS 
 Job-TransFair GmbH   Gemeinnütziges Integrationsleasing
@@ -2640,7 +2517,6 @@ U1, U2, U4 (Karlsplatz) Bus
 U4 (Margaretengürtel)Erreichbarkeit (1150 Wien) U  
 U6 (Burggasse/Stadthalle), U3 (Schweglerstraße)Erreichbarkeit (1150 Wien) U  
 U6 (Floridsdorf)
-==== PAGE ====
 Job-TransFair KOMPASS 
 Job-TransFair GmbH   Gemeinnütziges Integrationsleasing
 Unterstützung für
@@ -2671,7 +2547,6 @@ Zugang
 Die Zubuchung erfolgt durch das Arbeitsmarktservice Wien.
 125
 Beratung
-==== PAGE ====
 126
 Job-TransFair TERRA 
 Job-TransFair GmbH   Gemeinnütziges Integrationsleasing
@@ -2687,7 +2562,6 @@ U6 (Burggasse/Stadthalle), U3 (Schweglerstraße)Erreichbarkeit (Zentrale)U
 U1, U2, U4 (Karlsplatz) Bus 
  
  59A, 57A
-==== PAGE ====
 Job-TransFair TERRA 
 Job-TransFair GmbH   Gemeinnütziges Integrationsleasing
 Unterstützung für
@@ -2715,7 +2589,6 @@ Zugang
 Kostenlose Beratungstermine sind nach Terminvereinbarung innerhalb der Öffnungszeiten möglich.
 127
 Beratung
-==== PAGE ====
 KinderDrehscheibe
 Verein Wiener KinderDrehscheibe 
  Frauen & Familie
@@ -2731,7 +2604,6 @@ finungszeiten (Telefon- und E-Mailberatung) Mo, Do
 U4 (Kettenbrückengasse)
  
 128
-==== PAGE ====
 Unterstützung für
 Personen, die einen Kinderbetreuungsplatz suchen
 Beratungsangebot
@@ -2753,7 +2625,6 @@ KinderDrehscheibe
 Verein Wiener KinderDrehscheibe Frauen & Familie
 129
 Beratung
-==== PAGE ====
 Mädchen-Berufs-Zentrum
 Verein sprungbrett für mädchen
 Hütteldorferstraße 81b/Stiege 1/Top 4
@@ -2766,7 +2637,6 @@ U3 (Johnstraße)Bim
 49 (Johnstraße)Bus 
  10A (Johnstraße)
 130
-==== PAGE ====
 Unterstützung für
 Mädchen und junge Frauen von 11 bis 25 Jahre
 Junge Frauen während und nach der Lehre
@@ -2791,7 +2661,6 @@ Mädchen-Berufs-Zentrum
 Verein sprungbrett für mädchen
 131
 Beratung
-==== PAGE ====
 MigIn   
 Beratung Betreuung, Begleitung, 
  Beschäftigung von Frauen mit den  Muttersprachen arabisch, bosnisch-kroatisch-serbisch, bulgarisch, persisch, russisch, türkischContext Impulse am Arbeitsmarkt GmbH
@@ -2805,7 +2674,6 @@ U1 (Reumannplatz)Bim
 6 (Absberggasse)Bus 
  69A (Hüttenbrennergasse)
 132
-==== PAGE ====
 Unterstützung für
 In Wien gemeldete Frauen, die arbeitslos gemeldet sind, mit dem Ziel der nachhaltigen Beschäfti-
  gung auf dem Arbeitsmarkt. Durch kompetente BeraterInnen erfolgt ein Brückenschlag zwischen den Kulturen. Unser Firmennetzwerk bietet die Möglichkeit der Zusammenführung von diversitäts- offenen ArbeitsgeberInnen mit unseren Kundinnen.
@@ -2831,7 +2699,6 @@ mit den Muttersprachen arabisch, bosnisch-kroatisch-serbisch,
 bulgarisch, persisch, russisch, türkisch Context Impulse am Arbeitsmarkt GmbH
 133
 Beratung
-==== PAGE ====
 MONSUN
 FAB Verein zur Förderung von Arbeit 
  und Beschäftigung
@@ -2849,7 +2716,6 @@ U1 (Reumannplatz)Bus
  
  68A, 68B (Absbergbrücke)
 134
-==== PAGE ====
 Unterstützung für
 Beim AMS Wien vorgemerkte REHA-Personen, unabhängig von ihrer Ausbildung bzw. beruflichen Qualifikation. In der Beratungs- und Betreuungseinrichtung MONSUN gilt es, mit den TeilnehmerIn-nen im kooperativen, unterstützenden Miteinander zieladäquate Schritte bzw. Teilschritte zu erarbei- ten und zu planen, um das Ziel – eine Integration in den Arbeitsmarkt – zu erwirken.
 Beratungsangebot
@@ -2878,7 +2744,6 @@ MONSUN
 FAB Verein zur Förderung von Arbeit und Beschäftigung
 135
 Beratung
-==== PAGE ====
 SCHULDNERBERATUNG  WIEN  
 gGMBH
 Fonds Soziales Wien
@@ -2889,7 +2754,6 @@ finungszeiten Mo – Fr
 08.00 – 15.30Termine nach telefonischer Vereinbarung ErreichbarkeitU  
 U3 (Gasometer)
 136
-==== PAGE ====
 Unterstützung für
 verschuldete und überschuldete Menschen, auch ehemals Selbstständige, Menschen mit Unterstüt-
  zungsbedarf bei ihrer finanziellen Verwaltung (Betreutes Konto)
@@ -2915,7 +2779,6 @@ g GMBH
 Fonds Soziales Wien
 137
 Beratung
-==== PAGE ====
 step2job für die RGSen 958  und 968 (Johnstraße und Schloßhofer Straße)
 Context Impulse am Arbeitsmarkt GmbH
 Schöpfleuthnergasse 25/6. OG 
@@ -2937,7 +2800,6 @@ S1, S2, S3, S7 (Bahnhof Floridsdorf)Bim
  20A, 28A, 29A, 33A, 33B und Regionalbusse    
 (Bahnhof Floridsdorf)Gebührenfreie & gebührenpflichtige Parkplätze vor   dem Haus und in der näheren Umgebung
 138
-==== PAGE ====
 Unterstützung für
 step2Job ist eine Beratungs- & Betreuungseinrichtung für Personen, die beim AMS Wien vorge -merkt sind und bedarfsorientierte Mindestsicherung beziehen sowie Personen mit speziellem Betreu- ungsbedarf, um sie beim Wiedereinstieg in die Arbeitswelt durch persönliche und individuelle Un-terstützung zu begleiten.
 Beratungsangebot
@@ -2969,7 +2831,6 @@ Unsere Leistungen für Unternehmen:
 kostenloses Arbeitstraining
 139
 Beratung
-==== PAGE ====
 step2job für die RGSen 959 und 960 (Haufigasse und Esteplatz)
 FAB Verein zur Förderung von Arbeit 
  
@@ -2989,7 +2850,6 @@ U1 (Reumannplatz)
  
  68A, 68B (Absbergbrücke)
 140
-==== PAGE ====
 Unterstützung für
 beim AMS vorgemerkte BezieherInnen der bedarfsorientierten Mindestsicherung ohne ALV-Leistungs-  bezug oder beim AMS vorgemerkte arbeitsmarktferne Personen (AMFP) nach der jeweiligen Ziel-  definition des AMS Wien. Als AMFP gelten Personen, die in den letzten 12 Monaten in Summe nicht mehr als 2 Monate gearbeitet haben sowie mindestens 4 Monate arbeitslos waren (in Summe). Wie 
 -dereinsteigerinnen (Frauen) sind nicht enthalten. Die Personen haben ihren Aufenthalt bzw. Wohnsitz in den Bezirken 1, 3, 4 oder 11 und sind im Alter von 21 bis 64 Jahren.
@@ -3014,7 +2874,6 @@ step2job für die RGSen 959 und 960   (Haufigasse und Esteplatz)
 FAB Verein zur Förderung von Arbeit und Beschäftigung
 141
 Beratung
-==== PAGE ====
 step2job für die RGSen 961 und 966 (Dresdner Straße und Hietzinger Kai)
 itworks Personalservice und Beratung 
 gemeinnützige GmbH
@@ -3029,7 +2888,6 @@ finungszeiten Mo – Do
 U4 (Ober St. Veit)Erreichbarkeit 1200 Wien U   
 U6 (Dresdner Straße)
 142
-==== PAGE ====
 Unterstützung für
 Arbeit suchende Personen, die in den letzten 12 Monaten nicht länger als 2 Monate voll   versichert gearbeitet haben und mindestens 4 Monate beim AMS gemeldet waren.
  VollbezieherInnen der Wiener Mindestsicherung
@@ -3051,7 +2909,6 @@ step2job für die RGSen 961 und 966   (Dresdner Straße und Hietzinger Kai)
 itworks Personalservice und Beratung gemeinnützige GmbH
 143
 Beratung
-==== PAGE ====
 step2job für die RGS 962   (Redergasse)
 Caritas der Erzdiözese Wien
 Grohgasse 3/2, 1. Stock 1050 WienT  
@@ -3065,7 +2922,6 @@ U4 (Pilgramgasse)Bus
  
  12A, 13A, 59A 
 144
-==== PAGE ====
 Unterstützung für
 Unser Beratungs- und Betreuungsangebot richtet sich an Menschen aus den Wiener Bezirken 5, 6, 7 und 8, die beim AMS Redergasse arbeitslos gemeldet sind. Im Besonderen an arbeitsmarktferne Per 
 -sonen und BezieherInnen der Bedarfsorientierten Mindestsicherung. 
@@ -3095,7 +2951,6 @@ step2job für die RGS 962 (Redergasse)
 Caritas der Erzdiözese Wien
 145
 Beratung
-==== PAGE ====
 step2job für die RGS 963 (Währinger Gürtel)
 Volkshilfe Beschäftigung
 Lassallestraße 46/D3
@@ -3112,7 +2967,6 @@ U1 (Vorgartenstraße)Bus
  
  11A, 11B (Lassallestraße)
 146
-==== PAGE ====
 Unterstützung für
 Beim AMS Währinger Gürtel vorgemerkte BezieherInnen der bedarfsorientierten Mindestsicherung sowie Personen mit speziellem Betreuungsbedarf.
 Beratungsangebot
@@ -3139,7 +2993,6 @@ step2job für die RGS 963   (Währinger Gürtel)
 Volkshilfe Beschäftigung
 147
 Beratung
-==== PAGE ====
 step2job für die RGS 964 (Geiselbergstraße)
 Gesellschaft für Aus- und Weiterbildung
 Wiedner Hauptstraße 142
@@ -3154,7 +3007,6 @@ finungszeitenMo – Fr
  Bahn   
 S1, S2, S3, Regionalzüge (Matzleinsdorfer Platz)
 148
-==== PAGE ====
 step2job für die RGS 964 (Geiselbergstraße)
 Gesellschaft für Aus- und Weiterbildung
 Unterstützung für
@@ -3189,7 +3041,6 @@ Zubuchung durch das Arbeitsmarktservice Wien, RGS Geiselbergstraße
 Nachbetreuung/Arbeitsplatzstabilisierung
 149
 Beratung
-==== PAGE ====
 step2job für die RGS 965 (Schönbrunner Straße)
 ibis acam Bildungsgesellschaft
 Geiselbergstraße 26-32/1/3.Stock
@@ -3204,7 +3055,6 @@ finungszeiten Mo – Fr
  
  S1, S2, S7, Regionalzüge (Geiselbergstraße)
 150
-==== PAGE ====
 step2job für die RGS 965 (Schönbrunner Straße)
 ibis acam Bildungsgesellschaft
 Unterstützung für
@@ -3232,7 +3082,6 @@ Zugang
 Zubuchung durch die Regionale Geschäftsstelle Schönbrunner Straße des Arbeitsmarktservice Wien
 151
 Beratung
-==== PAGE ====
 step2job für die RGS 967 (Huttengasse)
 BEST Beratung und Betreuung
 Braunhirschengasse 28
@@ -3248,7 +3097,6 @@ U6 (Gumpendorferstraße), U6, U3 (Westbahnhof)Bus
  57A (Grimmgasse) Bim   
 58, 52 (Rustengasse)
 152
-==== PAGE ====
 step2job für die RGS 967 (Huttengasse)
 BEST Beratung und Betreuung
 Unterstützung für
@@ -3278,7 +3126,6 @@ Zugang
 Die Zubuchung unserer TeilnehmerInnen erfolgt ausschließlich durch das AMS RGS Huttengasse.
 153
 Beratung
-==== PAGE ====
 step2job für die RGS 969  (Prandaugasse)
 Job-TransFair GmbH   Gemeinnütziges Integrationsleasing
 Markgraf-Rüdiger-Straße 6-8
@@ -3291,7 +3138,6 @@ finungszeiten Mo – Fr
 08.00 – 16.45Erreichbarkeit (1150 Wien)U  
 U3 (Schweglerstraße), U6 (Burggasse/Stadthalle)
 154
-==== PAGE ====
 step2job für die RGS 969 (Prandaugasse)
 Job-TransFair GmbH   Gemeinnütziges Integrationsleasing
 Unterstützung für
@@ -3318,7 +3164,6 @@ Zugang
 Die Zubuchung erfolgt über das AMS Wien RGS Prandaugasse. 
 155
 Beratung
-==== PAGE ====
 Team 4   KünstlerInnenservice
 Verein zur Schafiung von Arbeit
 Salztorgasse 1
@@ -3331,7 +3176,6 @@ U1 (Schwedenplatz)
    
 U4 (Schwedenplatz und Schottenring)
 156
-==== PAGE ====
 Team 4 KünstlerInnenservice
 Verein zur Schafiung von Arbeit
 Unterstützung für
@@ -3354,7 +3198,6 @@ Zugang
 Ausschließlich über Zubuchungen von regionalen Geschäftsstellen des AMS Wien 
 157
 Beratung
-==== PAGE ====
 TU Career Center
 TU Career Center GmbH
 Wiedner Hauptstraße 23-25/Stiege 1/Top 81040 WienT  
@@ -3368,7 +3211,6 @@ U1 (Taubstummengasse)
    
 U2, U4 (Karlsplatz)
 158
-==== PAGE ====
 TU Career Center
 TU Career Center GmbH
 Unterstützung für
@@ -3397,7 +3239,6 @@ Zugang
 Die Zubuchung zum TU Career Center erfolgt über die Regionalgeschäftsstellen des AMS Wien.
 159
 Beratung
-==== PAGE ====
 UNIPORT 
 Karriereservice der Universität Wien 
 Spitalgasse 2, Uni Campus, Hof 1.17, Stöcklgebäude 1090 WienT  
@@ -3411,7 +3252,6 @@ finungszeitenMo – Do
  Bus 
  13A (Skodagasse)
 160
-==== PAGE ====
 Unterstützung für
 Studierende, AbsolventInnen, Young-Professionals, AMS-Wien-KundInnen (mit Ausnahme technische Studienabschlüsse) Besonders in der Karriereberatung wird der Vielfalt der Studien Österreichs grßter Universität Rech-nung getragen. Studierende und AbsolventInnen erhalten maßgeschneiderte, individuelle Beratungs- angebote und top-aktuelle Karriere-Infos.
 Beratungsangebot
@@ -3436,7 +3276,6 @@ UNIPORT
 Karriereservice der Universität Wien 
 161
 Beratung
-==== PAGE ====
 Wiener BerufsBörse –   Beratungszentrum für  
  Sucht und Arbeit
 Verein zur Förderung der beruichen 
@@ -3455,7 +3294,6 @@ finungszeiten Mo – Do
  
  13A (Skodagasse)
 162
-==== PAGE ====
 Unterstützung für
 Personen mit jeder Form von Suchterkrankung (Alkohol, Drogen, Substitutionsmittel, Medikamente, Spielsucht etc.), Suchterfahrung bzw. Suchtgefährdung. Voraussetzung ist, dass die Person freien Zugang zum österreichischen Arbeitsmarkt hat (bei EU-BürgerInnen gültige Anmeldebestätigung der MA35!). Zielgruppe: Sowohl beim AMS Wien vorgemerkte Personen, als auch im Krankenstand/auf Therapie befindliche Menschen im Alter von 15 bis ca. 60 Jahren. 
 Beratungsangebot
@@ -3483,7 +3321,6 @@ Verein zur Förderung der beruichen Integration
 suchtkranker Personen
 163
 Beratung
-==== PAGE ====
 woman professional 
 Context Impulse am Arbeitsmarkt GmbH
 Quellenstraße 2c1100 WienT  
@@ -3496,7 +3333,6 @@ finungszeiten (Telefonische Auskünfte) Mo – Do
 U1 (Reumannplatz)Bim  
 6 (Absberggasse)
 164
-==== PAGE ====
 Unterstützung für
 Frauen, die beim AMS Wien arbeitslos gemeldet sind sowie über Matura, evt. einen akademischen Abschuss und/oder mehrjährige Leitungserfahrung verfügen.
 Beratungsangebot
@@ -3526,7 +3362,6 @@ Context Impulse am Arbeitsmarkt GmbH
 Social Media u.a.m. 
 165
 Beratung
-==== PAGE ====
 youngFIT
 Verein sprungbrett
 Hütteldorferstraße 81b/Stiege 1/Top 4
@@ -3539,7 +3374,6 @@ U3 (Johnstraße)Bim
 49 (Johnstraße)Bus 
  10A, 12A (Johnstraße)
 166
-==== PAGE ====
 youngFIT
 Verein sprungbrett
 Unterstützung für
@@ -3558,7 +3392,6 @@ ams Jugendliche, Infotag im sprungbrett jeden Mittwoch, 14 Uhr.
  Telefon: 01 789 45 45, Mail: sprungbrett@sprungbrett.or.at
 167
 Beratung
-==== PAGE ====
 Zentrum für Kompetenz   und Erfahrung
 FAB Verein zur Förderung von Arbeit 
   und Beschäftigung
@@ -3577,7 +3410,6 @@ U1 (Reumannplatz)
  
  68A, 68B (Absbergbrücke)
 168
-==== PAGE ====
 Zentrum für Kompetenz und Erfahrung
 FAB Verein zur Förderung von Arbeit und Beschäftigung
 Unterstützung für
@@ -3601,7 +3433,6 @@ Die Zubuchung der potenziellen TeilnehmerInnen zu einem Erstgespräch erfolgt du
  Esteplatz bzw. Hauffgasse.
 169
 Beratung
-==== PAGE ====
 abz*beratung für frauen
 abz*austria – Verein zur Förderung von Arbeit, Bildung und Zukunft von Frauen
 Fockygasse 14/2/16-18
@@ -3613,7 +3444,6 @@ finungszeiten (Telefonische Auskünfte) Di, Do
 09.00 – 13.00 Persönliche Termine nach Vereinbarung.  Telefonische Anmeldung unbedingt erforderlich!ErreichbarkeitBus 
  59A (Wolfganggasse/Steinbauergasse)
 170
-==== PAGE ====
 Unterstützung für
 In Wien gemeldete Frauen aller Alterstufen mit Fragen und Problemstellungen zu Beruf und Arbeit, die aktuell nicht beim AMS gemeldet sindDie abz*beratung für Frauen hat auch ein spezielles Angebot für junge Frauen zwischen 14 und 21, die schwanger oder bereits Mutter sind. 
 Beratungsangebot
@@ -3633,7 +3463,6 @@ abz*beratung für frauen
 abz*austria – Verein zur Förderung von   Arbeit, Bildung und Zukunft von Frauen
 171
 Beratung
-==== PAGE ====
 Betrofiene beraten Betrofiene
 pro mente Wien – Gesellschaft für 
  psychische und soziale Gesundheit
@@ -3652,7 +3481,6 @@ U4 (Kettenbrückengasse oder Pilgramgasse)Bus
  
  12A, 13A, 14A (Pilgramgasse)
 172
-==== PAGE ====
 Unterstützung für
 Menschen mit psychischen Erkrankungen bzw. Problemen
 am Arbeitsplatz
@@ -3683,7 +3511,6 @@ Betrofiene beraten Betrofiene
 pro mente Wien – Gesellschaft für   psychische und soziale Gesundheit
 173
 Beratung
-==== PAGE ====
 Dialog
 Sucht und Beschäftigung – Standfest  Beratungsstelle des Verein Dialog 
 Gudrunstraße 184
@@ -3698,7 +3525,6 @@ finungszeiten Mo, Mi
   09.00 – 13.00 Persönliche Termine nach Vereinbarung. ErreichbarkeitBus 
  14A (Sonnleithnergasse)
 174
-==== PAGE ====
 Unterstützung für
  Personen mit einer Suchtmittelproblematik, bei denen die Arbeitsfähigkeit abgeklärt wurde   und ein spezieller Unterstützungsbedarf besteht, arbeitsunfähig sowie arbeitsfähig
  Personen mit einer Suchtproblematik, die im Rahmen des AMS Wien oder NÖ   einen Kurs besuchen wollen
@@ -3719,7 +3545,6 @@ Dialog
 Sucht und Beschäftigung – Standfest   Beratungsstelle des Verein Dialog 
 175
 Beratung
-==== PAGE ====
 Haftentlassenenhilfe
 Neustart Wien
 Holzhausergasse 4
@@ -3732,7 +3557,6 @@ finungszeiten Mo – Fr
  
  5B (Kleine Stadtgutgasse) 6 Min. zu Fuß vom Praterstern (Wien Nord) S, U1, U2, O, 80A
 176
-==== PAGE ====
 Unterstützung für
 Erwachsene Frauen und Männer, deren Haftentlassung nicht länger als ein Jahr zurückliegt
 Beratungsangebot
@@ -3755,7 +3579,6 @@ Haftentlassenenhilfe
 Neustart Wien
 177
 Beratung
-==== PAGE ====
 UKI
 Unterstützungskomitee zur Integration von MigrantInnen
 Johnstraße 4
@@ -3773,7 +3596,6 @@ U3 (Johnstraße), U4 (Schönbrunn, ca. 10 Gehminuten)Bim
  
  10A (Linzer Straße/Johnstraße)
 178
-==== PAGE ====
 Unterstützung für
 Begünstigte oder begünstigbare Arbeit suchende MigrantInnen mit gesundheitlicher   Beeinträchtigung und mit einem Grad der Behinderung von mind. 50% bzw. 30% bei   anerkannten Flüchtlingen (festgestellt durch Bescheid oder Einschätzung des Sozialministerium 
 -service Wien) – MigAktiv/BSB-Projekt
@@ -3799,7 +3621,6 @@ UKI
 Unterstützungskomitee zur Integration von MigrantInnen
 179
 Beratung
-==== PAGE ====
 ibis acam
 T
 EAM 
@@ -3814,7 +3635,6 @@ Fax: +43/0316/815656 -4 Fax: +43/01/533 38 28 -28
 Bankverbindung : Steiermärkische Sparkasse, BLZ  20815, Konto Nr.  2100248604   
           
  
-==== PAGE ====
 HerausgeberWiener Dachverband für  sozial-ökonomische Einrichtungen (DSE-Wien)Taborstraße 24/18 A-1020 WienT  
 +43 (01) 720 38 80F   
 +43 (01) 720 38 80 - 20M office@dse-wien.atW www.dse-wien.at DesignKreativwarenhandlung, Elisabeth Engel www.kreativwarenhandlung.at2. überarbeitete und erweiterte Auflage, Juni 2015Schutzgebühr: Euro 9,-BilderFotolia: S.24 © Ilya Glovatskiy, S.44 © TMAX, S.84 © Monkey Business, S.90 © Robert Kneschke, S.92 © Johannes Zinner, S.94 © contrastwerkstatt, S.98 © drubig_photo, S.110 © Daniel Ernst, S.112 © Chris 
@@ -3830,5 +3650,4 @@ Bojana Gajic
 R. Gino Santa MariaS.138: racom S.164:  
 Buenos DiasS.18,124,126,154: Gerd Kressl  Alle anderen Bilder wurden von den jeweiligen  
 Organisationen zur Verfügung gestellt.
-==== PAGE ====
 Die Mitgliedsbetriebe des DSE-Wien werden von folgenden Einrichtungen gefördert:
