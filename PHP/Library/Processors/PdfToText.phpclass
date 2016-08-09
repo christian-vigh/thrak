@@ -1586,8 +1586,6 @@ class  PdfToText 	extends PdfObjectBase
 
 		// And finally, the Text property
 		$this -> Text	=  implode ( utf8_encode ( $this -> PageSeparator ), $this -> Pages ) ;
-
-	dump ( $this -> PageMap ) ; 
 	    }
 
 
@@ -4383,9 +4381,18 @@ class  PdfTexterEncodingMap 	extends  PdfTexterCharacterMap
   ==============================================================================================================*/
 class  PdfTexterPageMap		extends  PdfObjectBase
    {
+	// Page contents are (normally) first described by a catalog
+	// Although there should be only one entry for that, this property is defined as an array, as you need to really
+	// become paranoid when handling pdf contents...
 	protected	$PageCatalogs		=  [] ;
+	// Entries that describe which page contains which text objects. Of course, these can be nested otherwise it would not be funny !
 	protected	$PageKids		=  [] ;
+	// Terminal entries : they directly give the ids of the objects belonging to a page
 	protected	$PageContents		=  [] ;
+	// Note that all the above arrays are indexed by object id and filled with the data collected by calling the Peek() Method...
+
+	// Once the Peek() method has collected page contents & object information, the MapCatalog() method is called to create this array
+	// which contains page numbers as keys, and the list of objects contained in this page as values
 	public		$Pages			=  [] ;
 
 
@@ -4485,15 +4492,16 @@ class  PdfTexterPageMap		extends  PdfObjectBase
 		$kid_count	=  count ( $this -> PageKids ) ;
 
 		// PDF files created short after the birth of Earth may have neither a page catalog nor page contents descriptions
-		if  ( ! $this -> PageCatalogs  &&  ! $count )
+		if  ( ! $this -> PageCatalogs  )
 		   {
-			$this -> Pages [1]	=  array_keys ( $objects ) ;
-		    }
-		// Later, during Pleistocen, references to page kids started to appear...
-		else if  ( $count )
-		   {
-			foreach  ( array_keys ( $this -> PageKids )  as  $catalog )
-				$this -> MapKeys ( $catalog, $current_page ) ;
+			// Later, during Pleistocen, references to page kids started to appear...
+			if  ( $kid_count )
+			   {
+				foreach  ( array_keys ( $this -> PageKids )  as  $catalog )
+					$this -> MapKeys ( $catalog, $current_page ) ;
+			    }
+			else
+				$this -> Pages [1]	=  array_keys ( $objects ) ;
 		    }
 		// This is the ideal situation : there is a catalog that allows us to gather indirectly all page data
 		else
@@ -4529,7 +4537,7 @@ class  PdfTexterPageMap		extends  PdfObjectBase
 		else
 		   {
 			foreach  ( $entry [ 'kids' ]  as  $kid )
-				$this -> Mapids ( $kid, $page ) ;
+				$this -> MapKids ( $kid, $page ) ;
 		    }
 	    }
     }
