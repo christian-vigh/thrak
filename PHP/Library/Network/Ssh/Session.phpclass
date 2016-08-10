@@ -482,15 +482,15 @@ class  SshSession		extends  Object
 	
 	/*==============================================================================================================
 	
-	    GetNegociatedMethods -
-	        Returns information about negociated methods.
+	    GetNegotiatedMethods -
+	        Returns information about negotiated methods.
 	
 	  ==============================================================================================================*/
-	public function  GetNegociatedMethods ( )
+	public function  GetNegotiatedMethods ( )
 	   {
-		$this -> __check_connection ( false, "Cannot retrieve negociated methods information." ) ;
+		$this -> __check_connection ( false, "Cannot retrieve negotiated methods information." ) ;
 		
-		$result		=  $this -> Connection -> GetNegociatedMethods ( ) ;
+		$result		=  $this -> Connection -> GetNegotiatedMethods ( ) ;
 		
 		return ( $result ) ;
 	    }
