@@ -644,6 +644,11 @@
 		[ 'a' => self::CTYPE_ALNUM | self::CTYPE_XDIGIT, ... ]
 	  which is authorized only for PHP versions >= 5.6.
 
+    [Version : 1.2.41]	[Date : 2016/08/10]     [Author : CV]
+	. Series of hex digits that represent characters and are related to unmapped fonts using the WinAnsi or 
+	  MacRoman encoding scheme where inappropriately split into chunks of 4 digits instead of 2. This 
+	  caused in some occasions normal characters to be interpreted as far-east languages, such as Chinese.
+
  **************************************************************************************************************/
 namespace 	Thrak\Processors ;
 
@@ -1118,7 +1123,7 @@ abstract class  PdfObjectBase		extends  Object
 class  PdfToText 	extends PdfObjectBase
    {
 	// Current version of the class
-	const		VERSION					=  "1.2.40" ;
+	const		VERSION					=  "1.2.41" ;
 
 	// Pdf processing options
 	const		PDFOPT_NONE				=  0x0000 ;		// No extra option
@@ -1570,7 +1575,7 @@ class  PdfToText 	extends PdfObjectBase
 					$this -> Pages [ $page_number ]		.=  $object_text ;
 				    }
 				else if  ( self::$DEBUG  >  1 )
-					echo "\n----------------------------------- MISSING OBJECT #page_object for page #$page_number\n" ;
+					echo "\n----------------------------------- MISSING OBJECT #$page_object for page #$page_number\n" ;
 			    }
 		    }
 
@@ -1590,6 +1595,7 @@ class  PdfToText 	extends PdfObjectBase
 
 		// And finally, the Text property
 		$this -> Text	=  implode ( utf8_encode ( $this -> PageSeparator ), $this -> Pages ) ;
+		dump ( $this ->FontTable ) ;
 	    }
 
 
@@ -2631,9 +2637,10 @@ class  PdfToText 	extends PdfObjectBase
 			   			   	// Characters are encoded within angle brackets ( "<>" )
 			   			   	if  ( $is_hex )
 			   			   	   {
-			   			   	   	for  ( $i = 1 ; $i  <  $length ; $i += 4 )
+								 echo "TEXT= $text\n" ;
+			   			   	   	for  ( $i = 1 ; $i  <  $length ; $i += 2 )
 			   			   	   	   {
-			   			   	   	   	$ch 	=  hexdec ( substr ( $text, $i, 4 ) ) ;
+			   			   	   	   	$ch 	=  hexdec ( substr ( $text, $i, 2 ) ) ;
 
 			   			   			$result .=  $this -> CodePointToUtf8 ( $ch ) ;
 			   			   	   	    }
@@ -3445,7 +3452,7 @@ class 	PdfTexterFontTable 	extends PdfObjectBase
 				return ( $width ) ;
 		    }
 
-		return ( 4 ) ; 		// Should never happen!
+		return ( 2 ) ;
 	    }
 
 
