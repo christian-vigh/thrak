@@ -294,8 +294,8 @@ class  SshFileSystem		extends  Object
 	//	fprintf() function, on a remote file.
 	public function  fprintf ( $fp, $format )
 	   {
-		$args	=  func_get_args ( ) ;
-		$status		=  call_user_func_array ( $args ) ;
+		$args		=  func_get_args ( ) ;
+		$status		=  call_user_func_array ( 'fprintf', $args ) ;
 		
 		$this -> __check_error ( $status ) ;
 		
