@@ -439,10 +439,10 @@ class  VariableStore		extends		Object
 	  
 	 		- OPTION_USE_ENVIRONMENT_VARIABLES :
 	 			When specified, environment variables (and $_ENV array entries) are included in the 
-	 			variable store. They are also update if a variable value is updated.
+	 			variable store. They are also updated if a variable value is updated.
 	  
 	 		- OPTION_WARN_IF_UNDEFINED :
-	 			Warnings are issued if an undefined variable is not defined in this variable store.
+	 			Warnings are issued if a variable is not defined in this variable store.
 	  
 	 		- OPTION_RECURSIVE :
 	 			Variable references are recursively processed in variable values.
