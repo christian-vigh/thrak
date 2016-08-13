@@ -38,6 +38,11 @@
 
     [Version : 1.0.8]	[Date : 2016/01/24]     [Author : CV]
 	. Added the Utf8Encode()/Utf8Decode() methods.
+
+    [Version : 1.0.9]	[Date : 2016/08/11]     [Author : CV]
+	. Changed the CrossReference() method so that the $missing and $extra parameters are always initialized
+	  to an empty array. This avoids the need to reinitialize these parameters between two subsequent calls
+	  to the function.
   
  **************************************************************************************************************/
 namespace 	Thrak\Types ;
@@ -241,7 +246,8 @@ class  ArrayHelpers		extends  Object
 	   {
 		$compare_function	=  ( $case_sensitive ) ?  'strcmp' : 'strcasecmp' ;
 		$reference_array	=  [] ;
-		
+		$missing		=  [] ;
+		$extra			=  [] ;
 		
 		foreach  ( $keys  as  $key )
 			$reference_array []	=  [ 'key' => $key, 'found' => false ] ;
