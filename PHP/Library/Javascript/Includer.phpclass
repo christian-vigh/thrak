@@ -398,7 +398,7 @@ abstract class  ClientSideIncluder  extends Object
 	    }
 	    
 	    
-	public function  SetIncludePath ( string  $path )
+	public function  SetIncludePath ( $path )
 	   {
 		$list				=  explode ( PATH_SEPARATOR, $path ) ;
 		$this -> IncludePaths		=  array ( ) ;
