@@ -1,0 +1,5 @@
+This is a dummy file to check correct function of the DOC and PDF converter script
+Cyrillic windows-1251
+ВипРаскрутка - самый дружелюбный SEO форум Рунета, все о раскрутке и оптимизации 
+сайтов,
+дорвеях, заработке в интернете, партнерских программах, seo скриптах и софте
