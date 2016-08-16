@@ -44,6 +44,9 @@
 	  . A first run with the standard parameters (-configuration_file and -job)
 	  . A second run with the parameters defined for the job in the crontab.ini file
 
+    [Version : 1.0.3]	[Date : 2016/08/16]     [Author : CV]
+	. The $definitions parameter of the CronScript class is not optional.
+
  **************************************************************************************************************/
 namespace	Thrak\Administration ;
 
@@ -136,7 +139,7 @@ END;
 			Command-line arguments. If not specified, the global $argv variable will be used.
 	 
 	 *-------------------------------------------------------------------------------------------------------------*/
-	public function  __construct ( $script_definitions, $args = false )
+	public function  __construct ( $script_definitions = "", $args = false )
 	   {
 		global		$ScriptVariables, $argv ;
 
