@@ -17,6 +17,9 @@
     [Version : 1.0.1]	[Date : 2015/12/07]     [Author : CV]
 	. Added the Platform keyword in crontab.ini job description.
 
+    [Version : 1.0.2]	[Date : 2016/08/16]     [Author : CV]
+	. Relative paths specified for the Path key of a [Job] section can now be relative to the site root.
+
  **************************************************************************************************************/
 namespace	Thrak\Administration ;
 
@@ -72,6 +75,8 @@ class	CrontabConfiguration		extends  Object
 	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  Load  ( $file = false, $vstore = false )
 	   {
+		global	$THRAK_ROOT, $SITE_ROOT ;
+
 		$this -> IniFile	=  
 		$inifile		=  IniFile::LoadFromFile ( $file ) ;
 
@@ -139,9 +144,17 @@ class	CrontabConfiguration		extends  Object
 			else
 			    {
 				if  ( ! file_exists ( $path ) )
-					error ( new \Thrak\System\InvalidArgumentException ( "Path \"$path\" specified in section [$section_name] of file \"$file\" does not exist." ) ) ;
+				   {
+					$path2	=  Path::RealPath ( "site://$path" ) ;
 
-				$current_path	=  Path::RealPath ( $path ) ;
+					if (  ! file_exists ( $path2 ) )
+						error ( new \Thrak\System\InvalidArgumentException ( "Path \"$path\" specified in section [$section_name] of file \"$file\" does not exist." ) ) ;
+
+					$current_path	=  $path2 ;
+				    }
+				else
+					$current_path	=  Path::RealPath ( $path ) ;
+
 				$is_stocked	=  false ;
 			     }
 
