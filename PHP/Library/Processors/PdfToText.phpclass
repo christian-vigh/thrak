@@ -678,7 +678,12 @@
 
     [Version : 1.2.44]	[Date : 2016/08/21]     [Author : CV]
 	. Temporarily disabled processing of far-east characters specified as plain text ( "(xy)" ) instead of
-	  hex string ( "<abcd>" ).
+	  hex string ( "<abcd>" ). This was causing problems with PDF files that really use plain-text (mostly
+	  causing Chinese characters to be displayed instead of strings using the European alphabet).
+
+    [Version : 1.2.45]	[Date : 2016/08/22]     [Author : CV]
+	. Text objects containing page header/footer drawing instructions were unduly discarded, even if they
+	  contained normal text. Added the ExtractTextData() method to handle such cases.
 
  **************************************************************************************************************/
 namespace 	Thrak\Processors ;
@@ -884,7 +889,7 @@ abstract class  PdfObjectBase		extends  Object
 	   {
 		if  ( preg_match ( '#/Type \s* /Pagination \s* /Subtype \s*/((Header)|(Footer))#ix', $stream_data ) )
 			return ( true ) ;
-		else if  ( preg_match ( '#/Attached \s* \[ .*? /Top [^]]#ix', $stream_data ) )
+		else if  ( preg_match ( '#/Attached \s* \[ .*? /((Top)|(Bottom)) [^]]#ix', $stream_data ) )
 			return ( true ) ;
 		else
 			return ( false ) ;
@@ -1154,7 +1159,7 @@ abstract class  PdfObjectBase		extends  Object
 class  PdfToText 	extends PdfObjectBase
    {
 	// Current version of the class
-	const		VERSION					=  "1.2.44" ;
+	const		VERSION					=  "1.2.45" ;
 
 	// Pdf processing options
 	const		PDFOPT_NONE				=  0x0000 ;		// No extra option
@@ -1408,7 +1413,7 @@ class  PdfToText 	extends PdfObjectBase
 				None of the above options will apply.
 
 	 *-------------------------------------------------------------------------------------------------------------*/
-	public function  	__construct ( $filename = null, $options = self::PDFOPT_NONE, $user_password = false, $owner_password = false )
+	public function  __construct ( $filename = null, $options = self::PDFOPT_NONE, $user_password = false, $owner_password = false )
 	   {
 		// Perform static initializations if needed
 		if  ( ! self::$StaticInitialized )
@@ -1647,6 +1652,10 @@ class  PdfToText 	extends PdfObjectBase
 
 				// Decode the encoded stream
 				$decoded_stream_data 	=  $this -> DecodeData ( $object_number, $stream_data, $type ) ;
+if  ( $object_number  ==  2056 )
+{
+	echo "OBJDATA 2056, ISTEXT = " . $this -> IsText ( $object_data, $decoded_stream_data ) . ", ISFOOTER = " . $this -> IsPageHeaderOrFooter ( $decoded_stream_data ) . "\n$decoded_stream_data\n" ;
+}
 
 				// Second chance to peek author information, this time on a decoded stream data
 				if  ( ! $this -> GotAuthorInformation )
@@ -1671,6 +1680,21 @@ class  PdfToText 	extends PdfObjectBase
 					// We currently ignore page headers and footers
 					if  ( ! $this -> IsPageHeaderOrFooter ( $decoded_stream_data ) )
 						$text [ $object_number ]	=  $decoded_stream_data ;
+					// However, they may be mixed with actual text contents so we need to separate them...
+					else
+					   {
+						$this -> ExtractTextData ( $object_number, $decoded_stream_data, $remainder, $header, $footer ) ;
+
+						// We still need to check again that the extracted text portion contains something useful
+						if  ( $this -> IsText ( $object_data, $remainder ) )
+							$text [ $object_number ]	=  $remainder ;
+
+						echo "----------------------------------------------------------------------\n" ;
+						echo "*** HEADER ***\n$header\n" ;
+						echo "*** FOOTER ***\n$footer\n" ;
+						echo "*** TEXT   ***\n$remainder\n" ;
+						echo "----------------------------------------------------------------------\n" ;
+					    }
 				    }
 				else if  ( self::$DEBUG  >  1 )
 					echo "\n----------------------------------- UNRECOGNIZED #$object_number :\n$decoded_stream_data\n" ;
@@ -2418,6 +2442,56 @@ class  PdfToText 	extends PdfObjectBase
 	protected function  Decrypt ( $object_id, $object_data ) 
 	   {
 		return ( false ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        ExtractTextData - Extracts text, header & footer information from a text object.
+	
+	    PROTOTYPE
+	        $this -> ExtractTextData ( $object_id, $stream_contents, &$text, &$header, &$footer ) ;
+	
+	    DESCRIPTION
+	        Extracts text, header & footer information from a text object. The extracted text contents will be
+		stripped from any header/footer information.
+	
+	    PARAMETERS
+	        $text (string) -
+	                Variable that will receive text contents.
+
+		$header, $footer (string) -
+			Variables that will receive header and footer information.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  ExtractTextData ( $object_id, $stream_contents, &$text, &$header, &$footer )
+	   {
+		static		$header_or_footer_re	=  '#
+								(?P<contents> 
+									<< .*? \[ \s* / (?P<location> (Bottom) | (Top) ) \s* \] .*? >> \s*
+									BDC .*? EMC
+								 )
+							    #imsx' ;
+
+		$header		=
+		$footer		=  
+		$text		=  '' ;
+
+		if  ( preg_match_all ( $header_or_footer_re, $stream_contents, $matches ) )
+		   {
+			for  ( $i = 0, $count = count ( $matches [ 'contents' ] ) ; $i  <  $count ; $i ++ )
+			   {
+				if  ( ! strcasecmp ( $matches [ 'location' ] [$i], 'Bottom' ) )
+					$footer		=  $matches [ 'contents' ] [$i] ;
+				else
+					$header		=  $matches [ 'contents' ] [$i] ;
+			    }
+
+			$text	=  preg_replace ( $header_or_footer_re, '', $stream_contents ) ;
+		    }
+		else
+			$text	=  $stream_contents ;
 	    }
 
 
