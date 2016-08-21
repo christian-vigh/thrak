@@ -366,7 +366,6 @@ class  UploadedFile		extends		Object
 		   {
 			if  ( $this -> IsUploaded ( ) )
 			   {
-				output ( "MOVE ( " . $this -> TempFile . ", $destination )" ) ;
 				$status		=  @move_uploaded_file ( $this -> TempFile, $destination ) ;
 			
 				if  ( $status  ===  false )
