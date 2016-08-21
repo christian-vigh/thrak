@@ -76,8 +76,11 @@
 	Christian Vigh, 04/2016.
 
     HISTORY
-	[Version : 1.0]    [Date : 2016/04/08]     [Author : CV]
+    [Version : 1.0]	[Date : 2016/04/08]     [Author : CV]
 	Initial version.
+
+    [Version : 1.0.1]   [Date : 2016/08/18]     [Author : CV]
+	. Introduced the RtfException class.
 
  **************************************************************************************************************/
 namespace 	Thrak\Processors\Rtf ;
@@ -87,6 +90,44 @@ defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." 
 // Used namespaces & objects
 use 		Thrak\System\Object ;
 use		Thrak\IO\SearchableFile ;
+
+
+/*==============================================================================================================
+
+    class RtfException -
+        Implements an exception thrown when an error is encountered while processing RTF files.
+
+  ==============================================================================================================*/
+class  RtfException		extends  \Exception
+   { 
+	public static	$IsObject		=  false ;
+
+	public function  __construct ( $message )
+	   {
+		parent::__construct ( $message ) ;
+	    }
+    }
+
+
+if  ( ! function_exists ( 'warning' ) )
+   {
+	function  warning ( $message )
+	   {
+		trigger_error ( $message, E_USER_WARNING ) ;
+	    }
+    }
+
+
+if  ( ! function_exists ( 'error' ) )
+   {
+	function  error ( $message )
+	   {
+		if  ( is_string ( $message ) )
+			trigger_error ( $message, E_USER_ERROR ) ;
+		else if (  is_a ( $message, '\Exception' ) )
+			throw $message ;
+	    }
+    }
 
 
 /*==============================================================================================================
@@ -338,10 +379,10 @@ trait  RtfStringSupport
 		else if  ( is_callable ( $output ) )
 			$callable 	=  true ;
 		else
-			error ( new \Thrak\System\InvalidArgumentException ( "The '\$ouput' parameter of the write() method must either be a valid file resource or a callback." ) ) ;
+			error ( new RtfException ( "The '\$ouput' parameter of the write() method must either be a valid file resource or a callback." ) ) ;
 
 		if  ( $end  <  $start )
-			error ( new \Thrak\System\InvalidArgumentException( "The '\$end' parameter of the Write() method must be greater than or equal to " .
+			error ( new RtfException( "The '\$end' parameter of the Write() method must be greater than or equal to " .
 								"the '\$start' parameter." ) ) ;
 
 		$data 	=  substr ( $this -> RtfData, $start, $end - $start + 1 ) ;
@@ -368,10 +409,10 @@ trait  RtfStringSupport
 	   { return ( $this -> RtfData [ $offset ] ) ; }
 
 	public function  offsetSet 	( $offset, $value )
-	   { error ( new \Thrak\System\UnsupportedOperationException ( ) ) ; }
+	   { error ( new RtfException ( "Unsupported operation." ) ) ; }
 
 	public function  offsetUnset 	( $offset )
-	   { error ( new \Thrak\System\UnsupportedOperationException ( ) ) ; }
+	   { error ( new RtfException ( "Unsupported operation." ) ) ; }
 
 	private 	$string_position ;
 	private 	$string_length ;
@@ -533,10 +574,10 @@ trait  RtfStringSupport
 	   { return ( $this -> SearchableFile [ $offset ] ) ; }
 
 	public function  offsetSet 	( $offset, $value )
-	   { error ( new \Thrak\System\UnsupportedOperationException ( ) ) ; }
+	   { error ( new RtfException ( "Unsupported operation." ) ) ; }
 
 	public function  offsetUnset 	( $offset )
-	   { error ( new \Thrak\System\UnsupportedOperationException ( ) ) ; }
+	   { error ( new RtfException ( "Unsupported operation." ) ) ; }
 
 	public function  key 		( )
 	   { return ( $this -> SearchableFile -> key ( ) ) ; }

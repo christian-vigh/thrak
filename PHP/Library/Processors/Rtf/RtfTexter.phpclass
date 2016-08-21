@@ -11,8 +11,11 @@
 	Christian Vigh, 04/2016.
 
     HISTORY
-	[Version : 1.0]    [Date : 2016/04/12]     [Author : CV]
+    [Version : 1.0]     [Date : 2016/04/12]     [Author : CV]
 		Initial version.
+
+    [Version : 1.0.1]   [Date : 2016/08/18]     [Author : CV]
+	. Introduced the RtfException class.
 
  **************************************************************************************************************/
 namespace 	Thrak\Processors\Rtf ;
@@ -232,7 +235,7 @@ abstract class	RtfTexter	extends		RtfParser
 			case	'Eol'		:  return ( $this -> Eol ) ;
 			case	'Options'	:  return ( $this -> Options ) ;
 			default :
-				error ( new \Thrak\System\UndefinedPropertyException ( $member ) ) ;
+				error ( new RtfException ( $member ) ) ;
 		    }
 	    }
 
@@ -242,14 +245,14 @@ abstract class	RtfTexter	extends		RtfParser
 		switch ( $member )
 		   {
 			case	'Eol'		:
-				error ( new \Thrak\System\ReadOnlyPropertyException ( $member ) ) ;
+				error ( new RtfException ( $member ) ) ;
 
 			case	'Options'	:
 				$this -> SetOptions ( $value ) ;
 				break ;
 
 			default :
-				error ( new \Thrak\System\UndefinedPropertyException ( $member ) ) ;
+				error ( new RtfException ( $member ) ) ;
 		    }
 	    }
 
@@ -318,7 +321,7 @@ abstract class	RtfTexter	extends		RtfParser
 	public function  SaveTo ( $filename )
 	   {
 	   	if  ( ! ( $fp = fopen ( $filename, "w" ) ) )
-	   		error ( new \Thrak\System\FileWriteException ( "Could not open file \"$filename\" for writing." ) ) ;
+	   		error ( new RtfException ( "Could not open file \"$filename\" for writing." ) ) ;
 
 		$this -> Reset ( ) ;
 		fwrite ( $fp, $this -> AsText ( ) ) ;
