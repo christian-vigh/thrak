@@ -45,7 +45,7 @@
 	  . A second run with the parameters defined for the job in the crontab.ini file
 
     [Version : 1.0.3]	[Date : 2016/08/16]     [Author : CV]
-	. The $definitions parameter of the CronScript class is not optional.
+	. The $definitions parameter of the CronScript class is now optional.
 
  **************************************************************************************************************/
 namespace	Thrak\Administration ;
