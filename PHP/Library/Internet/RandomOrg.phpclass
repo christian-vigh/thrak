@@ -17,6 +17,7 @@
     [Version : 1.0.1]	[Date : 2014/10/19]     [Author : CV]
 	. Adjusted a few constants
 	. Handle error reporting returned by the site (throw an exception)
+	. Added the GetType() method
 
  **************************************************************************************************************/
 namespace 	Thrak\Internet ;
@@ -733,6 +734,11 @@ class  RandomOrg	extends Object
 	//	Get the time when the last query result was obtained.
 	public function  GetResultTime  ( $global =  false ) 
 	   { return ( ( $global ) ?  self::$GlobalLastResultTime : $this -> LastResultTime ) ; }
+
+	// GetType -
+	//	Get the type of the last executed query (byte, integer, float, sequence or string).
+	public function  GetType  ( $global =  false ) 
+	   { return ( ( $global ) ?  self::$GlobalLastQueryType : $this -> LastQueryType ) ; }
 	
 	// GetQueryInfo -
 	//	Gets informations about the last executed query.
