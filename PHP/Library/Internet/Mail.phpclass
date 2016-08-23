@@ -22,6 +22,9 @@
 	. Changed GetMimeHeaders() so that the 'To:' header will not be sent, since it is already done by the
 	  mail() function.
 
+    [Version : 2.1]	[Date : 2016/08/24]     [Author : CV]
+	. Added the LoadHtml() method, to load html contents from an external file.
+
  **************************************************************************************************************/
 namespace 	Thrak\Internet ;
 
@@ -159,7 +162,7 @@ class	Mail		extends  MailObject
 			$this -> Text		=  $text ;
 
 		if  ( ! empty ( $html ) )
-			$this -> Html	=  $html ;
+			$this -> Html		=  $this -> ExtractHtmlContents ( $html ) ;
 
 		if  ( ! empty ( $html_base ) )
 			$this -> HtmlBasePath	=  $html_base ;
@@ -404,6 +407,39 @@ class	Mail		extends  MailObject
 	/*--------------------------------------------------------------------------------------------------------------
 	 
 	    NAME
+	        LoadHtml - Loads Html contents from a file.
+	 
+	    PROTOTYPE
+	        $str	=  $mail -> LoadHtml ( $file, $base_path = false ) ;
+	 
+	    DESCRIPTION
+	        Loads Html contents from an external file.
+
+	    PARAMETERS
+		$file (string) -
+			Html file.
+
+		$base_path (string) -
+			If specified, indicates the root path to external images referenced in the html code in $file.
+			When false, the directory of the html file is used as the root.
+	 
+	    RETURN VALUE
+	        A string containing the data that will be passed to the PHP mail() function.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  LoadHtml ( $file, $base_path = false )
+	   {
+		if  ( ! file_exists ( $file ) )
+			throw ( new MailException ( "File \"$file\" does not exist." ) ) ;
+
+		$this -> Html		=  $this -> ExtractHtmlContents ( file_get_contents ( $file ) ) ;
+		$this -> HtmlBasePath	=  ( $base_path ) ?  $base_path : dirname ( $file ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	 
+	    NAME
 	        Send - Sends this mail.
 	 
 	    PROTOTYPE
@@ -426,7 +462,7 @@ class	Mail		extends  MailObject
 		$status = @mail ( $to, $this -> Subject, $body, $headers ) ;
 
 		if  ( $status  ===  false )
-			error ( new MailException ( error_get_last ( ) ) ) ;
+			throw ( new MailException ( error_get_last ( ) ) ) ;
 	    }
 
 
@@ -454,8 +490,6 @@ class	Mail		extends  MailObject
 	 *-------------------------------------------------------------------------------------------------------------*/
 	public function Validate ( ) 
 	   {
-		global	$Configuration ;
-
 	   	//***********************************************************************  Checkings
 		// Check that at least one recipient has been specified
 		if  ( ! count ( $this -> To ) )
@@ -516,7 +550,7 @@ class	Mail		extends  MailObject
 		// If there is an Html part but no text part, create a text part by textifying the
 		// html part
 		if  ( ! $this -> Text  &&  $this -> Html )
-			$this -> Text = strip_tags ( CrimsonHtml::GetHtmlBodyFromString ( $this -> Html ) ) ;
+			$this -> Text = strip_tags ( preg_replace ( "/(.*<body[^>]*>)|(<\/body[^>]*>.*)/si", '', $this -> Html ) ) ;
 	    }
 
 
@@ -531,6 +565,32 @@ class	Mail		extends  MailObject
 	 **************************************************************************************************************
 	 **************************************************************************************************************
 	 **************************************************************************************************************/
+
+	// ExtractHtmlContents -
+	//	Extract <style> and <body> contents from an html string.
+	protected function  ExtractHtmlContents ( $html )
+	   {
+		$result		=  '' ;
+		
+		if  ( preg_match ( '#<head> (?P<head> .*?) </head>#imsx', $html, $head_match ) )
+		   {
+			if  ( preg_match_all ( '#(?P<style> <style> .*? </style>)#imsx', $head_match [ 'head' ], $style_matches ) )
+				$result		.=  implode ( "\n", $style_matches [ 'style' ] ) . "\n" ;
+		    }
+		
+		if  ( preg_match ( '#<body> (?P<body> .*?) </body#imsx', $html, $body_match ) )
+		   {
+			$result		.=  $body_match [ 'body' ] ;
+		    }
+
+		// No <head> or <body> tags, simply use the supplied html contents
+		if  ( ! $result ) 
+			$result		=  $html ;
+
+			echo "$result\n" ;
+		return ( $result ) ;
+	    }
+
 
 	// GetMimeBoundary -
 	//	Generates a MIME boundary id.
