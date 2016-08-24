@@ -332,18 +332,17 @@ class	Mail		extends  MailObject
 	        AddAttachment, AddInlineAttachment - Adds email attachments.
 	 
 	    PROTOTYPE
-	        $email -> AddAttachment ( $path(s)... ) ;
-		$email -> AddInlineAttachment ( $path, $contents ) ;
+	        $email -> AddAttachment ( $path, $name = false ) ;
+		$email -> AddInlineAttachment ( $name, $contents ) ;
 	 
 	    DESCRIPTION
 	        Adds attachments to the current email.
 	 
 	    PARAMETERS
-	        $path(s)... (mixed) -
-	                A list of path names and/or arrays of path names to be added as attachments.
-			The files must reside on the local file system.
-
 		$path (string) -
+			Path to the external image file.
+
+		$name (string) -
 			The name that will be used to identify the attached file in the sent email.
    
 		$contents (string) -
