@@ -1,217 +1,96 @@
-	
-
+Amount	(Rs.)Allowances
+9,600	Conveyance	Allowance	Rebate																			
+PART	-	B	(Annexure)
+DETAILS	OF	SALARY	PAID	AND	ANY	OTHER	INCOME	AND	TAX	DEDUCTED
+NAME	AND	ADDRESS	OF	THE	EMPLOYERNAME	AND	DESIGNATION	OF	THE	EMPLOYEE
+FromTo
+ITC	Limited
+Virginia	House,
+37	J.L.	Nehru	Road
+1.	GROSS	SALARY
+01-Apr-20142015-201631-Mar-2015CIT	(TDS)	10B	Middleton	Row,Kolkata	-	700071
+AAACI5950LCALI00091ABIHPK1392M111393	PAN	of	the	Deductor	TAN	of	the	Deductor	PAN	of	the	Employee	Employee	Refere nce	No.
+	Amount	(Rs.)	Amount	(Rs.)	Amount	(Rs .)
+Assessment	YearPeriod	with	The	Employer
+15,21,700
+2,04,502
+2.	Less:	Allowance	to	the	extent	exempt	u/s	10
+0
+(a)	Salary	as	per	provisions	contained	in	Section	17	(1)
+(b)	Value	of	perquisites	under	Section	17	(2)	
+(	as	per	Form	No.	12	BA,	wherever	applicable)
+(c)	Pro;its	in	lieu	of	Salary	under	Section	17	(3)	
+(	as	per	Form	No.	12	BA,	wherever	applicable)
+3.	BALANCE	(1	-	2)
+4.	DEDUCTIONS	:
+(b)	Tax	on	Employment
+5.	Aggregate	of	4	(a)	and	(b)
+6.	Income	Chargeable	under	the	head	'Salaries'	(3	-	5)
+7.	Add:	Any	other	income	reported	by	the	employee
+8.	GROSS	TOTAL	INCOME	(6	+	7)
+AVANTIKA	KUMAR
+FORM	NO.	16
+Certiicate	under	section	203	of	the	Income	Tax	Act,	1961	for	tax	deducted	at	source	from	Salary	[	See	Rule	31	(	1	)	(	a	)	]		
+Kolkata
+ASSISTANT MANAGER - HR
+17,26,202
+17,16,602
+0
+2,200
+2,200
+17,14,402
+17,14,402(d)	Total
+(a)	Entertainment	AllowanceTotal
+9,600
+0
+Page 1 of 2F16_2015_02_BNGDOS_111393_O
+SECTION	80C
+80C	-	LIC	Jeevan	Akhsay(i)73,99573,995
+80C	-	Provident	Fund	(Salary	PF)(ii)47,05247,052
+DescriptionSectionGross	Amount
+(Rs.)8ualifying	Amount
+(Rs.)Deductible	Amount
+(Rs.)
+80G80G	-	Donation	to	Approved	Charitable	Fund2,6182,6182,618
+VERIFICATION
+I,	SUNIL	SOMANI,	son	of	RAJ	KUMAR	SOMANI	working	in	the	capacity	of	ADMINISTRATOR	-	SALARIES	&	RETIREMENT	FUNDS	do	
+hereby	certify	that	the	information	given	above	is	true,	complete	and	correct	and	is	based	on	the	books	of	account,	documents,	TDS	
+statements	and	other	available	records.9.	Deductions	under	Chapter	VI-A
+Deductible	Amount
+(Rs.)Gross	Amount
+(Rs.)
+11.	Total	Income	(8	-	10)	(Rounded	off)
+12.	Tax	on	Total	Income
+13.	Surcharge	
+14.	Education	Cess	@	3%
+16.	Less	:	Relief	u/s	89
+(Signature of person responsible for deduc/on of tax)
+Full	Name	:	SUNIL	SOMANI
+Place
+DateKOLKATA29th	May,	2015
+15,90,740
+3,02,222
+0
+9,067
+0
+Designation	:	ADMINISTRATOR	-	SALARIES	&	RETIREMENT	FUNDS
+THIS DOCUMENT IS ELECTRONICALLY GENERATED AND IS DIGITALLY SIGNED
+10.	Aggregate	of	deductible	amount	under	Chapter	VI-A1,23,665
+15.	TAX	PAYABLE	(12	+	13	+	14)3,11,289
+17.	TAX	PAYABLE	(15	-	16)
+18.	Total	Tax	Deducted:
+0
+3,11,289
+3,11,289
+19.	Net	Tax	Payable	(Refundable)	(17	-	18)0
+(a)	Tax	deducted	by	Other	
+(b)	Tax	deducted	by	current	employer(A)	Sections	80C,	80CCC	and	80CCD
 
-	
-
-
-
-
-
-	
-	  !	 "# $ %"
- # 	!#	 # &   !#
-"''(
-
-
 
- 
-!"
-)&		
-	
-	#$%$&'(
-)*+""
-
-,-.)
-		   *+( *+( *+ 
-,-,-	*  	
-	
-	
- 
-
 
-
-
-'('++,- )/0)
-01/00
-2
-!
-
-3
-
-3
-456) 
-
-%('5
-5	
-"'
-) %)(%(
-75
-8
-"
-'
-)%0( %5
-94 )0*!
-
+(B)	Other	Sections	(e.g.	80E,	80G,	80TTA	etc.)	under	chapter	VI-A
+3,11,289
 	
-55
-(%(:;
-7'"
-'
-)%( %5
-94 )0*!
-
+
 	
-55
-(* <%).0(
-1&<&=$#> '2 %($3<454
-/
-
-71%("%(
-."+/0(++(1'
-12 3""2!
-4
-
-5
-"!
-
-45
-
-
-4&	 "#.56
-7 88%#	
-	# ).
-	
-							 				
-		
-		9	2)):,- 
-
-)6;<.;<=<))0
-
-00 00)6;)>;>=< )6;)>;>=<(
-%(<
-4
-
-$
-
-
- !
-"	""#$""$
-'<$#> ?
-?.#
-
-	-!%(//
-?.:	"
-9"%':9(%(1/01/0
-
-','' &
-
- 	
- ?'*-'/ 	
- ('0 	
-
-?@?@.&55	
-"!
-9"0)?0)?0)?
-	
-
-#'= #'>+ #7,=+'>+ #- !
-57&+# #'$$>.'#<'A<$#<+ < $9= &'"!
-
-
-7!!
-74	
-	
- 
-
-45
-
-"
-"
-"!
-- 7"4
-$&'
-4
-"!
-	
-
-"@('
-("+,7
-('0 	
-&
-
- 	
-
-))4)=	((**
-
-)0$3$#4
-
-)'!
-
-
-)1<"
-BC
-)
-2
-
-76?
-%&'() *'*'*&+, --)./' ( 01
-9 4
-2'= #'>+ #
-:
-
-
-
-
-&
-
-,>,$
-
-
-
-
-0!+0)/
-)3;@=;6>=
-0000
-
-
-
-&
-2&+# #'$$>.'#<'A<$#<+< $ 9= &'
-#$2$3### 3#
-)=///*(('0("+,7 );<2;..3
-)/$D:E*<%)0F)F)1())0?
-)6$)3).
-
-)4((A
-
-))0?
-2;));<4@
-)@ -0	*(0)6)4=
-%($3"
-"
-">!
-
-
-%($3"
-"
-"
-
-45
-%('
-??"?&
-
-
-
-%*(>!
-'
-%
-?<?@?$$
-("
-!5
-#.
-2;));<4@
-
-
-
- !
-"	""#$""$
+Vage 2 of 2F16_2015_02_BNGDOS_111393_O
