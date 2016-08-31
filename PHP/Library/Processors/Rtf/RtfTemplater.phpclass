@@ -1,0 +1,736 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        RtfTemplater.phpclass
+
+    DESCRIPTION
+        A class to process Rtf templates.
+
+	Rtf templates are documents saved in Rtf format, that can include the following pseudo-constructs which
+	will be interpreted at runtime :
+
+	- %$name% :
+		Substituted with the value of the variable having the specified name.
+		The variable values will be searched from the associative array passed to the class constructor.
+
+	- %( expression )% :
+		Substituted with the value of the specified expression.
+
+	- %IF( expression1 )%
+		text1
+	  %ELSEIF ( expression2 )%
+		text2
+	  ...
+	  %ELSE%
+		text if none of the above expressions work
+	  %END% (or %ENDIF%)
+		Conditionally includes the appropriate text, depending on the value of the supplied 
+		expression(s).
+
+    AUTHOR
+        Christian Vigh, 08/2016.
+
+    HISTORY
+        [Version : 1.0]		[Date : 2016-08-29]     [Author : CV]
+                Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Processors\Rtf ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces & objects
+use 		Thrak\System\Object ;
+use		Thrak\Processors\Rtf\RtfDocument ;
+
+
+/*==============================================================================================================
+
+    RtfTemplater class -
+        Base class for the RtfStringTemplater and RtfFileTemplater classes.
+
+  ==============================================================================================================*/
+abstract class 	RtfTemplater 	extends  RtfDocument
+   {
+	// Array of variable name/value pairs
+	public		$Variables ;
+
+	// A flag telling wether static initializations have been performed
+	private	static	$RtfTemplaterStaticConstruct	=  false ;
+
+	// List of Rtf tags that are followed by a string parameter - this string parameter shall never be included in
+	// the 'text' element of the returned value
+	private static	$TagsWithTextParameter	=
+	   [
+		'annotation',
+		'atnauthor',
+		'atnicn',
+		'atndate',
+		'atnid',
+		'atnparent',
+		'atnref',
+		'atntime',
+		'author',
+		'bkmkend',
+		'bkmkstart',
+		'bkmkpub',
+		'buptim',
+		'category',
+		'comment',
+		'company',
+		'creatim',
+		'doccomm',
+		'ebcend',
+		'ebcstart',
+		'factoidname',
+		'falt',
+		'ffdeftext',
+		'ffentrymcr',
+		'ffexitmcr',
+		'ffformat',
+		'ffhelptext',
+		'ffl',
+		'ffstattext',
+		'ffname',
+		'fn',
+		'fname',
+		'fontfile',
+		'hlinkbase',
+		'keywords',
+		'linkval',
+		'listname',
+		'manager',
+		'mmaddfieldname',
+		'mmconnectstr',
+		'mmdatasource',
+		'mmheadersource',
+		'mmmailsubject',
+		'mmodsofilter',
+		'mmodsohash',
+		'mmodsomappedname',
+		'mmodsoname',
+		'mmodsorecipdata',
+		'mmodsosrc',
+		'mmodsotable',
+		'mmodsouniquetag',
+		'mmodsoudl',
+		'mmodsoudldata',
+		'mmquery',
+		'mvfmf',
+		'mvfml',
+		'mvtof',
+		'mvtol',
+		'objalias',
+		'objclass',
+		'objdata',
+		'objname',
+		'objtime',
+		'oleclsid',
+		'operator',
+		'printim',
+		'propname',
+		'protend',
+		'protstart',
+		'pubauto',
+		'pxe',
+		'revtim',
+		'rxe',
+		'staticval',
+		'subject',
+		'title',
+		'txe',
+		'xmlattr',
+		'xmlattrns',
+		'xmlattrvalue',
+		'xmlattrname',
+		'xmlname',
+		'xmlns',
+		'yxe'
+	    ] ;
+
+
+
+	public function  __construct  ( $variables )
+	   {
+		// Call the parent constructor with the parameters specified after $variables
+		$argv 		=  func_get_args ( ) ;
+		array_shift ( $argv ) ;
+
+		call_user_func_array ( [ 'parent', '__construct' ], $argv ) ;
+
+		// Get specific parameters
+		$this -> Variables		=  $variables ;
+
+		// Static initializations
+		if  ( ! self::$RtfTemplaterStaticConstruct ) 
+		    {
+			self::$TagsWithTextParameter		=  array_flip ( self::$TagsWithTextParameter ) ;
+			self::$RtfTemplaterStaticConstruct	=  true ;
+		     }
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+
+	    NAME
+		AsString - Generates a final document from a template, as a string.
+
+	    PROTOTYPE
+	        $text 	=  $templater -> AsString ( ) ;
+
+	    DESCRIPTION
+	        Returns the contents of the underlying document template, once the pseudo-language constructs have been
+		processed.
+
+	    RETURN VALUE
+		The processed template document contents.
+
+	    NOTES
+		Contents of the return value are appended data by chunks of $RecordSize characters, to avoid too much
+		memory allocation & copying during processing.
+		For large files, this function will be limited to the available amount of memory.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  AsString ( )
+	   {
+		$text 		=  '' ;
+
+		$this -> PreprocessTemplateData
+		   (
+			$this -> RecordSize,
+			function ( $data ) use ( &$text )
+			   { $text .=  $data ; }
+		    ) ;
+
+		return ( $text ) ;
+	    }
+
+
+	public function  __tostring ( )
+	   { return ( $this -> AsString ( ) ) ; }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+
+	    NAME
+		SaveTo - Generates a final document from a template, as an external file.
+
+	    PROTOTYPE
+	        $text 	=  $templater -> SaveTo ( $output ) ;
+
+	    DESCRIPTION
+	        Saves the contents of the underlying document template to an external file, once the pseudo-language 
+		constructs have been processed.
+
+	    PARAMETERS
+	    	$output (string) -
+	    		Name of the file where the preprocessed template data is to be written.
+
+	    NOTES
+		File contents are written by blocks of $RecordSize characters.
+		This function can process files of any size without eating up all of the available memory.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  SaveTo ( $filename )
+	   {
+		if  ( ! ( $fp = fopen ( $filename, "w" ) ) )
+			error ( new RtfException ( "Could not open file \"$filename\" for writing." ) ) ;
+
+		$this -> PreprocessTemplateData
+		   (
+			$this -> RecordSize,
+			function ( $data ) use ( $fp )
+			   { fwrite ( $fp, $data ) ; }
+		    ) ;
+
+		fclose ( $fp ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+
+	    NAME
+	        PreprocessTemplateData - Internally performs the templating process.
+
+	    PROTOTYPE
+	        $this -> PreprocessTemplateData ( $record_size, $callback ) ;
+
+	    DESCRIPTION
+	        Protected function that performs the templating process.
+
+	    PARAMETERS
+	    	$record_size (integer) -
+	    		Size of an output record. Although the term "output record" for string contents does not seem
+	    		to make sense, it does have one : BeautifyData works with an internal string buffer where it
+	    		catenates every new syntactic element extracted from the rtf contents.
+
+	    		 When this string buffer reaches (or gets bigger than, see the NOTES section) $record_size
+	    		 characters, the callback specified by the Beautify() function catenates it to the final
+	    		 result.
+
+	    		 This is especially useful when processing large files, because it reduces the number of
+	    		 large memory allocations and copies needed during the catenation of the string buffer to the
+	    		 final result.
+
+	    	$callback (callback) -
+	    		Callback that is called each time $record_size characters have been processed. The callback
+	    		has one parameter, $data, which is the data collected so far, up to $record_size characters.
+
+	    NOTES
+		The internal string buffer can grow beyond $record_size characters ; this is particularly common for
+		picture data, which is considered as a single syntactic element and can contain several kilobytes or
+		megabytes of hexadecimal data. Doing so avoids to test throughout the code, each time we process a
+		character or jump to a searched one, if we've gone past $record_size character. This is a trade-off
+		between memory and performance.
+
+		Whatever the size of the internal buffer is, the callback will be called with data of at most
+		$record_size characters.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	const	INSTRUCTION_TEXT		=  1 ;
+	const	INSTRUCTION_IF			=  2 ;
+	const   INSTRUCTION_ELSEIF		=  3 ;
+	const	INSTRUCTION_ELSE		=  4 ;
+	const	INSTRUCTION_END			=  5 ;
+	const	INSTRUCTION_EXPRESSION		=  6 ;
+
+	private static	$InstructionNames	=
+	   [
+		self::INSTRUCTION_TEXT		=>  'text data',
+		self::INSTRUCTION_IF		=>  '%IF%',
+		self::INSTRUCTION_ELSEIF	=>  '%ELSEIF%',
+		self::INSTRUCTION_ELSE		=>  '%ELSE%',
+		self::INSTRUCTION_END		=>  '%END%',
+		self::INSTRUCTION_EXPRESSION	=>  'expression'
+	    ] ;
+
+
+	protected function  PreprocessTemplateData ( $record_size, $callback )
+	   {
+		// Get our contents size
+		$contents_length 		=  count ( $this ) ;
+
+		// Current index
+		$current_index			=  0 ;
+
+		while  ( ( $token = $this -> __next_token ( $current_index, $contents_length ) )  !==  false )
+		   {
+			$this -> __process_instruction ( $record_size, $callback, $token ) ;
+		    }
+	    }
+
+
+	private function  __process_instruction ( $record_size, $callback, $token, $ignore = false )
+	   {
+		switch  ( $token [ 'instruction' ] )
+		   {
+			case	self::INSTRUCTION_TEXT :
+				$this -> __process_text_instruction ( $record_size, $callback, $token [ 'start' ], $token [ 'end' ], $ignore ) ;
+				break ;
+
+			case	self::INSTRUCTION_EXPRESSION :
+				$this -> __process_expression_instruction ( $record_size, $callback, $token [ 'rtf' ], $token [ 'text' ], $ignore ) ;
+				break ;
+
+			case	self::INSTRUCTION_IF :
+				$this -> __process_if_instruction ( $record_size, $callback, $token [ 'rtf' ], $token [ 'expression' ], $ignore ) ;
+				break ;
+
+			default :
+				warning ( new RtfException ( "Unexpected instruction {self::$InstructionNames [ $token [ 'instruction ] ]}." ) ) ;
+		    }
+	    }
+
+
+	private function  __process_if_instruction ( $record_size, $callback, $rtf, $expression, $ignore = false ) 
+	   {
+		$expression_result	=  $this -> __evaluate_expression ( $expression ) ;
+
+
+	    }
+
+
+	private function  __process_text_instruction ( $record_size, $callback, $start, $end, $ignore = false )
+	   {
+		if  ( ! $ignore ) 
+			$this -> __write ( $callback, $record_size, $start, $end ) ;
+	    }
+
+
+	private function  __process_expression_instruction ( $record_size, $callback, $rtf, $expression, $ignore = false )
+	   {
+		if  ( $ignore )
+			return ;
+
+		$text	=  $this -> __evaluate_expression ( $expression ) ;
+		$callback ( $rtf . $text ) ;
+	    }
+
+
+	private function  __next_token ( &$current_index, $contents_length )
+	   {
+		if  ( $current_index  >=  $contents_length )
+			return ( false ) ;
+
+		if  ( $this [ $current_index ]  ==  '%' )
+		   {
+			// An ending delimiter has been found
+			if  ( ( $end_percent_index =  $this -> strchr ( '%', $current_index + 1 ) )  !==  false )
+			   {
+				// Extract this substring, which may be a template construct
+				$construct	=  $this -> substr ( $current_index, $end_percent_index - $current_index + 1 ) ;
+
+				// Separate Rtf data and text contents
+				$items		=  $this -> SeparateTextFromRtf ( $construct ) ;
+				$rtf_data	=  $items [ 'rtf' ] ;
+				$text		=  $items [ 'text' ] ;
+
+				// A big and really dirty kludge : ensure that there is always a space after an IF or ELSEIF,
+				// so that it will simplify pattern matching afterwards
+				$text		=  preg_replace ( '/^(%(ELSE)?IF) ([^a-z0-9_\s])/ix', '$1 $3', $text ) ;
+
+				// %IF expr% construct
+				if  ( preg_match ( '/^% \s* IF \s+ (?P<expr> .*) \s* %$/imsx', $text, $match ) )
+				   {
+					$result		=
+					   [
+						'instruction'	=>  self::INSTRUCTION_IF,
+						'expression'	=>  $match [ 'expr' ],
+						'rtf'		=>  $rtf_data 
+					    ] ;
+				    }
+				// %ELSEIF expr% construct
+				else if  ( preg_match ( '/^% \s* ELSEIF \s+ (?P<expr> .*) \s* %$/imsx', $text, $match ) )
+				   {
+					$result		=
+					   [
+						'instruction'	=>  self::INSTRUCTION_ELSEIF,
+						'expression'	=>  $match [ 'expr' ],
+						'rtf'		=>  $rtf_data 
+					    ] ;
+				    }
+				// %ELSE% construct
+				else if  ( preg_match ( '/^% \s* ELSE \s* %$/imsx', $text ) )
+				   {
+					$result		=  
+					   [ 
+						'instruction'	=>  self::INSTRUCTION_ELSE,
+						'rtf'		=>  $rtf_data 
+					    ] ;
+				    }
+				// %END% construct
+				else if  ( preg_match ( '/^% \s* END \s* %$/imsx', $text ) )
+				   {
+					$result		=  
+					   [ 
+						'instruction'	=>  self::INSTRUCTION_END,
+						'rtf'		=>  $rtf_data 
+					    ] ;
+				    }
+				// An expression that could reference variables
+				else if  ( preg_match ( '/^% (?P<expr> .*) %$/imsx', $text, $match ) )
+				   {
+					$result		=  
+					   [
+						'instruction'	=>  self::INSTRUCTION_EXPRESSION,
+						'text'		=>  $match [ 'expr' ],
+						'rtf'		=>  $rtf_data 
+					    ] ;
+				    }
+				// Unrecognized instruction : leave it as is
+				else  
+				   {
+					$result		=  
+					   [
+						'instruction'	=>  self::INSTRUCTION_TEXT,
+						'start'		=>  $current_index,
+						'end'		=>  $end_percent_index - 1
+					    ] ;
+				    }
+
+				$current_index	=  $end_percent_index + 1 ;
+			    }
+			// Ending delimiter not found : the rest is simply pure Rtf contents
+			else
+			   {
+				$result		=  
+				   [
+					'instruction'	=>  self::INSTRUCTION_TEXT,
+					'start'		=>  $current_index,
+					'end'		=>  $contents_length - 1
+				    ] ;
+
+				$current_index	=  $contents_length ;
+			    }
+		    }
+		// Other case : search for a potential start delimiter
+		else if  ( ( $start_percent_index = $this -> strchr ( '%', $current_index ) )  !==  false )
+		   {
+			$result		=  
+			   [
+				'instruction'	=>  self::INSTRUCTION_TEXT,
+				'start'		=>  $current_index,
+				'end'		=>  $start_percent_index - 1
+			    ] ;
+
+			$current_index	=  $start_percent_index ;
+		    }
+		// Other cases : consider contents as pure rtf data
+		else
+		   {
+			$result		=  
+			   [
+				'instruction'	=>  self::INSTRUCTION_TEXT,
+				'start'		=>  $current_index,
+				'end'		=>  $contents_length - 1
+			    ] ;
+
+			$current_index	=  $contents_length ;
+		    }
+
+		return ( $result ) ;
+	     }
+
+
+	private function  __write ( $callback, $record_size, $start, $end )
+	   {
+		for  ( $i = $start ; $i  <=  $end ; $i += $record_size )
+			$callback ( $this -> substr ( $i, min ( $record_size, $end - $i + 1 ) ) ) ;
+	    }
+
+
+	private function  __evaluate_expression ( $text )
+	   {
+		preg_match_all ( '/ \$ (?P<vname> [A-Z_][A-Z0-9_]* ) /ix', $text, $var_matches ) ;
+
+		$variable_defs		=  [] ;
+
+		for  ( $i = 0, $count = count ( $var_matches [ 'vname' ] ) ; $i  <  $count ; $i ++ )
+			{
+			$vname	=  $var_matches [ 'vname' ] [$i] ;
+
+			if  ( isset ( $this -> Variables [ $vname ] ) )
+				$variable_defs []	=  "\$$vname = " . $this -> __quote ( $this -> Variables [ $vname ] ) ;
+			else if  ( isset ( $GLOBALS [ $vname ] ) )
+				$variable_defs []	=  "global \$$vname" ;
+			else
+				$variable_defs []	=  "\$$vname = '*** Error *** Variable $vname is not defined'" ;
+
+			}
+
+		$expression	=  str_replace ( '/\bmod\b/ix', '%', $text ) ;
+		$eval_command	=  implode ( ' ; ', $variable_defs ) . ' ; ' . $expression ; 
+		$result		=  $this -> __evaluate ( $eval_command ) ;
+
+		return ( $result [ 'value' ] ) ; 
+	    }
+
+
+	private function  __quote ( $value )
+	   {
+		$value		=  str_replace ( '"', '\\"', $value ) ;
+
+		return ( '"' . $value . '"' ) ;
+	    }
+
+
+	private function  __evaluate ( $expr )
+	   {
+		$new_exp	=  "global \$__value__ ; \$__value__ = $expr ;" ;
+		ob_start ( ) ;
+		$result		=  @eval ( $new_exp ) ;
+		
+		$errors		=  ob_get_clean ( ) ;
+		
+		if  ( $errors )
+			$errors		=  explode ( "\n", str_replace ( "\r", '', $errors ) ) ;
+		else
+			$errors		=  false ;
+		
+		$result		=   [ 'errors' => $errors, 'value' => $__value__ ] ;
+		
+		unset ( $__value__ ) ;
+		return ( $result ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        SeparateTextFromRtf - Separates the tags and text parts of Rtf contents.
+	
+	    PROTOTYPE
+	        $result		=  $rtf -> SeparateTextFromRtf ( $contents ) ;
+	
+	    DESCRIPTION
+	        Separates the tags and text parts of a piece of Rtf contents.
+		This function is especially used for extracting template constructs delimited by percent signs. It may
+		happen that due to user manipulations in the template document, some Rtf tags may be interspersed with
+		real template constructs.
+
+		Imagine for example that in the string "%VNAME2%", the "%V" and "2%" parts have been put in boldface ;
+		you will get something like the following Rtf code :
+
+			%VN}{\rtlch\fcs1 \af0 \ltrch\fcs0 \lang2057\langfe1036\langnp2057\insrsid15075231 AM}
+			{\rtlch\fcs1 \af0 \ltrch\fcs0 \b\lang2057\langfe1036\langnp2057\insrsid15075231\charrsid15075231 E2%
+
+		This function helps distinguishing the Rtf contents from the pure text part.
+	
+	    PARAMETERS
+	        $contents (string) -
+	                Contents to be analyzed.
+	
+	    RETURN VALUE
+	        Returns an associative array containing the following entries :
+		- 'rtf' :
+			Rtf contents.
+		- 'text' :
+			Pure text contents (%VNAME2 in the above example).
+	
+	    NOTES
+	        Since template constructs can contain extra Rtf contents, this method helps to separate them. The 
+		extracted Rtf contents will be appended first to the output, followed by the text substituted for the
+		template construct.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  SeparateTextFromRtf ( $contents ) 
+	   {
+		// Regular expression to match an Rtf tag
+		static		$catch_tag_re 		=  "/^ \\\\ [A-Za-z0-9\\-*!|~']+ \s?/imsx" ;
+
+		// Translate special characters first, so that we are sure that the text won't contain any special character
+		// representations, such as those using the \'xy notation, or tags specifying quotes
+		$contents			=  $this -> DecodeSpecialChars ( $contents ) ;
+		$contents_length		=  strlen ( $contents ) ;
+
+		// Rtf tags + text 
+		$tags				=  '' ;
+		$text				=  '' ;
+
+		// Current nesting level for curly braces
+		$token_level			=  0 ;
+
+		// A stack growing when tags ith textual parameters are encountered (those defined in the $TagsWithTextParameter property)
+		$in_parameterized_tags		=  [] ;
+
+		// Loop through supplied Rtf contents
+		for ( $i = 0 ; $i  <  $contents_length ; $i ++ )
+		   {
+			$ch	=  $contents [$i] ;
+
+			switch  ( $ch )
+			   {
+				// Opening brace : Increment the nesting level
+				case	'{' :
+					$token_level ++ ;
+					$tags	.=  $ch ;
+
+					if  ( isset ( $contents [ $i + 1 ] )  &&  $contents [ $i + 1 ]  ==  ' ' )
+					   {
+						$tags	.=  ' ' ;
+						$i ++ ;
+					    }
+
+					break ;
+
+				// Closing brace :
+				// - Decrement the nesting level
+				// - Remove it from the $in_parameterized_tags stack, if this current nesting level was related to an Rtf tag expecting textual parameters
+				case	'}' :
+					if  ( isset ( $in_parameterized_tags [ $token_level ] ) )
+						unset ( $in_parameterized_tags [ $token_level ] ) ;
+
+					$token_level -- ;
+
+					$tags	.=  $ch ;
+
+					if  ( isset ( $contents [ $i + 1 ] )  &&  $contents [ $i + 1 ]  ==  ' ' )
+					   {
+						$tags	.=  ' ' ;
+						$i ++ ;
+					    }
+
+					break ;
+
+				// Backslash : this is an Rtf tag
+				case	'\\' :
+					if  ( preg_match ( $catch_tag_re, substr ( $contents, $i ), $match ) )
+					   {
+						$tags			.=  $match [0] ;
+						$i			+=  strlen ( $match [0] ) - 1 ;
+						$tagname		 =  preg_replace ( '/\d/', '', substr ( trim ( $match [0] ), 1 ) ) ;
+
+						// If this tags belong to those expecting textual parameters, then add it to the parameterized tag stack
+						if  ( isset ( self::$TagsWithTextParameter [ $tagname ] ) )
+							$in_parameterized_tags [ $token_level ]		=  true ;
+					    }
+					else
+						$tags	.=  $ch ;
+
+					break ; 
+
+				// Other characters : collect them until either one of the special Rtf characters is found (a curly brace or a backslash)
+				default : 
+					$part	=  '' ;
+
+					for  ( $j = $i ; $j  <  $contents_length ; $j ++ )
+					   {
+						$ch	=  $contents [$j] ;
+
+						if  ( $ch  ==  '{'  ||  $ch  ==  '}'  ||  $ch  ==  '\\' )
+							break ;
+
+						$part	.=  $ch ;
+					    }
+
+					// If we are currently in a nested tag expecting some textual parameter, add it to the collected tags
+					if  ( isset ( $in_parameterized_tags [ $token_level ] ) )
+						$tags	.=  $part ;
+					// Otherwise, this is pure text
+					else
+						$text	.=  $part ;
+
+					$i	=  $j - 1 ;
+			    }
+		    }
+
+		// All done, return
+		return ( [ 'rtf' => $tags, 'text' => $text ] ) ;
+	    }
+    }
+
+
+/*==============================================================================================================
+
+    RtfStringTemplater class -
+        A templater class that works on a string.
+
+  ==============================================================================================================*/
+ class  RtfStringTemplater	extends  RtfTemplater
+   {
+	use 	RtfStringSupport ;
+
+	public function  __construct ( $rtfdata, $variables = [], $chunk_size = 4 * 1024 * 1024 )
+	   {
+		parent::__construct ( $variables, $rtfdata, $chunk_size ) ;
+	    }
+    }
+
+
+/*==============================================================================================================
+
+    RtfFileTemplater class -
+        A beautifier class that works on a file.
+
+  ==============================================================================================================*/
+class  RtfFileTemplater	extends  RtfTemplater
+   {
+	use 	RtfFileSupport ;
+
+
+	public function  __construct ( $file, $variables = [], $record_size = 16384 )
+	   {
+		parent::__construct ( $variables, $file, $record_size ) ;
+	    }
+    }
