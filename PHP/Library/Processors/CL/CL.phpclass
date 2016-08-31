@@ -29,6 +29,11 @@
    [Version : 2.0.4]	[Date : 2016/01/31]		[Author : CV]
 	. The $command parameter of the class constructor was not prepended to the argument list
 	  if a string was specified.
+
+   [Version : 2.0.5]	[Date : 2016/08/28]		[Author : CV]
+	. Changed the __display_variables() method to include global variables.
+	. Changed the __read_from_stdin() method, which was unable to read data from piped standard
+	  input.
  
  ***************************************************************************************************/
 namespace 	Thrak\Processors\CL ;
@@ -1317,7 +1322,7 @@ class CL  extends     Object
 	   	switch  ( $option )
 	   	   {
 			case	0 :
-				$this -> __list ( 'Variables', array_merge ( $standard_variables, $defined_variables ) ) ;
+				$this -> __list ( 'Variables', array_merge ( $standard_variables, $defined_variables, array_keys ( $GLOBALS ) ) ) ;
 				break ;
 
 			case	1 :
@@ -2018,12 +2023,18 @@ class CL  extends     Object
 	//	Reads argument data from stdin
 	private function  __read_from_stdin ( )
 	   {
-	   	global		$Runtime ;
-
-
+		$stat		=  fstat ( STDIN ) ;
 	   	$contents 	=  "" ;
 
-	   	if  ( IS_STANDALONE )
+		if  ( ! ( $stat [ 'mode' ]  &  S_IFCHR ) )
+		   {
+			while  ( ! feof ( STDIN ) )
+				$contents	.=  fread ( STDIN, 8192 ) ;
+
+			return ( $contents ) ;
+		    }
+
+	   	if  ( IS_WINDOWS )
 	   		$eof = "^Z" ;
    		else
    			$eof = "^D" ;
