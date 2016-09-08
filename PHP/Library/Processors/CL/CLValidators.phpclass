@@ -20,6 +20,10 @@
    [Version : 2.0.1]	[Date : 2015/04/11]		[Author : CV]
 	. Replaced each exception throwing with "error ( new CLException (...) )".
 
+   [Version : 2.0.2]	[Date : 2016/09/07]		[Author : CV]
+	. Array values were not correctly processed.
+	. The __validate() method did not correctly handle regular expressions without delimiters.
+
  ***************************************************************************************************/
 namespace 	Thrak\Processors\CL ;
 
@@ -76,19 +80,29 @@ class  CLRegexValidator  extends  CLAbstractValidator
 	    }
 
   	// Internal validation
-  	private function  __validate ( $value )
+   	private function  __validate ( $value )
   	   {
   	   	if  ( is_array ( $value ) )
   	   	   {
 			$result 	=  array ( ) ;
 
 			foreach  ( $value  as  $item )
-				$result [] =  String::NormalizeRegex ( $value, true ) ;
-
-			return ( $result ) ;
+			   {
+				if  ( String::IsRegex ( $item ) )
+					$result		=  $item ;
+				else
+					$result []	=  String::NormalizeRegex ( $item, true ) ;
+			    }
   	   	    }
    		else
-			return ( String::NormalizeRegex ( $value, true ) ) ;
+		   {
+			if  ( String::IsRegex ( $value ) )
+				$result		=  $value ;
+			else
+				$result		=  String::NormalizeRegex ( $value, true ) ;
+		    }
+
+		return ( $result ) ;
   	    }
     }
 
