@@ -15,3 +15,5 @@ Private/
 Confidential/
 *.xt
 xt.*
+*.xt.*
+pdftotext.eu/
