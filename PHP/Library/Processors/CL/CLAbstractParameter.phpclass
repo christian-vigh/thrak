@@ -56,6 +56,11 @@
     [Version : 2.0.9]	[Date : 2015/11/23]		[Author : CV]
 	. Added support for help topic aliases.
 
+    [Version : 2.0.10]	[Date : 2016/09/07]		[Author : CV]
+	. The 'usage' parameter attribute was not taken into account. The UsageString property now
+	  remains unmodified, and the GetUsageString() method is now used to retrieve the usage
+	  string.
+
 ***************************************************************************************************/
 namespace 	Thrak\Processors\CL ;
 
@@ -1626,7 +1631,14 @@ class  CLAbstractParameter  extends Object
 		$result 	=  "" ;
 		$aliases 	=  array ( ) ;
 
-		if  ( $this -> Named )
+		if  ( $this -> UsageString )
+		   {
+			$result =  $this -> UsageString ;
+
+			if  ( ! $this -> Required )
+				$result		=  '[' . $result . ']' ;
+		    }
+		else if  ( $this -> Named )
 		   {
 			if  ( $short )
 				$aliases [] = $this -> GetUsageParameterName ( ) ;
@@ -1932,11 +1944,6 @@ class  CLAbstractParameter  extends Object
     		// Analyze child tags
     		foreach  ( $array [ 'children' ]  as  $child )
     			$this -> ProcessChildTag ( $child ) ;
-
-		// Build the usage string
-		if  ( ! $this -> UsageString )
-			$this -> UsageString = $this -> GetUsageString ( false ) ;
-
 	   }
 
 
