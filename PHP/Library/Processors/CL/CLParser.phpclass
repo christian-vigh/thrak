@@ -95,6 +95,10 @@
  
    [Version : 2.0.13]	[Date : 2016/08/01]		[Author : CV]
 	. A PHP warning was issued when an empty string was specified for a <string> parameter
+ 
+   [Version : 2.0.14]	[Date : 2016/09/07]		[Author : CV]
+	. Use the GetUsageString() method instead of UsageString property of the CLAbstractParameter
+	  class.
 
  ***************************************************************************************************/
 namespace 	Thrak\Processors\CL ;
@@ -1876,7 +1880,7 @@ END;
 				$paragraph =  Formatting::FormatParagraph ( "*** no help text defined for this parameter ***", null, $this -> MaxWidth, 16 ) ;
 
 			$paragraph	=  rtrim ( $paragraph ) ;
-			$phelp		= "\n\t" . $parameter -> UsageString . " :\n" . $paragraph . "\n" ;
+			$phelp		= "\n\t" . $parameter -> GetUsageString ( false ) . " :\n" . $paragraph . "\n" ;
 
 			// If a topic has been specified, only include the parameters related to this topic
 			// (the command has been run with the -help "topic" option)
