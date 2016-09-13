@@ -21,8 +21,12 @@
     AUTHOR
         Christian Vigh, 04/2016.
 
+    LICENSE
+	To use this file, you must conform to the GNU Lesser General Public License.
+
     HISTORY
-    [Version : 1.2.47]	[Date : 2016/08/??]     [Author : CV]
+    [Version : 1.2.47]	[Date : 2016/09/13]     [Author : CV]
+	. Changed the licensing model from GPL TO LGPL.
 	. Specialized the PdfImage class into subclasses. The only available subclass for now is PdfJpegImage.
 	. Added the $EncryptMetadata property, coming from encyption information present in the PDF file.
 
