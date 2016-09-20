@@ -1236,8 +1236,9 @@ abstract class 	RtfTemplater 	extends  RtfDocument
 				$variable_defs []	=  "global \$$vname" ;
 			else
 			   {
-				$variable_defs []	=  "\$$vname = ''" ;
+				$variable_defs []		=  "\$$vname = ''" ;
 				$this -> __warning ( "Variable $vname is not defined." ) ;
+				$this -> Variables [ $vname ]	= '' ;
 			    }
 
 		    }

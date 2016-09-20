@@ -339,7 +339,7 @@ abstract class	RtfTexter	extends		RtfParser
 	
 	    DESCRIPTION
 	        Resets the texter object so that a new parsing can be performed on the same file.
-s	
+	
 	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  Reset ( )
 	   {
