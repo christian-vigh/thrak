@@ -303,7 +303,7 @@ abstract class	RtfTexter	extends		RtfParser
 
 
 	public function  __tostring ( )
-	   { return ( $this -> AsText ( ) ) ; }
+	   { return ( $this -> AsString ( ) ) ; }
 
 
 	/*--------------------------------------------------------------------------------------------------------------

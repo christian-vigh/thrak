@@ -472,7 +472,7 @@ abstract class 	RtfTemplater 	extends  RtfDocument
 
 		// Translate special characters first, so that we are sure that the text won't contain any special character
 		// representations, such as those using the \'xy notation, or tags specifying quotes
-		$contents			=  $this -> DecodeSpecialChars ( $contents ) ;
+		$contents			=  RtfDocument::DecodeSpecialChars ( $contents ) ;
 
 		// Also remove any newlines and \par constructs within instructions
 		$contents			=  preg_replace ( '/ (\r) | (\n) | (\\\\par \b) /ix', '', $contents ) ;

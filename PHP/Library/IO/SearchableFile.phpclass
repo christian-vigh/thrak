@@ -661,7 +661,7 @@ class  SearchableFile		extends		Object
 				$buffer 	=  $this -> Cache -> Next ( ) ;
 
 				if  ( ! $buffer )
-					return ( false ) ;
+					break ;
 			    }
 		    }
 
