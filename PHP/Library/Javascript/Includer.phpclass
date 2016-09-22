@@ -190,7 +190,6 @@ abstract class  ClientSideIncluder  extends Object
 		   {
 			$test_file	=  Path::ToUnix ( $directory . "/" . $file ) ;
 
-
 			if  ( file_exists ( $test_file ) )
 			   {
 				$real_file	=  Path::ToUnix ( substr ( $test_file, strlen ( $_SERVER [ 'DOCUMENT_ROOT' ] ) ) ) ;
