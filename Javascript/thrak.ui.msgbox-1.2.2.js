@@ -845,4 +845,4 @@
 	    }
 
 
-    } ) ( jQuery, $. script ( ) ) ;
+    } ) ( jQuery, ( $. script ) ?  $. script ( ) : undefined ) ;
