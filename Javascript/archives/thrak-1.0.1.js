@@ -117,7 +117,7 @@
 		$('input[type="submit"]', context ). button ( ) ;
 
 		// Tooltips
-		$('.tooltip', context). simpletooltip 
+		$('.tooltip', context). simpletooltip
 		   ({ 
 			showEffect	:  "fadeIn", 
 			hideEffect	:  "fadeOut", 
