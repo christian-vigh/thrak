@@ -498,7 +498,7 @@ class	Mail		extends  MailObject
 		// If not, check for the sendmail_from entry of php.ini
 		if  ( ! count ( $this -> From ) )
 		    {
-			$from	=  php_ini_get ( 'sendmail_from' ) ;
+			$from	=  ini_get ( 'sendmail_from' ) ;
 
 			if  ( $from ) 
 				$this -> From	=  $from ;
