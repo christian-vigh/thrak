@@ -12,9 +12,12 @@
         Christian Vigh, 10/2015.
 
     HISTORY
-    [Version : 1.0]    [Date : 2015/10/08]     [Author : CV]
+    [Version : 1.0]	[Date : 2015/10/08]     [Author : CV]
         Initial version.
 
+    [Version : 1.0.1]	[Date : 2016/09/22]     [Author : CV]
+	. Added a "default" locale for error messages
+ 
  **************************************************************************************************************/
 
 //# include_once ( "sprintf.js" )
@@ -179,6 +182,20 @@
 		// Localized messages
 		messages	:		
 		   {
+			'default'	:
+			   {
+				formErrors		:  "Errors have been found in your input data.",
+				mandatoryField		:  "This field is mandatory.",
+				invalidEmail		:  "Invalid email address.",
+				valueTooShort		:  "Input value must be at least %d characters long.",
+				valueTooLong		:  "Input value must be at most %d characters long.",
+				invalidValueLength	:  "Input value must have between %d and %d characters.",
+				valueTooLow		:  "Input %s value must be greater than or equal to %g.",
+				valueTooHigh		:  "Input %s value must be less than or equal to %g.",
+				valueOutOfRange		:  "Input %s value must be between %g and %g.",
+				integerValueType	:  "integer",
+				floatValueType		:  "float"
+			    },
 			'fr'	:
 			    {
 				formErrors		:  "Des erreurs ont &eacute;t&eacute; rencontr&eacute;es dans les valeurs que vous avez saisies.",
