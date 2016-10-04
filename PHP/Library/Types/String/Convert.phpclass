@@ -58,6 +58,9 @@
      [Version : 1.0.11]		[Date : 2016/03/02]		[Author : CV]
 	. Moved here the String::FrenchToMySqlDate() and MySqlToFrenchDate() methods.
 
+     [Version : 1.0.12]		[Date : 2016/10/04]		[Author : CV]
+	. Added the ToAscii() method.
+
  ***************************************************************************************************/
 namespace 	Thrak\Types\String ;
 
@@ -1503,6 +1506,80 @@ class  	Convert		extends  Object
 		// All done, return
 		return ( $argv ) ;
 	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        ToAscii - Converts text from various encoding schemes to pure ascii.
+	
+	    PROTOTYPE
+	        $result		=  Convert::ToAscii ( $text, $encode_from = false ) ;
+	
+	    DESCRIPTION
+	        Converts text from various encoding schemes to pure ascii in the character range 0..127 (7 bits).
+		Accentuated letters will be converted to their non-accentuated ascii version ; some symbols such as
+		the copyright symbol will be translated into a sequence of letters ("(c)" in this case).
+	
+	    PARAMETERS
+	        $text (string) -
+	                Text to be encoded into 7-bit ascii.
+
+		$encode_from (string) -
+			If specified, indicates the character encoding used by the $text parameter.
+			When not specified, the method will try to detect it.
+	
+	    RETURN VALUE
+	        The input string, converted to 7-bits ascii.
+
+	    NOTES
+		. The function changes the current detection order for character encodings to : ISO-8859-1 and UTF-8.
+		. It uses the iconv() builtin function for the conversion
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public static function  ToAscii ( $string, $from_encoding = false )
+	   {
+		// No encoding specified by the caller : we have to detect it by ourselves
+		if  ( ! $from_encoding )
+		   {
+			 mb_detect_order ( [ 'ISO-8859-1', 'UTF-8' ] ) ;
+			 $from_encoding		=  mb_detect_encoding ( $string ) ;
+		    }
+
+		 // There is a small issue with iconv() ; for 8-bit character sets, it can return a sequence of characters corresponding to the character in the
+		 // input string ; for example :
+		 // - "à" (in either ISO8859-1 or UTF8) will return the sequence "`a" (backquote + a). 
+		 //   The same principle applies to all accentuated letters such as "ù", "ê", etc. In fact, the following characters are always prepended to 
+		 //   the converted, unaccentuated letter, if the original character code is not an UTF8 code :
+		 //   . "`" : grave accents, such as in "à", which will give the ascii sequence "`a"
+		 //   . "'" : acute accents : "é" will give "'e" once converted
+		 //   . '"' : double quotes used for German umlauts ; "ü" will be converted to '"u'
+		 //   . "^" : carets ; "ê" will be converted to "^e"
+		 //   . "~" : tildas ; "ã" will be converted to "~a".
+		 //   For those reasons, any character belonging the above character set will be doubled before conversion (because characters such as apostrophes,
+		 //   backticks, double quotes, carets and tildas are left as is, making it impossible to distinguish them from the same character that could
+		 //   have been added during the conversion process by the iconf() function).
+		 // - A big deal of special symbols are also converted ; for example, the copyright symbol will be converted to the string "(c)"
+		 // - Accentuated characters belonging to the UTF8 character set are replaced with their unaccentuated version (no extra prefix character is added)
+
+		 // So first, let's double the special characters that are added by the iconv() function when it finds a character within the ISO range in the
+		 // input string
+		 $special_characters	=  [ '~' , '\''  , '`' , '"' , '^'  ] ;
+		 $special_translations  =  [ '~~', '\'\'', '``', '""', '^^' ] ;
+ 
+		 $string  =  str_replace ( $special_characters, $special_translations, $string ) ;
+ 
+		 // Now, perform the conversion
+		 $result  =  @iconv ( $encoding, 'ASCII//TRANSLIT', $string ) ;
+
+		// Finally, all characters following the extra characters either added by iconv or already present in the input string will be remove.
+		// Only the character following each of their occurrence will be preserved.
+		 $result  =  preg_replace ( '/ ( [~\'`"\^] ) (.) /x', '$2', $result ) ;
+ 
+		 // All done, we should have a perfectly asciified string now.
+		 return ( $result ) ;
+	    }
+
 
 
 	/*--------------------------------------------------------------------------------------------------------------
