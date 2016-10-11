@@ -15,7 +15,18 @@
      	Initial version.
 
    [Version : 2.0]	[Date : 2012/10/06]		[Author : CV]
-	Migrated to the Thrak library version 2.
+	. Migrated to the Thrak library version 2.
+
+   [Version : 2.0.1]	[Date : 2016/10/11]		[Author : CV]
+	. Replaced calls to array_key_exists() by isset(). At the time this class was developed, the
+	  isset() builtin function issued a warning if its argument was a reference to an undefined
+	  array value.
+	. Changed the Preprocess() method to return the preprocessed text.
+	. Better handle duplicate directories in include path.
+	. Added the AddIncludePath(), RemoveIncludePath(), GetIncludePaths() and SetIncludePaths()
+	  methods.
+	. Changed the constructor to be able to specify additional include paths.
+	. Spaces after a macro were output BEFORE the macro expanded value.
 
  ***************************************************************************************************/
 namespace 	Thrak\Processors ;
@@ -281,15 +292,17 @@ class	PPP  extends  Object
 	private		$CurrentLine ;
 
 
-	/*******************************************************************************************/
-	/*******************************************************************************************/
-	/*******************************************************************************************/
-	/******                                                                               ******/
-	/******                              MAGIC FUNCTIONS                                  ******/
-	/******                                                                               ******/
-	/*******************************************************************************************/
-	/*******************************************************************************************/
-	/*******************************************************************************************/
+	/**************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 ******                                         MAGIC FUNCTIONS                                          ******
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************/
 
 	/*-------------------------------------------------------------------------------------------
 
@@ -323,7 +336,7 @@ class	PPP  extends  Object
 		An exception is issued if any error occurs.
 
 	 --------------------------------------------------------------------------------------------*/
-	public function  __construct ( $filename, $options = self::OPT_NONE, $preprocess = true )
+	public function  __construct ( $filename, $includes = null, $options = self::OPT_NONE, $preprocess = false )
 	   {
 	   	// Check supplied filename
 	   	if  ( ! file_exists ( $filename ) )
@@ -348,7 +361,7 @@ class	PPP  extends  Object
 		$this -> __load_predefined_macros ( ) ;
 
 		// Get the list of include directories
-		$this -> IncludeDirectories = $this -> __get_include_directories ( ) ;
+		$this -> __get_include_directories ( $includes ) ;
 
 		// Run the preprocessing process if needed
 		if  ( $preprocess )
@@ -356,15 +369,17 @@ class	PPP  extends  Object
 	    }
 
 
-	/*******************************************************************************************/
-	/*******************************************************************************************/
-	/*******************************************************************************************/
-	/******                                                                               ******/
-	/******                           PRIVATE FUNCTIONS                                   ******/
-	/******                                                                               ******/
-	/*******************************************************************************************/
-	/*******************************************************************************************/
-	/*******************************************************************************************/
+	/**************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 ******                                        PRIVATE FUNCTIONS                                         ******
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************/
 
 	// __evaluate_expression -
 	//	Evaluates an expression found in a #if / # elseif directive.
@@ -403,7 +418,7 @@ class	PPP  extends  Object
 						$this -> __throw_exception ( $file, $line, "Syntax error when using the '{$token [ 'value' ]}' pseudo-function." ) ;
 
 					// Check that the specified macro name exists
-					$status 	=  array_key_exists ( $tokens [$i + 2] [ 'value' ], $this -> Macros ) ;
+					$status 	=  isset ( $this -> Macros [ $tokens [$i + 2] [ 'value' ] ] ) ;
 
 					// Invert the result if the pseudo-function is : undefined()
 					if  ( ! $defined )
@@ -645,8 +660,8 @@ class	PPP  extends  Object
    			   				break ;
 
 						$macro_name 		=  $result [ 'name' ] ;
-						$macro_value 		=  ( array_key_exists ( 'value', $result ) )      ?  $result [ 'value' ]      : "" ;
-						$macro_parameters 	=  ( array_key_exists ( 'parameters', $result ) ) ?  $result [ 'parameters' ] : null ;
+						$macro_value 		=  ( isset ( $result [ 'value' ] ) )      ?  $result [ 'value' ]      : "" ;
+						$macro_parameters 	=  ( isset ( $result [ 'parameters' ] ) ) ?  $result [ 'parameters' ] : null ;
 						$this -> Define ( $macro_name, $macro_value, $macro_parameters ) ;
 						break ;
 
@@ -664,7 +679,7 @@ class	PPP  extends  Object
 					//	Push a new nested if into the if conditions stack.
 					//	$if_conditions [ $if_last ] [ 'current' ] will tell if subsequent lines will be included or not.
 					case	self::DIRECTIVE_IF_DEFINED :
-						$status 		=  array_key_exists ( $result [ 'name' ], $this -> Macros ) ;
+						$status 		=  isset ( $this -> Macros [ $result [ 'name' ] ] ) ;
 						$array 			=  array ( 'satisfied' => $status, 'state' => self::STATE_IF_IF, 'current' => $status, 'line' => $line_index ) ;
 						$if_conditions []	=  $array ;
 						$if_last ++ ;
@@ -673,7 +688,7 @@ class	PPP  extends  Object
 					// # ifndef directive
 					//	Same as for #ifdef, except that the macro test result is inverted.
 					case	self::DIRECTIVE_IF_NOT_DEFINED :
-						$status 		=  ! array_key_exists ( $result [ 'name' ], $this -> Macros ) ;
+						$status 		=  ! isset ( $this -> Macros [ $result [ 'name' ] ] ) ;
 						$array 			=  array ( 'satisfied' => $status, 'state' => self::STATE_IF_IF, 'current' => $status, 'line' => $line_index ) ;
 						$if_conditions []	=  $array ;
 						$if_last ++ ;
@@ -708,7 +723,7 @@ class	PPP  extends  Object
 						// been satisfied.
 						else
 						   {
-							$status 				    =  array_key_exists ( $result [ 'name' ], $this -> Macros ) ;
+							$status 				    =  isset ( $this -> Macros [ $result [ 'name' ] ] ) ;
 							$if_conditions [ $if_last ] [ 'satisfied' ] =  $status ;
 							$if_conditions [ $if_last ] [ 'current'   ] =  $status ;
 						    }
@@ -734,7 +749,7 @@ class	PPP  extends  Object
 						// been satisfied.
 						else
 						   {
-							$status 				    =  ! array_key_exists ( $result [ 'name' ], $this -> Macros ) ;
+							$status 				    =  ! isset ( $this -> Macros [ $result [ 'name' ] ] ) ;
 							$if_conditions [ $if_last ] [ 'satisfied' ] =  $status ;
 							$if_conditions [ $if_last ] [ 'current'   ] =  $status ;
 						    }
@@ -981,40 +996,223 @@ class	PPP  extends  Object
   	    }
 
 
-	/********************************************************************************************
-	 ********************************************************************************************
-	 ********************************************************************************************
-	 ******                                                                                ******
-	 ******                           INCLUDE STACK MANAGEMENT                             ******
-	 ******                                                                                ******
-	 ********************************************************************************************
-	 ********************************************************************************************
-	 ********************************************************************************************/
+	/**************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 ******                                     INCLUDE STACK MANAGEMENT                                     ******
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************/
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        AddIncludePath - Adds one of more directories to the include path.
+	
+	    PROTOTYPE
+	        $ppp -> AddIncludePath ( $path... ) ;
+	
+	    DESCRIPTION
+	        Adds one or more directories to the current include path.
+	
+	    PARAMETERS
+	        $path (list of strings or arrays of strings) -
+	                A list of include directories, specified either as a string or array of strings parameter.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  AddIncludePath ( )
+	   {
+		$args	=  func_get_args ( ) ;
+		$list	=  array ( ) ;
+
+		foreach  ( $args  as  $arg )
+		   {
+			if  ( is_array ( $arg ) )
+				$list		=  array_merge ( $list, $arg ) ;
+			else
+				$list	[]	=  $arg ;
+		    }
+
+		foreach  ( $list  as  $item )
+			$this -> __add_include_directory ( $item ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        RemoveIncludePath - Removes one of more directories from the include path.
+	
+	    PROTOTYPE
+	        $ppp -> RemoveIncludePath ( $path... ) ;
+	
+	    DESCRIPTION
+	        Removes one or more directories from the current include path.
+	
+	    PARAMETERS
+	        $path (list of strings or arrays of strings) -
+	                A list of include directories, specified either as a string or array of strings parameter.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  RemoveIncludePath ( )
+	   {
+		$args	=  func_get_args ( ) ;
+		$list	=  array ( ) ;
+
+		foreach  ( $args  as  $arg )
+		   {
+			if  ( is_array ( $arg ) )
+				$list		=  array_merge ( $list, $arg ) ;
+			else
+				$list	[]	=  $arg ;
+		    }
+
+		foreach  ( $list  as  $item )
+			$this -> __remove_include_directory ( $item ) ;
+	    }
+
+	
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        GetIncludePath - Returns the list of include directories.
+	
+	    PROTOTYPE
+	        $value	=  $ppp -> GetIncludePath ( ) ;
+	
+	    DESCRIPTION
+	        Returns the current list of include directories, separated by the DIRECTORY_SEPARATOR string.
+	
+	    RETURN VALUE
+	        A string of directory paths, separated by the DIRECTORY_SEPARATOR string.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  GetIncludePath ( )
+	   {
+		list ( $cmpfunc, $separator )	=  $this -> __get_platform_dependent_parameters ( ) ;
+
+		return ( implode ( $separator, $this -> IncludeDirectories ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        SetIncludePath - Sets the list of current include directories.
+	
+	    PROTOTYPE
+	        $ppp -> SetIncludePath ( $value ) ;
+	
+	    DESCRIPTION
+	        Sets the list of current include directories.
+	
+	    PARAMETERS
+	        $value (string) -
+	                A list of include directories, separated by the DIRECTORY_SEPARATOR string.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  SetIncludePath ( $paths )
+	   {
+		list ( $cmpfunc, $separator )	=  $this -> __get_platform_dependent_parameters ( ) ;
+		$list				=  explode ( $separator, $paths ) ;
+		$this -> IncludeDirectories	=  array ( ) ;
+
+		$this -> AddIncludePath ( $list ) ;
+	    }
+
+
+	// __add_include_directory -
+	//	Adds a directory to the include path.
+	private function  __add_include_directory ( $path )
+	   {
+		list ( $cmpfunc, $separator )	=  $this -> __get_platform_dependent_parameters ( ) ;
+		$path				=  Path::RealPath ( $path ) ;
+
+		if  ( ! $path )
+			return ;
+
+		foreach  ( $this -> IncludeDirectories  as  $include )
+		   {
+			if  ( ! $cmpfunc ( $include, $path ) )
+				return ;
+		    }
+
+		$this -> IncludeDirectories []	=  $path ;
+	    }
+
+
+	// __remove_include_directory -
+	//	Removes a directory from the include path.
+	private function  __remove_include_directory ( $path )
+	   {
+		list ( $cmpfunc, $separator )	=  $this -> __get_platform_dependent_parameters ( ) ;
+		$path				=  Path::RealPath ( $path ) ;
+
+		if  ( ! $path )
+			return ;
+
+		for  ( $i = 0, $count = count ( $this -> IncludeDirectories ) ; $i  <  $count ; $i ++ )
+		   {
+			if  ( ! $cmpfunc ( $this -> IncludeDirectories [$i], $path ) )
+			   {
+				unset ( $this -> IncludeDirectories [$i] ) ;
+				return ;
+			    }
+		    }
+	    }
+
+
+
+	// __get_platform_dependent_parameters -
+	//	Returns the function used to compare filenames and the include directory separator.
+	private function  __get_platform_dependent_parameters ( )
+	   {
+		static		$CompareFunction	=  null,
+				$Separator		=  null ;
+
+		if  ( ! $CompareFunction )
+		   {
+			if  ( IS_WINDOWS )
+			   {
+		   		$CompareFunction	=  'strcasecmp' ;
+				$Separator 		=  ';' ;
+			    }
+			else
+			   {
+   				$CompareFunction 	=  'strcmp' ;
+				$Separator 		=  ':' ;
+			    }
+		    }
+
+		return ( array ( $CompareFunction, $Separator ) ) ;
+	    }
+
 
 	// __get_include_directories -
 	//	Gets the include directories defined in the 'IncludePaths' member of the $Configuration object,
 	//	in the PHP_INCLUDES environment variable, and in the 'include_path' PHP setting.
-	private function  __get_include_directories ( )
+	private function  __get_include_directories ( $includes )
 	   {
-	   	global 		$Configuration, $Runtime ;
+	   	global 		$Configuration ;
 
-		// Get path list separator
-		if  ( IS_WINDOWS )
-		   {
-		   	$compare_function	=  'strcasecmp' ;
-			$separator 		=  ';' ;
-		    }
-		else
-		   {
-   			$compare_function 	=  'strcmp' ;
-			$separator 		=  ':' ;
-		    }
-
-		// Resulting array
-		$result 	=  array ( ) ;
 
 		// Directory list
-		$list 		=  $Configuration -> Get ( "Environment/include-path" ) ;
+		$php_include_path	=  ini_get ( 'include_path' ) ;
+
+		if  ( $php_include_path )
+		   {
+			$table 	=  String::ExplodeAndTrim ( $separator, $php_include_path ) ;
+			$list 	=  array_merge ( $list, $table ) ;
+		    }
+
+		if  ( $Configuration )
+			$list 		=  $Configuration -> Get ( "Environment/include-path" ) ;
+		else 
+			$list		=  array ( ) ;
 
 		$php_includes 	=  getenv ( 'PHP_INCLUDES' ) ;
 
@@ -1024,41 +1222,14 @@ class	PPP  extends  Object
 			$list	=  array_merge ( $list, $table ) ;
 		    }
 
-		$php_include_path	=  ini_get ( 'include_path' ) ;
-
-		if  ( $php_include_path )
+		if  ( $includes )
 		   {
-			$table 	=  String::ExplodeAndTrim ( $separator, $php_include_path ) ;
-			$list 	=  array_merge ( $list, $table ) ;
+			$table 	=  String::ExplodeAndTrim ( $separator, $includes ) ;
+			$list	=  array_merge ( $list, $table ) ;
 		    }
 
-		// Remove duplicate directories
-		$count 	=  count ( $list ) ;
-
-		for  ( $i = 0 ; $i  < $count ; $i ++ )
-		   {
-			$result_count 	=  count ( $result ) ;
-			$item_a 	=  $list [$i] ;
-			$found 		=  false ;
-
-			// Ignore the directories that are already present in the $result array
-			for  ( $j = 0 ; $j < $result_count ; $j ++ )
-			   {
-				$item_b 	=  $result [$j] ;
-
-				if  ( $item_a  ==  '.'  ||  ! $compare_function  ( $item_a, $item_b ) )
-				   {
-					$found = true ;
-					break ;
-				    }
-			    }
-
-			// Directory not found in $result : add it
-			if  ( ! $found )
-				$result []	=  $item_a ;
-		    }
-
-		return ( $result ) ;
+		foreach  ( $list  as  $directory )
+			$this -> __add_include_directory ( $directory ) ;
 	    }
 
 
@@ -1155,16 +1326,17 @@ class	PPP  extends  Object
 	    }
 
 
-	/********************************************************************************************
-	 ********************************************************************************************
-	 ********************************************************************************************
-	 ******                                                                                ******
-	 ******                  MACRO-RELATED FUNCTIONS (PUBLIC & PRIVATE)                    ******
-	 ******                                                                                ******
-	 ********************************************************************************************
-	 ********************************************************************************************
-	 ********************************************************************************************/
-
+	/**************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 ******                            MACRO-RELATED FUNCTIONS (PUBLIC & PRIVATE)                            ******
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************/
 
 	/*-------------------------------------------------------------------------------------------
 
@@ -1251,13 +1423,13 @@ class	PPP  extends  Object
 	 --------------------------------------------------------------------------------------------*/
 	public function  IsDefined ( $name )
 	   {
-	   	return  ( array_key_exists ( $name, $this -> Macros ) ) ;
+	   	return  ( isset ( $this -> Macros [ $name ] ) ) ;
    	    }
 
 
  	public function  IsUndefined ( $name )
  	   {
-	   	return  ( ! array_key_exists ( $name, $this -> Macros ) ) ;
+	   	return  ( ! isset ( $this -> Macros [ $name ] ) ) ;
  	    }
 
 
@@ -1316,7 +1488,7 @@ class	PPP  extends  Object
 	 --------------------------------------------------------------------------------------------*/
 	public function  ValueOf ( $name, $argv = false )
 	   {
-	   	if  ( array_key_exists ( $name, $this -> Macros ) )
+	   	if  ( isset ( $this -> Macros [ $name ] ) )
  	   		return ( $this -> __ExpandMacro ( null, null, $name, argv, false ) ) ;
    		else
    			return ( false ) ;
@@ -1734,7 +1906,7 @@ class	PPP  extends  Object
 	private function  __ExpandMacro ( $file, $line, $name, $argv, $macro_stack = array ( ), $isdef = true )
 	   {
 	   	// If the macro name exists, process it
-		if  ( array_key_exists ( $name, $this -> Macros ) )
+		if  ( isset ( $this -> Macros [ $name ] ) )
 		   {
 		   	// Check for circular macro references
 		   	if  ( $isdef )
@@ -1887,11 +2059,6 @@ class	PPP  extends  Object
 					$stringify	=  $level ;
 					continue 2 ;
 
-				// Whitespaces :
-				//	Just check that they are not between a stringifying operator and a macro name
-				case	T_WHITESPACE :
-			 		break ;
-
 				// String token :
 				//	This may be a macro call or reference.
 			   	case	T_STRING :
@@ -1906,7 +2073,7 @@ class	PPP  extends  Object
 			   		    }
 
 					// If the current name is a macro, remember it
-					if  ( array_key_exists ( $value, $this -> Macros ) )
+					if  ( isset ( $this -> Macros [ $value ] ) )
 					   {
 				   		$current_state 	=  self::STATE_MACRO_NAME ;
 				   		$current_macro 	=  $value ;
@@ -2075,15 +2242,17 @@ class	PPP  extends  Object
 	    }
 
 
-	/*******************************************************************************************/
-	/*******************************************************************************************/
-	/*******************************************************************************************/
-	/******                                                                               ******/
-	/******                            PUBLIC FUNCTIONS                                   ******/
-	/******                                                                               ******/
-	/*******************************************************************************************/
-	/*******************************************************************************************/
-	/*******************************************************************************************/
+	/**************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 ******                                         PUBLIC FUNCTIONS                                         ******
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************/
 
 	/*-------------------------------------------------------------------------------------------
 
@@ -2183,6 +2352,9 @@ class	PPP  extends  Object
 	    DESCRIPTION
 		Preprocesses the file that has been specified to the object's constructor.
 
+	    RETURN VALUE
+		Returns the preprocessed text, which is also available through the Text property.
+
 	    NOTES
 		Throws an exception if any error occurs.
 
@@ -2203,5 +2375,7 @@ class	PPP  extends  Object
 		$output = $this -> __preprocess ( $this -> Filename, 1 ) ;
 		$this -> Lines 	=  $output ;
 		$this -> Text 	=  implode ( "\n", $output ) ;
+
+		return ( $this -> Text ) ;
 	    }
     }
