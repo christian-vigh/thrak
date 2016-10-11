@@ -36,6 +36,9 @@
    [Version : 2.0.3]	[Date : 2015/04/11]		[Author : CV]
 	. Replaced each exception throwing with "error ( new CLException (...) )".
 
+   [Version : 2.0.4]	[Date : 2016/10/09]		[Author : CV]
+	. Added the <byte-quantity> parameter type (class CLByteQuantityParameter).
+
  ***************************************************************************************************/
 namespace  	Thrak\Processors\CL ;
 
@@ -44,9 +47,9 @@ defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." 
 
 // Used namespaces and classes
 use 	Thrak\Processors\CL\CLException ;
-use     Thrak\IO\AsciiReport ;
 use     Thrak\Processors\IniFile ;
 use     Thrak\Types\String ;
+use	Thrak\Types\String\Convert ;
 use     Thrak\Types\String\Regex ;
 use	Thrak\System\Debug ;
 
@@ -333,12 +336,12 @@ abstract class  CLNumericParameter  extends  \Thrak\Processors\CL\CLAbstractPara
 
 		if  ( $min )
 		   {
-			if  ( ( float ) $value  <  ( float ) $this -> $member )
+			if  ( ( double ) $value  <  ( double ) $this -> $member )
 				error ( new CLException ( "'$name' attribute of the '$pname' parameter : the specified value ($value) is below the authorized minimum value ({$this -> $member})." ) ) ;
 		    }
     		else
 		   {
-			if  ( ( float ) $value  >  ( float ) $this -> $member )
+			if  ( ( double ) $value  >  ( double ) $this -> $member )
 				error ( new CLException ( "'$name' attribute of the '$pname' parameter : the specified value ($value) is above the authorized maximum value ({$this -> $member})." ) ) ;
 		    }
 
@@ -1134,3 +1137,43 @@ class  CLFloatParameter  extends  CLNumericParameter
 		return ( ( double ) $value ) ;
 	    }
     }
+
+
+/*==================================================================================================
+
+    CLByteQuantityParameter class -
+	Implements a byte quantity parameter.
+
+  ==================================================================================================*/
+class  CLByteQuantityParameter  extends  CLNumericParameter
+   {
+	public function  __construct ( $parent, $tags, $valuetext = "bytecount" )
+	   {
+	   	$this -> Help		=  "Defines a byte-quantity parameter." ;
+	   	$this -> Integral	=  true ;
+
+		parent::__construct ( $parent, $tags, $valuetext ) ;
+	    }
+
+
+   	// Override the IsValid() member, since we don't have to check if the value is an integer
+   	protected function  IsValid ( $value )
+   	   {
+		return ( Convert::StringToByteCount ( $value )  !== false ) ;
+   	    }
+
+	
+	protected function  ProcessValue  ( $pname, $pvalue )
+	   {
+		$pvalue	=  Convert::StringToByteCount ( $pvalue ) ;
+
+		if  ( $pvalue  ===  false ) 
+			error ( new CLException ( "The value '$value' for the '$pname' parameter is not a valid byte quantity." ) ) ;
+
+		$value	=  parent::ProcessValue ( $pname, $pvalue ) ;
+		
+		return ( ( double ) $value ) ;
+	    }
+    }
+
+
