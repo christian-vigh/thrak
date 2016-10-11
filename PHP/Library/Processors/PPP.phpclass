@@ -625,6 +625,9 @@ class	PPP  extends  Object
   			   			if  ( $this -> __push_include ( $result [ 'file'], $file, $line_index, $local, true )  !==  false )
 						   {
    			   				$contents 	=  $this -> __preprocess ( $result [ 'file' ], 1, $file, $line_index, $local ) ;
+
+							$this -> __pop_include ( ) ;
+
    			   				$output 	=  array_merge ( $output, $contents ) ;
    			   				$path 		=  Path::ToUnix ( $this -> CurrentFile ) ;
 
@@ -644,6 +647,9 @@ class	PPP  extends  Object
   			   			$this -> __push_include ( $result [ 'file'], $file, $line_index, $local, false ) ;
 
    			   			$contents 	=  $this -> __preprocess ( $result [ 'file' ], 1, $file, $line_index, $local ) ;
+
+						$this -> __pop_include ( ) ;
+
    			   			$output 	=  array_merge ( $output, $contents ) ;
    			   			$path 		=  Path::ToUnix ( $this -> CurrentFile ) ;
 
@@ -1297,7 +1303,7 @@ class	PPP  extends  Object
 				if  ( $include_once )
 					return ( false ) ;
 				else
-					$this -> __throw_exception ( $calling_file, $calling_line, "File '$file' has already been included." ) ;
+					$this -> __throw_exception ( $calling_file, $calling_line, "Recursive inclusion of file '$file'." ) ;
 			    }
 		    }
 
