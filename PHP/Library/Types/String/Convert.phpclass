@@ -61,6 +61,10 @@
      [Version : 1.0.12]		[Date : 2016/10/04]		[Author : CV]
 	. Added the ToAscii() method.
 
+     [Version : 1.0.13]		[Date : 2016/10/09]		[Author : CV]
+	. Changed the StringToByteCount() method to also handle quantities that are multiple of 1000
+	  in addition to 1024.
+
  ***************************************************************************************************/
 namespace 	Thrak\Types\String ;
 
@@ -891,7 +895,7 @@ class  	Convert		extends  Object
 
 	    PARAMETERS
 		$value (string) -
-			Byte count, specified as an numeric value followed by an optional suffix :
+			Byte count, specified as a numeric value followed by an optional suffix :
 			- 'kb' or 'kilobytes'  for kilobytes
 			- 'mb' or 'megabytes'  for megabytes
 			- 'gb' or 'gigabytes'  for gigabytes
@@ -900,6 +904,8 @@ class  	Convert		extends  Object
 			- 'eb' or 'exabytes'   for exabytes
 			- 'zb' or 'zettabytes' for zettabytes
 			- 'yb' or 'yottabytes' for yottabytes
+			The above suffixes designate multiples of 1024 ; the equivalent are also
+			available for multiples of 1000 : 'k', 'm', 'g', 't', 'p', 'e', 'z' and 'y'.
 
 	    RETURN VALUE
 		Returns the specified byte count, or false if the string was incorrect.
@@ -911,9 +917,9 @@ class  	Convert		extends  Object
 
 		if  ( preg_match ( $regex, $value, $matches ) )
 		   {
-			$value 		=  $matches [ 'value' ] ;
+			$value 		=  ( double ) $matches [ 'value' ] ;
 
-			if  ( array_key_exists ( 'mul', $matches ) )
+			if  ( isset ( $matches [ 'mul' ] ) )
 			   {
 			   	switch  ( strtolower ( $matches [ 'mul' ] ) )
 			   	   {
@@ -923,6 +929,7 @@ class  	Convert		extends  Object
 					case 'kb' : case 'ko' : case 'kilobytes' :
 						$value *= 1024 ; break ;
 
+					// The developer's way of counting bytes
 					case 'mb' : case 'mo' : case 'megabytes' :
 						$value *= 1024 * 1024 ; break ;
 
@@ -944,6 +951,29 @@ class  	Convert		extends  Object
 					case 'yb' : case 'yo' : case 'yottabytes' :
 						$value *= 1024 * 1024 * 1024 * 1024 * 1024 * 1024 * 1024 * 1024 ; break ;
 
+					// The manufacturer's way of selling bytes
+					case 'm' :
+						$value *= 1000 * 1000 ; break ;
+
+					case 'g' :
+						$value *= 1000 * 1000 * 1000 ; break ;
+
+					case 't' :
+						$value *= 1000 * 1000 * 1000 * 1000 ; break ;
+
+					case 'p' :
+						$value *= 1000 * 1000 * 1000 * 1000 * 1000 ; break ;
+
+					case 'e' :
+						$value *= 1000 * 1000 * 1000 * 1000 * 1000 * 1000 ; break ;
+
+					case 'z' :
+						$value *= 1000 * 1000 * 1000 * 1000 * 1000 * 1000 * 1000 ; break ;
+
+					case 'y' :
+						$value *= 1000 * 1000 * 1000 * 1000 * 1000 * 1000 * 1000 * 1000 ; break ;
+
+					// None of the above : no translation possible
 					default :
 						return ( false ) ;
 			   	    }
@@ -995,7 +1025,7 @@ class  	Convert		extends  Object
 		StringToIntegerRange - Converts a string to an integer range.
 
 	    PROTOTYPE
-                $result  = ThrakString::StringToIntegerRange ( $str ) ;
+                $result  = String::StringToIntegerRange ( $str ) ;
 
 	    DESCRIPTION
                 Converts an integer range expression, such as 'low..high' or 'low-high', into a range
