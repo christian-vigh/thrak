@@ -29,6 +29,10 @@
    [Version : 2.0.3]	[Date : 2015/04/11]		[Author : CV]
 	. Replaced each exception throwing with "error ( new CLException (...) )".
 
+   [Version : 2.0.4]	[Date : 2016/10/10]		[Author : CV]
+	. File globbing on Windows platforms was not taken correctly into account (the current script
+	  path was used instead of the current directory).
+
  ***************************************************************************************************/
 namespace  	Thrak\Processors\CL ;
 
@@ -150,17 +154,19 @@ abstract class  CLFileSystemObjectParameter  extends  \Thrak\Processors\CL\CLAbs
 	 --------------------------------------------------------------------------------------------*/
 	protected function  ProcessValue ( $pname, $real_value )
 	   {
+		$real_values	=  [ $real_value ] ;
+
 		// On Windows platform, we need to do file substitution by ourself
-		if  ( IS_WINDOWS  &&  $this -> Glob )
+		if  ( IS_WINDOWS )
 		   {
-			$real_values	=  glob ( $real_value ) ;
-			
-			if  ( ! $real_values )
-				$real_values	=  [ $real_value ] ;
-		    }
-		else
-		   {
-			$real_values	=  [ $real_value ] ;
+			if  ( $this -> Glob ) 
+			   {
+				$real_value	=  Path::RealPath ( $real_value, true ) ;
+				$real_values	=  glob ( $real_value ) ;
+
+				if  ( ! $real_values )
+					$real_values	=  [ $real_value ] ;
+			    }
 		    }
 
 		// Loop through the expanded values (there will be only one on Unix platforms)
