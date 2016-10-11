@@ -19,6 +19,11 @@
 	. Added the EvaluateTags() method.
 	. Changed the ExpandShellParameters() method so that the default value array is $argv.
 
+   [Version : 1.0.2]	[Date : 2016/10/11]		[Author : CV]
+	. Replaced calls to array_key_exists() by isset(). At the time this class was developed, the
+	  isset() builtin function issued a warning if its argument was a reference to an undefined
+	  array value.
+
  ***************************************************************************************************/
 namespace 	Thrak\Processors ;
 
@@ -491,7 +496,7 @@ class  	PHP	extends  Object
 		   {
 		   	PHP::__initialize_extra_php_tokens ( ) ;
 
-			if  ( array_key_exists ( $value, PHP::$ExtraPHPTokensByValue ) )
+			if  ( isset ( PHP::$ExtraPHPTokensByValue [ $value ] ) )
 				return ( PHP::$ExtraPHPTokens [ $value ] ) ;
 		    }
     		else
@@ -716,7 +721,7 @@ class  	PHP	extends  Object
 			else if  ( is_string ( $token ) )
 			   {
 			   	// Search for an existing token entry
-			   	if  ( array_key_exists ( $token, PHP::$ExtraPHPTokensByToken ) )
+			   	if  ( isset ( PHP::$ExtraPHPTokensByToken [ $token ] ) )
 			   	   {
 					$id 	=  PHP::$ExtraPHPTokensByToken [ $token ] ;
 					$name  	=  PHP::$ExtraPHPTokensByValue [ $id ] ;
