@@ -1,7 +1,7 @@
 PHP/Test/
-Support/Database/old
-Support/Materials
-Support/Test
+Support/Database/old/
+Support/Materials/
+Support/Test/
 Thrak.phpproj
 Thrak.phpproj.user
 Thrak.sln
