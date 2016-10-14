@@ -27,6 +27,7 @@
 	  methods.
 	. Changed the constructor to be able to specify additional include paths.
 	. Spaces after a macro were output BEFORE the macro expanded value.
+	. File inclusion was not correctly handled.
 
  ***************************************************************************************************/
 namespace 	Thrak\Processors ;
