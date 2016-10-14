@@ -1,6 +1,7 @@
 PHP/Test/
 Support/Database/old
 Support/Materials
+Support/Test
 Thrak.phpproj
 Thrak.phpproj.user
 Thrak.sln
@@ -16,4 +17,3 @@ Confidential/
 *.xt
 xt.*
 *.xt.*
-pdftotext.eu/
