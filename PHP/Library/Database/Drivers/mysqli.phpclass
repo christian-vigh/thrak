@@ -29,6 +29,10 @@
    [Version : 2.0.4]	[Date : 2016/01/14]		[Author : CV]
 	. Implemented the $simple_query parameter for the db_run_query() function.
 
+   [Version : 2.0.5]	[Date : 2016/10/16]		[Author : CV]
+	. The db_disconnect() method was calling db_set_error(), which caused an exception since
+	  the connection was already closed.
+
  ***************************************************************************************************/
 namespace  	Thrak\Database\Drivers ;
 
@@ -136,7 +140,17 @@ class	mysqli  extends  DatabaseDriver
 	public function  db_disconnect ( $resource )
 	   {
 		$status = mysqli_close ( $resource ) ;
-		$this -> db_set_error ( ) ;
+		
+		if  ( $status ) 
+		   {
+			$this -> Parent -> LastErrorNumber 	=  0 ;
+			$this -> Parent -> LastErrorMessage	=  '' ;
+		    }
+		else
+		   {
+			$this -> Parent -> LastErrorNumber 	=  -1 ;
+			$this -> Parent -> LastErrorMessage	=  'Error during connection closing.' ;
+		    }
 
 		return ( $status ) ;
 	    }
