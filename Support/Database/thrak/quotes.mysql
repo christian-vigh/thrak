@@ -22,15 +22,13 @@ CREATE TABLE  /* <xql expand="table_prefix"> */ quotes
    (
 	quo_id 			INTEGER UNSIGNED 		NOT NULL AUTO_INCREMENT
 								COMMENT 'Unique id for this entry',
-	quo_selections 		INTEGER UNSIGNED 		NOT NULL DEFAULT 0
-								COMMENT 'Number of times this quote has been selected for display',
 	quo_author 		VARCHAR(128)			NOT NULL DEFAULT ''
 								COMMENT 'Quote author',
 	quo_text 		VARCHAR(4096)			NOT NULL DEFAULT ''
 								COMMENT 'Quote contents',
 								
 	PRIMARY KEY 		( quo_id ),
-	KEY 			( quo_selections )
+	KEY quo_author		( quo_author )
     )  ENGINE = MyISAM DEFAULT CHARSET latin1 COMMENT 'Stores quotes to be displayed randomly' ;
 
 /***
