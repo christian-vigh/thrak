@@ -11,8 +11,14 @@
         Christian Vigh, 10/2015.
 
     HISTORY
-    [Version : 1.0]    [Date : 2015/10/05]     [Author : CV]
+    [Version : 1.0]	[Date : 2015/10/05]     [Author : CV]
         Initial version.
+
+    [Version : 1.1]	[Date : 2016/10/16]     [Author : CV]
+	. Changed the way of selecting a random quote, which had catastrophic performances
+	. Add the Current() method
+	. The class did not take correctly into account the time a random quote was last selected, thus 
+	  selecting a new random quote at each instantiation.
 
  **************************************************************************************************************/
 namespace	Thrak\Database\Tables ;
@@ -86,7 +92,7 @@ class  Qotd	extends		Object
 		$Database -> SetQuery ( "SELECT * FROM $quotes_selection_table WHERE quos_id = 1" ) ;
 		$row	=  $Database -> LoadRow ( ) ;
 
-		$this -> LastSelectionTime	=  $row [ 'quos_selection_time' ] ;
+		$this -> LastSelectionTime	=  strtotime ( $row [ 'quos_selection_time' ] ) ;
 		$this -> LastSelectionId	=  $row [ 'quos_selection_id' ] ;
 
 		// If an interval has been specified and differs from the interval stored in the selection data table,
@@ -102,20 +108,20 @@ class  Qotd	extends		Object
 		// Check if a new quote needs to be selected, given the current interval and the time of the last selection
 		$now	=  time ( ) ;
 
-		if  ( ! $this -> LastSelectionId  ||  $this -> LastSelectionId + $this -> Interval  <  $now )
+		if  ( ! $this -> LastSelectionId  ||  $this -> LastSelectionTime + $this -> Interval  <=  $now )
 			$this -> Next ( ) ;
 		else
-			$this -> __select_current ( ) ;
+			$this -> Current ( ) ;
 	    }
 
 
 	/*--------------------------------------------------------------------------------------------------------------
 
-	    __select_current -
+	    Current -
 		Selects the current quote.
 	 
 	 *-------------------------------------------------------------------------------------------------------------*/
-	private function  __select_current ( )
+	public function  Current ( )
 	   {
 		global		$Database ;
 
@@ -151,29 +157,21 @@ class  Qotd	extends		Object
 		global		$Database ;
 
 
-		// This query randomly choses the next quote, after eliminating all the quotes having the
-		// same id or author than the previous one.
-		// Since a selection count is updated for each quotes, only the quotes with the lowest selection count
-		// will be retained.
+		// Randomly select a quote
 		$query	=  "
 				SELECT *
-				FROM {$this -> QuotesTable}
-				WHERE
-					quo_id		<>  {$this -> LastSelectionId}  AND
-					quo_selections	=
-					  (
-						SELECT MIN( quo_selections ) 
-						FROM {$this -> QuotesTable}
-					   ) AND
-					quo_author		NOT IN
+				FROM quotes AS quotes_1 
+				JOIN
+				   (
+					SELECT 
 					   (
-						SELECT quo_author
-						FROM {$this -> QuotesTable}
-						WHERE
-							quo_id = {$this -> LastSelectionId}
-					    )
-				ORDER BY RAND()
-				LIMIT 1
+						FLOOR( RAND() * (SELECT MAX(quo_id) FROM quotes))
+					    ) AS quo_id
+				     ) AS quotes_2
+				WHERE 
+					quotes_1. quo_id = quotes_2. quo_id
+				ORDER BY 
+					quotes_1. quo_id ASC
 			   " ;
 
 		$Database -> SetQuery ( $query ) ;
@@ -195,16 +193,6 @@ class  Qotd	extends		Object
 			   " ;
 
 		$Database -> Execute ( $query ) ;
-
-		// Update this quote's selection count
-		$query	=  "
-				UPDATE {$this -> QuotesTable}
-				SET
-					quo_selections = quo_selections + 1
-				WHERE
-					quo_id = {$row [ 'quo_id' ]}
-			   " ;
-
-		$Database -> Execute ( $query ) ;
+		$this -> LastSelectionTime	=  $now ;
 	    }
     }
