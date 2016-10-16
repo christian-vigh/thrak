@@ -75,6 +75,10 @@
 
     [Version : 2.0.11]		[Date : 2016/01/26]		[Author : CV]
 	. Changed the meaning of the "format" attribute : it is now a callback function.
+
+    [Version : 2.0.12]		[Date : 2016/10/16]		[Author : CV]
+	. No separation line will be output if a row is followed by another row containing the 
+	  string "*".
   
  ***************************************************************************************************/
 namespace 	Thrak\IO ;
@@ -614,8 +618,10 @@ class  AsciiReport		extends  Object
 		   {
 			// Loop through data lines 
 			// TODO: Current implementation is a complete aberration from a performance point of view
-			foreach ( $list  as  $item )
+			for  ( $il = 0 , $list_count = count ( $list ) ; $il  <  $list_count ; $il ++ )
 	                   {
+				$item	=  $list [$il] ;
+
 				// Find the maximum number of lines for this data line
 				$max_height	=  -1 ;
 			
@@ -663,7 +669,9 @@ class  AsciiReport		extends  Object
 					    }
 					
 					// Add the report bottom
-					$line   .= $separation ;
+					if  ( ! isset ( $list [ $il + 1 ] )  ||  $list [ $il + 1 ]  !=  '*' )
+						$line   .= $separation ;
+
 					$result	.=  $line ;
 
 					if  ( $display )
@@ -676,26 +684,29 @@ class  AsciiReport		extends  Object
 				// Otherwise, this is big separation line
 				else
 				   {
-					$replace_previous_separator	=  false ;
-					
-					// Leading bang means we must replace the previous separation line, generated for the end of a row
-					if  ( ! strlen ( $item ) )			// Default to '-' for empty strings
-						$char		=  '-' ;
-					
-					if  ( $item [0]  ==  '!' )
+					if  ( $item [0]  !=  '*' )
 					   {
-						$replace_previous_separator	=  true ;
-						$char				=  ( strlen ( $item )  >  1 ) ?  $item [1] : '-' ;
+						$replace_previous_separator	=  false ;
+					
+						// Leading bang means we must replace the previous separation line, generated for the end of a row
+						if  ( ! strlen ( $item ) )			// Default to '-' for empty strings
+							$char		=  '-' ;
+					
+						if  ( $item [0]  ==  '!' )
+						   {
+							$replace_previous_separator	=  true ;
+							$char				=  ( strlen ( $item )  >  1 ) ?  $item [1] : '-' ;
+						    }
+						else
+							$char		=  $item [0] ;
+					
+						$line	=  $this -> SeparationLine ( $char ) . $newline ;
+					
+						if  ( $replace_previous_separator )
+							$result		=  substr ( $result, 0, strlen ( $result ) - strlen ( $line ) ) ;
+
+						$result .= $line ;
 					    }
-					else
-						$char		=  $item [0] ;
-					
-					$line	=  $this -> SeparationLine ( $char ) . $newline ;
-					
-					if  ( $replace_previous_separator )
-						$result		=  substr ( $result, 0, strlen ( $result ) - strlen ( $line ) ) ;
-						
-					$result .= $line ;
 				    }
 	                   }
 		    }
