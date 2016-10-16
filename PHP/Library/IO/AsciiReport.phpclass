@@ -618,9 +618,11 @@ class  AsciiReport		extends  Object
 		   {
 			// Loop through data lines 
 			// TODO: Current implementation is a complete aberration from a performance point of view
-			for  ( $il = 0 , $list_count = count ( $list ) ; $il  <  $list_count ; $il ++ )
+			$list_keys	=  array_keys ( $list ) ;
+
+			for  ( $il = 0 , $list_count = count ( $list_keys ) ; $il  <  $list_count ; $il ++ )
 	                   {
-				$item	=  $list [$il] ;
+				$item	=  $list [ $list_keys [$il] ] ;
 
 				// Find the maximum number of lines for this data line
 				$max_height	=  -1 ;
