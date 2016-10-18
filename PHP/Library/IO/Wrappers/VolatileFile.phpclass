@@ -93,10 +93,24 @@ class  VolatileFileWrapper	extends  FileWrapper
 						"A file with the same name exists and could not be removed." ) ;
 				
 				mkdir ( $parameters [ 'root' ] ) ;
+
+				if  ( IS_UNIX )
+				   {
+					system ( "chown www-data:www-data {$parameters [ 'root' ]}" ) ;
+					system ( "chmod 700 {$parameters [ 'root' ]}" ) ;
+				    }
 			    }
 		    }
 		else
+		   {
 			mkdir ( $parameters [ 'root' ] ) ;
+
+			if  ( IS_UNIX )
+			   {
+				system ( "chown www-data:www-data {$parameters [ 'root' ]}" ) ;
+				system ( "chmod 700 {$parameters [ 'root' ]}" ) ;
+			    }
+		    }
 		
    		$parameters = array_merge ( $parameters, array ( 'read-buffer-size' => 16384, 'write-buffer-size' => 16384 ) ) ;
    		parent::Register ( $wrapper_name, $parameters, $flags ) ;
