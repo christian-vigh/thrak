@@ -16,9 +16,9 @@
 
     [Version : 1.1]	[Date : 2016/10/16]     [Author : CV]
 	. Changed the way of selecting a random quote, which had catastrophic performances
-	. Add the Current() method
+	. Added the Current() method
 	. The class did not take correctly into account the time a random quote was last selected, thus 
-	  selecting a new random quote at each instantiation.
+	  selecting a new random quote upon each instantiation.
 
  **************************************************************************************************************/
 namespace	Thrak\Database\Tables ;
