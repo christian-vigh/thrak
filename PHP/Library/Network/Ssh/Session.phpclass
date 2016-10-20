@@ -357,7 +357,7 @@ class  SshSession		extends  Object
 
 		if  ( ! $stdout ) 
 			error ( new SshSessionException ( "Failed to execute command" ) ) ;
-		
+
 		// No output array specified : display results as they come
 		if  ( $output  ===  null  ||  $callback )
 		   {
