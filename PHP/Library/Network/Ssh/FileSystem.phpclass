@@ -28,6 +28,11 @@
 
     [Version : 1.0.5]	[Date : 2016/10/18]     [Author : CV]
 	. Added the filesize() method
+
+    [Version : 1.0.6]	[Date : 2016/10/22]     [Author : CV]
+	. Some special characters in paths (such as UTF8 characters) can cause the ssh2.sftp wrapper to 
+	  generate a memory violation in the PHP executable on Windows systems. The SshPath() method has been
+	  changed to url-encode the supplied path.
  
  **************************************************************************************************************/
 namespace	Thrak\Network\Ssh ;
@@ -144,10 +149,13 @@ class  SshFileSystem		extends  Object
 			$path	=  $this -> __get_path ( $path ) ;
 		else
 			$path	=  "/$path" ;
+
+		// Encode the whole path, but make sure slashes are not encoded with %2F, which would make any access to this path fail
+		$path	=  str_replace ( '%2F', '/', rawurlencode ( $path ) ) ;
 		
-		$path	=  "ssh2.sftp://{$this -> SftpSession}$path" ;
+		$result	=  "ssh2.sftp://{$this -> SftpSession}$path" ;
 		
-		return ( $path ) ;
+		return ( $result ) ;
 	    }
 	
 	
