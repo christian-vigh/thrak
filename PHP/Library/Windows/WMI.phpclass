@@ -18,6 +18,9 @@
 	. Classes implemented on-the-fly now include underlying WMI object methods, which are dependent of the
 	  WMI class being implemented.
 
+    [Version : 1.1.1]	[Date : 2016/10/24]     [Author : CV]
+	. The ArrayAccess interface of the WmiInstance class was incorrectly handled.
+
  **************************************************************************************************************/
 namespace 	Thrak\Windows ;
 
@@ -378,6 +381,7 @@ class  WmiInstance		extends		AbstractWindowsBase
 			$this -> PropertyNames []	=  $property_name ;
 		    }
 
+		$this -> PropertyNames	=  array_flip ( $this -> PropertyNames ) ;
 	    }
 
 
@@ -445,7 +449,7 @@ class  WmiInstance		extends		AbstractWindowsBase
 		if  ( is_integer ( $offset )  &&  $offset  >  0  &&  $offset  <  count ( $this -> PropertyNames ) )
 			return ( $this -> PropertyNames [ $offset ] ) ;
 		else if  ( is_string  ( $offset )  &&  isset  ( $this -> PropertyNames [ $offset ] ) )
-			return  ( $offset ) ;
+			return  ( $this -> $offset ) ;
 		else
 			return ( false ) ;
 	    }
@@ -457,10 +461,10 @@ class  WmiInstance		extends		AbstractWindowsBase
 	
 	public function  offsetGet ( $offset )
 	   {
-		$real_offset	=  $this -> __offset_get ( $offset ) ;
+		$value	=  $this -> __offset_get ( $offset ) ;
 		
-		if  ( $real_offset  !==  false )
-			return ( $this -> $real_offset ) ;
+		if  ( $value  !==  false )
+			return ( $value ) ;
 		else
 			error ( new \Thrak\System\OutOfRangeException ( "Invalid offset $offset." ) ) ;
 	    }
