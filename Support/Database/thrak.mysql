@@ -58,7 +58,7 @@ REVOKE ALL PRIVILEGES, GRANT OPTION FROM thrak@localhost ;
 DROP USER thrak@localhost ;
 
 -- Then recreate it
-CREATE USER thrak@localhost IDENTIFIED BY 'a0xlz86-_p2q9sjmc0s7z1l' ;
+CREATE USER thrak@localhost IDENTIFIED BY 'uEf7Fr=Ov7_U,It_gOXW72A--:t3' ;
 GRANT ALL PRIVILEGES ON *.* TO thrak@localhost WITH GRANT OPTION ;
 
 /* <xql include="thrak/*.mysql">		*/
