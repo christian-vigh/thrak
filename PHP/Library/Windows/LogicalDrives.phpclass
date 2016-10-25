@@ -21,6 +21,10 @@
     [Version : 1.0.2]	[Date : 2015/11/13]	[Author : CV]
 	. Indexing by property name was not correctly checked.
 
+    [Version : 1.0.3]	[Date : 2016/10/24]	[Author : CV]
+	. The GetNetworkName() method was not checking that the ProviderName property exists (it is only
+	  present for network-mapped drives).
+
  ************************************************************************************************************/
 namespace 	Thrak\Windows ;
 
@@ -79,7 +83,7 @@ class  LogicalDrive 		extends  	AbstractWindowsBase
 	const 	CFGMGR_ERRCODE_CANNOT_START			=  0x0A ;
 	const 	CFGMGR_ERRCODE_DEVICE_FAILED 			=  0x0B ;
 	const 	CFGMGR_ERRCODE_NOT_ENOUGH_RESOURCES		=  0x0C ;
-	const 	CFGMGR_ERRCODE_CANNOt_VERIFY_RESOURCES		=  0x0D ;
+	const 	CFGMGR_ERRCODE_CANNOT_VERIFY_RESOURCES		=  0x0D ;
 	const 	CFGMGR_ERRCODE_NEED_COMPUTER_RESTART		=  0x0E ;
 	const 	CFGMGR_ERRCODE_REENUMERATION_PROBLEM		=  0x0F ;
 	const 	CFGMGR_ERRCODE_UNIDENTIFIED_RESOURCES		=  0x10 ;
@@ -245,10 +249,15 @@ class  LogicalDrive 		extends  	AbstractWindowsBase
 			Hostname part (eg, "myhost").
 		- resource :
 			Resource name part (eg, "myresource").
+
+		If the current drive is not mapped to the network, the function will return false.
 	    
 	  ===========================================================================================================*/
 	public function  GetNetworkName ( )
 	   {
+		if  ( ! isset ( $this -> ProviderName ) )
+			return ( false ) ;
+
 		$result 	=  array ( 'fullname'  =>  $this -> ProviderName, 'host' => '', 'resource' => '' ) ;
 		
 		if  ( preg_match ( '#^\\(?P<host>[^\]+)\(?P<resource).*$#', $this -> ProviderName, $matches ) )
