@@ -98,7 +98,7 @@ class      Wmi      extends  AbstractWindowsBase
 		Creates a WMI object instance on the specified remote computer.     
 
 	 *-------------------------------------------------------------------------------------------------------------*/
-	public static function  RemoteInstance ( $computer, $namespace = 'root\CIMV2', $user, $password, $locale = null, $domain = null )
+	public static function  RemoteInstance ( $computer, $user, $password, $namespace = 'root\CIMV2', $locale = null, $domain = null )
 	   {
 	        $locator	=  new \COM ( "WbemScripting.SWbemLocator" ) ;
 	        $wmi_object     =  $locator -> ConnectServer ( $computer, $namespace, $user, $password, $locale, $domain ) ;
