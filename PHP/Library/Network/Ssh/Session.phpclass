@@ -35,6 +35,10 @@
 	  to display the command output. In this case, asynchronous I/O was set for the stream, which does not
 	  work on Windows systems.
 
+    [Version : 1.0.6]	[Date : 2016/10/26]     [Author : CV]
+	. Commands whose excessive length required the creation of a remote script could fail prematurely
+	  before the end of the script execution, because of a premature removal of the script itself.
+
  **************************************************************************************************************/
 namespace	Thrak\Network\Ssh ;
 
@@ -325,6 +329,11 @@ class  SshSession		extends  Object
 		   {
 			$this -> Reconnect ( ) ;
 		    }
+
+		// If the command is too long, a remote file will be created to hold the command(s), then executed
+		// However, we will need to remove it at the end
+		$remote_file		=  false ;
+		$fs			=  false ;
 		
 		// Execute the command
 		$command_length		=  strlen ( $command ) ;
@@ -348,7 +357,6 @@ class  SshSession		extends  Object
 
 			$sh_command	=  "sh $remote_file" ;
 			$stdout		=  ssh2_exec ( $this -> Connection -> GetResource ( ), $sh_command, null, $env ) ;
-			$fs -> unlink ( $remote_file ) ;
 		    }
 		else
 			$stdout		=  ssh2_exec ( $this -> Connection -> GetResource ( ), $command, null, $env ) ;
@@ -405,6 +413,11 @@ class  SshSession		extends  Object
 		
 		// Close the standard output of the command
 		fclose ( $stdout ) ;
+
+		// If a remote script was created, we need to remove it, now that we are sure that the command has been
+		// processed and that its stdout descriptor has been closed
+		if  ( $fs  &&  $remote_file )
+			$fs -> unlink ( $remote_file ) ;
 		
 		// Count one more command execution
 		$execution_count ++ ;
