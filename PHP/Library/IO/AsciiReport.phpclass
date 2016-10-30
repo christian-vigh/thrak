@@ -487,6 +487,7 @@ class  AsciiReport		extends  Object
 		'livestock'	 	=>  'livestock',
 		'luggage'	 	=>  'luggage',
 		'marketing'	 	=>  'marketing',
+		'match'			=>  'matches',
 		'money'	 		=>  'money',
 		'insurance'	 	=>  'insurance',
 		'mud'	 		=>  'mud',
