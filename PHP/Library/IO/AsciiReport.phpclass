@@ -79,6 +79,9 @@
     [Version : 2.0.12]		[Date : 2016/10/16]		[Author : CV]
 	. No separation line will be output if a row is followed by another row containing the 
 	  string "*".
+
+    [Version : 2.0.13]		[Date : 2016/10/30]		[Author : CV]
+	. Carriage returns were not correctly handled in multiline values.
   
  ***************************************************************************************************/
 namespace 	Thrak\IO ;
@@ -235,6 +238,7 @@ class  AsciiReportColumn	extends Object
 	//
 	function  Value ( $data )
            {
+		$data	=  str_replace ( "\r", '', $data ) ;
 		$lines	=  explode ( "\n", $data ) ;
 		$result =  [] ;
 		
