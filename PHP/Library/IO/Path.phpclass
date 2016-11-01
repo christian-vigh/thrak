@@ -1981,8 +1981,10 @@ class  	Path	extends  Object
 		   {
    			if  ( $use_cwd )
    				$cwd 	=  getcwd ( ) ;
-   			else
+   			else if  ( isset ( $_SERVER [ 'SCRIPT_FILENAME' ] ) )
    				$cwd 	=  dirname ( $_SERVER [ 'SCRIPT_FILENAME' ] ) ;
+			else 
+				$cwd	=  dirname ( __FILE__ ) ;
 		    }
 		else
 			$cwd	=  $use_cwd ;
