@@ -71,6 +71,10 @@
   
     [Version : 1.0.16]		[Date : 2016/01/29]		[Author : CV]
 	. Added the PushDirectory() / PopDirectory() methods
+  
+    [Version : 1.0.17]		[Date : 2016/11/01]		[Author : CV]
+	. RealPath() method : use the path of the current script if $_SERVER [ 'SCRIPT_FILENAME' ]
+	  is undefined.
 
  ***************************************************************************************************/
 namespace 	Thrak\IO ;
