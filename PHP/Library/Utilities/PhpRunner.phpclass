@@ -1,0 +1,459 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        PhpRunner.phpclass
+
+    DESCRIPTION
+        Utility class for running a script using different PHP versions.
+
+    AUTHOR
+        Christian Vigh, 10/2016.
+
+    HISTORY
+    [Version : 1.0]	[Date : 2016-10-29]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Utilities ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use  Thrak\System\Object ;
+use  Thrak\Types\String ;
+use  Thrak\IO\Path ;
+
+
+/*==============================================================================================================
+
+    class PhpRunner -
+        A class for running a php script using different PHP versions.
+
+  ==============================================================================================================*/
+class	PhpRunner	extends  Object
+   {
+	// Directory where all the PHP binaries reside, as subdirectories
+	public		$BinaryDirectory ;
+
+	// The list of PHP versions selected by the filter options passed to the constructor
+	public		$Versions ;
+
+	// List of packages currently defined in $BinaryDirectory (without the directory part)
+	protected	$Packages ;
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        Constructor
+	
+	    PROTOTYPE
+	        $runner		=  new PhpRunner ( $binary_directory, $filter_options ) ;
+	
+	    DESCRIPTION
+	        Assuming you have a directory containing a set of PHP binary packages, this class can select the
+		PHP versions that are to be used for running a script, then runs the script using each of the selected
+		versions.
+	
+	    PARAMETERS
+	        $binary_directory (string) -
+			Path where all your PHP binary distributions are located.
+			A typical name for a PHP binary distribution directory could be :
+				php-5.2.10-nts-Win32-VC6-x86
+			or :
+				php-7.0.11-Win32-VC14-x86
+
+			Each directory name starts with the string "php", followed by several parts prefixed by a dash ;
+			Most of them are optional and appear in the following order :
+
+			- Php version number :
+				A version number composed of a major, minor and release numbers, such as "7.0.1".
+			- Thread safety :
+				"nts" for non-thread safe versions, nothing for the thread safe ones.
+				Note that thread safety has been introduced with version 5.2.1. Previous releases were
+				non-thread safe, but it is not indicated in the distribution name.
+			- Platform :
+				Nothing for Unix versions, "Win32" for Windows versions.
+			- Microsoft VC " runtime version :
+				The string "VC" followed by the Microsoft VC redistributable runtime version. It also
+				indicates which version of Visual Studio has been used to compile the PHP binaries ; it
+				can be : VC6 (Visual Studio 2006?), VC9 (VS2010), VC11 (VS2012) orVC15 (VS2013).
+				PHP versions prior to 5.2.7 were, to my knowledge, compiled with either Gnu C or VS2003
+				and for such versions, package directory names did not include such a component.
+				This class assumes in such cases that it defaults to VC6.
+			- Architecture :
+				Either "x86" or "x64".
+				Prior to version 5.2.7, this component was not included in the directory name.
+				In such cases, this class assumes a value of "x86".
+
+		$filter_options (array of strings) -
+			A set of strings allowing to restrict the PHP versions to be selected from the binary directory
+			specified for the constructor. It can contain zero or more of the following :
+
+			- A version number :
+				Version number can be fully qualified (5.6.1), or be partial ; the string "5.6" for 
+				example, means : "5.6.*", ie all PHP releases for the PHP version 5.6 (from 5.6.0 to 
+				5.6.x).
+			- "ts" or "nts" :
+				Selects the thread-safe or non-thread-safe versions.
+			- "win32" or "w32" :
+				Selects the Windows platform (note that Unix platforms are not yet supported).
+			- "vcx" :
+				Selects the Microsoft VC redistributable runtime version "x".
+				For versions prior to PHP 5.2.7, the version is assumed to be 5.
+			- "x86" or "x64" :
+				Target architecture.
+				For versions prior to PHP 5.2.7, "x86" is assumed.
+
+	    NOTES
+		This class have been tested only on Windows platforms.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( $binary_directory, $filter_options )
+	   {
+		parent::__construct ( ) ;
+
+		if  ( ! file_exists ( $binary_directory ) )
+			error ( new \Thrak\Exception\DirectoryNotFoundException ( "Directory \"$binary_directory\" does not exist." ) ) ;
+
+		if  ( ! is_dir ( $binary_directory ) ) 
+			error ( new \Thrak\Exception\FileNotDirectoryException ( "Path \"$binary_directory\" is not a directory." ) ) ;
+
+		$this -> BinaryDirectory	=  $binary_directory ;
+
+		// Retrieve the list of PHP packages in the specified binary directory
+		$this -> Packages		=  $this -> __get_packages ( ) ;
+
+		// Retrieve the list of PHP versions that match the filter options
+		$this -> Versions		=  $this -> __get_applicable_versions ( $filter_options ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+
+		Utility methods.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+
+	// __get_applicable_versions -
+	//	Process the specified filter options and returns an array of selected PHP versions, as PhpVersion objects.
+	private function  __get_applicable_versions ( $filter_options )
+	   {
+		// Regular expression used to match a version specifier.
+		static	$version_re	=  '/^
+						(?P<major> \d+ | \*)
+						(
+							\.
+							(?P<minor> \d+ | \*)
+							(
+								\.
+								(?P<release> \d+ | \*)
+							 )?
+						 )?
+					     $/ix' ;
+
+		// Filter options, presented in a more computer-manageable way
+		// An initial value of false means "match any value for this element"
+		$searched_options	=  
+		   [ 
+			'version'	=>  false,			// Regular expression to match a php version
+			'platform'	=>  false,			// Platform : win32 or nothing
+			'nts'		=>  false,			// 1 = thread safe, 2 = non thread safe
+			'vcredist'	=>  false,			// VC runtime version
+			'architecture'	=>  false			// x86 or x64
+		    ] ;
+
+		// Loop through filtering options
+		foreach  ( $filter_options  as  $option )
+		   {
+			$option		=  trim ( $option ) ;
+			$low_option	=  strtolower ( $option ) ;
+
+			// Php version : build a regular expression to reflect the version specifier used in the filter options
+			if  ( preg_match ( $version_re, $low_option, $match ) )
+			   {
+				$version_match	=  ( ( $match [ 'major' ]  ==  '*' ) ?  '\d+' : $match [ 'major' ] ) .
+						   '\.' ;
+
+				if  ( isset ( $match [ 'minor' ] ) )
+				   {
+					if  ( $match [ 'minor' ]  ==  '*' )
+						$version_match	.=  '\d+' ;
+					else
+						$version_match	.=  $match [ 'minor' ] ;
+
+					$version_match	.=  '\.' ;
+
+					if  ( isset ( $match [ 'release' ] ) )
+					   {
+						if  ( $match [ 'release' ]  ==  '*' )
+							$version_match	.=  '\d+' ;
+						else
+							$version_match  .=  $match [ 'release' ] ;
+					    }
+					else
+						$version_match	.=  '\d+' ;
+				    }		  
+				else
+					$version_match	.=  '\d+ \. \d+' ;
+
+				$searched_options [ 'version' ]		=  '/^' . $version_match . '$/ix' ;
+			    }
+			// Select thread-safe builds
+			else if  ( $low_option  ==  'ts' )
+				$searched_options [ 'nts' ]	=  1 ;
+			// Non thread safe builds
+			else if  ( $low_option  ==  'nts' )
+				$searched_options [ 'nts' ]	=  2 ;
+			// Win32 builds
+			else if  ( $low_option  ==  'win32'  ||  $low_option  ==  'w32' )
+				$searched_options [ 'platform' ]	=  'Win32' ;
+			// VC runtime version
+			else if  ( preg_match ( '/^ vc \d+ $/ix', $low_option ) )
+				$searched_options [ 'vcredist' ]	=  $low_option ;
+			// x86 architecture
+			else if  ( $low_option  ==  'x86' )
+				$searched_options [ 'architecture' ]	=  'x86' ;
+			// x64 architecture
+			else if  ( $low_option  ==  'x64' )
+				$searched_options [ 'architecture' ]	=  'x64' ;
+			// Unknown filter option : complain...
+			else
+				error ( new \Thrak\System\InvalidArgumentException ( "Incorrect package filter option : \"$option\"." ) ) ;
+		    }
+
+		// Now that we have processed the filter options and formatted them in a computer-manageable way, we will need to
+		// do the same for each package found in the directory specified by the $BinaryDirectory property, then perform a comparison
+		// on both arrays
+		$matched_packages	=  [] ;
+
+		// Loop through the packages that have been found in the directory specified 
+		foreach  ( $this -> Packages  as  $package )
+		   {
+			// Get all items specified after the initial "php" string
+			$parts	=  explode ( '-', $package ) ;
+			array_shift ( $parts ) ;			// and get rid of the "php" string
+
+			// As for the filter input options, build an array of options for this package
+			$package_options	=  
+			   [ 
+				'version'	=>  false,
+				'platform'	=>  false,
+				'nts'		=>  1,
+				'vcredist'	=>  false,
+				'architecture'	=>  false 
+			    ] ;
+
+			// Loop through individual parts of the package name
+			foreach  ( $parts  as  $part )
+			   {
+				$low_part	=  strtolower ( trim ( $part ) ) ;
+
+				if  ( ctype_digit ( $part [0] ) )
+					$package_options [ 'version' ]		=  $part ;
+				else if  ( $low_part  ==  'win32' )
+					$package_options [ 'platform' ]		=  'Win32' ;
+				else if  ( $low_part  ==  'nts' )
+					$package_options [ 'nts' ]		=  2 ;
+				else if  ( preg_match ( '/^ vc \d+ $/ix', $low_part ) )
+					$package_options [ 'vcredist' ]		=  $low_part ;
+				else if  ( $low_part  ==  'x86' )
+					$package_options [ 'architecture' ]	=  'x86' ;
+				else if  ( $low_part  == 'x64' )
+					$package_options [ 'architecture' ]	=  'x64' ;
+			    }
+
+			// We assume that versions prior to 5.2.1 are non thread safe
+			if  ( $package_options [ 'version' ]  <  '5.2.1' )
+				$package_options [ 'nts' ]		=  true ;
+
+			// Let's say that versions prior to 5.2.7 were built with VS2005
+			if  ( $package_options [ 'version' ]  <  '5.2.7' )
+				$package_options [ 'vcredist' ]		=  5 ;
+
+			// Versions prior to 5.5.0 did not include the architecture in the package directory name 
+			// They were targeted for the x86 32-bits architecture
+			if  ( $package_options [ 'version' ]  <  '5.5.0' )
+				$package_options [ 'architecture' ]	=  'x86' ;
+
+			// Check that this package matches the filter options
+			if  ( $this -> __match_package ( $searched_options, $package_options ) )
+				$matched_packages []	=  new PhpPackage ( $this -> BinaryDirectory . '/' . $package ) ;
+		    }
+
+		// Complain if no match found
+		if  ( ! count ( $matched_packages ) )
+			error ( new \Thrak\System\RuntimeException ( "The specified filtering options (" .
+					implode ( ' ', $filter_options ) . ") did not match any installed PHP package." ) ) ;
+
+		// Sort the results so that version 5.2.10 appears after 5.2.9, not 5.2.1
+		usort
+		   (
+			$matched_packages,
+			function ( $a, $b ) 
+			   {
+				$parts_a	=  explode ( '.', $a -> Version ) ;
+				$parts_b	=  explode ( '.', $b -> Version ) ;
+
+				if  ( $parts_a [0]  ==  $parts_b [0] )
+				   {
+					if  ( $parts_a [1]  ==  $parts_b [1] )
+						return ( $parts_a [2] - $parts_b [2] ) ;
+					else
+						return ( $parts_a [1] - $parts_b [1] ) ;
+				    }
+				else
+					return ( $parts_a [0] - $parts_b [0] ) ;
+			    }
+		    ) ;
+		
+		// All done, return
+		return ( $matched_packages ) ;
+	    }
+
+
+	// __get_packages -
+	//	Retrieves the Php packages located in the directory specified by the BinaryDirectory property.
+	private function  __get_packages ( )
+	   {
+		$packages	=  [] ;
+		$rs		=  opendir ( $this -> BinaryDirectory ) ;
+
+		while  ( ( $file = readdir ( $rs ) ) )
+		   {
+			if  ( ! is_dir ( $this -> BinaryDirectory . '/' . $file )  ||  ! preg_match ( '/^php-\d/i', $file ) )
+				continue ;
+
+			$packages []		=  $file ;
+		    }
+
+		closedir ( $rs ) ;
+
+		return ( $packages ) ;
+	    }
+
+
+	// __match_package -
+	//	Checks if the specified package matches the filter options.
+	private function  __match_package ( $searched_options, $package_options )
+	   {
+		// When a version has been specified, it must match the package's one
+		// When not specified, it will match ALL versions
+		if  ( $searched_options [ 'version' ]  && 
+				! preg_match ( $searched_options [ 'version' ], $package_options [ 'version' ] ) )
+			return ( false ) ;
+
+		// Same for platform 
+		if  ( $searched_options [ 'platform' ]  &&  $searched_options [ 'platform' ]  !=  $package_options [ 'platform' ] )
+			return ( false ) ;
+
+		// Tread safe/non thread safe
+		if  ( ( $searched_options [ 'nts' ]  ===  1  &&  $package_options [ 'nts' ]  ===  2 ) ||
+		      ( $searched_options [ 'nts' ]  ===  2  &&  $package_options [ 'nts' ]  ===  1 ) )
+			return ( false ) ;
+
+		// VC runtime version
+		if  ( $searched_options [ 'vcredist' ]  !==  false  &&  $package_options [ 'vcredist' ]  !==  false  &&
+			$searched_options [ 'vcredist' ]  !=  $package_options [ 'vcredist' ] )
+			return ( false ) ;
+
+		// Architecture
+		if  ( $searched_options [ 'architecture' ]  !==  false  &&  $package_options [ 'architecture' ]  !==  false  &&
+			$searched_options [ 'architecture' ]  !=  $package_options [ 'architecture' ] )
+			return ( false ) ;
+
+		// All of the above criterias have succeeded : we can say that the specified package matches
+		return ( true ) ;
+	    }
+    }
+
+
+/*==============================================================================================================
+
+    class PhpPackage -
+        Wraps an existing PHP package installed in a directory.
+
+  ==============================================================================================================*/
+class  PhpPackage	extends	 Object 
+   {
+	// Supported architectures
+	const		ARCHITECTURE_X86	=  0 ;
+	const		ARCHITECTURE_X64	=  1 ;
+
+	// Php package version (eg, "5.6.27")
+	public		$Version ;
+	// Installation directory
+	public		$Directory ;
+	// Package name (name of the subdirectory of $Directory for this package)
+	public		$Package ;
+	// Platform
+	public		$IsWin32		=  1 ;
+	// Thread safety
+	public		$IsThreadSafe		=  1 ;
+	// Architecture
+	public		$Architecture		=  self::ARCHITECTURE_X86 ;
+	// VC runtime version
+	public		$VcVersion		=  6 ;
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        Constructor - build a PhpPackage object.
+	
+	    PROTOTYPE
+	        $package	=  new PhpPackage ( $directory ) ;
+	
+	    DESCRIPTION
+	        Builds a Php package object wrapping the contents of the specified binary distribution.
+	
+	    PARAMETERS
+	        $directory (string) -
+	                Path of the Php binary distribution.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( $directory ) 
+	   {
+		$this -> Directory	=  Path::ToHost ( Path::RealPath ( $directory ) ) ;
+		$filename		=  basename ( $directory ) ;
+		$this -> Package	=  $filename ;
+
+		// Check that the package directory name is correct
+		if  ( ! preg_match_all ( '/ - (?P<option> [a-z_][a-z_0-9]*) /ix', $filename, $option_matches )  ||
+		      ! preg_match ( '/^ php- (?P<version> \d+ \. \d+ \. \d+)/ix', $filename, $version_match ) )
+			error ( "Path \"$directory\" does not follow the naming conventions for PHP redistributables." ) ;
+
+		$this -> Version	=  $version_match [ 'version' ] ;
+
+		// Get the package options from this name
+		foreach  ( $option_matches [ 'option' ]  as  $option )
+		   {
+			$low_option	=  strtolower ( $option ) ;
+
+			switch ( $low_option )
+			   {
+				case	'win32' :
+					$this -> IsWin32	=  1 ;
+					break ;
+
+				case	'nts' :
+					$this -> IsThreadSafe	=  0 ;
+					break ;
+
+				case	'x64' :
+					$this -> Architecture	=  self::ARCHITECTURE_X64 ;
+					break ;
+
+				case	'x86' :
+					$this -> Architecture	=  self::ARCHITECTURE_X86 ;
+					break ;
+
+				default :
+					if  ( substr ( $low_option, 0, 2 )  ==  'vc' )
+						$this -> VcVersion	=  ( integer ) substr ( $low_option, 2 ) ;
+					else
+						error ( "Path \"$directory\" contains an unknown token : $option." ) ;
+			    }
+		    }
+	    }
+    }
