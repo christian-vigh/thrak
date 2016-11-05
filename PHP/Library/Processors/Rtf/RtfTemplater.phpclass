@@ -200,7 +200,7 @@
 
     [Version : 1.0.2]	[Date : 2016-11-03]     [Author : CV]
 	. The variables passed to the constructor were not created in the __evaluate() method prior to calling
-	  the PHP eval() function.
+	  the PHP eval() function, thus causing infinite 'undefined variable' warnings.
 
  **************************************************************************************************************/
 // Used namespaces & objects
