@@ -1,0 +1,1240 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        PhpSettings.phpclass
+
+    DESCRIPTION
+        A class to read/update php settings.
+
+    AUTHOR
+        Christian Vigh, 11/2016.
+
+    HISTORY
+    [Version : 1.0]	[Date : 2016-11-05]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Processors ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use  Thrak\System\Object ;
+use  Thrak\Types\String ;
+use  Thrak\IO\Path ;
+
+
+class	PhpSettingException		extends  \Thrak\System\Exception {} ;
+
+
+/*==============================================================================================================
+
+    class PhpSettings -
+        A class for reading/writing php settings.
+
+  ==============================================================================================================*/
+class  PhpSettings	extends  Object
+   {
+	// Type of entries stored in the $Elements array
+	const		INI_TYPE_SECTION		=  1 ;				// Section name
+	const		INI_TYPE_COMMENT		=  2 ;				// Comment - consecutive comments are grouped together, including empty lines
+	const		INI_TYPE_ENTRY			=  3 ;				// Setting value
+
+	// Types for php.ini settings
+	const		VALUE_TYPE_NONE			=  0 ;				// Value type no yet determined
+	const		VALUE_TYPE_INTEGER		=  1 ;				// Integer value
+	const		VALUE_TYPE_FLOAT		=  2 ;				// Float value
+	const		VALUE_TYPE_BOOLEAN		=  3 ;				// Boolean value : includes "On", "Yes", "True" and "Off", "No", "False"
+	const		VALUE_TYPE_STRING		=  4 ;				// Generic string, quoted or not
+	const		VALUE_TYPE_QUANTITY		=  5 ;				// A quantity, with a suffix such as 'K', 'M', 'G'
+	const		VALUE_TYPE_PERCENTAGE		=  6 ;				// A percentage
+	const		VALUE_TYPE_HEXADECIMAL_INTEGER	=  7 ;				// Integer value, specified in hexadecimal
+	const		VALUE_TYPE_OCTAL_INTEGER	=  8 ;				// Integer value, specified in octal
+
+	// Locations where a php.ini setting is authorized to be set
+	const		PHP_INI_USER			=  1 ;				// Entry can be set in user scripts (like with ini_set()) or in the Windows registry. 
+											// Since PHP 5.3, entry can be set in .user.ini
+	const		PHP_INI_PERDIR			=  2 ;				// Entry can be set in php.ini, .htaccess, httpd.conf or .user.ini (since PHP 5.3)
+	const		PHP_INI_SYSTEM			=  3 ;				// Entry can be set in php.ini or httpd.conf 
+	const		PHP_INI_ALL			=  4 ;				// Entry can be set anywhere 
+
+
+	// Ini filename
+	public		$Filename ;
+	// True when some setting has been modified or added.
+	public		$IsDirty			=  false ;
+
+	// Ini file elements. Each element of this array has a 'type' entry, which can be any of the INI_TYPE_* values.
+	// Other entries depend on the value of the 'type' entry :
+	//
+	// - INI_TYPE_SECTION :
+	//	Denotes a section (eg, "[PHP]"). Additional entries are :
+	//	- 'section' :
+	//		Section name.
+	//	- 'extra' :
+	//		Optional spaces and comment located after the section.
+	// - INI_TYPE_COMMENT :
+	//	A comment. Several consecutive empty lines and comments will be grouped together. Additional entries are :
+	//	- 'section' :
+	//		Section where the comment belongs.
+	//	- 'value' :
+	//		Comment(s) string.
+	// - INI_TYPE_ENTRY :
+	//	A php.ini setting. Contains the following entries :
+	//	- 'section' :
+	//		Section to which the setting belongs.
+	//	- 'name' :
+	//		Setting name.
+	//	- 'equals' :
+	//		The equal sign, including all the surrounding spaces in the original .ini file.
+	//		This entry is used to be able to write back the .ini file contents without altering its presentation.
+	//	- 'value' :
+	//		Setting value. If the original value is quoted, this entry will hold the unquoted value.
+	//	- 'value-type' :
+	//		Setting value type (one of the VALUE_TYPE_* values). This value is deduced from the setting value
+	//		found in the .ini file. When the deduced value type is VALUE_TYPE_STRING, a further step is taken
+	//		and the global $PhpSettings array is searched to find out the real value type, if any (such an
+	//		additional step can be useful is the setting in the .ini file contains no value).
+	//	- 'quoted' :
+	//		A boolean saying whether the original value in the .ini file was quoted or not.
+	//	- 'extra' :
+	//		Optional comment that may follow the setting definition. Again, this entry is used to be able to
+	//		write back the .ini file without altering its presentation.
+	//	- 'commented' :
+	//		Most .ini files contain lines that start with a semicolon immediately followed by a setting name ;
+	//		to avoid duplicating similar lines, the PhpSettings class handles such situations and allows to
+	//		set an existing setting (by uncommenting the corresponding line if it exists) or to remove it by
+	//		commenting the line.
+	//	- 'line' :
+	//		Line number where the entry begins. Line numbers start at 0.
+	private		$Elements			=  [] ;
+
+	// The contents of a .ini file are not loaded unless it is necessary. This flags is set to true when the loading
+	// has occurred. This delayed loading is useful for a class such as PhpPackage (and, indirectly, PhpRunner), 
+	// which may need to instantiate many PhpSettings objects.
+	private		$Loaded				=  false ;
+	// Currently documented PHP settings. Each element in this array has the following entries :
+	//
+	// - 'setting' :
+	//	Setting name.
+	// - 'value-type' :
+	//	Value type (one of the VALUE_TYPE_* constants).
+	// - 'default-value' :
+	//	Default value.
+	// - 'location' :
+	//	One of the PHP_INI_* constants, that defines in which locations a setting can be set.
+	// - 'comment' :
+	//	Optional comment.
+	// 
+	// The following additional entries have been extrapolated from the 'comment' entry ; they may not contain relevant information 
+	// for all the settings :
+	//
+	// - 'min-php-version' :
+	//	Minimum PHP version, in the form "major.minor.release" (the setting did not exist before this version).
+	// - 'max-php-version' :
+	//	Maximum PHP version (the setting was removed in this version).
+	// - 'module' :
+	//	When applicable, specifies the PHP module that is related to this setting.
+	// - 'min-module-version', 'max-module-version' :
+	//	Same as 'min-php-version' and 'max-php-version', for the related module.
+	private static	$PhpSettings			=  false ;
+
+	// Location of the Php settings file
+	public static	$PhpSettingsFile		=  "thrak://Data/PhpSettings.csv" ;
+
+	// Direct access to the settings in the $Elements property, using their names
+	private		$Settings			=  [] ;
+	// Section names and starting entry in the $Elements array
+	private		$Sections			=  [] ;
+	// Section indexes in the $Sections array
+	private		$SectionIndexes			=  [] ;
+
+	/**************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 ******                                          PUBLIC METHODS                                          ******
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************/
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        Constructor
+	
+	    PROTOTYPE
+	        $settings	=  new PhpSettings ( $inifile ) ;
+	
+	    DESCRIPTION
+	        Creates a new settings object for the specified php.ini file.
+	
+	    PARAMETERS
+	        $inifile (string) -
+	                Php.ini file to be loaded.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( $inifile )
+	   {
+		if  ( ! file_exists ( $inifile ) )
+			error ( new PhpSettingException ( "File \"$inifile\" does not exist." ) ) ;
+
+		$this -> Filename	=  $inifile ;
+
+		if  ( self::$PhpSettings  ===  false )
+			$this -> __load_php_settings ( ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        getter, Get - Returns the value of a setting
+	
+	    PROTOTYPE
+	        $value	=  $settings -> $setting ;
+		$value	=  $settings -> Get ( $setting, $default = null ) ;
+	
+	    DESCRIPTION
+	        This getter allows to retrieve the value of a php setting.
+	
+	    PARAMETERS
+	        $setting (string) -
+	                .INI file setting specified as a name when it is a PHP valid name :
+
+				$settings -> memory_limit
+
+			or as a string :
+
+				$setting -> {'mbstring.strict_detection'} 
+
+		$default (any) -
+			Value to be returned if the setting does not exists.
+	
+	    RETURN VALUE
+	        Returns the value of the specified PHP .ini setting, converted to the appropriate type, or null if the
+		settings does not exist in the .INI file.
+	
+	    NOTES
+	        This is a shortcut notation for the GetSetting() method.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __get ( $setting )
+	   {
+		return ( $this -> Get ( $setting ) ) ;
+	    }
+
+
+	public function  Get ( $setting, $default = null ) 
+	   {
+		$this -> __ensure_loaded ( ) ;
+
+		// The "extension" and "zend_extension" settings are a little bit special, since they can have several occurrences,
+		// and mus be retrieved using the GetExtension() method
+		if  ( $setting  ==  'extension'  ||  $setting  ==  'zend_extension' )
+			error ( new PhpSettingException ( "The \"$setting\" setting can only be retrieved by the GetExtensionStatus() method." ) ) ;
+
+		// Setting is not defined
+		if  ( ! isset ( $this -> Settings [ $setting ] ) )
+			return ( null ) ;
+		// Setting is defined :
+		else
+		   {
+			// Handle the case where it can be defined multiple times (even when commented out) and take the most
+			// appropriate value (in general, the last one that is uncommented)
+			$index		=  $this -> __elect_setting ( $setting ) ;
+
+			// Cast the setting value to the appropriate type
+			if  ( $index  !==  false )
+				return ( $this -> __get_value ( $this -> Elements [ $index ] [ 'value' ], $this -> Elements [ $index ] [ 'value-type' ] ) ) ;
+			// Paranoia...
+			else
+				return ( null ) ;
+		    }
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        setter, Set - Changes or adds a new setting.
+	
+	    PROTOTYPE
+	        $settings -> $setting	=  $value ;
+		$settings -> $setting	=  [ $value, $section ] ;
+		$settings -> Set ( $setting, $value, $section = false ) ;
+	
+	    DESCRIPTION
+	        Changes the value of an existing setting or creates a new one.
+		Care is taken about the supplied value type ; when a setting is modified, its target type is taken from
+		the setting found in the .INI file, or from the settings loaded in the $PhpSettings static variable.
+		When a new setting is created, the $PhpSettings static variable is used to determine its type ; if not
+		found, the type that has been determined from the specified value is taken.
+	
+	    PARAMETERS
+	        $setting (string) -
+	                Setting name to be modified or created.
+
+		$value (string) -
+			New setting value.
+
+		$section (string) -
+			When specified AND the setting does not exist, it will be appended to the specified .INI section ;
+			otherwise, it will be appended at the end of the file.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __set ( $setting, $value )
+	   {
+		if  ( is_array ( $value ) )
+		   {
+			if  ( count ( $value )  ==  2 )
+				$this -> Set ( $setting, $value [0], $value [1] ) ;
+			else
+				error ( new PhpSettingException ( "A setting value can either be a scalar or an array containing the value and the related section name (" .
+						"setting \"$setting\")." ) ) ;
+		    }
+		else
+			$this -> Set ( $setting, $value ) ;
+	    }
+
+
+	public function  Set ( $setting, $value, $section = false )
+	   {
+		$this -> __ensure_loaded ( ) ;
+
+		$lower_setting	=  strtolower ( $setting ) ;
+
+		if  ( isset ( $this -> Settings [ $lower_setting ] ) )
+		   {
+			$index		=  $this -> __elect_setting ( $setting ) ;
+			
+			$this -> __assign_setting ( $index, $section, $setting, $value ) ;
+		    }
+		else
+			$this -> __create_setting ( $section, $setting, $value ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        AsString, Save, SaveTo - Saves the current PHP settings.
+	
+	    PROTOTYPE
+		$contents	=  $settings -> AsString ( ) ;
+	        $settings -> Save ( ) ;
+		$settings -> SaveTo ( $output_file ) ;
+	
+	    DESCRIPTION
+	        Save() will save the current PHP settings back to the file that has been specified to the constructor,
+		if the IsDirty flag is set.
+		SaveTo() saves the current settings to the specified output file.
+		AsString() simply returns the .INI file contents.
+	
+	    PARAMETERS
+	        $output_file (string) -
+	                Name of the output file where the settings are to be saved.
+	
+	    NOTES
+	        The Save() method will reset the IsDirty flag, while the SaveTo() one will leave it unmodified.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  AsString ( )
+	   {
+		$this -> __ensure_loaded ( ) ;
+
+		$result		=  '' ;
+
+		foreach  ( $this -> Elements  as  $item )
+		   {
+			switch  ( $item [ 'type' ] )
+			   {
+				case	self::INI_TYPE_SECTION :
+					$result		.=  "[{$item [ 'section' ]}]{$item [ 'extra' ]}\n" ;
+					break ;
+
+				case	self::INI_TYPE_COMMENT :
+					$result		.=  $item [ 'value' ] . "\n" ;
+					break ;
+
+				case	self::INI_TYPE_ENTRY :
+					$line 	=  $this -> __format_entry ( $item ) ;
+					
+					$result		.=   "$line\n" ;
+					break ;
+			    }
+		    }
+
+		return ( $result ) ;
+	    }
+
+
+	public function  __tostring ( )
+	   {
+		return ( $this -> AsString ( ) ) ;
+	    }
+
+
+	public function  Save ( )
+	   { $this -> SaveTo ( $this -> Filename ) ; }
+
+
+	public function  SaveTo ( $filename )
+	   {
+		$this -> __ensure_loaded ( ) ;
+
+		if  ( ! ( $fp = fopen ( $filename, "w" ) ) )
+			error ( new PhpSettingException ( "Unable to open file \"$filename\" for writing." ) ) ;
+
+		fwrite ( $fp, $this -> AsString ( ) ) ;
+		fclose ( $fp ) ;
+	    }
+
+
+	/**************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 ******                                         INTERNAL METHODS                                         ******
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************/
+
+	// __assign_setting -
+	//	Assigns a new value to an existing setting.
+	private function  __assign_setting ( $index, $section, $setting, $value ) 
+	   {
+		$element		=  &$this -> Elements [ $index ] ;
+
+		// NULL value : the setting will be commented out
+		if  ( $value  ===  null )
+		   {
+			$element [ 'commented' ]	=  true ;
+
+			return ;
+		    }
+
+		// Determine the type of the supplied value
+		$source_value_type	=  $this -> __guess_value_type ( $setting, $value ) ;
+
+		// Initializations 
+		$target_value_type	=  $element [ 'value-type' ] ;
+		$low_value		=  strtolower ( $value ) ;
+		$new_value		=  $value ;
+
+		// Try some "smart" conversion, taking into consideration the value type associated to the setting found in the .INI file
+		// and the one that has been deduced from the supplied value
+		switch  ( $target_value_type )
+		   {
+			// Boolean value :
+			//	Handle possible booleans as strings, as well as numeric values
+			case	self::VALUE_TYPE_BOOLEAN :
+				if  ( $low_value  ===  'on'  ||  $low_value  ===  'yes'  ||  $low_value  ===  'true'  ||
+				      $low_value  ===  'off'  ||  $low_value  ===  'no'  ||  $low_value  ===  'false'  ||  $low_value  ===  'none' )
+					$new_value	=  ucfirst ( $value ) ;
+				else if  ( is_numeric ( $value ) )
+					$new_value	=  ( $value ) ?  "1" : "0" ;
+				else
+					error ( new PhpSettingException ( "The value \"$value\" supplied for the \"$setting\" boolean setting is not a valid boolean value." ) ) ;
+
+				break ;
+
+			// Float value :
+			//	Convert any scalar value, including a boolean, to a double
+			case	self::VALUE_TYPE_FLOAT :
+				$new_value	=  $this -> __to_numeric ( $value, $source_value_type ) ;
+
+				if  ( $new_value  ===  false ) 
+					error ( new PhpSettingException ( "The value \"$value\" supplied for the \"$setting\" float setting is not a valid float value." ) ) ;
+
+				break ;
+
+			// Integer value :
+			//	Convert any scalar value to an integer
+			case	self::VALUE_TYPE_INTEGER :
+				$new_value	=  ( string ) ( integer ) $this -> __to_numeric ( $value, $source_value_type ) ;
+
+				if  ( $new_value  ===  false ) 
+					error ( new PhpSettingException ( "The value \"$value\" supplied for the \"$setting\" integer setting is not a valid integer value." ) ) ;
+
+				break ;
+
+			// Hexadecimal integer value :
+			//	Convert any scalar value to an integer in hex notation
+			case	self::VALUE_TYPE_HEXADECIMAL_INTEGER :
+				$new_value	=  sprintf ( "0x%X", $this -> __to_numeric ( $value, $source_value_type ) ) ;
+
+				if  ( $new_value  ===  false ) 
+					error ( new PhpSettingException ( "The value \"$value\" supplied for the \"$setting\" integer setting is not a valid integer value." ) ) ;
+
+				break ;
+
+			// Octal integer value :
+			//	Convert any scalar value to an integer in octal notation
+			case	self::VALUE_TYPE_OCTAL_INTEGER :
+				$new_value	=  sprintf ( "0%o", $this -> __to_numeric ( $value, $source_value_type ) ) ;
+
+				if  ( $new_value  ===  false ) 
+					error ( new PhpSettingException ( "The value \"$value\" supplied for the \"$setting\" integer setting is not a valid integer value." ) ) ;
+
+				break ;
+
+			// Percentage value :
+			//	Convert any supplied numeric value to a percentage.
+			case	self::VALUE_TYPE_PERCENTAGE :
+				if  ( is_numeric ( $value ) )
+					$new_value	=  ( $value * 100 ) . '%' ;
+				else if  ( ! preg_match ( '/^ \d+ (\. \d+)? % $/x', $value ) )
+					error ( new PhpSettingException ( "The value \"$value\" supplied for the \"$setting\" percentage setting is not a valid percentage value." ) ) ;
+
+				break ;
+
+			// Quantity :
+			//	Systematically converts an integer or quantity value to a quantity
+			case	self::VALUE_TYPE_QUANTITY :
+				$new_value	=  $this -> __to_quantity ( $value, $source_value_type ) ;
+
+				if  ( $new_value  ===  false ) 
+					error ( new PhpSettingException ( "The value \"$value\" supplied for the \"$setting\" integer quantity setting is not a valid integer value." ) ) ;
+
+				break ;
+
+			// Other cases :
+			//	String type, let the value as is
+			case	self::VALUE_TYPE_STRING :
+			default :
+		    }
+
+		// All done, assign the new value to this setting
+		$element [ 'value' ]	=  $new_value ;
+	    }
+
+
+	// __create_setting -
+	//	Creates the specified setting.
+	private function  __create_setting ( $section, $setting, $value )
+	   {
+		// Try to guess the value type
+		$value_type	=  $this -> __guess_value_type ( $setting, $value ) ;
+
+		// Parse setting value
+		list ( $value, $quoted, $value_type, $extra )	=  $this -> __preprocess_value ( $section, $setting, $value ) ;
+
+		// Create the entry
+		$entry		=
+		   [
+			'section'	=>  $section,
+			'type'		=>  self::INI_TYPE_ENTRY,
+			'name'		=>  $setting,
+			'equals'	=>  ' = ',
+			'value'		=>  $value,
+			'value-type'	=>  $value_type,
+			'quoted'	=>  $quoted,
+			'extra'		=>  $extra,
+			'commented'	=>  false,
+			'line'		=>  -1 
+		     ] ;
+
+		// A section name was specified  - here comes the worries
+		if  ( $section )
+		   {	
+			// This section already exists
+			if  ( isset ( $this -> SectionsIndexes [ $section ] ) )
+			   {
+				// Get the next section after this one
+				$next_section		=  $this -> SectionIndexes [ $section ] + 1 ;
+				
+				// Next section does not exist : the specified one is the last in the list, so we only have to append
+				// the new entry
+				if  ( $next_section  >=  count ( $this -> SectionIndexes ) )
+					$this -> Elements []	=  $entry ;
+				// Otherwise, insert the new entry before the start of the next section
+				else
+				   {
+					array_splice ( $this -> Elements, $this -> Sections [ $next_section ] [ 'element' ] - 1, 0, $entry ) ;
+
+					// Renumber the starting entries for each section after the specified one
+					$this -> __renumber_sections ( $next_section, 1 ) ;
+				    }
+			    }
+			// Section does not exist : create it at the end of the file
+			else
+			   {
+				// Insert an empty line, just to be pretty
+				$this -> Elements []	=
+				   [
+					'section'	=>  $section,
+					'type'		=>  self::INI_TYPE_COMMENT,
+					'value'		=>  ''
+				    ] ;
+
+				// Insert a section entry for this section
+				$this -> Elements []	=
+				   [
+					'section'	=>  $section, 
+					'type'		=>  self::INI_TYPE_SECTION,
+					'extra'		=>  ''
+				    ] ;
+
+				// Add this new entry to the list of known sections
+				$this -> Sections []			=  [ 'name' => $section, 'element' => count ( $this -> Elements ) - 1 ] ;
+				$this -> SectionIndexes [ $section ]	=  count ( $this -> Sections ) - 1 ;
+
+				// And append the specified setting
+				$this -> Elements []			=  $entry ;
+			    }
+		    }
+		// No section name specified : simply append the setting to the end of the file
+		else
+		    {
+			$this -> Elements []	=  $entry ;
+		     }
+	    }
+
+
+	// __elect_setting -
+	//	When the same setting is defined multiple times in the same php.ini file (either commented or not),
+	//	this function selects one of the following occurrences :
+	//	- the last uncommented one
+	//	- the last commented one
+	//	An uncommented setting can occur before the last commented one...
+	private function  __elect_setting ( $setting )
+	   {
+		$indexes	=  $this -> Settings [ $setting ] ;
+		$index_max	=  count ( $indexes ) - 1 ;
+
+		for  ( $i = $index_max ; $i  >=  0 ; $i -- )
+		   {
+			if  ( ! $this -> Elements [ $indexes [$i] ] [ 'commented' ] )
+				return ( $indexes [$i] ) ;
+		    }
+
+		return ( $indexes [ $index_max ] ) ;
+	    }
+
+
+	// __ensure_loaded -
+	//	Makes sure that the php.ini settings have been loaded.
+	private function  __ensure_loaded ( )
+	   {
+		if  ( $this -> Loaded )
+			return ;
+
+		// Get lines from the specified .ini file
+		$lines			=  file ( $this -> Filename ) ;
+
+		// If no [PHP] section starts the .ini file, then the settings encountered while reading file contents
+		// are considered to belong to this PHP section.
+		$current_section	=  '' ;
+		
+		// Loop through .ini lines
+		for ( $i = 0, $line_count = count ( $lines ) ; $i  <  $line_count ; $i ++ )
+		   {
+			$line	=  rtrim ( $lines [$i], "\r\n" ) ;
+
+			// Section name of the form [name]
+			// Comments occurring after the section definition will be preserved.
+			if  ( preg_match ( '/^ \s* \[ (?P<section> [^\]]+) \] (?P<extra> .*) /x', $line, $match ) )
+			   {
+				$current_section	=  $match [ 'section' ] ;
+
+				// Add the entry
+				$entry			=
+				   [
+					'section'	=>  $current_section,
+					'type'		=>  self::INI_TYPE_SECTION,
+					'extra'		=>  $match [ 'extra' ]
+				    ] ;
+			    }
+			// A setting definition.
+			// Note that we also handle settings that have been commented out, such as :
+			//	;memory_limit = 16M
+			// In this case, giving a new value for this setting will reuse this line by uncommenting it
+			// There must be NO space between the semicolon and the setting name.
+			// If the same setting is defined as both commented and uncommented, the uncommented version 
+			// will be used.
+			else if  ( preg_match ( '/^ \s* (?P<comment> ;)? (?P<name> [^\s=]+) (?P<equals> \s* = \s*) (?P<value> .*) /ix', $line, $match ) )
+			   {
+				$name						=  $match [ 'name' ] ;
+				list ( $value, $quoted, $value_type, $extra )	=  $this -> __preprocess_value ( $current_section, $name, trim ( $match [ 'value' ] ) ) ;
+
+				$entry		=
+				   [
+					'section'	=>  $current_section,
+					'type'		=>  self::INI_TYPE_ENTRY,
+					'name'		=>  $name,
+					'equals'	=>  $match [ 'equals' ],
+					'value'		=>  $value,
+					'value-type'	=>  $value_type,
+					'quoted'	=>  $quoted,
+					'extra'		=>  $extra,
+					'commented'	=>  ( $match [ 'comment' ]  ==  ';' ),
+					'line'		=>  $i 
+				    ] ;
+
+				// Some kind of cross-reference for settings. Duplicate entries are remembered, which is
+				// especially useful for directives such as "extension".
+				if  ( isset ( $this -> Settings [ $name ] ) )
+					$this -> Settings [ $name ] []	=  count ( $this -> Elements ) ;
+				else
+					$this -> Settings [ $name ]	=  [ count ( $this -> Elements ) ] ;
+			    }
+			// Anything else is considered as a comment ; group consecutive comments or empty lines into one 
+			// single entry
+			else
+			   {
+				$comment	=  $line ;
+
+				for  ( $j = $i + 1 ; $j  <  $line_count ; $j ++ )
+				  {
+					$line	=   rtrim ( $lines [$j], "\r\n" ) ;
+
+					// Break if we find a setting that has been commented out
+					if  ( preg_match ( '/^ ; [^ \t]/x', $line ) )
+						break ;
+
+					if  ( ! preg_match ( '/^ \s* (?P<comment> [\#;] .*)? $/x', $line, $match ) )
+						break ;
+
+					$comment	.=  "\n$line" ;
+				   }
+
+				$i	=  $j - 1 ;
+
+				$entry		= 
+				   [
+					'section'	=>  $current_section,
+					'type'		=>  self::INI_TYPE_COMMENT,
+					'value'		=>  $comment
+				    ] ;
+			    }
+
+			// Add this entry to the list of elements scanned so far
+			$this -> Elements []	=  $entry ;
+		    }
+
+		// Build the $Sections array, which gives the starting line of each section (ie, the line containing [section name])
+		// If settings were found before the first section (which should normally be [PHP]), an entry named '' will be present
+		// in the $Sections array, and point to line #-1.
+		$start_index		=  0 ;
+		$section_index		=  0 ;
+
+		if  ( $this -> Elements [0] [ 'type' ]  !==  self::INI_TYPE_SECTION )
+		   {
+			$this -> Sections []		=  [ 'name' => '', 'element' => -1 ] ;
+			$this -> SectionIndexes	[ '' ]	=  0 ;
+			$start_index ++ ;
+			$section_index ++ ;
+		    }
+
+		for  ( $i = $start_index, $count = count ( $this -> Elements ) ; $i  <  $count ; $i ++ )
+		   {
+			if  ( $this -> Elements [$i] [ 'type' ]  ===  self::INI_TYPE_SECTION )
+			   {
+				$section				=  $this -> Elements [$i] [ 'section' ] ;
+				$this -> Sections []			=  [ 'name' => $section, 'element' => $i ] ;
+				$this -> SectionIndexes [ $section ]	=  $section_index ++ ;
+			    }
+		    }
+
+		// Say we're ok with loading
+		$this -> Loaded		=  true ;
+	    }
+
+
+	// __format_entry -
+	//	Returns a setting definition, ready for writing back to a .ini file.
+	//	The initial formatting, including spaces and optional comment, is preserved.
+	private function  __format_entry ( $item )
+	   {
+		$result		=   ( ( $item [ 'commented' ] ) ?  ';' : '' ) .
+				    $item [ 'name' ] . $item [ 'equals' ] .
+				    $this -> __quote_value ( $item [ 'value' ], $item [ 'quoted' ] ) .
+				    $item [ 'extra' ] ;
+
+		return ( $result ) ;
+	    }
+
+
+	// __guess_value_type -
+	//	Tries to guess the type of the specified value.
+	private function  __guess_value_type ( $setting, $value )
+	   {
+		static 	$boolean_values 	=  [ 'on', 'true', 'yes', 'off', 'false', 'no', 'none' ] ;
+		
+		$low_value 		=  strtolower ( $value ) ;
+		$length 		=  strlen ( $value ) ;
+		$type			=  self::VALUE_TYPE_NONE ;
+		
+		// Do a first guess, based on the value type
+		if  ( is_numeric ( $value ) )
+		   {
+			$v 	=  ( float ) $value ;
+			
+			if  ( ceil ( $v )  ==  $v )
+			   {
+				if  ( ! strncasecmp ( $value, '0x', 2 ) )
+					$type	=  self::VALUE_TYPE_HEXADECIMAL_INTEGER ;
+				else if  ( $length  >  1  &&  $value [0]  ==  '0' )
+					$type	=  self::VALUE_TYPE_OCTAL_INTEGER ;
+				else
+					$type	=  self::VALUE_TYPE_INTEGER ;
+			    }
+			else
+				$type	=  self::VALUE_TYPE_FLOAT ;
+		    }
+		else if  ( in_array ( $low_value, $boolean_values ) )
+			$type	=  self::VALUE_TYPE_BOOLEAN ;
+		else if  ( preg_match ( '/^\d+%$/', $value ) )
+			$type	=  self::VALUE_TYPE_PERCENTAGE ;
+		else if  ( preg_match ( '/^\d+[kmgt][b]?$/i', $value ) )
+			$type	=  self::VALUE_TYPE_QUANTITY ;
+		else if  ( $value  !==  '' )
+			$type	=  self::VALUE_TYPE_STRING ;
+
+		// If the value type cannot be determined, this means that an empty value was specified for the setting.
+		// In this case, look at the $PhpSettings that have been loaded (if any) and return the corresponding 
+		// value type.
+		// Otherwise, default to type String.
+		if  ( $type  ===  self::VALUE_TYPE_NONE )
+		   {
+			if  ( self::$PhpSettings  &&  isset ( self::$PhpSettings [ $setting ] ) )
+				$type	=  self::$PhpSettings [ $setting ] [ 'value-type' ] ;
+			else
+				$type	=  self::VALUE_TYPE_STRING ;
+		    }
+
+		// All done, return 
+		return ( $type ) ;
+	    }
+	 
+
+	//  __get_value -
+	//	Returns a correctly casted value for the specified setting. For example, it will return a PHP boolean
+	//	for On/Off values, a byte quantity for values such as "1M", and so on.
+	private function  __get_value ( $value, $value_type )
+	   {
+		switch  ( $value_type )
+		   {
+			case  self::VALUE_TYPE_BOOLEAN :
+				switch  ( strtolower ( $value ) )
+				   {
+					case  'on' :  case  'yes' :  case  'true' :
+						return ( true ) ;
+
+					case  'off' : case  'no' :  case  'false' :  case  'none' :
+						return ( false ) ;
+
+					default :
+						if  ( is_numeric ( $value ) )
+							return ( $value  !=  0 ) ;
+						else
+							return ( false ) ;
+				    }
+
+				break ;
+
+			case	self::VALUE_TYPE_FLOAT :
+				return ( ( double ) $value ) ;
+
+			case	self::VALUE_TYPE_HEXADECIMAL_INTEGER :
+				return ( ( integer ) hexdec ( substr ( $value, 2 ) ) ) ;
+
+			case	self::VALUE_TYPE_INTEGER :
+				return ( ( integer ) $value ) ;
+
+			case	self::VALUE_TYPE_OCTAL_INTEGER :
+				return ( ( integer ) octdec ( $value ) ) ;
+
+			case	self::VALUE_TYPE_PERCENTAGE :
+				$pc	=  str_replace ( '%', '', $value ) ;
+
+				return ( ( double ) $pc / 100.0 ) ;
+
+			case	self::VALUE_TYPE_QUANTITY :
+				preg_match ( '/^ (?P<number> \d+) (?P<suffix> [kmgt][b]?)? $/ix', $value, $match ) ;
+				$number		=  ( double ) $match [ 'number' ] ;
+
+				switch ( strtolower ( $match [ 'suffix' ] ) )
+				   {
+					case	'k'	:  $number *= 1024 ; break ;
+					case	'm'	:  $number *= 1024 * 1024 ; break ;
+					case	'g'	:  $number *= 1024 * 1024 * 1024 ; break ;
+					case	't'	:  $number *= 1024 * 1024 * 1024 * 1024 ; break ;
+					case	'kb'	:  $number *= 1000 ; break ;
+					case	'mb'	:  $number *= 1000 * 1000 ; break ;
+					case	'gb'	:  $number *= 1000 * 1000 * 1000 ; break ;
+					case	'tb'	:  $number *= 1000 * 1000 * 1000 * 1000 ; break ;
+				    }
+
+				return ( $number ) ;
+				
+			case	self::VALUE_TYPE_STRING :
+			default :
+				return ( $value ) ;
+		    }
+	    }
+
+
+	// __load_php_settings -
+	//	Loads the decription of PHP settings, taken from the PHP documentation.
+	private function  __load_php_settings ( )
+	   {
+		// Don't do antyhing if no file found
+		if  ( ! file_exists ( self::$PhpSettingsFile ) )
+		   {
+			self::$PhpSettings	=  [] ;
+			return ;
+		    }
+
+		// Get class constants - just to translate string values found in CSV file for value type and setting location
+		// into a real constant
+		static		$constants	=  false ;
+
+		if  ( ! $constants )
+		   {
+			$reflection	=  new \ReflectionClass ( __CLASS__ ) ;
+			$constants	=  $reflection -> getConstants ( ) ;
+		    }
+
+		// Open the file
+		$fp	=  fopen ( self::$PhpSettingsFile, 'r' ) ;
+		fgets ( $fp ) ;					// 1st line is the title line
+
+		// Loop through CSV file entries ; Contents of each line are :
+		//	Setting;Value type;Default value;Location;Comment;Min PHP version;Max PHP version;Module;Min module version;Max module version
+		while  ( ( $elements = fgetcsv ( $fp, 0, ';' ) ) ) 
+		   {
+			if  ( count ( $elements )  !=  10 )
+				continue ;
+
+			$setting				=  $elements [0] ;
+			$value_type				=  $elements [1] ;
+			$default_value				=  $elements [2] ;
+			$location				=  $elements [3] ;
+			$comment				=  $elements [4] ;
+			$min_php_version			=  $elements [5] ;
+			$max_php_version			=  $elements [6] ;
+			$module					=  $elements [7] ;
+			$min_module_version			=  $elements [8] ;
+			$max_module_version			=  $elements [9] ;
+
+			// Create version objects when necessary
+			if  ( $min_php_version )
+				$min_php_version	=  new PhpVersion ( $min_php_version ) ;
+			else
+				$min_php_version	=  null ;
+
+			if  ( $max_php_version )
+				$max_php_version	=  new PhpVersion ( $max_php_version ) ;
+			else
+				$max_php_version	=  null ;
+
+			if  ( $min_module_version )
+				$min_module_version	=  new PhpModuleVersion ( $module, $min_module_version ) ;
+			else
+				$min_module_version	=  null ;
+
+			if  ( $max_module_version )
+				$max_module_version	=  new PhpModuleVersion ( $module, $max_module_version ) ;
+			else
+				$max_module_version	=  null ;
+
+
+			// Convert value type/setting location strings into a constant
+			if  ( isset ( $constants [ $value_type ] ) )
+				$value_type	=  $constants [ $value_type ] ;
+			else
+				$value_type	=  self::VALUE_TYPE_STRING ;
+
+			if  ( isset ( $constants [ $location ] ) )
+				$location	=  $constants [ $location ] ;
+			else 
+				$location	=  self::PHP_INI_SYSTEM ;
+
+			// The string "NULL" in the default value column means what it means...
+			if  ( $default_value  ===  "NULL" )
+				$default_value		=  null ;
+
+			// Add this entry to the list of known php settings
+			self::$PhpSettings [ $setting ]		= 
+			   [
+				'setting'		=>  $setting,
+				'value-type'		=>  $value_type,
+				'default-value'		=>  $default_value,
+				'location'		=>  $location,
+				'comment'		=>  $comment,
+				'min-php-version'	=>  $min_php_version,
+				'max-php-version'	=>  $max_php_version,
+				'module'		=>  $module,
+				'min-module-version'	=>  $min_module_version,
+				'max-module-version'	=>  $max_module_version
+			    ] ;
+		    }
+	    }
+
+
+	// __needs_quoting -
+	//	Checks whether a setting value needs to be quoted when writing it back to a .ini file.
+	private function  __needs_quoting ( $value )
+	   {
+		return ( preg_match ( '/[{}|&~!\[()\^]"/', $value )  >  0 ) ;
+	    }
+
+
+	// __preprocess_value -
+	//	The regular expression used for capturing setting definitions in __ensure_loaded() catches both the value
+	//	after the equal sign, and the optional comment in a single capture.
+	//	This function separates the values from the optional comment. If the value is quoted, it unquotes it.
+	//	Returns an array having the following elements :
+	//	- The (unquoted) setting value
+	//	- A flag set to true when the initial value was quoted
+	//	- The (probably guessed) value type
+	//	- The optional comment, including spaces after the value
+	private function  __preprocess_value ( $section, $setting, $value )
+	   {
+		$quoted		=  false ;
+		$extra		=  '' ;
+
+		// If the string is quoted, remove the quotes and process escaped characters inside
+		if  ( isset ( $value [0] )  &&  $value [0]  ==  '"' )
+		   {
+			$new_value	=  '' ;
+			$quoted		=  true ;
+
+			for  ( $i = 1, $length = strlen ( $value ) ; $i  <  $length ; $i ++ )
+			   {
+				$ch	=  $value [$i] ;
+
+				switch  ( $ch )
+				   {
+					case	'"' :
+						break ;
+
+					default :
+						$new_value	.=  $ch ;
+				    }
+			    }
+		    }
+		else
+			$new_value	=  $value ;
+
+		// Try to guess the value type
+		$value_type	=  $this -> __guess_value_type ( $setting, $new_value ) ;
+
+		// All done, return
+		return ( [ $new_value, $quoted, $value_type, $extra ] ) ;
+	    }
+
+
+	// __quote_value -
+	//	Conditionally quotes the value, either if it contains special characters or if the $quote parameter is set to true.
+	private function  __quote_value ( $value, $quote )
+	   {
+		if  ( ! $quote )
+			$quote	=  $this -> __needs_quoting ( $value ) ;
+
+		if  ( $quote )
+			$result		=  '"' . str_replace ( '"', '\\"', $value ) . '"' ;
+		else
+			$result		=  $value ;
+
+		return ( $result ) ;
+	    }
+
+
+	// __renumber_sections -
+	//	Renumbers section starting elements in the $Elements array, starting from the specified section index.
+	private function  __renumber_sections ( $section_index, $increment )
+	   {
+		for  ( $i = 0, $count = count ( $this -> Sections ) ; $i  <  $count ; $i ++ )
+		   {
+			$this -> Sections [$i]	+=  $increment ;
+		    }
+	    }
+
+
+	// __to_numeric ( $value, $value_type ) -
+	//	Converts any kind of numeric value (floats, integers and even boolean) to a numeric value.
+	//	Returns false if the supplied value is not numeric.
+	private function  __to_numeric ( $value, $value_type )
+	   {
+		$low_value	=  strtolower ( $value ) ;
+
+		switch ( $value_type ) 
+		   {
+			case	self::VALUE_TYPE_FLOAT :
+				$new_value	=  $value ;
+				break ;
+
+			case	self::VALUE_TYPE_HEXADECIMAL_INTEGER :
+				$new_value	=  ( string ) ( double ) hexdec ( substr ( $value, 2 ) ) ;
+				break ;
+
+			case	self::VALUE_TYPE_INTEGER :
+				$new_value	=  $value ;
+				break ;
+
+			case	self::VALUE_TYPE_OCTAL_INTEGER :
+				$new_value	=  ( string ) ( double ) octdec ( $value ) ;
+				break ;
+
+			case	self::VALUE_TYPE_BOOLEAN :
+				if  ( $low_value  ===  'on'  ||  $low_value  ===  'yes'  ||  $low_value  ===  'true' )
+					$new_value	=  "1" ;
+				else if  ( $low_value  ===  'off'  ||  $low_value  ===  'no'  ||  $low_value  ===  'false'  ||  $low_value  ===  'none' )
+					$new_value	=  "0" ;
+				else if (  is_numeric ( $value ) )
+					$new_value	=  ( string ) ( $value ?  1 : 0 ) ;
+				else
+					$new_value	=  false ;
+
+				break ;
+
+			default :
+				$new_value	=  false ;
+		    }
+
+		return ( $new_value ) ;
+	    }
+
+
+	// __to_quantity -
+	//	Converts an integer value to a byte quantity.
+	private function  __to_quantity ( $value, $value_type ) 
+	   {
+		// Multiplers for each unit
+		static	$multipliers		=
+		   [
+			'b'		=>  1,
+			'k'		=>  1024,
+			'kb'		=>  1000,
+			'm'		=>  1024 * 1024,
+			'mb'		=>  1000 * 1000,
+			'g'		=>  1024 * 1024 * 1024,
+			'gb'		=>  1000 * 1000 * 1000,
+			't'		=>  1024 * 1024 * 1024 * 1024,
+			'tb'		=>  1000 * 1000 * 1000 * 1000
+		    ] ;
+
+		$byte_quantity		=  0 ;
+		$unit			=  'b' ;
+
+		// Determine final quantity, depending on the supplied input value
+		switch  ( $value_type )
+		   {
+			case	self::VALUE_TYPE_FLOAT :
+				$byte_quantity	=  ( integer ) $value ;
+				break ;
+
+			case	self::VALUE_TYPE_INTEGER :
+				$byte_quantity	=  ( integer ) $value ;
+				break ;
+
+			case	self::VALUE_TYPE_HEXADECIMAL_INTEGER :
+				$byte_quantity	=  ( integer ) ( hexdec ( substr ( $value, 2 ) ) ) ;
+				break ;
+
+			case	self::VALUE_TYPE_OCTAL_INTEGER :
+				$byte_quantity	=  ( integer ) octdec ( $value ) ;
+				break ;
+
+			case	self::VALUE_TYPE_QUANTITY :
+				preg_match ( '/^ (?P<value> \d+) (?P<unit> .*) $/ix', $value, $match ) ;
+
+				$byte_quantity	=  $match [ 'value' ] ;
+				$unit		=  ( isset ( $match [ 'unit' ] ) ) ?  strtolower ( $match [ 'unit' ] ) : 'b' ;
+				break ;
+
+			default :
+				return ( false ) ;
+		    }
+
+		// Multiply the quantity by the unit
+		$byte_quantity	*=  $multipliers [ $unit ] ;
+
+		// Convert back quantity to a multiple of Kilo, Mega, Giga or Terabytes
+		if  ( $byte_quantity )
+		   {
+			static	$suffixes	=  "KMGT" ;
+
+			if  ( strlen ( $unit )  ==  1 )
+			   {
+				$divider	=  1024 ;
+				$suffix		=  '' ;
+			    }
+			else
+			   {
+				$divider	=  1000 ;
+				$suffix		=  'b' ;
+			    }
+
+			$new_unit	=  '' ;
+
+			for  ( $i = 0, $length = strlen ( $suffixes ) ; $i  <  $length ; $i ++ )
+			   {
+				if  ( ! ( $byte_quantity % $divider ) )
+				   {
+					$byte_quantity	/=  $divider ;
+					$new_unit	 =  $suffixes [$i] ;
+				    }
+				else
+					break ;
+			    }
+
+			$byte_quantity	.=  $new_unit . $suffix ;
+		    }
+
+		// All done, return
+		return ( $byte_quantity ) ;
+	    }
+    }
+
+
+/*==============================================================================================================
+
+    class PhpModuleVersion, PhpVersion -
+        Stores a PHP or module version in the form "major.minor.release".
+
+  ==============================================================================================================*/
+class  PhpModuleVersion	extends  Object
+   {
+	public		$Module ;
+	public		$Major ;
+	public		$Minor ;
+	public		$Release ;
+	public		$BinaryVersion ;
+
+
+	public function  __construct ( $module, $version )
+	   {
+		$this -> Module		=  $module ;
+
+		if  ( ! preg_match ( '/^ (?P<version> (?P<major> \d+) ( \. (?P<minor> \d+) (\. (?P<release> \d+) )? )? ) $/x', $version, $match ) )
+			error ( new PhpSettingException ( "Invalid version number \"$version\" for module $module." ) ) ;
+
+		$this -> Major		=  ( integer ) $match [ 'major' ] ;
+		$this -> Minor		=  ( isset ( $match [ 'minor'   ] ) ) ?  ( integer ) $match [ 'minor'   ] : 0 ;
+		$this -> Release	=  ( isset ( $match [ 'release' ] ) ) ?  ( integer ) $match [ 'release' ] : 0 ;
+		$this -> BinaryVersion	=  ( $this -> Major  <<  16 ) | ( $this -> Minor  <<  8 )  |  $this -> Release ;
+	    }
+
+
+	public function  __tostring ( )
+	   { return ( $this -> Major . '.' . $this -> Minor . '.' . $this -> Release ) ; }
+    }
+
+
+class  PhpVersion		extends  PhpModuleVersion
+   {
+	public function  __construct ( $version )
+	   {
+		parent::__construct ( 'PHP', $version ) ;
+	    }
+    }

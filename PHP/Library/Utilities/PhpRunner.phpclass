@@ -22,6 +22,7 @@ defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." 
 use  Thrak\System\Object ;
 use  Thrak\Types\String ;
 use  Thrak\IO\Path ;
+use  Thrak\Processors\PhpSettings ;
 
 
 /*==============================================================================================================
@@ -114,11 +115,11 @@ class	PhpRunner	extends  Object
 		parent::__construct ( ) ;
 
 		if  ( ! file_exists ( $binary_directory ) )
-			error ( new \Thrak\Exception\DirectoryNotFoundException ( "Directory \"$binary_directory\" does not exist." ) ) ;
+			error ( new \Thrak\System\DirectoryNotFoundException ( "Directory \"$binary_directory\" does not exist." ) ) ;
 
 		if  ( ! is_dir ( $binary_directory ) ) 
-			error ( new \Thrak\Exception\FileNotDirectoryException ( "Path \"$binary_directory\" is not a directory." ) ) ;
-
+			error ( new \Thrak\System\FileNotDirectoryException ( "Path \"$binary_directory\" is not a directory." ) ) ;
+			
 		$this -> BinaryDirectory	=  $binary_directory ;
 
 		// Retrieve the list of PHP packages in the specified binary directory
@@ -394,6 +395,10 @@ class  PhpPackage	extends	 Object
 	public		$Architecture		=  self::ARCHITECTURE_X86 ;
 	// VC runtime version
 	public		$VcVersion		=  6 ;
+	// PHP executable file 
+	public		$Executable ;
+	// Php.ini settings for this version
+	public		$Settings ;
 
 
 	/*--------------------------------------------------------------------------------------------------------------
@@ -414,7 +419,36 @@ class  PhpPackage	extends	 Object
 	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  __construct ( $directory ) 
 	   {
-		$this -> Directory	=  Path::ToHost ( Path::RealPath ( $directory ) ) ;
+		$directory	=  Path::ToHost ( Path::RealPath ( $directory ) ) ;
+
+		// Check that :
+		// - $directory exists and is a directory, not a file
+		// - there is a PHP executable in it, along with a php.ini file.
+		if   ( ! file_exists ( $directory ) )
+			error ( new \Thrak\System\FileNotFoundException ( "Path \"$directory\" does not exist." ) ) ;
+
+		if  ( ! is_dir ( $directory ) )
+			error ( new \Thrak\System\FileNotDirectoryException ( "Path \"$directory\" is not a valid path." ) ) ;
+
+		$exe_file	=  $directory . DIRECTORY_SEPARATOR . 'php' ;
+
+		if  ( IS_WINDOWS )
+			$exe_file	.=  '.exe' ;
+
+		if  ( ! file_exists ( $exe_file ) )
+			error ( new \Thrak\System\FileNotFoundException ( "Path \"$directory\" does not contain any PHP executable." ) ) ;
+
+		$ini_file	=  $directory . DIRECTORY_SEPARATOR . 'php.ini' ;
+
+		if  ( ! file_exists ( $ini_file ) )
+			error ( new \Thrak\System\FileNotFoundException ( "Path \"$directory\" does not have a php.ini file." ) ) ;
+
+		// Save the base directory, executable and php.ini file locations
+		$this -> Directory	=  $directory ;
+		$this -> Executable	=  $exe_file ;
+		$this -> Settings	=  new PhpSettings ( $ini_file ) ;
+
+		// The package name is only the sub-directory name of this build
 		$filename		=  basename ( $directory ) ;
 		$this -> Package	=  $filename ;
 
@@ -452,7 +486,7 @@ class  PhpPackage	extends	 Object
 					if  ( substr ( $low_option, 0, 2 )  ==  'vc' )
 						$this -> VcVersion	=  ( integer ) substr ( $low_option, 2 ) ;
 					else
-						error ( "Path \"$directory\" contains an unknown token : $option." ) ;
+						error ( new \Thrak\System\InvalidArgumentException ( "Path \"$directory\" contains an unknown token : $option." ) ) ;
 			    }
 		    }
 	    }
