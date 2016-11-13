@@ -58,11 +58,24 @@ class  PhpSettings	extends  Object
 	const		PHP_INI_SYSTEM			=  3 ;				// Entry can be set in php.ini or httpd.conf 
 	const		PHP_INI_ALL			=  4 ;				// Entry can be set anywhere 
 
+	// Processing options
+	const		OPTION_NONE			=  0x0000 ;			// No option
+	const		OPTION_CREATE_BACKUP		=  0x0001 ;			// Create a .BAK file		
+	const		OPTION_NUMBERED_BACKUPS		=  0x0003 ;			// Create a .x.BAK file, where "x" is a unique number in the directory of the specified
+											// .INI file
 
 	// Ini filename
 	public		$Filename ;
 	// True when some setting has been modified or added.
 	public		$IsDirty			=  false ;
+	// Processing options
+	public		$Options ;
+	// Backup file ; set when a backup copy has been made (the "name" part represents the name of the supplied php.ini) :
+	// - A name of the form "name.x.bak", if the OPTION_NUMBERED_BACKUPS flag is set
+	// - A name of the form "name.bak", if the OPTION_CREATE_BACKUP flag is set
+	// - An empty string if none of the above options has been specified
+	// When the SaveTo() method is used, this property will be set to the specified output file
+	public		$BackupFile ;
 
 	// Ini file elements. Each element of this array has a 'type' entry, which can be any of the INI_TYPE_* values.
 	// Other entries depend on the value of the 'type' entry :
@@ -149,6 +162,13 @@ class  PhpSettings	extends  Object
 	// Section indexes in the $Sections array
 	private		$SectionIndexes			=  [] ;
 
+	
+	// Platform-dependent settings
+	private static	$DllExtension ;					// Extension for dynamic-load (shared) libraries (.dll or .so), without the leading dot
+	private static  $DllPrefix ;					// On Windows, the prefix "php_" is contained in an extension name
+	private static  $PathCmpFunc ;					// Compare function : strcasecmp on Windows platforms, strcmp on Unix
+
+
 	/**************************************************************************************************************
 	 **************************************************************************************************************
 	 **************************************************************************************************************
@@ -167,7 +187,7 @@ class  PhpSettings	extends  Object
 	        Constructor
 	
 	    PROTOTYPE
-	        $settings	=  new PhpSettings ( $inifile ) ;
+	        $settings	=  new PhpSettings ( $inifile, $options = PhpSettings::OPTION_NONE ) ;
 	
 	    DESCRIPTION
 	        Creates a new settings object for the specified php.ini file.
@@ -175,17 +195,47 @@ class  PhpSettings	extends  Object
 	    PARAMETERS
 	        $inifile (string) -
 	                Php.ini file to be loaded.
+
+		$options (integer) -
+			A combination of PhpSettings::OPTION_* flags.
 	
 	 *-------------------------------------------------------------------------------------------------------------*/
-	public function  __construct ( $inifile )
+	public function  __construct ( $inifile, $options = self::OPTION_NONE )
 	   {
+		parent::__construct ( ) ;
+
 		if  ( ! file_exists ( $inifile ) )
 			error ( new PhpSettingException ( "File \"$inifile\" does not exist." ) ) ;
 
-		$this -> Filename	=  $inifile ;
+		$this -> Filename		=  Path::RealPath ( $inifile ) ;
 
 		if  ( self::$PhpSettings  ===  false )
-			$this -> __load_php_settings ( ) ;
+			self::__static_construct ( ) ;
+
+		$this -> Options		=  $options ;
+	    }
+
+
+	// __static_construct -
+	//	Performs one-shot initializations
+	public static function  __static_construct ( )
+	   {
+		// Load the description of the PHP settings, if available
+		self::__load_php_settings ( ) ;
+
+		// Type of shared libraries extension
+		if  ( IS_WINDOWS )
+		   {
+			self::$DllExtension	=  'dll' ;
+			self::$DllPrefix	=  'php_' ;
+			self::$PathCmpFunc	=  'strcasecmp' ;
+		    }
+		else
+		   {
+			self::$DllExtension	=  'so' ;
+			self::$DllPrefix	=  '' ;
+			self::$PathCmpFunc	=  'strcmp' ;
+		    }
 	    }
 
 
@@ -196,7 +246,7 @@ class  PhpSettings	extends  Object
 	
 	    PROTOTYPE
 	        $value	=  $settings -> $setting ;
-		$value	=  $settings -> Get ( $setting, $default = null ) ;
+		$value	=  $settings -> Get ( $setting ) ;
 	
 	    DESCRIPTION
 	        This getter allows to retrieve the value of a php setting.
@@ -210,13 +260,12 @@ class  PhpSettings	extends  Object
 			or as a string :
 
 				$setting -> {'mbstring.strict_detection'} 
-
-		$default (any) -
-			Value to be returned if the setting does not exists.
 	
 	    RETURN VALUE
-	        Returns the value of the specified PHP .ini setting, converted to the appropriate type, or null if the
-		settings does not exist in the .INI file.
+	        Returns the value of the specified PHP .ini setting, converted to the appropriate type, or the value 
+		returned by the ini_get() function.
+		Whatever the result, the function returns null if the setting is definitely not defined in the php.ini
+		file.
 	
 	    NOTES
 	        This is a shortcut notation for the GetSetting() method.
@@ -228,7 +277,7 @@ class  PhpSettings	extends  Object
 	    }
 
 
-	public function  Get ( $setting, $default = null ) 
+	public function  Get ( $setting ) 
 	   {
 		$this -> __ensure_loaded ( ) ;
 
@@ -237,9 +286,16 @@ class  PhpSettings	extends  Object
 		if  ( $setting  ==  'extension'  ||  $setting  ==  'zend_extension' )
 			error ( new PhpSettingException ( "The \"$setting\" setting can only be retrieved by the GetExtensionStatus() method." ) ) ;
 
-		// Setting is not defined
+		// Setting is not defined - return the default value of the setting
 		if  ( ! isset ( $this -> Settings [ $setting ] ) )
-			return ( null ) ;
+		   {
+			$status		=  ini_get ( $setting ) ;
+
+			if  ( $status  ===  false )
+				return ( null ) ;
+			else
+				return ( $status ) ;
+		    }
 		// Setting is defined :
 		else
 		   {
@@ -248,9 +304,9 @@ class  PhpSettings	extends  Object
 			$index		=  $this -> __elect_setting ( $setting ) ;
 
 			// Cast the setting value to the appropriate type
-			if  ( $index  !==  false )
+			if  ( $index  !==  false  &&  ! $this -> Elements [ 'commented' ] )
 				return ( $this -> __get_value ( $this -> Elements [ $index ] [ 'value' ], $this -> Elements [ $index ] [ 'value-type' ] ) ) ;
-			// Paranoia...
+			// Item does not exist or is commented out
 			else
 				return ( null ) ;
 		    }
@@ -321,6 +377,266 @@ class  PhpSettings	extends  Object
 	/*--------------------------------------------------------------------------------------------------------------
 	
 	    NAME
+	        IsExtensionEnabled - Checks if an extension is enabled.
+	
+	    PROTOTYPE
+	        $status		=  $settings -> IsExtensionEnabled ( $name, $zend = false, $prefix = true ) ;
+	
+	    DESCRIPTION
+	        Checks if an extension is enabled.
+	
+	    PARAMETERS
+	        $name (string) -
+	                Extension name. For non-zend extensions, it can be only a subpart of the extension itself ; for
+			example, specifying "mbstring" will yield to :
+			- "php_mbstring.dll" on Windows platforms
+			- "mbstring.so" on Unix platforms
+
+		$zend (boolean) -
+			When false, the extension will be searched in the "extension=" settings ; when true, the
+			"zend_extension=" settings will be searched. In this case, no special processing will be
+			performed on the extension name.
+
+		$prefix (boolean) -
+			(Windows platforms only) When false, no "php_" string will be prepended to the extension name.
+	
+	    RETURN VALUE
+	        True if the extension is enabled, false otherwise.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  IsExtensionEnabled ( $name, $zend = false, $prefix = true )
+	   {
+		$this -> __ensure_loaded ( ) ;
+
+		$setting		=  ( $zend ) ?  'zend_extension' : 'extension' ;
+		$extension_name		=  $this -> __get_extension_name ( $name, $zend, $prefix ) ;
+		$cmpfunc		=  self::$PathCmpFunc ;
+
+		if  ( isset ( $this -> Settings [ $setting ] ) )
+		   {
+			foreach  ( $this -> Settings [ $setting ]  as  $index )
+			   {
+				$element	=  $this -> Elements [ $index ] ;
+
+				if  ( ! $element [ 'commented' ]  &&  ! $cmpfunc ( $element [ 'value' ], $extension_name ) )
+					return ( true ) ;
+			    }
+		    }
+
+		return ( false ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        GetEnabledExtensions - Retrieves the list of enabled extensions.
+	
+	    PROTOTYPE
+	        $array	=  $settings -> GetEnabledExtensions ( $zend = false ) ;
+	
+	    DESCRIPTION
+	        Returns the list of enabled extensions as an array.
+	
+	    PARAMETERS
+	        $zend (boolean) -
+	                When true, the method will return the list of zend extensions.
+	
+	    RETURN VALUE
+	        Returns an array of strings containing the enabled extension names.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  GetEnabledExtensions ( $zend = false )
+	   {
+		$this -> __ensure_loaded ( ) ;
+
+		$setting		=  ( $zend ) ?  'zend_extension' : 'extension' ;
+		$result			=  [] ;
+
+		if  ( isset ( $this -> Settings [ $setting ] ) )
+		   {
+			foreach  ( $this -> Settings [ $setting ]  as  $index )
+			   {
+				$element	=  $this -> Elements [ $index ] ;
+
+				if  ( ! $element [ 'commented' ] )
+					$result []	=  $element [ 'value' ] ;
+			    }
+		    }
+
+		return ( $result ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        DisableExtension - Disables an extension.
+	
+	    PROTOTYPE
+	        $status		=  $settings -> DisableExtension ( $name, $zend = false, $prefix = true ) ;
+	
+	    DESCRIPTION
+	        Disables the specified extension.
+	
+	    PARAMETERS
+	        $name (string) -
+	                Extension name. For non-zend extensions, it can be only a subpart of the extension itself ; for
+			example, specifying "mbstring" will yield to :
+			- "php_mbstring.dll" on Windows platforms
+			- "mbstring.so" on Unix platforms
+
+		$zend (boolean) -
+			When false, the extension will be searched in the "extension=" settings ; when true, the
+			"zend_extension=" settings will be searched. In this case, no special processing will be
+			performed on the extension name.
+
+		$prefix (boolean) -
+			(Windows platforms only) When false, no "php_" string will be prepended to the extension name.
+	
+	    RETURN VALUE
+	        Returns false if the extension was already disabled or is missing from the .INI file, true if it has
+		been disabled.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  DisableExtension ( $name, $zend = false, $prefix = true )
+	   {
+		$this -> __ensure_loaded ( ) ;
+
+		$setting		=  ( $zend ) ?  'zend_extension' : 'extension' ;
+		$extension_name		=  $this -> __get_extension_name ( $name, $zend, $prefix ) ;
+		$cmpfunc		=  self::$PathCmpFunc ;
+		$status			=  false ;
+
+		if  ( isset ( $this -> Settings [ $setting ] ) )
+		   {
+			foreach  ( $this -> Settings [ $setting ]  as  $index )
+			   {
+				$element	=  &$this -> Elements [ $index ] ;
+
+				if  ( ! $cmpfunc ( $extension_name, $element [ 'value' ] ) )
+				   {
+					$element [ 'commented' ]	=  true ;
+					$status				=  true ;
+
+					break ;
+				    }
+			    }
+		    }
+
+		return ( $status ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        EnableExtension - Enables an extension.
+	
+	    PROTOTYPE
+	        $status		=  $settings -> EnableExtension ( $name, $zend = false, $prefix = true ) ;
+	
+	    DESCRIPTION
+	        Enables the specified extension.
+	
+	    PARAMETERS
+	        $name (string) -
+	                Extension name. For non-zend extensions, it can be only a subpart of the extension itself ; for
+			example, specifying "mbstring" will yield to :
+			- "php_mbstring.dll" on Windows platforms
+			- "mbstring.so" on Unix platforms
+
+		$zend (boolean) -
+			When false, the extension will be searched in the "extension=" settings ; when true, the
+			"zend_extension=" settings will be searched. In this case, no special processing will be
+			performed on the extension name.
+
+		$prefix (boolean) -
+			(Windows platforms only) When false, no "php_" string will be prepended to the extension name.
+	
+	    RETURN VALUE
+	        Returns false if the extension was already enabled, true if it has been enabled.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  EnableExtension ( $name, $zend = false, $prefix = true )
+	   {
+		$this -> __ensure_loaded ( ) ;
+
+		$setting		=  ( $zend ) ?  'zend_extension' : 'extension' ;
+		$extension_name		=  $this -> __get_extension_name ( $name, $zend, $prefix ) ;
+		$cmpfunc		=  self::$PathCmpFunc ;
+		$status			=  false ;
+		$found			=  false ;
+		$insert_at		=  false ;
+
+		// The setting list ("extension=" or "zend_extension=") is defined ; check if our extension is already present here
+		if  ( isset ( $this -> Settings [ $setting ] ) )
+		   {
+			foreach  ( $this -> Settings [ $setting ]  as  $index )
+			   {
+				$element	=  &$this -> Elements [ $index ] ;
+
+				// Extension present
+				if  ( ! $cmpfunc ( $extension_name, $element [ 'value' ] ) )
+				   {
+					// If not commented, then we have nothing to do
+					if  ( ! $element [ 'commented' ] )
+						return ( false ) ;
+
+					// Otherwise, just remove the comment
+					$element [ 'commented' ]	=  false ;
+					$status				=  true ;
+					$found				=  true ;
+
+					break ;
+				    }
+			    }
+
+			// Extension not found : determine the insertion point, which is after the very last "extension" or "zend_extension" setting
+			if  ( ! $found )
+				$insert_at	=  $this -> Settings [ $setting ] [ count ( $this -> Settings [ $setting ] ) - 1 ] + 1 ;
+		    }
+
+		// Insert the extension if not found
+		if  ( ! $found ) 
+		   {
+			$entry		=
+			   [
+				'section'	=>  ( $zend ) ?  '' : 'PHP',
+				'type'		=>  self::INI_TYPE_ENTRY,
+				'name'		=>  $setting,
+				'equals'	=>  ' = ',
+				'value'		=>  $extension_name,
+				'value-type'	=>  self::VALUE_TYPE_STRING,
+				'quoted'	=>  false,
+				'extra'		=>  '',
+				'commented'	=>  false,
+				'line'		=>  -1 
+			     ] ;
+			
+			// If no insertion point was determined (because there is no "extension" or "zend_extension" setting in the php.ini file),
+			// then append it to the file
+			if  ( $insert_at  ===  false )
+			   {
+				$this -> Elements []			=  $entry ;
+				$this -> Settings [ $setting ] []	=  count ( $this -> Elements ) - 1 ;
+			    }
+			// Otherwise, insert it at the insertion point
+			else
+			   {
+				array_splice ( $this -> Elements, $insert_at, 0, [ $entry ] ) ;
+				$this -> Settings [ $setting ] []	=  $insert_at ;
+			    }
+		    }
+
+		// All done, return
+		return ( $status ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
 	        AsString, Save, SaveTo - Saves the current PHP settings.
 	
 	    PROTOTYPE
@@ -337,6 +653,9 @@ class  PhpSettings	extends  Object
 	    PARAMETERS
 	        $output_file (string) -
 	                Name of the output file where the settings are to be saved.
+
+	    RETURN VALUE
+		The Save() returns false if the file was not saved because it has not been modified.
 	
 	    NOTES
 	        The Save() method will reset the IsDirty flag, while the SaveTo() one will leave it unmodified.
@@ -379,18 +698,37 @@ class  PhpSettings	extends  Object
 
 
 	public function  Save ( )
-	   { $this -> SaveTo ( $this -> Filename ) ; }
+	   {
+		if  ( $this -> IsDirty )
+		   {
+			$this -> SaveTo ( $this -> Filename ) ; 
+			return ( true ) ;
+		    }
+		else
+			return ( false ) ;
+	    }
 
 
 	public function  SaveTo ( $filename )
 	   {
 		$this -> __ensure_loaded ( ) ;
 
+		$contents	=  $this -> AsString ( ) ;
+		$same_path	=  Path::SamePath ( $this -> Filename, $filename ) ;
+
+		if  ( $same_path  &&  ( $this -> Options & self::OPTION_CREATE_BACKUP ) )
+			$this -> __create_backup ( ) ;
+		else
+			$this -> BackupFile	=  '' ;
+
 		if  ( ! ( $fp = fopen ( $filename, "w" ) ) )
 			error ( new PhpSettingException ( "Unable to open file \"$filename\" for writing." ) ) ;
 
-		fwrite ( $fp, $this -> AsString ( ) ) ;
+		fwrite ( $fp, $contents ) ;
 		fclose ( $fp ) ;
+
+		if  ( $same_path )
+			$this -> IsDirty	=  false ;
 	    }
 
 
@@ -513,6 +851,49 @@ class  PhpSettings	extends  Object
 
 		// All done, assign the new value to this setting
 		$element [ 'value' ]	=  $new_value ;
+
+		// Say that something was modified
+		$this -> IsDirty	=  true ;
+	    }
+
+
+	// __create_backup -
+	//	Creates a backup file.
+	private function  __create_backup ( )
+	   {
+		$renumber	=  ( ( $this -> Options & self::OPTION_NUMBERED_BACKUPS )  ===  self::OPTION_NUMBERED_BACKUPS ) ;
+		$root_name	=  $this -> Filename ;
+
+		// Create a numbered backup file if necessary (file.ini.x.bak)
+		if  ( $renumber )
+		   {
+			$files		=  glob ( "$root_name.*.bak" ) ;
+
+			if  ( $files )
+			   {
+				$max	=  -1 ;
+
+				foreach  ( $files  as  $file )
+				   {
+					preg_match ( '/ (?P<number> \d+) \.bak /ix', $file, $match ) ;
+
+					if  ( $match [ 'number' ]  >  $max )
+						$max	=  $match [ 'number' ] ;
+				    }
+
+				$max ++ ;
+			    }
+			else
+				$max	=  1 ;
+
+			$output		=  "$root_name.$max.bak" ;
+		    }
+		else
+			$output		=  "$root_name.bak" ;
+
+		copy ( $this -> Filename, $output ) ;
+
+		$this -> BackupFile		=  $output ;
 	    }
 
 
@@ -545,7 +926,7 @@ class  PhpSettings	extends  Object
 		if  ( $section )
 		   {	
 			// This section already exists
-			if  ( isset ( $this -> SectionsIndexes [ $section ] ) )
+			if  ( isset ( $this -> SectionIndexes [ $section ] ) )
 			   {
 				// Get the next section after this one
 				$next_section		=  $this -> SectionIndexes [ $section ] + 1 ;
@@ -557,7 +938,7 @@ class  PhpSettings	extends  Object
 				// Otherwise, insert the new entry before the start of the next section
 				else
 				   {
-					array_splice ( $this -> Elements, $this -> Sections [ $next_section ] [ 'element' ] - 1, 0, $entry ) ;
+					array_splice ( $this -> Elements, $this -> Sections [ $next_section ] [ 'element' ], 0, [ $entry ] ) ;
 
 					// Renumber the starting entries for each section after the specified one
 					$this -> __renumber_sections ( $next_section, 1 ) ;
@@ -595,6 +976,9 @@ class  PhpSettings	extends  Object
 		    {
 			$this -> Elements []	=  $entry ;
 		     }
+
+		// Say that something was modified
+		$this -> IsDirty	=  true ;
 	    }
 
 
@@ -762,6 +1146,33 @@ class  PhpSettings	extends  Object
 	    }
 
 
+	// __get_extension_name -
+	//	Returns the real extension name. For example, if the supplied input extension is "mbstring", the output 
+	//	will be :
+	//	- "php_mbstring.dll" on Windows systems
+	//	- "mbstring.so" on Unix systems
+	private function  __get_extension_name ( $name, $zend, $prefix )
+	   {
+		// We can't do nothing much with zend_extension entries
+		if  ( $zend )
+			return ( $name ) ;
+
+		// If a composite path has been specified, do nothing
+		if  ( strpos ( $name, '/' )  !==  false  ||  strpos ( $name, '\\' )  !==  false )
+			return ( $name ) ;
+
+		// A single name has been specified ; check if we need to add an extension
+		if  ( ! pathinfo ( $name, PATHINFO_EXTENSION ) )
+			$name	.=  '.' . self::$DllExtension ;
+
+		// And on Windows platform, check if we need to prepend the string "php_"
+		if  ( $prefix  &&  self::$DllPrefix  &&  strncasecmp ( $name, self::$DllPrefix, strlen ( self::$DllPrefix ) ) )
+			$name	=  self::$DllPrefix . $name ;
+
+		return ( $name ) ;
+	    }
+
+
 	// __guess_value_type -
 	//	Tries to guess the type of the specified value.
 	private function  __guess_value_type ( $setting, $value )
@@ -884,7 +1295,7 @@ class  PhpSettings	extends  Object
 
 	// __load_php_settings -
 	//	Loads the decription of PHP settings, taken from the PHP documentation.
-	private function  __load_php_settings ( )
+	private static function  __load_php_settings ( )
 	   {
 		// Don't do antyhing if no file found
 		if  ( ! file_exists ( self::$PhpSettingsFile ) )
@@ -984,7 +1395,7 @@ class  PhpSettings	extends  Object
 	//	Checks whether a setting value needs to be quoted when writing it back to a .ini file.
 	private function  __needs_quoting ( $value )
 	   {
-		return ( preg_match ( '/[{}|&~!\[()\^]"/', $value )  >  0 ) ;
+		return ( preg_match ( '/[${}\[()\^\]"]/', $value ) ) ;
 	    }
 
 
@@ -1015,15 +1426,24 @@ class  PhpSettings	extends  Object
 				switch  ( $ch )
 				   {
 					case	'"' :
-						break ;
+						$i ++ ;
+						break 2 ;
 
 					default :
 						$new_value	.=  $ch ;
 				    }
 			    }
+
+			$extra	=  substr ( $value, $i ) ;
 		    }
 		else
-			$new_value	=  $value ;
+		   {
+			preg_match ( '/ (?P<value> .*?) (?P<extra> \s* ; .*)? $/x', $value, $match ) ;
+			$new_value	=  $match [ 'value' ] ;
+		
+			if  ( isset ( $match [ 'extra' ] ) )
+				$extra	=  $match [ 'extra' ] ;
+		    }
 
 		// Try to guess the value type
 		$value_type	=  $this -> __guess_value_type ( $setting, $new_value ) ;
@@ -1055,7 +1475,7 @@ class  PhpSettings	extends  Object
 	   {
 		for  ( $i = 0, $count = count ( $this -> Sections ) ; $i  <  $count ; $i ++ )
 		   {
-			$this -> Sections [$i]	+=  $increment ;
+			$this -> Sections [$i] [ 'element' ]	+=  $increment ;
 		    }
 	    }
 
@@ -1214,6 +1634,8 @@ class  PhpModuleVersion	extends  Object
 
 	public function  __construct ( $module, $version )
 	   {
+		parent::__construct ( ) ;
+
 		$this -> Module		=  $module ;
 
 		if  ( ! preg_match ( '/^ (?P<version> (?P<major> \d+) ( \. (?P<minor> \d+) (\. (?P<release> \d+) )? )? ) $/x', $version, $match ) )
