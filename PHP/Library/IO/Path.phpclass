@@ -75,6 +75,9 @@
     [Version : 1.0.17]		[Date : 2016/11/01]		[Author : CV]
 	. RealPath() method : use the path of the current script if $_SERVER [ 'SCRIPT_FILENAME' ]
 	  is undefined.
+  
+    [Version : 1.0.18]		[Date : 2016/11/14]		[Author : CV]
+	. Added the NextUniqueFilename() method.
 
  ***************************************************************************************************/
 namespace 	Thrak\IO ;
@@ -155,7 +158,6 @@ define ( 'FIND_OPTIONS_EXTENDED_STAT_INFO'	, 0x04 ) ;
 define ( 'FIND_OPTIONS_ALL'			, 0xFF ) ;
 define ( 'FIND_OPTIONS_DEFAULT'			, 0x01 ) ;
 define ( 'FIND_OPTIONS_EXTRA_MASK'		, 0xFE ) ;
-
 
 
 /*===========================================================================================
@@ -1786,6 +1788,114 @@ class  	Path	extends  Object
 			chgrp ( $file, $group ) ;
 		
 		return ( true ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        NextUniqueFilename - Generates a unique filename based on a pattern.
+	
+	    PROTOTYPE
+	        $filename	=  Path::NextUniqueFilename ( $file_specifier, $specifier = 's' ) ;
+	
+	    DESCRIPTION
+	        Generates a unique filename based on a pattern, that includes a sprintf()-like format specifier to be
+		replaced with a unique sequential number. This function can be used in cases where you need to create
+		sequentially numbered backup files, such as "file.txt.1.bak" for file "file.txt". The next backup 
+		filename would be "file.txt.2.bak", and so on.
+
+		If files exists matching this pattern, the nex sequence id will be that of the highest found sequence,
+		plus 1. For example, if the directory contains files "file.1.txt" to "file.10.txt", calling 
+		NextUniqueFilename() will return "file.11.txt".
+	
+	    PARAMETERS
+	        $file_specifier (string) -
+	                A file pattern containing a format specifier such as "%s". The "s" from "%s" is specified by
+			the $specifier parameter.
+			If the file does not contain any format specifier, a default value of ".%s" will be appended
+			to the supplied filename (eg, specifying "file.txt" will yield to "file.txt.%s".
+			As for sprintf(), a width can be specified in the pattern ; to generate a file pattern with 
+			4-digits sequential ids, just specify :
+
+				file.%04s.txt
+
+		$specifier (string) -
+			The character used in the format specifier, to be replaced by a unique sequential id.
+			This parameter must be specified as a single alphabetic character.
+	
+	    RETURN VALUE
+	        Returns the generated unique filename, or false if an invalid specifier was supplied.
+
+	    NOTES
+		This function does not create any file.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public static function  NextUniqueFilename ( $file_specifier, $specifier = 's' ) 
+	   {
+		// The specifier must be a single alphabetic character
+		if  ( strlen ( $specifier )  !=  1  ||  ! ctype_alpha ( $specifier ) )
+			return ( false ) ;
+
+		$re	=  "/^
+				(?P<head> .*?)
+				(?P<specifier>
+					%
+					(?P<width> \d*)
+					$specifier
+					)
+				(?P<tail> .*)
+			      \$/ix" ;
+
+		// A specifier was found in the $file_specifier string ; isolate the head and the tail (ie, the left and right
+		// parts around the '%s' specifier), then build a file mask to retrieve the list of files currently matching
+		// the specified pattern
+		if  ( preg_match ( $re, $file_specifier, $match ) )
+		   {
+			$specifier	=  $match [ 'specifier' ] ;
+			$head		=  $match [ 'head' ] ;
+			$tail		=  $match [ 'tail' ] ;
+			$mask		=  $match [ 'head' ] . '*' . $match [ 'tail' ] ;
+		    }
+		// Otherwise (no specifier supplied), append the specifier to the filename
+		else
+		   {
+			$specifier	 =  '%s' ;
+			$mask		 =  $file_specifier . '.*' ;
+			$head		 =  $file_specifier . '.' ;
+			$tail		 =  '' ;
+			$file_specifier .=  '.%' . $specifier ;
+		    }
+
+		// Search for files matching the generated mask
+		$files	=  glob ( $mask ) ;
+
+		if  ( count ( $files ) )
+		   {
+			$seqid		=  -PHP_INT_MAX ;
+			$offset		=  strlen ( $head ) ;
+
+			foreach  ( $files  as  $file )
+			   {
+				preg_match ( '/\d+/', $file, $match, 0, $offset ) ;
+
+				if  ( $match [0]  >  $seqid )
+					$seqid	=  $match [0] ;
+			    }
+		    }
+		// No files found : the next sequence id will be 1
+		else
+			$seqid	=  0 ;
+
+		// Build the next sequence id, taking into account the width modifiers between the '%' and the $specifier character
+		$seqid ++ ;
+		$seqstr		=  sprintf ( $specifier, $seqid ) ;
+
+		// Generate the new filename
+		$new_filename	=  "$head$seqstr$tail" ;
+
+		// All done, return
+		return ( $new_filename ) ;
 	    }
 
 
