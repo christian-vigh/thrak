@@ -14,6 +14,15 @@
     [Version : 1.0]	[Date : 2016-11-05]     [Author : CV]
         Initial version.
 
+    [Version : 1.0.1]	[Date : 2016-11-13]     [Author : CV]
+	. Added the Clear() method
+	. Specifying a null value to the Set() method will unset the specified setting.
+	. The EnableExtension() and DisableExtension() methods were not setting the IsDirty flag.
+
+    [Version : 1.0.2]	[Date : 2016-11-16]     [Author : CV]
+	. Added various optimizations.
+	. A commented-out setting was not uncommented when assigning a new value to it.
+
  **************************************************************************************************************/
 namespace 	Thrak\Processors ;
 
@@ -335,7 +344,7 @@ class  PhpSettings	extends  Object
 	                Setting name to be modified or created.
 
 		$value (string) -
-			New setting value.
+			New setting value. If the specified value is null, the setting will be commented out.
 
 		$section (string) -
 			When specified AND the setting does not exist, it will be appended to the specified .INI section ;
@@ -359,6 +368,47 @@ class  PhpSettings	extends  Object
 
 	public function  Set ( $setting, $value, $section = false )
 	   {
+		if  ( $value  !==  null )
+		   {
+			$this -> __ensure_loaded ( ) ;
+
+			$lower_setting	=  strtolower ( $setting ) ;
+
+			if  ( isset ( $this -> Settings [ $lower_setting ] ) )
+			   {
+				$index		=  $this -> __elect_setting ( $setting ) ;
+			
+				$this -> __assign_setting ( $index, $section, $setting, $value ) ;
+			    }
+			else
+				$this -> __create_setting ( $section, $setting, $value ) ;
+		    }
+		else
+			$this -> Clear ( $setting ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        Clear - Undefines a setting.
+	
+	    PROTOTYPE
+	        $settings -> Clear ( $setting ) ;
+	
+	    DESCRIPTION
+	        Undefines the specified setting. 
+		If the setting already exists in the INI file, it will simply be commented out.
+		If it is defined multiple times (which should never happen), only the last non-commented occurrence will
+		be commented out.
+	
+	    PARAMETERS
+	        $setting (string) -
+	                Setting to be undefined.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  Clear ( $setting )
+	   {
 		$this -> __ensure_loaded ( ) ;
 
 		$lower_setting	=  strtolower ( $setting ) ;
@@ -366,11 +416,9 @@ class  PhpSettings	extends  Object
 		if  ( isset ( $this -> Settings [ $lower_setting ] ) )
 		   {
 			$index		=  $this -> __elect_setting ( $setting ) ;
-			
-			$this -> __assign_setting ( $index, $section, $setting, $value ) ;
+
+			$this -> Elements [ $index ] [ 'commented' ]	=  true ;
 		    }
-		else
-			$this -> __create_setting ( $section, $setting, $value ) ;
 	    }
 
 
@@ -524,6 +572,8 @@ class  PhpSettings	extends  Object
 			    }
 		    }
 
+		$this -> IsDirty	=  true ;
+
 		return ( $status ) ;
 	    }
 
@@ -629,6 +679,8 @@ class  PhpSettings	extends  Object
 			    }
 		    }
 
+		$this -> IsDirty	=  true ;
+
 		// All done, return
 		return ( $status ) ;
 	    }
@@ -680,9 +732,22 @@ class  PhpSettings	extends  Object
 					break ;
 
 				case	self::INI_TYPE_ENTRY :
-					$line 	=  $this -> __format_entry ( $item ) ;
+					$quote		=  $item [ 'quoted' ] ;
+					$value		=  $item [ 'value' ] ;
+
+					if  ( ! $quote )
+					   {
+						$length		=  strlen ( $value ) ;
+						$quote		=  ( strcspn ( $value, '${}[]()^' )  <  $length ) ;
+					    }
+
+					if  ( $quote )
+						$value		=  '"' . $value . '"' ;
+
+					$result		 .=   ( ( $item [ 'commented' ] ) ?  ';' : '' ) .
+							      $item [ 'name' ] . $item [ 'equals' ] . $value .
+							      $item [ 'extra' ] . "\n" ;
 					
-					$result		.=   "$line\n" ;
 					break ;
 			    }
 		    }
@@ -711,8 +776,6 @@ class  PhpSettings	extends  Object
 
 	public function  SaveTo ( $filename )
 	   {
-		$this -> __ensure_loaded ( ) ;
-
 		$contents	=  $this -> AsString ( ) ;
 		$same_path	=  Path::SamePath ( $this -> Filename, $filename ) ;
 
@@ -850,10 +913,11 @@ class  PhpSettings	extends  Object
 		    }
 
 		// All done, assign the new value to this setting
-		$element [ 'value' ]	=  $new_value ;
+		$element [ 'value' ]		=  $new_value ;
+		$element [ 'commented' ]	=  false ;
 
 		// Say that something was modified
-		$this -> IsDirty	=  true ;
+		$this -> IsDirty		=  true ;
 	    }
 
 
@@ -1017,43 +1081,113 @@ class  PhpSettings	extends  Object
 		// are considered to belong to this PHP section.
 		$current_section	=  '' ;
 		
-		// Loop through .ini lines
+		// Loop through .ini lines, trying to use preg_match() only when necessary
 		for ( $i = 0, $line_count = count ( $lines ) ; $i  <  $line_count ; $i ++ )
 		   {
-			$line	=  rtrim ( $lines [$i], "\r\n" ) ;
+			$trimmed_line	=  trim ( $lines [$i] ) ;
 
-			// Section name of the form [name]
-			// Comments occurring after the section definition will be preserved.
-			if  ( preg_match ( '/^ \s* \[ (?P<section> [^\]]+) \] (?P<extra> .*) /x', $line, $match ) )
+			// Either a comment or a commented-out setting
+			if  ( ! isset ( $trimmed_line [0] )  ||  $trimmed_line [0]  ==  ';'  ||  $trimmed_line [0]  ==  '#' )
 			   {
-				$current_section	=  $match [ 'section' ] ;
+				$comment	=  '' ;
+				$comment_count	=  0 ;
 
-				// Add the entry
-				$entry			=
-				   [
-					'section'	=>  $current_section,
-					'type'		=>  self::INI_TYPE_SECTION,
-					'extra'		=>  $match [ 'extra' ]
-				    ] ;
+				// Gather consecutive comments as a single entry 
+				do
+				   {
+					// Stop here if we have a commented-out setting
+					if  ( isset ( $trimmed_line [1] )  &&  ( ctype_alpha ( $trimmed_line [1] )  ||  $trimmed_line [1]  ==  '_' )  &&
+							strpos ( $trimmed_line, '=' )  !==  false )
+						break ;
+					// Otherwise, just catenate this line to the comments gathered so far
+					else
+					   {
+						$comment	.=   $lines [$i] ;
+						$comment_count ++ ;
+					    }
+
+					// Process next line, but break the for() loop if we went past the last line
+					$i ++ ;
+
+					if  ( $i  >=  $line_count )
+						break 2 ;
+
+					$trimmed_line	=  trim ( $lines [$i] ) ;
+
+				    }  while  ( ! isset ( $trimmed_line [0] )  ||  $trimmed_line [0]  ==  ';'  ||  $trimmed_line [0]  ==  '#' ) ;
+
+				// A comment has been found (we need to check $comment_count here, because it will be zero if we only met a
+				// commented-out setting, which we don't consider that much as a comment...)
+				if  ( $comment_count )
+				   {
+					$length		=  strlen ( $comment ) ;
+
+					// Remove only the very last line break from this comment.
+					// Care is taken here, because we need to remove only the very last line break, so we cannot use rtrim()
+					if  ( $length )
+					   {
+						$old_length	=  $length ;
+
+						if  ( $comment [ $length - 1 ]  ==  "\n" )
+							$length -- ;
+
+						if  ( $length  &&  $comment [ $length - 1 ]  ==  "\r" )
+							$length -- ;
+
+						if  ( $old_length  !=  $length )
+							$comment = substr ( $comment, 0, $length ) ;
+					    }
+
+					// Add this comment entry
+					$entry		= 
+					   [
+						'section'	=>  $current_section,
+						'type'		=>  self::INI_TYPE_COMMENT,
+						'value'		=>  $comment
+					    ] ;
+
+					$this -> Elements []	=  $entry ;
+				    }
 			    }
-			// A setting definition.
-			// Note that we also handle settings that have been commented out, such as :
-			//	;memory_limit = 16M
-			// In this case, giving a new value for this setting will reuse this line by uncommenting it
-			// There must be NO space between the semicolon and the setting name.
-			// If the same setting is defined as both commented and uncommented, the uncommented version 
-			// will be used.
-			else if  ( preg_match ( '/^ \s* (?P<comment> ;)? (?P<name> [^\s=]+) (?P<equals> \s* = \s*) (?P<value> .*) /ix', $line, $match ) )
+
+			// Section name found - Preserve the optional comment after it
+			if  ( $trimmed_line [0]  ==  '[' )
+			   {
+				if  ( preg_match ( '/^ \s* \[ (?P<section> [^\]]+) \] (?P<extra> .*) /x', $lines [$i], $match ) )
+				   {
+					$current_section	=  $match [ 'section' ] ;
+
+					$entry			=
+					   [
+						'section'	=>  $current_section,
+						'type'		=>  self::INI_TYPE_SECTION,
+						'extra'		=>  rtrim ( $match [ 'extra' ], "\r\n" )
+					    ] ;
+				    }
+				else
+				   {
+					$entry			=
+					   [
+						'section'	=>  $current_section,
+						'type'		=>  self::INI_TYPE_SECTION,
+						'extra'		=>  rtrim ( $match [ 'extra' ], "\r\n" ) . ' ; *** UNTERMINATED SECTION' 
+					    ] ;
+				    }
+
+				$this -> Elements []	=  $entry ;
+			    }
+			// Setting, either commented out or not
+			else if  ( preg_match ( '/^ \s* (?P<comment> ;)? (?P<name> [^\s=]+) (?P<equals> \s* = \s*) (?P<value> .*) /ix', $lines [$i], $match ) )
 			   {
 				$name						=  $match [ 'name' ] ;
-				list ( $value, $quoted, $value_type, $extra )	=  $this -> __preprocess_value ( $current_section, $name, trim ( $match [ 'value' ] ) ) ;
+				list ( $value, $quoted, $value_type, $extra )	=  $this -> __preprocess_value ( $current_section, $name, $match [ 'value' ] ) ;
 
 				$entry		=
 				   [
 					'section'	=>  $current_section,
 					'type'		=>  self::INI_TYPE_ENTRY,
 					'name'		=>  $name,
-					'equals'	=>  $match [ 'equals' ],
+					'equals'	=>  rtrim ( $match [ 'equals' ], "\r\n" ),
 					'value'		=>  $value,
 					'value-type'	=>  $value_type,
 					'quoted'	=>  $quoted,
@@ -1068,39 +1202,26 @@ class  PhpSettings	extends  Object
 					$this -> Settings [ $name ] []	=  count ( $this -> Elements ) ;
 				else
 					$this -> Settings [ $name ]	=  [ count ( $this -> Elements ) ] ;
+
+				$this -> Elements []	=  $entry ;
 			    }
-			// Anything else is considered as a comment ; group consecutive comments or empty lines into one 
-			// single entry
+			// Unhandled line contents - we should never arrive here unless :
+			// . There is a bug in this code
+			// . The .INI file is syntactically incorrect
 			else
 			   {
-				$comment	=  $line ;
-
-				for  ( $j = $i + 1 ; $j  <  $line_count ; $j ++ )
-				  {
-					$line	=   rtrim ( $lines [$j], "\r\n" ) ;
-
-					// Break if we find a setting that has been commented out
-					if  ( preg_match ( '/^ ; [^ \t]/x', $line ) )
-						break ;
-
-					if  ( ! preg_match ( '/^ \s* (?P<comment> [\#;] .*)? $/x', $line, $match ) )
-						break ;
-
-					$comment	.=  "\n$line" ;
-				   }
-
-				$i	=  $j - 1 ;
-
 				$entry		= 
 				   [
 					'section'	=>  $current_section,
 					'type'		=>  self::INI_TYPE_COMMENT,
-					'value'		=>  $comment
+					'value'		=>  rtrim ( $lines [$i], "\r\n" ) 
 				    ] ;
-			    }
 
-			// Add this entry to the list of elements scanned so far
-			$this -> Elements []	=  $entry ;
+				if  ( isset ( $trimmed_line [0] )  &&  $trimmed_line [0]  !=  ';'  &&  $trimmed_line [0]  !=  '#' )
+					$entry [ 'value' ]	.=  ' ; *** UNCLASSIFIED ENTRY' ;
+
+				$this -> Elements []	=  $entry ;
+			    }
 		    }
 
 		// Build the $Sections array, which gives the starting line of each section (ie, the line containing [section name])
@@ -1129,20 +1250,6 @@ class  PhpSettings	extends  Object
 
 		// Say we're ok with loading
 		$this -> Loaded		=  true ;
-	    }
-
-
-	// __format_entry -
-	//	Returns a setting definition, ready for writing back to a .ini file.
-	//	The initial formatting, including spaces and optional comment, is preserved.
-	private function  __format_entry ( $item )
-	   {
-		$result		=   ( ( $item [ 'commented' ] ) ?  ';' : '' ) .
-				    $item [ 'name' ] . $item [ 'equals' ] .
-				    $this -> __quote_value ( $item [ 'value' ], $item [ 'quoted' ] ) .
-				    $item [ 'extra' ] ;
-
-		return ( $result ) ;
 	    }
 
 
@@ -1177,37 +1284,56 @@ class  PhpSettings	extends  Object
 	//	Tries to guess the type of the specified value.
 	private function  __guess_value_type ( $setting, $value )
 	   {
-		static 	$boolean_values 	=  [ 'on', 'true', 'yes', 'off', 'false', 'no', 'none' ] ;
+		static 	$boolean_values 	=  [ 'on' => 1, 'true' => 1, 'yes' => 1, 'off' => 0, 'false' => 0, 'no' => 0, 'none' => 0 ] ;
+		static  $value_types		=  [] ;
 		
-		$low_value 		=  strtolower ( $value ) ;
-		$length 		=  strlen ( $value ) ;
+		// Keeping a cache of last seen values with their types is really successful
+		// When processing 537 php.ini files, only 201 cache misses were found, among 175837 values...
+		if  ( isset ( $value_types [ $value ] ) )
+			return ( $value_types [ $value ] ) ;
+
 		$type			=  self::VALUE_TYPE_NONE ;
 		
 		// Do a first guess, based on the value type
-		if  ( is_numeric ( $value ) )
+		if  ( isset ( $value [0] ) )
 		   {
-			$v 	=  ( float ) $value ;
-			
-			if  ( ceil ( $v )  ==  $v )
+			// String or boolean value
+			if  ( $value [0]  <  '0'  ||  $value [0]  >  '9' )
 			   {
-				if  ( ! strncasecmp ( $value, '0x', 2 ) )
-					$type	=  self::VALUE_TYPE_HEXADECIMAL_INTEGER ;
-				else if  ( $length  >  1  &&  $value [0]  ==  '0' )
-					$type	=  self::VALUE_TYPE_OCTAL_INTEGER ;
+				if  ( isset ( $boolean_values [ strtolower ( $value ) ] ) )
+					$type	=  self::VALUE_TYPE_BOOLEAN ;
 				else
-					$type	=  self::VALUE_TYPE_INTEGER ;
+					$type	=  self::VALUE_TYPE_STRING ;
 			    }
-			else
-				$type	=  self::VALUE_TYPE_FLOAT ;
+			// Numeric value, specified in decimal, hex or octal base, or as a floating-point number
+			else if  ( is_numeric ( $value ) )
+			   {
+				$v 	=  ( float ) $value ;
+			
+				if  ( ( integer ) $v  ==  $v )
+				   {
+					if  ( $value [0]  !==  '0' )
+						$type	=  self::VALUE_TYPE_INTEGER ;
+					else
+					   {
+						if  ( isset ( $value [1] )  &&  ( $value [1]  ===  'x'  ||  $value [1]  ===  'X' ) )
+							$type	=  self::VALUE_TYPE_HEXADECIMAL_INTEGER ;
+						else
+							$type	=  self::VALUE_TYPE_OCTAL_INTEGER ;
+					    }
+				    }
+				else
+					$type	=  self::VALUE_TYPE_FLOAT ;
+			    }
+			// Percentage or byte quantity
+			else if  ( preg_match ( '/ \d+ (?P<suffix> (%) | ( [kmgt][b]? ) ) $/ix', $value, $match ) )
+			   {
+				if  ( $match [ 'suffix' ]  ==  '%' )
+					$type		=  self::VALUE_TYPE_PERCENTAGE ;
+				else
+					$type		=  self::VALUE_TYPE_QUANTITY ;
+			    }
 		    }
-		else if  ( in_array ( $low_value, $boolean_values ) )
-			$type	=  self::VALUE_TYPE_BOOLEAN ;
-		else if  ( preg_match ( '/^\d+%$/', $value ) )
-			$type	=  self::VALUE_TYPE_PERCENTAGE ;
-		else if  ( preg_match ( '/^\d+[kmgt][b]?$/i', $value ) )
-			$type	=  self::VALUE_TYPE_QUANTITY ;
-		else if  ( $value  !==  '' )
-			$type	=  self::VALUE_TYPE_STRING ;
 
 		// If the value type cannot be determined, this means that an empty value was specified for the setting.
 		// In this case, look at the $PhpSettings that have been loaded (if any) and return the corresponding 
@@ -1220,6 +1346,9 @@ class  PhpSettings	extends  Object
 			else
 				$type	=  self::VALUE_TYPE_STRING ;
 		    }
+		
+		// Memorize this value/type association
+		$value_types [ $value ]		=  $type ;
 
 		// All done, return 
 		return ( $type ) ;
@@ -1391,14 +1520,6 @@ class  PhpSettings	extends  Object
 	    }
 
 
-	// __needs_quoting -
-	//	Checks whether a setting value needs to be quoted when writing it back to a .ini file.
-	private function  __needs_quoting ( $value )
-	   {
-		return ( preg_match ( '/[${}\[()\^\]"]/', $value ) ) ;
-	    }
-
-
 	// __preprocess_value -
 	//	The regular expression used for capturing setting definitions in __ensure_loaded() catches both the value
 	//	after the equal sign, and the optional comment in a single capture.
@@ -1410,46 +1531,59 @@ class  PhpSettings	extends  Object
 	//	- The optional comment, including spaces after the value
 	private function  __preprocess_value ( $section, $setting, $value )
 	   {
+		static		$values		=  [] ;
+
 		$quoted		=  false ;
 		$extra		=  '' ;
 
+		// Avoid analyzing the same values again and again by memorizing them as they come in
+		if  ( isset ( $values [ $value ] ) )
+			return ( $values [ $value ] ) ;
+
+		$trimmed_value	=  trim ( $value ) ;
+
 		// If the string is quoted, remove the quotes and process escaped characters inside
-		if  ( isset ( $value [0] )  &&  $value [0]  ==  '"' )
+		if  ( isset ( $trimmed_value [0] )  &&  $trimmed_value [0]  ==  '"' )
 		   {
 			$new_value	=  '' ;
 			$quoted		=  true ;
-
-			for  ( $i = 1, $length = strlen ( $value ) ; $i  <  $length ; $i ++ )
+			
+			if  ( ( $last_quote = strpos ( $trimmed_value, '"', 1 ) )  !==  false ) 
 			   {
-				$ch	=  $value [$i] ;
-
-				switch  ( $ch )
-				   {
-					case	'"' :
-						$i ++ ;
-						break 2 ;
-
-					default :
-						$new_value	.=  $ch ;
-				    }
+				$new_value	=  substr ( $trimmed_value, 1, $last_quote - 1 ) ;
+				$extra		=  substr ( $trimmed_value, $last_quote + 1 ) ;
 			    }
-
-			$extra	=  substr ( $value, $i ) ;
+			else	// Unterminated quoted string
+				$new_value	=  substr ( $trimmed_value, 1 ) ;
 		    }
 		else
 		   {
-			preg_match ( '/ (?P<value> .*?) (?P<extra> \s* ; .*)? $/x', $value, $match ) ;
-			$new_value	=  $match [ 'value' ] ;
-		
-			if  ( isset ( $match [ 'extra' ] ) )
-				$extra	=  $match [ 'extra' ] ;
+			$semicolon_index	=  strpos ( $trimmed_value, ';' ) ;
+
+			if  ( $semicolon_index  ===  false )
+				$new_value	=  $trimmed_value ;
+			else
+			   {
+				for  ( $i = $semicolon_index ; $i  >=  0 ; $i -- )
+				   {
+					if  ( ! ctype_space ( $trimmed_value [$i] ) )
+						break ;
+				    }
+
+				$i ++ ;
+				$new_value	=  substr ( $trimmed_value, 0, $i ) ;
+				$extra		=  substr ( $trimmed_value, $i ) ;
+			    }
 		    }
 
 		// Try to guess the value type
-		$value_type	=  $this -> __guess_value_type ( $setting, $new_value ) ;
+		$value_type		=  $this -> __guess_value_type ( $setting, $new_value ) ;
 
 		// All done, return
-		return ( [ $new_value, $quoted, $value_type, $extra ] ) ;
+		$result			=  [ $new_value, $quoted, $value_type, $extra ] ;
+		$values [ $value ]	=  $result ;
+
+		return ( $result ) ;
 	    }
 
 
@@ -1458,10 +1592,10 @@ class  PhpSettings	extends  Object
 	private function  __quote_value ( $value, $quote )
 	   {
 		if  ( ! $quote )
-			$quote	=  $this -> __needs_quoting ( $value ) ;
+			$quote		=  ( strcspn ( $value, '${}[]()^' )  <  strlen ( $value ) ) ;
 
 		if  ( $quote )
-			$result		=  '"' . str_replace ( '"', '\\"', $value ) . '"' ;
+			$result		=  '"' . $value . '"' ;
 		else
 			$result		=  $value ;
 
@@ -1582,9 +1716,10 @@ class  PhpSettings	extends  Object
 		// Convert back quantity to a multiple of Kilo, Mega, Giga or Terabytes
 		if  ( $byte_quantity )
 		   {
-			static	$suffixes	=  "KMGT" ;
+			static	$suffixes		=  "KMGT" ;
+			static	$suffixes_length	=  4 ;
 
-			if  ( strlen ( $unit )  ==  1 )
+			if  ( ! isset ( $unit [1] ) )		// strlen ( $unit )  ==  1
 			   {
 				$divider	=  1024 ;
 				$suffix		=  '' ;
@@ -1597,7 +1732,7 @@ class  PhpSettings	extends  Object
 
 			$new_unit	=  '' ;
 
-			for  ( $i = 0, $length = strlen ( $suffixes ) ; $i  <  $length ; $i ++ )
+			for  ( $i = 0 ; $i  <  $suffixes_length ; $i ++ )
 			   {
 				if  ( ! ( $byte_quantity % $divider ) )
 				   {
