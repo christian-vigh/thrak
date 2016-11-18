@@ -58,6 +58,10 @@
 	. Variables are either stored in a regular PHP array or an object of class AssociativeArray, depending
 	  on whether variable names are case-sensitive (Unix platforms) or not (Windows platforms). Array access
 	  methods called in a few locations of this class where not handling correctly this duality.
+
+    [Version : 1.0.4]	[Date : 2016/11/18]     [Author : CV]
+	. The destructor of the EnvironmentVariable object removed the environement variable, thus leading to
+	  progressively empty the $_ENV array.
  
  **************************************************************************************************************/
 namespace  Thrak\Processors ;
@@ -176,19 +180,6 @@ class  EnvironmentVariable		extends  Variable
 		
 		if  ( $value  ===  null )
 			$this -> GetValue ( ) ;
-	    }
-	
-	
-	/*==============================================================================================================
-	
-	    Destructor -
-	        Unsets the corresponding environment variable.
-	
-	  ==============================================================================================================*/
-	public function  __destruct ( )
-	   {
-		putenv ( $this -> Name ) ;
-		unset ( $_ENV [ $this -> Name ] ) ;
 	    }
 	
 	
