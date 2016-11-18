@@ -1,0 +1,182 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        PhpPackage.phpclass
+
+    DESCRIPTION
+        Encapsulates access to a PHP redistributable.
+
+    AUTHOR
+        Christian Vigh, 11/2016.
+
+    HISTORY
+    [Version : 1.0]	[Date : 2016-11-17]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Utilities ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use  Thrak\System\Object ;
+use  Thrak\Types\String ;
+use  Thrak\IO\Path ;
+use  Thrak\Processors\PhpSettings ;
+
+
+/*==============================================================================================================
+
+    class PhpPackage -
+        Wraps an existing PHP package installed in a directory.
+
+  ==============================================================================================================*/
+class  PhpPackage	extends	 Object 
+   {
+	// Supported architectures
+	const		ARCHITECTURE_X86	=  0 ;
+	const		ARCHITECTURE_X64	=  1 ;
+
+	// Php package version (eg, "5.6.27")
+	public		$Version ;
+	// Installation directory
+	public		$Directory ;
+	// Package name (name of the subdirectory of $Directory for this package)
+	public		$Package ;
+	// Platform
+	public		$IsWin32		=  1 ;
+	// Thread safety
+	public		$IsThreadSafe		=  1 ;
+	// Architecture
+	public		$Architecture		=  self::ARCHITECTURE_X86 ;
+	// VC runtime version
+	public		$VcVersion		=  6 ;
+	// PHP executable file 
+	public		$Executable ;
+	// Php.ini settings for this version
+	public		$Settings ;
+	// Indicates if the local directory exists for this package
+	public		$Virtual ;
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        Constructor - build a PhpPackage object.
+	
+	    PROTOTYPE
+	        $package	=  new PhpPackage ( $directory, $virtual = false ) ;
+	
+	    DESCRIPTION
+	        Builds a Php package object wrapping the contents of the specified binary distribution.
+	
+	    PARAMETERS
+	        $directory (string) -
+	                Path of the Php binary distribution.
+
+		$virtual (boolean) -
+			When true, the specified directory does not need to exist. In this case, the $Settings property
+			will be set to false.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( $directory, $virtual = false ) 
+	   {
+		$this -> Virtual	=  $virtual ;
+
+		$directory	=  Path::ToHost ( Path::RealPath ( $directory ) ) ;
+
+		// Check that :
+		// - $directory exists and is a directory, not a file
+		// - there is a PHP executable in it, along with a php.ini file.
+		if  ( ! $virtual )
+		   {
+			if   ( ! file_exists ( $directory ) )
+				error ( new \Thrak\System\FileNotFoundException ( "Path \"$directory\" does not exist." ) ) ;
+
+			if  ( ! is_dir ( $directory ) )
+				error ( new \Thrak\System\FileNotDirectoryException ( "Path \"$directory\" is not a valid path." ) ) ;
+		    }
+
+		$exe_file	=  $directory . DIRECTORY_SEPARATOR . 'php' ;
+
+		if  ( IS_WINDOWS )
+			$exe_file	.=  '.exe' ;
+
+		if  ( ! $virtual  &&  ! file_exists ( $exe_file ) )
+			error ( new \Thrak\System\FileNotFoundException ( "Path \"$directory\" does not contain any PHP executable." ) ) ;
+
+		$ini_file	=  $directory . DIRECTORY_SEPARATOR . 'php.ini' ;
+
+		if  ( ! $virtual  &&  ! file_exists ( $ini_file ) )
+			error ( new \Thrak\System\FileNotFoundException ( "Path \"$directory\" does not have a php.ini file." ) ) ;
+
+		// Save the base directory, executable and php.ini file locations
+		$this -> Directory	=  $directory ;
+		$this -> Executable	=  $exe_file ;
+		$this -> Settings	=  ( $virtual ) ?  false : new PhpSettings ( $ini_file, PhpSettings::OPTION_NUMBERED_BACKUPS ) ;
+
+		// The package name is only the sub-directory name of this build
+		$filename		=  basename ( $directory ) ;
+		$this -> Package	=  $filename ;
+
+		// Check that the package directory name is correct
+		if  ( ! preg_match_all ( '/ - (?P<option> [a-z_][a-z_0-9]*) /ix', $filename, $option_matches )  ||
+		      ! preg_match ( '/^ php- (?P<version> \d+ \. \d+ \. \d+)/ix', $filename, $version_match ) )
+			error ( "Path \"$directory\" does not follow the naming conventions for PHP redistributables." ) ;
+
+		$this -> Version	=  $version_match [ 'version' ] ;
+
+		// Get the package options from this name
+		foreach  ( $option_matches [ 'option' ]  as  $option )
+		   {
+			$low_option	=  strtolower ( $option ) ;
+
+			switch ( $low_option )
+			   {
+				case	'win32' :
+					$this -> IsWin32	=  1 ;
+					break ;
+
+				case	'nts' :
+					$this -> IsThreadSafe	=  0 ;
+					break ;
+
+				case	'x64' :
+					$this -> Architecture	=  self::ARCHITECTURE_X64 ;
+					break ;
+
+				case	'x86' :
+					$this -> Architecture	=  self::ARCHITECTURE_X86 ;
+					break ;
+
+				default :
+					if  ( substr ( $low_option, 0, 2 )  ==  'vc' )
+						$this -> VcVersion	=  ( integer ) substr ( $low_option, 2 ) ;
+					else
+						error ( new \Thrak\System\InvalidArgumentException ( "Path \"$directory\" contains an unknown token : $option." ) ) ;
+			    }
+		    }
+	    }
+
+
+	public function  Run ( $command, $php_options )
+	   {
+	    }
+    }
+
+
+
+class  PhpRunnerResult			extends		Object 
+   {
+	public		$Package ;
+	public		$Elapsed ;
+	public		$Output ;
+
+
+	public function  __construct ( $parent )
+	   {
+		parent::__construct ( ) ;
+
+		$this -> Package	=  $parent ;
+	    }
+    }

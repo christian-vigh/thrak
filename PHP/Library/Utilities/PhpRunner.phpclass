@@ -37,10 +37,10 @@ class	PhpRunner	extends  Object
 	public		$BinaryDirectory ;
 
 	// The list of PHP versions selected by the filter options passed to the constructor
-	public		$Versions ;
+	public		$Packages ;
 
 	// List of packages currently defined in $BinaryDirectory (without the directory part)
-	protected	$Packages ;
+	protected	$PackagesNames ;
 
 
 	/*--------------------------------------------------------------------------------------------------------------
@@ -123,10 +123,122 @@ class	PhpRunner	extends  Object
 		$this -> BinaryDirectory	=  $binary_directory ;
 
 		// Retrieve the list of PHP packages in the specified binary directory
-		$this -> Packages		=  $this -> __get_packages ( ) ;
+		$this -> PackageNames		=  $this -> __get_packages ( ) ;
 
 		// Retrieve the list of PHP versions that match the filter options
-		$this -> Versions		=  $this -> __get_applicable_versions ( $filter_options ) ;
+		$this -> Packages		=  $this -> __get_applicable_versions ( $filter_options ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        IniSet - Sets a .INI setting value.
+	
+	    PROTOTYPE
+	        $runner -> IniSet ( $setting, $value ) ;
+	
+	    DESCRIPTION
+	        Sets the value of a setting for the .INI files of all the PHP packages selected by this PhpRunner
+		instance.
+	
+	    PARAMETERS
+	        $setting (string) -
+	                Setting to be modified.
+
+		$value (string) -
+			New setting value. 
+			If null, the setting will be removed (that is, commented out in the .INI file).
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  IniSet ( $setting, $value )
+	   {
+		foreach  ( $this -> Packages  as  $package )
+		   {
+			$package -> Settings -> Set ( $setting, $value ) ;
+		    }
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        IniEnableExtension - Enables a PHP extention.
+	
+	    PROTOTYPE
+	        $runner -> IniEnableExtension ( $extension, $zend = false, $prefix = true ) ;
+	
+	    DESCRIPTION
+	        Enables the specified extension for the .INI files of all the PHP packages selected by this PhpRunner
+		instance.
+	
+	    PARAMETERS
+	        See the description of the PhpSettings::EnableExtension() method.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  IniEnableExtension ( $extension, $zend = false, $prefix = true ) 
+	   {
+		foreach  ( $this -> Packages  as  $package )
+		   {
+			$package -> Settings -> EnableExtension ( $extension, $zend, $prefix ) ;
+		    }
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        IniDisableExtension - Disables a PHP extention.
+	
+	    PROTOTYPE
+	        $runner -> IniDisableExtension ( $extension, $zend = false, $prefix = true ) ;
+	
+	    DESCRIPTION
+	        Disables the specified extension for the .INI files of all the PHP packages selected by this PhpRunner
+		instance.
+	
+	    PARAMETERS
+	        See the description of the PhpSettings::DisableExtension() method.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  IniDisableExtension ( $extension, $zend = false, $prefix = true ) 
+	   {
+		foreach  ( $this -> Packages  as  $package )
+		   {
+			$package -> Settings -> DisableExte6nsion ( $extension, $zend, $prefix ) ;
+		    }
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        IniSave - Saves all the .INI files.
+	
+	    PROTOTYPE
+	        $runner -> IniSave ( ) ;
+	
+	    DESCRIPTION
+	        Saves all the .INI files of all the PHP packages selected by this PhpRunner instance.
+		
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  IniSave ( )
+	   {
+		foreach  ( $this -> Packages  as  $package )
+		   {
+			$package -> Settings -> Save ( ) ;
+		    }
+	    }
+
+
+	public function  GroupRun ( $command, $php_options = false )
+	   {
+		$result_set	=  [] ;
+
+		foreach  ( $this -> Packages  as  $package )
+		   {
+			$result_set []	=  $package -> Run ( $command, $php_options ) ;
+		    }
 	    }
 
 
@@ -229,7 +341,7 @@ class	PhpRunner	extends  Object
 		$matched_packages	=  [] ;
 
 		// Loop through the packages that have been found in the directory specified 
-		foreach  ( $this -> Packages  as  $package )
+		foreach  ( $this -> PackageNames  as  $package )
 		   {
 			// Get all items specified after the initial "php" string
 			$parts	=  explode ( '-', $package ) ;
@@ -279,7 +391,7 @@ class	PhpRunner	extends  Object
 
 			// Check that this package matches the filter options
 			if  ( $this -> __match_package ( $searched_options, $package_options ) )
-				$matched_packages []	=  new PhpPackage ( $this -> BinaryDirectory . '/' . $package ) ;
+				$matched_packages [ $package ]	=  new PhpPackage ( $this -> BinaryDirectory . '/' . $package ) ;
 		    }
 
 		// Complain if no match found
@@ -368,126 +480,3 @@ class	PhpRunner	extends  Object
 	    }
     }
 
-
-/*==============================================================================================================
-
-    class PhpPackage -
-        Wraps an existing PHP package installed in a directory.
-
-  ==============================================================================================================*/
-class  PhpPackage	extends	 Object 
-   {
-	// Supported architectures
-	const		ARCHITECTURE_X86	=  0 ;
-	const		ARCHITECTURE_X64	=  1 ;
-
-	// Php package version (eg, "5.6.27")
-	public		$Version ;
-	// Installation directory
-	public		$Directory ;
-	// Package name (name of the subdirectory of $Directory for this package)
-	public		$Package ;
-	// Platform
-	public		$IsWin32		=  1 ;
-	// Thread safety
-	public		$IsThreadSafe		=  1 ;
-	// Architecture
-	public		$Architecture		=  self::ARCHITECTURE_X86 ;
-	// VC runtime version
-	public		$VcVersion		=  6 ;
-	// PHP executable file 
-	public		$Executable ;
-	// Php.ini settings for this version
-	public		$Settings ;
-
-
-	/*--------------------------------------------------------------------------------------------------------------
-	
-	    NAME
-	        Constructor - build a PhpPackage object.
-	
-	    PROTOTYPE
-	        $package	=  new PhpPackage ( $directory ) ;
-	
-	    DESCRIPTION
-	        Builds a Php package object wrapping the contents of the specified binary distribution.
-	
-	    PARAMETERS
-	        $directory (string) -
-	                Path of the Php binary distribution.
-	
-	 *-------------------------------------------------------------------------------------------------------------*/
-	public function  __construct ( $directory ) 
-	   {
-		$directory	=  Path::ToHost ( Path::RealPath ( $directory ) ) ;
-
-		// Check that :
-		// - $directory exists and is a directory, not a file
-		// - there is a PHP executable in it, along with a php.ini file.
-		if   ( ! file_exists ( $directory ) )
-			error ( new \Thrak\System\FileNotFoundException ( "Path \"$directory\" does not exist." ) ) ;
-
-		if  ( ! is_dir ( $directory ) )
-			error ( new \Thrak\System\FileNotDirectoryException ( "Path \"$directory\" is not a valid path." ) ) ;
-
-		$exe_file	=  $directory . DIRECTORY_SEPARATOR . 'php' ;
-
-		if  ( IS_WINDOWS )
-			$exe_file	.=  '.exe' ;
-
-		if  ( ! file_exists ( $exe_file ) )
-			error ( new \Thrak\System\FileNotFoundException ( "Path \"$directory\" does not contain any PHP executable." ) ) ;
-
-		$ini_file	=  $directory . DIRECTORY_SEPARATOR . 'php.ini' ;
-
-		if  ( ! file_exists ( $ini_file ) )
-			error ( new \Thrak\System\FileNotFoundException ( "Path \"$directory\" does not have a php.ini file." ) ) ;
-
-		// Save the base directory, executable and php.ini file locations
-		$this -> Directory	=  $directory ;
-		$this -> Executable	=  $exe_file ;
-		$this -> Settings	=  new PhpSettings ( $ini_file ) ;
-
-		// The package name is only the sub-directory name of this build
-		$filename		=  basename ( $directory ) ;
-		$this -> Package	=  $filename ;
-
-		// Check that the package directory name is correct
-		if  ( ! preg_match_all ( '/ - (?P<option> [a-z_][a-z_0-9]*) /ix', $filename, $option_matches )  ||
-		      ! preg_match ( '/^ php- (?P<version> \d+ \. \d+ \. \d+)/ix', $filename, $version_match ) )
-			error ( "Path \"$directory\" does not follow the naming conventions for PHP redistributables." ) ;
-
-		$this -> Version	=  $version_match [ 'version' ] ;
-
-		// Get the package options from this name
-		foreach  ( $option_matches [ 'option' ]  as  $option )
-		   {
-			$low_option	=  strtolower ( $option ) ;
-
-			switch ( $low_option )
-			   {
-				case	'win32' :
-					$this -> IsWin32	=  1 ;
-					break ;
-
-				case	'nts' :
-					$this -> IsThreadSafe	=  0 ;
-					break ;
-
-				case	'x64' :
-					$this -> Architecture	=  self::ARCHITECTURE_X64 ;
-					break ;
-
-				case	'x86' :
-					$this -> Architecture	=  self::ARCHITECTURE_X86 ;
-					break ;
-
-				default :
-					if  ( substr ( $low_option, 0, 2 )  ==  'vc' )
-						$this -> VcVersion	=  ( integer ) substr ( $low_option, 2 ) ;
-					else
-						error ( new \Thrak\System\InvalidArgumentException ( "Path \"$directory\" contains an unknown token : $option." ) ) ;
-			    }
-		    }
-	    }
-    }
