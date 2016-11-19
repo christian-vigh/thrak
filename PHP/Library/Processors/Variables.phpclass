@@ -62,6 +62,14 @@
     [Version : 1.0.4]	[Date : 2016/11/18]     [Author : CV]
 	. The destructor of the EnvironmentVariable object removed the environement variable, thus leading to
 	  progressively empty the $_ENV array.
+
+    [Version : 1.0.5]	[Date : 2016/11/19]     [Author : CV]
+	. Added the VariableStore::Load() and ToArray() methods
+	. The VariableStore::offsetGet() method returned a Variable object instead of the variable value,
+	  and did not take into account the OPTION_WARN_IF_UNDEFINED flag.
+	. Added the possibility to supply arrays defining variable name/value pairs to the VariableStore class
+	  constructor, as well as specifying objects of type VariableStore.
+	. Made the Options property public.
  
  **************************************************************************************************************/
 namespace  Thrak\Processors ;
@@ -401,11 +409,11 @@ class  VariableStore		extends		Object
 	const		OPTION_RECURSIVE			=  0x0008 ;		// Recursively process variable values to further search for references
 	
 	// Current variable store options
-	protected	$Options ;
+	public		$Options ;
 	// Array of variables
 	protected	$Variables ;
 	// Variable reference parser object
-	protected	$Syntax ;
+	protected	$Parser ;
 	
 
 	/*==============================================================================================================
@@ -414,12 +422,16 @@ class  VariableStore		extends		Object
 	        Constructor - Builds a VariableStore object.
 	
 	    PROTOTYPE
-	        $store	=  new VariableStore ( $options, $syntax ) ;
+	        $store	=  new VariableStore ( $array_or_store(s), $options, $parser ) ;
 	
 	    DESCRIPTION
 	        Builds a variable store.
 	
 	    PARAMETERS
+		$array_or_store (array or VariableStore) -
+			Any number of arrays defining variable name/value pairs, or existing objects of class 
+			VariableStore.
+
 	        $options (integer) -
 	                A combination of one or more of the following values :
 	 		- OPTION_NONE :
@@ -443,18 +455,35 @@ class  VariableStore		extends		Object
 	 			On Windows platforms, the OPTION_CASE_INSENSITIVE flag is also enabled.
 				The OPTION_DEFAULT flag can be specified with other flags.
 	  
-	 	$syntax (object) -
+	 	$parser (object) -
 	 		An object inheriting from VariableParser.
 	 		If not specified, a ShellVariableParser object will be used.
 	
 	  ==============================================================================================================*/
-	public function  __construct ( $options = self::OPTION_DEFAULT, $syntax = null )
+	public function  __construct ( )
 	   {
 		parent::__construct ( ) ;
+
+		// Get function arguments
+		$options	=  self::OPTION_DEFAULT ;
+		$parser		=  null ;
+		$init_values	=  [] ;
+
+		foreach  ( func_get_args ( )  as  $arg )
+		   {
+			if  ( is_numeric ( $arg ) )
+				$options		=  $arg ;
+			else if  ( is_array ( $arg )  ||  is_a ( $arg, '\Thrak\Processors\VariableStore' ) )
+				$init_values []		=  $arg ;
+			else if  ( is_a ( $arg, '\Thrak\Processors\VariableParser' ) )
+				$parser			=  $arg ;
+			else 
+				error ( new \Thrak\System\InvalidArgumentException ( "Invalid argument of type \"" . gettype ( $arg ) . "\" supplied to the constructor." ) ) ;				
+		    }
 	
 		// Creates a variable parser, if not specified
-		if  ( ! $syntax )
-			$syntax		=  new ShellVariableParser ( ) ;
+		if  ( ! $parser )
+			$parser		=  new ShellVariableParser ( ) ;
 		
 		// Provide default options if needed
 		if  ( $options  &  self::OPTION_DEFAULT )
@@ -472,6 +501,10 @@ class  VariableStore		extends		Object
 		else
 			$this -> Variables	=  [] ;
 		
+		// Save input parameters
+		$this -> Options	=  $options ;
+		$this -> Parser		=  $parser ;
+
 		// If environment variables are to be used, populate the variable store with the contents of the $_ENV array
 		if  ( $options  &  self::OPTION_USE_ENVIRONMENT_VARIABLES )
 		   {
@@ -481,9 +514,9 @@ class  VariableStore		extends		Object
 			    }
 		    }
 		
-		// All done, save input parameters
-		$this -> Options	=  $options ;
-		$this -> Syntax		=  $syntax ;
+		// If initialization values were provided, define the corresponding variables
+		if  ( count ( $init_values ) )
+			$this -> Load ( $init_values ) ;
 	    }
 	
 	
@@ -571,7 +604,7 @@ class  VariableStore		extends		Object
 	private function  __Expand ( $value, $accept_escapes, $call_stack )
 	   {
 		$length		=  strlen ( $value ) ;
-		$syntax		=  $this -> Syntax ;
+		$parser		=  $this -> Parser ;
 		$result		=  "" ;
 		
 		// Loop through input value characters
@@ -588,10 +621,10 @@ class  VariableStore		extends		Object
 					$result		.=  $value [++$i] ;
 			    }
 			// Potential variable reference found
-			else if  ( $ch  ==  $syntax -> PrefixCharacter )
+			else if  ( $ch  ==  $parser -> PrefixCharacter )
 			   {
 				// Parse it
-				$vref	=  $syntax -> Parse ( $value, $i ) ;
+				$vref	=  $parser -> Parse ( $value, $i ) ;
 				
 				// Not a variable reference - ignore this character
 				if  ( $vref  ===  false )
@@ -612,7 +645,7 @@ class  VariableStore		extends		Object
 					// If the variable is defined, process its value
 					if  ( isset ( $this [ $name ] ) ) 
 					   {
-						$this_value		 =  $this [ $name ] ;
+						$this_value		 =  $this -> Variables [ $name ] ;
 						
 						// ... and even recursively, if the OPTION_RECURSIVE flag is specified
 						if  ( $this -> Options  &  self::OPTION_RECURSIVE )
@@ -699,7 +732,89 @@ class  VariableStore		extends		Object
 	  ==============================================================================================================*/
 	public function  IsDefined ( $name )
 	   { return ( isset ( $this [ $name ] ) ) ; }
+
+
+
+	/*--------------------------------------------------------------------------------------------------------------
 	
+	    NAME
+	        Load - Loads array of variable name/value pairs.
+	
+	    PROTOTYPE
+	        $store -> Load ( array_or_store... ) ;
+	
+	    DESCRIPTION
+	        Loads new variables defined in the array(s) specified as argument(s).
+	
+	    PARAMETERS
+	        $array_or_store (array or variable store) -
+	                Array(s) containing variable name/value pairs, or objects of class VariableStore. 
+			Any number of arguments can be specified to this method.
+			Arrays can recursively contain arrays of variable name/value pairs.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  Load ( )
+	   {
+		$argv		=  func_get_args ( ) ;
+
+		foreach  ( $argv  as  $array )
+		   {
+			foreach  ( $array  as  $name => $value )
+			   {
+				if  ( is_array ( $value ) )
+					$this -> Load ( $value ) ;
+				else if ( is_a ( $value, '\Thrak\Processors\VariableStore' ) )
+				   {
+					foreach  ( $value  as  $variable )
+						$this -> Define ( $variable -> Name, $variable -> Value ) ;
+				    }
+				else if  ( is_scalar ( $value ) )
+					$this -> Define ( $name, $value ) ;
+				else
+					error ( new \Thrak\System\RuntimeException ( "Expecting values of type array, VariableStore or scalar, found \"" .
+							gettype ( $value ) . "\"." ) ) ;
+			    }
+		    }
+	    }
+	
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        ToArray - Returns an array of variable name/value pairs.
+	
+	    PROTOTYPE
+	        $array	=  $store -> ToArray ( $expand = false ) ;
+	
+	    DESCRIPTION
+	        Returns an array representing all the variables defined in this value store.
+	
+	    PARAMETERS
+	        $expand (boolean) -
+	                When true, variable contents are expanded if they are not environment variables.
+	
+	    RETURN VALUE
+	        Returns an array of variable name/value pairs.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  ToArray ( $expand = false ) 
+	   {
+		$result		=  [] ;
+
+		foreach ( $this as $variable )
+		   {
+			$name	=  $variable -> Name ;
+			$value  =  $variable -> Value ;
+
+			if  ( $expand  &&  ! is_a ( $variable, '\Thrak\Processors\EnvironmentVariable' ) )
+				$value	=  $this -> Expand ( $value ) ;
+
+			$result [ $name ]	=  $value ;
+		    }
+
+		return ( $result ) ;
+	    }
+
 	
 	/*==============================================================================================================
 	
@@ -747,7 +862,32 @@ class  VariableStore		extends		Object
 	
 	
 	public function  offsetGet ( $offset )
-	   { return ( $this -> Variables [ $offset ] ) ; }
+	   {
+		// Raw value requested
+		if  ( isset ( $offset [0] )  &&  $offset [0]  ==  '#' )
+		   {
+			$raw	=  true ;
+			$offset =  substr ( $offset, 1 ) ;
+		    }
+		else 
+			$raw	=  false ;
+
+		if  ( isset ( $this -> Variables [ $offset ] ) )
+		   {
+			$variable	=  $this -> Variables [ $offset ] ;
+
+			if  ( ! $raw  &&  $this -> Options & self::OPTION_RECURSIVE  &&  ! is_a ( $variable, '\Thrak\Processors\EnvironmentVariable' ) )
+				$value		=  $this -> Expand ( $variable -> Value ) ;
+			else
+				$value		=  $variable -> Value ;
+
+			return ( $value ) ; 
+		    }
+		else if  ( $this -> Options  &  self::OPTION_WARN_IF_UNDEFINED )
+			warning ( "Undefined variable \"$offset\"." ) ;
+
+		return ( false ) ;
+	    }
 	
 
 	// OffsetSet has a special behavior - see comments inline
