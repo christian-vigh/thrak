@@ -24,6 +24,12 @@
 	  isset() builtin function issued a warning if its argument was a reference to an undefined
 	  array value.
 
+   [Version : 1.0.3]	[Date : 2016/11/21]		[Author : CV]
+	. Added the EvaluateExpression() method.
+
+   [Version : 1.0.4]	[Date : 2016/11/24]		[Author : CV]
+	. Rewrote the EvaluateExpression() method
+
  ***************************************************************************************************/
 namespace 	Thrak\Processors ;
 
@@ -85,6 +91,8 @@ define ( 'XT_UNKNOWN'			, 0x9000 ) ;
 define ( 'PHP_TOKENS_ADD_PHP_TAGS'	, 0x0001 ) ;	// PHP opening and closing tags are added before parsing
 define ( 'PHP_TOKENS_ADD_EOF'		, 0x0002 ) ;	// A XT_EOF entry is added as the last part element
 define ( 'PHP_TOKENS_REMOVE_SPACES'	, 0x0004 ) ;	// Ignore T_WHITESPACE tokens
+define ( 'PHP_TOKENS_PREPROCESSOR'	, 0x0008 ) ;	// When specified, the # and ## constructs are recognized as preprocessor directives
+							// for stringification and catenation
 define ( 'PHP_TOKENS_ALL'		, 0xFFFF ) ;	// Include all flags
 define ( 'PHP_TOKENS_DEFAULT'		, 0x0003 ) ;	// Default flags : ADD_PHP_TAGS | ADD_EOF
 
@@ -97,6 +105,118 @@ define ( 'PHP_TOKENS_DEFAULT'		, 0x0003 ) ;	// Default flags : ADD_PHP_TAGS | AD
  ===========================================================================================*/
 class  	PHP	extends  Object
    {
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        EvaluateExpression - Evaluates an expression.
+	
+	    PROTOTYPE
+	        $status		=  self::EvaluateExpression ( $expr, &$result, &$error = null ) ;
+	
+	    DESCRIPTION
+	        Evaluates an expression and returns the result, without generating any spurious error message if
+		evaluation failed.
+	
+	    PARAMETERS
+	        $expr (string) -
+	                A valid PHP expression to be evaluated. The value must not contain the opening tag (<?php)
+			and does not need to end with a semicolon.
+
+		$result (any) -
+			Receives the result of the evaluated expression.
+
+		$error (string) -
+			An optional variable that will receive the error message if an error occurred.
+	
+	    RETURN VALUE
+	        Returns true if the expression evaluated correctly, false if an error occurred. In this case, the $error
+		parameter will receive the error message.
+	
+	    NOTES
+	        . This methods catches both notice, error and fatal error messages, which require different levels of
+		  error handling.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public static function  EvaluateExpression ( $expr, &$result, &$error = null )
+	   {
+		static	$has_error_clear_last		=  null ;
+
+		if  ( $has_error_clear_last  ===  null )
+			$has_error_clear_last	=  function_exists ( 'error_clear_last' ) ;
+
+		// Reset the $error parameter in case of the caller used the same variable several times
+		$error			=  null ;
+
+		// Clear any previous error
+		// This is a horrible kludge to "clear" the last error for PHP versions < 7, which do not have the error_clear_last() function
+		// The idea is to set a dummy error handler, then reference a non-existing variable with the silent operator "@" so that
+		// the error returned by error_get_last() will refer to this variable.
+		if  ( $has_error_clear_last )
+			error_clear_last ( ) ;
+		else
+		   {
+			set_error_handler ( 'var_dump', 0 ) ;
+			@$__error_get_last_horrible_kludge__ ;
+			restore_error_handler ( ) ;
+		    }
+
+		// Temporarily install an error handler for warnings and notices
+		// This is for handling expressions such as :
+		//		ZZ / 10
+		// where 'ZZ' is a non-existing constant. Such a construct issues a notice message,
+		// but does not reset the last error retrieved by error_get_last()
+		$got_error		=  false ;		// Will be set to the error message if the temp handler was called
+
+		$old_handler	=  set_error_handler
+		   (
+			function ( $errno, $errstr )  use ( &$got_error )
+			   {
+				$got_error	=  $errstr ;
+			    },
+			E_ALL | E_STRICT 
+		    ) ;
+
+		// Evaluate the expression, using the silent operator "@" ; message related to fatal errors, such as syntax errors,
+		// will not be displayed, but the last error will be set accordingly
+		$expr			=  trim ( $expr ) ;
+
+		if  ( substr ( $expr, -1, 1 )  !=  ';' )
+			$expr	.=  ';' ;
+
+		$eval_expression	=  "return $expr" ;
+		$result			=  @eval ( $eval_expression ) ;
+
+		// Housecleaning
+		restore_error_handler ( $old_handler ) ;
+
+		// No non-fatal error was catched by our temp handler ; check if there has been a fatal error, which can be retrieved
+		// using error_get_last()
+		if  ( ! $got_error )
+		   {
+			$last_error		=  error_get_last ( ) ;
+
+			// Last error contains the one generated at the entry of this function to "clear" a potential previous error
+			if  ( ! $last_error  ||  strpos ( $last_error [ 'message' ], '__error_get_last_horrible_kludge__' )  !==  false )
+				$status		=  true ;
+			// Otherwise this means that the supplied expression generated a fatal error
+			else
+			   {
+				$error		=  $last_error [ 'message' ] ;
+				$status		=  false ;
+			    }
+		    }
+		// Notice or user error caught
+		else
+		   {
+			$error		=  $got_error ;
+			$status		=  false ;
+		    }
+
+		// All done, return true if the expression was correctly evaluated, false otherwise (in this case 
+		return ( $status ) ;
+	    }
+
+
 	/*-------------------------------------------------------------------------------------------
 
 	    NAME
@@ -228,7 +348,7 @@ class  	PHP	extends  Object
 		ExpandShellParameters - Expand parameter references in a string.
 
 	    PROTOTYPE
-	    	$result = PHP::ExpandShellParameters ( $string, $values = null ) ;
+	    	$result = self::ExpandShellParameters ( $string, $values = null ) ;
 
 	    DESCRIPTION
 	    	ExpandShellParameters() expands any shell-like reference to a parameter by its
@@ -416,7 +536,7 @@ class  	PHP	extends  Object
 		ExpandVariables - Expands references to environment variables.
 
 	    PROTOTYPE
-		$string = PHP::ExpandVariables ( $string ) ;
+		$string = self::ExpandVariables ( $string ) ;
 
 	    DESCRIPTION
 		Replaces all references to environment variables with their contents.
@@ -474,7 +594,7 @@ class  	PHP	extends  Object
 		GetPHPTokenName - Returns the name of a PHP token.
 
 	    PROTOTYPE
-		$name = PHP::GetPHPTokenName ( $value ) ;
+		$name = self::GetPHPTokenName ( $value ) ;
 
 	    DESCRIPTION
 		Returns the name of a PHP token.
@@ -494,10 +614,10 @@ class  	PHP	extends  Object
 	   {
 		if  ( $value  >=  XT_TOKEN_BASE )
 		   {
-		   	PHP::__initialize_extra_php_tokens ( ) ;
+		   	self::__initialize_extra_php_tokens ( ) ;
 
-			if  ( isset ( PHP::$ExtraPHPTokensByValue [ $value ] ) )
-				return ( PHP::$ExtraPHPTokens [ $value ] ) ;
+			if  ( isset ( self::$ExtraPHPTokensByValue [ $value ] ) )
+				return ( self::$ExtraPHPTokens [ $value ] ) ;
 		    }
     		else
     		   {
@@ -517,7 +637,7 @@ class  	PHP	extends  Object
 		GetPHPTokens - Tokenizes PHP code.
 
 	    PROTOTYPE
-		$tokens = PHP::GetPHPTokens ( $input, $flags = PHP_TOKENS_DEFAULT ) ;
+		$tokens = self::GetPHPTokens ( $input, $flags = PHP_TOKENS_DEFAULT ) ;
 
 	    DESCRIPTION
 		Tokenizes the supplied input string, which should contain PHP code.
@@ -577,9 +697,9 @@ class  	PHP	extends  Object
 	 --------------------------------------------------------------------------------------------*/
 	public static function  GetPHPTokens ( $input, $flags = PHP_TOKENS_DEFAULT )
 	   {
-		PHP::__initialize_extra_php_tokens ( ) ;
+		self::__initialize_extra_php_tokens ( ) ;
 
-		return ( PHP::__GetPHPTokens ( $input, $flags, true ) ) ;
+		return ( self::__GetPHPTokens ( $input, $flags, true ) ) ;
 	    }
 
 
@@ -602,7 +722,7 @@ class  	PHP	extends  Object
 			   {
 			   	$extra_key 		=  '_' . md5 ( time ( ) ) ;
 
-			   	// The PHP tokenizer eats the first space after the '<?php' opning tag ; remember it
+			   	// The PHP tokenizer eats the first space after the '<?php' opening tag ; remember it
 			   	$search 	=  " \t" ;
 
 			   	if  ( $index1  &&  ( $ch = strpos ( $search, $input [ $index1 - 1 ] ) ) !==  false )
@@ -721,10 +841,10 @@ class  	PHP	extends  Object
 			else if  ( is_string ( $token ) )
 			   {
 			   	// Search for an existing token entry
-			   	if  ( isset ( PHP::$ExtraPHPTokensByToken [ $token ] ) )
+			   	if  ( isset ( self::$ExtraPHPTokensByToken [ $token ] ) )
 			   	   {
-					$id 	=  PHP::$ExtraPHPTokensByToken [ $token ] ;
-					$name  	=  PHP::$ExtraPHPTokensByValue [ $id ] ;
+					$id 	=  self::$ExtraPHPTokensByToken [ $token ] ;
+					$name  	=  self::$ExtraPHPTokensByValue [ $id ] ;
 			   	    }
 	    			// Otherwise, set it to unknown
  				else
@@ -752,7 +872,7 @@ class  	PHP	extends  Object
     			   	// function is to mainly serve for the PPP object, the sharp will be promoted to
     			   	// an XT_SHARP token, and the rest of the input line will be tokenized as well
 				// Also handle the concatenation operator ( ## )
-    			   	if  ( $token [0]   ==  T_COMMENT  &&  $token [1] [0]  ==  '#' )
+    			   	if  ( ( $flags & PHP_TOKENS_PREPROCESSOR )  &&  $token [0]   ==  T_COMMENT  &&  $token [1] [0]  ==  '#' )
     			   	   {
 					if  ( strlen ( $token [1] )  >  1  )
 					   {
@@ -788,7 +908,7 @@ class  	PHP	extends  Object
 
 					// Analyze the remaining characters after the sharp
 					$new_input	=  substr ( $token [1], $remove, strlen ( $token [1] ) - $remove - 1 ) ;
-					$entries 	=  PHP::__GetPHPTokens ( $new_input, $add_php_tags, $add_eof, false ) ;
+					$entries 	=  self::__GetPHPTokens ( $new_input, $add_php_tags, $add_eof, false ) ;
 
 					// Merge the results with the return value
 					$result 	=  array_merge ( $result, $entries ) ;
@@ -813,7 +933,7 @@ class  	PHP	extends  Object
 						case	T_ENCAPSED_AND_WHITESPACE :
 							if  ( count ( $result )  &&  $result [ count ( $result ) - 1 ] [ 'id' ]  ==  XT_BACKQUOTE )
 							   {
-								$result		=  array_merge ( $result, PHP::__GetPhpTokens ( $token [1], $flags, $main ) ) ;
+								$result		=  array_merge ( $result, self::__GetPhpTokens ( $token [1], $flags, $main ) ) ;
 								array_pop ( $result ) ;		// Remove last XT_EOF token
 								$add_token	=  false ;
 							    }
@@ -913,14 +1033,14 @@ class  	PHP	extends  Object
 
 	private static function  __initialize_extra_php_tokens ( )
 	   {
-		if  ( PHP::$ExtraPHPTokensByName )
+		if  ( self::$ExtraPHPTokensByName )
 			return ;
 
-		foreach  ( PHP::$ExtraPHPTokens  as  $entry )
+		foreach  ( self::$ExtraPHPTokens  as  $entry )
 		   {
-			PHP::$ExtraPHPTokensByName  [ $entry [ 'name'  ] ]	=  $entry [ 'value' ] ;
-			PHP::$ExtraPHPTokensByValue [ $entry [ 'value' ] ]	=  $entry [ 'name'  ] ;
-			PHP::$ExtraPHPTokensByToken [ $entry [ 'token' ] ]	=  $entry [ 'value' ] ;
+			self::$ExtraPHPTokensByName  [ $entry [ 'name'  ] ]	=  $entry [ 'value' ] ;
+			self::$ExtraPHPTokensByValue [ $entry [ 'value' ] ]	=  $entry [ 'name'  ] ;
+			self::$ExtraPHPTokensByToken [ $entry [ 'token' ] ]	=  $entry [ 'value' ] ;
 		    }
 	    }
 
@@ -931,7 +1051,7 @@ class  	PHP	extends  Object
 		ParseCallback - Parses a callback specification string.
 
 	    PROTOTYPE
-		$callback = PHP::ParseCallback ( $value ) ;
+		$callback = self::ParseCallback ( $value ) ;
 
 	    DESCRIPTION
 		Parses a callback specification string.
