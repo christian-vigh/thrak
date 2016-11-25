@@ -26,7 +26,7 @@
 	. Removed the useless $record_size parameter from the TextifyData() method.
 
     [Version : 1.0.4]   [Date : 2016/11/21]     [Author : CV]
-	. The RtfParser::IgnoreCompounds() methods was not called.
+	. The RtfParser::IgnoreCompounds() method was not called.
 
  **************************************************************************************************************/
 namespace 	Thrak\Processors\Rtf ;
