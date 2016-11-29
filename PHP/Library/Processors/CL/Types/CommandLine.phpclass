@@ -22,6 +22,10 @@
     [Version : 1.0]	[Date : 2015/09/24]	[Author : CV]
      	Initial version.
 
+    [Version : 1.0.1]	[Date : 2016/11/29]	[Author : CV]
+	. The 'name' entry now returns the command name, without its path and extension, and 'path'
+	  holds the full path of the command.
+
 ***************************************************************************************************/
 namespace  	Thrak\Processors\CL ;
 
@@ -175,9 +179,10 @@ class  CLCommandLineParameter  extends  \Thrak\Processors\CL\CLAbstractParameter
 				$escaped_args []	=  '"' . str_replace ( '"', "\\\"", $value ) . '"' ;
 		    }
 
+		$path		=  Path::RealPath ( $path ) ;
 		$result		=
 		   [
-			'name'		=>  $cmdname,
+			'name'		=>  pathinfo ( $cmdname, PATHINFO_FILENAME ),
 			'path'		=>  $path,
 			'argv'		=>  $values,
 			'command'	=>  implode ( ' ', array_merge ( [ $cmdname ], $escaped_args ) ),
