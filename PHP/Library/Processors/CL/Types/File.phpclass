@@ -33,6 +33,9 @@
 	. File globbing on Windows platforms was not taken correctly into account (the current script
 	  path was used instead of the current directory).
 
+   [Version : 2.0.5]	[Date : 2016/12/01]		[Author : CV]
+	. Added the CLExecutableParameter class.
+
  ***************************************************************************************************/
 namespace  	Thrak\Processors\CL ;
 
@@ -1195,5 +1198,43 @@ class  CLDriveParameter  extends  \Thrak\Processors\CL\CLAbstractParameter
 			  return ( strtoupper ( $value [0] ) . ":" ) ;
 		  
 		  error ( new CLException ( "Invalid drive specification '$value' for parameter '$name'." ) ) ;
+	    }
+    }
+
+
+/*==================================================================================================
+
+    CLExecutableParameter class -
+	A class for handling command (executable) parameters. The returned value will be the full
+	path of the command.
+
+  ==================================================================================================*/
+class  CLExecutableParameter  extends  \Thrak\Processors\CL\CLAbstractParameter
+   {
+	/*-------------------------------------------------------------------------------------------
+
+		Class constructor.
+
+	 --------------------------------------------------------------------------------------------*/
+	public function  __construct ( $parent, $tags, $valuetext = "command" )
+	   {
+	   	$this -> Help 			=  "Specifies an executable file." ;
+	   	$this -> ReturnValueHelp	=  "Returns the full path of the specified command." ;
+
+		parent::__construct ( $parent, $tags, $valuetext, null, null, null ) ;
+	    }
+
+
+	/*-------------------------------------------------------------------------------------------
+
+		Preprocess value.
+
+	 --------------------------------------------------------------------------------------------*/
+  	protected function  ProcessValue ( $name, $value )
+  	   {
+		  if  ( ( $result = Path::Whereis ( $value ) ) )
+			return ( $result ) ;
+		  
+		  error ( new CLException ( "Command '$value' not found for parameter '$name'." ) ) ;
 	    }
     }
