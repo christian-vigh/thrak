@@ -26,9 +26,9 @@
 	. Started implementation of CID fonts (EXPERIMENTAL) :
 	  - Added the PdfTexterCIDMap abstract class.
 	  - Added the PdfTexterIdentityHMap class, to implement the IDENTITY-H CID font.
-	. CID tables are externalized and located into the directory pointed to by thePdfToText::CIDTablesDirectory 
+	. CID tables are externalized and located into the directory pointed to by the PdfToText::CIDTablesDirectory 
 	  public static property. Currently, only the IDENTITY-H CID font is (partially) implemented.
-	. Usual behavior remains for inexisting CID substitution tables.
+	. Usual behavior remains for inexisting CID substitution tables : garbage will be produced.
 
     (...)
 
@@ -4716,9 +4716,12 @@ abstract class	PdfTexterCIDMap		extends  PdfTexterCharacterMap
 			$file	=  PdfToText::$CIDTablesDirectory . DIRECTORY_SEPARATOR . $map_name . '.cid' ;
 
 			if  ( ! file_exists ( $file ) )
-				warning ( new PdfToTextException ( "Could not find CID table \"$map_name\" in directory \"" . PdfToText::$CIDTablesDirectory . "\"." ) ) ;
-
-			require ( $file ) ;
+			   {
+				if  ( PdfToText::$DEBUG )
+					warning ( new PdfToTextException ( "Could not find CID table \"$map_name\" in directory \"" . PdfToText::$CIDTablesDirectory . "\"." ) ) ;
+			    }
+			else
+				require ( $file ) ;
 
 			self::$CachedMaps [ $map_name ]		=  array ( 'file' => $file, 'map' => $map ) ;
 		    }
@@ -4756,14 +4759,14 @@ abstract class	PdfTexterCIDMap		extends  PdfTexterCharacterMap
 			   {
 				case	self::UNKNOWN_CID :
 					if  ( PdfToText::$DEBUG )
-						echo ( '[CID:' . sprintf ( '%04x', $offset ) . "]" ) ;
+						echo ( '[UID:' . sprintf ( '%04x', $offset ) . "]" ) ;
 
 					$this -> LastAltOffset	=  false ;
 
 					if  ( ! PdfToText::$DEBUG )
 						return ( '' ) ;
 					else 
-						return ( "[CID: $offset]" ) ;
+						return ( "[UID: $offset]" ) ;
 
 				case	self::ALT_CID :
 					$this -> LastAltOffset		=  ( integer ) $offset ;
