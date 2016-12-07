@@ -21,6 +21,9 @@
  	. Added the $EntityAmpersandEscape and $EntitySemicolonEscape global variables
  	. Added the EscapeEntities() and UnescapeEntities() methods
 
+    [Version : 1.0.2]	[Date : 2015/12/07]	[Author : CV]
+	. An ampersand alone was not properly escaped.
+
  ***************************************************************************************************/
 namespace	Thrak\Internet\Xml ;
 
@@ -90,7 +93,7 @@ class  Utilities  extends Object
 			$semicolon_escape	=  self::$EntitySemicolonEscape ;
 		
 		$replacement	=  $ampersand_escape . '\1' . $semicolon_escape ;
-		$value		=  preg_replace ( '/&([^;]+);/', $replacement, $value ) ;
+		$value		=  preg_replace ( [ '/&([^;]+);/', '/&/' ], [ $replacement, "{$ampersand_escape}amp{$semicolon_escape}" ], $value ) ;
 		
 		return ( $value ) ;
 	    }
