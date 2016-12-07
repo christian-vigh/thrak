@@ -22,7 +22,7 @@
  	. Added the EscapeEntities() and UnescapeEntities() methods
 
     [Version : 1.0.2]	[Date : 2015/12/07]	[Author : CV]
-	. An ampersand alone was not properly escaped.
+	. An ampersand alone was not properly escaped by the EscapeEntities() method.
 
  ***************************************************************************************************/
 namespace	Thrak\Internet\Xml ;
