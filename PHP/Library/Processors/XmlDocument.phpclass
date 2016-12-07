@@ -2023,7 +2023,7 @@ abstract class  XmlDocument	extends		XmlNodes
 			$include_file_stack	=  [] ;
 		
 		$contents	=  $this -> __preprocess_contents ( $contents, $include_file_stack, $this -> Filename ) ;
-		
+
 		// Silent Xml errors
 		XmlErrors::Initialize ( ) ;
 		
