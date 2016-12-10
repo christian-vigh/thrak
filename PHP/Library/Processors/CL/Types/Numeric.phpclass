@@ -331,6 +331,10 @@ abstract class  CLNumericParameter  extends  \Thrak\Processors\CL\CLAbstractPara
    		else
    			$member 	=  'TypeMaxValue' ;
 
+		// Handle the case where no lower/upper value has been specified (floats and doubles)
+		if  ( $this -> $member  ===  null )
+			return ( $value ) ;
+
 		if  ( ! strcmp ( $value, '*' ) )
 			$value  	=  $this -> $member ;
 
