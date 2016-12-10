@@ -39,6 +39,10 @@
    [Version : 2.0.4]	[Date : 2016/10/09]		[Author : CV]
 	. Added the <byte-quantity> parameter type (class CLByteQuantityParameter).
 
+   [Version : 2.0.5]	[Date : 2016/11/10]		[Author : CV]
+	. Types without an lower/upper limit (floats and doubles) were generating an error message
+	  if a min/max value was specified.
+
  ***************************************************************************************************/
 namespace  	Thrak\Processors\CL ;
 
