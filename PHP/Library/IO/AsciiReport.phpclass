@@ -82,6 +82,9 @@
 
     [Version : 2.0.13]		[Date : 2016/10/30]		[Author : CV]
 	. Carriage returns were not correctly handled in multiline values.
+
+    [Version : 2.0.14]		[Date : 2016/12/12]		[Author : CV]
+	. Added new plural forms for the Summary() function.
   
  ***************************************************************************************************/
 namespace 	Thrak\IO ;
@@ -539,6 +542,9 @@ class  AsciiReport		extends  Object
 			// Words ending with -ss give -sses
 			else if  ( String::EndsWith ( $low_singular, 'ss' ) )
 				$plural		=  substr ( $low_singular, 0, strlen ( $low_singular ) - 2 ) . 'sses' ;
+			// Words ending with -tch give -tches
+			else if  ( String::EndsWith ( $low_singular, 'tch' ) )
+				$plural		=  substr ( $low_singular, 0, strlen ( $low_singular ) - 3 ) . 'tches' ;
 			// Otherwise, add trailing 's' for unmatched words
 			else if  ( ! String::EndsWith ( $low_singular, 's' ) )
 				$plural		=  $singular . 's' ;
