@@ -493,9 +493,10 @@ class  SshFileSystem		extends  Object
 	//	Opens a remote directory.
 	public function  opendir ( $path )
 	   {
-		$status		=  @opendir ( $this -> SshPath ( $path ) ) ;
+		$real_path	=  $this -> SshPath ( $path ) ;
+	   	$status		=  @opendir ( $real_path ) ;
 		
-		$this -> __check_error ( $status, $path ) ;
+		$this -> __check_error ( $status, $real_path ) ;
 		
 		return ( $status ) ;
 	    }
