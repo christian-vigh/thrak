@@ -26,7 +26,7 @@ namespace 	Thrak\Security ;
 defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
 
 use 	Thrak\System\Object ;
-use     Thrak\Types\String ;
+use     Thrak\Types\StringUtilities ;
 use	Thrak\Security\Tracker ;
 use	Thrak\Database\BufferedInsert ;
 use	Thrak\Web\WebSite ;

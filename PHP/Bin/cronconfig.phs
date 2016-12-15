@@ -112,7 +112,7 @@
 	 **************************************************************************************************************/
 	require ( dirname ( __FILE__ ) . '/../Script.phpinclude' ) ;
 
-	use  Thrak\Types\String ;
+	use  Thrak\Types\StringUtilities ;
 	use  Thrak\IO\Path ;
 	use  Thrak\IO\AsciiReport ;
 	use  Thrak\Processors\CL\CLParser ;

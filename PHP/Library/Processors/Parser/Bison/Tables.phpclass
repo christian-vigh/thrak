@@ -20,10 +20,10 @@ namespace 	Thrak\Processors\Parser\Bison ;
 defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
 
 // Used namespaces & objects
-use 		Thrak\System\Object 			as  Object ;
-use 		Thrak\System\Exception 			as  Exception ;
-use 		Thrak\Types\String			as  String ;
-use		Thrak\IO\Path				as  Path ;
+use 		Thrak\System\Object ;
+use 		Thrak\System\Exception ;
+use 		Thrak\Types\StringUtilities ;
+use		Thrak\IO\Path ;
 
 
 

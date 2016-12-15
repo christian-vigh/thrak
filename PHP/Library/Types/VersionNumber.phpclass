@@ -20,9 +20,9 @@ namespace 	Thrak\Types ;
 defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
 
 // Used namespaces & objects
-use 		Thrak\System\Object 		as  Object ;
-use		Thrak\IO\Path			as  Path ;
-use		Thrak\Types\String		as  String ;
+use 		Thrak\System\Object ;
+use		Thrak\IO\Path ;
+use		Thrak\Types\StringUtilities ;
 
 
 define ( 'VERSION_MAX_ITEMS'		, 4 ) ;

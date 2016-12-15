@@ -32,7 +32,7 @@ namespace 	Thrak\Security ;
 defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
 
 use 	Thrak\System\Object ;
-use     Thrak\Types\String ;
+use     Thrak\Types\StringUtilities ;
 
 
 /*==============================================================================================================

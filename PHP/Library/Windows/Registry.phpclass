@@ -28,7 +28,6 @@ use  	Thrak\System\Object ;
 use	Thrak\Windows\AbstractWindowsBase ;
 use	Thrak\Windows\Windows ;
 use	Thrak\Types\AssociativeArray ;
-use	Thrak\Types\String ;
 
 
 /*===========================================================================================

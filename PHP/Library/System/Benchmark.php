@@ -20,8 +20,8 @@ namespace 	Thrak\System ;
 defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
 
 // Used namespaces & objects
-use 		Thrak\System\Object 		as  Object ;
-use		Thrak\Types\String		as  String ;
+use 		Thrak\System\Object ;
+use		Thrak\Types\StringUtilities ;
 use		Thrak\IO\Path ;
 use		Thrak\System\Timer ;
 

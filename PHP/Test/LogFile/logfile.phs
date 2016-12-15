@@ -11,7 +11,6 @@
 	require ( getenv ( "THRAK_PHPTOOLS" ) . "/bin/tools.phpinclude" ) ;
 
 	use  Thrak\Processors\CL\CLParser ;
-	use  Thrak\Types\String ;
 	use  Thrak\IO\Console ;
 	use  Thrak\IO\Path ;
 	use  Thrak\IO\AsciiReport ;

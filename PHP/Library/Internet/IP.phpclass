@@ -20,8 +20,7 @@ namespace  	Thrak\Internet ;
 defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
 
 // Used namespaces and classes
-use     Thrak\System\Object 		as  Object ;
-use  	Thrak\Types\String  		as  String ;
+use     Thrak\System\Object ;
 
 
 /*==================================================================================================

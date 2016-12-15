@@ -36,9 +36,8 @@ namespace 	Thrak\IO ;
 defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
 
 // Used namespaces & objects
-use 		Thrak\System\Object 		as  Object ;
-use 		Thrak\Types\String		as  String ;
-use 		Thrak\IO\Path 			as  Path ;
+use 		Thrak\System\Object ;
+use 		Thrak\IO\Path ;
 
 
 /*==================================================================================================
