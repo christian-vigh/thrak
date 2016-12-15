@@ -29,7 +29,7 @@ defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." 
 // Used namespaces and classes
 use  	Thrak\System\Object ;
 use	Thrak\IO\Path ;
-use	Thrak\Types\String ;
+use	Thrak\Types\StringUtilities ;
 use	Thrak\Types\String\Convert ;
 use	Thrak\Types\ArrayHelpers ;
 use	Thrak\Internet\TLDList ;
@@ -459,7 +459,7 @@ abstract class  WhoisInformation		extends		WhoisInformationBase
 			$definitions [ 'ignore' ]	=  [] ;
 
 		foreach  ( $definitions [ 'ignore' ]   as  &$ignored )
-			$ignored	=  [ 'regex' => String::IsRegex ( $ignored ), 'value' => $ignored ] ;
+			$ignored	=  [ 'regex' => StringUtilities::IsRegex ( $ignored ), 'value' => $ignored ] ;
 
 		// Range definitions - make sure the array exists and that at least the 'drop' entry also exists
 		if  ( ! isset ( $definitions [ 'range-definition' ] ) )
@@ -470,11 +470,11 @@ abstract class  WhoisInformation		extends		WhoisInformationBase
 
 		if  ( isset ( $definitions [ 'range-definition' ] [ 'start' ] ) ) 
 			$definitions [ 'range-definition' ] [ 'regex-start' ]		=  
-				String::IsRegex ( $definitions [ 'range-definition' ] [ 'start' ] ) ;
+				StringUtilities::IsRegex ( $definitions [ 'range-definition' ] [ 'start' ] ) ;
 
 		if  ( isset ( $definitions [ 'range-definition' ] [ 'end' ] ) ) 
 			$definitions [ 'range-definition' ] [ 'regex-end' ]		=  
-				String::IsRegex ( $definitions [ 'range-definition' ] [ 'end' ] ) ;
+				StringUtilities::IsRegex ( $definitions [ 'range-definition' ] [ 'end' ] ) ;
 
 		// Check each individual 'data-block' entry
 		foreach  ( $definitions [ 'data-blocks' ]  as  $key => &$data_block )
@@ -537,7 +537,7 @@ abstract class  WhoisInformation		extends		WhoisInformationBase
 				$data_block [ 'ignore']		=  [] ;
 
 			foreach  ( $data_block [ 'ignore' ]   as  &$ignored )
-				$ignored	=  [ 'regex' => String::IsRegex ( $ignored ), 'value' => $ignored ] ;
+				$ignored	=  [ 'regex' => StringUtilities::IsRegex ( $ignored ), 'value' => $ignored ] ;
 
 			// Check individual keyword entries 
 			foreach  ( $data_block [ 'keywords' ]  as  $index => &$keyword_entry )
@@ -779,7 +779,7 @@ abstract class  WhoisInformation		extends		WhoisInformationBase
 			$class	=  '\Thrak\Processors\Whois\WhoisUnreachableInformation' ;
 		    }
 		// Ip address - extract provider information
-		else if  ( String::IsIpAddress ( $ip_or_domain ) ) 
+		else if  ( StringUtilities::IsIpAddress ( $ip_or_domain ) ) 
 		   {
 			if  ( ( $offset = stripos ( $contents, 'This is the RIPE Database query service' ) ) !==  false )
 			   {
@@ -1087,7 +1087,7 @@ abstract class  WhoisInformation		extends		WhoisInformationBase
 					   {
 						foreach  ( $match_values  as  $match_value )
 						   {
-							if (  String::IsRegex ( $match_value ) )
+							if (  StringUtilities::IsRegex ( $match_value ) )
 								$status		=  preg_match ( $match_value, $value ) ;
 							else
 								$status		=  ! strcasecmp ( $match_value, $value ) ;
@@ -1120,7 +1120,7 @@ abstract class  WhoisInformation		extends		WhoisInformationBase
 			case	self::VALUE_TYPE_DATE :
 				if  ( ! $value )
 					$result		=  0 ;
-				else if  ( ( $result = String::IsDateString ( $value ) )  ===  false )
+				else if  ( ( $result = StringUtilities::IsDateString ( $value ) )  ===  false )
 					error ( new WhoisInformationException ( "Expected date/time value for block #$block_id, keyword #$keyword_id ($keyword), " .
 							"class {$this -> MyClass}, found \"$value\".", $this -> Contents ) ) ;
 				break ;
@@ -1132,12 +1132,12 @@ abstract class  WhoisInformation		extends		WhoisInformationBase
 
 				if  ( count ( $parts )  <  2 )
 				   {
-					if  ( ( $date = String::IsDateString ( $parts [0] ) ) )
+					if  ( ( $date = StringUtilities::IsDateString ( $parts [0] ) ) )
 						$result		=  [ 'id' => '', 'date' => $date ] ;
 					else
 						$result		=  [ 'id' => $parts [0], 'date' => 0 ] ;
 				    }
-				else if  ( ! ( $date = String::IsDateString ( $parts [1] ) ) )
+				else if  ( ! ( $date = StringUtilities::IsDateString ( $parts [1] ) ) )
 					error ( new WhoisInformationException ( "Expected id/date value for block #$block_id, keyword #$keyword_id ($keyword), " .
 							"class {$this -> MyClass}, found \"$value\".", $this -> Contents ) ) ;
 				else
@@ -1165,13 +1165,13 @@ abstract class  WhoisInformation		extends		WhoisInformationBase
 
 					$a	=  trim ( $parts [0] ) ;
 
-					if  ( ! String::IsIPAddress ( $a ) )
+					if  ( ! StringUtilities::IsIPAddress ( $a ) )
 						error ( new WhoisInformationException ( "Expected net mask or net range value for low ip value in block #$block_id, keyword #$keyword_id ($keyword), " .
 								"class {$this -> MyClass}, found \"$value\".", $this -> Contents ) ) ;
 
 					$b	=  trim ( $parts [1] ) ;
 
-					if  ( ! String::IsIPAddress ( $b ) )
+					if  ( ! StringUtilities::IsIPAddress ( $b ) )
 						error ( new WhoisInformationException ( "Expected net mask or net range value for high ip value in block #$block_id, keyword #$keyword_id ($keyword), " .
 								"class {$this -> MyClass}, found \"$value\".", $this -> Contents ) ) ;
 

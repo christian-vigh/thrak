@@ -23,12 +23,12 @@ namespace  	Thrak\Internet ;
 defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
 
 // Used namespaces and classes
-use     Thrak\System\Object 		as  Object ;
-use 	Thrak\System\Exception 		as  Exception ;
-use 	Thrak\Internet\Xml\SimpleXML	as  SimpleXML ;
-use     Thrak\Internet\IP 		as  IP ;
-use  	Thrak\Types\String  		as  String ;
-use	Thrak\IO\Path 			as  Path ;
+use     Thrak\System\Object ;
+use 	Thrak\System\Exception ;
+use 	Thrak\Internet\Xml\SimpleXML ;
+use     Thrak\Internet\IP ;
+use  	Thrak\Types\StringUtilities ;
+use	Thrak\IO\Path ;
 
 
 /*==================================================================================================
@@ -143,7 +143,7 @@ class  URI  extends  Object
 	   	    }
  		else
    		   {
-   		   	if  (  String::EndsWith ( $default_scheme, "://" ) )
+   		   	if  (  StringUtilities::EndsWith ( $default_scheme, "://" ) )
 		 	   {
 		 	   	$scheme 	=  $default_scheme ;
 				$scheme_name 	=  substr ( $default_scheme, 0, strlen ( $default_scheme ) - 3 ) ;
@@ -405,9 +405,9 @@ class  URIProtocols  extends  Object
 
 					// Official scheme or not ?
 					case	'official' :
-						if  ( String::IsTrue ( $attr_value ) )
+						if  ( StringUtilities::IsTrue ( $attr_value ) )
 							$official = true ;
-						else if  ( String::IsFalse ( $attr_value ) )
+						else if  ( StringUtilities::IsFalse ( $attr_value ) )
 							$official = false ;
 						else
 							throw new Exception ( "URIProtocols class : The 'official' attribute of the '<scheme>' tag defined in the procotols file '$file' must be a boolean value." ) ;
@@ -416,7 +416,7 @@ class  URIProtocols  extends  Object
 					// Optional associated port(s)
 					case 	'ports' :
 					case	'port' :
-						$list 	=  String::ExplodeAndTrim ( ',', $attr_value ) ;
+						$list 	=  StringUtilities::ExplodeAndTrim ( ',', $attr_value ) ;
 
 						foreach  ( $list  as  $item )
 						   {

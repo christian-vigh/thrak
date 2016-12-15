@@ -52,7 +52,7 @@ defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." 
 // Used namespaces and classes
 use 	Thrak\Processors\CL\CLException ;
 use     Thrak\Processors\IniFile ;
-use     Thrak\Types\String ;
+use     Thrak\Types\StringUtilities ;
 use	Thrak\Types\String\Convert ;
 use     Thrak\Types\String\Regex ;
 use	Thrak\System\Debug ;
@@ -223,7 +223,7 @@ abstract class  CLNumericParameter  extends  \Thrak\Processors\CL\CLAbstractPara
 
 			// Determine the function name and aliases
 			if  ( array_key_exists ( 'name', $definition ) )
-				$entry [ 'names' ] 	=  String::ExplodeAndTrim ( ',', $definition [ 'name' ] ) ;
+				$entry [ 'names' ] 	=  StringUtilities::ExplodeAndTrim ( ',', $definition [ 'name' ] ) ;
 			else
 				$entry [ 'names' ]	=  array ( $section ) ;
 

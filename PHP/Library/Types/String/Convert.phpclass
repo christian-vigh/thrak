@@ -56,7 +56,7 @@
 	. Changed the return value of the StringToIPV4AddressRange() method.
 
      [Version : 1.0.11]		[Date : 2016/03/02]		[Author : CV]
-	. Moved here the String::FrenchToMySqlDate() and MySqlToFrenchDate() methods.
+	. Moved here the StringUtilities::FrenchToMySqlDate() and MySqlToFrenchDate() methods.
 
      [Version : 1.0.12]		[Date : 2016/10/04]		[Author : CV]
 	. Added the ToAscii() method.
@@ -71,8 +71,8 @@ namespace 	Thrak\Types\String ;
 defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
 
 // Used namespaces & objects
-use 		Thrak\System\Object 		as  Object ;
-use 		Thrak\Types\String		as  String ;
+use 		Thrak\System\Object ;
+use 		Thrak\Types\StringUtilities ;
 
 
 /*===========================================================================================
@@ -112,7 +112,7 @@ class  	Convert		extends  Object
 		BytesToString - Converts a byte array to a string.
 
 	    PROTOTYPE
-                $string  = String::BytesToString ( $bytes ) ;
+                $string  = StringUtilities::BytesToString ( $bytes ) ;
 
 	    DESCRIPTION
                 Converts a byte array to a string?
@@ -753,7 +753,7 @@ class  	Convert		extends  Object
 		FrenchToMysqlDate - Converts a french date into MySql format.
 
 	    PROTOTYPE
-		$result = String::FrenchToMySqlDate ( $date ) ;
+		$result = StringUtilities::FrenchToMySqlDate ( $date ) ;
 
 	    DESCRIPTION
 	    	Converts a french date (dd/mm/yyyy) into MySql format (yyyy-mm-dd).
@@ -803,7 +803,7 @@ class  	Convert		extends  Object
 		MySqlToFrenchDate - Converts a Mysql date into the french format.
 
 	    PROTOTYPE
-		$result = String::MysqlToFrenchDate ( $date ) ;
+		$result = StringUtilities::MysqlToFrenchDate ( $date ) ;
 
 	    DESCRIPTION
 	    	Converts a MySql date (yyyy-mm-dd) to french format (dd/mm/yyyy).
@@ -888,7 +888,7 @@ class  	Convert		extends  Object
 		StringToByteCount - Converts a string to a byte count.
 
 	    PROTOTYPE
-		$count = String::StringToByteCount ( $value ) ;
+		$count = StringUtilities::StringToByteCount ( $value ) ;
 
 	    DESCRIPTION
 		Converts a string to a byte count.
@@ -1025,7 +1025,7 @@ class  	Convert		extends  Object
 		StringToIntegerRange - Converts a string to an integer range.
 
 	    PROTOTYPE
-                $result  = String::StringToIntegerRange ( $str ) ;
+                $result  = StringUtilities::StringToIntegerRange ( $str ) ;
 
 	    DESCRIPTION
                 Converts an integer range expression, such as 'low..high' or 'low-high', into a range
@@ -1083,7 +1083,7 @@ class  	Convert		extends  Object
 		StringToIntegerRanges - Converts a string to an array of integer ranges.
 
 	    PROTOTYPE
-                $result  = String::StringToIntegerRanges ( $str ) ;
+                $result  = StringUtilities::StringToIntegerRanges ( $str ) ;
 
 	    DESCRIPTION
 		Converts a list of comma-separated integer ranges into an array of ranges.
@@ -1104,7 +1104,7 @@ class  	Convert		extends  Object
 
 		foreach  ( $ranges  as  $range )
 		   {
-			$item 		= String::StringToIntegerRange ( $range ) ;
+			$item 		= StringUtilities::StringToIntegerRange ( $range ) ;
 			$result [] 	= $item ;
 		    }
 
@@ -1712,7 +1712,7 @@ class  	Convert		extends  Object
 		   	   {
 				$ch = strtoupper ( substr ( $ch, 0, 1 ) ) ;
 
-				if  ( String::IsLetter ( $ch ) )
+				if  ( StringUtilities::IsLetter ( $ch ) )
 					$value = ord ( $ch ) - ord ( 'A' ) + 10 ;
 				else if  ( $ch  >=  '0'  &&  $ch  <=  '9' )
 					$value = ord ( $ch ) - ord ( '0' ) ;

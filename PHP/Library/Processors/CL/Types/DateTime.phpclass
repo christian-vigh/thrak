@@ -41,7 +41,7 @@ defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." 
 
 // used namespaces and classes
 use 	Thrak\Processors\CL\CLException ;
-use     Thrak\Types\String ;
+use     Thrak\Types\StringUtilities ;
 use     Thrak\Types\String\Regex ;
 
 
@@ -573,7 +573,7 @@ END;
 		else
 		   {
 		   	// First, strip spaces
-		   	$value	=  String::StripSpaces ( $value ) ;
+		   	$value	=  StringUtilities::StripSpaces ( $value ) ;
 
 			// This callback function is here to ensure that we don't confuse between 'm' (minutes) and the
 			// start of 'ms' (milliseconds)
@@ -586,7 +586,7 @@ END;
 			// Then, for each unit name or alias specified, add an extra space after it
 			foreach  ( $this -> UnitNames  as  $name )
 			   {
-			   	$name 	=  String::EscapeRegexCharacters ( $name ) ;
+			   	$name 	=  StringUtilities::EscapeRegexCharacters ( $name ) ;
 				$value  = preg_replace_callback ( '/([^a-z_]) (' . $name . ') ([^a-z_ \t])/ix', $callback, $value ) ;
 			    }
 
@@ -600,7 +600,7 @@ END;
 				foreach  ( $this -> UnitNames  as  $name )
 				   {
 					$re  =  '/^ (?P<value>' . REGEX_UNSIGNED_FLOAT . ')' .
-							'(?P<unit> ' .String::EscapeRegexCharacters ( $name ) . ')? $/ix' ;
+							'(?P<unit> ' .StringUtilities::EscapeRegexCharacters ( $name ) . ')? $/ix' ;
 
 					// Yes, we have to separate the numeric value from the unit name
 					if  ( preg_match ( $re, $item, $matches ) )

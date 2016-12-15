@@ -31,9 +31,10 @@ defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." 
 
 
 // Used namespaces and classes
-use 	Thrak\System\Object		as  Object ;
-use 	Thrak\System\Exception 		as  Exception ;
-use     Thrak\IO\Path 			as  Path ;
+use 	Thrak\System\Object ;
+use 	Thrak\System\Exception ;
+use     Thrak\IO\Path ;
+use 	Thrak\Types\StringUtilities ;
 
 
 /*==================================================================================================
@@ -137,7 +138,7 @@ class  Utilities  extends Object
 
 	    RETURNS
 	    	An array of names an values ; for example :
-			CrimsonString::ParseAttributeValuePairs ( 'name="xxx" name2="yyy"' ) ;
+			CrimsonStringUtilities::ParseAttributeValuePairs ( 'name="xxx" name2="yyy"' ) ;
 		will return :
 			array ( 'name' => 'xxx', 'name2' => 'yyy' ) ;
 

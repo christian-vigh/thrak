@@ -33,7 +33,7 @@ use		Thrak\Internet\Azure\AbstractAzureBase ;
 use		Thrak\Internet\Azure\AzureException ;
 use		Thrak\Internet\Azure\IAzureService ;
 use		Thrak\Processors\IniFile ;
-use		Thrak\Types\String ;
+use		Thrak\Types\StringUtilities ;
 use		Thrak\Types\String\Formatting ;
 
 class  BingTranslatorException		extends  AzureException { } ;
@@ -926,7 +926,7 @@ class  BingTranslator		extends		AbstractAzureBase
 		if  ( count ( $text )  >  self::MAX_TRANSLATE_ARRAY_ITEMS )
 			error ( new BingTranslatorException ( 'Too many items to translate. Current limit is ' . self::MAX_TRANSLATE_ARRAY_ITEMS ) ) ;
 		
-		if  ( String::StringArrayLength ( $text )  >  self::MAX_TRANSLATE_ARRAY_CHARACTERS )
+		if  ( StringUtilities::StringArrayLength ( $text )  >  self::MAX_TRANSLATE_ARRAY_CHARACTERS )
 			error ( new BingTranslatorException ( 'Too many characters to translate. Current limit is ' . self::MAX_TRANSLATE_ARRAY_CHARACTERS ) ) ;			
 
 		// Build the request
@@ -1300,7 +1300,7 @@ END;
 		if  ( count ( $text )  >  self::MAX_TRANSLATE_ARRAY_ITEMS )
 			error ( new BingTranslatorException ( 'Too many items to translate. Current limit is ' . self::MAX_TRANSLATE_ARRAY_ITEMS ) ) ;
 		
-		if  ( String::StringArrayLength ( $text )  >  self::MAX_TRANSLATE_ARRAY_CHARACTERS )
+		if  ( StringUtilities::StringArrayLength ( $text )  >  self::MAX_TRANSLATE_ARRAY_CHARACTERS )
 			error ( new BingTranslatorException ( 'Too many characters to translate. Current limit is ' . self::MAX_TRANSLATE_ARRAY_CHARACTERS ) ) ;			
 
 		$this -> __check_language ( $from_language, "source" ) ;

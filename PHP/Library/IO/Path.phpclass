@@ -86,7 +86,7 @@ defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." 
 
 // Used namespaces & objects
 use 	Thrak\System\Object ;
-use	Thrak\Types\String ;
+use	Thrak\Types\StringUtilities ;
 use	Thrak\IO\Wrappers\GenericWrapper ;
 use	Thrak\Types\FileSpecificationFormatter ;
 use	Thrak\Types\SpecializedFormatterDefinition ;
@@ -917,7 +917,7 @@ class  	Path	extends  Object
 						//	The parameter value is a numeric value followed by an optional size
 						//	specifier, such as "kb" for "kilobytes".
 						case	'size' :
-							$new_expression .=  String::StringToByteCount ( $value ) ;
+							$new_expression .=  StringUtilities::StringToByteCount ( $value ) ;
 							break ;
 
 						// [parameter of type modebit] -
@@ -1631,7 +1631,7 @@ class  	Path	extends  Object
 	 --------------------------------------------------------------------------------------------*/
 	public static function  Matches ( $file, $pattern, $case_sensitive = false )
 	   {
-		return ( String::Matches ( $file, $pattern, $case_sensitive ) ) ;
+		return ( StringUtilities::Matches ( $file, $pattern, $case_sensitive ) ) ;
 	    }
 
 	
@@ -2075,7 +2075,7 @@ class  	Path	extends  Object
 	   	if  ( $index  !==  false )
 		   {
 			$root	=  GenericWrapper::GetStreamOption ( substr ( $path, 0, $index ), "root" ) ;
-			$root	=  String::SetEOS ( $root, '/' ) ;
+			$root	=  StringUtilities::SetEOS ( $root, '/' ) ;
 
 			if  ( ! $root )
 	   			return ( $path ) ;
@@ -2103,7 +2103,7 @@ class  	Path	extends  Object
 		else
 			$cwd	=  $use_cwd ;
 
-   		if  ( ! String::EndsWith ( $cwd, '/' )  &&  ! String::EndsWith ( $cwd, "\\" ) )
+   		if  ( ! StringUtilities::EndsWith ( $cwd, '/' )  &&  ! StringUtilities::EndsWith ( $cwd, "\\" ) )
    			$cwd  .=  '/' ;
 
    		if  ( $path [0]  !=  '/'  &&  ( $length  >  1  &&  $path [1]  !=  ':' ) )

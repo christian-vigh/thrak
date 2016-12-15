@@ -42,7 +42,7 @@ defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." 
 
 // Used namespaces & objects
 use 		Thrak\System\Object ;
-use 		Thrak\Types\String ;
+use 		Thrak\Types\StringUtilities ;
 
 
 /*===========================================================================================
@@ -257,7 +257,7 @@ class  	Formatting 	extends  Object
 	   {
 	   	// Suppress carriage returns and replace tabs
 	   	$contents	=  ( string ) $contents ; 	// In case we have a simpleXMLNode
-		$contents	=  str_replace ( "\r", '', String::ExpandTabs ( $contents ) ) ;
+		$contents	=  str_replace ( "\r", '', StringUtilities::ExpandTabs ( $contents ) ) ;
 
 		// Paranoia : handle the case that the inner contents are empty of simply made of spaces
 		if  ( trim ( $contents )  ==  "" )
@@ -337,7 +337,7 @@ class  	Formatting 	extends  Object
 			$result = rtrim ( $result, " \t" ) ;
 
 		// Make sure we don't end with an eol sequence.
-		if  ( String::EndsWith ( $result, $eol ) )
+		if  ( StringUtilities::EndsWith ( $result, $eol ) )
 			$result = substr ( $result, 0, strlen ( $result ) - strlen ( $eol ) ) ;
 
 		// All done, return
@@ -905,7 +905,7 @@ class  	Formatting 	extends  Object
 
 		// Remove accentuated letters if needed
   	   	if  ( $options  &  self::NORMALIZE_UNACCENTUATE )
-			$value = String::Unaccentuated ( $value ) ;
+			$value = StringUtilities::Unaccentuated ( $value ) ;
 
 		// Convert to lower- or upper- case if needed
 		if  ( $options  &  self::NORMALIZE_LOWERCASE )
@@ -922,7 +922,7 @@ class  	Formatting 	extends  Object
 		   	foreach ( $words  as  &$word )
 		   	   {
 				if  ( $options  &  self::NORMALIZE_UNACCENTUATE )
-					$word = String::Unaccentuated ( $word ) ;
+					$word = StringUtilities::Unaccentuated ( $word ) ;
 
 				if  ( $options  &  self::NORMALIZE_LOWERCASE )
 					$word = strtolower ( $word ) ;

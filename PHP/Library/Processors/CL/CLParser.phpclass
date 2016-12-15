@@ -110,7 +110,7 @@ defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." 
 use 	Thrak\System\Object ;
 use  	Thrak\Runtime\VersionableObject	;
 use 	Thrak\IO\Path ;
-use 	Thrak\Types\String ;
+use 	Thrak\Types\StringUtilities ;
 use 	Thrak\Types\String\Formatting ;
 use 	Thrak\Processors\CL\CLException ;
 use 	Thrak\Internet\Xml\SimpleXML ;
@@ -726,8 +726,8 @@ END;
 			error ( new CLException ( "The 'with' attribute is required for the '<$tag>' tag." ) ) ;
 
 		// Normalize the values specified by the 'with' and 'parameter' attributes
-		$parameter_names 	=  String::ExplodeAndTrim ( ',', $parameter ) ;
-		$with_values 		=  String::ExplodeAndTrim ( ',', $with ) ;
+		$parameter_names 	=  StringUtilities::ExplodeAndTrim ( ',', $parameter ) ;
+		$with_values 		=  StringUtilities::ExplodeAndTrim ( ',', $with ) ;
 
 		// Checks that parameter names are not referenced by "with" values, and vice-versa
 		// If no collision, add this pair to the parameter grouping table
@@ -1153,7 +1153,7 @@ END;
 						   {
 							$temp_arg	=  rtrim ( $argv [$j] ) ;
 
-							if  ( String::EndsWith ( $temp_arg, $current_parameter -> Delimiter ) )
+							if  ( StringUtilities::EndsWith ( $temp_arg, $current_parameter -> Delimiter ) )
 							   {
 								$temp_arg	=  substr ( $temp_arg, 0, strrpos ( $temp_arg, $current_parameter -> Delimiter ) ) ;
 
@@ -1334,9 +1334,9 @@ END;
 				case	'allow-unknown-parameters' :
 				case	'unknown-parameters' :
 				case	'unknown' :
-					if  ( String::IsTrue ( $value ) )
+					if  ( StringUtilities::IsTrue ( $value ) )
 						$this -> AllowUnknownParameters = true ;
-					else if  ( String::IsFalse ( $value ) )
+					else if  ( StringUtilities::IsFalse ( $value ) )
 						$this -> AllowUnknownParameters = false ;
 					else
 						error ( new CLException ( "The value specified for the '$name' attribute of the <$tag> tag must be boolean." ) ) ;
@@ -1357,9 +1357,9 @@ END;
 				// 'allow-files' -
 				//	Checks whether files are allowed on the command line or not.
 				case	'allow-files' :
-					if  ( String::IsTrue ( $value ) )
+					if  ( StringUtilities::IsTrue ( $value ) )
 						$allow_files = true ;
-					else if  ( String::IsFalse ( $value ) )
+					else if  ( StringUtilities::IsFalse ( $value ) )
 						$allow_files = false ;
 					else
 						error ( new CLException ( "The value specified for the 'allow-files' attribute of the <$tag> tag must be boolean." ) ) ;
@@ -1368,9 +1368,9 @@ END;
 				// 'allow-php-tags' -
 				//	Allows (or not) PHP tags in default values and/or help.
 				case	'allow-php-tags' :
-					if  ( String::IsTrue ( $value ) )
+					if  ( StringUtilities::IsTrue ( $value ) )
 						$allow_php_tags = [ 'defaults' => true, 'help' => true ] ;
-					else if  ( String::IsFalse ( $value ) )
+					else if  ( StringUtilities::IsFalse ( $value ) )
 						$allow_php_tags = [ 'defaults' => false, 'help' => false ] ;
 					else
 					   {
@@ -1473,7 +1473,7 @@ END;
 		    		$specifications [ 'attributes' ] [] =  array ( 'name' => 'multiple', 'value' => 'true' ) ;
     		 	    }
 
-    		 	if  ( ! String::EndsWith ( $value_help, "." ) )
+    		 	if  ( ! StringUtilities::EndsWith ( $value_help, "." ) )
     		 		$value_help .= "." ;
 
 			$specifications [ 'attributes' ] [] = array ( 'name' => 'value-text', 'value' => $value_text ) ;
@@ -1547,7 +1547,7 @@ END;
 					if  ( $topic  ===  null )
 						error ( new CLException ( "<$child_tag> tag : the 'name' attribute is mandatory." ) ) ;
 
-					$topics						=  String::ExplodeAndTrim ( ',', $value ) ;
+					$topics						=  StringUtilities::ExplodeAndTrim ( ',', $value ) ;
 					$this -> CommandHelpTopics [ strtolower ( $topics [0] ) ]	=  
 					   [
 						'names'		=>  $topics,

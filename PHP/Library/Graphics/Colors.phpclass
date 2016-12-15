@@ -21,9 +21,9 @@
 namespace 	Thrak\Graphics ;
 
 // Used namespaces and objects
-use 	Thrak\System\Object 		as  Object ;
-use     Thrak\Types\Vector		as  Vector ;
-use 	Thrak\Types\String  		as  String ;
+use 	Thrak\System\Object ;
+use     Thrak\Types\Vector ;
+use 	Thrak\Types\StringUtilities ;
 
 
 /*==================================================================================================
@@ -148,7 +148,7 @@ class  NamedColors  extends     Object
 	 --------------------------------------------------------------------------------------------*/
 	private function  __simplified_color_name ( $name )
 	   {
-		$name = strtolower ( String::StripSpaces ( $name ) ) ;
+		$name = strtolower ( StringUtilities::StripSpaces ( $name ) ) ;
 
 		return ( $name ) ;
 	    }
@@ -488,7 +488,7 @@ class  Color  extends  Object
 	//	Extracts list of integer values separated by a comma.
 	private function  __extract_list_values ( $value, $max_values, $list )
 	   {
-		$result 	=  String::ExplodeAndTrim ( ',', $list ) ;
+		$result 	=  StringUtilities::ExplodeAndTrim ( ',', $list ) ;
 
 		// Get each color item
 		foreach  ( $result  as  &$item )
@@ -1375,7 +1375,7 @@ class  Color  extends  Object
 	 --------------------------------------------------------------------------------------------*/
 	public function  SetColor ( $value, $model = null )
 	   {
-		$value 		=  String::StripSpaces ( $value ) ;
+		$value 		=  StringUtilities::StripSpaces ( $value ) ;
 
 		// Check the supplied value
 		$colorimetric_model 	=  null ;

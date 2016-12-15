@@ -25,7 +25,7 @@ use  	Thrak\System\Object ;
 use	Thrak\IO\Path ;
 use     Thrak\Math ;
 use     Thrak\Processors\IniFile ;
-use     Thrak\Types\String ;
+use     Thrak\Types\StringUtilities ;
 
 
 /*==============================================================================================================
@@ -306,7 +306,7 @@ abstract class  RandomProvider		extends		Object
 		
 		if  ( $value )
 		   {
-			if  ( String::EndsWith ( $value, '\\' ) )
+			if  ( StringUtilities::EndsWith ( $value, '\\' ) )
 				$value	=  substr ( $value, 0, strlen ( $value ) - 1 ) ;
 			
 			self::$DefaultNamespace		=  $value ;
@@ -327,7 +327,7 @@ abstract class  RandomProvider		extends		Object
 				error ( new \Thrak\System\RuntimeException ( "The 'Name' key of the [$provider_section] section does not exists " .
 						"in file \"$real_path\"" ) ) ;
 			
-			$names	=  string::ExplodeAndTrim ( ',', $value ) ;
+			$names	=  StringUtilities::ExplodeAndTrim ( ',', $value ) ;
 
 			if  ( ! count ( $names ) ) 
 				error ( new \Thrak\System\RuntimeException ( "The 'Name' key of the [$provider_section] section does not specify " .

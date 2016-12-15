@@ -44,7 +44,7 @@ use 	Thrak\System\Object ;
 use 	Thrak\System\Exception ;
 use     Thrak\Database\Database ;
 use     Thrak\Database\DatabaseDriver ;
-use     Thrak\Types\String ;
+use     Thrak\Types\StringUtilities ;
 
 
 /*===========================================================================================
@@ -332,7 +332,7 @@ class	mysqli  extends  DatabaseDriver
 
 			if  ( $wildcard )
 			   {
-				if  ( String::MatchesEx ( $dbname, $wildcard ) )
+				if  ( StringUtilities::MatchesEx ( $dbname, $wildcard ) )
 					$result []	=  $dbname ;
 			    }
 			else
@@ -358,7 +358,7 @@ class	mysqli  extends  DatabaseDriver
 
 			if  ( $wildcard )
 			   {
-				if  ( String::MatchesEx ( $name, $wildcard ) )
+				if  ( StringUtilities::MatchesEx ( $name, $wildcard ) )
 					$selected	=  true ;
 			    }
 			else

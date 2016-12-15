@@ -23,7 +23,7 @@ defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." 
 use	Thrak\System\Object ;
 use	Thrak\Types\AssociativeArray ;
 use	Thrak\IO\Path ;
-use     Thrak\Types\String ;
+use     Thrak\Types\StringUtilities ;
 
 
 /*==============================================================================================================
@@ -107,7 +107,7 @@ class  Cookies		extends		Object
 	   {
 		if  ( is_string ( $expires ) )
 		   {
-			if  ( ! ( $expires = String::IsDateString ( $expires ) ) )
+			if  ( ! ( $expires = StringUtilities::IsDateString ( $expires ) ) )
 				$expires	=  0 ;
 		    }
 		

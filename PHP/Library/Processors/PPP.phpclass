@@ -35,11 +35,11 @@ namespace 	Thrak\Processors ;
 defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
 
 // Used namespaces & objects
-use 		Thrak\System\Object 		as  Object ;
-use 		Thrak\System\Exception 		as  Exception ;
-use 		Thrak\IO\Path 			as  Path ;
-use  		Thrak\Types\String  		as  String ;
-use 		Thrak\Processors\PHP		as  PHP ;
+use 		Thrak\System\Object ;
+use 		Thrak\System\Exception ;
+use 		Thrak\IO\Path ;
+use  		Thrak\Types\StringUtilities ;
+use 		Thrak\Processors\PHP ;
 
 
 /*==================================================================================================
@@ -592,7 +592,7 @@ class	PPP  extends  Object
 
 		// Should we generate #line directives ?
 		if  ( $this -> Options  &  self::OPT_LINE )
-			$output [] 	=  "#line " . $this -> CurrentLine . " " . String::QuotedString ( $this -> CurrentFile, '"', true ) ;
+			$output [] 	=  "#line " . $this -> CurrentLine . " " . StringUtilities::QuotedString ( $this -> CurrentFile, '"', true ) ;
 
 		// Loop through each input line
 		foreach  ( $lines  as  $line )
@@ -1212,7 +1212,7 @@ class	PPP  extends  Object
 
 		if  ( $php_include_path )
 		   {
-			$table 	=  String::ExplodeAndTrim ( $separator, $php_include_path ) ;
+			$table 	=  StringUtilities::ExplodeAndTrim ( $separator, $php_include_path ) ;
 			$list 	=  array_merge ( $list, $table ) ;
 		    }
 
@@ -1225,13 +1225,13 @@ class	PPP  extends  Object
 
 		if  ( $php_includes )
 		   {
-			$table 	=  String::ExplodeAndTrim ( $separator, $php_includes ) ;
+			$table 	=  StringUtilities::ExplodeAndTrim ( $separator, $php_includes ) ;
 			$list	=  array_merge ( $list, $table ) ;
 		    }
 
 		if  ( $includes )
 		   {
-			$table 	=  String::ExplodeAndTrim ( $separator, $includes ) ;
+			$table 	=  StringUtilities::ExplodeAndTrim ( $separator, $includes ) ;
 			$list	=  array_merge ( $list, $table ) ;
 		    }
 
@@ -1376,7 +1376,7 @@ class	PPP  extends  Object
 	public function  Define ( $name, $value, $parameters = null )
 	   {
 	   	if  ( $parameters )
-	   		$parameters  =  String::ExplodeAndTrim ( ',', $parameters ) ;
+	   		$parameters  =  StringUtilities::ExplodeAndTrim ( ',', $parameters ) ;
 
 		$this -> __AddMacro ( false, $name, $value, $parameters ) ;
 	    }
@@ -2189,7 +2189,7 @@ class	PPP  extends  Object
 					if  ( $new_string )
 					   {
 					   	// Convert the string to an array of macro parameters
-						$current_macro_argv 	=  String::ExplodeAndTrim ( ',', $new_string ) ;
+						$current_macro_argv 	=  StringUtilities::ExplodeAndTrim ( ',', $new_string ) ;
 
 						// Then replace the characters that were replaced by improbable characters with their original version
 						foreach  ( $current_macro_argv  as  &$arg )

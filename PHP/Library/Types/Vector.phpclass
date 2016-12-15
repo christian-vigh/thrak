@@ -29,9 +29,10 @@ defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." 
 
 
 // Used namespaces and classes
-use 	Thrak\System\Object 		as  Object ;
-use 	Thrak\System\Exception 		as  Exception ;
-use  	Thrak\Math 			as  Math ;
+use 	Thrak\System\Object ;
+use 	Thrak\System\Exception ;
+use  	Thrak\Math ;
+use 	Thrak\Types\StringUtilities ;
 
 
 /*==================================================================================================
@@ -660,9 +661,9 @@ class  Vector  extends     \ArrayObject
 		   {
 		   	// CaseSensitiveKeys flag
 			case	'casesensitivekeys' :
-				if  ( String::IsTrue ( $value ) )
+				if  ( StringUtilities::IsTrue ( $value ) )
 					$array [ 'CaseSensitiveKeys' ] = true ;
-				else if  ( String::IsFalse ( $value ) )
+				else if  ( StringUtilities::IsFalse ( $value ) )
 					$array [ 'CaseSensitiveKeys' ] = false ;
 				else
 					$bad_flag_value = true ;
@@ -670,9 +671,9 @@ class  Vector  extends     \ArrayObject
 
 		   	// CaseSensitiveValues flag
 			case	'casesensitivevalues' :
-				if  ( String::IsTrue ( $value ) )
+				if  ( StringUtilities::IsTrue ( $value ) )
 					$array [ 'CaseSensitiveValues' ] = true ;
-				else if  ( String::IsFalse ( $value ) )
+				else if  ( StringUtilities::IsFalse ( $value ) )
 					$array [ 'CaseSensitiveValues' ] = false ;
 				else
 					$bad_flag_value = true ;
@@ -685,9 +686,9 @@ class  Vector  extends     \ArrayObject
 
 			// Recurse flag
 			case	'recurse' :
-				if  ( String::IsTrue ( $value ) )
+				if  ( StringUtilities::IsTrue ( $value ) )
 					$array [ 'Recurse' ] = true ;
-				else if  ( String::IsFalse ( $value ) )
+				else if  ( StringUtilities::IsFalse ( $value ) )
 					$array [ 'Recurse' ] = false ;
 				else
 					$bad_flag_value = true ;
@@ -695,9 +696,9 @@ class  Vector  extends     \ArrayObject
 
 			// BoundsChecking flag
 			case	'boundschecking' :
-				if  ( String::IsTrue ( $value ) )
+				if  ( StringUtilities::IsTrue ( $value ) )
 					$array [ 'BoundsChecking' ] = true ;
-				else if  ( String::IsFalse ( $value ) )
+				else if  ( StringUtilities::IsFalse ( $value ) )
 					$array [ 'BoundsChecking' ] = false ;
 				else
 					$bad_flag_value = true ;
@@ -4088,7 +4089,7 @@ class  Vector  extends     \ArrayObject
 		$reference 		=  $this -> ToString ( false ) ;
 		$search 		=  $search -> ToString ( false ) ;
 		$search 		=  preg_replace ( array ( '/^\(\s*/', '/\s*\)\s*$/' ), '', $search ) ;
-		$search 		=  String::EscapeRegexCharacters ( $search ) ;
+		$search 		=  StringUtilities::EscapeRegexCharacters ( $search ) ;
 
 		// If loose search is required, replace any closing parenthesis with an re that matches everything
 		if  ( $loose_search )
@@ -4799,7 +4800,7 @@ function array_permutations($items, $perms = array()) {
 			   {
 			   	if  ( is_string ( $value ) )
 			   	   {
-			   		$item = String::QuotedString ( $value, "'", true ) ;
+			   		$item = StringUtilities::QuotedString ( $value, "'", true ) ;
 			   		$item = str_replace ( array ( '(', ')' ), array ( '\(', '\)' ), $item ) ;
 		   		    }
 		   		else

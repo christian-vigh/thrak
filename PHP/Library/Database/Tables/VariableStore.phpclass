@@ -24,7 +24,7 @@ defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." 
 
 // Used namespaces & objects
 use	Thrak\Database\Table ;
-use	Thrak\Types\String ;
+use	Thrak\Types\StringUtilities ;
 
 
 /*==============================================================================================================
@@ -591,7 +591,7 @@ class   VariableStore		extends		Table
 			// Boolean type -
 			//	Checks that the specified value expresses a real boolean value.
 			case	self::TYPE_BOOLEAN :
-				if  ( ( $result = String::BooleanValue ( $value ) )  ===  null )
+				if  ( ( $result = StringUtilities::BooleanValue ( $value ) )  ===  null )
 					$this -> ConversionError ( $name, $type, "non-boolean value specified", 'from' ) ;
 
 				return ( ( $result ) ?  "1" : "0" ) ;
@@ -687,7 +687,7 @@ class   VariableStore		extends		Table
 			// Boolean type -
 			//	Checks that the underlying database value expresses a real boolean value.			
 			case	self::TYPE_BOOLEAN :
-				if  ( ( $result = String::BooleanValue ( $value ) )  ===  null )
+				if  ( ( $result = StringUtilities::BooleanValue ( $value ) )  ===  null )
 					$this -> ConversionError ( $name, $type, "non-boolean value \"$value\" flagged as boolean", 'from' ) ;
 
 				return ( ( $result ) ?  true : false ) ;

@@ -91,7 +91,8 @@ define ( 'DD_SIZE'	, 4 ) ;
 define ( 'DQ_SIZE'	, 8 ) ;
 
 // Other constants
-define ( 'PHP_INT_MIN'			, - PHP_INT_MAX - 1 ) ;
+if  ( ! defined ( 'PHP_INT_MIN' ) )
+	define ( 'PHP_INT_MIN'			, - PHP_INT_MAX - 1 ) ;
 
 // A small kludge for the CLParser object, so that the --classes, --stdclasses, etc. special
 // parameters won't show the classes, functions, interfaces and so on defined in the CL package.
@@ -379,7 +380,7 @@ $BootFinalize		=  function ( $debug )
 			if  ( is_dir ( $ramdisk ) )
 			   {
 				$ramdisk	=  \Thrak\IO\Path::ToUnix ( $ramdisk ) ;
-				$ramdisk	=  \Thrak\Types\String::SetEOS ( $ramdisk, '/' ) ;
+				$ramdisk	=  \Thrak\Types\StringUtilities::SetEOS ( $ramdisk, '/' ) ;
 				
 				\Thrak\IO\Wrappers\FileWrapper::Register ( "ramdisk$index", array ( 'root' => $ramdisk ) ) ;
 				 
@@ -452,7 +453,7 @@ $BootFinalize		=  function ( $debug )
 		   {
 			$realpath	=  \Thrak\IO\Path::RealPath ( $include ) ;
 			$realpath	=  \Thrak\IO\Path::ToUnix ( $realpath ) ;
-			$realpath	=  \Thrak\Types\String::SetEOS ( $realpath, '/' ) ;
+			$realpath	=  \Thrak\Types\StringUtilities::SetEOS ( $realpath, '/' ) ;
 			
 			$real_includes []	=  $realpath ;
 		    }

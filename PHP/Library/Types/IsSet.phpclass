@@ -33,6 +33,7 @@ namespace  	Thrak\Types ;
 defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
 
 use	Thrak\System\Object ;
+use 	Thrak\Types\StringUtilities ;
 
 
 /*==============================================================================================================
@@ -559,21 +560,21 @@ class  IsSetAnd		extends  WhenSet
 	   {
 		self::Check ( $array, $index ) ;
 		
-		return  ( ( isset ( $array [ $index ] ) ) ?  is_array ( $array [ $index ] )  &&  String::IsDate ( $array [ $index ] ) : false ) ;
+		return  ( ( isset ( $array [ $index ] ) ) ?  is_array ( $array [ $index ] )  &&  StringUtilities::IsDate ( $array [ $index ] ) : false ) ;
 	    }
 
 	public static function  IsTime ( array  $array, $index )
 	   {
 		self::Check ( $array, $index ) ;
 		
-		return  ( ( isset ( $array [ $index ] ) ) ?  is_array ( $array [ $index ] )  &&  String::IsTime ( $array [ $index ] ) : false ) ;
+		return  ( ( isset ( $array [ $index ] ) ) ?  is_array ( $array [ $index ] )  &&  StringUtilities::IsTime ( $array [ $index ] ) : false ) ;
 	    }
 
 	public static function  IsDateTime ( array  $array, $index )
 	   {
 		self::Check ( $array, $index ) ;
 		
-		return  ( ( isset ( $array [ $index ] ) ) ?  is_array ( $array [ $index ] )  &&  String::IsDateTime ( $array [ $index ] ) : false ) ;
+		return  ( ( isset ( $array [ $index ] ) ) ?  is_array ( $array [ $index ] )  &&  StringUtilities::IsDateTime ( $array [ $index ] ) : false ) ;
 	    }
 
 	

@@ -34,7 +34,7 @@ use  	Thrak\System\Object ;
 use     Thrak\System\IsNonObject ;
 use     Thrak\Reflection\DocCommentExtender ;
 use     Thrak\Reflection\Sourcers\ReflectionSourcerInterface ;
-use	Thrak\Types\String ;
+use	Thrak\Types\StringUtilities ;
 
 
 /*==============================================================================================================
@@ -103,7 +103,7 @@ class  ReflectionClass 		extends 	\ReflectionClass
 
 			foreach  ( $constants  as  $name => $value )
 			   {
-				if  ( String::Matches ( $name, $filter ) )
+				if  ( StringUtilities::Matches ( $name, $filter ) )
 				   {
 					if  ( $flip )
 						$result [ $value ]	=  $name ;

@@ -30,7 +30,7 @@ defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." 
 
 // Used namespaces and classes
 use 	Thrak\Processors\CL\CLException ;
-use     Thrak\Types\String ;
+use     Thrak\Types\StringUtilities ;
 use	Thrak\Types\String\Formatting ;
 
 
@@ -143,7 +143,7 @@ class  CLSortOptionsParameter  extends  \Thrak\Processors\CL\CLAbstractParameter
 			switch ( strtolower ( $attribute [ 'name' ] ) )
 			   {
 				case	'name' :
-					$attrnames = String::ExplodeAndTrim ( ',', $attribute [ 'value' ] ) ;
+					$attrnames = StringUtilities::ExplodeAndTrim ( ',', $attribute [ 'value' ] ) ;
 
 					// Check that the name was not already specified
 					foreach  ( $attrnames  as  $attrname )
@@ -211,13 +211,13 @@ class  CLSortOptionsParameter  extends  \Thrak\Processors\CL\CLAbstractParameter
 	protected function  ProcessValue ( $pname, $pvalue )
 	   {
 		// Sort field names are comma-separated
-		$values		=  String::ExplodeAndTrim ( ',', $pvalue ) ;
+		$values		=  StringUtilities::ExplodeAndTrim ( ',', $pvalue ) ;
 		$result		=  [] ;
 
 		// Loop through each field name optionnally followed by ASC or DESC
 		foreach  ( $values  as  $value )
 		   {
-			$items		=  String::ExplodeAndTrim ( ' ', $value, true ) ;
+			$items		=  StringUtilities::ExplodeAndTrim ( ' ', $value, true ) ;
 			$item_count	=  count ( $items ) ;
 			
 			switch  ( $item_count ) 

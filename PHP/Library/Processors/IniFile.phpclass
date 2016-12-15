@@ -97,7 +97,7 @@ defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." 
 // Used namespaces and classes
 use  	Thrak\System\Object ;    
 use	Thrak\IO\Path ;
-use	Thrak\Types\String ;
+use	Thrak\Types\StringUtilities ;
 use	Thrak\Processors\VariableStore ;
 
 
@@ -529,7 +529,7 @@ class  IniFile  extends  Object
 					$word 		=  "" ;
 					$multiline	=  false ;
 					$quoted		=  ( $this -> Options & self::OPTION_COMPATIBILITY_QUOTED_VALUES ) ?
-								String::RemoveDelimiters ( $value, '"' ) : false ;
+								StringUtilities::RemoveDelimiters ( $value, '"' ) : false ;
 				    }
 	    			// Neither multiline, nor single-line : complain
 	    			else
@@ -899,7 +899,7 @@ class  IniFile  extends  Object
 			   		else
 					   {
 						if  ( ( $this -> Options & self::OPTION_COMPATIBILITY_QUOTED_VALUES )  &&  $item [ 'quoted' ] )
-							$value	=  String::QuotedString ( $item [ 'value' ], '"', true ) ;
+							$value	=  StringUtilities::QuotedString ( $item [ 'value' ], '"', true ) ;
 						else
 							$value	=  $item [ 'value' ] ;
 
@@ -1172,8 +1172,8 @@ class  IniFile  extends  Object
 		
 		if  ( $value  !==  null )
 		   {
-			if  ( String::IsBoolean ( $value ) )
-				$result		=  String::IsTrue ( $value ) ?  true : false ;
+			if  ( StringUtilities::IsBoolean ( $value ) )
+				$result		=  StringUtilities::IsTrue ( $value ) ?  true : false ;
 			else
 				error ( new \Thrak\System\RuntimeException ( "Invalid boolean value \"$value\" for the \"$key\" value of the [$section] section." ) ) ;
 		    }

@@ -23,7 +23,7 @@ defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." 
 // Used namespaces & objects
 use	Thrak\System\Object ;
 use     Thrak\IO\Path ;
-use	Thrak\Types\String ;
+use	Thrak\Types\StringUtilities ;
 use	Thrak\Types\String\Convert ;
 use	Thrak\Windows\Wmi ;
 
@@ -223,7 +223,7 @@ class  ProcessList		extends		Object
 		for  ( $i = 1 ; $i  <  $count ; $i ++ )
 		   {
 			$line		=  trim ( $output [$i] ) ;
-			$columns	=  String::SplitFields ( $line, 6 ) ;
+			$columns	=  StringUtilities::SplitFields ( $line, 6 ) ;
 			$process	=  new  Process ( $columns [7] ) ;
 
 			if  ( preg_match ( '/\d+:\d+/', $columns [4] ) )

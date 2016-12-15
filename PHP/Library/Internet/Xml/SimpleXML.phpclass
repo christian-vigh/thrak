@@ -37,7 +37,7 @@ defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." 
 use 	Thrak\System\Object ;
 use 	Thrak\System\Exception ;
 use     Thrak\IO\Path ;
-use	Thrak\Types\String ;
+use	Thrak\Types\StringUtilities ;
 use	Thrak\Types\StringEncoder ;
 
 
@@ -896,7 +896,7 @@ class  SimpleXML  extends Object
 			$prepend	.=  '[errno=' .  $error -> code . '] ' . 'line ' . $error -> line . ', col ' . $error -> column  . ' : ' . $text ;
 			$message	.=  $prepend ;
 			
-			if  ( ! String::EndsWith ( $message, "\n" ) )
+			if  ( ! StringUtilities::EndsWith ( $message, "\n" ) )
 				$message	.=  "\n" ;
 		    }
 		

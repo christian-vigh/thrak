@@ -31,10 +31,10 @@ defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." 
 
 
 // Used namespaces & objects
-use 		Thrak\System\Object 		as  Object ;
-use 		Thrak\System\Exception		as  Exception ;
-use 		Thrak\Type\String\Convert	as  Convert ;
-use  		Thrak\Types\String 		as  String ;
+use 		Thrak\System\Object ;
+use 		Thrak\System\Exception ;
+use 		Thrak\Type\String\Convert ;
+use  		Thrak\Types\StringUtilities ;
 
 
 /*==================================================================================================
@@ -88,18 +88,18 @@ class  CLRegexValidator  extends  CLAbstractValidator
 
 			foreach  ( $value  as  $item )
 			   {
-				if  ( String::IsRegex ( $item ) )
+				if  ( StringUtilities::IsRegex ( $item ) )
 					$result		=  $item ;
 				else
-					$result []	=  String::NormalizeRegex ( $item, true ) ;
+					$result []	=  StringUtilities::NormalizeRegex ( $item, true ) ;
 			    }
   	   	    }
    		else
 		   {
-			if  ( String::IsRegex ( $value ) )
+			if  ( StringUtilities::IsRegex ( $value ) )
 				$result		=  $value ;
 			else
-				$result		=  String::NormalizeRegex ( $value, true ) ;
+				$result		=  StringUtilities::NormalizeRegex ( $value, true ) ;
 		    }
 
 		return ( $result ) ;

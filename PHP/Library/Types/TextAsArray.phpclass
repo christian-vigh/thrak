@@ -34,7 +34,7 @@ defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." 
 
 // Used namespaces & objects
 use 	Thrak\System\Object ;
-use	Thrak\Types\String ;
+use	Thrak\Types\StringUtilities ;
 use	Thrak\IO\BinaryFile ;
 
 
@@ -1041,7 +1041,7 @@ class  TextStringAsArray	extends		TextAsArray
 		   {
 			$this -> Count	=  substr_count ( $this -> Contents, $this -> Delimiter ) + 1 ;
 
-			if  ( String::EndsWith ( $this -> Contents, $this -> Delimiter ) )
+			if  ( StringUtilities::EndsWith ( $this -> Contents, $this -> Delimiter ) )
 				$this -> Count -- ;
 		    }
 

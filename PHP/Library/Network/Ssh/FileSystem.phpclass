@@ -43,7 +43,7 @@ defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." 
 // Used namespaces & objects
 use	Thrak\System\Object ;
 use     Thrak\IO\Path ;
-use	Thrak\Types\String ;
+use	Thrak\Types\StringUtilities ;
 
 
 /*==============================================================================================================
@@ -180,7 +180,7 @@ class  SshFileSystem		extends  Object
 		if  ( ! $result )
 			error ( new SftpException ( "Cannot chdir() to \"$path\" : path does not exist" ) ) ;
 		
-		$old_cwd	=  String::SetEOS ( $this -> Cwd, '/' ) ;
+		$old_cwd	=  StringUtilities::SetEOS ( $this -> Cwd, '/' ) ;
 		$this -> Cwd	=  $this -> realpath ( $result ) ;
 		
 		return ( $old_cwd ) ;

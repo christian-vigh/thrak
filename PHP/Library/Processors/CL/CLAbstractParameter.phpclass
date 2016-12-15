@@ -69,7 +69,7 @@ defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." 
 
 // Used namespaces & objects
 use 		Thrak\System\Object ;
-use  		Thrak\Types\String ;
+use  		Thrak\Types\StringUtilities ;
 use		Thrak\Types\String\Convert ;
 
 
@@ -732,14 +732,14 @@ class  CLAbstractParameter  extends Object
 
 				$definition [ 'help' ] [ $last ] = rtrim ( $definition [ 'help' ] [ $last ] ) ;
 
-				if  ( ! String::EndsWith ( $definition [ 'help' ] [ $last ], '.' ) )
+				if  ( ! StringUtilities::EndsWith ( $definition [ 'help' ] [ $last ], '.' ) )
 					$definition [  'help' ] [ $last ] .= '.' ;
 			    }
     			else
 			   {
 			   	$definition [ 'help' ] = rtrim ( $definition [ 'help' ] ) ;
 
-			   	if  ( ! String::EndsWith ( $definition [ 'help' ], '.' ) )
+			   	if  ( ! StringUtilities::EndsWith ( $definition [ 'help' ], '.' ) )
     					$definition [ 'help' ] .=  '.' ;
 			    }
 	     	    }
@@ -764,7 +764,7 @@ class  CLAbstractParameter  extends Object
 
 
 		foreach  ( $this -> Values  as  $Value )
-			$result [] = String::QuotedString ( $Value ) ;
+			$result [] = StringUtilities::QuotedString ( $Value ) ;
 
 		if  ( count ( $result ) )
 			return ( implode ( " ", $result ) ) ;
@@ -999,7 +999,7 @@ class  CLAbstractParameter  extends Object
 			//	Check that the supplied value is an integer.
 			case	self::ATTRIBUTE_TYPE_INTEGER :
 			case	self::ATTRIBUTE_TYPE_UNSIGNED_INTEGER :
-				if  ( ! String::IsInteger ( $value )  )
+				if  ( ! StringUtilities::IsInteger ( $value )  )
 					error ( new CLException ( "The '$value' value for the '$name' attribute of the <$tag> parameter is not a valid integer value." ) ) ;
 
 				if  ( $type  ==  self::ATTRIBUTE_TYPE_UNSIGNED_INTEGER  &&  $value  <  0 )
@@ -1024,9 +1024,9 @@ class  CLAbstractParameter  extends Object
 			// Boolean type :
 			//	Check that the supplied value is a boolean.
 			case	self::ATTRIBUTE_TYPE_BOOLEAN :
-				if  ( String::IsTrue ( $value ) )
+				if  ( StringUtilities::IsTrue ( $value ) )
 					$attribute_value = true ;
-				else if  ( String::IsFalse ( $value ) )
+				else if  ( StringUtilities::IsFalse ( $value ) )
 					$attribute_value = false ;
 				else
 				   	error ( new CLException ( "The '$value' value for the '$name' attribute of the <$tag> parameter type should be a boolean value." ) ) ;
@@ -1035,7 +1035,7 @@ class  CLAbstractParameter  extends Object
 			// List type :
 			//	Convert a comma
 			case	self::ATTRIBUTE_TYPE_LIST :
-				$value =  String::ExplodeAndTrim ( ',', $value ) ;
+				$value =  StringUtilities::ExplodeAndTrim ( ',', $value ) ;
 				$attribute_value = $value ;
 				break ;
 
@@ -1071,7 +1071,7 @@ class  CLAbstractParameter  extends Object
 					error ( new CLException ( "The '$name' attribute definition of the <$tag> parameter type must be defined." ) ) ;
 
 				$keywords 		=  $attribute_definition [ 'keywords' ] ;
-				$values			=  String::ExplodeAndTrim ( ',', $value ) ;
+				$values			=  StringUtilities::ExplodeAndTrim ( ',', $value ) ;
 				$attribute_value 	=  array ( ) ;
 
 				foreach  ( $values  as  $specified_value )
@@ -1311,7 +1311,7 @@ class  CLAbstractParameter  extends Object
 	 --------------------------------------------------------------------------------------------*/
 	protected function  ProcessValues ( $values )
 	   {
-	   	$this -> SpecifiedValue	=  String::ImplodeWithQuotedStrings ( ' ', $values ) ;
+	   	$this -> SpecifiedValue	=  StringUtilities::ImplodeWithQuotedStrings ( ' ', $values ) ;
 	   	$result 		=  array ( ) ;
 	   	$name 			=  $this -> GetUsageParameterName ( ) ;
 
@@ -1351,7 +1351,7 @@ class  CLAbstractParameter  extends Object
 			// If validation code has been specified, call it
 			if  ( $this -> ValidationCode  !==  null )
 			   {
-			   	$code 		=  str_replace ( '{}', String::QuotedString ( $value, '"', true ), $this -> ValidationCode ) ;
+			   	$code 		=  str_replace ( '{}', StringUtilities::QuotedString ( $value, '"', true ), $this -> ValidationCode ) ;
 			   	$code		=  "\$value = " . $code . ";" ;
 
 			   	eval ( $code ) ;
@@ -1482,7 +1482,7 @@ class  CLAbstractParameter  extends Object
 
 		$text = trim ( $text ) ;
 
-		if  ( ! String::EndsWith ( $text, '.' ) )
+		if  ( ! StringUtilities::EndsWith ( $text, '.' ) )
 			$text .= '.' ;
 
 		return ( $text ) ;

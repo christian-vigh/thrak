@@ -27,8 +27,8 @@ defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." 
 
 
 // Used namespaces and classes
-use 	Thrak\Processors\CL\CLException as  CLException ;
-use     Thrak\Types\String  		as  String ;
+use 	Thrak\Processors\CL\CLException ;
+use     Thrak\Types\StringUtilities ;
 
 
 /*==================================================================================================
@@ -143,7 +143,7 @@ END;
 	   	static 		$tokens 	=  array ( '[', ']', ',', '=>' ) ;
 
 		// Get the array elements, a token being one array element
-		$items 		=  String::ExplodeWithQuotedStrings ( $value, true, $tokens, true ) ;
+		$items 		=  StringUtilities::ExplodeWithQuotedStrings ( $value, true, $tokens, true ) ;
 
 		if  ( $items [0]  !=  '[' )
 			$items 	=  array_merge ( array ( '[' ), $items, array ( ']' ) ) ;
@@ -402,7 +402,7 @@ class  CLListParameter  extends  \Thrak\Processors\CL\CLAbstractSimpleCompoundPa
   	   	if  ( $value  ==  "" )
   	   		$data 	=  array ( ) ;
  		else
-			$data 	=  String::ExplodeAndTrim ( $this -> ItemSeparator, $value ) ;
+			$data 	=  StringUtilities::ExplodeAndTrim ( $this -> ItemSeparator, $value ) ;
 
 		$count 	=  count ( $data ) ;
 

@@ -57,7 +57,7 @@ defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." 
 // Used namespaces & objects
 use 		Thrak\System\Object ;
 use		Thrak\Types\ArrayHelpers ;
-use 		Thrak\Types\String ;
+use 		Thrak\Types\StringUtilities ;
 use		Thrak\Types\String\Formatting ;
 
 
@@ -907,7 +907,7 @@ class  Regex	extends  Object
 			foreach  ( $regex_list  as  $regex_key => $regex_value )
 			   {
 				// Normalize regular expression
-				if  ( ! String::IsRegex ( $regex_value ) )
+				if  ( ! StringUtilities::IsRegex ( $regex_value ) )
 					$regex_value	=  '/^ \s* ' . str_replace ( '/', '\\/', $regex_value ) . '/imsx' ;
 
 				// Call either the PregMatchEx or PregMatchAllEx method
@@ -967,7 +967,7 @@ class  Regex	extends  Object
 			$key_subjects	=  ArrayHelpers::CombinationsOf ( $match_references ) ;
 		
 			// Make $sequence a regex if not already specified : add delimiters and options
-			if  ( ! String::IsRegex ( $new_sequence ) )
+			if  ( ! StringUtilities::IsRegex ( $new_sequence ) )
 				$new_sequence	=  '/^ ' . str_replace ( '/', '\\/', $new_sequence ) . ' $/imsx' ;
 
 			// Find a match
@@ -1721,7 +1721,7 @@ class  Regex	extends  Object
 				'aaa'		=>  'replacement of aaa'
 			    ]
 		    ] ;
-		$result		=  String::RegReplaceNamedPatterns ( $pattern, $subject, $replacement ) ) ;
+		$result		=  StringUtilities::RegReplaceNamedPatterns ( $pattern, $subject, $replacement ) ) ;
 	  
 	 	The resulting string will be :
 	 		replacement of aaa (?P<the new replacement for the pattern string> coucou) zzzz (?P<the

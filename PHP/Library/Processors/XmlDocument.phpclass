@@ -68,7 +68,7 @@ defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." 
 // Used namespaces and classes
 use 	Thrak\System\Object ;
 use	Thrak\IO\Path ;
-use	Thrak\Types\String ;
+use	Thrak\Types\StringUtilities ;
 use	Thrak\Types\String\Regex ;
 use	Thrak\Types\StringEncoder ;
 use     Thrak\Types\AssociativeArray ;
@@ -940,7 +940,7 @@ class  XmlErrors	extends  Object
 			$prepend	.=  '[errno=' .  $error -> code . '] ' . 'line ' . $error -> line . ', col ' . $error -> column  . ' : ' . $text ;
 			$message	.=  $prepend ;
 			
-			if  ( ! String::EndsWith ( $message, "\n" ) )
+			if  ( ! StringUtilities::EndsWith ( $message, "\n" ) )
 				$message	.=  "\n" ;
 		    }
 		
@@ -1091,7 +1091,7 @@ class  XmlNode		extends		Object
 		//	<tagname>
 		//		value
 		//	</tagname>
-		if  ( ! String::EndsWith ( $value, "\n" ) )
+		if  ( ! StringUtilities::EndsWith ( $value, "\n" ) )
 			$value	.=  "\n" ;
 		
 		// Since the value in a "<tagname>value</tagname>" node is displayed on a single line, ensure that it is correctly indented
@@ -1798,7 +1798,7 @@ abstract class  XmlDocument	extends		XmlNodes
 	  ==============================================================================================================*/
 	private function  __preprocess_contents ( $contents, $include_file_stack, $current_file )
 	   {
-		$contents	=  String::Untabify ( $contents ) ;
+		$contents	=  StringUtilities::Untabify ( $contents ) ;
 		
 		// Regex for matching every pseudo-directive in an xml file
 		static		$match_re	=  '/
@@ -1932,7 +1932,7 @@ abstract class  XmlDocument	extends		XmlNodes
 	  ==============================================================================================================*/
 	private function  __path_error ( $directive, $message, $contents, $offset, $file )
 	   {
-		$location	 =  String::GetCharacterLocation ( $contents, $offset ) ;
+		$location	 =  StringUtilities::GetCharacterLocation ( $contents, $offset ) ;
 			
 		if  ( $file )
 			$message	.=  " in file \"$file\"" ;

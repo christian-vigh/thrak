@@ -75,10 +75,10 @@ defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." 
 
 
 // Used namespaces & objects
-use		Thrak\System\Object			as  Object ;
+use		Thrak\System\Object ;
 use		Thrak\System\IsNonObject ;
-use 		Thrak\Types\String			as  String ;
-use 		Thrak\Types\String\Formatting 		as  Formatting ;
+use 		Thrak\Types\StringUtilities ;
+use 		Thrak\Types\String\Formatting ;
 
 // Error modes
 define ( 'ERROR_MODE_UNDEFINED'		, -1 ) ;
@@ -431,7 +431,7 @@ class  Exception 	extends  \Exception
 
 		$lmargin	=  strlen ( $header ) + 1 ;
 		$width 		=  self::$LineWidth ;
-		$errstr		=  String::SetEOS ( $errstr, "\n" ) ;
+		$errstr		=  StringUtilities::SetEOS ( $errstr, "\n" ) ;
 		$errstr	       .=  $trailer ;
 
 		$message 	=  $header . " " .

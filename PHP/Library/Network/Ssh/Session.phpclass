@@ -51,7 +51,7 @@ define ( 'LIBSSH2_EXEC_BUG'			,  true ) ;
 
 // Used namespaces & objects
 use	Thrak\System\Object ;
-use	Thrak\Types\String ;
+use	Thrak\Types\StringUtilities ;
 use	Thrak\Network\Ssh\SshConnection ;
 use	Thrak\Network\Ssh\SshAuthentication ;
 use	Thrak\Network\Ssh\SshFileSystem ;
@@ -434,7 +434,7 @@ class  SshSession		extends  Object
 
 		// Make sure the command is terminated by a newline and append the "echo [status=]" command to be able to
 		// retrieve last-executed command status
-		$command	 =  String::SetEOS ( $command, "\n" ) ;
+		$command	 =  StringUtilities::SetEOS ( $command, "\n" ) ;
 		$command	.=  "echo \"[status=\\\$?]\"\n" ;
 		
 		// Enclose the whole command(s) into a "bash <<END" construct

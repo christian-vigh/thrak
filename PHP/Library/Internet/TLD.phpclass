@@ -23,11 +23,11 @@ namespace  	Thrak\Internet ;
 defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
 
 // Used namespaces and classes
-use     Thrak\System\Object 		as  Object ;
-use 	Thrak\System\Exception 		as  Exception ;
-use  	Thrak\Types\String  		as  String ;
-use	Thrak\IO\Path 			as  Path ;
-use  	Thrak\Internet\Xml\SimpleXML 	as  SimpleXML ;
+use     Thrak\System\Object ;
+use 	Thrak\System\Exception ;
+use  	Thrak\Types\StringUtilities ;
+use	Thrak\IO\Path ;
+use  	Thrak\Internet\Xml\SimpleXML ;
 
 
 /*==================================================================================================
@@ -149,9 +149,9 @@ class  TLDList  extends  Object
 	 --------------------------------------------------------------------------------------------*/
 	private function  __process_boolean ( $file, $name, $attr, $value )
 	   {
-		if  ( String::IsTrue ( $value ) )
+		if  ( StringUtilities::IsTrue ( $value ) )
 			return ( true ) ;
-		else if ( String::IsFalse ( $value ) )
+		else if ( StringUtilities::IsFalse ( $value ) )
 			return ( false ) ;
 
 		throw new CLException ( "Invalid boolean value '$value' specified for the '$attr' attribute of the '$name' TLD, in TLD definitions file '$file'." ) ;

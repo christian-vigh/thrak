@@ -38,7 +38,7 @@ defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." 
 // Used namespaces and classes
 use     Thrak\System\Object ;
 use 	Thrak\Processors\CL\CLException ;
-use     Thrak\Types\String ;
+use     Thrak\Types\StringUtilities ;
 use     Thrak\Types\String\Convert ;
 use  	Thrak\Internet\URI ;
 use     Thrak\Internet\URIProtocols ;
@@ -78,7 +78,7 @@ class  CLEmailParameter  extends  \Thrak\Processors\CL\CLAbstractParameter
 	 --------------------------------------------------------------------------------------------*/
   	protected function  ProcessValue ( $name, $value )
   	   {
-		if  ( ! String::IsValidEmail ( $value ) )
+		if  ( ! StringUtilities::IsValidEmail ( $value ) )
 			error ( new CLException ( "Invalid email address '$value' for the '$name' parameter." ) ) ;
 
 		// All done, return
@@ -283,7 +283,7 @@ class  CLURLParameter  extends  CLAbstractInternetParameter
 	// Normalize scheme name
 	private function  __normalize_scheme_name ( $name )
 	   {
-		if  ( String::EndsWith ( $name, "://" ) )
+		if  ( StringUtilities::EndsWith ( $name, "://" ) )
 			$result = substr ( $name, 0, strlen ( $name ) - 3 ) ;
 		else
 			$result = $name ;
@@ -405,8 +405,8 @@ END;
 	 --------------------------------------------------------------------------------------------*/
 	protected function  ProcessValue ( $name, $value )
 	   {
-	   	$isv4 	=  String::IsIPV4Address ( $value ) ;
-		$isv6 	=  String::IsIPV6Address ( $value ) ;
+	   	$isv4 	=  StringUtilities::IsIPV4Address ( $value ) ;
+		$isv6 	=  StringUtilities::IsIPV6Address ( $value ) ;
 
 		if  ( $isv4 )
 		   {

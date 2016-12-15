@@ -29,7 +29,7 @@ defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." 
 // Used namespaces & objects
 use	Thrak\System\Object ;
 use     Thrak\IO\Path ;
-use	Thrak\Types\String ;
+use	Thrak\Types\StringUtilities ;
 use	Thrak\Processors\IniFile ;
 
 
@@ -186,7 +186,7 @@ class	CrontabConfiguration		extends  Object
 			//	Process title is set to that string.
 			$value			=  $inifile -> GetKey ( $section_name, 'ProcessTitle', $default_process_title ) ;
 
-			if  ( ( $bval = String::BooleanValue ( $value ) )  !==  null )
+			if  ( ( $bval = StringUtilities::BooleanValue ( $value ) )  !==  null )
 			   {
 				if  ( $bval )
 					$process_title	=  $current_name ;

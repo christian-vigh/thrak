@@ -19,8 +19,8 @@
 	- Added the AlignString(), AlignTextMargins() and FormatParagraph() functions.
 
     [Version : 1.1.1]	[Date : 2011/07/02]		[Author : CV]
-	-  Created the IsValidEmail() function from the CrimsonMail::IsValidAddress() one.
-	   IsValidAddress() now uses the CrimsonString::IsValidEmail() function.
+	-  Created the IsValidEmail() function from the Mail::IsValidAddress() one.
+	   IsValidAddress() now uses the StringUtilities::IsValidEmail() function.
   	-  Added the IsValidWindowsFilename and  IsValidUnixFilename functions
 
     [Version : 1.1.2]	[Date : 2011/07/08]		[Author : CV]
@@ -165,6 +165,9 @@
 	. Added the FindClosingDelimiter() method.
 	. Moved the FrenchToMysqlDate() and MysqlToFrenchDate() to the Convert class.
  
+     [Version : 2.0.33]	[Date : 2016/12/15]		[Author : CV]
+	. Renamed class "String" to "StringUtilities" to be compatible with PHP 7.x.
+ 
  ***************************************************************************************************/
 namespace 	Thrak\Types ;
 
@@ -220,7 +223,7 @@ define ( 'CASE_ASIS'			, CASE_LOWER + CASE_UPPER + 1 ) ;		// A complement to CAS
 		String utilities.
 
   ===========================================================================================*/
-class String  extends  Object
+class StringUtilities  extends  Object
    {
 	/*-------------------------------------------------------------------------------------------
 
@@ -228,7 +231,7 @@ class String  extends  Object
 		ArrayRepresentation - Gets a string representation of an array.
 	  
 	    PROTOTYPE
-		$str	=  String::ArrayRepresentation ( $array, $spaces = "" ) ;
+		$str	=  StringUtilities::ArrayRepresentation ( $array, $spaces = "" ) ;
 	  
 	    DESCRIPTION
 		Returns a one-line string representation of an array. This method is intended for
@@ -249,7 +252,6 @@ class String  extends  Object
 	   {
 		$count		=  0 ;
 		$result		=  "" ;
-		$numeric_only	=  true ;
 		$last_key	=  -1 ;		
 		
 		foreach  ( $array  as  $key => $item )
@@ -310,7 +312,7 @@ class String  extends  Object
 		ConstantText - Returns the constant string associated with the specified input.
 
 	    PROTOTYPE
-		$text = String::ConstantText ( $definition ) ;
+		$text = StringUtilities::ConstantText ( $definition ) ;
 
 	    DESCRIPTION
 		Returns the text associated with the constant specified by $definition.
@@ -344,7 +346,7 @@ class String  extends  Object
 		CSet - Generates a character set.
 	  
 	    PROTOTYPE
-		$str	=  String::CSet ( $expression, $option = self::CSET_RETURN_STRING ) ;
+		$str	=  StringUtilities::CSet ( $expression, $option = self::CSET_RETURN_STRING ) ;
 	  
 	    DESCRIPTION
 		Generates a string containing all the characters specified in the expression.
@@ -360,17 +362,17 @@ class String  extends  Object
 	 	$option (integer) -
 	 		Specifies the return value format ; can be one of the following values :
 	  
-	 		- String::CSET_RETURN_STRING :
+	 		- StringUtilities::CSET_RETURN_STRING :
 	 			The returned value will be a string containing the expanded cset
 	 			characters.
 	  
-	 		- String::CSET_RETURN_ORD :
+	 		- StringUtilities::CSET_RETURN_ORD :
 	 			Returns an array of character ordinals.
 	  
-	 		- String::CSET_RETURN_ASSOC_BY_CHAR :
+	 		- StringUtilities::CSET_RETURN_ASSOC_BY_CHAR :
 	 			Returns an associative array of character/ordinal pairs.
 	  
-	 		- String::CSET_RETURN_ASSOC_BY_ORD :
+	 		- StringUtilities::CSET_RETURN_ASSOC_BY_ORD :
 	 			Returns an associative array of ordinal/character pairs.
 	  	  
 	    RETURN VALUE
@@ -662,7 +664,7 @@ class String  extends  Object
 	    	EndsWith - Checks if a string ends with the specified string.
 
 	    PROTOTYPE
-		$status = String::EndsWith ( $value, $substring, $case_insensitive = false ) ;
+		$status = StringUtilities::EndsWith ( $value, $substring, $case_insensitive = false ) ;
 
 	    DESCRIPTION
 	    	Checks if the specified string ($value) starts with the specified substring.
@@ -701,7 +703,7 @@ class String  extends  Object
 	    	Escape - Escapes a string.
 
 	    PROTOTYPE
-		$value = String::Escape ( $input, $string_delimiter = '"' ) ;
+		$value = StringUtilities::Escape ( $input, $string_delimiter = '"' ) ;
 
 	    DESCRIPTION
 	    	Escapes a string, ie replace any control character by its equivalent. For example,
@@ -760,8 +762,8 @@ class String  extends  Object
 	    	EscapedCharInString, EscapedChar - Processes an escaped character within a string.
 
 	    PROTOTYPE
-	    	$result = String::EscapedCharInString ( $input, $index ) ;
-	    	$ch     = String::EscapedChar ( $input ) ;
+	    	$result = StringUtilities::EscapedCharInString ( $input, $index ) ;
+	    	$ch     = StringUtilities::EscapedChar ( $input ) ;
 
 	    DESCRIPTION
 	    	Processes an escaped sequence within a string. Escape sequences are any C-like sequences
@@ -853,7 +855,7 @@ class String  extends  Object
 				while  ( $index  <  $length )
 				   {
 					$ch2 	= substr ( $input, $index, 1 ) ;
-					$digit  = String::ToDigit ( $ch2, $base ) ;
+					$digit  = StringUtilities::ToDigit ( $ch2, $base ) ;
 
 					if  ( $digit  ===  false )
 						break ;
@@ -872,7 +874,7 @@ class String  extends  Object
 				while  ( $index  <  $length )
 				   {
 					$ch2 	= substr ( $input, $index, 1 ) ;
-					$digit  = String::ToDigit ( $ch2, $base ) ;
+					$digit  = StringUtilities::ToDigit ( $ch2, $base ) ;
 
 					if  ( $digit  ===  false )
 						break ;
@@ -894,7 +896,7 @@ class String  extends  Object
 
 	public static function  EscapedChar ( $input )
 	   {
-		$array = String::__Escape ( $input, 0 ) ;
+		$array = StringUtilities::__Escape ( $input, 0 ) ;
 
 		if  ( $array  ===  false )
 			return ( false ) ;
@@ -905,7 +907,7 @@ class String  extends  Object
 
 	public static function  EscapedCharInString ( $input, $index )
 	    {
-	    	$array = String::__Escape ( $input, $index ) ;
+	    	$array = StringUtilities::__Escape ( $input, $index ) ;
 
 	    	if  ( $array  ===  false )
 	    		return ( false ) ;
@@ -920,7 +922,7 @@ class String  extends  Object
 		EscapeRegexCharacters - Escape characters in a string for use in a regex.
 
 	    PROTOTYPE
-		$result = String::EscapeRegexCharacters ( $string ) ;
+		$result = StringUtilities::EscapeRegexCharacters ( $string ) ;
 
 	    DESCRIPTION
 		Escapes the characters in a string that could have a special meaning when used within
@@ -985,7 +987,7 @@ class String  extends  Object
 		ExpandTabs - Expands tab characters.
 
 	    PROTOTYPE
-	    	$result = String::ExpandTabs ( $string, $width = 8 ) ;
+	    	$result = StringUtilities::ExpandTabs ( $string, $width = 8 ) ;
 
 	    DESCRIPTION
 		ExpandTabs expands all the tab characters in the input string. The $width parameter
@@ -1066,7 +1068,7 @@ class String  extends  Object
      		ExplodeAndTrim - Explodes a list.
 
      	    PROTOTYPE
-		$array = String::ExplodeAndTrim ( $separator, $string, $remove_empty = false ) ;
+		$array = StringUtilities::ExplodeAndTrim ( $separator, $string, $remove_empty = false ) ;
 
      	    DESCRIPTION
 		Explodes a list and trims all values.
@@ -1116,7 +1118,7 @@ class String  extends  Object
 		ExplodeWithQuotedStrings - Explodes a string possibly containing quoted strings.
 
 	    PROTOTYPE
-		$values = String::ExplodeWithQuotedStrings ( $input, $process_escapes = true,
+		$values = StringUtilities::ExplodeWithQuotedStrings ( $input, $process_escapes = true,
 							$tokens = null, $preserve_quotes = false ) ;
 
 	    DESCRIPTION
@@ -1142,7 +1144,7 @@ class String  extends  Object
 				array ( '[', 1, ',', '2', ']' )
 			You will call this function like this :
 
-				$result = String::ExplodeWithQuotedString ( "[1,2]", true, array ( '[', ']', ',' ) ) ;
+				$result = StringUtilities::ExplodeWithQuotedString ( "[1,2]", true, array ( '[', ']', ',' ) ) ;
 
 			If only one token is needed, it can be specified as a single string.
 
@@ -1236,7 +1238,7 @@ class String  extends  Object
 				case	'\\' :
 					if  ( $process_escapes  &&  $in_quote )
 					   {
-						$a = String::EscapedCharInString ( $input, $i ) ;
+						$a = StringUtilities::EscapedCharInString ( $input, $i ) ;
 						$ch = $a [0] ;
 						$i  = $a [1] - 1 ;	// -1 because we are in a for() loop which will increment $i
 					     }
@@ -1309,7 +1311,7 @@ class String  extends  Object
 		FindClosingDelimiter - Finds the closing delimiter in a string.
 
 	    PROTOTYPE
-		$position	=  String::FindClosingDelimiter ( $text, $start = 0, $opening = '{',
+		$position	=  StringUtilities::FindClosingDelimiter ( $text, $start = 0, $opening = '{',
 								  $closing = '}' ) ;
 
 	    DESCRIPTION
@@ -1408,8 +1410,8 @@ class String  extends  Object
 	  	GetLineNumber, GetCharacterLocation - Returns a line number corresponding to an offset
 
 	    PROTOTYPE
-		$line	= String::GetLineNumber ( $str, $offset ) ;
-		$array  = String::GetCharacterLocation ( $str, $offset ) ;
+		$line	= StringUtilities::GetLineNumber ( $str, $offset ) ;
+		$array  = StringUtilities::GetCharacterLocation ( $str, $offset ) ;
 
 	    DESCRIPTION
 		Returns the line number in $str of the character located at $offset. Line numbers start
@@ -1485,7 +1487,7 @@ class String  extends  Object
 		ImplodeWithQuotedStrings - Implodes array values, quoting them if necessary.
 
 	    PROTOTYPE
-		$string = String::ImplodeWithQuotedStrings ( $separator, $array, $quote = '"', $forced = false ) ;
+		$string = StringUtilities::ImplodeWithQuotedStrings ( $separator, $array, $quote = '"', $forced = false ) ;
 
 	    DESCRIPTION
 		Implodes an array of strings, quoting them if necessary.
@@ -1513,7 +1515,7 @@ class String  extends  Object
 		$result 	=  array ( ) ;
 
 		foreach (  $array  as  $item )
-		   	$result [] = String::QuotedString ( $item, $quote, $forced ) ;
+		   	$result [] = StringUtilities::QuotedString ( $item, $quote, $forced ) ;
 
 		return  ( implode ( $separator, $result ) ) ;
 	    }
@@ -1525,7 +1527,7 @@ class String  extends  Object
 	        IsDelimitedBy - Checks if a string is delimited by a sequence.
 	
 	    PROTOTYPE
-	        $status		=  String::IsDelimitedBy ( $value, $left, $right = false ) ;
+	        $status		=  StringUtilities::IsDelimitedBy ( $value, $left, $right = false ) ;
 	
 	    DESCRIPTION
 	        Checks if a string is delimited by a sequence.
@@ -1568,7 +1570,7 @@ class String  extends  Object
 	        IsJson - Checks if a string is JSON data.
 	
 	    PROTOTYPE
-	        $status = String::IsJson ( $str, $quick_check = true ) ;
+	        $status = StringUtilities::IsJson ( $str, $quick_check = true ) ;
 	
 	    DESCRIPTION
 	        Checks if the supplied string contains JSON data.
@@ -1615,7 +1617,7 @@ class String  extends  Object
 	  	IsMadeOf - Checks if a string contains only the specified characters.
 
 	    PROTOTYPE
-		$status = String::IsMadeOf ( $str, $chars ) ;
+		$status = StringUtilities::IsMadeOf ( $str, $chars ) ;
 
 	    DESCRIPTION
 		Checks if the specified string is only made of the specified characters.
@@ -1638,7 +1640,7 @@ class String  extends  Object
 	  	IsSerialized - Checks if a string contains serialized data.
 
 	    PROTOTYPE
-		$status = String::IsSerialized ( $value, $quick_check = true, &$result = null ) ;
+		$status = StringUtilities::IsSerialized ( $value, $quick_check = true, &$result = null ) ;
 
 	    DESCRIPTION
 		Checks if the specified string contains serialized data.
@@ -1763,7 +1765,7 @@ class String  extends  Object
 	  	IsPhpName - Checks if a string is a valid PHP name.
 
 	    PROTOTYPE
-		$status = String::IsPhpName ( $str ) ;
+		$status = StringUtilities::IsPhpName ( $str ) ;
 
 	    DESCRIPTION
 		Checks if the specified string is a valid PHP name.
@@ -1782,7 +1784,7 @@ class String  extends  Object
 	  	IsRegex - Checks if the supplied string is a regular expression.
 
 	    PROTOTYPE
-		$status = String::IsRegex ( $str, $delimiter = false ) ;
+		$status = StringUtilities::IsRegex ( $str, $delimiter = false ) ;
 
 	    DESCRIPTION
 		Checks if the specified string is a valid regular expression.
@@ -1868,8 +1870,8 @@ class String  extends  Object
 		IsTrue, IsFalse - Checks the boolean value of a variable.
 
 	    PROTOTYPE
-		$result = String::IsTrue  ( $value ) ;
-		$result = String::IsFalse ( $value ) ;
+		$result = StringUtilities::IsTrue  ( $value ) ;
+		$result = StringUtilities::IsFalse ( $value ) ;
 
 	    DESCRIPTION
 		Checks the specified value and returns its boolean state.
@@ -1932,7 +1934,7 @@ class String  extends  Object
 			return ( ( $value ) ? true : false ) ;
 
 		// Other cases : loop through the boolean value keywords to retrieve the appropriate boolean constant
-		foreach  ( String::$BooleanValuesTable  as  $name => $constant )
+		foreach  ( StringUtilities::$BooleanValuesTable  as  $name => $constant )
 		   {
 		   	if  ( ! strcmp ( $name, $value ) )
 		   		return ( $constant ) ;
@@ -1945,7 +1947,7 @@ class String  extends  Object
 
 	public static function  IsTrue ( $value )
 	   {
-		$value = String::BooleanValue ( $value ) ;
+		$value = StringUtilities::BooleanValue ( $value ) ;
 
 		if  ( $value  ===  null )
 			return ( null ) ;
@@ -1956,7 +1958,7 @@ class String  extends  Object
 
 	public static function  IsFalse ( $value )
 	   {
-		$value = String::BooleanValue ( $value ) ;
+		$value = StringUtilities::BooleanValue ( $value ) ;
 
 		if  ( $value  ===  null )
 			return ( null ) ;
@@ -1971,9 +1973,9 @@ class String  extends  Object
 		IsDate, IsDateTime, IsTime - Checks a string for date, datetime and time specification.
 
 	    PROTOTYPE
-		$status = String::IsDate ( $value ) ;
-		$status = String::IsDateTime ( $value ) ;
-		$status = String::IsTime ( $value ) ;
+		$status = StringUtilities::IsDate ( $value ) ;
+		$status = StringUtilities::IsDateTime ( $value ) ;
+		$status = StringUtilities::IsTime ( $value ) ;
 
 	    DESCRIPTION
 	    	Checks if the specified value is a date / datetime / time specification.
@@ -2014,7 +2016,7 @@ class String  extends  Object
 		
 		return  
 		   ( 
-			String::IsDate ( $value )  ||  String::IsTime ( $value )  ||
+			StringUtilities::IsDate ( $value )  ||  StringUtilities::IsTime ( $value )  ||
 			( preg_match ( '/
 					   (
 						( ^ ( \d{2} | \d{4} ) [-] \d{2} [-] \d{2} ) |
@@ -2035,7 +2037,7 @@ class String  extends  Object
 		IsDateString - Checks if the specified value is a date string.
 
 	    PROTOTYPE
-		$status = String::IsDateString ( $value ) ;
+		$status = StringUtilities::IsDateString ( $value ) ;
 
 	    DESCRIPTION
 	    	Checks if the specified value is a date string, 
@@ -2072,7 +2074,7 @@ class String  extends  Object
 		IsDigit  - Checks if the specified character is a valid digit.
 
 	    PROTOTYPE
-		$status = String::IsDigit ( $ch, $base = 10 ) ;
+		$status = StringUtilities::IsDigit ( $ch, $base = 10 ) ;
 
 	    DESCRIPTION
 	    	Checks if the specified character is a digit.
@@ -2093,7 +2095,7 @@ class String  extends  Object
 	 --------------------------------------------------------------------------------------------*/
 	public static function  IsDigit ( $ch, $base = 10 )
 	   {
-	   	if  ( String::ToDigit ( $ch, $base )  ===  false )
+	   	if  ( StringUtilities::ToDigit ( $ch, $base )  ===  false )
 	   		return ( false ) ;
    		else
    			return ( true ) ;
@@ -2153,10 +2155,10 @@ class String  extends  Object
 		IsIPAddress, IsIPV4Address, IsIPV6, IsIPV4AddressMask address - IP address checker.
 
 	    PROTOTYPE
-		$status =  String::IsIPAddress		( $string, &$result = null ) ;
-		$status =  String::IsIPV4Address	( $string, &$result = null ) ;
-		$status =  String::IsIPV6Address	( $string, &$result = null ) ;
-		$status =  String::IsIPV4AddressMask	( $string, &$result = null ) ;
+		$status =  StringUtilities::IsIPAddress		( $string, &$result = null ) ;
+		$status =  StringUtilities::IsIPV4Address	( $string, &$result = null ) ;
+		$status =  StringUtilities::IsIPV6Address	( $string, &$result = null ) ;
+		$status =  StringUtilities::IsIPV4AddressMask	( $string, &$result = null ) ;
 
 	    DESCRIPTION
 	    	Checks if the supplied string is an IP address. IsIPAddress recognizes both V4 and
@@ -2173,12 +2175,12 @@ class String  extends  Object
 	 --------------------------------------------------------------------------------------------*/
 	public static function  IsIPAddress ( $string, &$result = null )
 	   {
-		$status		=  String::IsIPV4Address ( $string, $result ) ;
+		$status		=  StringUtilities::IsIPV4Address ( $string, $result ) ;
 
 		if  ( $status )
 			return ( true ) ;
 
-		$status		=  String::IsIPV6Address ( $string, $result ) ;
+		$status		=  StringUtilities::IsIPV6Address ( $string, $result ) ;
 
 		return ( $status ) ;
 	    }
@@ -2216,7 +2218,7 @@ class String  extends  Object
 		IsLetter - Checks if the specified character is a letter.
 
 	    PROTOTYPE
-		$status = String::IsLetter ( $ch ) ;
+		$status = StringUtilities::IsLetter ( $ch ) ;
 
 	    DESCRIPTION
 	    	Checks if the specified character is a letter.
@@ -2249,7 +2251,7 @@ class String  extends  Object
 		IsPunctuation - Checks if the specified character is a punctuation character.
 
 	    PROTOTYPE
-		$status = String::IsPunctuation ( $ch ) ;
+		$status = StringUtilities::IsPunctuation ( $ch ) ;
 
 	    DESCRIPTION
 	    	Checks if the specified character is a punctuation character.
@@ -2279,7 +2281,7 @@ class String  extends  Object
 		IsSpace - Checks if the specified character is a space.
 
 	    PROTOTYPE
-		$bool = String::IsSpace ( $ch ) ;
+		$bool = StringUtilities::IsSpace ( $ch ) ;
 
 	    DESCRIPTION
 	    	Checks if the specified character is a space (newline, carriage return, tab or space).
@@ -2304,7 +2306,7 @@ class String  extends  Object
 		IsUTF8 - Checks if a string is UTF8-encoded.
 
 	    PROTOTYPE
-		$bool = String::IsUTF8 ( $value ) ;
+		$bool = StringUtilities::IsUTF8 ( $value ) ;
 
 	    DESCRIPTION
 	    	Checks if the specified value is encodeed in the UTF8 character set.
@@ -2368,7 +2370,7 @@ class String  extends  Object
 		IsValidEmail - Checks if an email address is valid.
 
 	    PROTOTYPE
-		$status = String::IsValidEmail ( $email ) ;
+		$status = StringUtilities::IsValidEmail ( $email ) ;
 
 	    DESCRIPTION
 		Checks if the specified email address is valid.
@@ -2428,7 +2430,7 @@ class String  extends  Object
 	  	Matches - Checks if a filename corresponds to a filemask.
 
 	    PROPERTY
-	    	$status = String::Matches ( $file, $pattern, $case_sensitive = false ) ;
+	    	$status = StringUtilities::Matches ( $file, $pattern, $case_sensitive = false ) ;
 
 	    DESCRIPTION
 		Checks if the specified file matches the supplied file pattern.
@@ -2492,7 +2494,7 @@ class String  extends  Object
 	  	MatchesEx - Checks if a filename corresponds to a filemask or a regular expression.
 
 	    PROPERTY
-	    	$status = String::MatchesEx ( $file, $pattern, $case_sensitive = false ) ;
+	    	$status = StringUtilities::MatchesEx ( $file, $pattern, $case_sensitive = false ) ;
 
 	    DESCRIPTION
 		Checks if the specified file matches the supplied file pattern. $pattern can either
@@ -2515,7 +2517,7 @@ class String  extends  Object
 		NormalizeRegex - Normalizes a regex expression.
 
 	    PROTOTYPE
-		$re = String::NormalizeRegex ( $re, $fullmatch = false ) ;
+		$re = StringUtilities::NormalizeRegex ( $re, $fullmatch = false ) ;
 
 	    DESCRIPTION
 	    	Normalizes a regex value and adds delimiters if not present.
@@ -2572,8 +2574,8 @@ class String  extends  Object
 		QuoteStringArray        - Quotes an array of strings.
 
 	    PROTOTYPE
-		$string = String::QuotedString ( $string, $quote = '"', $force = false ) ;
-		$string = String::QuotedStringArray ( $array, $quote = '"', $force = false ) ;
+		$string = StringUtilities::QuotedString ( $string, $quote = '"', $force = false ) ;
+		$string = StringUtilities::QuotedStringArray ( $array, $quote = '"', $force = false ) ;
 
 	    DESCRIPTION
 		Quotes a string using the specified quote character.
@@ -2620,7 +2622,7 @@ class String  extends  Object
 		$result 	=  array ( ) ;
 
 		foreach  ( $array  as  $item )
-			$result [] = String::QuotedString ( $item, $quote, $force ) ;
+			$result [] = StringUtilities::QuotedString ( $item, $quote, $force ) ;
 
 		return ( implode ( ' ', $result ) ) ;
 	    }
@@ -2632,7 +2634,7 @@ class String  extends  Object
 	        RemoveDelimiters - Remove delimiters around a string.
 	
 	    PROTOTYPE
-	        $status		=  String::RemoveDelimiters ( &$value, $left, $right = false ) ;
+	        $status		=  StringUtilities::RemoveDelimiters ( &$value, $left, $right = false ) ;
 	
 	    DESCRIPTION
 	        Removes delimiters from the specified string.
@@ -2681,7 +2683,7 @@ class String  extends  Object
 		RemoveDuplicateCharacters - Removes duplicate characters in a string.
 
 	    PROTOTYPE
-		$str = String::RemoveDuplicateCharacters ( $str, bool  $sort = false ) ;
+		$str = StringUtilities::RemoveDuplicateCharacters ( $str, bool  $sort = false ) ;
 
 	    DESCRIPTION
 	 	Removes duplicate characters in a string.
@@ -2725,7 +2727,7 @@ class String  extends  Object
 		RemoveDuplicateSpaces - Removes duplicated spaces.
 
 	    PROTOTYPE
-		$str = String::RemoveDuplicateSpaces ( $str, bool  $trim = true ) ;
+		$str = StringUtilities::RemoveDuplicateSpaces ( $str, bool  $trim = true ) ;
 
 	    DESCRIPTION
 	    	Removes duplicated spaces from the specified string. If $trim is true, the string
@@ -2749,7 +2751,7 @@ class String  extends  Object
 		RemoveSpaces - Removes all spaces.
 
 	    PROTOTYPE
-		$str = String::RemoveSpaces ( $str ) ;
+		$str = StringUtilities::RemoveSpaces ( $str ) ;
 
 	    DESCRIPTION
 	    	Removes duplicated spaces from the specified string. If $trim is true, the string
@@ -2770,7 +2772,7 @@ class String  extends  Object
 		ReplaceRegex - Uses preg_replace.
 
 	    PROTOTYPE
-	    	$result = String::ReplaceRegex ( $array, $subject, $limit = -1, &$count = null ) ;
+	    	$result = StringUtilities::ReplaceRegex ( $array, $subject, $limit = -1, &$count = null ) ;
 
 	    DESCRIPTION
 	    	Uses preg_replace with an array whose keys are the regular expressions and whoses values
@@ -2809,7 +2811,7 @@ class String  extends  Object
 	  	ReplaceStrings - Replace strings defined in a associative array.
 
 	    PROTOTYPE
-		$array = String::ReplaceStrings ( $array, $input ) ;
+		$array = StringUtilities::ReplaceStrings ( $array, $input ) ;
 
 	    DESCRIPTION
 		Replaces the contents of $input that contains the strings defined in $array. The
@@ -2839,7 +2841,7 @@ class String  extends  Object
 		SafeStringToRegex - Converts a string to its regex equivalent.
 
 	    PROTOTYPE
-		$value = String::SafeRegex ( $string ) ;
+		$value = StringUtilities::SafeRegex ( $string ) ;
 
 	    DESCRIPTION
 		Converts a string to a regular expression. This function can be used to search for a
@@ -2888,7 +2890,7 @@ class String  extends  Object
 	  	SetEOS - Make sure a string ends with a specified character sequence.
 
 	    PROTOTYPE
-		$value = String::SetEOS ( $value, $end ) ;
+		$value = StringUtilities::SetEOS ( $value, $end ) ;
 
 	    DESCRIPTION
 		If $value does not end with $end, appends $end to it and return the result.
@@ -2912,7 +2914,7 @@ class String  extends  Object
 	        Split - Splits text contents according to a regex or a string.
 	 
 	    PROTOTYPE
-	        $result		=  String::Split ( $contents, $separator, 
+	        $result		=  StringUtilities::Split ( $contents, $separator, 
 						   $options = SPLIT_IGNORE_EMPTY_BLOCKS ) ;
 	 
 	    DESCRIPTION
@@ -2993,7 +2995,7 @@ class String  extends  Object
 	        SplitFields - Splits a line into fields.
 	 
 	    PROTOTYPE
-	        $array	=  String::SplitFields ( $line, $fixed_fields = false, $separator = ' ' ) ;
+	        $array	=  StringUtilities::SplitFields ( $line, $fixed_fields = false, $separator = ' ' ) ;
 	 
 	    DESCRIPTION
 	        Splits a line of text into an array of field values. When non-false, the $fixed_fields parameter
@@ -3012,7 +3014,7 @@ class String  extends  Object
 		The 7th and last column is the command line, which can contain spaces. So, to retrieve field values,
 		just call :
 
-			$array	=  String::SplitFields ( $line, 6 ) ;
+			$array	=  StringUtilities::SplitFields ( $line, 6 ) ;
 
 		If $line contains the second line of the ps command output, then you will have :
 			$array [0]	==  'root'		(UID)
@@ -3080,7 +3082,7 @@ class String  extends  Object
 	  	SplitList - Splits a list.
 
 	    PROTOTYPE
-		$array = String::SplitList ( $string, $separators = '[\s,]' ) ;
+		$array = StringUtilities::SplitList ( $string, $separators = '[\s,]' ) ;
 
 	    DESCRIPTION
 		Splits a list of values delimited by the specified separators. This function returns
@@ -3110,7 +3112,7 @@ class String  extends  Object
 	    	StartsWith - Checks if a string starts with the specified string.
 
 	    PROTOTYPE
-		$status = String::StartsWith ( $value, $substring, $case_insensitive = false ) ;
+		$status = StringUtilities::StartsWith ( $value, $substring, $case_insensitive = false ) ;
 
 	    DESCRIPTION
 	    	Checks if the specified string ($value) starts with the specified substring.
@@ -3148,7 +3150,7 @@ class String  extends  Object
 	  	StringArrayLength - Returns the number of characters in a string array.
 
 	    PROTOTYPE
-		$length = String::StringArrayLength ( $array ) ;
+		$length = StringUtilities::StringArrayLength ( $array ) ;
 
 	    DESCRIPTION
 		Returns the number of characters in a string array.
@@ -3184,7 +3186,7 @@ class String  extends  Object
 	  	StripEOL - remove end of line character(s) at the end of a string.
 
 	    PROTOTYPE
-		$text = String::StripEOL ( $text ) ;
+		$text = StringUtilities::StripEOL ( $text ) ;
 
 	    DESCRIPTION
 		Removes EOL characters from a string.
@@ -3197,7 +3199,7 @@ class String  extends  Object
 
 	public static function  StripEOL ( $line )
 	   {
-	   	$result = preg_split ( String::$EOLChars, $line ) ;
+	   	$result = preg_split ( StringUtilities::$EOLChars, $line ) ;
 
 		return ( $result ) ;
 	    }
@@ -3209,7 +3211,7 @@ class String  extends  Object
 	  	StripSpaces - remove space characters in a string.
 
 	    PROTOTYPE
-		$text = String::StripSpaces ( $text ) ;
+		$text = StringUtilities::StripSpaces ( $text ) ;
 
 	    DESCRIPTION
 		Removes space characters from a string.
@@ -3231,7 +3233,7 @@ class String  extends  Object
 	  	Tabify - Replace consecutive spaces with tabs.
 
 	    PROTOTYPE
-		$text = String::Tabify ( $text, $tabstop = 8 ) ;
+		$text = StringUtilities::Tabify ( $text, $tabstop = 8 ) ;
 
 	    DESCRIPTION
 		Replaces series of spaces in $text with tabulations, taking into account the tab size
@@ -3356,7 +3358,7 @@ class String  extends  Object
 		TextToArray - Converts text to an array of lines.
 
 	    PROTOTYPE
-		$array = String::TextToArray ( $text ) ;
+		$array = StringUtilities::TextToArray ( $text ) ;
 
 	    DESCRIPTION
 	    	Splits a text containing crlf-terminated strings into an array of strings.
@@ -3375,7 +3377,7 @@ class String  extends  Object
 	  	Unaccentuated - Replace accentuated letters in a string with their ascii equivalent.
 
 	    PROTOTYPE
-		$str = String::Unaccentuated ( $input ) ;
+		$str = StringUtilities::Unaccentuated ( $input ) ;
 
 	    DESCRIPTION
 		Replaces the accentuated letters in $input with their ascii, non-accentuated, equivalent.
@@ -3419,8 +3421,8 @@ class String  extends  Object
 		   {
 		   	$c   = $input [$i] ;
 
-			if  ( isset ( String::$AccentuatedLetters [ $c ] ) )
-				$c  = String::$AccentuatedLetters [ $c ] ;
+			if  ( isset ( StringUtilities::$AccentuatedLetters [ $c ] ) )
+				$c  = StringUtilities::$AccentuatedLetters [ $c ] ;
 
 			$result .= $c ;
 		    }
@@ -3435,7 +3437,7 @@ class String  extends  Object
 	  	Unescape - Interpret escape sequences within a string.
 
 	    PROTOTYPE
-		$str = String::Unescape ( $input ) ;
+		$str = StringUtilities::Unescape ( $input ) ;
 
 	    DESCRIPTION
 		Replaces the accentuated letters in $input with their ascii, non-accentuated, equivalent.
@@ -3451,7 +3453,7 @@ class String  extends  Object
 			
 			if  ( $ch  ==  "\\" )
 			   {
-				$a	=  String::EscapedCharInString ( $input, $i ) ;
+				$a	=  StringUtilities::EscapedCharInString ( $input, $i ) ;
 				$ch	=  $a [0] ;
 				$i	=  $a [1] - 1 ;
 			    }
@@ -3469,7 +3471,7 @@ class String  extends  Object
 	  	Untabify - Replaces tabs with equivalent spaces.
 
 	    PROTOTYPE
-		$str = String::Untabify ( $input, $tabsize = 8 ) ;
+		$str = StringUtilities::Untabify ( $input, $tabsize = 8 ) ;
 
 	    DESCRIPTION
 		Replaces tabulations in $input with the sufficient number of spaces to reach the
@@ -3531,7 +3533,7 @@ class String  extends  Object
 	  	WildcardToRegex - Transforms a wildcard expression to a regex.
 
 	    PROTOTYPE
-		$str = String::WildcardToRegex ( $pattern, $escaped_chars = "" ) ;
+		$str = StringUtilities::WildcardToRegex ( $pattern, $escaped_chars = "" ) ;
 
 	    DESCRIPTION
 		Transforms a wildcard expression into a regular expression.

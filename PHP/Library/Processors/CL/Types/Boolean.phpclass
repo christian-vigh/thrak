@@ -30,7 +30,7 @@ namespace  	Thrak\Processors\CL ;
 
 defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
 
-use	Thrak\Types\String ;
+use	Thrak\Types\StringUtilities ;
 
 
 /*==================================================================================================
@@ -77,9 +77,9 @@ class  CLBooleanParameter  extends  \Thrak\Processors\CL\CLAbstractParameter
 
 			 if  ( $value  !==  null )
 			    {
-				 if  ( String::IsTrue ( $value ) )
+				 if  ( StringUtilities::IsTrue ( $value ) )
 					 $boolean	=  true ;
-				 else if  ( String::IsFalse ( $value ) )
+				 else if  ( StringUtilities::IsFalse ( $value ) )
 					 $boolean	=  false ;
 				 else
 					 error ( new CLException ( "Invalid boolean value \"$value\" for parameter \"$name\"." ) ) ;

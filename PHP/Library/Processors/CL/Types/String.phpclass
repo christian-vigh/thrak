@@ -31,7 +31,7 @@ defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." 
 
 // Used namespaces and classes
 use  	Thrak\Processors\CL\CLException ;
-use     Thrak\Types\String ;
+use     Thrak\Types\StringUtilities ;
 use     Thrak\Types\String\Convert ;
 use     Thrak\Types\String\Regex ;
 use     Thrak\Types\String\Formatting ;
@@ -448,9 +448,9 @@ class  CLStringParameter  extends  \Thrak\Processors\CL\CLAbstractParameter
 				case  self::TRANSFORM_TRIM			:  $value = trim ( $value ) 					; break ;
 				case  self::TRANSFORM_LTRIM			:  $value = ltrim ( $value ) 					; break ;
 				case  self::TRANSFORM_RTRIM 			:  $value = rtrim ( $value ) 					; break ;
-				case  self::TRANSFORM_SPACES			:  $value = String::NoSpaces ( $value, false ) 			; break ;
-				case  self::TRANSFORM_QUOTE     		:  $value = String::QuotedString ( $value, '"', false ) 	; break ;
-				case  self::TRANSFORM_FORCED_QUOTE		:  $value = String::QuotedString ( $value, '"', true ) 		; break ;
+				case  self::TRANSFORM_SPACES			:  $value = StringUtilities::NoSpaces ( $value, false ) 			; break ;
+				case  self::TRANSFORM_QUOTE     		:  $value = StringUtilities::QuotedString ( $value, '"', false ) 	; break ;
+				case  self::TRANSFORM_FORCED_QUOTE		:  $value = StringUtilities::QuotedString ( $value, '"', true ) 		; break ;
 				case  self::TRANSFORM_BASE64_ENCODE		:  $value = base64_encode ( $value ) ;				; break ;
 				case  self::TRANSFORM_BASE64_DECODE		:  $value = base64_decode ( $value ) ;				; break ;
 				case  self::TRANSFORM_UUENCODE 			:  $value = convert_uuencode ( $value ) ;			; break ;
@@ -574,10 +574,10 @@ class  CLStringParameter  extends  \Thrak\Processors\CL\CLAbstractParameter
 				break ;
 
 			default :
-				if  ( ! String::IsInteger ( $value, false ) )
+				if  ( ! StringUtilities::IsInteger ( $value, false ) )
 					error ( new CLException ( "The padding attribute of the '$name' parameter must either be the keywords min, max or nopadding/nopad/none, or a positive integer." ) ) ;
 
-				return ( String::ToInteger ( $value ) ) ;
+				return ( StringUtilities::ToInteger ( $value ) ) ;
 	    	    }
    	    }
 
@@ -689,7 +689,7 @@ class  CLCharacterParameter  extends  \Thrak\Processors\CL\CLAbstractParameter
   	   	// If the specified value is a string, then check for an integer specification
 		if  ( strlen ( $value )  !=  1 )
 		   {
-			if  ( String::IsInteger ( $value, false ) )
+			if  ( StringUtilities::IsInteger ( $value, false ) )
 				$value = chr ( Convert::ToInteger ( $value ) ) ;
 			else
 				error ( new CLException ( "The value for the '$name' parameter should be a character ; '$value' was specified." ) ) ;

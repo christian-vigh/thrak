@@ -20,7 +20,7 @@ namespace 	Thrak\Reflection\Sourcers ;
 defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
 
 use  	Thrak\System\Object ;
-use	Thrak\Types\String ;
+use	Thrak\Types\StringUtilities ;
 use	Thrak\Reflection\ReflectionHelpers ;
 
 
@@ -74,7 +74,7 @@ class  ReflectionParameterSourcer 		extends  ReflectionSourcer
 				if  ( is_string ( $value ) )
 					$value	=  '"' . str_replace ( '"', "\\\"", $value ) . '"' ;
 				else if  ( is_array ( $value ) )
-					$value	=  String::ArrayRepresentation ( $value, " " ) ;
+					$value	=  StringUtilities::ArrayRepresentation ( $value, " " ) ;
 				
 				$result		.=  $value ;
 			    }

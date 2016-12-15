@@ -22,7 +22,7 @@ defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." 
 
 // Used namespaces and classes
 use     Thrak\System\Object ;
-use	Thrak\Types\String ;
+use	Thrak\Types\StringUtilities ;
 use	Thrak\Processors\Xml\XmlFileDocument ;
 
 
@@ -71,8 +71,8 @@ class  HttpError		extends  Object
 			else
 				$description	=  '' ;
 
-			if  ( String::IsBoolean ( $error ) )
-				$error	=  String::BooleanValue ( $error ) ;
+			if  ( StringUtilities::IsBoolean ( $error ) )
+				$error	=  StringUtilities::BooleanValue ( $error ) ;
 			else
 				$error	=  false ;
 

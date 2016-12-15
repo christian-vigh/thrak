@@ -42,15 +42,15 @@ defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." 
 
 
 // Used namespaces & objects
-use 		Thrak\System\Object 		as  Object ;
-use 		Thrak\Processors\CL\CLException	as  CLException ;
-use 		Thrak\Types\String 		as  String ;
+use 		Thrak\System\Object ;
+use 		Thrak\Processors\CL\CLException ;
+use 		Thrak\Types\StringUtilities ;
 use 		Thrak\Types\String\Convert ;
-use 		Thrak\Processors\PHP		as  PHP ;
-use 		Thrak\IO\Path 			as  Path ;
-use 		Thrak\IO\Console		as  Console ;
-use  		Thrak\IO\AsciiReport		as  AsciiReport ;
-use  		Thrak\System\Timer 		as  Timer ;
+use 		Thrak\Processors\PHP ;
+use 		Thrak\IO\Path ;
+use 		Thrak\IO\Console ;
+use  		Thrak\IO\AsciiReport ;
+use  		Thrak\System\Timer ;
 
 
 /*==================================================================================================
@@ -830,9 +830,9 @@ class CL  extends     Object
 		// Store command line options and command specification
 		$this -> CommandLineOptions	=  $options ;
 
-		if  ( String::IsTrue ( $command ) )
+		if  ( StringUtilities::IsTrue ( $command ) )
 			$this -> CommandIncluded = true ;
-		else if  ( String::IsFalse ( $command ) )
+		else if  ( StringUtilities::IsFalse ( $command ) )
 		   {
 			$this -> CommandIncluded 	=  false ;
 			$this -> ExecutablePath		=  "(unknown command)" ;
@@ -855,7 +855,7 @@ class CL  extends     Object
 		else if  ( is_array ( $argv_or_string ) )
 			$arguments = $argv_or_string ;
 		else if  ( is_string ( $argv_or_string ) )
-			$arguments = String::ExplodeWithQuotedStrings ( $argv_or_string ) ;
+			$arguments = StringUtilities::ExplodeWithQuotedStrings ( $argv_or_string ) ;
 		else
 			error ( new CLException ( "Unexpected value type for argv_or_string" ) ) ;
 
@@ -1012,7 +1012,7 @@ class CL  extends     Object
 
 
 		// Build a command line from input parameters
-		$this -> CommandLine = String::QuotedStringArray ( $output_arguments ) ;
+		$this -> CommandLine = StringUtilities::QuotedStringArray ( $output_arguments ) ;
 
 		// Save argc and argv
 		$this -> Argv 	=  $output_arguments ;
@@ -1472,7 +1472,7 @@ class CL  extends     Object
 
 			$last 	=  count ( $help ) - 1 ;
 
-			if  ( ! String::EndsWith ( $help [ $last ], '.' ) )
+			if  ( ! StringUtilities::EndsWith ( $help [ $last ], '.' ) )
 				$help [ $last ] .= '.' ;
 
 			// Add the entry to the help array
@@ -1953,7 +1953,7 @@ class CL  extends     Object
     		$contents		=  preg_replace ( '-//.*?$-imsx', '', $contents ) ;
     		$contents 		=  preg_replace ( '-/\*.*?\*/-imsx', '', $contents ) ;
     		$contents 		=  str_replace ( array ( "\r", "\n" ), ' ', $contents ) ;
-    		$arguments		=  String::ExplodeWithQuotedStrings ( $contents ) ;
+    		$arguments		=  StringUtilities::ExplodeWithQuotedStrings ( $contents ) ;
     		$output_arguments       =  array ( ) ;
 
     		// Loop through arguments
@@ -2170,7 +2170,7 @@ class CL  extends     Object
 
 			foreach  ( $arguments_to_save  as  $argument )
 			   {
-			   	$argument 	=  String::QuotedString ( $argument ) ;
+			   	$argument 	=  StringUtilities::QuotedString ( $argument ) ;
 				fwrite ( $fp, "$argument\n" ) ;
 			    }
 

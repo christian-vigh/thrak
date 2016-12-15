@@ -93,7 +93,7 @@ defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." 
 
 // Used namespaces & objects
 use 		Thrak\System\Object ;
-use		Thrak\Types\String ;
+use		Thrak\Types\StringUtilities ;
 
 // Text alignment options
 define ( 'ASCII_REPORT_ALIGN_LEFT'	, 1 ) ;
@@ -531,22 +531,22 @@ class  AsciiReport		extends  Object
 			if  ( isset ( self::$PluralForms [ $low_singular ] ) )
 				$plural		=  self::$PluralForms [ $low_singular ] ;
 			// English words ending ith '-ism' are invariable
-			else if  ( String::EndsWith ( $low_singular, 'ism' ) )
+			else if  ( StringUtilities::EndsWith ( $low_singular, 'ism' ) )
 				$plural		=  $singular ;
 			// Words ending with -y give -ies
-			else if  ( String::EndsWith ( $low_singular, 'y' ) )
+			else if  ( StringUtilities::EndsWith ( $low_singular, 'y' ) )
 				$plural		=  substr ( $low_singular, 0, strlen ( $low_singular ) - 1 ) . 'ies' ;
 			// Words ending with -x give -xes
-			else if  ( String::EndsWith ( $low_singular, 'x' ) )
+			else if  ( StringUtilities::EndsWith ( $low_singular, 'x' ) )
 				$plural		=  substr ( $low_singular, 0, strlen ( $low_singular ) - 1 ) . 'xes' ;
 			// Words ending with -ss give -sses
-			else if  ( String::EndsWith ( $low_singular, 'ss' ) )
+			else if  ( StringUtilities::EndsWith ( $low_singular, 'ss' ) )
 				$plural		=  substr ( $low_singular, 0, strlen ( $low_singular ) - 2 ) . 'sses' ;
 			// Words ending with -tch give -tches
-			else if  ( String::EndsWith ( $low_singular, 'tch' ) )
+			else if  ( StringUtilities::EndsWith ( $low_singular, 'tch' ) )
 				$plural		=  substr ( $low_singular, 0, strlen ( $low_singular ) - 3 ) . 'tches' ;
 			// Otherwise, add trailing 's' for unmatched words
-			else if  ( ! String::EndsWith ( $low_singular, 's' ) )
+			else if  ( ! StringUtilities::EndsWith ( $low_singular, 's' ) )
 				$plural		=  $singular . 's' ;
 
 			// If the singular form contains several words, don't forget to put them in the plural form

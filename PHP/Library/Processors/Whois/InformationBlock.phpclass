@@ -24,7 +24,7 @@ defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." 
 // Used namespaces and classes
 use  	Thrak\System\Object ;
 use	Thrak\IO\Path ;
-use	Thrak\Types\String ;
+use	Thrak\Types\StringUtilities ;
 use	Thrak\Types\AssociativeArray ;
 use	Thrak\Processors\WhoisInformation ;
 use	Thrak\Processors\WhoisInformationBase ;
@@ -94,12 +94,12 @@ class  WhoisInformationBlock		extends		WhoisInformationBase
 				   {
 					if  ( preg_match ( $email_date_re, $entry -> Text, $match ) )
 					   {
-						$dates []	=  String::IsDateString ( $match [ 'date' ] ) ;
+						$dates []	=  StringUtilities::IsDateString ( $match [ 'date' ] ) ;
 						break ;
 					    }
 					else if  ( preg_match ( $date_re, $entry -> Text, $match ) )
 					   {
-						$dates []	=  String::IsDateString ( $match [ 'date' ] ) ;
+						$dates []	=  StringUtilities::IsDateString ( $match [ 'date' ] ) ;
 						break ;
 					    }
 				    }

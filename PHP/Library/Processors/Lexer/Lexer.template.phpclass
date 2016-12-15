@@ -4,7 +4,7 @@
 // Used namespaces and classes
 use	Thrak\System\Object ;
 use     Thrak\system\Exception ;
-use     Thrak\Types\String ;
+use     Thrak\Types\StringUtilities ;
 use	Thrak\Processors\PPP ;
 
 
@@ -183,7 +183,7 @@ class  /* __CLASSNAME__ */ __CLASSNAME__	extends  Object
 		   	    }
 
 		   	// Process spaces
-		   	if  ( String::IsSpace ( $ch ) )
+		   	if  ( StringUtilities::IsSpace ( $ch ) )
 		   	   {
 		   	   	$this -> ContentIndex ++ ;
 				$this -> LastChar 	=  $ch ;

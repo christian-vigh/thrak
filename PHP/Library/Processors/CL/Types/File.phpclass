@@ -42,10 +42,10 @@ namespace  	Thrak\Processors\CL ;
 defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
 
 // Used namespaces and classes
-use     Thrak\Processors\CL\CLException as  CLException ;
-use   	Thrak\Types\String 		as  String ;
-use 	Thrak\IO\Path 			as  Path ;
-use     Thrak\Types\String\Convert	as  Convert ;
+use     Thrak\Processors\CL\CLException ;
+use   	Thrak\Types\StringUtilities ;
+use 	Thrak\IO\Path ;
+use     Thrak\Types\String\Convert ;
 
 
 /*==================================================================================================
@@ -141,7 +141,7 @@ abstract class  CLFileSystemObjectParameter  extends  \Thrak\Processors\CL\CLAbs
 	 --------------------------------------------------------------------------------------------*/
 	protected function  CreationModeValidator ( $object, $attribute_definition, $tag, $name, $attribute_value )
 	   {
-   	   	if  ( String::IsInteger ( $attribute_value ) )
+   	   	if  ( StringUtilities::IsInteger ( $attribute_value ) )
    			$mode  = Convert::ToInteger ( $attribute_value ) ;
 		else
 			error ( new CLException ( "Invalid creation mode specification '$attribute_value' for the <$tag> tag." ) ) ;
@@ -957,7 +957,7 @@ END;
 			   {
 				foreach  ( $this -> ExcludeDirectoryMask  as  $mask )
 				   {
-					if  ( String::Matches ( $dirname, $mask, $case ) )
+					if  ( StringUtilities::Matches ( $dirname, $mask, $case ) )
 						return ( true ) ;
 				    }
 			    }
@@ -968,7 +968,7 @@ END;
 			   {
 				foreach  ( $this -> ExcludeFileMask  as  $mask )
 				   {
-					if  ( String::Matches ( $filename, $mask, $case ) )
+					if  ( StringUtilities::Matches ( $filename, $mask, $case ) )
 						return ( true ) ;
 				    }
 			    }

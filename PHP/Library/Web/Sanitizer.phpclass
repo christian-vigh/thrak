@@ -141,7 +141,7 @@ namespace 	Thrak\Web ;
 defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
 
 use 	Thrak\System\Object ;
-use     Thrak\Types\String ;
+use     Thrak\Types\StringUtilities ;
 use	Thrak\Types\Wrapper ;
 use	Thrak\Types\ScalarWrapper ;
 use	Thrak\Types\ArrayWrapper ;
@@ -523,7 +523,7 @@ class  ScalarSanitizer	extends  ScalarWrapper
 				
 		if  ( $value  !==  null )
 		   {
-			if  ( String::IsValidEmail ( $value ) )
+			if  ( StringUtilities::IsValidEmail ( $value ) )
 				$email_value	=  $value ;
 		    }
 

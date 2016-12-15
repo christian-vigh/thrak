@@ -107,6 +107,7 @@
 namespace 	Thrak\Internals ;
 
 use 	Thrak\System\Object ;
+use 	Thrak\Types\StringUtilities ;
 
  
 /*===========================================================================================================
@@ -222,10 +223,10 @@ abstract class  Wrapper		extends  Object
 			$entry [ 'internal-name' ]	=  $name ;
 			$entry [ 'external-name' ]	=  $attr -> getProperty ( "name", $name ) ;
 			$entry [ 'callback' ]		=  array ( $object_or_class, $name ) ;
-			$entry [ 'enabled' ]		=  String::IsTrue ( $attr -> getProperty ( "enabled" , "true"  ) ) ?  true : false ;
-			$entry [ 'property' ]		=  String::IsTrue ( $attr -> getProperty ( "property", "true"  ) ) ?  true : false ;
-			$entry [ 'readonly' ]		=  String::IsTrue ( $attr -> getProperty ( "readonly", "false" ) ) ?  true : false ;
-			$entry [ 'method' ]		=  String::IsTrue ( $attr -> getProperty ( "method"  , "true"  ) ) ?  true : false ;
+			$entry [ 'enabled' ]		=  StringUtilities::IsTrue ( $attr -> getProperty ( "enabled" , "true"  ) ) ?  true : false ;
+			$entry [ 'property' ]		=  StringUtilities::IsTrue ( $attr -> getProperty ( "property", "true"  ) ) ?  true : false ;
+			$entry [ 'readonly' ]		=  StringUtilities::IsTrue ( $attr -> getProperty ( "readonly", "false" ) ) ?  true : false ;
+			$entry [ 'method' ]		=  StringUtilities::IsTrue ( $attr -> getProperty ( "method"  , "true"  ) ) ?  true : false ;
 			$external_name 			=  strtolower ( $entry [ 'external-name' ] ) ;
 			
 			if  ( isset ( self::$__wrapper_methods [ $external_name ] ) )

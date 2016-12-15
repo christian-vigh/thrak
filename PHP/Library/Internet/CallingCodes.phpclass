@@ -24,11 +24,11 @@ defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." 
 
 
 // Used namespaces and classes
-use     Thrak\System\Object 		as  Object ;
-use 	Thrak\System\Exception 		as  Exception ;
-use 	Thrak\Internet\Xml\SimpleXML	as  SimpleXML ;
-use     Thrak\IO\Path 			as  Path ;
-use     Thrak\Types\String 		as  String ;
+use     Thrak\System\Object ;
+use 	Thrak\System\Exception ;
+use 	Thrak\Internet\Xml\SimpleXML ;
+use     Thrak\IO\Path ;
+use     Thrak\Types\StringUtilities ;
 
 
 /*==================================================================================================
@@ -350,7 +350,7 @@ class  CallingCodes  extends  Object
 					// Calling codes
 					case  	'code' :
 					case	'codes' :
-						$codes 	=  String::ExplodeAndTrim ( ',', $attr_value ) ;
+						$codes 	=  StringUtilities::ExplodeAndTrim ( ',', $attr_value ) ;
 
 						foreach  ( $codes  as  &$code )
 						   {
@@ -365,9 +365,9 @@ class  CallingCodes  extends  Object
 					// For the case where the same prefix serves a country and several other dependencies, the "default" attribute
 					// tells which one is to use by default when only a calling code is specified
 					case	'default' :
-						if  ( String::IsTrue ( $attr_value ) )
+						if  ( StringUtilities::IsTrue ( $attr_value ) )
 							$is_default = true ;
-						else if  ( String::IsFalse ( $attr_value ) )
+						else if  ( StringUtilities::IsFalse ( $attr_value ) )
 							$is_default = false ;
 						else
 							throw new Exception ( "CallingCode class : invalid boolean value '$attr_value' for the '$attr_name' attribute." ) ;

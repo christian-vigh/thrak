@@ -50,8 +50,8 @@ namespace  	Thrak\Processors\CL ;
 defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
 
 // Used namespaces and classes
-use 	Thrak\Types\String  		as  String ;
-use     Thrak\Types\String\Convert 	as  Convert ;
+use 	Thrak\Types\StringUtilities ;
+use     Thrak\Types\String\Convert ;
 
 
 /*==================================================================================================
@@ -213,7 +213,7 @@ END;
 				case	'value' :
 					$constant_value =  $attribute [ 'value' ] ;
 
-					if  ( String::IsInteger ( $constant_value, false ) )
+					if  ( StringUtilities::IsInteger ( $constant_value, false ) )
 						$constant_value = Convert::ToInteger ( $constant_value ) ;
 					else
 						error ( new CLException ( "Invalid constant value '$constant_value' for the <$tag> subtag of the '$name' parameter." ) ) ;
@@ -242,11 +242,11 @@ END;
 			error ( new CLException ( "The <constant> child tags for the '$name' parameter must define both the 'name' and 'value' attributes." ) ) ;
 
 		// Check that the constant value is numeric
-		if  ( ! String::IsInteger( $constant_value, false )  ||  $constant_value  !=  round ( $constant_value, 0 ) )
+		if  ( ! StringUtilities::IsInteger( $constant_value, false )  ||  $constant_value  !=  round ( $constant_value, 0 ) )
 			error ( new CLException ( "The value '{$attribute [ 'value' ]}' defined for the constant '{$list [0]}' of the '$name' parameter must be an integer value." ) ) ;
 
 		// Loop through existing constant names to check for duplicates
-		$list 		=  String::ExplodeAndTrim ( ',', $constant_names ) ;
+		$list 		=  StringUtilities::ExplodeAndTrim ( ',', $constant_names ) ;
 
 		foreach  ( $list  as  $item )
 		   {
@@ -269,20 +269,20 @@ END;
 	   	$result 	=  array ( ) ;
 
 	   	// For numeric results, simply get the value
-   		if  ( String::IsInteger ( $pvalue, false ) )
+   		if  ( StringUtilities::IsInteger ( $pvalue, false ) )
    			$value 	=  Convert::ToInteger ( $pvalue ) ;
 		// Otherwise, build the value from the supplied parameter
 		else
 		   {
 			$pvalue2 	=  str_replace ( '|', ',', $pvalue ) ;
-			$list 		=  String::ExplodeAndTrim ( ',', $pvalue2 ) ;
+			$list 		=  StringUtilities::ExplodeAndTrim ( ',', $pvalue2 ) ;
 			$value 		=  0 ;
 
 			// Loop through potential list items
 			foreach  ( $list  as  $item )
 			   {
 			   	// If current list item is numeric, simply OR its bits with the current value
-				if  ( String::IsInteger ( $item, false ) )
+				if  ( StringUtilities::IsInteger ( $item, false ) )
 					$value |= Convert::ToInteger ( $item ) ;
 				// Otherwise, search for bitmask using the specified flags
 				else
@@ -490,7 +490,7 @@ END;
 			   {
 				// Constant name
 				case	'name' :
-					$constant_names 	=  String::ExplodeAndTrim ( ',', $attribute [ 'value' ] ) ;
+					$constant_names 	=  StringUtilities::ExplodeAndTrim ( ',', $attribute [ 'value' ] ) ;
 					break ;
 
 				// PHP constant name
@@ -500,7 +500,7 @@ END;
 					
 				// Constant value
 				case	'value' :
-					if  ( String::IsInteger ( $attribute [ 'value' ] ) )
+					if  ( StringUtilities::IsInteger ( $attribute [ 'value' ] ) )
 						$constant_value		=  Convert::ToInteger ( $attribute [ 'value' ] ) ;
 					else 
 						$constant_value		=  $attribute [ 'value' ] ;
@@ -573,7 +573,7 @@ END;
 	   	$result 	=  array ( ) ;
 		$specified 	=  array ( ) ;
 		$pvalue 	=  str_replace ( '|', ',', $pvalue ) ;
-		$list 		=  String::ExplodeAndTrim ( ',', $pvalue ) ;
+		$list 		=  StringUtilities::ExplodeAndTrim ( ',', $pvalue ) ;
 		$mask		=  0 ;
 
 		// Build default values for each flag

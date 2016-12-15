@@ -20,12 +20,12 @@ namespace 	Thrak\Processors\Lexer ;
 defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
 
 // Used namespaces & objects
-use 		Thrak\System\Object 			as  Object ;
-use 		Thrak\System\Exception 			as  Exception ;
-use 		Thrak\Types\String			as  String ;
-use		Thrak\IO\Path				as  Path ;
-use 		Thrak\Internet\Xml\Utilities		as  XmlUtilities ;
-use 		Thrak\Processors\PPP			as  PPP ;
+use 		Thrak\System\Object ;
+use 		Thrak\System\Exception ;
+use 		Thrak\Types\StringUtilities ;
+use		Thrak\IO\Path ;
+use 		Thrak\Internet\Xml\Utilities ;
+use 		Thrak\Processors\PPP ;
 
 
 // Internally used for token replacement
@@ -584,7 +584,7 @@ class  Lexer	extends  Object
 	private function  __CreateLexer ( $disable_preprocessing = false )
 	   {
 	   	// Check that the specified classname is a valid PHP name
-		if  ( $this -> ClassName  &&  ! String::IsPhpName ( $this -> ClassName ) )
+		if  ( $this -> ClassName  &&  ! StringUtilities::IsPhpName ( $this -> ClassName ) )
 			error ( "File \"{$this -> Filename}\" : the class name specified through the Lexer file constructor (\"{$this -> ClassName}\") is not " .
 				"a valid PHP name." ) ;
 
@@ -1032,8 +1032,8 @@ class  Lexer	extends  Object
 		   			   	// 'case-sensitive' :
 		   			   	//	A boolean value indicating whether pattern matching should be case-sensitive or not.
 		   			   	case 	"case-sensitive" :
-		   			   		if  ( String::IsBoolean ( $attr_value ) )
-		   			   			$lexer -> CaseSensitive 	=  ( bool ) String::BooleanValue ( $attr_value ) ;
+		   			   		if  ( StringUtilities::IsBoolean ( $attr_value ) )
+		   			   			$lexer -> CaseSensitive 	=  ( bool ) StringUtilities::BooleanValue ( $attr_value ) ;
 		   			   		else
 		   			   			self::__Error ( $lexer, $current_line, "Invalid boolean value \"$attr_value\" specified for the " .
 		   			   					"\"$attr_name\"  attribute of the \"%option\" directive." ) ;
@@ -1043,8 +1043,8 @@ class  Lexer	extends  Object
 		   			   	//	A boolean value indicating whether the generated lexical analyzer will return token values
 		   			   	//	when it encounters spaces or not.
 		   			   	case 	"want-spaces" :
-		   			   		if  ( String::IsBoolean ( $attr_value ) )
-		   			   			$lexer -> WantSpaces	 	=  ( bool ) String::BooleanValue ( $attr_value ) ;
+		   			   		if  ( StringUtilities::IsBoolean ( $attr_value ) )
+		   			   			$lexer -> WantSpaces	 	=  ( bool ) StringUtilities::BooleanValue ( $attr_value ) ;
 		   			   		else
 		   			   			self::__Error ( $lexer, $current_line, "Invalid boolean value \"$attr_value\" specified for the " .
 		   			   					"\"$attr_name\"  attribute of the \"%option\" directive." ) ;
@@ -1054,8 +1054,8 @@ class  Lexer	extends  Object
 		   			   	//	A boolean value indicating whether the generated lexical analyzer will return token values
 		   			   	//	when it encounters comments (both multiline and single-line) or not.
 		   			   		case 	"want-comments" :
-		   			   		if  ( String::IsBoolean ( $attr_value ) )
-		   			   			$lexer -> WantComments 	=  ( bool ) String::BooleanValue ( $attr_value ) ;
+		   			   		if  ( StringUtilities::IsBoolean ( $attr_value ) )
+		   			   			$lexer -> WantComments 	=  ( bool ) StringUtilities::BooleanValue ( $attr_value ) ;
 		   			   		else
 		   			   			self::__Error ( $lexer, $current_line, "Invalid boolean value \"$attr_value\" specified for the " .
 		   			   					"\"$attr_name\"  attribute of the \"%option\" directive." ) ;
@@ -1065,8 +1065,8 @@ class  Lexer	extends  Object
 		   			   	//	A boolean value indicating whether the generated lexical analyzer will return unknown token values
 		   			   	//	or generate an exception.
 		   			   		case 	"want-unknown-tokens" :
-		   			   		if  ( String::IsBoolean ( $attr_value ) )
-		   			   			$lexer -> WantUnknownTokens 	=  ( bool ) String::BooleanValue ( $attr_value ) ;
+		   			   		if  ( StringUtilities::IsBoolean ( $attr_value ) )
+		   			   			$lexer -> WantUnknownTokens 	=  ( bool ) StringUtilities::BooleanValue ( $attr_value ) ;
 		   			   		else
 		   			   			self::__Error ( $lexer, $current_line, "Invalid boolean value \"$attr_value\" specified for the " .
 		   			   					"\"$attr_name\"  attribute of the \"%option\" directive." ) ;
@@ -1076,8 +1076,8 @@ class  Lexer	extends  Object
 		   			   	//	A boolean value indicating whether the generated lexical analyzer will return token values
 		   			   	//	when it encounters comments (both multiline and single-line) or not.
 		   			   		case 	"want-line-directives" :
-		   			   		if  ( String::IsBoolean ( $attr_value ) )
-		   			   			$lexer -> WantLineDirectives 	=  ( bool ) String::BooleanValue ( $attr_value ) ;
+		   			   		if  ( StringUtilities::IsBoolean ( $attr_value ) )
+		   			   			$lexer -> WantLineDirectives 	=  ( bool ) StringUtilities::BooleanValue ( $attr_value ) ;
 		   			   		else
 		   			   			self::__Error ( $lexer, $current_line, "Invalid boolean value \"$attr_value\" specified for the " .
 		   			   					"\"$attr_name\"  attribute of the \"%option\" directive." ) ;
@@ -1098,7 +1098,7 @@ class  Lexer	extends  Object
 		   			   			self::__Error ( $lexer, $current_line, "No class name specified for the " .
 		   			   					"\"$attr_name\"  attribute of the \"%option\" directive." ) ;
 
-		   			   		if  ( ! String::IsPhpName ( $attr_value ) )
+		   			   		if  ( ! StringUtilities::IsPhpName ( $attr_value ) )
 		   			   			self::__Error ( $lexer, $current_line, "The class name specified for the " .
 		   			   					"\"$attr_name\"  attribute of the \"%option\" directive (\"$attr_value\") is not " .
 		   			   					"a valid PHP name." ) ;
@@ -1115,7 +1115,7 @@ class  Lexer	extends  Object
 		   			   			self::__Error ( $lexer, $current_line, "No token prefix specified for the " .
 		   			   					"\"$attr_name\"  attribute of the \"%option\" directive." ) ;
 
-		   			   		if  ( ! String::IsPhpName ( $attr_value ) )
+		   			   		if  ( ! StringUtilities::IsPhpName ( $attr_value ) )
 		   			   			self::__Error ( $lexer, $current_line, "The prefix specified for the " .
 		   			   					"\"$attr_name\"  attribute of the \"%option\" directive (\"$attr_value\") is not " .
 		   			   					"a valid PHP name." ) ;
@@ -1166,8 +1166,8 @@ class  Lexer	extends  Object
 		   			   	//	If false, only the 'start' (or 'begin') attribute can be specified.
 		   			   	//	If true, both the 'start' (or 'begin') and 'stop' (or 'end') attributes must be specified.
 		   			   	case 	'multiline' :
-		   			   		if  ( String::IsBoolean ( $attr_value ) )
-		   			   			$multiline 	=  ( bool ) String::BooleanValue ( $attr_value ) ;
+		   			   		if  ( StringUtilities::IsBoolean ( $attr_value ) )
+		   			   			$multiline 	=  ( bool ) StringUtilities::BooleanValue ( $attr_value ) ;
 		   			   		else
 		   			   			self::__Error ( $lexer, $current_line, "Invalid boolean value \"$attr_value\" specified for the " .
 		   			   					"\"$attr_name\"  attribute of the \"%option\" directive." ) ;
@@ -1332,8 +1332,8 @@ class  Lexer	extends  Object
 		   			   	// 	Indicates if blocks can be nested within blocks.
 		   			   	case 	'nesting' :
 		   			   	case 	'allow-nesting' :
-		   			   		if  ( String::IsBoolean ( $attr_value ) )
-		   			   			$block [ 'allow-nesting' ] 	=  ( bool ) String::BooleanValue ( $attr_value ) ;
+		   			   		if  ( StringUtilities::IsBoolean ( $attr_value ) )
+		   			   			$block [ 'allow-nesting' ] 	=  ( bool ) StringUtilities::BooleanValue ( $attr_value ) ;
 		   			   		else
 		   			   			self::__Error ( $lexer, $current_line, "Invalid boolean value \"$attr_value\" specified for the " .
 		   			   					"\"$attr_name\"  attribute of the \"%block\" directive." ) ;
@@ -1393,7 +1393,7 @@ class  Lexer	extends  Object
 		   			$lower_token	=  strtolower ( $token_name ) ;
 
 		   			// Check that names are valid PHP names (this is a restriction)
-		   			if  ( ! String::IsPhpName ( $token_name ) )
+		   			if  ( ! StringUtilities::IsPhpName ( $token_name ) )
 		   				self::__Error ( $lexer, $current_line, "The generated token value \"$token_name\" is not a valid PHP identifier." ) ;
 
 		   			// Check that the current token was not already defined
@@ -1458,7 +1458,7 @@ class  Lexer	extends  Object
 			   			$lower_token	=  strtolower ( $token_name ) ;
 
 			   			// Check that the token name is a valid PHP name
-			   			if  ( ! String::IsPhpName ( $token_name ) )
+			   			if  ( ! StringUtilities::IsPhpName ( $token_name ) )
 			   				self::__Error ( $lexer, $current_line, "The generated token value \"$token_name\" is not a valid PHP identifier." ) ;
 
 			   			// Check that the token does not already exists
@@ -1656,7 +1656,7 @@ class  Lexer	extends  Object
 	 --------------------------------------------------------------------------------------------*/
 	private static function  __ToRegex ( $lexer, $text )
 	   {
-		if  ( String::IsRegex ( $text ) )
+		if  ( StringUtilities::IsRegex ( $text ) )
 		   {
 		   	if  ( ! $lexer -> CaseSensitive )
 		   	   {
@@ -1671,7 +1671,7 @@ class  Lexer	extends  Object
 		    }
 		else
 		   {
-			$text = "/" . String::SafeRegex ( $text ) . "/" ;
+			$text = "/" . StringUtilities::SafeRegex ( $text ) . "/" ;
 
 			if (  ! $lexer -> CaseSensitive )
 				$text .= 'i' ;
