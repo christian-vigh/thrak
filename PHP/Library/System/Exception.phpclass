@@ -67,6 +67,10 @@
     [Version : 2.0.11] 	[Date : 2015/10/03]	[Author : CV]
 	. Changed the __GetExceptionParameters() method to handle the case where the $Configuration
 	  variable is null, which is the case when an exception is thrown from within a destructor.
+
+    [Version : 2.0.12] 	[Date : 2016/12/16]	[Author : CV]
+	. Added the __normalize_stacktrace() for PHP 7 to have the same array items as for prior
+	  PHP versions ('file' and 'line').
  
  ***************************************************************************************************/
 namespace	Thrak\System ;
@@ -289,7 +293,7 @@ class  Exception 	extends  \Exception
 	   	// Get the backtrace, except for the current function
 	   	$trace 	=  debug_backtrace ( ) ;
 
-	   	if  ( ! array_key_exists ( 'file', $trace [0] ) )
+	   	if  ( ! isset ( $trace [0] [ 'file' ] ) )
 	   		array_shift ( $trace ) ;
 
 	   	if  ( $trace [0] [ 'function' ]  ==  'trigger_error' )
@@ -320,6 +324,7 @@ class  Exception 	extends  \Exception
 
 	   	$level 		=  0 ;
 
+		   echo "LOCATE<br>" ; echo "<pre>";print_r ($stacktrace ) ; echo '</pre>' ;
 		foreach  ( $stacktrace  as  $entry )
 		   {
 		   	$found 	=  false ;
@@ -339,6 +344,7 @@ class  Exception 	extends  \Exception
 
 		   	   	$result [ 'level' ]	=  $level ;
 		   	   	$result [ 'caller' ]    =  $entry [ 'function' ] ;
+
 				return ( $result ) ;
 		   	    }
 
@@ -348,6 +354,7 @@ class  Exception 	extends  \Exception
 		$entry 			=  $stacktrace [0] ;
 		$entry [ 'level' ]	=  0 ;
 		$entry [  'caller' ]	=  $entry [ 'function' ] ;
+
 		return ( $entry ) ;
 	    }
 
@@ -385,12 +392,46 @@ class  Exception 	extends  \Exception
 	
 	 /*==================================================================================================
 
+		Normalizes a stack trace so that it provides consistent indexes across PHP versions 5.x and
+		7.x (PHP 7 uses the Error exception object to carry the 'line' and 'file' information, which
+		were directly accessible from the array items returned by debug_backtrace() for versions up
+		to 5.6).
+
+	  ==================================================================================================*/
+	static private function  __normalize_stacktrace ( &$trace )
+	   {
+		if  ( $trace )
+		   {
+			foreach  ( $trace  as  &$item )
+			   {
+				if  ( ! isset ( $item [ 'file' ] ) )
+				   {
+					if  ( isset ( $item [ 'args' ] )  &&  isset ( $item [ 'args' ] [0] )  &&
+							is_a ( $item [ 'args' ] [0], 'Error' ) )
+					   {
+						$item [ 'file' ]	=  $item [ 'args' ] [0] -> getFile ( ) ;
+						$item [ 'line' ]	=  $item [ 'args' ] [0] -> getLine ( ) ;
+					    }
+					else
+					   {
+						$item [ 'file' ]	=  '(unknown file)' ;
+						$item [ 'line' ]	=  0 ;
+					    }
+				    }
+			    }
+		    }
+	    }
+
+
+	 /*==================================================================================================
+
 		Displays the error message as text.
 
 	  ==================================================================================================*/
 	static private function  __DisplayTextMessage ( $errtype, $errno, $errstr, $errfile, $errline, $stacktrace = null, $exception = null )
 	   {
 		self::__GetExceptionParameters ( ) ;
+		self::__normalize_stacktrace ( $stacktrace ) ;
 
 	   	$header 	=  Exception::$Errors [ $errtype ] [ 'text' ] ;
 		$trailer	=  "" ;
@@ -466,6 +507,8 @@ class  Exception 	extends  \Exception
 	  ==================================================================================================*/
 	static private function  __DisplayHtmlMessage ( $errtype, $errno, $errstr, $errfile, $errline, $stacktrace = null, $exception = null )
 	   {
+		self::__normalize_stacktrace ( $stacktrace ) ;
+
 		if (  $exception )
 		   {
 			$exception_class	=  get_class ( $exception ) ;
@@ -489,6 +532,7 @@ class  Exception 	extends  \Exception
 		if  ( self::$ErrorMode  ==  ERROR_MODE_VERBOSE )
 		   {
 	   	   	$caller  =  Exception::__LocateCaller ( $stacktrace ) ;
+			      echo "<pre>";print_r ( $caller ) ;echo "</pre>";
 						
 			$caller_link	=  "<br/>See function {$caller [ 'caller' ]}() in {$caller [ 'file' ]}#{$caller [ 'line' ]}" ;
 		    }
