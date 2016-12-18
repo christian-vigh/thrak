@@ -71,6 +71,8 @@
     [Version : 2.0.12] 	[Date : 2016/12/16]	[Author : CV]
 	. Added the __normalize_stacktrace() for PHP 7 to have the same array items as for prior
 	  PHP versions ('file' and 'line').
+	. Modified the __ExceptionHandler() function : the Exception::getTrace() method returns an
+	  empty array with PHP 7 ; substitute it with debug_backtrace().
  
  ***************************************************************************************************/
 namespace	Thrak\System ;
@@ -231,16 +233,22 @@ class  Exception 	extends  \Exception
 	  ==================================================================================================*/
 	static public function  __Exception_Handler ( $exception )
 	   {
+		$trace		=  $exception -> getTrace ( ) ;
+
+		// getTrace() will return an empty array on PHP 7
+		if  ( ! $trace )
+			$trace		=  debug_backtrace ( ) ;
+
 	   	if (  IS_STANDALONE )	// Display as text on the console
 	   		Exception::__DisplayTextMessage ( 0, $exception -> getCode ( ), $exception -> getMessage ( ),
 	   							$exception -> getFile ( ), $exception -> getLine ( ),
-	   							$exception -> getTrace ( ),
+	   							$trace,
 								$exception ) ;
 	   	else			// Display as HTML
 		   {
 	   		Exception::__DisplayHtmlMessage ( 0, $exception -> getCode ( ), $exception -> getMessage ( ),
 	   							$exception -> getFile ( ), $exception -> getLine ( ),
-	   							$exception -> getTrace ( ),
+	   							$trace,
 								$exception ) ;
 		   }
 	    }
@@ -324,7 +332,6 @@ class  Exception 	extends  \Exception
 
 	   	$level 		=  0 ;
 
-		   echo "LOCATE<br>" ; echo "<pre>";print_r ($stacktrace ) ; echo '</pre>' ;
 		foreach  ( $stacktrace  as  $entry )
 		   {
 		   	$found 	=  false ;
@@ -462,7 +469,7 @@ class  Exception 	extends  \Exception
 
 	   	   	$errstr .= "\n=> " ;
 
-	   		$errstr .= "See function \"{$caller [ 'caller' ]}()\" in \"{$caller [ 'file' ]}\"#{$caller [ 'line' ]}" ;
+	   		$errstr .= "See function \"{$caller [ 'caller' ]}()\" called from \"{$caller [ 'file' ]}\"#{$caller [ 'line' ]}" ;
 
 	   		if  ( $caller [ 'level' ] )
 	   	   		$errstr .= " {" . $caller [ 'level' ] . "}" ;
@@ -532,9 +539,8 @@ class  Exception 	extends  \Exception
 		if  ( self::$ErrorMode  ==  ERROR_MODE_VERBOSE )
 		   {
 	   	   	$caller  =  Exception::__LocateCaller ( $stacktrace ) ;
-			      echo "<pre>";print_r ( $caller ) ;echo "</pre>";
 						
-			$caller_link	=  "<br/>See function {$caller [ 'caller' ]}() in {$caller [ 'file' ]}#{$caller [ 'line' ]}" ;
+			$caller_link	=  "<br/>See function {$caller [ 'caller' ]}() called from {$caller [ 'file' ]}#{$caller [ 'line' ]}" ;
 		    }
 		else
 			$caller_link	=  '' ;
