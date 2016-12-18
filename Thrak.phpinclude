@@ -60,6 +60,21 @@ if  ( ! strncasecmp ( php_uname ( 's' ), 'windows', 7 ) )
  	define ( 'IS_UNIX'		,  1 ) ;
      }
 
+// PHP version-related constants
+preg_match ( '/^ (?<major> \d+ ) \. (?P<minor> \d+ ) \. (?P<release> \d+) ( (?P<extra> .* ) )? /x', phpversion ( ), $__match__ ) ;
+
+define ( 'PHP_VERSION_MAJOR'	, ( integer ) $__match__ [ 'major' ] ) ;
+define ( 'PHP_VERSION_MINOR'	, ( integer ) $__match__ [ 'minor' ] ) ;
+define ( 'PHP_VERSION_RELEASE'	, ( integer ) $__match__ [ 'release' ] ) ;
+
+if  ( isset ( $__match__ [ 'extra' ] ) )
+	define ( 'PHP_VERSION_BUILD', $__match__ [ 'extra' ] ) ;
+else
+	define ( 'PHP_VERSION_BUILD', '' ) ;
+
+define ( 'PHP_VERSION_NUMBER'	, ( PHP_VERSION_MAJOR  <<  16 ) | (PHP_VERSION_MINOR  <<  8 ) | PHP_VERSION_RELEASE ) ;
+unset ( $__match__ ) ;
+
 // Determine if we run locally (ie, on a standalone PC, not a server)
 if  ( ! isset ( $_SERVER [ 'SERVER_ADDR' ] )  ||  ( $_SERVER [ 'SERVER_ADDR' ]  ==  '127.0.0.1'  ||  $_SERVER [ 'SERVER_ADDR' ]  ==  '::1' ) )
 	define ( 'IS_LOCAL'		,  1 ) ;
