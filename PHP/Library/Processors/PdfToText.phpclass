@@ -3628,7 +3628,6 @@ class 	PdfTexterFontTable 	extends PdfObjectBase
 		// The same object can hold different notations for font associations
 		if  ( preg_match_all ( '# (?P<font> ' . self::$FontSpecifiers . ' ) \s+ (?P<object> \d+) #imsx', $object_data, $matches ) )
 		   {
-		   echo "HERE !\n" ;
 			for ( $i = 0, $count = count ( $matches [ 'font' ] ) ; $i  <  $count ; $i ++ )
 			   {
 				$font	=  $matches [ 'font'   ] [$i] ;
