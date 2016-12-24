@@ -1,0 +1,365 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        HtmlMinifier.phpclass
+
+    DESCRIPTION
+        Minifier for html sources.
+	This minifier does use the parsing methods provided by the abstract Minifier class, but rather relies
+	on DOM functions.
+	It is able to minify javascript inside "script" tags, as well as inline CSS styles. It also handles
+	the minification of HTML code inside conditional comments, which are preserved (normal comments are
+	preserved).
+
+    AUTHOR
+        Christian Vigh, 12/2016.
+
+    HISTORY
+    [Version : 1.0]    [Date : 2016/12/24]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Processors\Minifiers ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+use 	Thrak\System\Object ;
+use     Thrak\Types\StringUtilities ;
+use	Thrak\Processors\Minifiers\Minifier ;
+use	Thrak\Processors\Minifiers\CssMinifier ;
+use	Thrak\Processors\Minifiers\JavascriptMinifier ;
+
+
+/*==============================================================================================================
+
+    HtmlMinifier class -
+        Minifier for Html sources.
+
+  ==============================================================================================================*/
+class	HtmlMinifier	extends  Minifier 
+   {
+	// List of tags that are closed automatically, ie they don't accept any child data
+	static private		$SelfClosingTags	=
+	   [
+		'area',
+		'base',
+		'basefont',
+		'br',
+		'col',
+		'command',
+		'embed',
+		'frame',
+		'hr',
+		'img',
+		'input',
+		'isindex',
+		'keygen',
+		'link',
+		'meta',
+		'param',
+		'source',
+		'track',
+		'wbr'
+	   ] ;
+
+	// List of tags where inner text formatting must be preserved
+	static private		$PreserveSpacesInTags	=
+	   [
+		'code',
+		'pre',
+		'textarea'
+	    ] ;
+
+	static private		$StaticInitialized	=  false ;
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+
+	   Constructor -
+		Initializes the parent minifier class.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( )
+	   {
+		parent::__construct ( ) ;
+
+		// To speed up searching in the $SelfClosingTags and $PreserveSpacesInTags, the array values will become array keys
+		if  ( ! self::$StaticInitialized )
+		   {
+			self::$SelfClosingTags		=  array_flip ( self::$SelfClosingTags ) ;
+			self::$PreserveSpacesInTags	=  array_flip ( self::$PreserveSpacesInTags ) ;
+			self::$StaticInitialized	=  true ;
+		    }
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+
+	   MinifyData -
+		Process the input stream.
+	 
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  MinifyData ( )
+	   {
+		return ( $this -> __minify_data ( $this -> Content ) ) ;
+	    }
+
+
+
+	/**************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 ******                                        PRIVATE FUNCTIONS                                         ******
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************/
+
+	// __minify_data -
+	//	Minifies HTML data specified by $text.
+	//	Since a DOMDocument is created, the $body_only can be set to true for processing only the body contents.
+	//	This is useful when only a HTML string (not a full page) has to be minified. This is the case for example
+	//	for the html code inside conditional comments.
+	private function  __minify_data ( $text, $body_only = false ) 
+	   {
+		// Create the doument
+		$doc		=  new \DOMDocument ( ) ;
+		$doc -> loadHTML ( $text ) ;
+		$contents	=  '' ;
+
+		// Normalize the document (hope it will repair user bugs...)
+		$doc -> normalizeDocument ( ) ;
+
+		// We need to process the whole document when called from MinifyData() ; however, if called only to minify
+		// a string of html tags, we will have to get rid of the surrounding envelope created by DOMDocument
+		// (doctype/html/head/body) and take care only of the <body> contents
+		if  ( $body_only )
+		   {
+			$newdoc		=  $doc -> getElementsByTagName ( 'body' ) ;
+			$newdoc		=  $newdoc -> item (0) ;
+		    }
+		else
+			$newdoc		=  $doc ;
+
+		// Process document child nodes ; this should start with <!doctype> and <head>...
+		foreach  ( $newdoc -> childNodes  as  $node )
+			$this -> __process_child_nodes ( $node, $contents, 0 ) ;
+
+		return ( $contents ) ;
+	    }
+
+
+	// __process_child_nodes -
+	//	Processes the specified node and recursively processes its children.
+	//	The minified contents are appended to $contents.
+	//	The $level parameter is currently not used ; it indicates the current nesting level in the DOM tree,
+	//	starting from zero.
+	private function  __process_child_nodes ( $node, &$contents, $level )
+	   {
+		$name			=  strtolower ( $node -> nodeName ) ;
+		$type			=  $node -> nodeType ;
+
+		// Determine node type
+		switch  ( $type )
+		   {
+			// <!DOCTYPE> node
+			case	XML_DOCUMENT_TYPE_NODE :
+				$contents	.=  '<' . $this -> __get_document_node_as_string ( $node ) . '>' ;
+				break ;
+
+			// An HTML node, that may contain children
+			case	XML_ELEMENT_NODE :
+				$self_closing		 =  isset ( self::$SelfClosingTags [ $name ] ) ;
+				$contents		.=  '<' . $this -> __get_element_node_as_string ( $node ) ;
+
+				// The tag is not designed to have children (self-closing)
+				if  ( $self_closing )
+					$contents	.=  '/>' ;
+				// The tag may have children - we have to inspect them
+				else
+				   {
+					$contents	.=  '>' ;
+
+					// The first child of a <style> and <script> tag is not of type XML_TEXT_NODE, but XML_CDATA_SECTION_NODE
+					// It contains the Javascript or CSS code that we also need to minify.
+					// No other kind of child may be present here
+					switch  ( $name )
+					   {
+						case	'script' :
+							$contents	.=  $this -> __get_script_node_as_string ( $node ) ;
+							break ;
+
+						case	'style' :
+							$contents	.=  $this -> __get_style_node_as_string ( $node ) ;
+							break ;
+
+						// Default : process tag children
+						default :
+							foreach  ( $node -> childNodes  as  $child_node )
+								$this -> __process_child_nodes ( $child_node, $contents, $level + 1 ) ;
+					    }
+
+					// Don't forget the closing tag
+					$contents	.=  '</' . $node -> nodeName . '>' ;
+				    }
+
+				break ;
+
+			// Text node containing text data belonging to its parent tag
+			case	XML_TEXT_NODE :
+				$contents	.=  $this -> __get_text_data ( $node ) ;
+				break ;
+
+			// Comment node : either remove it or keep it if it is a conditional comment
+			case	XML_COMMENT_NODE :
+				$contents	.=  $this -> __get_comment ( $node ) ;
+				break ;
+
+			// For the distracted developer I am
+			default :
+				warning ( "Unhandled node \"$name\" (type #$type)." ) ;
+		    }
+	    }
+
+
+	// __get_comment -
+	//	Comments fall into two cases :
+	//	- Regular comments, which are removed from the output
+	//	- Conditional comments, that contain HTML code that also needs to be minified. 
+	//	  Conditional comments are always preserved.
+	private function  __get_comment ( $node )
+	   {
+		// Conditional comments in the DOM are returned like this (the leading "<!--" and the trailing "-->" are removed, as well as 
+		// leading and trailing spaces) :
+		//	[if IE]>conditional comment for IE.<![endif]
+		// while their original specification was :
+		//	<!--[if IE]>conditional comment for IE.<![endif]-->
+		static	$comment_re	=  '/^ \s* 
+						(?P<start> \[ [^\]]+ \] >)
+						(?P<contents> .*)
+						(?P<end> \s* <! \s* \[ [^\]]+ \] )
+					     $/imsx' ;
+
+		$comment	=  trim ( $node -> nodeValue ) ;
+		$result		=  '' ;
+
+		// If a conditional comment has been found, minify the HTML code inside it ; otherwise, remove the comment from the output
+		if  ( $comment  &&  $comment [0]  ==  '['  &&  preg_match ( $comment_re, $comment, $match ) )
+		   {
+			$result		=  '<!--' . $match [ 'start' ] . 
+					   $this -> __minify_data ( $match [ 'contents' ], true ) .
+					   $match [ 'end' ] . '-->' ;
+		    }
+
+		return ( $result ) ;
+	    }
+
+
+	// __get_document_node_as_string -
+	//	Returns the HTML string for a <!DOCTYPE> tag.
+	private function  __get_document_node_as_string ( $node )
+	   {
+		$result		=  "!DOCTYPE {$node -> name}" ;
+
+		if  ( $node -> publicId )
+			$result		.=  " PUBLIC \"{$node -> publicId}\"" ;
+
+		if  ( $node -> systemId )
+			$result		.=  " \"{$node -> systemId}\"" ;
+
+		return ( $result ) ;
+	    }
+
+
+	// __get_element_node_as_string -
+	//	Returns an HTML element with its attributes as a string.
+	//	This function does not return the closing tag.
+	private function  __get_element_node_as_string ( $node ) 
+	   {
+		$result		=  $node -> nodeName ;
+
+		foreach  ( $node -> attributes  as  $attribute )
+		   {
+			$result		.=  ' ' . $attribute -> nodeName . '=' . $this -> __quote_attribute_value ( $attribute -> nodeValue ) ;
+		    }
+
+		return ( $result ) ;
+	    }
+
+
+	// __get_script_node_as_string -
+	//	Minifies the contents of a <script> tag, if any.
+	private function  __get_script_node_as_string ( $node )
+	   {
+		static	$minifier	=  false ;
+
+		$code		=  trim ( $node -> nodeValue ) ;
+		$result		=  '' ;
+
+		if  ( $code )
+		   {
+			if  ( $minifier  ===  false )
+				$minifier	=  new JavascriptMinifier ( ) ;
+
+			$result		=  $minifier -> Minify ( $code ) ;
+		    }
+
+		return ( $result ) ;
+	    }
+
+
+	// __get_stle_node_as_string -
+	//	Minifies the contents of an inline <style> tag.
+	private function  __get_style_node_as_string ( $node )
+	   {
+		static	$minifier	=  false ;
+
+		$code		=  trim ( $node -> nodeValue ) ;
+		$result		=  '' ;
+
+		if  ( $code )
+		   {
+			if  ( $minifier  ===  false )
+				$minifier	=  new CssMinifier ( ) ;
+
+			$result		=  $minifier -> Minify ( $code ) ;
+		    }
+
+		return ( $result ) ;
+	    }
+
+
+	// __get_text_data -
+	//	Removes unnecessary spaces from node values.
+	protected function  __get_text_data ( $node )
+	   {
+		$parent		=  strtolower ( $node -> parentNode -> nodeName ) ;
+
+		if  ( isset  ( self::$PreserveSpacesInTags [ $parent ] ) )
+			$result		=  $node -> nodeValue ;
+		else
+			$result		=  preg_replace ( '/\s+/ms', ' ', $node -> nodeValue ) ;
+
+		$result		=  htmlentities ( $result ) ;
+
+		return ( $result ) ;
+	    }
+
+
+	// __quote_attribute_value -
+	//	Quotes an attribute value, using single-quotes if the attribute value contains double-quote(s).
+	//	Otherwise, use double quotes.
+	private function  __quote_attribute_value ( $value )
+	   {
+		if  ( strpos ( $value, '"' )  !==  false )
+			$quote	=  "'" ;
+		else
+			$quote	=  '"' ;
+
+		return ( $quote . $value . $quote ) ;
+	    }
+    }
