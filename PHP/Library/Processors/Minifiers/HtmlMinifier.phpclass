@@ -73,6 +73,28 @@ class	HtmlMinifier	extends  Minifier
 
 	static private		$StaticInitialized	=  false ;
 
+	// Style table - where all values specified by the "style=" attribute are collected
+	public			$StyleTable		=  [] ;
+
+	// Elements used for building/replacing substituted style names
+	// "TAG_CLASS" is used to replace substituted "style=" constructs
+	// "TAG_STYLE" is used when creating a CSS class does not bring any improvement in size reduction (typically,
+	// a "style=" attribute whose value has been met only once)
+	// "TAG_LOCAL_STYLE" is put at the end of the <head> part to define the classes that have been built from "style="
+	// similar definitions.
+	// All those tags are enclosed with the TAG_START and TAG_END string to avoid collisions.
+	const			TAG_CLASS		=  '__CLASS__' ;
+	const			TAG_STYLE		=  '__STYLE__' ;
+	const			TAG_LOCAL_STYLE		=  '__LOCAL_STYLE__' ;
+	const			TAG_START		=  "\x00" ;
+	const			TAG_END			=  "\x01" ;
+
+	// Data for generation of style identifiers
+	static private		$IdentifierChars	=  "01234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_" ;
+	static private		$IdentifierCharCount ;
+
+	private			$NextStyleIdentifier	=  0 ;
+
 
 	/*--------------------------------------------------------------------------------------------------------------
 
@@ -89,6 +111,9 @@ class	HtmlMinifier	extends  Minifier
 		   {
 			self::$SelfClosingTags		=  array_flip ( self::$SelfClosingTags ) ;
 			self::$PreserveSpacesInTags	=  array_flip ( self::$PreserveSpacesInTags ) ;
+
+			self::$IdentifierCharCount	=  strlen ( self::$IdentifierChars ) ;
+
 			self::$StaticInitialized	=  true ;
 		    }
 	    }
@@ -149,6 +174,9 @@ class	HtmlMinifier	extends  Minifier
 		foreach  ( $newdoc -> childNodes  as  $node )
 			$this -> __process_child_nodes ( $node, $contents, 0 ) ;
 
+		// Replace the specific "style=" constructs with short class names built on the fly
+		$contents	=  $this -> __process_styles ( $contents ) ;
+
 		return ( $contents ) ;
 	    }
 
@@ -195,6 +223,14 @@ class	HtmlMinifier	extends  Minifier
 
 						case	'style' :
 							$contents	.=  $this -> __get_style_node_as_string ( $node ) ;
+							break ;
+
+						// <head> node : we may have to insert a <style> tag to replace "style=" attributes
+						case	'head' :
+							foreach  ( $node -> childNodes  as  $child_node )
+								$this -> __process_child_nodes ( $child_node, $contents, $level + 1 ) ;
+
+							$contents	.=  self::TAG_START . self::TAG_LOCAL_STYLE . self::TAG_END ;
 							break ;
 
 						// Default : process tag children
@@ -280,16 +316,177 @@ class	HtmlMinifier	extends  Minifier
 	//	This function does not return the closing tag.
 	private function  __get_element_node_as_string ( $node ) 
 	   {
-		$result		=  $node -> nodeName ;
+		$result			=  $node -> nodeName ;
+
+		// "class=" and "style=" attributes need special care : if many similar "style=" attributes are found, then a CSS class will be
+		// created ; however, at that point, we did not process the whole html contents yet, so we have to :
+		// - Memorize the "style=" attribute
+		// - Replace it with a TAG_STYLE tag, followed by a class id that has been attributed for this particular style entry
+		// - Put a TAG_CLASS with the same id
+		// Later, if it happens that the "style=" entry is used only once and is not worth creating a CSS class, the TAG_STYLE tag
+		// will be replaced by its original value.
+		// On the contrary, the TAG_STYLE tag will be removed and the TAG_CLASS tag will be replaced with the name of the class that
+		// has been created for this "style=" entry
+		$class_attribute	=  false ;
+		$style_id		=  false ;
 
 		foreach  ( $node -> attributes  as  $attribute )
 		   {
-			$result		.=  ' ' . $attribute -> nodeName . '=' . $this -> __quote_attribute_value ( $attribute -> nodeValue ) ;
+			$attribute_name			=  strtolower ( $attribute -> nodeName ) ;
+			$attribute_value		=  trim ( preg_replace ( '/\s+/', ' ', $attribute -> nodeValue ) ) ;
+
+			if  ( ! $attribute_value )
+				continue ;
+
+			if  ( $attribute_name  ==  'class' )
+				$class_attribute	=  $attribute_value ;
+			else if  ( $attribute_name  ==  'style' )
+			   {
+				$attribute_value	=  preg_replace ( '/(\s*)([:;])(\s*)/', '$2', $attribute_value ) ;
+				$this -> __handle_style_attribute ( $attribute_value, $style_id ) ;
+			    }
+			else
+				$result		       .=  ' ' . $attribute -> nodeName . '=' . $this -> __quote_attribute_value ( $attribute_value ) ;
 		    }
+
+		// A "style=" entry has been found...
+		if  ( $style_id )
+		   {
+			// If a "class=" entry was already present, add the tag that specifies the class corresponding to the "style=" entry 
+			// (which will be removed)
+			if  ( $class_attribute )
+				$class_attribute	.=  self::TAG_START . self::TAG_CLASS . $style_id . self::TAG_END ;
+			// No "class=" entry exists : create it
+			else
+				$class_attribute	 =  self::TAG_START . self::TAG_CLASS . $style_id . self::TAG_END ;
+
+			// Leave a TAG_STYLE tag in case of it was not worth creating a CSS class for it
+			$style_attribute	=  self::TAG_START . self::TAG_STYLE . $style_id . self::TAG_END ;
+
+			$result		.=  " class=\"$class_attribute\"$style_attribute" ;
+		    }
+		// Otherwise, simply leave the potential "class=" attribute as is
+		else if  ( $class_attribute )
+			$result		.=  " class=\"$class_attribute\"" ;
 
 		return ( $result ) ;
 	    }
 
+
+	// process_styles -
+	//
+	private function  __process_styles ( $contents )
+	   {
+		$style_string		=  '' ;
+		$searches		=  [] ;
+		$replacements		=  [] ;
+
+		foreach  ( $this -> StyleTable  as  $value => $definition )
+		   {
+			if  ( $definition [ 'count' ]  ==  1 )
+			   {
+				$searches []		=  self::TAG_START . self::TAG_CLASS . $definition [ 'name' ] . self::TAG_END ;
+				$replacements []	=  '' ;
+
+				$searches []		=  self::TAG_START . self::TAG_STYLE . $definition [ 'name' ] . self::TAG_END ;
+				$replacements []	=  " style=\"$value\"" ;
+			    }
+			else
+			   {
+				$searches []		=  self::TAG_START . self::TAG_CLASS . $definition [ 'name' ] . self::TAG_END ;
+				$replacements []	=  " {$definition [ 'name' ]}" ;
+
+				$searches []		=  self::TAG_START . self::TAG_STYLE . $definition [ 'name' ] . self::TAG_END ;
+				$replacements []	=  '' ;
+
+				$style_string		.=  '.' . $definition [ 'name' ] . '{' . $value . ';}' ;
+			    }
+		    }
+
+		$searches []		=  self::TAG_START . self::TAG_LOCAL_STYLE . self::TAG_END ;
+
+		if  ( $style_string )
+			$replacements []	=  "<style>$style_string</style>" ;
+		else
+			$replacements []	=  '' ;
+
+		$contents	=  str_replace ( $searches, $replacements, $contents ) ;
+
+		return ( $contents ) ;
+	    }
+
+
+	// __handle_style_attribute -
+	//	Memorizes the values of the different "style=" attributes encountered so far, together with their occurrence count.
+	private function  __handle_style_attribute ( $value, &$new_id )
+	   {
+		$style_elements		=  explode ( ';', $value ) ;
+		$new_style_elements	=  [] ;
+
+		foreach  ( $style_elements  as  $element )
+		   {
+			if  ( trim ( $element ) )
+				$new_style_elements []	=  $element ;
+		    }
+
+		ksort ( $new_style_elements ) ;
+		$style_string	=  implode ( ';', $new_style_elements ) ;
+
+		if  ( isset ( $this -> StyleTable [ $style_string ] ) )
+		   {
+			$new_id		=  $this -> StyleTable [ $style_string ] [ 'name' ] ;
+			$this -> StyleTable [ $style_string ] [ 'count' ] ++ ;
+		    }
+		else
+		   {
+			$new_id					=  $this -> __get_next_style_identifier ( ) ;
+			$this -> StyleTable [ $style_string ]	=  [ 'name' => $new_id, 'count' => 1 ] ;
+		    }
+	    }
+
+
+	// __get_next_style_identifier -
+	//	Given a set of characters ($IdentifierChars) of length $IdentifierCharCount, converts a number
+	//	$NextStyleIdentifier to the base represented by the set of characters.
+	private function  __get_next_style_identifier ( )
+	   {
+		$id			=  '' ;
+		$current_identifier	=  $this -> NextStyleIdentifier ;
+		
+		while  ( $current_identifier  >=  self::$IdentifierCharCount )
+		   {
+			$rem			 =  $current_identifier % self::$IdentifierCharCount ;
+			$id			.=  self::$IdentifierChars [ $rem ] ;
+			$current_identifier	 =  ( integer ) ( $current_identifier / self::$IdentifierCharCount )  ;
+		    }
+
+		$id	.=  self::$IdentifierChars [ $current_identifier ] ;
+		$this -> NextStyleIdentifier ++ ;
+
+		return ( '_' . strrev ( $id ) ) ;
+	    }
+
+	/*
+	private function  __get_element_node_as_string ( $node ) 
+	   {
+		$result		=  $node -> nodeName ;
+
+		foreach  ( $node -> attributes  as  $attribute )
+		   {
+			$attribute_value		=  trim ( preg_replace ( '/\s+/', ' ', $attribute -> nodeValue ) ) ;
+
+			if  ( ! $attribute_value )
+				continue ;
+
+			if  ( ! strcasecmp ( $attribute -> nodeName, 'style' ) )
+				$attribute_value	=  preg_replace ( '/(\s*)([:;])(\s*)/', '$2', $attribute_value ) ;
+
+			$result		.=  ' ' . $attribute -> nodeName . '=' . $this -> __quote_attribute_value ( $attribute_value ) ;
+		    }
+
+		return ( $result ) ;
+	    }
+	*/
 
 	// __get_script_node_as_string -
 	//	Minifies the contents of a <script> tag, if any.
