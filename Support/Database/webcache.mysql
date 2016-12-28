@@ -1,0 +1,41 @@
+/***************************************************************************************************
+
+    NAME
+	webcache.mysql 
+		
+    DESCRIPTION
+    	This script contains the SQL commands to create the tables for web caching.
+	
+    AUTHOR
+    	Christian Vigh, 2016.
+	
+    HISTORY
+    [Version : 1.0]		[Date : 2016/12/25]		[Author : CV]
+    	Initial release.
+    	
+ ****************************************************************************************************/
+
+
+DROP TABLE IF EXISTS webcache ;
+
+CREATE TABLE webcache
+   (
+	id 			INT 			NOT NULL AUTO_INCREMENT
+							COMMENT 'Unique id for this cache entry',
+	md5			CHAR(32)		NOT NULL DEFAULT ''
+							COMMENT 'MD5 hash of the file or url, for indexing purposes',
+	creation_time 		TIMESTAMP		NOT NULL
+							COMMENT 'Creation time for this entry',
+	ttl 			INTEGER UNSIGNED	NOT NULL DEFAULT 0
+							COMMENT 'Time To Live for this entry',
+	hits 			BIGINT UNSIGNED 	NOT NULL DEFAULT 0
+							COMMENT 'Number of hits for this file',
+	file			VARCHAR(4096)		NOT NULL DEFAULT ''
+							COMMENT 'File or Url to be cached',
+	data 			LONGTEXT 		NOT NULL
+							COMMENT 'Cached data',
+							
+	PRIMARY KEY 		( id ),
+	KEY 			( md5 ),
+	KEY 			( creation_time )
+    ) ENGINE = MyISAM DEFAULT CHARSET latin1 COMMENT 'A cache table for Web pages' ;

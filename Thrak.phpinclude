@@ -525,4 +525,5 @@ if  ( ! IS_STANDALONE )
 	// Create a website instance
 	$WebSecurity	=  new  \Thrak\Web\WebSecurity ( ) ;
 	$WebSite	=  new  \Thrak\Web\WebSite ( ) ;
+	$WebCache	=  new  \Thrak\Web\WebCache ( ) ;
     }

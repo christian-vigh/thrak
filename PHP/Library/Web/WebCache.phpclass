@@ -1,0 +1,483 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        WebCache.phpclass
+
+    DESCRIPTION
+        A class for caching web pages into a database. The WebCache object itself is already instantiated in
+	Thrak.phpinclude ; pages must be cached on a per-file basis. 
+
+	The principle is : call the Cache() method, providing the full path of the current file (or of the
+	file to be cached), and provide any filenames, Unix timestamps and user-supplied functions that 
+	return a Unix timestamp.
+
+	When filenames are supplied, their last modification time is taken.
+
+	The most recent timestamps, coming either from the last modification time of the supplied filenames,
+	or from the supplied timestamps, or from the timestamp values returned by the callback functions
+	specified (if any) are checked against the creation date of the cache row in the database table for
+	the current file.
+
+	If the database row does not exist or is older than the maximum computed timestamp, then the normal
+	flow of operations occur and the HTML contents are generated ; a WebCache function, installed through
+	the register_shutdown_function() function, updates the database with the most up-to-date results.
+
+	Upon subsequent calls without any new modification, the HTML contents stored in the database are 
+	directly echoed, avoiding the need to run again the processes that generated the HTML contents.
+
+	This is useful when many computations or database accesses are needed to generate again the same
+	contents.
+
+    AUTHOR
+        Christian Vigh, 12/2016.
+
+    HISTORY
+    [Version : 1.0]	[Date : 2016-12-25]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Web ;
+
+defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
+
+// Used namespaces & objects
+use 	Thrak\System\Object ;
+use	Thrak\Processors\Minifiers\HtmlMinifier ;
+
+
+/*==============================================================================================================
+
+    class WebCache -
+        A class for caching web pages.
+
+  ==============================================================================================================*/
+class  WebCache		extends  Object
+   {
+	// Default name for the page cache table
+	const		WEBCACHE_TABLE		=  'webcache' ;
+	// Default time to live for a page
+	const		DEFAULT_TTL		=  0 ;
+	// Default URL to be associated with a file to be cached
+	const		DEFAULT_URL		=  '' ;
+
+	// Name of the page cache table
+	public		$WebCacheTable ;
+	// True if caching is enabled
+	public		$Enabled ;
+	// Default Time To Live - zero means forever
+	public		$DefaultTTL ;
+	// True if cached data is to be minified
+	public		$Minify ;
+	// When true, a small 16x16 square is displayed on the upper left corner ; hovering over it will display the original
+	// file size, it new size, and the number of bytes gained
+	protected	$Debug			=  true ;
+	// Cached files
+	private		$Cache			=  [] ;
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        Constructor
+	
+	    PROTOTYPE
+		$webcache	=  new WebCache ( $webcache_table = self::WEBCACHE_TABLE ) ;
+	
+	    DESCRIPTION
+	        Builds a WebCache object and creates the webcache table if needed.
+	
+	    PARAMETERS
+	        $webcache_table (string) -
+	                Name of the database table to be used for caching pages.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( $webcache_table = self::WEBCACHE_TABLE )
+	   {
+		global		$Configuration ;
+
+
+		$this -> WebCacheTable	=  $webcache_table ;
+
+		// Check if page caching should be enabled
+		$this -> Enabled	=  $Configuration -> Get ( 'Site/cache/enabled' ) ;
+
+		// Get default time-to-live
+		$this -> DefaultTTL	=  $Configuration -> Get ( 'Site/cache/default-ttl' ) ;
+
+		if  ( ! $this -> DefaultTTL )
+			$this -> DefaultTTL	=  0 ;
+
+		// Should we minify cached data ?
+		$this -> Minify		=  $Configuration -> Get ( 'Site/cache/minify' ) ;
+
+		// Create the page cache table if needed
+		$this -> __ensure_table_exists ( ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        Cache - Submits a page for caching.
+	
+	    PROTOTYPE
+	        $webcache -> Cache ( $file, [ $ttl, [ $url, [...] ] ] ) ;
+	
+	    DESCRIPTION
+	        Submits a page for caching. If the page is already present in the database and nothing proves that it is 
+		older than any of the criterias specified after the $url parameter, then the contents cached in the
+		database are simply displayed ; otherwise, the page contents are regenerated and the database is updated
+		with the new contents.
+	
+	    PARAMETERS
+	        $file (string) -
+	                File to be cached. This is usually a PHP file that takes some time to generate its HTML contents
+			and is worth to be cached.
+			If the last modification time of the filename is more recent than the one stored in the database,
+			then the html contents will be regenerated.
+
+		$ttl (integer) -
+			Time to live, in seconds. After expiration, the html contents will need to be regenerated.
+
+		$url (string) -
+			This parameter is useful when different url parameters generate different html contents for the
+			same php file. Specify an empty string if url parameters do not affect the html contents.
+
+		... (mixed) -
+			A set of parameters which can specify the following :
+
+			- filenames :
+				Filenames whose last modification time is to be checked against the creation date of the
+				entry in the database. If one of them is more recent than the record cached in the
+				database, the the html contents will be regenerated.
+
+			- Unix timestamps :
+				Optional Unix timestamps that will be checked against the update time of the record
+				in the database.
+
+			- Callbacks :
+				Callback functions can be specified when more complex computations are to be performed
+				to determine a last update date (for example, retrieve the date of the most recent
+				record of some kind in the database that implies rebuilding the html contents).
+				The callback function must return a Unix timestamp, or zero if its result is not to be
+				taken into account.
+
+			The most recent of those timestamps, including the last modification time of $file, will be
+			checked against the last update time of the cached record in the database.
+
+			Any combination of scalar values and arrays are accepted as arguments. Arrays are processed
+			recursively.
+	
+	    RETURN VALUE
+	        This function never returns if the page contents were taken from the cache table.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  Cache ( )
+	   {
+		// Don't do anything if caching is disabled 
+		if  ( ! $this -> Enabled )
+			return ;
+
+		global		$Database ;
+
+
+		// Check that enough parameters have been specified
+		$argv		=  func_get_args ( ) ;
+		$argc		=  count ( $argv ) ;
+
+		if  ( ! $argc )
+			error ( new \Thrak\System\InvalidArgumentException ( "At least a filename must be specified." ) ) ;
+
+		// Get the file to be cached
+		$file_to_cache		=  $argv [0] ;
+		array_shift ( $argv ) ;
+		$argc -- ;
+
+		// Optional url
+		if  ( $argc )
+		   {
+			$url	=  $argv [0] ;
+			array_shift ( $argv ) ;
+		    }
+		else
+			$url	=  '' ;
+
+		// Optional time-to-live
+		if  ( $argc )
+		   {
+			$ttl	=  $argv [0] ;
+			array_shift ( $argv ) ;
+		    }
+		else
+			$ttl	=  $this -> DefaultTTL ;
+
+		// Get the most recent modification time from the file to be cached and the optional arguments
+		$max_mtime	=  0 ;
+
+		if  ( file_exists ( $file_to_cache ) )
+			$max_mtime		=  ( double ) filemtime ( $file_to_cache ) ;
+
+		$this -> __get_mtimes ( $argv, $max_mtime ) ;
+
+		// Check that a cache row exists in the database, with this file/url combination,
+		// a creation date newer than the most recent time found above, and a non-expired TTL
+		$escaped_file	=  $Database -> Escape ( $file_to_cache ) ;
+		$escaped_url	=  $Database -> Escape ( $url ) ;
+
+		$query		=  "
+					SELECT 
+						*
+					FROM {$this -> WebCacheTable}
+					WHERE 
+						md5		=  MD5('$escaped_file$escaped_url')	AND
+						file		=  '$escaped_file'			AND
+						url		=  '$escaped_url'			AND
+						(
+							ttl = 0  OR
+							creation_time + ttl > NOW()
+						 )
+				   " ;
+
+		if  ( $max_mtime )
+			$query		.=  " AND  creation_time  >  FROM_UNIXTIME($max_mtime)" ;
+
+		$Database -> SetQuery ( $query ) ;
+		$row		=  $Database -> LoadRow ( ) ;
+
+		// No row found, either because it does not exist or because it is outdated :
+		// Establish a callback function that will capture the HTML contents at the end of the script
+		// and create/update the cached row in the database
+		if  ( ! $row )
+		   {
+			$row	=
+			   [
+				'id'			=>  0,
+				'creation_time'		=>  time ( ),
+				'ttl'			=>  $ttl,
+				'hits'			=>  0,
+				'file'			=>  $file_to_cache,
+				'url'			=>  $url
+			    ] ;
+
+			$this -> Cache [ "$file_to_cache$url" ]		=  $row ;
+
+			register_shutdown_function ( function ( ) { $this -> __cache_pages ( ) ; } ) ;
+		    }
+		// A valid cached row has been found : display its contents then exit the script
+		else
+		   {
+			ob_clean ( ) ;
+			
+			$query		=  "
+						UPDATE {$this -> WebCacheTable}
+						SET
+							hits		=  hits + 1
+						WHERE 
+							id = {$row [ 'id' ]}
+					   " ;
+			$Database -> Execute ( $query ) ;
+
+			echo ( $row [ 'data' ] ) ;
+			exit ( ) ;
+		    }
+	    }
+
+
+	/**************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 ******                                        PRIVATE FUNCTIONS                                         ******
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************/
+
+	// __cache_pages -
+	//	Updates the cache table with all the pages that have been declared by calling the Cache() method
+	private function  __cache_pages ( )
+	   {
+		global		$Database ;
+
+		// Loop through declared files
+		foreach  ( $this -> Cache  as  $cache_key => $cache_entry )
+		   {
+			$escaped_file		=  $Database -> Escape ( $cache_entry [ 'file' ] ) ;
+			$escaped_url		=  $Database -> Escape ( $cache_entry [ 'url' ] ) ;
+			$query			=  "
+							SELECT id
+							FROM {$this -> WebCacheTable}
+							WHERE
+								md5		=  MD5('$escaped_file$escaped_url')	AND
+								file		=  '$escaped_file'			AND
+								url		=  '$escaped_url'
+						   " ;
+			$Database -> SetQuery ( $query ) ;
+			$id			=  $Database -> LoadValue ( ) ;
+			$ob_contents		=  ob_get_contents ( ) ;
+			$original_size		=  strlen ( $ob_contents ) ;
+			$original_size_fmt	=  number_format ( $original_size, 0, '.', ' ' ) . 'b' ;
+
+			$debug_html		=  "<div title='uncached = $original_size_fmt, cached = \x0, gain = \x1' " .
+							"style='position: absolute; left: 0px; right: 0px; width: 16px; height: 16px; cursor: pointer; z-index: 100; background-color: transparent'></div>" ;
+
+			$minifier		=  new HtmlMinifier ( ) ;
+			$minified_data		=  $minifier -> Minify ( $ob_contents ) ;
+
+			$new_size		=  strlen ( $minified_data ) ;
+			$new_size_fmt		=  number_format ( $new_size, 0, '.', ' ' ) . 'b' ;
+
+			$delta_fmt		=  number_format ( $original_size - $new_size, 0, '.', ' ' ) . 'b' ;
+
+			$debug_html		=  str_replace ( [ "\x0", "\x1" ], [ $new_size_fmt, $delta_fmt ], $debug_html ) ;
+
+			if  ( $this -> Debug )
+				$minified_data		=  str_ireplace ( '<body>', '<body>' . $debug_html , $minified_data ) ;
+
+			$escaped_data		=  $Database -> Escape ( $minified_data ) ;
+
+			// Insert or update, depending on whether the row already exists or not
+			if  ( ! $id )
+			   {
+				$query		=  "
+							INSERT INTO {$this -> WebCacheTable}
+							SET
+								md5		=  MD5('$escaped_file'),
+								creation_time	=  FROM_UNIXTIME({$cache_entry [ 'creation_time' ]}),
+								ttl		=  {$cache_entry [ 'ttl' ]},
+								hits		=  0,
+								file		=  '$escaped_file',
+								url		=  '$escaped_url',
+								data		=  '$escaped_data'
+						   " ;
+			    }
+			else
+			   {
+				$query		=  "
+							UPDATE {$this -> WebCacheTable}
+							SET
+								creation_time	=  FROM_UNIXTIME({$cache_entry [ 'creation_time' ]}),
+								ttl		=  {$cache_entry [ 'ttl' ]},
+								hits		=  0,
+								data		=  '$escaped_data'
+							WHERE
+								md5		=  MD5('$escaped_file$escaped_url')	AND
+								file		=  '$escaped_file'			AND
+								url		=  '$escaped_url'
+						   " ;
+			    }
+
+			$Database -> Execute ( $query ) ;
+		    }
+	    }
+
+
+	// __ensure_table_exists -
+	//	Ensures that the cache table exists ; create it if needed.
+	//	A session variable is set afterwards to prevent unnecessary checkings.
+	private function  __ensure_table_exists ( )
+	   {
+		global		$Database, $Session ;
+
+
+		$session_key	=  "objects/WebCache/{$this -> WebCacheTable}" ;
+
+		if  ( isset ( $Session [ $session_key ] ) )
+			return ;
+
+		$query		=  "
+					CREATE TABLE IF NOT EXISTS webcache
+					   (
+						id 			INT 			NOT NULL AUTO_INCREMENT
+												COMMENT 'Unique id for this cache entry',
+						md5			CHAR(32)		NOT NULL DEFAULT ''
+												COMMENT 'MD5 hash of the file and key, for indexing purposes',
+						creation_time 		DATETIME		NOT NULL DEFAULT '0000-00-00 00:00:00'
+												COMMENT 'Creation time for this entry',
+						ttl 			INTEGER UNSIGNED	NOT NULL DEFAULT 0
+												COMMENT 'Time To Live for this entry',
+						hits 			BIGINT UNSIGNED 	NOT NULL DEFAULT 0
+												COMMENT 'Number of hits for this file',
+						file			VARCHAR(4096)		NOT NULL DEFAULT ''
+												COMMENT 'File to be cached',
+						url			VARCHAR(4096)		NOT NULL DEFAULT ''
+												COMMENT 'Additional key, such as the url corresponding to the file',
+						data 			LONGTEXT 		NOT NULL
+												COMMENT 'Cached data',
+							
+						PRIMARY KEY 		( id ),
+						KEY 			( md5 ),
+						KEY 			( creation_time )
+					    ) ENGINE = MyISAM DEFAULT CHARSET latin1 COMMENT 'A cache table for Web pages' ;
+				   " ;
+
+		$Database -> Execute ( $query ) ;
+
+		$Session [ $session_key ]	=  true ;
+	    }
+
+
+	// __get_mtimes -
+	//	Retrieves the max modification time from all the extra arguments passed to the Cache() function.
+	private function  __get_mtimes ( $argv, &$max_mtime ) 
+	   {
+		// Loop through arguments ; update $max_mtime if a greater value has been found
+		foreach  ( $argv  as  $arg )
+		   {
+			// Array : recursively process its contents
+			if  ( is_array ( $arg ) )
+			    {
+				$this -> __get_mtimes ( $arg, $max_mtime ) ;
+			     }
+			// Numeric value : this is a modification time
+			else if  ( is_numeric ( $arg ) )
+			   {
+				if  ( $arg  >  $max_mtime )
+					$max_mtime	=  $arg ;
+			     }
+			// String value : this is a filename, that we may have to locate using the include path
+			else if  ( is_string ( $arg ) )
+			   {
+				if  ( ( $real_path = $this -> __locate_file ( $arg ) )  !==  false )
+				   {
+					$mtime		=  filemtime ( $real_path ) ;
+
+					if  ( $mtime  >  $max_mtime )
+						$max_mtime	=  $mtime ;
+				    }
+			    }
+			// Callback : will return a modification time
+			else if  ( is_callable ( $arg ) )
+			   {
+				$result		=  $arg ( ) ;
+
+				if  ( $result  &&  $result  >  $max_mtime )
+					$max_mtime	=  $result ;
+			    }
+		    }
+	    }
+
+
+	// __locate_file -
+	//	Locates the specified file, using the include path if needed.
+	private function  __locate_file ( $path )
+	   {
+		if  ( file_exists ( $path ) )
+			return ( $path ) ;
+
+		$include_paths		=  explode ( PATH_SEPARATOR, get_include_path ( ) ) ;
+
+		foreach  ( $include_paths  as  $include_path )
+		   {
+			$real_path	=  $include_path . DIRECTORY_SEPARATOR . $path ;
+
+			if  ( file_exists ( $real_path ) )
+				return ( $real_path ) ;
+		    }
+
+		return ( false ) ;
+	    }
+    }
