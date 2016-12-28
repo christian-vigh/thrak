@@ -268,14 +268,14 @@ class  Configuration
 				if  ( is_dir ( $path ) )
 					return ( $path ) ;
 
-				warning ( "Configuration::GetExistingDirectory : the \"$path\" path is not a directory." ) ;
+				error ( new \Thrak\System\FileNotDirectoryException ( "The \"$path\" path is not a directory." ) ) ;
 			    }
 			else if  ( $create )
 			   {
 				@mkdir ( $path, $mode, true ) ;
 
 				if  ( ! file_exists ( $path ) )
-					warning ( "Configuration::GetExistingDirectory : could not create the \"$path\" directory." ) ;
+					error ( new \Thrak\System\DirectoryNotFoundException ( "Could not create the \"$path\" directory." ) ) ;
 				else
 					return ( $path ) ;
 			    }
