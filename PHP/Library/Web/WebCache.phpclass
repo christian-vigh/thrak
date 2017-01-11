@@ -71,7 +71,7 @@ class  WebCache		extends  Object
 	public		$Minify ;
 	// When true, a small 16x16 square is displayed on the upper left corner ; hovering over it will display the original
 	// file size, it new size, and the number of bytes gained
-	protected	$Debug			=  true ;
+	protected	$Debug			=  false ;
 	// Cached files
 	private		$Cache			=  [] ;
 
@@ -337,7 +337,9 @@ class  WebCache		extends  Object
 			if  ( $this -> Debug )
 				$minified_data		=  str_ireplace ( '<body>', '<body>' . $debug_html , $minified_data ) ;
 
-			$escaped_data		=  $Database -> Escape ( $minified_data ) ;
+			// The minifier seems to add a few pixels somewhere, so the original page is a little bit shifted
+			// For the moment, cache only the original contents
+			$escaped_data		=  $Database -> Escape ( $ob_contents ) ;//$minified_data ) ;
 
 			// Insert or update, depending on whether the row already exists or not
 			if  ( ! $id )
