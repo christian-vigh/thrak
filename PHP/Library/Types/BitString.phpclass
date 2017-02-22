@@ -5,13 +5,35 @@
         BitString.phpclass
 
     DESCRIPTION
-        A class to manipulate bit strings and iterate through them.
+        A set of classes to handle bit strings.
+
+	A bit string can take as input a string or another bit string. The least significant bit in the string
+	will be the least significant bit of the first byte of the string ; the most significant bit will be
+	the most significant bit of the last byte of the string.
+
+	This may seem counter-natural, as we would expect the reverse situation. However, the string is 
+	internally converted to an array of little-endian integers (4 bytes on 32 bits systems, 8 bytes on
+	64-bits ones).
+
+	The original intent of this class was to retrieve color values from a stream of bytes ; each color
+	having a number of bits per components, and a number of components per color (for example, 24-bits
+	RGB colors have a number of bits per components of 8, and a number of components per color of 3, one
+	for each of the red, green, blue components).
+
+	Anyway, it can be used to retrieve any portion of bits within a bit string using the BitString::GetBits
+	method. The BitStringIterator class has been designed to retrieve things like colors values, but can be 
+	used for other purposes.
+
+    LIMITATIONS
+	These classes has been designed with performance in mind ; for this reason, no more than 32 bits can
+	be retrieved at once by the GetBits() method on 32-bits platforms, and no more than 64 on 64-bits
+	platforms. This is not a design issue, but rather a design choice.
 
     AUTHOR
         Christian Vigh, 02/2017.
 
     HISTORY
-    [Version : 1.0]	[Date : 2017-02-01]     [Author : CV]
+    [Version : 1.0]	[Date : 2017/02/19]     [Author : CV]
         Initial version.
 
  **************************************************************************************************************/
@@ -21,13 +43,733 @@ namespace 	Thrak\Types ;
 use 	Thrak\System\Object ;
 
 
+// Exception thrown by the BitString classes
+class	BitStringException		extends  \Exception 
+   {
+	public static	$IsObject		=  false ;
+    } 
+
+
 /*==============================================================================================================
 
     class BitString -
-        A class to manipulate bit strings and iterate through them.
+        Implements a string as a series of bits. Individual bits can be accessed either through the array access
+	operator, or by using an iterator. The GetBits() method can retrieve more than one bit at once, not 
+	exceeding the machine's word size used for compiling PHP, and given by PHP_INT_SIZE.
 
   ==============================================================================================================*/
-class  BitString	extends  Object 
+class  BitString		extends		Object 
+				implements	\Countable, \ArrayAccess, \Iterator
    {
+	// Word size in bytes and bits
+	const		WORD_SIZE_IN_BYTES		=  PHP_INT_SIZE ;
+	const		WORD_SIZE_IN_BITS		=  self::WORD_SIZE_IN_BYTES * 8 ;
+
+	// The string supplied to the constructor is unpacked in words of size WORD_SIZE_IN_BYTES and stored in this array
+	private		$Data				=  [] ;
+	// Exact data size in bits, and number of items in the Data array
+	private		$DataSizeInBits,
+			$DataSizeInWords ;
+
+	// Used for iterating through the bits
+	private		$CurrentIteratorBit ;
+
+
+	/*--------------------------------------------------------------------------------------------------------------
 	
+	    NAME
+	        Constructor
+	
+	    PROTOTYPE
+	        $bitstring	=  new BitString ( $data, $data_size_in_bits = false, $filler = 0 ) ;
+	
+	    DESCRIPTION
+	        Creates a bit string based on the supplied string data. The data can be later accessed through one of
+		the following methods :
+		- By calling the GetBits() method to retrieve a group of bits
+		- By using the array access operator to retrieve an individual bit
+		- By using the iterator interface to retrieve individual bits
+	
+	    PARAMETERS
+	        $data (string or BitString) -
+	                Data to be used to build the BitString. It can either be :
+			- A string, which will be converted to integer values of size PHP_INT_SIZE, in little-endian
+			  order.
+			- An existing BitString object, which will be duplicated.
+
+		$data_size_in_bits (integer) -
+			If not specified, the total number of bits will be the length of $data * 8. If specified,
+			indicates the exact number of bits to consider ; $data will be truncated if this parameter
+			is shorter that strlen($data), and expanded with the filler value if greater.
+
+		$filler (byte) -
+			Filler value, for unset bits, specified as a byte. This value is used when the total number of
+			bits does not fit on a byte boundary, or when $data needs to be expanded because
+			$data_size_in_bits is greater than strlen($data) * 8.
+
+			A value of false, null or empty string will be interpreted as 0x00.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( $data, $data_size_in_bits = false, $filler = 0 )
+	   {
+		parent::__construct ( ) ;
+
+		// Allow duplication of an existing BitString
+		if  ( is_a ( $data, '\Thrak\Types\BitString' ) )
+		   {
+			$this -> Data			=  $data -> Data ;
+			$this -> DataSizeInBits		=  $data -> DataSizeInBits ;
+			$this -> DataSizeInWords	=  $data -> DataSizeInWords ;
+
+			return ;
+		    }
+
+		// A null data can be specified but in this case, the number of bits is mandatory
+		if  ( ! $data  &&  $data_size_in_bits )
+			error ( new BitStringException ( "Either a binary data string or a length in bits must be specified, or both." ) ) ;
+
+		// Convert the string to 32- or 64-bits, depending on the host machine word size
+		if  ( BitString::WORD_SIZE_IN_BYTES  ===  4 )
+			$pack_format		=  'V' ;
+		else
+			$pack_format		=  'P' ;
+
+		// Normalize the $filler value, which must be a byte
+		if  ( is_numeric ( $filler ) )
+			$filler		=  chr ( $filler  &  0xFF ) ;
+		else if  ( is_bool ( $filler )  ||  is_null ( $filler ) )
+			$filler		=  "\0" ;
+		else if  ( is_string ( $filler ) )
+		   {
+			if  ( ! strlen ( $filler ) )
+				$filler		=  "\0" ;
+			else
+				$filler		=  $filler [0] ;
+		    }
+		else
+			error ( new BitStringException ( "Invalid type for filler value." ) ) ;
+
+		// Make sure $data is a string - if empty, default will be the filler value
+		if  ( ! $data )
+			$data	=  $filler ;
+
+		// Maximum size in bytes
+		$length				=  strlen ( $data ) ;
+		$length_in_bits			=  $length * 8 ;
+
+		// If a data size in bits has been specified, we may have either to expand or truncate the supplied data
+		if  ( $data_size_in_bits )
+		   {
+			if  ( $data_size_in_bits  >  $length_in_bits )
+			   {
+				$extra		 =  ( integer ) ( ( $data_size_in_bits - $length_in_bits + 7 ) / 8 ) ;
+				$data		.=  str_repeat ( $filler, $extra ) ;
+				$length		+=  $extra ;
+				$length_in_bits +=  $extra * 8 ;
+			    }
+			else if  ( $data_size_in_bits  <  $length_in_bits )
+			   {
+				$data		 =  substr ( $data, 0, ( integer ) ( ( $data_size_in_bits + 7 ) / 8 ) ) ;
+				$length		 =  strlen ( $data ) ;
+				$length_in_bits	 =  $length * 8 ;
+			    }
+		    }
+
+		// For the unpack() function to unpack up to the last byte, we may have to fill the supplied string with zero bytes
+		// until its length is a multiple of the machine's word size
+		$rem				=  $length % self::WORD_SIZE_IN_BYTES ;
+
+		if  ( $rem )
+		   {
+			$extra		 =  self::WORD_SIZE_IN_BYTES - $rem ;
+			$data		.=  str_repeat ( $filler, $extra ) ;
+		    }
+
+		// Unpack the data into 32- or 64-bits words, depending on the host platform
+		// Renumber all elements, since unpack() return value starts at index 1 (!)
+		$data				=  unpack ( "$pack_format*", $data ) ;
+
+		foreach  ( $data  as  $word )
+			$this -> Data []	=  $word ;
+
+		$this -> DataSizeInBits		=  $length_in_bits ;
+		$this -> DataSizeInWords	=  count ( $this -> Data ) ;
+	    }
+
+
+	/**************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 ******                                          USER FUNCTIONS                                          ******
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************/
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        GetBits - Returns a range of bits from the bit string.
+	
+	    PROTOTYPE
+	        $value		=  $bitstring -> GetBits ( $offset, $bit_count ) ;
+	
+	    DESCRIPTION
+	        Returns $bit_count bits starting at the specified offset in the BitString.
+	
+	    PARAMETERS
+	        $offset (integer) -
+	                Starting bit offset. Offsets are numbered from zero, zero being the least significant bit of
+			the first byte from the string supplied to the constructor. The last bit is the most significant
+			bit of the last byte coming from the same string.
+
+		$bit_count (integer) -
+			Number of bits to be retrieved. This value cannot exceed PHP_INT_SIZE*8.
+	
+	    RETURN VALUE
+	        Returns the retrieved bits, as an integer value, or false if the specified offset is invalid.
+
+	    IMPLEMENTATION NOTES
+		There are not dozen of cases to deal with when retrieving bits from a series of words :
+		1) The specified bit offset and the number of bits to be retrieved fit into one word :
+
+			Word x					Word x+1
+			+--------------------------------+	+--------------------------------+
+			|           !        !           |	|				 |
+			+--------------------------------+	+--------------------------------+
+		     bit 31	    ^	     ^	        0        31                             0
+				    |        |
+				    $offset  |
+				             |
+				    $offset + $bitcount - 1
+
+		    In this case we just have to :
+		    - Create a bitmask of $bit_count bits
+		    - Shift it until position $offset
+		    - Make a binary AND between the concerned word and the shifted bitmask
+		    - Shift the result back to bit 0
+
+		2) The specified bit offset and the number of bits to be retrieved spans two words :
+
+			Word x					Word x+1
+			+--------------------------------+	+--------------------------------+
+			|      !                         |	|     			    !    |
+			+--------------------------------+	+--------------------------------+
+		     bit 31	    	      	        0        31                         ^   0
+			       ^							    |
+			       |							    |
+			       $offset							    |
+											    |
+										 $offset + $bitcount - 1
+
+		   In this case we have to perform the operation described in step 1) two times, then create a final
+		   value having the bits from word x as the least significant bits, followed by the bits coming from
+		   word x+1 as next most significant bits.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  GetBits ( $offset, $bit_count )
+	   {
+		// Stick to our limit of no more bits that can fit in a machine word. Make sure $bit_count is non-zero
+		if  ( $bit_count  >  self::WORD_SIZE_IN_BITS  ||  ! $bit_count )
+			return ( false ) ;
+
+		// Only extract a number of bits that can fit in a machine's word
+		if  ( $offset  <  $this -> DataSizeInBits )
+		   {
+			// If the requested number of bits goes past the number of bits in the bit string, shrink it
+			if  ( $offset + $bit_count  >=  $this -> DataSizeInBits )
+				$bit_count	=  $this -> DataSizeInBits - $offset ;
+
+			// Get exact word index and bit position within word from the specified offset
+			$word		=  ( integer ) ( $offset / self::WORD_SIZE_IN_BITS ) ;
+			$bit		=  $offset % self::WORD_SIZE_IN_BITS ;
+
+			// Get the related word
+			$word_value	=  $this -> Data [ $word ] ;
+
+			// If the bit position + the number of requested bits fits a machine word then...
+			if  ( $bit + $bit_count  <=  self::WORD_SIZE_IN_BITS )
+			   {
+				// If the bit count is less that a machine word size, then perform the mask&shift stuff
+				if  ( $bit_count  <  self::WORD_SIZE_IN_BITS )
+				   {
+					$mask		=  ( 1  <<  $bit_count ) - 1 ;
+					$value		=  ( $word_value & ( $mask  <<  $bit ) ) >>  $bit ;
+				    }
+				// Otherwise, $bit is zero so simply return the whole word
+				else
+					$value		=  $word_value ;
+			    }
+			// Bit position + number of requested bits spans two words so...
+			else
+			   {
+				// Compute the number of bits to extract from word x and word x + 1
+				$bit_count_2	=  $bit + $bit_count - self::WORD_SIZE_IN_BITS ;
+				$bit_count_1	=  $bit_count - $bit_count_2 ;
+
+				// Get the next word
+				$word_value_2	=  $this -> Data [ $word + 1 ] ;
+
+				// Compute the masks to extract the bits from both words
+				$mask_1		=  ( 1  <<  $bit_count_1 ) - 1 ;
+				$mask_2		=  ( 1  <<  $bit_count_2 ) - 1 ;
+
+				// Get the bits from word x, as the least significant bit
+				$value_1	=  ( $word_value    &  ( $mask_1  <<  $bit ) ) >>  $bit ;
+
+				// Then get bits from word x+1, and shift them not to overlap bits in $value_1
+				$value_2	=  ( $word_value_2  &  ( $mask_2           ) ) <<  $bit_count_1 ;
+
+				// Make a OR between both values
+				$value		=  $value_1 | $value_2 ;
+			    }
+
+			// All done, return
+			return ( $value ) ;
+		    }
+		else
+			return ( false ) ;
+	    }
+
+
+	/**************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 ******                                       CONVERSION FUNCTIONS                                       ******
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************/
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        ToHex - Converts a BitString to a hex string.
+	
+	    PROTOTYPE
+	        $value	=  $bitstring -> ToHex ( $uppercase = true ) ;
+	
+	    DESCRIPTION
+	        Converts a bit string to its hexadecimal representation (in hex digits).
+	
+	    PARAMETERS
+	        $uppercase (boolean) -
+	                Indicates whether the hex digits should be in uppercase or not.
+	
+	    RETURN VALUE
+	        A string containing hex digits that represent the bit string.
+	
+	    NOTES
+	        This function is for debugging purposes only ; you should be aware that a bit string built with :
+
+			ABCDEF
+
+		will cause the ToHex() method to generate the following hex string :
+
+			414243444546
+
+		but note that it does not reflect the real order of the bits in the underlying structure. The "1" of
+		"41" is actually the least significant bit of the bit string, while the "4" of "46" is the most 
+		significant bit having the value 1.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  ToHex ( $uppercase = true )
+	   {
+		$result		=  '' ;
+		$format		=  ( $uppercase ) ?  'X' : 'x' ;
+
+		for  ( $i = 0, $bit_count = 0 ; $i  <  $this -> DataSizeInWords ; $i ++ )
+		   {
+			$word		=   $this -> Data [$i] ;
+
+			for  ( $j = 0 ; $j  <  self::WORD_SIZE_IN_BYTES ; $j ++ )
+			   {
+				$byte		  =  $word & 0xFF ;
+				$result		 .=  sprintf ( "%02$format", $byte ) ;
+				$word		>>=  8 ;
+				$bit_count	 +=  8 ;
+
+				if  ( $bit_count  >=  $this -> DataSizeInBits )
+					break 2 ;
+			    }
+		    }
+
+		return ( $result ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        ToString - Returns the bit string as a string.
+	
+	    PROTOTYPE
+	        $result		=  $bitstring -> ToString ( ) ;
+		$result		=  ( string ) $bitstring ;
+	
+	    DESCRIPTION
+	        Returns the bitstring as a string of bytes. The initial order of bits is preserved.
+	
+	    RETURN VALUE
+	        The string representation of the bit string, as bytes (the first byte being the LSB).
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  ToString ( )
+	   {
+		$result		=  '' ;
+
+		for  ( $i = 0, $bit_count = 0 ; $i  <  $this -> DataSizeInWords ; $i ++ )
+		   {
+			$word		=   $this -> Data [$i] ;
+
+			for  ( $j = 0 ; $j  <  self::WORD_SIZE_IN_BYTES ; $j ++ )
+			   {
+				$byte		  =  $word & 0xFF ;
+				$result		 .=  chr ( $byte ) ;
+				$word		>>=  8 ;
+				$bit_count	 +=  8 ;
+
+				if  ( $bit_count  >=  $this -> DataSizeInBits )
+					break 2 ;
+			    }
+		    }
+
+		return ( $result ) ;
+	    }
+
+
+	public function  __tostring ( )
+	   { return ( $this -> ToString ( ) ) ; }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        ToBin - Returns the binary representation of a bit string.
+	
+	    PROTOTYPE
+	        $result		=  $bitstring -> ToBin ( $debug = true ) ;
+	
+	    DESCRIPTION
+	        Returns the binary representation (a string containing zeroes and ones) of a bit string.
+	
+	    PARAMETERS
+	        $debug (boolean) -
+	                When true, the returned string reflects the order of bits as returned by the ToHex() method.
+			When false, the real bit order is respected (first bit is the least significant bit, and last
+			bit the most significant one).
+	
+	    RETURN VALUE
+	        A string containing the binary representation of the bit string.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  ToBin ( $debug = true )
+	   {
+		$result		=  '' ;
+
+		if  ( $debug )
+		   {
+			for  ( $i = 0, $bit_count = 0 ; $i  <  $this -> DataSizeInWords ; $i ++ )
+			   {
+				$word		=   $this -> Data [$i] ;
+
+				for  ( $j = 0 ; $j  <  self::WORD_SIZE_IN_BYTES ; $j ++ )
+				   {
+					$byte		=  $word & 0xFF ;
+
+					for  ( $k = 0 ; $k  <  8 ; $k ++ )
+					   {
+						$bit		  =  ( $byte & 0x80 ) ?  "1" : "0" ;
+						$result		 .=  $bit ;
+						$byte		<<=  1 ;
+						$bit_count ++ ;
+
+						if  ( $bit_count  >=  $this -> DataSizeInBits )
+							break 3 ;
+					    }
+
+					$word	>>=  8 ;
+				    }
+			    }
+		    }
+		else
+		   {
+			$bit	=   0 ; 
+
+			foreach  ( $this -> Data  as  $word )
+			   {
+				for  ( $i = 0 ; $bit  <  $this -> DataSizeInBits  &&   $i  <  self::WORD_SIZE_IN_BITS ; $i ++, $word  >>=  1, $bit ++ )
+					$result		.=  ( $word  &  1 ) ?  '1' : '0' ;
+			    }
+		    }
+
+		return ( $result ) ;
+	    }
+
+
+	/**************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 ******                                    INTERFACES IMPLEMENTATIONS                                    ******
+	 ******                                                                                                  ******
+	 ******                                                                                                  ******
+	 **************************************************************************************************************
+	 **************************************************************************************************************
+	 **************************************************************************************************************/
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    Countable interface -
+		Returns the number of bits in the bit string.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  Count  ( )
+	   {  return ( $this -> DataSizeInBits ) ; }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    ArrayAccess interface -
+		Allow to access the BitString object as an array, to retrieve individual bits by using their offset.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  offsetExists ( $offset )
+	   {  return ( $offset  >=  0  &&  $offset  <  $this -> DataSizeInBits ) ; }
+
+
+	public function  offsetGet ( $offset )
+	   {
+		$word		=  ( integer ) ( $offset / self::WORD_SIZE_IN_BITS ) ;
+		$bit		=  $offset % self::WORD_SIZE_IN_BITS ;
+		$result		=  $this -> Data [ $word ]  &  ( 1 << $bit ) ;
+
+		return ( ( $result ) ?  1 : 0 ) ;
+	    }
+	
+
+	public function  offsetSet ( $offset, $value ) 
+	   {
+		$word		=  ( integer ) ( $offset / self::WORD_SIZE_IN_BITS ) ;
+		$bit		=  $offset % self::WORD_SIZE_IN_BITS ;
+		$value		=  ( $value ) ?  1 : 0 ;
+
+		if  ( $value )
+			$this -> Data [ $word ]		|=  ( $value  <<  $bit ) ;
+		else
+			$this -> Data [ $word ]		&=  ~( $value  <<  $bit ) ;
+	    }
+
+
+	public function  offsetUnset ( $offset )
+	   {
+		$word		=  ( integer ) ( $offset / self::WORD_SIZE_IN_BITS ) ;
+		$bit		=  $offset % self::WORD_SIZE_IN_BITS ;
+
+		$this -> Data [ $word ]		&=  ~( 1  <<  $bit ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    Iterator interface -
+		Allows to sequentially access individual bits of the bit string using a foreach() construct.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  rewind ( )
+	   { $this -> CurrentIteratorBit = 0 ; }
+
+
+	public function  valid ( )
+	   { return ( $this -> CurrentIteratorBit  <  $this -> DataSizeInBits ) ; }
+
+
+	public function  next ( )
+	   { $this -> CurrentIteratorBit ++ ; }
+
+
+	public function  key ( )
+	   { return ( $this -> CurrentIteratorBit ) ; }
+
+
+	public function  current ( )
+	   {
+		$word		=  ( integer ) ( $this -> CurrentIteratorBit / self::WORD_SIZE_IN_BITS ) ;
+		$bit		=  $this -> CurrentIteratorBit % self::WORD_SIZE_IN_BITS ;
+		$result		=  $this -> Data [ $word ] & ( 1 << $bit ) ;
+
+		return ( ( $result ) ?  1 : 0 ) ;
+	    }
+    }
+
+
+/*==============================================================================================================
+
+    class BitStringIterator -
+        Allows to iterate through a BitString object and retrieve groups of bits as array.
+	This class was originally implemented to read a stream of values representing colors, with a specific
+	number of bits per color component, and a number of components per color.
+
+  ==============================================================================================================*/
+class  BitStringIterator	extends		Object 
+				implements	\Iterator
+   {
+	// BitString object, and its size in bits
+	private		$BitString ;
+	private		$BitStringSize ;
+
+	// Number of bits per component, and number of components to be retrieved at once
+	private		$BitsPerComponent,
+			$ComponentCount ;
+
+	// Total number of bits to be retrieved at once (BitsPerComponent * ComponentCount)
+	private		$TotalBits ;
+	// Bitmask used to isolate BitsPerComponent bits
+	private		$BitMask ;
+
+	// Current bit position in the iterator
+	private		$CurrentBit ;
+
+	// For the method current() of the iterator, two versions are used, for optimization purposes :
+	// - One is used when TotalBits fits in a machine word ; in this case, the GetBits() method of the BitString class
+	//   is called only once
+	// - The other version calls the GetBits() method as many times as there are components to handle (ComponentCount)
+	private		$CurrentCallback ;
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        Constructor
+	
+	    PROTOTYPE
+	        $iterator	=  new BitStringIterator ( $data, $bits_per_component, $component_count = 1 ) ;
+	
+	    DESCRIPTION
+	        The BitStringIterator class allows to iterate through a BitString by groups of $bits_per_component bits.
+		An array of $component_count groups will be returned upon each iteration.
+	
+	    PARAMETERS
+	        $data (string or BitString) -
+	                BitString to be iterated. If a simple string is specified, it will be internally converted to
+			a BitString object.
+
+		$bits_per_component (integer) -
+			Number of bits per component.
+
+		$component_count (integer) -
+			Number of components having $bits_per_component bits to be returned upon each iteration.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( $data, $bits_per_component, $component_count = 1 )
+	   {
+		// Preliminary checks
+		if  ( $bits_per_component  <  1 )
+			error ( new BitStringException ( "The number of bits per component must be greater that zero." ) ) ;
+
+		if  ( $bits_per_component  >  BitString::WORD_SIZE_IN_BITS )
+			error ( new BitStringException ( "The number of bits per component must not exceed machine word size (" .
+					BitString::WORD_SIZE_IN_BITS . " bits)" ) ) ;
+
+		if  ( $component_count  <  1 )
+			error ( new BitStringException ( "The number of components must be greater that zero." ) ) ;
+
+		// Iteration parameters 
+		$this -> BitsPerComponent	=  $bits_per_component ;
+		$this -> ComponentCount		=  $component_count ;
+
+		// Create a BitString to handle most of the mess
+		if  ( is_a ( $data, '\Thrak\Types\BitString' ) )
+			$this -> BitString	=  $data ;
+		else
+			$this -> BitString	=  new BitString ( $data ) ;
+
+		$this -> BitStringSize		=  count ( $this -> BitString ) ;
+		$this -> TotalBits		=  $bits_per_component * $component_count ;
+		$this -> BitMask		=  ( 1  <<  $bits_per_component ) - 1 ;
+
+		// If the total number of bits to retrieve per iteration is less than the machine word's size (well, the one
+		// that has been used to compile PHP), then we'll used an optimized routine 
+		if  ( $this -> TotalBits  <=  BitString::WORD_SIZE_IN_BITS )
+			$this -> CurrentCallback	=  [ $this, '__optimized_retrieve' ] ;
+		else
+			$this -> CurrentCallback	=  [ $this, '__normal_retrieve' ] ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    Iterator interface -
+		Allows to sequentially retrieve groups of $component_count values of size $bits_per_component.
+		The retrieved value is an array having $component_count elements.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  rewind ( )
+	   { $this -> CurrentBit = 0 ; }
+
+
+	public function  valid ( )
+	   { return ( $this -> CurrentBit  <  $this -> BitStringSize ) ; }
+
+
+	public function  next ( )
+	   { $this -> CurrentBit  +=  $this -> TotalBits ; }
+
+
+	public function  key ( )
+	   { return ( $this -> CurrentBit ) ; }
+
+
+	public function  current ( )
+	   {
+		$callback	=  $this -> CurrentCallback ;
+		return ( $callback ( ) ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    __optimized_retrieve -
+		This function is called when $bits_per_component * $component_count is less than or equal to the 
+		number of bits in a machine word. It calls the BitString::GetBits() method only once, then separate
+		the results.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	private function  __optimized_retrieve ( )
+	   {
+		$value		=  $this -> BitString -> GetBits ( $this -> CurrentBit, $this -> TotalBits ) ;
+		$result		=  [] ;
+
+		for  ( $i = 0 ; $i  <  $this -> ComponentCount ; $i ++, $value  >>=  $this -> BitsPerComponent )
+			$result []	=  $value  &  $this -> BitMask ;
+		
+		return ( $result ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    __normal_retrieve -
+		Worst-case scenario : $bits_per_component * $component_count is greater than a machine word.
+		In this case, the BitString::GetBits() method will be called for each component.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	private function  __normal_retrieve ( )
+	   {
+		$current_bit		=  $this -> CurrentBit ;
+		$result			=  [] ;
+
+		for  ( $i = 0 ; $i  <  $this -> ComponentCount ; $i ++, $current_bit += $this -> BitsPerComponent )
+			$result []	=  $this -> BitString -> GetBits ( $current_bit, $this -> BitsPerComponent  ) ;
+
+		return ( $result ) ;
+	    }
     }
