@@ -42,8 +42,11 @@
     [Version : 1.0.9]	[Date : 2016/08/11]     [Author : CV]
 	. Changed the CrossReference() method so that the $missing and $extra parameters are always initialized
 	  to an empty array. This avoids the need to reinitialize these parameters between two subsequent calls
-	  to the function.
-  
+	  to the function.  
+
+    [Version : 1.0.10]	[Date : 2017/02/26]     [Author : CV]
+	. Changed the ToRanges() method to use a simpler algorithm.
+
  **************************************************************************************************************/
 namespace 	Thrak\Types ;
 
@@ -773,31 +776,40 @@ class  ArrayHelpers		extends  Object
 	        An array of two-elements arrays, containing the lower and upper bounds of each range.
 	 
 	 *-------------------------------------------------------------------------------------------------------------*/
-	public static function  ToRanges ( $array ) 
+	public static function  ToRanges ( $array, $sort = true )
 	   {
-		$ranges		=  [] ;
-		$count		=  count ( $array ) ;
-		if  ( ! $count ) 
+		$value_count	=  count ( $array ) ;
+
+		if  ( ! $value_count )
 			return ( [] ) ;
-		else if  ( $count  ==  1 )
-			return ( [ [ $array [0], $array [0] ] ] ) ;
 
-		$start_value	=  $array [0] ;
-		sort ( $array ) ;
+		if  ( $sort )
+			sort ( $array ) ;
 
-		for  ( $i = 1 ; $i  <  $count ; $i ++ )
+		$ranges		=  [] ;
+		$start_value	=  ( integer ) $array [0] ;
+		$end_value	=  $start_value ;
+
+		for  ( $i = 1 ; $i  <  $value_count ; $i ++ )
 		   {
-			if  ( $array [$i]  !=  $array [$i-1] + 1 )
+			$current_value		=  ( integer ) $array [$i] ;
+
+			if  ( $current_value - $end_value  >  1 )
 			   {
-				$ranges []	=  [ $start_value, $array [$i - 1] ] ;
-				$start_value	=  $array [$i] ;
+				$ranges []	=  [ $start_value, $end_value ] ;
+				$start_value	= 
+				$end_value	=  $current_value ;
 			    }
+			else
+				$end_value	=  $current_value ;
 		    }
 
-		$ranges []	=  [ $start_value, $array [ $count - 1 ] ] ;
+		$ranges []	=  [ $start_value, $end_value ] ;
 
 		return ( $ranges ) ;
 	    }
+
+
 
 
 	/*--------------------------------------------------------------------------------------------------------------
