@@ -763,7 +763,7 @@ class  ArrayHelpers		extends  Object
 	        ToRanges - Extracts ranges of values from a numeric array.
 	 
 	    PROTOTYPE
-	        $ranges		=  ArrayHelpers::ToRanges ( $array ) ;
+	        $ranges		=  ArrayHelpers::ToRanges ( $array, $sort = false ) ;
 	 
 	    DESCRIPTION
 	        Extracts ranges of values from an array containing integer elements.
@@ -771,12 +771,19 @@ class  ArrayHelpers		extends  Object
 	    PARAMETERS
 	        $array (array of integers) -
 	                Values to be assembled as ranges.
+
+		$sort (boolean) -
+			When true, the array will be sorted before processing.
 	 
 	    RETURN VALUE
 	        An array of two-elements arrays, containing the lower and upper bounds of each range.
+
+	    NOTES
+		It is the responsibility of the caller to ensure that the supplied array is a one-dimensional array of
+		integer values.
 	 
 	 *-------------------------------------------------------------------------------------------------------------*/
-	public static function  ToRanges ( $array, $sort = true )
+	public static function  ToRanges ( $array, $sort = false )
 	   {
 		$value_count	=  count ( $array ) ;
 
@@ -808,8 +815,6 @@ class  ArrayHelpers		extends  Object
 
 		return ( $ranges ) ;
 	    }
-
-
 
 
 	/*--------------------------------------------------------------------------------------------------------------
