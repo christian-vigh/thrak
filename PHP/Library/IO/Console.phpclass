@@ -40,6 +40,9 @@
     [Version : 1.0.7]		[Date : 2016/05/13]		[Author : CV]
 	. Fixed the __Output() method, which added unnecessary newlines in command-line mode.
 
+    [Version : 1.0.8]		[Date : 2017/03/18]		[Author : CV]
+	. Added output function to include line number.
+
  ***************************************************************************************************/
 namespace 	Thrak\IO ;
 
@@ -349,6 +352,12 @@ class  Console 		extends  Object
 		Displays the specified message.
 
 	    PARAMETERS
+		$fp (resource) -
+			Output file.
+
+		$numbering (boolean) -
+			When true, line numbers are prepended to each line.
+
 	    	$message (string) -
 			Message to be displayed. A newline is added at the end of the message if none
 			was provided.
@@ -357,57 +366,93 @@ class  Console 		extends  Object
 	    	This function works both for text and html output.
 
 	 --------------------------------------------------------------------------------------------*/
-        private static function  __Output ( $fp, $value )
+	private static function  __flatten_output_strings ( &$result = [], $values )
+	   {
+		foreach  ( $values  as  $value )
+		   {
+			if  ( ! is_array ( $value ) )
+			   {
+				$subvalues	=  explode ( "\n", $value ) ;
+
+				foreach  ( $subvalues  as  $value )
+					$result []	=  rtrim ( $value ) ;
+			    }
+			else
+				self::__flatten_output_strings ( $result, $value ) ;
+		    }
+	    }
+
+
+        private static function  __Output ( $fp, $numbering, $value )
            {
-        	foreach  ( $value  as  $message )
+		// Retrieve individual output lines
+		$output_values		=  [] ;
+		self::__flatten_output_strings ( $output_values, $value ) ;
+
+		// Compute the width in characters needed to display line numbers
+		$output_value_count	=  count ( $output_values ) ;
+		$width			=  ceil ( log ( $output_value_count + 0.1, 10 ) ) ;
+		
+		// Output will not be the same if we are running in cli or web mode
+		if  ( IS_STANDALONE )
+		   {
+			$nl		=  PHP_EOL ;
+			$lnfmt		=  "%0{$width}d: " ;
+		    }
+		else
+		   {
+			$nl		=  '<br/>' ;
+			$lnfmt		=  '<div style="font-family: courrier; display: inline; margin-right: 8px">%0' . $width . 'd: </div>' ;
+		    }
+
+		// Loop through strings to be output
+        	for  ( $i = 0 ; $i  <  $output_value_count ; $i ++ )
         	   {
-        		if  ( is_array ( $message ) )
-        			self::__Output ( $fp, $message ) ;
-        		else
-        		   {
-				$need_newline	=  ( substr ( $message, -1, 1 )  !=  "\n" ) ;
+			$output_value	=  $output_values [$i] ;
 
-				if  ( IS_STANDALONE ) 
-				   {
-					$message	=  str_replace ( "\r", '', $message ) ;
-					$message	=  str_replace ( "\n", PHP_EOL, $message ) ;
-					$newline	=  PHP_EOL ;
-				    }
-				else
-				   {
-					$message	=  str_replace ( [ "\r", "\n" ], [ '', '<br/>' ], $message ) ;
-					$newline	=  '<br/>' ;
-				    }
+			// When running from a command-line prompt in Windows, we may need to perform some conversions
+			if  ( IS_WINDOWS  &&  IS_CLI )
+			   {
+				$encoding	=  mb_detect_encoding ( $output_value, [ 'ASCII', 'ISO-8859-1', 'UTF-8' ] ) ;
+				$str		=  @iconv ( $encoding, 'CP437', $output_value ) ;
 
-        		   	if  ( $need_newline )
-        		   		$message .= $newline ;
+				if  ( $str  !==  false )
+					$output_value	=  $str ;
+			    }
 
-				if  ( IS_WINDOWS  &&  IS_CLI )
-				   {
-					$str	=  @iconv ( 'ISO-8859-1', 'CP437', $message ) ;
+			// Build the message, with an optional line number
+			$message	=  '' ;
 
-					if  ( $str  !==  false )
-						$message	=  $str ;
-				    }
+			if  ( $numbering )
+				$message	=  sprintf ( $lnfmt, $i + 1 ) ;
 
-				if  ( IS_STANDALONE )
-        		   		fputs ( $fp, $message ) ;
-				else 
+			$message	.=  $output_value . $nl ;
+
+			// In standalone mode we may use a file resource...
+			if  ( IS_STANDALONE )
+			   {
+				// ... except when it's STDIN, because otherwise the output may go to another stream if we use fputs()
+				if  ( $fp  ==  STDOUT )
 					echo ( $message ) ;
-        		   }
+				else
+					fputs ( $fp, $message ) ;
+			    }
+			else
+				echo ( $message ) ;
         	    }
             }
 
 
+	// Output functions without line numbers
 	public static function  Output ( )
 	   {
-		self::__Output ( STDOUT, func_get_args ( ) ) ;
+		self::__Output ( STDOUT, false, func_get_args ( ) ) ;
 	    }
 
 	
 	public static function  ErrorOutput ( )
 	   {
-		self::__Output ( STDERR, func_get_args ( ) ) ;
+		self::__Output ( STDERR, false, func_get_args ( ) ) ;
 	    }
 
 	
@@ -416,7 +461,29 @@ class  Console 		extends  Object
 		$args	=  func_get_args ( ) ;
 		$fp	=  array_shift ( $args ) ;
 		
-		self::__Output ( $fp, $args ) ;
+		self::__Output ( $fp, false, $args ) ;
+	    }
+
+
+	// Output functions with line numbers
+	public static function  NlOutput ( )
+	   {
+		self::__Output ( STDOUT, true, func_get_args ( ) ) ;
+	    }
+
+	
+	public static function  NlErrorOutput ( )
+	   {
+		self::__Output ( STDERR, true, func_get_args ( ) ) ;
+	    }
+
+	
+	public static function  NlFileOutput ( )
+	   {
+		$args	=  func_get_args ( ) ;
+		$fp	=  array_shift ( $args ) ;
+		
+		self::__Output ( $fp, true, $args ) ;
 	    }
 
 	
