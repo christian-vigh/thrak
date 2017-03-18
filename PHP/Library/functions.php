@@ -26,6 +26,9 @@
     [Version : 1.0.4]	[Date : 2015/11/20]	[Author : CV]
 	. Added the dateex() function.
 
+    [Version : 1.0.5]	[Date : 2017/03/18]	[Author : CV]
+	. Added the nloutput() and nlerror_output() functions.
+
  ***************************************************************************************************/
 defined ( '__THRAK_SETUP__' ) or die ( "This file cannot be accessed directly." ) ;
 
@@ -93,6 +96,19 @@ function  error_output ( )
    {
 	Console::ErrorOutput ( func_get_args ( ) ) ;
     }
+
+
+function  nloutput ( )
+   {
+	Console::NlOutput ( func_get_args ( ) ) ;
+    }
+
+
+function  nlerror_output ( )
+   {
+	Console::NlErrorOutput ( func_get_args ( ) ) ;
+    }
+
 
 
 /*==================================================================================================
