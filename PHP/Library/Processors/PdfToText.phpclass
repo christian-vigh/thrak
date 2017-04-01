@@ -24,24 +24,8 @@
         Christian Vigh, 04/2016.
 
     HISTORY
-    [Version : 1.5.0]	[Date : 2017/03/31]     [Author : CV]
-	. Implemented page layout rendering !!!
-	  - Text parts are displayed in the same order as Acrobat Reader displays them
-	  - Spaces are inserted in the same line when necessary (the BlockSeparator property can be used
-	    to separate items that are on the same line, at different -x-coordinates)
-	  - The PDFOPT_RAW_LAYOUT and PDFOPT_BASIC_LAYOUT options have been added. The default is 
-	    PDFOPT_RAW_LAYOUT, which behaves as in the previous versions. The PDFOPT_BASIC_LAYOUT will 
-	    activate layout rendering.
-	  - The new ExtraTextWidth property allows to adjust the computed text widths to help determine if
-	    two consecutive blocks of text on the same line should be separated by a whitespace or not.
-	  - Hold a separate set of instructions to be removed from PDF stream before interpretation,
-	    depending on whether the page layout option has been activated or not. This is done not to impact
-	    the performance of this class for callers that use it the traditional way.
-	  This new feature allows to process more efficiently PDF files presenting tabular data or form data
-	  (such as tickets reservations for example). Note that the PDFOPT_BASIC_LAYOUT option simply ensures
-	  that items coming from the PDF file are shown in the correct order and not improperly concatenated ; 
-	  it does not visually reproduce  what you could see with Acrobat Reader.
-	. Font descriptors were mistakenly interpreted as font entries.
+    [Version : 1.5.1]	[Date : 2017/03/31]     [Author : CV]
+	. Corrected a bug in the LZW decompression algorithm.
 	
     (...)
 
@@ -781,7 +765,7 @@ abstract class  PdfObjectBase		extends  Object
 class  PdfToText 	extends PdfObjectBase
    {
 	// Current version of the class
-	const		VERSION					=  "1.5.0" ;
+	const		VERSION					=  "1.5.1" ;
 
 	// Pdf processing options
 	const		PDFOPT_NONE				=  0x00000000 ;		// No extra option
@@ -2171,6 +2155,7 @@ class  PdfToText 	extends PdfObjectBase
 	//	for a performance gain of 30-35%.
 	private function   __decode_lzw ( $data ) 
 	   {
+		// The initial dictionary contains 256 entries where each index is equal to its character representation
 		static $InitialDictionary      =  array
 		   (
 			"\x00", "\x01", "\x02", "\x03", "\x04", "\x05", "\x06", "\x07", "\x08", "\x09", "\x0A", "\x0B", "\x0C", "\x0D", "\x0E", "\x0F",
@@ -2190,48 +2175,54 @@ class  PdfToText 	extends PdfObjectBase
 			"\xE0", "\xE1", "\xE2", "\xE3", "\xE4", "\xE5", "\xE6", "\xE7", "\xE8", "\xE9", "\xEA", "\xEB", "\xEC", "\xED", "\xEE", "\xEF",
 			"\xF0", "\xF1", "\xF2", "\xF3", "\xF4", "\xF5", "\xF6", "\xF7", "\xF8", "\xF9", "\xFA", "\xFB", "\xFC", "\xFD", "\xFE", "\xFF"
 		    ) ;
+
+		// Dictionary lengths - when we reach one of the values specified as the key, we have to set the bit length to the corresponding value
 		static  $DictionaryLengths	=  array 
 		   (
 			511		=>  10,
 			1023		=>  11,
-			2047		=>  12,
-			4095		=>  13,
-			8191		=>  14
+			2047		=>  12
 		    ) ;
 
-		$result			=  '' ;
-		$data_length		=  strlen ( $data ) ;
-		$max_data_bits		=  $data_length << 3 ;
-		$current_data_bit	=  0 ;
+		// Decoded string to be returned
+		$result		=  '' ;
 
 		// Convert string to binary string
-		$bit_string		=  '' ;
+		$bit_string	=  '' ;
+		$data_length	=  strlen ( $data ) ;
 
-		for  ( $i = 0 ; $i  <  $data_length ; $i ++ )
-			$bit_string	.=  sprintf ( '%08b', ord ( $data [$i] ) ) ;
+		for  ( $i = 0 ; $i  <  $data_length ; $i ++ ) 
+			$bit_string	.=  sprintf ( '%08b', ord ( $data[$i] ) ) ;
 
+		$data_length	*=  8 ;
+		
+		// Initialize dictionary
 		$bit_length		=  9 ;
 		$dictionary_index	=  258 ;
-
-		// initialize the dictionary (with the first 256 entries).
 		$dictionary		=  $InitialDictionary ;
+
+		// Previous value
 		$previous_index		=  0 ;
 
-		// Until we encounter the EOD marker (257), read $bit_length bits
-		while  ( ( $current_data_bit  <  $max_data_bits )  &&  ( ( $index = bindec ( substr ( $bit_string, $current_data_bit, $bit_length ) ) )  !==  257 ) ) 
-		   { 
-			$current_data_bit	+=  $bit_length ;
+		// Start index in bit string
+		$start_index		=  0 ;
 
-			// Normal case : Simply process the entry
-			if  ( $index  !==   256  &&  $previous_index  !==  256 )
-			   {
-				// Check if the entry exists in the dictionary
+		// Until we encounter the EOD marker (257), read $bit_length bits
+		while  ( ( $start_index  <  $data_length )  &&  ( ( $index = bindec ( substr ( $bit_string, $start_index, $bit_length ) ) )  !==  257 ) ) 
+		   {
+			// Move to next bit position
+			$start_index	+=  $bit_length ;
+
+			if  ( $index  !==  256  &&  $previous_index  !==  256 )
+			    {
+				// Check if index exists in the dictionary and remember it
 				if  ( $index  <  $dictionary_index ) 
 				   {
 					$result			.=  $dictionary [ $index ] ;
 					$dictionary_value	 =  $dictionary [ $previous_index ] . $dictionary [ $index ] [0] ;
-					$previous_index		 =  $index ;		// Remember this index
+					$previous_index		 =  $index ;
 				    } 
+				// Index does not exist - add it to the dictionary
 				else 
 				   {
 					$dictionary_value	 =  $dictionary [ $previous_index ] . $dictionary [ $previous_index ] [0] ;
@@ -2241,31 +2232,32 @@ class  PdfToText 	extends PdfObjectBase
 				// Update dictionary
 				$dictionary [ $dictionary_index ++ ]	=  $dictionary_value ;
 				
-				// Update bit length if needed 
+				// Change bit length whenever we reach an index limit
 				if  ( isset ( $DictionaryLengths [ $dictionary_index ] ) )
-				   {
 					$bit_length	=  $DictionaryLengths [ $dictionary_index ] ;
-				    }
 			    }
-			// Clear-table marker
-			else if  ( $index  ===  256 ) 
+			// Clear table marker
+			else if  ( $index  ===  256) 
 			   { 
-				// Reset code length in bits and dictionary index
+				// Reset dictionary and bit length
+				// Reset dictionary and bit length
 				$bit_length		=  9 ;
 				$dictionary_index	=  258 ;
 				$previous_index		=  256 ;
-				$dictionary		=  $InitialDictionary ;		// Reset the dictionary, with its first 256 entries
-			    }
+				$dictionary		=  $InitialDictionary ;
+			     }
 			// First entry
-			else
+			else	// $previous_index  === 256 
 			   {
+				// first entry
 				$result		.=  $dictionary [ $index ] ;
 				$previous_index  =  $index ;
-			    }  
-		}
+			    } 
+		    }
 
+		// All done, return
 		return ( $result ) ;
-	    }
+	   }
 
 
 	// __decode_ascii_hex -
@@ -3653,7 +3645,7 @@ class  PdfToText 	extends PdfObjectBase
 		//	[ sx tx ty sy x y ]
 		// (although tx and ty are not useful here, since they affect the graphic orientation of the text)
 		// sx and sy are scaling parameters, actually a multiplier for the x and y parameters. We only keep 
-		static		$IdentityMatrix		=  array ( 1, 1, 0, 0 ) ;
+		static		$IdentityMatrix		=  array ( 1, 0, 0, 1, 0, 0 ) ;
 
 		// Remove useless instructions
 		$new_data	=  $this -> __strip_useless_instructions ( $data ) ;
@@ -3675,8 +3667,8 @@ class  PdfToText 	extends PdfObjectBase
 		$data_index 				=  0 ;
 
 		// Text matrices
-		$initial_tm				=  
-		$current_tm				=  $IdentityMatrix ;
+		$CTM				=  
+		$Tm				=  $IdentityMatrix ;
 
 		// Nesting level of BT..ET instructions (Begin text/End text) - they are not nestable but be prepared to meet buggy PDFs
 		$BT_nesting_level			=  0 ;
@@ -3775,10 +3767,12 @@ class  PdfToText 	extends PdfObjectBase
 
 					// Tm instruction
 					case	'm' :
-						$current_tm [0]			=  ( double ) $operand_stack [0] ;
-						$current_tm [1]			=  ( double ) $operand_stack [3] ;
-						$current_tm [2]			=  $initial_tm [2] + ( double ) $operand_stack [4] ;
-						$current_tm [3]			=  $initial_tm [3] + ( double ) $operand_stack [5] ;
+						$Tm [0]			=  ( double ) $operand_stack [0] ;
+						$Tm [1]			=  ( double ) $operand_stack [1] ;
+						$Tm [2]			=  ( double ) $operand_stack [2] ;
+						$Tm [3]			=  ( double ) $operand_stack [3] ;
+						$Tm [4]			=  ( double ) $operand_stack [4] ;
+						$Tm [5]			=  ( double ) $operand_stack [5] ;
 
 						$enhanced_statistics  &&  $this -> Statistics [ 'Distributions' ] [ 'Tm' ] ++ ;
 						break ;
@@ -3807,8 +3801,9 @@ class  PdfToText 	extends PdfObjectBase
 
 					// Td instruction
 					case	'd' :
-						$current_tm [2]		+=  ( double ) $operand_stack [0] ;
-						$current_tm [3]		+=  ( double ) $operand_stack [1] ;
+//TODO
+						$Tm [2]		+=  ( double ) $operand_stack [0] ;
+						$Tm [3]		+=  ( double ) $operand_stack [1] ;
 
 						$enhanced_statistics  &&  $this -> Statistics [ 'Distributions' ] [ 'Td' ] ++ ;
 						break ;
@@ -3820,8 +3815,9 @@ class  PdfToText 	extends PdfObjectBase
 
 					// TD instruction
 					case	'D' :
-						$current_tm [2]		 =  ( double ) $operand_stack [0] ;
-						$current_tm [3]		 =  ( double ) $operand_stack [1] ;
+//TODO
+						$Tm [2]		 =  ( double ) $operand_stack [0] ;
+						$Tm [3]		 =  ( double ) $operand_stack [1] ;
 
 						$enhanced_statistics  &&  $this -> Statistics [ 'Distributions' ] [ 'TD' ] ++ ;
 						break ;
@@ -3868,12 +3864,14 @@ class  PdfToText 	extends PdfObjectBase
 			// cm instruction
 			else if  ( $token  ==  'cm' )
 			   {
-				$initial_tm [0]		 =  ( double ) $operand_stack [0] ;
-				$initial_tm [1]		 =  ( double ) $operand_stack [3] ;
-				$initial_tm [2]		 =  ( double ) $operand_stack [4] ;
-				$initial_tm [3]		 =  ( double ) $operand_stack [5] ;
+				$a		 =  ( double ) $operand_stack [0] ;
+				$b		 =  ( double ) $operand_stack [1] ;
+				$c		 =  ( double ) $operand_stack [2] ;
+				$d		 =  ( double ) $operand_stack [3] ;
+				$e		 =  ( double ) $operand_stack [4] ;
+				$f		 =  ( double ) $operand_stack [5] ;
 
-				$current_tm		 =  $initial_tm ;
+				$Tm			=  $CTM ;
 				$operand_stack		=  array ( ) ;
 
 				$enhanced_statistics  &&  $this -> Statistics [ 'Distributions' ] [ 'cm' ] ++ ;
@@ -3883,14 +3881,11 @@ class  PdfToText 	extends PdfObjectBase
 			   {
 				if  ( $token_start  ===  'q' )
 				   {
-					$graphic_stack [ $graphic_stack_size ++ ]	=  array ( $initial_tm, $current_tm ) ;
+					$graphic_stack [ $graphic_stack_size ++ ]	=  $CTM ;
 				    }
-				else
+				else if  ( $graphic_stack_size )
 				   {
-					if  ( $graphic_stack_size )
-					   {
-						list ( $initial_tm, $current_tm	)	=  $graphic_stack [ -- $graphic_stack_size ] ;
-					    }
+					$CTM		=  $graphic_stack [ -- $graphic_stack_size ] ;
 				    }
 			    }
 			// Text array in the [...] notation. Well, in fact, even non-array constructs are returned as an array by the
@@ -3901,15 +3896,15 @@ class  PdfToText 	extends PdfObjectBase
 
 				if  ( $text  !==  '' )
 				   {
-					if  ( $current_tm [0]  >=  0 )
-						$x	=  $current_tm [2] ;
+					if  ( $Tm [0]  >=  0 )
+						$x	=  $Tm [2] ;
 					else
-						$x	=  $page_attributes [ 'width' ] - $current_tm [2] ;
+						$x	=  $page_attributes [ 'width' ] - $Tm [2] ;
 
-					if  ( $current_tm [1]  >=  0 )
-						$y	=  $current_tm [3] ;
+					if  ( $Tm [1]  >=  0 )
+						$y	=  $Tm [3] ;
 					else
-						$y	=  $page_attributes [ 'height' ] - $current_tm [3] ;
+						$y	=  $page_attributes [ 'height' ] - $Tm [3] ;
 
 					$fragment	=  array
 					   (
@@ -3918,9 +3913,9 @@ class  PdfToText 	extends PdfObjectBase
 						'page'		=>  $page_number,
 						'template'	=>  $current_template,
 						'font'		=>  $current_font_name,
-						'font-height'	=>  abs ( $current_font_height * $current_tm [1] ),
+						'font-height'	=>  abs ( $current_font_height * $Tm [1] ),
 						'text'		=>  $text,
-						'initial'	=>  $initial_tm, 'current' => $current_tm
+						'initial'	=>  $CTM, 'current' => $Tm
 					    ) ;
 
 					$page_fragments []	=  $fragment ;
@@ -3932,11 +3927,11 @@ class  PdfToText 	extends PdfObjectBase
 			else if  ( $token  ==  'BT' )
 			   {
 				if  ( ! $BT_nesting_level )
-					$current_tm	=  $IdentityMatrix ;
+					$Tm	=  $IdentityMatrix ;
 
 				$BT_nesting_level ++ ;
 				$operand_stack					=  array ( ) ;
-				$graphic_stack [ $graphic_stack_size ++ ]	=  array ( $initial_tm, $current_tm ) ;
+				$graphic_stack [ $graphic_stack_size ++ ]	=  array ( $CTM, $Tm ) ;
 
 				$enhanced_statistics  &&  $this -> Statistics [ 'Distributions' ] [ 'BT' ] ++ ;
 			    }
@@ -3949,7 +3944,7 @@ class  PdfToText 	extends PdfObjectBase
 
 					if  ( ! $BT_nesting_level  &&  $graphic_stack_size )
 					   {
-						list ( $initial_tm, $current_tm	)	=  $graphic_stack [ -- $graphic_stack_size ] ;
+						list ( $CTM, $Tm	)	=  $graphic_stack [ -- $graphic_stack_size ] ;
 					    }
 
 				    }
@@ -3959,7 +3954,9 @@ class  PdfToText 	extends PdfObjectBase
 			// Template (substituted in __next_token)
 			else if  ( $token_start  ===  '!' )
 			   {
-			warning ( "Template handling not yet implemented." ) ;
+				if  ( self::$DEBUG ) 
+					warning ( "Template handling not yet implemented." ) ;
+
 				$enhanced_statistics  &&  $this -> Statistics [ 'Distributions' ] [ 'template' ] ++ ;
 			    }
 			// Other instructions
