@@ -339,10 +339,10 @@ class  WShell extends AbstractWindowsBase
 	   {
 		$result		=  Formatting::InsertTextAtColumn ( $text, "^ $message", $column + 1 ) ;
 		
-		error ( new \Thrak\System\ParseException ( "SendKeys input syntax error :\n\t" . str_replace ( "\n", "\n\t", $result ) ) ) ;
+		throw ( new \Exception ( "SendKeys input syntax error :\n\t" . str_replace ( "\n", "\n\t", $result ) ) ) ;
 	    }
-	
-	
+
+
 	// __sendkeys_escape -
 	//	Processes character escaped after a backslash.
 	private function  __sendkeys_escape ( $ch, $modifiers )
@@ -406,7 +406,7 @@ class  WShell extends AbstractWindowsBase
 				case	'+' :
 				case	'^' :
 				case	'%' :
-					$modifiers	=  StringUtilities::RemoveDuplicateCharacters ( "$modifiers$ch" ) ;
+					$modifiers	.=  $ch ;
 					break ;
 					
 				// Tilde : synonym for {ENTER} ; make sure the character won't be escaped during second pass
