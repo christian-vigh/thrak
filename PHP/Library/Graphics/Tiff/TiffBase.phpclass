@@ -1,0 +1,955 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        TiffBase.phpclass
+
+    DESCRIPTION
+        Base classes for other TIFF manipulation classes.
+
+    AUTHOR
+        Christian Vigh, 04/2017.
+
+    REFERENCES
+	- https://www.itu.int/itudoc/itu-t/com16/tiff-fx/docs/tiff6.pdf :
+		Specifications of the TIFF file format version 6.
+	- http://www.awaresystems.be/imaging/tiff.html :
+		Where to get a list of available TIFF IFD tags.
+
+    HISTORY
+    [Version : 1.0]	[Date : 2017-04-08]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Graphics ;
+
+// Used namespaces and objects
+use 		Thrak\System\Object ;
+
+
+class  TiffException	extends  \Thrak\System\Exception {}
+
+/*==============================================================================================================
+
+        Custom error reporting functions.
+
+  ==============================================================================================================*/
+if  ( ! function_exists ( 'warning' ) )
+   {
+	function  warning ( $message )
+	   {
+		trigger_error ( $message, E_USER_WARNING ) ;
+	    }
+    }
+
+
+if  ( ! function_exists ( 'error' ) )
+   {
+	function  error ( $message )
+	   {
+		if  ( is_string ( $message ) )
+			trigger_error ( $message, E_USER_ERROR ) ;
+		else if (  is_a ( $message, '\Exception' ) )
+			throw $message ;
+	    }
+    }
+
+
+/*==============================================================================================================
+
+    class TiffImage -
+        Base class for TiffSplitter. Contains mainly constants.
+
+  ==============================================================================================================*/
+abstract class  TiffImage	extends  Object 
+   {
+	// Endianness of the supplied file - given by the first two bytes
+	const		LITTLE_ENDIAN				=  0x4949 ;
+	const		BIG_ENDIAN				=  0x4D4D ;
+
+	// A constant identifier, at offsets 2..3 of the TIFF file (this WORD16 depends on the endianness given by the first two bytes)
+	const		TIFF_IDENTIFIER				=  42 ;
+
+	// Type of entries in the Image File Directory (IFD)
+	const		TYPE_BYTE				=  1 ;		// 8-byte unsigned integer
+	const		TYPE_ASCII				=  2 ;		// ASCII 8-bit byte that contains a 7-bit ASCII code; the last byte must be NUL (binary zero).
+	const		TYPE_SHORT				=  3 ;		// SHORT 16-bit (2-byte) unsigned integer.
+	const		TYPE_LONG				=  4 ;		// LONG 32-bit (4-byte) unsigned integer.
+	const		TYPE_RATIONAL				=  5 ;		// RATIONAL Two LONGs: the first represents the numerator of a fraction; the second, the denominator.
+	const		TYPE_SBYTE				=  6 ;		// SBYTE An 8-bit signed (twos-complement) integer.
+	const		TYPE_UNDEFINED				=  7 ;		// UNDEFINED An 8-bit byte that may contain anything, depending on the definition of the field.
+	const		TYPE_SSHORT				=  8 ;		// SSHORT A 16-bit (2-byte) signed (twos-complement) integer.
+	const		TYPE_SLONG				=  9 ;		// SLONG A 32-bit (4-byte) signed (twos-complement) integer.
+	const		TYPE_SRATIONAL				=  10 ;		// SRATIONAL Two SLONG’s: the first represents the numerator of a fraction, the second the denominator.
+	const		TYPE_FLOAT				=  11 ;		// FLOAT Single precision (4-byte) IEEE format.
+	const		TYPE_DOUBLE				=  12 ;		// DOUBLE Double precision (8-byte) IEEE format.
+	const		TYPE_IGNORED				=  255 ;	// Indicates a tag that we will ignore
+
+	// Possible kind of values for the Value/Offset value field
+	const		INLINE_ALWAYS				=  0 ;		// Data is always inlined in the Value/Offset Value field
+	const		INLINE_NEVER				=  1 ;		// Data is never inlined
+	const		INLINE_POSSIBLE				=  2 ;		// Data may be inlined 
+
+	// Tags that describe the data contained in the Value/Value offset field
+	const		TAG_ARTIST				=  0x013B ;	// (ASCII) Creator of the image
+	const		TAG_BITS_PER_SAMPLE			=  0x0102 ;	// (SHORT) Number of bits per component (4 or 8)
+	const		TAG_CELL_LENGTH				=  0x0109 ;	// (SHORT) Length of the dithering or halftoning matrix used to create a dithered or halftoned bilevel file.
+	const		TAG_CELL_WIDTH				=  0x0108 ;	// (SHORT) Width of the dithering or halftoning matrix used to create a dithered or halftoned bilevel file
+	const		TAG_COLOR_MAP				=  0x0140 ;	// (SHORT) RGB color map (short???)
+	const		TAG_COMPRESSION				=  0x0103 ;	// (SHORT) Type of compression used (1 = use as few bits as possible, 2 = CCITT FAX compression)
+	const		TAG_COPYRIGHT				=  0x8298 ;	// (ASCII) Copyright information
+	const		TAG_DATETIME				=  0x0132 ;	// (ASCII) Date/time of image creation
+	const		TAG_DOCUMENT_NAME			=  0x010D ;	// (ASCII) The name of the document from which this image was scanned
+	const		TAG_DOT_RANGE				=  0x0150 ;	// (BYTE or SHORT) The component values that correspond to a 0% dot and 100% dot
+	const		TAG_EXIF_IFD				=  0x8769 ;	// (LONG) Pointer to EXIF IFD
+	const		TAG_EXTRA_SAMPLES			=  0x0152 ;	// (SHORT) Extra data associated with image bits
+	const		TAG_FILL_ORDER				=  0x010A ;	// (SHORT) Logical order of bits within a byte 
+	const		TAG_FREE_BYTE_COUNT			=  0x0121 ;	// (LONG) For each string of contiguous unused bytes in a TIFF file, the number of bytes in the string
+	const		TAG_FREE_OFFSETS			=  0x0120 ;	// (LONG) For each string of contiguous unused bytes in a TIFF file, the byte offset of the string
+	const		TAG_GRAY_RESPONSE_CURVE			=  0x0123 ;	// (SHORT) For grayscale data, the optical density of each possible pixel value
+	const		TAG_GRAY_RESPONSE_UNIT			=  0x0122 ;	// (SHORT) The precision of the information contained in the GrayResponseCurve
+	const		TAG_HALFTONE_HINTS			=  0x0141 ;	// (SHORT * 2) 
+	const		TAG_HOST_COMPUTER			=  0x013C ;	// (ASCII) The computer and/or operating system in use at the time of image creation
+	const		TAG_ICC_PROFILE				=  0x8773 ;	// (UNDEFINED) ICC profile data
+	const		TAG_IMAGE_DESCRIPTION			=  0x010E ;	// (ASCII) A string that describes the subject of the image
+	const		TAG_IMAGE_LENGTH			=  0x0101 ;	// (SHORT or LONG) Number of rows in the image
+	const		TAG_IMAGE_PREDICTOR			=  0x013D ;	// (SHORT) Mathematical operator that is applied to the image data before an encoding scheme is applied
+	const		TAG_IMAGE_SOURCE_DATA			=  0x935C ;	// (UNDEFINED) Used by Photoshop
+	const		TAG_IMAGE_WIDTH				=  0x0100 ;	// (SHORT or LONG) Number of columns in the image
+	const		TAG_INK_NAMES				=  0x014D ;	// (ASCII) List of null-separated ink names
+	const		TAG_INK_SET				=  0x014C ;	// (SHORT) The set of inks used in a separated (PhotometricInterpretation=5) image
+	const		TAG_JPEG_INTERCHANGE_FORMAT		=  0x0201 ;	// (LONG) Indicates whether a JPEG interchange format bitstream is present in the TIFF file.
+	const		TAG_JPEG_INTERCHANGE_FORMAT_LENGTH	=  0x0202 ;	// (LONG) Length in bytes of the JPEG interchange format bitstream.
+	const		TAG_JPEG_LOSSLESS_PREDICTORS		=  0x0205 ;	// (SHORT) Points to a list of lossless predictor-selection values, one per component.
+	const		TAG_JPEG_POINT_TRANSFORMS		=  0x0206 ;	// (SHORT) Points to a list of point transform values, one per component
+	const		TAG_JPEG_PROC				=  0x0200 ;	// (SHORT) JPEG process used to generate compressed data
+	const		TAG_JPEG_RESTART_INTERVAL		=  0x0203 ;	// (SHORT) Length of the restart interval used in the compressed image data.
+	const		TAG_JPEG_Q_TABLES			=  0x0207 ;	// (LONG) Points to a list of offsets to the quantization tables, one per component
+	const		TAG_JPEG_DC_TABLES			=  0x0208 ;	// (LONG) Points to a list of offsets to the DC Huffman tables or the lossless Huffman tables, one per component
+	const		TAG_JPEG_AC_TABLES			=  0x0209 ;	// (LONG) Points to a list of offsets to the Huffman AC tables, one per component
+	const		TAG_MAKE				=  0x010F ;	// (ASCII) The scanner manufacturer
+	const		TAG_MAX_SAMPLE_VALUE			=  0x0119 ;	// (SHORT) The maximum component value used.
+	const		TAG_MIN_SAMPLE_VALUE			=  0x0119 ;	// (SHORT) The minimum component value used.
+	const		TAG_MODEL				=  0x0110 ;	// (ASCII) The scanner model name or number
+	const		TAG_NEW_SUBFILE_TYPE			=  0x00FE ;	// (LONG) A general indication of the kind of data contained in this subfile
+	const		TAG_NUMBER_OF_INKS			=  0x014E ;	// (SHORT) Number of inks
+	const		TAG_ORIENTATION				=  0x0112 ;	// (SHORT) The orientation of the image with respect to the rows and columns
+	const		TAG_PAGE_NAME				=  0x011D ;	// (ASCII) The name of the page from which this image was scanned
+	const		TAG_PAGE_NUMBER				=  0x0129 ;	// (SHORT) The page number of the page from which this image was scanned
+	const		TAG_PHOTOMETRIC_INTERPRETATION		=  0x0106 ;	// (SHORT) Indicates whether 0 is white or black (0 = white is zero, 1 = black is zero)
+	const		TAG_PHOTOSHOP				=  0x8649 ;	// (BYTE) Collection of Photoshop image resource blocks
+	const		TAG_PLANAR_CONFIGURATION		=  0x011C ;	// (SHORT) How the components of each pixel are stored.
+	const		TAG_PRIMARY_CHROMACITIES		=  0x013F ;	// (RATIONAL) Chromaticities of the primaries of an image
+	const		TAG_REFERENCE_BLACK_WHITE		=  0x0214 ;	// (RATIONAL) Did not understand this value
+	const		TAG_RESOLUTION_UNIT			=  0x0128 ;	// (SHORT) Resolution (1 = no unit, 2 = inch, 3 = centimeter)
+	const		TAG_ROWS_PER_STRIP			=  0x0116 ;	// (SHORT or LONG) Rows per strip 
+	const		TAG_SAMPLE_FORMAT			=  0x0153 ;	// (SHORT) How to interpret each data sample in a pixel
+	const		TAG_SAMPLES_PER_PIXEL			=  0x0115 ;	// (SHORT) Number of components per pixel (eg, 3 for RGB colors)
+	const		TAG_SMAX_SAMPLE_VALUE			=  0x0154 ;	// (type that best matches sample data) Maximum sample value
+	const		TAG_SMIN_SAMPLE_VALUE			=  0x0154 ;	// (type that best matches sample data) Minimum sample value
+	const		TAG_SOFTWARE				=  0x0131 ;	// (ASCII) Name and version number of the software package(s) used to create the image
+	const		TAG_STRIP_BYTE_COUNTS			=  0x0117 ;	// (SHORT or LONG) Number of bytes in each strip after compression
+	const		TAG_STRIP_OFFSETS			=  0x0111 ;	// (SHORT or LONG) Byte offset of each strip
+	const		TAG_SUBFILE_TYPE			=  0x00FF ;	// (SHORT) A general indication of the kind of data contained in this subfile
+	const		TAG_T4_OPTIONS				=  0x0124 ;	// (LONG) Options for COMPRESSION = 3
+	const		TAG_T6_OPTIONS				=  0x0125 ;	// (LONG) Options for COMPRESSION = 4
+	const		TAG_TARGET_PRINTER			=  0x0151 ;	// (ASCII) Target printer name
+	const		TAG_TILE_BYTE_COUNTS			=  0x0145 ;	// (SHORT or LONG) Number of compressed bytes for each tile
+	const		TAG_TILE_LENGTH				=  0x0143 ;	// (SHORT or LONG) Tile length in pixels
+	const		TAG_TILE_OFFSETS			=  0x0144 ;	// (LONG) Byte offsets of each tile
+	const		TAG_TILE_WIDTH				=  0x0142 ;	// (SHORT or LONG) Tile width in pixels
+	const		TAG_THRESHHOLDING			=  0x0107 ;	// (SHORT) Technique used to convert from gray to black&white pixels
+	const		TAG_TRANSFER_FUNCTION			=  0x012D ;	// (SHORT) Transfer function for images in tabular style
+	const		TAG_TRANSFER_RANGE			=  0x0156 ;	// (SHORT) Expands the range of the transfer function.
+	const		TAG_WHITE_POINT				=  0x013E ;	// (RATIONAL) Chromaticity of the white point of an image
+	const		TAG_X_POSITION				=  0x011E ;	// (RATIONAL) X position of the image
+	const		TAG_X_RESOLUTION			=  0x011A ;	// (RATIONAL) Number of pixels per resolution unit in the image width
+	const		TAG_Y_POSITION				=  0x011F ;	// (RATIONAL) Y position of the image
+	const		TAG_Y_RESOLUTION			=  0x011B ;	// (RATIONAL) Number of pixels per resolution unit in the image length
+	const		TAG_YCC_COEFFICIENTS			=  0x0211 ;	// (RATIONAL) Transformation from RGB to Y Cb Cr data
+	const		TAG_YCC_POSITIONING			=  0x0213 ;	// (SHORT) Specifies the positioning of subsampled chrominance components relative to luminance samples
+	const		TAG_YCC_SUBSAMPLING			=  0x0212 ;	// (SHORT) Subsampling factors used for the chrominance components of a YCbCr image.
+
+	// Output format for individual pages
+	const		OUTPUT_FORMAT_TIFF			=  0 ;
+	//const		OUTPUT_FORMAT_PDF			=  1 ;
+
+	// Types associated to each tag
+	public static	$TagTypes			=  array
+	   (
+		self::TAG_ARTIST				=>  array ( 'type' => self::TYPE_ASCII		, 'inline' => self::INLINE_NEVER	),
+		self::TAG_BITS_PER_SAMPLE			=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_ALWAYS	),
+		self::TAG_CELL_LENGTH				=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_ALWAYS	),
+		self::TAG_CELL_WIDTH				=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_ALWAYS	),
+		self::TAG_COLOR_MAP				=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_NEVER	),
+		self::TAG_COMPRESSION				=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_ALWAYS	),
+		self::TAG_COPYRIGHT				=>  array ( 'type' => self::TYPE_ASCII		, 'inline' => self::INLINE_NEVER	),
+		self::TAG_DATETIME				=>  array ( 'type' => self::TYPE_ASCII		, 'inline' => self::INLINE_NEVER	),
+		self::TAG_DOCUMENT_NAME				=>  array ( 'type' => self::TYPE_ASCII		, 'inline' => self::INLINE_NEVER	),
+		self::TAG_DOT_RANGE				=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_NEVER	),
+		self::TAG_EXIF_IFD				=>  array ( 'type' => self::TYPE_IGNORED	, 'inline' => self::INLINE_NEVER	),
+		self::TAG_EXTRA_SAMPLES				=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_ALWAYS	),
+		self::TAG_FILL_ORDER				=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_ALWAYS	),
+		self::TAG_FREE_BYTE_COUNT			=>  array ( 'type' => self::TYPE_LONG		, 'inline' => self::INLINE_ALWAYS	),
+		self::TAG_FREE_OFFSETS				=>  array ( 'type' => self::TYPE_LONG		, 'inline' => self::INLINE_ALWAYS	),
+		self::TAG_GRAY_RESPONSE_CURVE			=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_NEVER	),
+		self::TAG_GRAY_RESPONSE_UNIT			=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_ALWAYS	),
+		self::TAG_HALFTONE_HINTS			=>  array ( 'type' => self::TYPE_LONG		, 'inline' => self::INLINE_ALWAYS	),
+		self::TAG_HOST_COMPUTER				=>  array ( 'type' => self::TYPE_ASCII		, 'inline' => self::INLINE_NEVER	),
+		self::TAG_ICC_PROFILE				=>  array ( 'type' => self::TYPE_LONG		, 'inline' => self::INLINE_NEVER	),
+		self::TAG_IMAGE_DESCRIPTION			=>  array ( 'type' => self::TYPE_ASCII		, 'inline' => self::INLINE_NEVER	),
+		self::TAG_IMAGE_LENGTH				=>  array ( 'type' => self::TYPE_LONG		, 'inline' => self::INLINE_ALWAYS	),
+		self::TAG_IMAGE_PREDICTOR			=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_ALWAYS	),
+		self::TAG_IMAGE_SOURCE_DATA			=>  array ( 'type' => self::TYPE_UNDEFINED	, 'inline' => self::INLINE_NEVER	),
+		self::TAG_IMAGE_WIDTH				=>  array ( 'type' => self::TYPE_LONG		, 'inline' => self::INLINE_ALWAYS	),
+		self::TAG_INK_NAMES				=>  array ( 'type' => self::TYPE_ASCII		, 'inline' => self::INLINE_NEVER	),
+		self::TAG_INK_SET				=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_ALWAYS	),
+		self::TAG_JPEG_INTERCHANGE_FORMAT		=>  array ( 'type' => self::TYPE_LONG		, 'inline' => self::INLINE_NEVER	),
+		self::TAG_JPEG_INTERCHANGE_FORMAT_LENGTH	=>  array ( 'type' => self::TYPE_LONG		, 'inline' => self::INLINE_ALWAYS	),
+		self::TAG_JPEG_LOSSLESS_PREDICTORS		=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_NEVER	),
+		self::TAG_JPEG_POINT_TRANSFORMS			=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_NEVER	),
+		self::TAG_JPEG_PROC				=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_ALWAYS	),
+		self::TAG_JPEG_RESTART_INTERVAL			=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_ALWAYS	),
+		self::TAG_JPEG_Q_TABLES				=>  array ( 'type' => self::TYPE_LONG		, 'inline' => self::INLINE_NEVER	),
+		self::TAG_JPEG_AC_TABLES			=>  array ( 'type' => self::TYPE_LONG		, 'inline' => self::INLINE_NEVER	),
+		self::TAG_JPEG_DC_TABLES			=>  array ( 'type' => self::TYPE_LONG		, 'inline' => self::INLINE_NEVER	),
+		self::TAG_MAKE					=>  array ( 'type' => self::TYPE_ASCII		, 'inline' => self::INLINE_NEVER	),
+		self::TAG_MAX_SAMPLE_VALUE			=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_POSSIBLE	),
+		self::TAG_MIN_SAMPLE_VALUE			=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_POSSIBLE	),
+		self::TAG_MODEL					=>  array ( 'type' => self::TYPE_ASCII		, 'inline' => self::INLINE_NEVER	),
+		self::TAG_NEW_SUBFILE_TYPE			=>  array ( 'type' => self::TYPE_LONG		, 'inline' => self::INLINE_ALWAYS	),
+		self::TAG_NUMBER_OF_INKS			=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_ALWAYS	),
+		self::TAG_ORIENTATION				=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_ALWAYS	),
+		self::TAG_PAGE_NAME				=>  array ( 'type' => self::TYPE_ASCII		, 'inline' => self::INLINE_NEVER	),
+		self::TAG_PAGE_NUMBER				=>  array ( 'type' => self::TYPE_LONG		, 'inline' => self::INLINE_ALWAYS	),
+		self::TAG_PHOTOMETRIC_INTERPRETATION		=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_ALWAYS	),
+		self::TAG_PHOTOSHOP				=>  array ( 'type' => self::TYPE_BYTE		, 'inline' => self::INLINE_NEVER	),
+		self::TAG_PLANAR_CONFIGURATION			=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_ALWAYS	),
+		self::TAG_PRIMARY_CHROMACITIES			=>  array ( 'type' => self::TYPE_RATIONAL	, 'inline' => self::INLINE_NEVER	),
+		self::TAG_REFERENCE_BLACK_WHITE			=>  array ( 'type' => self::TYPE_RATIONAL	, 'inline' => self::INLINE_NEVER	),
+		self::TAG_RESOLUTION_UNIT			=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_ALWAYS	),
+		self::TAG_ROWS_PER_STRIP			=>  array ( 'type' => self::TYPE_LONG		, 'inline' => self::INLINE_ALWAYS	),
+		self::TAG_SAMPLE_FORMAT				=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_NEVER	),
+		self::TAG_SAMPLES_PER_PIXEL			=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_ALWAYS	),
+		self::TAG_SMAX_SAMPLE_VALUE			=>  array ( 'type' => self::TYPE_IGNORED	, 'inline' => self::INLINE_ALWAYS	),
+		self::TAG_SMIN_SAMPLE_VALUE			=>  array ( 'type' => self::TYPE_IGNORED	, 'inline' => self::INLINE_ALWAYS	),
+		self::TAG_SOFTWARE				=>  array ( 'type' => self::TYPE_ASCII		, 'inline' => self::INLINE_NEVER	),
+		self::TAG_STRIP_BYTE_COUNTS			=>  array ( 'type' => self::TYPE_LONG		, 'inline' => self::INLINE_NEVER	),
+		self::TAG_STRIP_OFFSETS				=>  array ( 'type' => self::TYPE_LONG		, 'inline' => self::INLINE_NEVER	),
+		self::TAG_SUBFILE_TYPE				=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_ALWAYS	),
+		self::TAG_T4_OPTIONS				=>  array ( 'type' => self::TYPE_LONG		, 'inline' => self::INLINE_ALWAYS	),
+		self::TAG_T6_OPTIONS				=>  array ( 'type' => self::TYPE_LONG		, 'inline' => self::INLINE_ALWAYS	),
+		self::TAG_TARGET_PRINTER			=>  array ( 'type' => self::TYPE_ASCII		, 'inline' => self::INLINE_NEVER	),
+		self::TAG_TILE_BYTE_COUNTS			=>  array ( 'type' => self::TYPE_LONG		, 'inline' => self::INLINE_NEVER	),
+		self::TAG_TILE_LENGTH				=>  array ( 'type' => self::TYPE_LONG		, 'inline' => self::INLINE_ALWAYS	),
+		self::TAG_TILE_OFFSETS				=>  array ( 'type' => self::TYPE_LONG		, 'inline' => self::INLINE_NEVER	),
+		self::TAG_TILE_WIDTH				=>  array ( 'type' => self::TYPE_LONG		, 'inline' => self::INLINE_ALWAYS	),
+		self::TAG_THRESHHOLDING				=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_ALWAYS	),
+		self::TAG_TRANSFER_FUNCTION			=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_NEVER	),
+		self::TAG_TRANSFER_RANGE			=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_NEVER	),
+		self::TAG_WHITE_POINT				=>  array ( 'type' => self::TYPE_RATIONAL	, 'inline' => self::INLINE_NEVER	),
+		self::TAG_X_POSITION				=>  array ( 'type' => self::TYPE_RATIONAL	, 'inline' => self::INLINE_NEVER	),
+		self::TAG_X_RESOLUTION				=>  array ( 'type' => self::TYPE_RATIONAL	, 'inline' => self::INLINE_NEVER	),
+		self::TAG_Y_POSITION				=>  array ( 'type' => self::TYPE_RATIONAL	, 'inline' => self::INLINE_NEVER	),
+		self::TAG_Y_RESOLUTION				=>  array ( 'type' => self::TYPE_RATIONAL	, 'inline' => self::INLINE_NEVER	),
+		self::TAG_YCC_COEFFICIENTS			=>  array ( 'type' => self::TYPE_RATIONAL	, 'inline' => self::INLINE_NEVER	),
+		self::TAG_YCC_POSITIONING			=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_ALWAYS	),
+		self::TAG_YCC_SUBSAMPLING			=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_ALWAYS	),
+	    ) ;	
+
+	// Indicates whether static information has been initialized 
+	static private	$StaticInitialized	=  false ;
+
+	public function  __construct ( )
+	   {
+		if  ( ! self::$StaticInitialized )
+		   {
+			$me		=  new  \ReflectionClass ( $this ) ;
+			$constants	=  $me -> getConstants ( ) ;
+
+			foreach  ( $constants  as  $name => $value )
+			   {
+				if  ( ! strncmp ( $name, 'TAG_', 4 ) )
+				   {
+					if  ( isset ( self::$TagTypes [ $value ] ) )
+						self::$TagTypes [ $value ] [ 'name' ]	=  $name ;
+				    }
+			    }
+
+			self::$StaticInitialized	=  true ;
+		    }
+
+		parent::__construct ( ) ;
+	    }
+    }
+
+
+/*==============================================================================================================
+
+    class TiffPage -
+        Implements an IFD (ie, all the information needed to build a page of a TIFF file).
+
+  ==============================================================================================================*/
+class  TiffPage			extends  Object
+   {
+	// Page number 
+	public		$PageNumber	=  -1 ;
+	// Parent TiffSplitter object
+	protected	$Parent ;
+	// Image file directory for this page
+	protected	$IFD ;
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+
+	    Constructor - 
+		Instantiates a TIFF page and retrieves the page number, if any.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( $parent, $ifd_data )
+	   {
+		$this -> Parent		=  $parent ;
+
+		// Remove the tags that we decided to ignore
+		$new_ifd_data		=  array ( ) ;
+
+		foreach  ( $ifd_data  as  $item )
+		   {
+			if  ( isset ( TiffImage::$TagTypes [ $item [ 'tag' ] ] ) )
+			   {  
+				if  ( TiffImage::$TagTypes [ $item [ 'tag' ] ] [ 'type' ]  !==  TiffImage::TYPE_IGNORED )
+					$new_ifd_data []	=  $item ;
+				else
+				   {
+					warning ( "Tag \"{$item ['tagname' ]}\" is currently ignored." ) ;
+				    }
+			    }
+			else
+				$new_ifd_data []	=  $item ;
+		    }
+
+		$this -> IFD		=  $new_ifd_data ;
+
+		// Try to find if there is a page number somewhere
+		foreach  ( $ifd_data  as  $entry )
+		   {
+			if  ( $entry [ 'tag' ]  ===  TiffImage::TAG_PAGE_NUMBER )
+			   {
+				$this -> PageNumber	=  $entry [ 'value' ]  &  0xFFFF ;
+				break ;
+			    }
+		    }
+	    }
+
+
+    }
+
+
+/*==============================================================================================================
+
+    class TiffData -
+        A general abstract class to access bytes, words and dwords in TIFF data.
+
+  ==============================================================================================================*/
+abstract class  TiffData	extends  Object
+    {
+	// Underlying filename ; set to false if the data comes from a string
+	public		$Filename			=  false ;
+
+	// Either TiffImage::BIG_ENDIAN (MSB first) or LITTLE_ENDIAN (LSB first)
+	public		$Endianness ;
+	// Since we use the pack()/unpack() functions, we have to use the proper coding format for WORD16 and WORD32
+	protected	$PackFormat16,
+			$PackFormat32 ;
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    Constructor -
+		Ensures that the supplied TIFF data starts with a word specifying the endianness of the file, followed
+		by the WORD16 value 42.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( )
+	   {
+		$first_word			=  $this -> GetByte ( 0, 2 ) ;
+		$endianness			=  ( $first_word [1]  <<  8 )  |  $first_word [2] ; 
+
+		switch ( $endianness )
+		   {
+			case	TiffImage::LITTLE_ENDIAN :
+				$this -> PackFormat16		=  'v' ;
+				$this -> PackFormat32		=  'V' ;
+				break ;
+
+			case	TiffImage::BIG_ENDIAN :
+				$this -> PackFormat16		=  'n' ;
+				$this -> PackFormat32		=  'N' ;
+				break ;
+
+			default :
+				$this -> InvalidTiffData ( ) ;
+		    }
+
+		$this -> Endianness	=  $endianness ;
+
+		$tiff_id		=  $this -> GetWord16 ( 2 ) ;
+
+		if  ( $tiff_id   !==  TiffImage::TIFF_IDENTIFIER )
+			$this -> InvalidTiffData ( ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        GetByte - Returns one or more bytes from the TIFF data
+	
+	    PROTOTYPE
+	        $result		=  $tiff_data -> GetByte ( $offset, $count = 1 ) ;
+	
+	    DESCRIPTION
+	        Returns one or more bytes from the TIFF data, starting at the specified offset.
+	
+	    PARAMETERS
+	        $offset (integer) -
+	                Start offset.
+
+		$count (integer) -
+			Number of bytes to be retrieved.
+	
+	    RETURN VALUE
+	        Returns a single byte value if the $count parameter is 1. If greater, returns a 1-based array of bytes.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	abstract public function	GetByte		( $offset, $count = 1 ) ;
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        GetWord16 - Returns one or more WORD16 values from the TIFF data
+	
+	    PROTOTYPE
+	        $result		=  $tiff_data -> GetWord16 ( $offset, $count = 1 ) ;
+	
+	    DESCRIPTION
+	        Returns one or more WORD16 values from the TIFF data, starting at the specified offset.
+	
+	    PARAMETERS
+	        $offset (integer) -
+	                Start offset.
+
+		$count (integer) -
+			Number of bytes to be retrieved.
+	
+	    RETURN VALUE
+	        Returns a single WORD16 value if the $count parameter is 1. If greater, returns a 1-based array of 
+		WORD16, in host order.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	abstract public function	GetWord16	( $offset, $count = 1 ) ;
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        GetWord32 - Returns one or more WORD32 values from the TIFF data
+	
+	    PROTOTYPE
+	        $result		=  $tiff_data -> GetWord32 ( $offset, $count = 1 ) ;
+	
+	    DESCRIPTION
+	        Returns one or more WORD32 values from the TIFF data, starting at the specified offset.
+	
+	    PARAMETERS
+	        $offset (integer) -
+	                Start offset.
+
+		$count (integer) -
+			Number of bytes to be retrieved.
+	
+	    RETURN VALUE
+	        Returns a single WORD32 value if the $count parameter is 1. If greater, returns a 1-based array of 
+		WORD32, in host order.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	abstract public function	GetWord32	( $offset, $count = 1 ) ;
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        GetRawBytes - Returns one or more bytes from the TIFF data as a string.
+	
+	    PROTOTYPE
+	        $result		=  $tiff_data -> GetRawBytes ( $offset, $count = 1 ) ;
+	
+	    DESCRIPTION
+	        Returns one or more bytes from the TIFF data, starting at the specified offset.
+	
+	    PARAMETERS
+	        $offset (integer) -
+	                Start offset.
+
+		$count (integer) -
+			Number of bytes to be retrieved.
+	
+	    RETURN VALUE
+	        Returns a string of bytes.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	abstract public function	GetRawBytes		( $offset, $count = 1 ) ;
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+		General utility functions.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+
+	// Unpack32, Unpack16 -
+	//	Unpacks raw data according to the destination byte order.
+	public function  Unpack32 ( $data )
+	   {
+		return ( unpack ( $this -> PackFormat32 . '*', $data ) ) ;
+	    }
+
+
+	public function  Unpack16 ( $data )
+	   {
+		return ( unpack ( $this -> PackFormat16 . '*', $data ) ) ;
+	    }
+
+
+	// Pack32, Pack16 -
+	//	Packs raw data according to the destination byte order.
+	public function  Pack32 ( $data )
+	   {
+		return ( pack ( $this -> PackFormat32 . '*', $data ) ) ;
+	    }
+
+
+	public function  Pack16 ( $data )
+	   {
+		return ( pack ( $this -> PackFormat16 . '*', $data ) ) ;
+	    }
+
+
+	// ToWord16, ToWord32 -
+	//	Converts a set of word16/32 values to the destination format. 
+	//	Argument list is infinite and can contain arrays.
+	public function  ToWord16 ( )
+	   {
+		$argv	=  func_get_args ( ) ;
+
+		return ( $this -> __to_word ( $argv, $this -> PackFormat16 ) ) ;
+	    }
+
+
+	public function  ToWord32 ( )
+	   {
+		$argv	=  func_get_args ( ) ;
+
+		return ( $this -> __to_word ( $argv, $this -> PackFormat32 ) ) ;
+	    }
+
+
+	private function  __to_word ( $argv, $format ) 
+	   {
+		$argc		=  count ( $argv ) ;
+
+		if  ( $argc  ===  1  &&  ! is_array ( $argv [0] ) )
+			$result		=  pack ( $format, $argv [0] ) ;
+		else
+		   {
+			$new_argv	=  array ( '' ) ;
+			$count		=  0 ;
+
+			foreach  ( $argv  as  $arg )
+			   {
+				if  ( ! is_array ( $arg ) )
+				   {
+					$new_argv []	=  $arg ;
+					$count ++ ;
+				    }
+				else
+				   {
+					$new_argv	 =  array_merge ( $new_argv, $arg ) ;
+					$count		+=  count ( $arg ) ;
+				    }
+			    }
+
+			$new_argv [0]	=  "$format$count" ;
+			$result		=  call_user_func_array ( 'pack', $new_argv ) ;
+		    }
+
+		return ( $result ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+		Other functions to be implemented by derived classes.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+
+	// Close function
+	public function  Close ( )
+	   {}
+
+	// Error function
+	abstract protected function	InvalidTiffData ( ) ;
+     }
+
+
+/*==============================================================================================================
+
+    class TiffString -
+        A class to access TIFF data specified as a string.
+
+  ==============================================================================================================*/
+class  TiffString	extends  TiffData 
+   {
+	protected	$TiffData ;
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    Constructor -
+		Does nothing much more than calling the parent constructor, which will check the consistency of the 
+		supplied data.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( $tiff_data )
+	   {
+		$this -> TiffData	=  $tiff_data ;
+
+		parent::__construct ( ) ;
+	    }
+
+
+ 	/*--------------------------------------------------------------------------------------------------------------
+	
+		Data retrieval functions.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  GetByte ( $offset, $count = 1 )
+	   {
+		$data		=  substr ( $this -> TiffData, $offset, $count ) ;
+		$result		=  unpack ( 'C' . $count, $data ) ;
+
+		if  ( $count  ===  1 ) 
+			return ( $result [1] ) ;
+		else
+			return ( $result ) ;
+	    }
+
+
+	public function  GetRawBytes ( $offset, $count = 1 )
+	   {
+		$data		=  substr ( $this -> TiffData, $offset, $count ) ;
+
+		return ( $data ) ;
+	    }
+
+
+	public function  GetWord16 ( $offset, $count = 1 )
+	   {
+		$byte_count	=  $count * 2 ;
+		$data		=  substr ( $this -> TiffData, $offset, $byte_count ) ;
+		$result		=  unpack ( $this -> PackFormat16 . $count, $data ) ;
+
+		if  ( $count  ===  1 )
+			return ( $result [1] ) ;
+		else
+			return ( $result ) ;
+	    }
+
+
+	public function  GetWord32 ( $offset, $count = 1 )
+	   {
+		$byte_count	=  $count * 4 ;
+		$data		=  substr ( $this -> TiffData, $offset, $byte_count ) ;
+		$result		=  unpack ( $this -> PackFormat32 . $count, $data ) ;
+
+		if  ( $count  ===  1 )
+			return ( $result [1] ) ;
+		else
+			return ( $result ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+		Error function.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  InvalidTiffData ( )
+	   {
+		error ( new TiffException ( "The supplied string does not contain valid TIFF data." ) ) ;
+	    }
+   }
+
+
+/*==============================================================================================================
+
+    class TiffFile -
+        A class to access TIFF data residing in a file. The class provides a caching mechanisme to avoid
+	unnecessary disk accesses.
+
+  ==============================================================================================================*/
+class  TiffFile		extends  TiffData
+   {
+	// File resource
+	private		$fp ;
+
+	// Size of a buffer in the cache
+	private		$BufferSize ;
+	// Max number of entries in the cache
+	private		$MaxCacheSize ;
+	// Associative array of cached buffers - array keys are the start offset of the buffer, and array values
+	// are the buffer contents itself
+	private		$Cache				=  array ( ) ;
+	// Association between a sequential buffer index and its associated file offset
+	private		$CacheIndexes			=  array ( ) ;
+	// Actual cache size ; may not exceed $MaxCacheSize
+	private		$CacheSize			=  0 ;
+	// When the cache is full and a new buffer needs to be added, this property will give the index of the oldest
+	// entry (buffer) loaded so far
+	private		$NextOldestCacheEntry		=  -1 ;
+
+	// Some statistics about cache hits/misses
+	public		$CacheHits			=  0,
+			$CacheMisses			=  0 ;
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	    
+	    Constructor -
+		Load the first buffer then call the parent constructor to check the validity of the supplied filename's
+		contents.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( $filename, $buffer_size, $cache_size )
+	   {
+		if  ( ! ( $this -> fp = fopen ( $filename, 'r' ) ) )
+			error ( new TiffException ( "Unable to open file \"$filename\"." ) ) ;
+
+		$this -> Filename		=  $filename ;
+		$this -> BufferSize		=  $buffer_size ;
+		$this -> MaxCacheSize		=  $cache_size ;
+
+		$this -> Cache [0]		=  $this -> __read_block ( 0 ) ;
+		$this -> CacheIndexes []	=  0 ;
+		$this -> CacheSize ++ ;
+
+		parent::__construct ( ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    Destructor -
+		Closes the underlying opened file.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __destruct ( )
+	   {
+		$this -> Close ( ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+		Data retrieval functions.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  GetByte ( $offset, $count = 1 )
+	   {
+		$this -> __ensure_in_cache ( $offset, $offset + $count - 1 ) ;
+
+		$data		=  $this -> __get_bytes ( $offset, $count ) ;
+		$result		=  unpack ( 'C' . $count, $data ) ;
+
+		if  ( $count  ===  1 ) 
+			return ( $result [1] ) ;
+		else
+			return ( $result ) ;
+	    }
+
+
+	public function  GetRawBytes ( $offset, $count = 1 )
+	   {
+		$this -> __ensure_in_cache ( $offset, $offset + $count - 1 ) ;
+
+		$data		=  $this -> __get_bytes ( $offset, $count ) ;
+
+		return ( $data ) ;
+	    }
+
+
+	public function  GetWord16 ( $offset, $count = 1 )
+	   {
+		$byte_count	=  $count * 2 ;
+		$this -> __ensure_in_cache ( $offset, $offset + $byte_count - 1 ) ;
+
+		$data		=  $this -> __get_bytes ( $offset, $byte_count ) ;
+		$result		=  unpack ( $this -> PackFormat16 . $count, $data ) ;
+
+		if  ( $count  ===  1 )
+			return ( $result [1] ) ;
+		else
+			return ( $result ) ;
+	    }
+
+
+	public function  GetWord32 ( $offset, $count = 1 )
+	   {
+		$byte_count	=  $count * 4 ;
+		$this -> __ensure_in_cache ( $offset, $offset + $byte_count - 1 ) ;
+
+		$data		=  $this -> __get_bytes ( $offset, $byte_count ) ;
+		$result		=  unpack ( $this -> PackFormat32 . $count, $data ) ;
+
+		if  ( $count  ===  1 )
+			return ( $result [1] ) ;
+		else
+			return ( $result ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+		Close function.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  Close ( )
+	   {
+		if  ( $this -> fp )
+			fclose ( $this -> fp ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+		Error function.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  InvalidTiffData ( )
+	   {
+		error ( new TiffException ( "File \"{$this -> Filename}\" is not a valid TIFF file." ) ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+		Support functions.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+
+	// __get_bytes -
+	//	Effectively returns the specified number of bytes starting at the specified file offset.
+	private function  __get_bytes ( $offset, $count )
+	   {
+		$start_block_offset		=  ( ( integer ) ( $offset / $this -> BufferSize ) ) * $this -> BufferSize ;
+		$in_block_offset		=  $offset - $start_block_offset ;
+
+		if  ( $in_block_offset + $count  <  $this -> BufferSize )
+			return ( substr ( $this -> Cache [ $start_block_offset ], $in_block_offset, $count ) ) ;
+
+		$remaining_bytes	 =  $this -> BufferSize - $in_block_offset ;
+		$data			 =  substr ( $this -> Cache [ $start_block_offset ], $in_block_offset, $remaining_bytes ) ;
+		$count			-=  $remaining_bytes ;
+
+		while  ( $count  >  0 )
+		   {
+			$start_block_offset	+=  $this -> BufferSize ;
+			$remaining_bytes	 =  ( $count  >  $this -> BufferSize ) ?  $this -> BufferSize : $count ;
+			$data			.=  substr ( $this -> Cache [ $start_block_offset ], 0, $remaining_bytes ) ;
+			$count			-=  $remaining_bytes ;
+		    }
+
+		return ( $data ) ;
+	    }
+
+
+	// __read_block -
+	//	Effectively reads a block of size BufferSize from the underlying file.
+	private function  __read_block ( $offset )
+	   {
+		fseek ( $this -> fp, $offset, SEEK_SET ) ;
+		$data	=  fread ( $this -> fp, $this -> BufferSize ) ;
+
+		return ( $data ) ;
+	    }
+
+
+	// __ensure_in_cache -
+	//	Ensures that offsets from $start to $end are present in the cache.
+	private function  __ensure_in_cache ( $start, $end )
+	   {
+		// Make sure that the request data length will fit in the cache
+		if  ( $end - $start + 1  >  $this -> MaxCacheSize * $this -> BufferSize )
+			error ( new TiffException ( "Requested data is too big to fit in the cache (0x" . sprintf ( "%08X", $start ) . "..0x" . sprintf ( "%08X", $end ) . ")." ) ) ;
+
+		// Get the offset of the buffer containing $start
+		$offset1	=  ( ( integer ) ( $start / $this -> BufferSize ) ) * $this -> BufferSize ;
+
+		// If not present, load it
+		if  ( ! isset ( $this -> Cache [ $offset1 ] ) )
+		   {
+			$this -> __load_block_in_cache ( $offset1 ) ;
+			$this -> CacheMisses ++ ;
+		    }
+		else
+			$this -> CacheHits ++ ;
+
+		// Now get the offset of the buffer containing $end
+		$offset2	=  ( ( integer ) ( $end   / $this -> BufferSize ) ) * $this -> BufferSize ;
+
+		// Compute the number of buffers needed to hold that data
+		$block_count	=  ( integer ) ( ( $offset2 - $offset1 ) / $this -> BufferSize ) ;
+
+		// Then ensure that every block is present in the cache
+		for  ( $i = 0, $offset = $offset1 + $this -> BufferSize; $i  <  $block_count ; $i ++, $offset += $this -> BufferSize )
+		   {
+			if  ( ! isset ( $this -> Cache [ $offset ] ) )
+			   {
+				$this -> __load_block_in_cache ( $offset ) ;
+				$this -> CacheMisses ++ ;
+			    }
+			else
+				$this -> CacheHits ++ ;
+		    }
+	    }
+
+
+	// __load_block_in_cache -
+	//	Loads a new block in the cache, replacing the oldest entry if the cache is full
+	private function  __load_block_in_cache ( $offset )
+	   {
+		$data	=  $this -> __read_block ( $offset ) ;
+
+		if  ( $this -> CacheSize  <  $this -> MaxCacheSize )
+		   {
+			$this -> Cache [ $offset ]	=  $data ;
+			$this -> CacheIndexes []	=  $offset ;
+			$this -> CacheSize ++ ;
+		    }
+		else
+		   {
+			$this -> NextOldestCacheEntry ++ ;
+
+			if   ( $this -> NextOldestCacheEntry  >=  $this -> MaxCacheSize )
+				$this -> NextOldestCacheEntry	=  0 ;
+
+			$offset_to_replace						=  $this -> CacheIndexes [ $this -> NextOldestCacheEntry ] ;
+			$this -> Cache [ $offset_to_replace ]				=  $data ;
+			$this -> CacheIndexes [ $this -> NextOldestCacheEntry ]		=  $offset ;
+		    }
+	    }
+    }
+
+
+
