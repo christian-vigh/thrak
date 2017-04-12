@@ -548,10 +548,10 @@ class  TiffSplitterPage			extends  TiffPage
 	/*--------------------------------------------------------------------------------------------------------------
 	
 	    NAME
-	        SaveAs - Saves the current page to the specified output file.
+	        SaveTo - Saves the current page to the specified output file.
 	
 	    PROTOTYPE
-	        $page -> SaveAs ( $filename, $format = TiffImage::OUTPUT_FORMAT_TIFF ) ;
+	        $page -> SaveTo ( $filename, $format = TiffImage::OUTPUT_FORMAT_TIFF ) ;
 	
 	    DESCRIPTION
 	        Saves the current page to the specified output file, in the specified format.
@@ -567,7 +567,7 @@ class  TiffSplitterPage			extends  TiffPage
 		The PDF file format is not yet implemented.
 	
 	 *-------------------------------------------------------------------------------------------------------------*/
-	public function  SaveAs ( $filename, $format = TiffImage::OUTPUT_FORMAT_TIFF )
+	public function  SaveTo ( $filename, $format = TiffImage::OUTPUT_FORMAT_TIFF )
 	   {
 		$data	=  $this -> AsString ( $format ) ;
 
