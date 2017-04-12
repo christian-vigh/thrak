@@ -319,10 +319,13 @@ class  TiffSplitterPage			extends  TiffPage
 	
 	    PARAMETERS
 	        $format (integer) -
-	                Eiether TiffImage::OUTPUT_FORMAT_TIFF or TiffImage::OUTPUT_FORMAT_PDF.
+	                Either TiffImage::OUTPUT_FORMAT_TIFF or TiffImage::OUTPUT_FORMAT_PDF.
 	
 	    RETURN VALUE
 	        A string value that can be directly used to create a TIFF or PDF file containing this page.
+
+	    NOTES
+		The PDF file format is not yet implemented.
 	
 	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  __tostring ( )
@@ -542,6 +545,28 @@ class  TiffSplitterPage			extends  TiffPage
 	    }
 
 
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        SaveAs - Saves the current page to the specified output file.
+	
+	    PROTOTYPE
+	        $page -> SaveAs ( $filename, $format = TiffImage::OUTPUT_FORMAT_TIFF ) ;
+	
+	    DESCRIPTION
+	        Saves the current page to the specified output file, in the specified format.
+	
+	    PARAMETERS
+		$filename (string) -
+			Output filename.
+
+	        $format (integer) -
+	                Either TiffImage::OUTPUT_FORMAT_TIFF or TiffImage::OUTPUT_FORMAT_PDF.
+	
+	    NOTES
+		The PDF file format is not yet implemented.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  SaveAs ( $filename, $format = TiffImage::OUTPUT_FORMAT_TIFF )
 	   {
 		$data	=  $this -> AsString ( $format ) ;
@@ -550,7 +575,6 @@ class  TiffSplitterPage			extends  TiffPage
 		   {
 			//case	TiffImage::OUTPUT_FORMAT_PDF :
 			//	$expected_extensions	=  array ( 'pdf' ) ;
-
 
 			case	TiffImage::OUTPUT_FORMAT_TIFF :
 			default :
