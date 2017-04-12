@@ -294,6 +294,9 @@ class  TiffPage			extends  Object
    {
 	// Page number 
 	public		$PageNumber	=  -1 ;
+	// Page dimensions
+	public		$PageWidth	=  0,
+			$PageHeight	=  0 ;
 	// Parent TiffSplitter object
 	protected	$Parent ;
 	// Image file directory for this page
@@ -333,10 +336,19 @@ class  TiffPage			extends  Object
 		// Try to find if there is a page number somewhere
 		foreach  ( $ifd_data  as  $entry )
 		   {
-			if  ( $entry [ 'tag' ]  ===  TiffImage::TAG_PAGE_NUMBER )
+			switch (  $entry [ 'tag' ] )
 			   {
-				$this -> PageNumber	=  $entry [ 'value' ]  &  0xFFFF ;
-				break ;
+				case	TiffImage::TAG_PAGE_NUMBER :
+					$this -> PageNumber	=  $entry [ 'value' ]  &  0xFFFF ;
+					break ;
+
+				case	TiffImage::TAG_IMAGE_WIDTH :
+					$this -> PageWidth	=  $entry [ 'value' ] ;
+					break ;
+
+				case	TiffImage::TAG_IMAGE_LENGTH :
+					$this -> PageLength	=  $entry [ 'value' ] ;
+					break ;
 			    }
 		    }
 	    }
