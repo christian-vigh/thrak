@@ -100,6 +100,12 @@
 	. Use the GetUsageString() method instead of UsageString property of the CLAbstractParameter
 	  class.
 
+   [Version : 2.0.15]	[Date : 2017/04/14]		[Author : CV]
+	. Better handle numeric parameters whose arguments start with a minus or plus sign, such as
+	  in :
+		-numval -123
+	  Before that, "-123" was mistakenly interpreted as a parameter name.
+
  ***************************************************************************************************/
 namespace 	Thrak\Processors\CL ;
 
@@ -968,6 +974,7 @@ END;
 	   	$argv 			=  $cl -> Argv ;
 	   	$named_parameters	=  array ( ) ;
 	   	$unnamed_parameters 	=  array ( ) ;
+		$escaped_switches	=  preg_quote ( $this -> SwitchCharacters ) ;
 
 
 	   	// Loop through command-line arguments
@@ -1047,7 +1054,7 @@ END;
 
 						if  ( $current_parameter  ===  false )
 						   {
-							if(  $this -> AllowUnknownParameters )
+							if  (  $this -> AllowUnknownParameters )
 							   {
 								$this -> UnknownParameters [ strtolower ( $pname ) ]	=  $pname ;
 								continue 2 ;
@@ -1092,6 +1099,7 @@ END;
 							// Check that the current argument is not a switch
 							if  ( $current_prefix  !=  ''  &&  $current_parameter -> Named )
 							   {
+								// No switch character
 								if  ( strpos ( $this -> SwitchCharacters, $current_prefix )  !==  false )
 			    					   {
 									if  ( $current_parameter -> AllowSwitchCharacter )
@@ -1099,8 +1107,23 @@ END;
 									else
 										break ;
 			    					    }
+								// Switch character present
 								else
-				    					$args []  =  $argv [$j] ;
+								   {
+									// Take care of numeric parameters, which can start with a minus or plus sign
+									// and can be mistakenly interpreted as parameters
+									// This will not eliminate all the cases, (for example, a command line accepting
+									// filenames, with a filename containing only numeric characters) but it should cover 
+									// the most common ones
+									if  ( $current_parameter -> Numeric   && 
+										(
+											preg_match ( "/^[$escaped_switches] [a-zA-Z_] [a-zA-Z0-9__-]* \$/x", $argv [$j] )	||
+											preg_match ( '/\d [a-z_\-]/ix', $argv [$j] )
+										 ) )
+										break ;
+									else
+				    						$args []  =  $argv [$j] ;
+								    }
 							    }
 							else if  ( $current_prefix  !=  ''  &&  strpos ( $this -> SwitchCharacters, $current_prefix )  !==  false )
 								break ;
