@@ -455,8 +455,6 @@ abstract class  COMWrappedInstance  extends  Object
 	                        $real_member	=  self::$____resolved_names____ [ $real_member ] ;
 	                                               
 	                $this -> ____com_object____ -> $real_member	=  $value ;
-	                               
-	                return ( $result ) ;
 	            }
 	        // Unknown properties or methods generate an error ; this prevents the uncatchable com_exception to be thrown
 	        else

@@ -34,7 +34,7 @@ use     Thrak\Windows\COM\COMClassDefinition ;
   ==============================================================================================================*/
 class  COMWrapper       extends Object
    {
-	static private     $__class_definitions      =  array ( ) ;
+	static private		$__class_definitions    =  array ( ) ;
 	
 	
 	/*===================================================================================================
@@ -276,6 +276,7 @@ class  COMWrapper       extends Object
 	        @com_print_typeinfo ( $object, $interface ) ;
 	        $result =  ob_get_clean ( ) ;
 
+output ( $result ) ;
 		return ( $result ) ;
 	    }
 	      
@@ -617,20 +618,43 @@ END;
 	                            }
 				
 	                        // Now emit the method parameters
-	                        $index		=  0 ;
-	                        $names		=  array ( ) ;
+	                        $index			=  0 ;
+	                        $names			=  array ( ) ;
+				$inits			=  array ( ) ;
 	                                               
 	                        foreach  ( $member -> Parameters  as  $parameter_name => $parameter )
 	                           {
-	                                // Collect all parameter names, without the reference character "&"
-	                                if  ( $parameter -> IsReference ( ) )
-	                                        $names []           =  substr ( $parameter -> Name, 1 ) ;
-	                                else
-	                                        $names []           =  $parameter -> Name ;
+					if  ( $parameter -> IsReference ( ) )
+						$parameter_name		=  substr ( $parameter -> Name, 1 ) ;
+					else
+						$parameter_name		=  $parameter -> Name ;
+
+					$internal_parameter_name	=  '$__' . substr ( $parameter_name, 1 ) ;
+
+					// Pad names for alignment
+					$iname				=  str_pad  ( $internal_parameter_name, $maxlength + 3 ) ;
+	                                $name				=  str_pad ( $parameter_name, $maxlength ) ;
+
+					// Add the parameter initializations ; null means an empty variant
+					if  ( $parameter -> OutType  &&  $parameter -> OutType -> ConstantValue )
+					   {
+						$type				=  $parameter -> OutType -> ConstantValue ;
+						$empty				=  'VT_NULL' ;
+					    }
+					else
+					   {
+						$type				=  $parameter -> InType -> ConstantValue ;
+						$empty				=  'VT_EMPTY' ;
+					    }
+
+					//$inits []			=  "\t\t$iname	=  ( $name  ===  null ) ? new \\VARIANT ( 0, VT_EMPTY ) :  new \\VARIANT ( $name, $type ) ;" ;
+					$inits []			=  "\t\t$iname	=  $name ;" ;
+
+					// Add the parameter name, for real COM function call
+					$names []			=  $internal_parameter_name ;
 	                                                                              
-	                                // Pad to maximum name length and don't forget the comma between two parameters
+	                                // Don't forget the comma between two parameters
 	                                $comma                 =  ( $index + 1  ==  count ( $member -> Parameters ) ) ?  " " : "," ;
-	                                $name                  =  str_pad ( $parameter -> Name, $maxlength ) ;
 	                                                              
 	                                // Add method parameter
 	                                // FIX : since com_print_typeinfo() does not tell whether a parameter is optional or not, we have to
@@ -648,10 +672,16 @@ END;
 	                        $classtext .= "\t    ) \n" ;
 	                                               
 	                        // Method body : we need to call the underlying COM object method and wrap its return value if needed
+				if  ( count ( $inits ) )
+					$inits	=  implode ( "\n", $inits ) . "\n\n"  ;
+				else
+					$inits	=  '' ;
+
 	                        $classtext .= "\t   {\n" .
+					      $inits . 
 	                                      "\t\t\$result = \$this -> ____com_object____ -> {$member -> Name} ( " . 
 	                                      implode ( ', ', $names ) .
-	                                      " ) ;\n" .
+	                                      " ) ;\n\n" .
 	                                      "\t\treturn ( $namespace\\COMWrapper::Wrap ( \$result ) ) ;\n" .
 	                                      "\t    }\n\n" ;
 	                                               
@@ -667,6 +697,7 @@ END;
 	        $classtext           .=  "    }\n" ;
 	               
 	        // All done, create the class 
+	output ( $classtext ) ;
 	        eval ( $classtext ) ;
 	        self::$__class_definitions [ $class_name ]          =  $classtext ;
 	    }
