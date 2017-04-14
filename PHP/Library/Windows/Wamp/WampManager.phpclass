@@ -31,6 +31,11 @@ use	Thrak\Windows\Wamp\MySqlPackages ;
 use	Thrak\Processors\IniFile ;
 
 
+/*===========================================================================================
+
+	Wamp executable and configuration file names.
+
+  ===========================================================================================*/
 define ( 'WAMPMANAGER_EXECUTABLE'		,  'WampManager.exe' ) ;
 define ( 'WAMPMANAGER_CONFIGURATION'		,  'WampManager.conf' ) ;
 define ( 'WAMPMANAGER_LOCAL_CONFIGURATION'	,  'WampServer.conf' ) ;
