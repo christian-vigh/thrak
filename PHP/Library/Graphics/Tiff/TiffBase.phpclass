@@ -20,6 +20,11 @@
     [Version : 1.0]	[Date : 2017-04-08]     [Author : CV]
         Initial version.
 
+    [Version : 1.0.1]	[Date : 2017-04-14]     [Author : CV]
+	. Moved most of the code from TiffSplitter to TiffImage.
+	. Added the static $TypeNames array, which associates a TYPE_xxx constant with its string representation.
+	. Added the 'ifd-offset' and 'typename' items in each IFD entry.
+
  **************************************************************************************************************/
 namespace 	Thrak\Graphics ;
 
@@ -63,6 +68,9 @@ if  ( ! function_exists ( 'error' ) )
   ==============================================================================================================*/
 abstract class  TiffImage	extends  Object 
    {
+	// Enable debugging here
+	public static		$DEBUG		=  false ;
+
 	// Endianness of the supplied file - given by the first two bytes
 	const		LITTLE_ENDIAN				=  0x4949 ;
 	const		BIG_ENDIAN				=  0x4D4D ;
@@ -257,9 +265,29 @@ abstract class  TiffImage	extends  Object
 		self::TAG_YCC_SUBSAMPLING			=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_ALWAYS	),
 	    ) ;	
 
+	// Association between type constants and type names
+	public static   $TypeNames		=  array ( ) ;
+
+	// Input filename (false if instantiated from string contents)
+	public		$Filename		=  false ;
+	// Endianness (either LITTLE_ENDIAN or BIG_ENDIAN)
+	public		$Endianness ;
+
+	// Tiff data
+	public		$TiffData ;
+	// TIFF page information, sorted by actual page number defined in the file
+	protected	$Pages			=  array ( ) ;
+
 	// Indicates whether static information has been initialized 
 	static private	$StaticInitialized	=  false ;
 
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    Constructor -
+		Associates tag constants in the $TagTypes static array with their string representation.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
 	public function  __construct ( )
 	   {
 		if  ( ! self::$StaticInitialized )
@@ -274,6 +302,8 @@ abstract class  TiffImage	extends  Object
 					if  ( isset ( self::$TagTypes [ $value ] ) )
 						self::$TagTypes [ $value ] [ 'name' ]	=  $name ;
 				    }
+				else if ( ! strncmp ( $name, 'TYPE_', 5 ) )
+					self::$TypeNames [ $value ]	=  $name ;
 			    }
 
 			self::$StaticInitialized	=  true ;
@@ -281,6 +311,247 @@ abstract class  TiffImage	extends  Object
 
 		parent::__construct ( ) ;
 	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    GetPageInstance -
+		Returns an instance of a TiffPage.
+		The fact that such a method exists is to allow derived classes to implement a specialized version of a
+		TiffPage, as this is the case for TiffSplitter.
+			
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  GetPageInstance ( $parent, $ifd_data )
+	   {
+		return ( new TiffPage ( $parent, $ifd_data ) ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        Load - Loads a TIFF file
+	
+	    PROTOTYPE
+	        $splitter	=  TiffSplitter::Load ( $filename, $buffer_size = 8192, $cache_size = 512 ) ;
+	
+	    DESCRIPTION
+	        Loads a TIFF file.
+	
+	    PARAMETERS
+	        $filename (string) -
+	                Path to the TIFF file to be loaded.
+
+		$buffer_size (integer) -
+			TIFF data is read from the TIFF file by chunks of $buffer_size buffers.
+			The default buffer size is 8192 (8Kb). On most systems, larger buffer sizes do not improve
+			in a significant way the I/O performances.
+
+		$cache_size (integer) -
+			Since some multipage TIFF files could exceed the size of the available memory, a primitive
+			cache system has been implemented. This parameter specifies the maximum number of buffers that
+			should be kept at once into memory.
+	
+	    RETURN VALUE
+	        Returns a TiffSplitter object.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public static function  Load ( $filename, $buffer_size = 8192, $cache_size = 512 )
+	   {
+		// Check that the file exists
+		if  ( ! file_exists ( $filename ) )
+			error ( new TiffException ( "File \"$filename\" does not exist." ) ) ;
+
+		// Initialize the TiffSplitter object, using the TiffFile class to access the data
+		$tiff			=  new  TiffSplitter ( ) ;
+
+		$tiff -> Filename	=  $filename ;
+		$tiff -> TiffData	=  new  TiffFile ( $filename, $buffer_size, $cache_size ) ;
+		$tiff -> Endianness	=  $tiff -> TiffData -> Endianness ;
+		
+		// Parse the TIFF file contents (only the ImageFile Directory - IFD - will be retrieved for the moment)
+		$tiff -> __parse ( ) ;
+
+		// All done, return
+		return ( $tiff ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        LoadFromString - Loads TIFF data from a string.
+	
+	    PROTOTYPE
+	        $splitter	=  TiffSplitter::LoadFromString ( $tiff_data ) ;
+	
+	    DESCRIPTION
+	        Loads TIFF data directly from memory.
+	
+	    PARAMETERS
+	        $tiff_data (string) -
+	                String containing TIFF data.
+	
+	    RETURN VALUE
+	        Returns a TiffSplitter object.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public static function  LoadFromString ( $tiff_data )
+	   {
+		$tiff			=  new  TiffSplitter ( ) ;
+
+		$tiff -> TiffData	=  new  TiffString ( $tiff_data ) ;
+		$tiff -> Endianness	=  $tiff -> TiffData -> Endianness ;
+		
+		$tiff -> __parse ( ) ;
+
+		return ( $tiff ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+		Interfaces implementations.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+
+	// Countable interface
+	public function  Count ( )
+	   { return ( count ( $this -> Pages ) ) ; }
+
+
+	// IteratorAggregate interface
+	public function  getIterator ( )
+	   { return ( new \ArrayIterator ( $this -> Pages ) ) ; }
+
+
+	// ArrayAccess interface
+	public function  offsetExists ( $offset )
+	   { return ( $offset  <=  0  &&  $offset  <  count ( $this -> Pages ) ) ; }
+
+
+	public function  offsetGet ( $offset )
+	   { return ( $this -> Pages [ $offset ] ) ; }
+
+
+	public function  offsetSet ( $offset, $value )
+	   { error ( new \Thrak\System\UnsupportedOperationException ( ) ) ; }
+
+
+	public function  offsetUnset ( $offset )
+	   { error ( new \Thrak\System\UnsupportedOperationException ( ) ) ; }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+		Internal functions.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+
+	// __parse -
+	//	Retrieves the Image File Directories from the supplied TIFF contents.
+	//	The offset of the first IFD is given by a WORD32 value located at offset 4 in the TIFF contents, after
+	//	the WORD16 identifying the endianness at offset 0, and the magic WORD16 value 42 at offset 2.
+	//	For more information, read the specification, pages 13-14 and so...
+	private function  __parse ( )
+	   {
+		// Get the offset in the file of the first IFD
+		$ifd_start	=  $this -> TiffData -> GetWord32 ( 4 ) ;
+
+		// Retrieve the number of 12-bytes entries in this IFD
+		$ifd_count	=  $this -> TiffData -> GetWord16 ( $ifd_start ) ;
+
+		// Make the current offset point to the first IFD entry
+		$ifd_offset	=  $ifd_start + 2 ;
+
+		// Number of IFD found so far
+		$current_ifd	=  0 ;
+
+		// Loop through all the IDF in the TIFF file
+		while ( true )
+		   {
+			$current_ifd ++ ;
+
+			if  ( self::$DEBUG )
+				echo ( "IFD #$current_ifd at offset 0x" . sprintf ( "0x%08X", $ifd_offset - 2 ) . ", entry count : $ifd_count\n" ) ;
+
+			// Data used to instantiate a TiffPage object
+			$ifd_data	=  array ( ) ;
+
+			// Retrieve all the fields from the 12 bytes IFD entry
+			for  ( $i = 0 ; $i  <  $ifd_count ; $i ++, $ifd_offset += 12 )
+			   {
+				// Tag (TiffImage::TAG_* constants) + entry type (TiffImage::TYPE_* constants)
+				$w	=  $this -> TiffData -> GetWord16 ( $ifd_offset, 2 ) ;
+
+				// Entry count + value or offset
+				$dw	=  $this -> TiffData -> GetWord32 ( $ifd_offset + 4, 2 ) ;
+
+				$entry_tag	=  $w  [1] ;
+				$entry_type	=  $w  [2] ;
+				$entry_count	=  $dw [1] ;
+				$entry_value	=  $dw [2] ;
+
+				// Get the display name of the tag (for debugging purposes)
+				if  ( isset ( self::$TagTypes [ $entry_tag ] ) )
+					$tagname	=  self::$TagTypes [ $entry_tag ] [ 'name' ] ;
+				else
+					$tagname	=  "*** UNDEFINED ***" ;
+
+				// Get the display name of the type
+				if  ( isset ( self::$TypeNames [ $entry_type ] ) )
+					$typename	=  self::$TypeNames [ $entry_type ] ;
+				else	
+					$typename	=  "*** UNDEFINED ***" ;
+
+				// Add this new entry to the current IFD
+				$ifd_data []		=  array
+				   ( 
+					'tag'		=>  $entry_tag,
+					'tagname'	=>  $tagname,
+					'type'		=>  $entry_type,
+					'typename'	=>  $typename,
+					'count'		=>  $entry_count,
+					'value'		=>  $entry_value,
+					'ifd-offset'	=>  $ifd_offset 
+				    ) ;
+
+				if  ( self::$DEBUG )
+				   {
+					echo ( "\tEntry #" . ( $i + 1 ) . " :\n" ) ;
+					echo ( "\t\tTag   : " . sprintf ( "0x%04X", $entry_tag ) . " ($tagname)\n" ) ;
+					echo ( "\t\tType  : $entry_type\n" ) ;
+					echo ( "\t\tCount : $entry_count\n" ) ;
+					echo ( "\t\tValue : " . sprintf ( "0x%08X", $entry_value ) . "\n" ) ;
+				    }
+			    }
+
+			// Create a new page based on the IFD entries collected so far
+			$this -> Pages []	=  new TiffSplitterPage ( $this, $ifd_data ) ;
+
+			// An IFD is always followed by a pointer to the next IFD
+			$ifd_next	=  $this -> TiffData -> GetWord32 ( $ifd_offset	 ) ;
+
+			// When this pointer is null, we know that this is the last IFD of the file
+			if  ( ! $ifd_next )
+				break ;
+
+			// Point to the next IFD
+			$ifd_offset	 =  $ifd_next ;
+
+			// Retrieve this next IFD entry count and update the current pointer accordingly
+			$ifd_count	 =  $this -> TiffData -> GetWord16 ( $ifd_offset ) ;
+			$ifd_offset	+=  2 ;
+		    }
+
+		usort ( $this -> Pages, array ( $this, '__sort_by_page_number' ) ) ;
+	    }
+
+
+	// __sort_by_page_number -
+	//	Sorts the pages by their number
+	public function  __sort_by_page_number ( $a, $b )
+	   { return ( $a -> PageNumber - $b -> PageNumber ) ; }
     }
 
 
@@ -300,7 +571,7 @@ class  TiffPage			extends  Object
 	// Parent TiffSplitter object
 	protected	$Parent ;
 	// Image file directory for this page
-	protected	$IFD ;
+	public		$IFD ;
 
 
 	/*--------------------------------------------------------------------------------------------------------------
@@ -352,7 +623,6 @@ class  TiffPage			extends  Object
 			    }
 		    }
 	    }
-
 
     }
 
