@@ -61,6 +61,13 @@
 	  remains unmodified, and the GetUsageString() method is now used to retrieve the usage
 	  string.
 
+    [Version : 2.0.11]	[Date : 2017/04/14]		[Author : CV]
+	. Added the Numeric property (which is set to false by default, and needs to be 
+	  initialized to true by derived numeric classes). This is to allow such a series of 
+	  command-line parameters :
+		-numval -123
+	  Before that, "-123" was mistakenly interpreted as a parameter name.
+
 ***************************************************************************************************/
 namespace 	Thrak\Processors\CL ;
 
@@ -341,6 +348,7 @@ class  CLAbstractParameter  extends Object
 	public		$Hidden				=  false ;	// True if the parameter is not to appear when the -help or -usage parameter is specified
 	public		$Named				=  true ;	// Tells if the parameter is named or not
 	public		$AllowSwitchCharacter		=  false ;	// Tells if the parameter can be prefixed by one of the authorized switch prefix characters
+	public		$Numeric			=  false ;	// Indicates whether the parameter is numeric or not (ie, may be followed by an argument starting with "+" or "-")
 	// Help data
 	public		$HelpText ;
 	public		$UsageString ;
