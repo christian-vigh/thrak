@@ -47,6 +47,9 @@
     [Version : 1.0.10]	[Date : 2017/02/26]     [Author : CV]
 	. Changed the ToRanges() method to use a simpler algorithm.
 
+    [Version : 1.0.11]	[Date : 2017/04/14]     [Author : CV]
+	. Added the ToRangeString() method.
+
  **************************************************************************************************************/
 namespace 	Thrak\Types ;
 
@@ -814,6 +817,57 @@ class  ArrayHelpers		extends  Object
 		$ranges []	=  [ $start_value, $end_value ] ;
 
 		return ( $ranges ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        ToRangeString - Converts an array of integers to a string representing ranges.
+	
+	    PROTOTYPE
+	        $result		=  ArrayHelpers::ToRangeString ( $array, $range_separator = '-', $item_separator = ', ' ) ;
+	
+	    DESCRIPTION
+	        Converts an array of integers to a string representing ranges. The following for example :
+
+			$a =  [ 1, 3, 4, 2, 6, 22, 21, 20, 12  ] ;
+			echo ( ArrayHelpers::ToRangeString ( $a ) ) ;
+
+		will display :
+
+			1-4, 6, 12, 20-22
+	
+	    PARAMETERS
+	        $array (array of numeric values) -
+	                Array to be converted to a range list then to its string representation.
+
+		$range_separator (string) -
+			String to be used as a separator between the lower and upper limits of a range.
+			Note that the separator will not be used if the lower and upper limits are equal (only one
+			value will be inserted into the return value).
+
+		$item_separator (string) -
+			Separator string to be used between two ranges.
+	
+	    RETURN VALUE
+	        Returns a string representing the ranges found in $array.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public static function  ToRangeString ( $array, $range_separator = '-', $item_separator = ', ' )
+	   {
+		$ranges		=  self::ToRanges ( $array, true ) ;
+		$range_strings	=  [] ;
+
+		foreach  ( $ranges  as  $range )
+		   {
+			if  ( $range [0]  !=  $range [1] )
+				$range_strings []	=  $range [0] . $range_separator . $range [1] ;
+			else
+				$range_strings []	=  $range [0] ;
+		    }
+
+		return ( implode ( $item_separator, $range_strings ) ) ;
 	    }
 
 
