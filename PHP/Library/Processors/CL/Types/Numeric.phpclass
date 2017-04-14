@@ -43,6 +43,9 @@
 	. Types without an lower/upper limit (floats and doubles) were generating an error message
 	  if a min/max value was specified.
 
+   [Version : 2.0.6]	[Date : 2017/04/14]		[Author : CV]
+	. Take into account the new Numeric property of the CLAbstractParameter class.
+
  ***************************************************************************************************/
 namespace  	Thrak\Processors\CL ;
 
@@ -175,6 +178,7 @@ abstract class  CLNumericParameter  extends  \Thrak\Processors\CL\CLAbstractPara
 	   	$this -> MaxValue 		=  $typemax ;
 	   	$this -> AllowSwitchCharacter 	=  true ;
 	   	$this -> Signed			=  true ;
+		$this -> Numeric		=  true ;
 
 	   	if  ( ! $this -> Help )
 	   		$this -> Help		=  "Defines a numeric parameter." ;
@@ -933,6 +937,7 @@ class  CLByteParameter  extends  CLNumericParameter
 	public function  __construct ( $parent, $tags, $valuetext = "byte" )
 	   {
 	   	$this -> Help 			=  "Defines an unsigned byte parameter." ;
+		$this -> Numeric		=  true ;
 		parent::__construct ( $parent, $tags, $valuetext, 0, 255, false ) ;
 	    }
 
@@ -956,7 +961,8 @@ class  CLSByteParameter  extends  CLNumericParameter
    {
 	public function  __construct ( $parent, $tags, $valuetext = "sbyte" )
 	   {
-	   	$this -> Help = "Defines a signed byte parameter." ;
+	   	$this -> Help			=  "Defines a signed byte parameter." ;
+		$this -> Numeric		=  true ;
 		parent::__construct ( $parent, $tags, $valuetext, -128, +127, true ) ;
 	    }
 
@@ -980,7 +986,8 @@ class  CLShortParameter  extends  CLNumericParameter
    {
 	public function  __construct ( $parent, $tags, $valuetext = "short" )
 	   {
-	   	$this -> Help = "Defines a signed short integer parameter." ;
+	   	$this -> Help			=  "Defines a signed short integer parameter." ;
+		$this -> Numeric		=  true ;
 		parent::__construct ( $parent, $tags, $valuetext, -32768, +32767, true ) ;
 	    }
 
@@ -1004,7 +1011,8 @@ class  CLUShortParameter  extends  CLNumericParameter
    {
 	public function  __construct ( $parent, $tags, $valuetext = "ushort" )
 	   {
-	   	$this -> Help = "Defines an unsigned short integer parameter." ;
+	   	$this -> Help			=  "Defines an unsigned short integer parameter." ;
+		$this -> Numeric		=  true ;
 		parent::__construct ( $parent, $tags, $valuetext, 0, +65535, false ) ;
 	    }
 
@@ -1028,7 +1036,8 @@ class  CLIntegerParameter  extends  CLNumericParameter
    {
 	public function  __construct ( $parent, $tags, $valuetext = "integer" )
 	   {
-	   	$this -> Help = "Defines a signed integer parameter." ;
+	   	$this -> Help			=  "Defines a signed integer parameter." ;
+		$this -> Numeric		=  true ;
 		parent::__construct ( $parent, $tags, $valuetext, -2147483648, +2147483647, true ) ;
 	    }
 
@@ -1052,7 +1061,8 @@ class  CLUnsignedParameter  extends  CLNumericParameter
    {
 	public function  __construct ( $parent, $tags, $valuetext = "unsigned" )
 	   {
-	   	$this -> Help = "Defines an unsigned integer parameter." ;
+	   	$this -> Help			=  "Defines an unsigned integer parameter." ;
+		$this -> Numeric		=  true ;
 		parent::__construct ( $parent, $tags, $valuetext, 0, 0xFFFFFFFF, false ) ;
 	    }
 
@@ -1076,7 +1086,8 @@ class  CLLongParameter  extends  CLNumericParameter
    {
 	public function  __construct ( $parent, $tags, $valuetext = "long" )
 	   {
-	   	$this -> Help = "Defines a signed long integer parameter. If your PHP version is a 32-bit version, the value will be promoted to a float." ;
+	   	$this -> Help			=  "Defines a signed long integer parameter. If your PHP version is a 32-bit version, the value will be promoted to a float." ;
+		$this -> Numeric		=  true ;
 		parent::__construct ( $parent, $tags, $valuetext, -9223372036854775808, +9223372036854775807, true ) ;
 	    }
 
@@ -1101,7 +1112,8 @@ class  CLULongParameter  extends  CLNumericParameter
    {
 	public function  __construct ( $parent, $tags, $valuetext = "ulong" )
 	   {
-	   	$this -> Help = "Defines an unsigned long integer parameter. If your PHP version is a 32-bit version, the value will be promoted to a float." ;
+	   	$this -> Help			=  "Defines an unsigned long integer parameter. If your PHP version is a 32-bit version, the value will be promoted to a float." ;
+		$this -> Numeric		=  true ;
 		parent::__construct ( $parent, $tags, $valuetext, 0, 0xFFFFFFFFFFFFFFFF, false ) ;
 	    }
 
@@ -1125,8 +1137,9 @@ class  CLFloatParameter  extends  CLNumericParameter
    {
 	public function  __construct ( $parent, $tags, $valuetext = "float" )
 	   {
-	   	$this -> Help = "Defines a floating-point parameter." ;
-	   	$this -> Integral = false ;
+	   	$this -> Help			=  "Defines a floating-point parameter." ;
+	   	$this -> Integral		=  false ;
+		$this -> Numeric		=  true ;
 		parent::__construct ( $parent, $tags, $valuetext ) ;
 	    }
 
