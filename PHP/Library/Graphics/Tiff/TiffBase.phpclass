@@ -25,6 +25,9 @@
 	. Added the static $TypeNames array, which associates a TYPE_xxx constant with its string representation.
 	. Added the 'ifd-offset' and 'typename' items in each IFD entry.
 
+    [Version : 1.0.2]	[Date : 2017-04-16]     [Author : CV]
+	. Added the TiffIFD and TiffIfdEntry classes.
+
  **************************************************************************************************************/
 namespace 	Thrak\Graphics ;
 
@@ -66,7 +69,7 @@ if  ( ! function_exists ( 'error' ) )
         Base class for TiffSplitter. Contains mainly constants.
 
   ==============================================================================================================*/
-abstract class  TiffImage	extends  Object 
+class  TiffImage	extends  Object 
    {
 	// Enable debugging here
 	public static		$DEBUG		=  false ;
@@ -77,6 +80,9 @@ abstract class  TiffImage	extends  Object
 
 	// A constant identifier, at offsets 2..3 of the TIFF file (this WORD16 depends on the endianness given by the first two bytes)
 	const		TIFF_IDENTIFIER				=  42 ;
+
+	// IFD entry size 
+	const		IFD_ENTRY_SIZE				=  12 ;
 
 	// Type of entries in the Image File Directory (IFD)
 	const		TYPE_BYTE				=  1 ;		// 8-byte unsigned integer
@@ -98,6 +104,12 @@ abstract class  TiffImage	extends  Object
 	const		INLINE_NEVER				=  1 ;		// Data is never inlined
 	const		INLINE_POSSIBLE				=  2 ;		// Data may be inlined 
 
+	// IFD types
+	const		IFD_STANDARD				=  0 ;
+	const		IFD_EXIF				=  1 ;
+	const		IFD_GPS_EXIF				=  2 ;
+	const		IFD_INTEROPERABILITY_EXIF		=  3 ;
+
 	// Tags that describe the data contained in the Value/Value offset field
 	const		TAG_ARTIST				=  0x013B ;	// (ASCII) Creator of the image
 	const		TAG_BITS_PER_SAMPLE			=  0x0102 ;	// (SHORT) Number of bits per component (4 or 8)
@@ -114,6 +126,7 @@ abstract class  TiffImage	extends  Object
 	const		TAG_FILL_ORDER				=  0x010A ;	// (SHORT) Logical order of bits within a byte 
 	const		TAG_FREE_BYTE_COUNT			=  0x0121 ;	// (LONG) For each string of contiguous unused bytes in a TIFF file, the number of bytes in the string
 	const		TAG_FREE_OFFSETS			=  0x0120 ;	// (LONG) For each string of contiguous unused bytes in a TIFF file, the byte offset of the string
+	const		TAG_GPS_IFD				=  0x8825 ;	// (LONG) A pointer to the Exif-related GPS Info IFD
 	const		TAG_GRAY_RESPONSE_CURVE			=  0x0123 ;	// (SHORT) For grayscale data, the optical density of each possible pixel value
 	const		TAG_GRAY_RESPONSE_UNIT			=  0x0122 ;	// (SHORT) The precision of the information contained in the GrayResponseCurve
 	const		TAG_HALFTONE_HINTS			=  0x0141 ;	// (SHORT * 2) 
@@ -126,6 +139,7 @@ abstract class  TiffImage	extends  Object
 	const		TAG_IMAGE_WIDTH				=  0x0100 ;	// (SHORT or LONG) Number of columns in the image
 	const		TAG_INK_NAMES				=  0x014D ;	// (ASCII) List of null-separated ink names
 	const		TAG_INK_SET				=  0x014C ;	// (SHORT) The set of inks used in a separated (PhotometricInterpretation=5) image
+	const		TAG_INTEROPERABILITY_IFD		=  0xA005 ;	// (LONG) A pointer to the Exif-related Interoperability IFD
 	const		TAG_JPEG_INTERCHANGE_FORMAT		=  0x0201 ;	// (LONG) Indicates whether a JPEG interchange format bitstream is present in the TIFF file.
 	const		TAG_JPEG_INTERCHANGE_FORMAT_LENGTH	=  0x0202 ;	// (LONG) Length in bytes of the JPEG interchange format bitstream.
 	const		TAG_JPEG_LOSSLESS_PREDICTORS		=  0x0205 ;	// (SHORT) Points to a list of lossless predictor-selection values, one per component.
@@ -178,6 +192,102 @@ abstract class  TiffImage	extends  Object
 	const		TAG_YCC_POSITIONING			=  0x0213 ;	// (SHORT) Specifies the positioning of subsampled chrominance components relative to luminance samples
 	const		TAG_YCC_SUBSAMPLING			=  0x0212 ;	// (SHORT) Subsampling factors used for the chrominance components of a YCbCr image.
 
+	// EXIF tags
+	const		TAG_EXIF_EXPOSURE_TIME			=  0x829A ;	// (RATIONAL) Exposure time, in seconds
+	const		TAG_EXIF_F_NUMBER			=  0x829D ;	// (RATIONAL) F number (?)
+	const		TAG_EXIF_EXPOSURE_PROGRAM		=  0x8822 ;	// (SHORT) Class of the program used by the camera to set exposure when the picture is taken. 
+	const		TAG_EXIF_SPECTRAL_SENSITIVITY		=  0x8824 ;	// (ASCII) Indicates the spectral sensitivity of each channel of the camera used. 
+										// The tag value is an ASCII string compatible with the standard developed by the ASTM Technical committee. 
+	const		TAG_EXIF_ISO_SPEED_RATINGS		=  0x8827 ;	// (SHORT) Indicates the ISO Speed and ISO Latitude of the camera or input device as specified in ISO 12232. 
+	const		TAG_EXIF_OECF				=  0x8828 ;	// (UNDEFINED) Indicates the Opto-Electric Conversion Function (OECF) specified in ISO 14524. 
+	const		TAG_EXIF_VERSION			=  0x9000 ;	// (UNDEFINED) The version of the supported Exif standard, as 4 ascii bytes (TODO: check if LONG or offset)
+	const		TAG_EXIF_DATETIME_ORIGINAL		=  0x9003 ;	// (ASCII) The date and time when the original image data was generated.
+	const		TAG_EXIF_DATETIME_DIGITIZED		=  0x9004 ;	// (ASCII) The date and time when the image was stored as digital data.
+	const		TAG_EXIF_COMPONENTS_CONFIGURATION	=  0x9101 ;	// (UNDEFINED) Specific to compressed data; specifies the channels and complements PhotometricInterpretation
+	const		TAG_EXIF_COMPRESSED_BITS_PER_PIXEL	=  0x9102 ;	// (RATIONAL) Specific to compressed data; states the compressed bits per pixel.
+	const		TAG_EXIF_SHUTTER_SPEED_VALUE		=  0x9201 ;	// (SRATIONAL) Shutter speed
+	const		TAG_EXIF_APERTURE_VALUE			=  0x9202 ;	// (RATIONAL) Lens aperture
+	const		TAG_EXIF_BRIGHTNESS_VALUE		=  0x9203 ;	// (SRATIONAL) Brightness value
+	const		TAG_EXIF_EXPOSURE_BIAS_VALUE		=  0x9204 ;	// (SRATIONAL) Exposure bias
+	const		TAG_EXIF_MAX_APERTURE_VALUE		=  0x9205 ;	// (RATIONAL) The smallest F number of the lens.
+	const		TAG_EXIF_SUBJECT_DISTANCE		=  0x9206 ;	// (RATIONAL) The distance to the subject, given in meters
+	const		TAG_EXIF_METERING_MODE			=  0x9207 ;	// (SHORT) Metering mode
+	const		TAG_EXIF_LIGHT_SOURCE			=  0x9208 ;	// (SHORT) Light source
+	const		TAG_EXIF_FLASH				=  0x9209 ;	// (SHORT) Indicates the status of flash when the image was shot
+	const		TAG_EXIF_FOCAL_LENGTH			=  0x920A ;	// (RATIONAL) The actual focal length of the lens, in mm
+	const		TAG_EXIF_SUBJECT_AREA			=  0x9214 ;	// (SHORT) Indicates the location and area of the main subject in the overall scene
+	const		TAG_EXIF_MAKER_NOTE			=  0x927C ;	// (UNDEFINED) Manufacturer specific information
+	const		TAG_EXIF_USER_COMMENT			=  0x9286 ;	// (UNDEFINED) Keywords or comments on the image; complements ImageDescription
+	const		TAG_EXIF_SUBSEC_TIME			=  0x9290 ;	// (ASCII) A tag used to record fractions of seconds for the DateTime tag
+	const		TAG_EXIF_SUBSEC_TIME_ORIGINAL		=  0x9291 ;	// (ASCII) A tag used to record fractions of seconds for the DateTimeOriginal tag
+	const		TAG_EXIF_SUBSEC_TIME_DIGITIZED		=  0x9292 ;	// (ASCII) A tag used to record fractions of seconds for the DateTimeDigitized tag
+	const		TAG_EXIF_FLASHPIX_VERSION		=  0xA000 ;	// (UNDEFINED) The Flashpix format version supported by a FPXR file
+	const		TAG_EXIF_COLOR_SPACE			=  0xA001 ;	// (SHORT) The color space information tag is always recorded as the color space specifier
+	const		TAG_EXIF_PIXEL_X_DIMENSION		=  0xA002 ;	// (SHORT or LONG) Specific to compressed data; the valid width of the meaningful image
+	const		TAG_EXIF_PIXEL_Y_DIMENSION		=  0xA003 ;	// (SHORT or LONG) Specific to compressed data; the valid height of the meaningful image
+	const		TAG_EXIF_RELATED_SOUND_FILE		=  0xA004 ;	// (ASCII) Used to record the name of an audio file related to the image data (MSDOS 8.3 file name format)
+	const		TAG_EXIF_FLASH_ENERGY			=  0xA20B ;	// (RATIONAL) Indicates the strobe energy at the time the image is captured, as measured in Beam Candle Power Seconds
+	const		TAG_EXIF_SPATIAL_FREQUENCY_RESPONSE	=  0xA20C ;	// (UNDEFINED) Records the camera or input device spatial frequency table and SFR values 
+	const		TAG_EXIF_FOCAL_PLANE_X_RESOLUTION	=  0xA20E ;	// (RATIONAL) Indicates the number of pixels in the image width (X) direction per FocalPlaneResolutionUnit on the camera focal plane
+	const		TAG_EXIF_FOCAL_PLANE_Y_RESOLUTION	=  0xA20F ;	// (RATIONAL) Indicates the number of pixels in the image height (Y) direction per FocalPlaneResolutionUnit on the camera focal plane
+	const		TAG_EXIF_FOCAL_PLANE_RESOLUTION_UNIT	=  0xA210 ;	// (SHORT) Indicates the unit for measuring FocalPlaneXResolution and FocalPlaneYResolution
+	const		TAG_EXIF_SUBJECT_LOCATION		=  0xA214 ;	// (SHORT) Indicates the location of the main subject in the scene
+	const		TAG_EXIF_EXPOSURE_INDEX			=  0xA215 ;	// (RATIONAL) Indicates the exposure index selected on the camera or input device at the time the image is captured
+	const		TAG_EXIF_SENSING_METHOD			=  0xA217 ;	// (SHORT) Indicates the image sensor type on the camera or input device
+	const		TAG_EXIF_FILE_SOURCE			=  0xA300 ;	// (SHORT) Indicates the image source
+	const		TAG_EXIF_SCENE_TYPE			=  0xA301 ;	// (UNDEFINED) Indicates the type of scene
+	const		TAG_EXIF_CFA_PATTERN			=  0xA302 ;	// (UNDEFINED) Indicates the color filter array (CFA) geometric pattern of the image sensor when a one-chip color area sensor is used. 
+	const		TAG_EXIF_CUSTOM_RENDERED		=  0xA401 ;	// (SHORT) Indicates the use of special processing on image data, such as rendering geared to output
+	const		TAG_EXIF_EXPOSURE_MODE			=  0xA402 ;	// (SHORT) Indicates the use of special processing on image data, such as rendering geared to output
+	const		TAG_EXIF_WHITE_BALANCE			=  0xA403 ;	// (SHORT) Indicates the white balance mode set when the image was shot
+	const		TAG_EXIF_DIGITAL_ZOOM_RATIO		=  0xA404 ;	// (RATIONAL) Indicates the digital zoom ratio when the image was shot
+	const		TAG_EXIF_FOCAL_LENGTH_IN_35mm_FILM	=  0xA405 ;	// (SHORT) Indicates the equivalent focal length assuming a 35mm film camera, in mm
+	const		TAG_EXIF_SCENE_CAPTURE_TYPE		=  0xA406 ;	// (SHORT) Indicates the type of scene that was shot
+	const		TAG_EXIF_GAIN_CONTROL			=  0xA407 ;	// (SHORT) Indicates the degree of overall image gain adjustment
+	const		TAG_EXIF_CONTRAST			=  0xA408 ;	// (SHORT) Indicates the direction of contrast processing applied by the camera when the image was shot
+	const		TAG_EXIF_SATURATION			=  0xA409 ;	// (SHORT) Indicates the direction of saturation processing applied by the camera when the image was shot
+	const		TAG_EXIF_SHARPNESS			=  0xA40A ;	// (SHORT) Indicates the direction of sharpness processing applied by the camera when the image was shot
+	const		TAG_EXIF_DEVICE_SETTING_DESCRIPTION	=  0xA40B ;	// (UNDEFINED) This tag indicates information on the picture-taking conditions of a particular camera model
+	const		TAG_EXIF_SUBJECT_DISTANCE_RANGE		=  0xA40C ;	// (SHORT) Indicates the distance to the subject
+	const		TAG_EXIF_IMAGE_UNIQUE_ID		=  0xA420 ;	// (ASCII) Indicates an identifier assigned uniquely to each image
+
+	// GPS EXIF tags
+	const		TAG_GPS_VERSION_ID			=  0x0000 ;	// (BYTE) Indicates the version of GPSInfoIFD
+	const		TAG_GPS_LATITUDE_REF			=  0x0001 ;	// (ASCII) Indicates whether the latitude is north or south latitude ('S' or 'N').
+	const		TAG_GPS_LATITUDE			=  0x0002 ;	// (RATIONAL) Indicates the latitude (3 rationals for degrees, minutes and seconds)
+	const		TAG_GPS_LONGITUDE_REF			=  0x0003 ;	// (ASCII) Indicates whether the latitude is north or south latitude ('E' or 'W').
+	const		TAG_GPS_LONGITUDE			=  0x0004 ;	// (RATIONAL) Indicates the latitude (3 rationals for degrees, minutes and seconds)
+	const		TAG_GPS_ALTITUDE_REF			=  0x0005 ;	// (BYTE) Indicates the altitude used as the reference altitude
+	const		TAG_GPS_ALTITUDE			=  0x0006 ;	// (RATIONAL) Indicates the altitude based on the reference in GPSAltitudeRef
+	const		TAG_GPS_TIMESTAMP			=  0x0007 ;	// (RATIONAL) Indicates the time as UTC (Coordinated Universal Time)
+	const		TAG_GPS_SATELLITES			=  0x0008 ;	// (ASCII) Indicates the GPS satellites used for measurements
+	const		TAG_GPS_STATUS				=  0x0009 ;	// (ASCII) Indicates the status of the GPS receiver when the image is recorded
+	const		TAG_GPS_MEASURE_MODE			=  0x000A ;	// (ASCII) Indicates the GPS measurement mode
+	const		TAG_GPS_DOP				=  0x000B ;	// (RATIONAL) Indicates the GPS DOP (data degree of precision). 
+	const		TAG_GPS_SPEED_REF			=  0x000C ;	// (ASCII) Indicates the unit used to express the GPS receiver speed of movement
+	const		TAG_GPS_SPEED				=  0x000D ;	// (RATIONAL) Indicates the speed of GPS receiver movement
+	const		TAG_GPS_TRACK_REF			=  0x000E ;	// (ASCII) Indicates the reference for giving the direction of GPS receiver movement
+	const		TAG_GPS_TRACK				=  0x000F ;	// (RATIONAL) Indicates the direction of GPS receiver movement
+	const		TAG_GPS_IMG_DIRECTION_REF		=  0x0010 ;	// (ASCII) Indicates the reference for giving the direction of the image when it is captured
+	const		TAG_GPS_IMG_DIRECTION			=  0x0011 ;	// (RATIONAL) ndicates the direction of the image when it was captured
+	const		TAG_GPS_MAP_DATUM			=  0x0012 ;	// (ASCII) Indicates the geodetic survey data used by the GPS receiver
+	const		TAG_GPS_DEST_LATITUDE_REF		=  0x0013 ;	// (ASCII) Indicates whether the latitude of the destination point is north or south latitude
+	const		TAG_GPS_DEST_LATITUDE			=  0x0014 ;	// (RATIONAL) Indicates the latitude of the destination point
+	const		TAG_GPS_DEST_LONGITUDE_REF		=  0x0015 ;	// (ASCII) Indicates whether the longitude of the destination point is north or south latitude
+	const		TAG_GPS_DEST_LONGITUDE			=  0x0016 ;	// (RATIONAL) Indicates the logitude of the destination point
+	const		TAG_GPS_DEST_BEARING_REF		=  0x0017 ;	// (ASCII) Indicates the reference used for giving the bearing to the destination point.
+	const		TAG_GPS_DEST_BEARING			=  0x0018 ;	// (RATIONAL) Indicates the logitude of the destination point
+	const		TAG_GPS_DEST_DISTANCE_REF		=  0x0019 ;	// (ASCII) Indicates the unit used to express the distance to the destination point
+	const		TAG_GPS_DEST_DISTANCE			=  0x001A ;	// (RATIONAL) Indicates the distance to the destination point
+	const		TAG_GPS_PROCESSING_METHOD		=  0x001B ;	// (UNDEFINED) A character string recording the name of the method used for location finding
+	const		TAG_GPS_AREA_INFORMATION		=  0x001C ;	// (UNDEFINED) A character string recording the name of the GPS area
+	const		TAG_GPS_DATESTAMP			=  0x001D ;	// (ASCII) A character string recording date and time information relative to UTC (Coordinated Universal Time)
+	const		TAG_GPS_DIFFERENTIAL			=  0x001E ;	// (SHORT) Indicates whether differential correction is applied to the GPS receiver
+
+	// Interoperability EXIF tags
+	const		TAG_INTEROP_INTEROPERABILITY_INDEX	=  0x0001 ;	// (ASCII) Indicates the identification of the Interoperability rule
+
+
 	// Output format for individual pages
 	const		OUTPUT_FORMAT_TIFF			=  0 ;
 	//const		OUTPUT_FORMAT_PDF			=  1 ;
@@ -185,84 +295,89 @@ abstract class  TiffImage	extends  Object
 	// Types associated to each tag
 	public static	$TagTypes			=  array
 	   (
-		self::TAG_ARTIST				=>  array ( 'type' => self::TYPE_ASCII		, 'inline' => self::INLINE_NEVER	),
-		self::TAG_BITS_PER_SAMPLE			=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_ALWAYS	),
-		self::TAG_CELL_LENGTH				=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_ALWAYS	),
-		self::TAG_CELL_WIDTH				=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_ALWAYS	),
-		self::TAG_COLOR_MAP				=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_NEVER	),
-		self::TAG_COMPRESSION				=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_ALWAYS	),
-		self::TAG_COPYRIGHT				=>  array ( 'type' => self::TYPE_ASCII		, 'inline' => self::INLINE_NEVER	),
-		self::TAG_DATETIME				=>  array ( 'type' => self::TYPE_ASCII		, 'inline' => self::INLINE_NEVER	),
-		self::TAG_DOCUMENT_NAME				=>  array ( 'type' => self::TYPE_ASCII		, 'inline' => self::INLINE_NEVER	),
-		self::TAG_DOT_RANGE				=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_NEVER	),
-		self::TAG_EXIF_IFD				=>  array ( 'type' => self::TYPE_IGNORED	, 'inline' => self::INLINE_NEVER	),
-		self::TAG_EXTRA_SAMPLES				=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_ALWAYS	),
-		self::TAG_FILL_ORDER				=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_ALWAYS	),
-		self::TAG_FREE_BYTE_COUNT			=>  array ( 'type' => self::TYPE_LONG		, 'inline' => self::INLINE_ALWAYS	),
-		self::TAG_FREE_OFFSETS				=>  array ( 'type' => self::TYPE_LONG		, 'inline' => self::INLINE_ALWAYS	),
-		self::TAG_GRAY_RESPONSE_CURVE			=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_NEVER	),
-		self::TAG_GRAY_RESPONSE_UNIT			=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_ALWAYS	),
-		self::TAG_HALFTONE_HINTS			=>  array ( 'type' => self::TYPE_LONG		, 'inline' => self::INLINE_ALWAYS	),
-		self::TAG_HOST_COMPUTER				=>  array ( 'type' => self::TYPE_ASCII		, 'inline' => self::INLINE_NEVER	),
-		self::TAG_ICC_PROFILE				=>  array ( 'type' => self::TYPE_LONG		, 'inline' => self::INLINE_NEVER	),
-		self::TAG_IMAGE_DESCRIPTION			=>  array ( 'type' => self::TYPE_ASCII		, 'inline' => self::INLINE_NEVER	),
-		self::TAG_IMAGE_LENGTH				=>  array ( 'type' => self::TYPE_LONG		, 'inline' => self::INLINE_ALWAYS	),
-		self::TAG_IMAGE_PREDICTOR			=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_ALWAYS	),
-		self::TAG_IMAGE_SOURCE_DATA			=>  array ( 'type' => self::TYPE_UNDEFINED	, 'inline' => self::INLINE_NEVER	),
-		self::TAG_IMAGE_WIDTH				=>  array ( 'type' => self::TYPE_LONG		, 'inline' => self::INLINE_ALWAYS	),
-		self::TAG_INK_NAMES				=>  array ( 'type' => self::TYPE_ASCII		, 'inline' => self::INLINE_NEVER	),
-		self::TAG_INK_SET				=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_ALWAYS	),
-		self::TAG_JPEG_INTERCHANGE_FORMAT		=>  array ( 'type' => self::TYPE_LONG		, 'inline' => self::INLINE_NEVER	),
-		self::TAG_JPEG_INTERCHANGE_FORMAT_LENGTH	=>  array ( 'type' => self::TYPE_LONG		, 'inline' => self::INLINE_ALWAYS	),
-		self::TAG_JPEG_LOSSLESS_PREDICTORS		=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_NEVER	),
-		self::TAG_JPEG_POINT_TRANSFORMS			=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_NEVER	),
-		self::TAG_JPEG_PROC				=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_ALWAYS	),
-		self::TAG_JPEG_RESTART_INTERVAL			=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_ALWAYS	),
-		self::TAG_JPEG_Q_TABLES				=>  array ( 'type' => self::TYPE_LONG		, 'inline' => self::INLINE_NEVER	),
-		self::TAG_JPEG_AC_TABLES			=>  array ( 'type' => self::TYPE_LONG		, 'inline' => self::INLINE_NEVER	),
-		self::TAG_JPEG_DC_TABLES			=>  array ( 'type' => self::TYPE_LONG		, 'inline' => self::INLINE_NEVER	),
-		self::TAG_MAKE					=>  array ( 'type' => self::TYPE_ASCII		, 'inline' => self::INLINE_NEVER	),
-		self::TAG_MAX_SAMPLE_VALUE			=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_POSSIBLE	),
-		self::TAG_MIN_SAMPLE_VALUE			=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_POSSIBLE	),
-		self::TAG_MODEL					=>  array ( 'type' => self::TYPE_ASCII		, 'inline' => self::INLINE_NEVER	),
-		self::TAG_NEW_SUBFILE_TYPE			=>  array ( 'type' => self::TYPE_LONG		, 'inline' => self::INLINE_ALWAYS	),
-		self::TAG_NUMBER_OF_INKS			=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_ALWAYS	),
-		self::TAG_ORIENTATION				=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_ALWAYS	),
-		self::TAG_PAGE_NAME				=>  array ( 'type' => self::TYPE_ASCII		, 'inline' => self::INLINE_NEVER	),
-		self::TAG_PAGE_NUMBER				=>  array ( 'type' => self::TYPE_LONG		, 'inline' => self::INLINE_ALWAYS	),
-		self::TAG_PHOTOMETRIC_INTERPRETATION		=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_ALWAYS	),
-		self::TAG_PHOTOSHOP				=>  array ( 'type' => self::TYPE_BYTE		, 'inline' => self::INLINE_NEVER	),
-		self::TAG_PLANAR_CONFIGURATION			=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_ALWAYS	),
-		self::TAG_PRIMARY_CHROMACITIES			=>  array ( 'type' => self::TYPE_RATIONAL	, 'inline' => self::INLINE_NEVER	),
-		self::TAG_REFERENCE_BLACK_WHITE			=>  array ( 'type' => self::TYPE_RATIONAL	, 'inline' => self::INLINE_NEVER	),
-		self::TAG_RESOLUTION_UNIT			=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_ALWAYS	),
-		self::TAG_ROWS_PER_STRIP			=>  array ( 'type' => self::TYPE_LONG		, 'inline' => self::INLINE_ALWAYS	),
-		self::TAG_SAMPLE_FORMAT				=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_NEVER	),
-		self::TAG_SAMPLES_PER_PIXEL			=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_ALWAYS	),
-		self::TAG_SMAX_SAMPLE_VALUE			=>  array ( 'type' => self::TYPE_IGNORED	, 'inline' => self::INLINE_ALWAYS	),
-		self::TAG_SMIN_SAMPLE_VALUE			=>  array ( 'type' => self::TYPE_IGNORED	, 'inline' => self::INLINE_ALWAYS	),
-		self::TAG_SOFTWARE				=>  array ( 'type' => self::TYPE_ASCII		, 'inline' => self::INLINE_NEVER	),
-		self::TAG_STRIP_BYTE_COUNTS			=>  array ( 'type' => self::TYPE_LONG		, 'inline' => self::INLINE_NEVER	),
-		self::TAG_STRIP_OFFSETS				=>  array ( 'type' => self::TYPE_LONG		, 'inline' => self::INLINE_NEVER	),
-		self::TAG_SUBFILE_TYPE				=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_ALWAYS	),
-		self::TAG_T4_OPTIONS				=>  array ( 'type' => self::TYPE_LONG		, 'inline' => self::INLINE_ALWAYS	),
-		self::TAG_T6_OPTIONS				=>  array ( 'type' => self::TYPE_LONG		, 'inline' => self::INLINE_ALWAYS	),
-		self::TAG_TARGET_PRINTER			=>  array ( 'type' => self::TYPE_ASCII		, 'inline' => self::INLINE_NEVER	),
-		self::TAG_TILE_BYTE_COUNTS			=>  array ( 'type' => self::TYPE_LONG		, 'inline' => self::INLINE_NEVER	),
-		self::TAG_TILE_LENGTH				=>  array ( 'type' => self::TYPE_LONG		, 'inline' => self::INLINE_ALWAYS	),
-		self::TAG_TILE_OFFSETS				=>  array ( 'type' => self::TYPE_LONG		, 'inline' => self::INLINE_NEVER	),
-		self::TAG_TILE_WIDTH				=>  array ( 'type' => self::TYPE_LONG		, 'inline' => self::INLINE_ALWAYS	),
-		self::TAG_THRESHHOLDING				=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_ALWAYS	),
-		self::TAG_TRANSFER_FUNCTION			=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_NEVER	),
-		self::TAG_TRANSFER_RANGE			=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_NEVER	),
-		self::TAG_WHITE_POINT				=>  array ( 'type' => self::TYPE_RATIONAL	, 'inline' => self::INLINE_NEVER	),
-		self::TAG_X_POSITION				=>  array ( 'type' => self::TYPE_RATIONAL	, 'inline' => self::INLINE_NEVER	),
-		self::TAG_X_RESOLUTION				=>  array ( 'type' => self::TYPE_RATIONAL	, 'inline' => self::INLINE_NEVER	),
-		self::TAG_Y_POSITION				=>  array ( 'type' => self::TYPE_RATIONAL	, 'inline' => self::INLINE_NEVER	),
-		self::TAG_Y_RESOLUTION				=>  array ( 'type' => self::TYPE_RATIONAL	, 'inline' => self::INLINE_NEVER	),
-		self::TAG_YCC_COEFFICIENTS			=>  array ( 'type' => self::TYPE_RATIONAL	, 'inline' => self::INLINE_NEVER	),
-		self::TAG_YCC_POSITIONING			=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_ALWAYS	),
-		self::TAG_YCC_SUBSAMPLING			=>  array ( 'type' => self::TYPE_SHORT		, 'inline' => self::INLINE_ALWAYS	),
+		self::IFD_STANDARD			=>  array
+		   (
+			self::TAG_ARTIST				=>  array ( 'type' => self::TYPE_ASCII		),
+			self::TAG_BITS_PER_SAMPLE			=>  array ( 'type' => self::TYPE_SHORT		),
+			self::TAG_CELL_LENGTH				=>  array ( 'type' => self::TYPE_SHORT		),
+			self::TAG_CELL_WIDTH				=>  array ( 'type' => self::TYPE_SHORT		),
+			self::TAG_COLOR_MAP				=>  array ( 'type' => self::TYPE_SHORT		),
+			self::TAG_COMPRESSION				=>  array ( 'type' => self::TYPE_SHORT		),
+			self::TAG_COPYRIGHT				=>  array ( 'type' => self::TYPE_ASCII		),
+			self::TAG_DATETIME				=>  array ( 'type' => self::TYPE_ASCII		),
+			self::TAG_DOCUMENT_NAME				=>  array ( 'type' => self::TYPE_ASCII		),
+			self::TAG_DOT_RANGE				=>  array ( 'type' => self::TYPE_SHORT		),
+			self::TAG_EXIF_IFD				=>  array ( 'type' => self::TYPE_IGNORED	),
+			self::TAG_EXTRA_SAMPLES				=>  array ( 'type' => self::TYPE_SHORT		),
+			self::TAG_FILL_ORDER				=>  array ( 'type' => self::TYPE_SHORT		),
+			self::TAG_FREE_BYTE_COUNT			=>  array ( 'type' => self::TYPE_LONG		),
+			self::TAG_FREE_OFFSETS				=>  array ( 'type' => self::TYPE_LONG		),
+			self::TAG_GPS_IFD				=>  array ( 'type' => self::TYPE_IGNORED	),
+			self::TAG_GRAY_RESPONSE_CURVE			=>  array ( 'type' => self::TYPE_SHORT		),
+			self::TAG_GRAY_RESPONSE_UNIT			=>  array ( 'type' => self::TYPE_SHORT		),
+			self::TAG_HALFTONE_HINTS			=>  array ( 'type' => self::TYPE_LONG		),
+			self::TAG_HOST_COMPUTER				=>  array ( 'type' => self::TYPE_ASCII		),
+			self::TAG_ICC_PROFILE				=>  array ( 'type' => self::TYPE_LONG		),
+			self::TAG_IMAGE_DESCRIPTION			=>  array ( 'type' => self::TYPE_ASCII		),
+			self::TAG_IMAGE_LENGTH				=>  array ( 'type' => self::TYPE_LONG		),
+			self::TAG_IMAGE_PREDICTOR			=>  array ( 'type' => self::TYPE_SHORT		),
+			self::TAG_IMAGE_SOURCE_DATA			=>  array ( 'type' => self::TYPE_UNDEFINED	),
+			self::TAG_IMAGE_WIDTH				=>  array ( 'type' => self::TYPE_LONG		),
+			self::TAG_INK_NAMES				=>  array ( 'type' => self::TYPE_ASCII		),
+			self::TAG_INK_SET				=>  array ( 'type' => self::TYPE_SHORT		),
+			self::TAG_INTEROPERABILITY_IFD			=>  array ( 'type' => self::TYPE_IGNORED	),
+			self::TAG_JPEG_INTERCHANGE_FORMAT		=>  array ( 'type' => self::TYPE_LONG		),
+			self::TAG_JPEG_INTERCHANGE_FORMAT_LENGTH	=>  array ( 'type' => self::TYPE_LONG		),
+			self::TAG_JPEG_LOSSLESS_PREDICTORS		=>  array ( 'type' => self::TYPE_SHORT		),
+			self::TAG_JPEG_POINT_TRANSFORMS			=>  array ( 'type' => self::TYPE_SHORT		),
+			self::TAG_JPEG_PROC				=>  array ( 'type' => self::TYPE_SHORT		),
+			self::TAG_JPEG_RESTART_INTERVAL			=>  array ( 'type' => self::TYPE_SHORT		),
+			self::TAG_JPEG_Q_TABLES				=>  array ( 'type' => self::TYPE_LONG		),
+			self::TAG_JPEG_AC_TABLES			=>  array ( 'type' => self::TYPE_LONG		),
+			self::TAG_JPEG_DC_TABLES			=>  array ( 'type' => self::TYPE_LONG		),
+			self::TAG_MAKE					=>  array ( 'type' => self::TYPE_ASCII		),
+			self::TAG_MAX_SAMPLE_VALUE			=>  array ( 'type' => self::TYPE_SHORT		),
+			self::TAG_MIN_SAMPLE_VALUE			=>  array ( 'type' => self::TYPE_SHORT		),
+			self::TAG_MODEL					=>  array ( 'type' => self::TYPE_ASCII		),
+			self::TAG_NEW_SUBFILE_TYPE			=>  array ( 'type' => self::TYPE_LONG		),
+			self::TAG_NUMBER_OF_INKS			=>  array ( 'type' => self::TYPE_SHORT		),
+			self::TAG_ORIENTATION				=>  array ( 'type' => self::TYPE_SHORT		),
+			self::TAG_PAGE_NAME				=>  array ( 'type' => self::TYPE_ASCII		),
+			self::TAG_PAGE_NUMBER				=>  array ( 'type' => self::TYPE_LONG		),
+			self::TAG_PHOTOMETRIC_INTERPRETATION		=>  array ( 'type' => self::TYPE_SHORT		),
+			self::TAG_PHOTOSHOP				=>  array ( 'type' => self::TYPE_BYTE		),
+			self::TAG_PLANAR_CONFIGURATION			=>  array ( 'type' => self::TYPE_SHORT		),
+			self::TAG_PRIMARY_CHROMACITIES			=>  array ( 'type' => self::TYPE_RATIONAL	),
+			self::TAG_REFERENCE_BLACK_WHITE			=>  array ( 'type' => self::TYPE_RATIONAL	),
+			self::TAG_RESOLUTION_UNIT			=>  array ( 'type' => self::TYPE_SHORT		),
+			self::TAG_ROWS_PER_STRIP			=>  array ( 'type' => self::TYPE_LONG		),
+			self::TAG_SAMPLE_FORMAT				=>  array ( 'type' => self::TYPE_SHORT		),
+			self::TAG_SAMPLES_PER_PIXEL			=>  array ( 'type' => self::TYPE_SHORT		),
+			self::TAG_SMAX_SAMPLE_VALUE			=>  array ( 'type' => self::TYPE_IGNORED	),
+			self::TAG_SMIN_SAMPLE_VALUE			=>  array ( 'type' => self::TYPE_IGNORED	),
+			self::TAG_SOFTWARE				=>  array ( 'type' => self::TYPE_ASCII		),
+			self::TAG_STRIP_BYTE_COUNTS			=>  array ( 'type' => self::TYPE_LONG		),
+			self::TAG_STRIP_OFFSETS				=>  array ( 'type' => self::TYPE_LONG		),
+			self::TAG_SUBFILE_TYPE				=>  array ( 'type' => self::TYPE_SHORT		),
+			self::TAG_T4_OPTIONS				=>  array ( 'type' => self::TYPE_LONG		),
+			self::TAG_T6_OPTIONS				=>  array ( 'type' => self::TYPE_LONG		),
+			self::TAG_TARGET_PRINTER			=>  array ( 'type' => self::TYPE_ASCII		),
+			self::TAG_TILE_BYTE_COUNTS			=>  array ( 'type' => self::TYPE_LONG		),
+			self::TAG_TILE_LENGTH				=>  array ( 'type' => self::TYPE_LONG		),
+			self::TAG_TILE_OFFSETS				=>  array ( 'type' => self::TYPE_LONG		),
+			self::TAG_TILE_WIDTH				=>  array ( 'type' => self::TYPE_LONG		),
+			self::TAG_THRESHHOLDING				=>  array ( 'type' => self::TYPE_SHORT		),
+			self::TAG_TRANSFER_FUNCTION			=>  array ( 'type' => self::TYPE_SHORT		),
+			self::TAG_TRANSFER_RANGE			=>  array ( 'type' => self::TYPE_SHORT		),
+			self::TAG_WHITE_POINT				=>  array ( 'type' => self::TYPE_RATIONAL	),
+			self::TAG_X_POSITION				=>  array ( 'type' => self::TYPE_RATIONAL	),
+			self::TAG_X_RESOLUTION				=>  array ( 'type' => self::TYPE_RATIONAL	),
+			self::TAG_Y_POSITION				=>  array ( 'type' => self::TYPE_RATIONAL	),
+			self::TAG_Y_RESOLUTION				=>  array ( 'type' => self::TYPE_RATIONAL	),
+			self::TAG_YCC_COEFFICIENTS			=>  array ( 'type' => self::TYPE_RATIONAL	),
+			self::TAG_YCC_POSITIONING			=>  array ( 'type' => self::TYPE_SHORT		),
+			self::TAG_YCC_SUBSAMPLING			=>  array ( 'type' => self::TYPE_SHORT		)
+		    ) 
 	    ) ;	
 
 	// Association between type constants and type names
@@ -299,8 +414,11 @@ abstract class  TiffImage	extends  Object
 			   {
 				if  ( ! strncmp ( $name, 'TAG_', 4 ) )
 				   {
-					if  ( isset ( self::$TagTypes [ $value ] ) )
-						self::$TagTypes [ $value ] [ 'name' ]	=  $name ;
+					foreach  ( self::$TagTypes  as  $ifd_type => &$types )
+					   {
+						if  ( isset ( $types [ $value ] ) )
+							$types [ $value ] [ 'name' ]	=  $name ;
+					    }
 				    }
 				else if ( ! strncmp ( $name, 'TYPE_', 5 ) )
 					self::$TypeNames [ $value ]	=  $name ;
@@ -456,93 +574,39 @@ abstract class  TiffImage	extends  Object
 	private function  __parse ( )
 	   {
 		// Get the offset in the file of the first IFD
-		$ifd_start	=  $this -> TiffData -> GetWord32 ( 4 ) ;
+		$ifd_offset	=  $this -> TiffData -> GetWord32 ( 4 ) ;
 
-		// Retrieve the number of 12-bytes entries in this IFD
-		$ifd_count	=  $this -> TiffData -> GetWord16 ( $ifd_start ) ;
-
-		// Make the current offset point to the first IFD entry
-		$ifd_offset	=  $ifd_start + 2 ;
-
-		// Number of IFD found so far
+		// Loop through all the IFDs defined in this file
 		$current_ifd	=  0 ;
 
-		// Loop through all the IDF in the TIFF file
-		while ( true )
+		do
 		   {
+			$new_ifd_offset  =  $this -> GetIFD ( $ifd_offset, $ifd_data ) ;
 			$current_ifd ++ ;
 
 			if  ( self::$DEBUG )
-				echo ( "IFD #$current_ifd at offset 0x" . sprintf ( "0x%08X", $ifd_offset - 2 ) . ", entry count : $ifd_count\n" ) ;
-
-			// Data used to instantiate a TiffPage object
-			$ifd_data	=  array ( ) ;
-
-			// Retrieve all the fields from the 12 bytes IFD entry
-			for  ( $i = 0 ; $i  <  $ifd_count ; $i ++, $ifd_offset += 12 )
 			   {
-				// Tag (TiffImage::TAG_* constants) + entry type (TiffImage::TYPE_* constants)
-				$w	=  $this -> TiffData -> GetWord16 ( $ifd_offset, 2 ) ;
+				echo ( "IFD #$current_ifd at offset 0x" . sprintf ( "0x%08X", $ifd_offset - 2 ) . ", entry count : " . count ( $ifd_data ) . "\n" ) ;
+				$current_entry	=  0 ;
 
-				// Entry count + value or offset
-				$dw	=  $this -> TiffData -> GetWord32 ( $ifd_offset + 4, 2 ) ;
-
-				$entry_tag	=  $w  [1] ;
-				$entry_type	=  $w  [2] ;
-				$entry_count	=  $dw [1] ;
-				$entry_value	=  $dw [2] ;
-
-				// Get the display name of the tag (for debugging purposes)
-				if  ( isset ( self::$TagTypes [ $entry_tag ] ) )
-					$tagname	=  self::$TagTypes [ $entry_tag ] [ 'name' ] ;
-				else
-					$tagname	=  "*** UNDEFINED ***" ;
-
-				// Get the display name of the type
-				if  ( isset ( self::$TypeNames [ $entry_type ] ) )
-					$typename	=  self::$TypeNames [ $entry_type ] ;
-				else	
-					$typename	=  "*** UNDEFINED ***" ;
-
-				// Add this new entry to the current IFD
-				$ifd_data []		=  array
-				   ( 
-					'tag'		=>  $entry_tag,
-					'tagname'	=>  $tagname,
-					'type'		=>  $entry_type,
-					'typename'	=>  $typename,
-					'count'		=>  $entry_count,
-					'value'		=>  $entry_value,
-					'ifd-offset'	=>  $ifd_offset 
-				    ) ;
-
-				if  ( self::$DEBUG )
+				foreach  ( $ifd_data  as  $ifd_entry )
 				   {
-					echo ( "\tEntry #" . ( $i + 1 ) . " :\n" ) ;
-					echo ( "\t\tTag   : " . sprintf ( "0x%04X", $entry_tag ) . " ($tagname)\n" ) ;
-					echo ( "\t\tType  : $entry_type\n" ) ;
-					echo ( "\t\tCount : $entry_count\n" ) ;
-					echo ( "\t\tValue : " . sprintf ( "0x%08X", $entry_value ) . "\n" ) ;
+					echo ( "\tEntry #" . ( $current_entry ) . " :\n" ) ;
+					echo ( "\t\tTag   : " . sprintf ( "0x%04X", $ifd_entry -> Tag ) . " ({$ifd_entry -> Tagname})\n" ) ;
+					echo ( "\t\tType  : {$ifd_entry -> Type}\n" ) ;
+					echo ( "\t\tCount : {$ifd_entry -> Count}\n" ) ;
+					echo ( "\t\tValue : " . sprintf ( "0x%08X", $ifd_entry -> Value ) . "\n" ) ;
+
+					$current_entry ++ ;
 				    }
 			    }
 
-			// Create a new page based on the IFD entries collected so far
+			// Create a new Page object corresponding to the IFD data found
 			$this -> Pages []	=  new TiffSplitterPage ( $this, $ifd_data ) ;
 
-			// An IFD is always followed by a pointer to the next IFD
-			$ifd_next	=  $this -> TiffData -> GetWord32 ( $ifd_offset	 ) ;
+			$ifd_offset		=  $new_ifd_offset ;
 
-			// When this pointer is null, we know that this is the last IFD of the file
-			if  ( ! $ifd_next )
-				break ;
-
-			// Point to the next IFD
-			$ifd_offset	 =  $ifd_next ;
-
-			// Retrieve this next IFD entry count and update the current pointer accordingly
-			$ifd_count	 =  $this -> TiffData -> GetWord16 ( $ifd_offset ) ;
-			$ifd_offset	+=  2 ;
-		    }
+		    }  while  ( $ifd_offset ) ;
 
 		usort ( $this -> Pages, array ( $this, '__sort_by_page_number' ) ) ;
 	    }
@@ -552,6 +616,45 @@ abstract class  TiffImage	extends  Object
 	//	Sorts the pages by their number
 	public function  __sort_by_page_number ( $a, $b )
 	   { return ( $a -> PageNumber - $b -> PageNumber ) ; }
+
+
+	// GetIFD -
+	//	Retrieve an IFD pointing at the specified offset.
+	public function  GetIFD ( $ifd_offset, &$ifd_data )
+	   {
+		$ifd_data	=  new TiffIFD ( $this ) ;
+
+		// Retrieve the number of 12-bytes entries in this IFD
+		$ifd_count	=  $this -> TiffData -> GetWord16 ( $ifd_offset ) ;
+
+		// Make the current offset point to the first IFD entry
+		$ifd_offset	+=  2 ;
+
+		// Retrieve all the fields from the 12 bytes IFD entry
+		for  ( $i = 0 ; $i  <  $ifd_count ; $i ++, $ifd_offset += self::IFD_ENTRY_SIZE )
+		   {
+			// Tag (TiffImage::TAG_* constants) + entry type (TiffImage::TYPE_* constants)
+			$w	=  $this -> TiffData -> GetWord16 ( $ifd_offset, 2 ) ;
+
+			// Entry count + value or offset
+			$dw	=  $this -> TiffData -> GetWord32 ( $ifd_offset + 4, 2 ) ;
+
+			$entry_tag	=  $w  [1] ;
+			$entry_type	=  $w  [2] ;
+			$entry_count	=  $dw [1] ;
+			$entry_value	=  $dw [2] ;
+
+			// Add this new entry to the current IFD
+			$ifd_entry		=  new TiffIFDEntry ( $this, $entry_tag, $entry_type, $entry_count, $entry_value, $ifd_offset ) ;
+			$ifd_data []		=  $ifd_entry ;
+		    }
+
+		// An IFD is always followed by a pointer to the next IFD
+		$ifd_offset	=  $this -> TiffData -> GetWord32 ( $ifd_offset	 ) ;
+
+		// All done, return
+		return ( $ifd_offset ) ;
+	    }
     }
 
 
@@ -564,14 +667,20 @@ abstract class  TiffImage	extends  Object
 class  TiffPage			extends  Object
    {
 	// Page number 
-	public		$PageNumber	=  -1 ;
+	public		$PageNumber	=  0 ;
 	// Page dimensions
 	public		$PageWidth	=  0,
 			$PageHeight	=  0 ;
 	// Parent TiffSplitter object
-	protected	$Parent ;
+	public		$Parent ;
 	// Image file directory for this page
 	public		$IFD ;
+	// EXIF IFD
+	public		$EXIF_IFD ; 
+	// GPS IFD
+	public		$GPS_IFD ;
+	// Interoperability IFD 
+	public		$Interoperability_IFD ;
 
 
 	/*--------------------------------------------------------------------------------------------------------------
@@ -583,47 +692,297 @@ class  TiffPage			extends  Object
 	public function  __construct ( $parent, $ifd_data )
 	   {
 		$this -> Parent		=  $parent ;
+		$this -> IFD		=  $ifd_data ;
 
-		// Remove the tags that we decided to ignore
-		$new_ifd_data		=  array ( ) ;
+		if  ( ( $entry = $ifd_data -> GetTagById ( TiffImage::TAG_PAGE_NUMBER ) )  !==  false )
+			$this -> PageNumber	=  $entry -> Value ;
 
-		foreach  ( $ifd_data  as  $item )
+		if  ( ( $entry = $ifd_data -> GetTagById ( TiffImage::TAG_IMAGE_WIDTH ) )  !==  false )
+			$this -> PageWidth	=  $entry -> Value ;
+
+		if  ( ( $entry = $ifd_data -> GetTagById ( TiffImage::TAG_IMAGE_LENGTH ) )  !==  false )
+			$this -> PageHeight	=  $entry -> Value ;
+	    }
+    }
+
+
+/*==============================================================================================================
+
+    class TiffIFD -
+        Implements an image file directory.
+
+  ==============================================================================================================*/
+class	TiffIFD			extends		Object 
+				implements	\ArrayAccess, \Countable, \IteratorAggregate
+   {
+	// Image File Directory entries
+	protected		$IFD			=  array ( ) ;
+	protected		$IFDCount		=  0 ;
+	protected		$SupportedIFDCount	=  0 ;
+
+	// Entries indexed by their tag constant
+	protected		$IFDTagIndexes		=  array ( ) ;
+	// Entries indexed by their human-readable tag constant
+	protected		$IFDTagnameIndexes	=  array ( ) ;
+	// Parent TIFF image
+	protected		$ParentImage ;
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    Constructor -
+		Creates an IFD structure.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( $parent_image )
+	   {
+		$this -> ParentImage	=  $parent_image ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    GetRealCount -
+		Returns the number of supported IFD entries.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  GetRealCount ( )
+	   { return ( $this -> SupportedIFDCount ) ; }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    GetTagById -
+		Returns a TiffIFDEntry based on its tag name (one of the TiffImage::TAG_* constants).
+		Returns false in no corresponding entry exists.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  GetTagById ( $tagid )
+	   {
+		if  ( isset ( $this -> IFDTagIndexes [ $tagid ] ) )
+			return ( $this -> IFD [ $this -> IFDTagIndexes [ $tagid ] ] ) ;
+		else
+			return ( false ) ;
+	    }
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+		Interfaces implementations.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  count ( )
+	   { return ( $this -> IFDCount ) ; }
+
+
+	public function  getIterator ( )
+	   { return ( new \ArrayIterator ( $this -> IFD ) ) ; }
+
+
+	public function  offsetExists ( $offset )
+	   { return ( $offset  >=  0  &&  $offset  <  $this -> IFDCount ) ; }
+
+
+	public function  offsetGet ( $offset )
+	   { return ( $this -> IFD [ $offset ] ) ; }
+	
+
+	public function  offsetSet ( $offset, $ifd_entry )
+	   { 
+		if  ( $offset  ===  null )
 		   {
-			if  ( isset ( TiffImage::$TagTypes [ $item [ 'tag' ] ] ) )
-			   {  
-				if  ( TiffImage::$TagTypes [ $item [ 'tag' ] ] [ 'type' ]  !==  TiffImage::TYPE_IGNORED )
-					$new_ifd_data []	=  $item ;
-				else
-				   {
-					warning ( "Tag \"{$item ['tagname' ]}\" is currently ignored." ) ;
-				    }
-			    }
-			else
-				$new_ifd_data []	=  $item ;
+			$this -> IFD []			=  $ifd_entry ;
+			$index				=  $this -> IFDCount ;
+			$this -> IFDCount ++ ;
+		    }
+		else
+		   {
+			$this -> IFD [ $offset ]	=  $ifd_entry ;
+			$index				=  $offset ;
+			$this -> IFDCount		=  count ( $this -> IFD ) ;
 		    }
 
-		$this -> IFD		=  $new_ifd_data ;
+		if  ( $ifd_entry -> Supported )
+			$this -> SupportedIFDCount ++ ;
 
-		// Try to find if there is a page number somewhere
-		foreach  ( $ifd_data  as  $entry )
+		$this -> IFDTagIndexes     [ $ifd_entry -> Tag ]	=  $index ;
+		$this -> IFDTagnameIndexes [ $ifd_entry -> Tagname ]	=  $index ;
+	    }
+	
+
+	public function  offsetUnset ( $offset )
+	   { 
+		if  ( isset ( $this -> IFD [ $offset ] ) )
 		   {
-			switch (  $entry [ 'tag' ] )
-			   {
-				case	TiffImage::TAG_PAGE_NUMBER :
-					$this -> PageNumber	=  $entry [ 'value' ]  &  0xFFFF ;
-					break ;
+			$ifd_entry	=  $this -> IFD [ $offset ] ;
 
-				case	TiffImage::TAG_IMAGE_WIDTH :
-					$this -> PageWidth	=  $entry [ 'value' ] ;
-					break ;
+			unset ( $this -> IFDTagIndexes     [ $ifd_entry -> Tag     ] ) ;
+			unset ( $this -> IFDTagnameIndexes [ $ifd_entry -> Tagname ] ) ;
 
-				case	TiffImage::TAG_IMAGE_LENGTH :
-					$this -> PageLength	=  $entry [ 'value' ] ;
-					break ;
-			    }
+			$this -> IFDCount -- ;
+
+			if  ( $ifd_entry -> Supported )
+				$this -> SupportedIFDCount -- ;
+
+			unset ( $this -> IFD [ $offset ] ) ;
+		    }
+	    }
+    }
+
+
+/*==============================================================================================================
+
+    class TiffIFDEntry -
+        Implements an image file directory entry.
+
+  ==============================================================================================================*/
+class	TiffIFDEntry		extends  Object
+   {
+	// IFD data
+	public			$Tag ;					// Tag id (one of the TiffImage::TAG_* constants)
+	public			$Tagname ;				// Human-readable tag name
+	public			$Type ;					// Entry type (one of the TiffImage::TYPE_* constants)
+	public			$Typename ;				// Human-readable type name
+	public			$Count ;				// Value count
+	public			$Value ;				// Value data : either a DWORD or an offset pointing to the actual value data
+	public			$Offset ;				// Offset of this IFD entry in the TIFF file
+	public			$IsOffset ;				// True if $Value represents an offset within the TIFF file
+	public			$ActualSize ;				// Actual data size (without padding)
+	public			$Supported		=  true ;	// Indicates whether the current version of TiffImage supports this tag
+
+	// Properties not to be put in everybody's hands
+	protected		$NeedsPadding		=  false ;	// For binary/ascii values, indicates whether a NUL byte should be added for aligning
+									// the data on a word16 boundary
+	protected		$__UnderlyingValue	=  false ;	// Real data contents, if $Value is actually an offset
+
+	// Parent TiffImage object
+	protected		$ParentImage ;
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    Constructor -
+		Creates an IFD entry.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( $parent_image, $tag, $type, $count, $value, $offset = 0, $ifd_type = TiffImage::IFD_STANDARD )
+	   {
+		$this -> ParentImage	=  $parent_image ;
+
+		// Get the display name of the tag (for debugging purposes)
+		if  ( isset ( TiffImage::$TagTypes [ TiffImage::IFD_STANDARD ] [ $tag ] ) )
+			$tagname	=  TiffImage::$TagTypes [ TiffImage::IFD_STANDARD ] [ $tag ] [ 'name' ] ;
+		else
+			$tagname	=  "*** UNDEFINED ***" ;
+
+		// Get the display name of the type
+		if  ( isset ( TiffImage::$TypeNames [ $type ] ) )
+			$typename	=  TiffImage::$TypeNames [ $type ] ;
+		else	
+			$typename	=  "*** UNDEFINED ***" ;
+
+		// Initialize properties based on the supplied data
+		$this -> Tag		=  $tag ;
+		$this -> Tagname	=  $tagname ;
+		$this -> Type		=  $type ;
+		$this -> Typename	=  $typename ;
+		$this -> Count		=  $count ;
+		$this -> Value		=  $value ;
+		$this -> Offset		=  $offset ;
+
+		if  ( isset ( TiffImage::$TagTypes [ $ifd_type ] [ $tag ] )  &&  TiffImage::$TagTypes [ $ifd_type ] [ $tag ] [ 'type' ]  ===  TiffImage::TYPE_IGNORED )
+			$this -> Supported	=  false ;
+
+
+		// Determine if the IDF entry value is a value or an offset
+		switch ( $this -> Type )
+		   {
+			// ASCII type : always terminated by a NUL character
+			case	TiffImage::TYPE_ASCII :
+				$this -> IsOffset	=  ( $this -> Count + 1  >  4 ) ;
+				$this -> NeedsPadding	=  ( ( $this -> Count % 2 )  !==  0 ) ;
+				$this -> ActualSize	=  $this -> Count ;
+				break ;
+
+			// Other binary types : the value is always an offset
+			case	TiffImage::TYPE_BYTE :
+			case	TiffImage::TYPE_SBYTE :
+			case	TiffImage::TYPE_UNDEFINED :
+				$this -> IsOffset	=  ( $this -> Count  >  4 ) ;
+				$this -> NeedsPadding	=  ( ( $this -> Count % 2 )  !==  0 ) ;
+				$this -> ActualSize	=  $this -> Count ;
+				break ;
+
+			// Up to two SHORTS can be stored in the value field of the IFD ; above this count, the value field is an offset
+			case	TiffImage::TYPE_SHORT :
+			case	TiffImage::TYPE_SSHORT :
+				$this -> IsOffset	=  ( $this -> Count  >  2 ) ;
+				$this -> ActualSize	=  $this -> Count * 2 ;
+				break ;
+
+			// One long can be stored in the value field of the IFD ; above 1, it will be an offset
+			case	TiffImage::TYPE_LONG :
+			case	TiffImage::TYPE_SLONG :
+			case	TiffImage::TYPE_FLOAT :
+				$this -> IsOffset	=  ( $this -> Count  >  1 ) ;
+				$this -> ActualSize	=  $this -> Count * 4 ;
+				break ;
+
+			// Rationals and doubles are 64-bit values (2 DWORD32) ; so the value field of the IFD is always an offset
+			case	TiffImage::TYPE_RATIONAL :
+			case	TiffImage::TYPE_SRATIONAL :
+			case	TiffImage::TYPE_DOUBLE :
+				$this -> IsOffset	=  true ;
+				$this -> ActualSize	=  $this -> Count * 8 ;
+				break ;
+
+			default :
+				warning ( "Unimplemented type {$this -> Type}." ) ;
 		    }
 	    }
 
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    __get -
+		Magic function used to retrieve the UnderlyingValue property, which holds the actual data when the 
+		$Value property actually specifies an offset in the TIFF file.
+		The actual data is loaded only on demand.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __get ( $member )
+	   {
+		if  ( $member  ===  'UnderlyingValue' )
+		   {
+			if  ( $this -> IsOffset )
+			   {
+				if  ( $this -> __UnderlyingValue  ===  false )
+					$this -> GetUnderlyingValue ( ) ;
+
+				return ( $this -> __UnderlyingValue ) ;
+			    }
+			else
+				return ( $this -> Value ) ;
+		    }
+		else
+			return ( $this -> $member ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    GetUnderlyingValue -
+		Retrieve the actual data of an IFD entry whose value field is a pointer.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	protected function  GetUnderlyingValue ( )
+	   {
+		$data		=  $this -> ParentImage -> TiffData -> GetRawBytes ( $this -> Value, $this -> ActualSize ) ;
+
+		if  ( $this -> NeedsPadding )
+			$data	.=  "\0" ;
+
+		$this -> __UnderlyingValue	=  $data ;
+	    }
     }
 
 
