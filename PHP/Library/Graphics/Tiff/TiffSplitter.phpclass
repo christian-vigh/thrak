@@ -23,6 +23,9 @@
     [Version : 1.0.1]	[Date : 2017-04-14]     [Author : CV]
 	. Moved most of the code from TiffSplitter to TiffImage.
 
+    [Version : 1.0.2]	[Date : 2017-04-16]     [Author : CV]
+	. Completely rewrote the AsString() method to use the new TiffIFD and TiffIFDEntry classes.
+
  **************************************************************************************************************/
 namespace 	Thrak\Graphics ;
 
@@ -118,7 +121,7 @@ class  TiffSplitterPage			extends  TiffPage
 	   {
 		$tiff			=  $this -> Parent -> TiffData ;
 		$ifd			=  $this -> IFD ;
-		$ifd_count		=  count ( $ifd ) ;
+		$ifd_count		=  $ifd -> GetRealCount ( ) ;
 
 		// Build the header  (either the WORD16 0x4949 or 0x4D4D, followed by the WORD16 42)
 		$tiff_data		=  $tiff -> ToWord16 ( $this -> Parent -> Endianness, TiffImage::TIFF_IDENTIFIER ) ;
@@ -133,191 +136,95 @@ class  TiffSplitterPage			extends  TiffPage
 		$offset			+=  2 ;
 
 		// Compute the offset AFTER the IFD, including the pointer to the next IFD, which will be zero in our case
-		$post_offset		 =  $offset + ( $ifd_count * 12 ) + 4 ;
+		$post_offset		 =  $offset + ( $ifd_count * TiffImage::IFD_ENTRY_SIZE ) + 4 ;
 
-		// Some data needs extra processing before writing the file ; this is the case for example of the StripOffsets (which
-		// contains the offsets of each strip in the image) and StripByteCount (which contains the lengths of each strip)
-		$strip_offsets_index		=  false ;
-		$strip_byte_counts_index	=  false ;
+		// Data after the IFD entries
+		$post_data		 =  '' ;
 
-		// Loop through each IFD entry - we will first have to retrieve the data, if the "value" field is in fact a file offset,
-		// then retain the index of some fields that require post processing
-		$ifd_index	=  0 ;
-	
-		foreach  ( $ifd  as  &$ifd_entry )
-		   {
-			$ifd_count	=  $ifd_entry [ 'count' ] ;
-			$ifd_value	=  $ifd_entry [ 'value' ] ;
-
-			// Some IFD values are always offsets, some are always direct values and some can be either the former or the latter
-			// We have to determine, based on the tag type and its value count, whether we have a direct value or an offset
-			switch ( $ifd_entry [ 'type' ] )
-			   {
-				// ASCII and other related types : the value is always an offset
-				case	TiffImage::TYPE_BYTE :
-				case	TiffImage::TYPE_SBYTE :
-				case	TiffImage::TYPE_ASCII :
-				case	TiffImage::TYPE_UNDEFINED :
-					// Extract associated data
-					$data		=  $tiff -> GetRawBytes ( $ifd_value, $ifd_count ) ;
-
-					// Pad it to 16-bits boundary
-					if  ( strlen ( $data ) % 2 )
-					   {
-						$data		.=  "\x00" ;
-						$ifd_count ++ ;
-					    }
-
-					$ifd_entry [ 'data' ]		=  $data ;
-					$ifd_entry [ 'data-length' ]	=  $ifd_count ;
-					$ifd_entry [ 'offset' ]		=  true ;
-
-					break ;
-
-				// Up to two SHORTS can be stored in the value field of the IFD ; above this count, the value field is an offset
-				case	TiffImage::TYPE_SHORT :
-				case	TiffImage::TYPE_SSHORT :
-					if  ( $ifd_count  >  2 )
-					   {
-						$data				=  $tiff -> GetRawBytes ( $ifd_value, $ifd_count * 2 ) ;
-
-						$ifd_entry [ 'data' ]		=  $data ;
-						$ifd_entry [ 'data-length' ]	=  $ifd_count * 2 ;
-						$ifd_entry [ 'offset' ]		=  true ;
-					    }
-					else
-					   {
-						$ifd_entry [ 'offset' ]		=  false ;
-					    }
-
-					break ;
-
-				// One long can be stored in the value field of the IFD ; above 1, it will be an offset
-				case	TiffImage::TYPE_LONG :
-				case	TiffImage::TYPE_SLONG :
-				case	TiffImage::TYPE_FLOAT :
-					if  ( $ifd_count  >  1 )
-					   {
-						$data				=  $tiff -> GetRawBytes ( $ifd_value, $ifd_count * 4 ) ;
-
-						$ifd_entry [ 'data' ]		=  $data ;
-						$ifd_entry [ 'data-length' ]	=  $ifd_count * 4 ;
-						$ifd_entry [ 'offset' ]		=  true ;
-					    }
-					else
-						$ifd_entry [ 'offset' ]		=  false ;
-
-					break ;
-
-				// Rationals and doubles are 64-bit values ; so the value field of the IFD is always an offset
-				case	TiffImage::TYPE_RATIONAL :
-				case	TiffImage::TYPE_SRATIONAL :
-				case	TiffImage::TYPE_DOUBLE :
-					$data				=  $tiff -> GetRawBytes ( $ifd_value, $ifd_count * 8 ) ;
-
-					$ifd_entry [ 'data' ]		=  $data ;
-					$ifd_entry [ 'data-length' ]	=  $ifd_count * 8 ;
-					$ifd_entry [ 'offset' ]		=  true ;
-
-					break ;
-
-				default :
-					warning ( "Unimplemented type {$ifd_entry [ 'type' ]}." ) ;
-			    }
-
-			// TODO:
-			// Photoshop can generate TIFF files with a single strip ; in this case, this makes the above code to think that the value field
-			// of the IFD is not an offset, so we have to adjust it.
-			// However, this does not solve the problem !!!
-			// Anyway, we have to remember the indexes of the TAG_STRIP_OFFSETS and TAG_STRIP_BYTE_COUNTS tags
-			switch ( $ifd_entry [ 'tag' ] )
-			   {
-				case	TiffImage::TAG_STRIP_OFFSETS :
-					$strip_offsets_index		=  $ifd_index ;
-					$ifd_entry [ 'offset' ]		=  true ;
-					break ;
-
-				case	TiffImage::TAG_STRIP_BYTE_COUNTS :
-					$strip_byte_counts_index	=  $ifd_index ;
-					$ifd_entry [ 'offset' ]		=  true ;
-					break ;
-			    }
-
-			$ifd_index ++ ;
-		    }
-
-		// Check for some consistency in the input data
-		if  ( $strip_byte_counts_index  ===  false  ||  $strip_offsets_index  ===  false )
-			error ( new TiffException ( "The supplied TIFF is missing information about image data." ) ) ;
-
-		// $post_data is the data to be catenated after the IFD
-		$post_data	=  '' ;
-		$ifd_index	=  0 ;
-
-		// Loop through each entry
+		// Loop through each IFD entry
 		foreach  ( $ifd  as  $ifd_entry )
 		   {
-			// We have to convert each IFD field, taking into account the endianness of the input file
-			$tag	=  $tiff -> ToWord16 ( $ifd_entry [ 'tag'   ] ) ;
-			$type	=  $tiff -> ToWord16 ( $ifd_entry [ 'type'  ] ) ;
-			$count	=  $tiff -> ToWord32 ( $ifd_entry [ 'count' ] ) ;
+			// Don't try to process unsupported tags
+			if  ( ! $ifd_entry -> Supported )
+				continue ;
 
-			// If the'offset' entry is true, then we will have to search the corresponding IFD entry data at the value specified
-			// by 'value', which should contain 'count' entries (to be multiplied by the entry size given by its type in order to
-			// get a byte count)
-			if  ( $ifd_entry [ 'offset' ] )
+			// Get the Tag, Type and Count values converted to their original endianness
+			$tag	=  $tiff -> ToWord16 ( $ifd_entry -> Tag ) ;
+			$type	=  $tiff -> ToWord16 ( $ifd_entry -> Type ) ;
+			$count	=  $tiff -> ToWord32 ( $ifd_entry -> Count ) ;
+
+
+			// Normal processing
+			if  ( $ifd_entry -> Tag  !==  TiffImage::TAG_STRIP_OFFSETS )
 			   {
-				// General cases
-				if  ( $ifd_index  !=  $strip_offsets_index )
+				// IFD entry is not an offset to some data : simply reuse the original Value
+				if  ( ! $ifd_entry -> IsOffset )
+					$value		=  $ifd_entry -> Value ;
+				// Otherwise, retrieve the data it points to
+				else
 				   {
-					$post_data		.=  $ifd_entry [ 'data' ] ;
-					$value			 =  $tiff -> ToWord32 ( $post_offset ) ;
-					$post_offset		+=  $ifd_entry [ 'data-length' ] ;
-				    }
-				// Special case for TAG_STRIP_OFFSETS : we have to build a new offset table and catenate all the strips after it
-				// (this is not a requirement, it is just for practical reasons)
-				else 
-				   {
-					// Get the byte counts for each strip
-					$strip_byte_counts	=  $tiff -> Unpack32 ( $ifd [ $strip_byte_counts_index ] [ 'data' ] ) ;
+					// The original IFD value will be replaced with the current output offset
+					$value		 =  $post_offset ;
 
-					// Get strip offsets
-					$strip_offsets		=  $tiff -> Unpack32 ( $ifd_entry [ 'data' ] ) ;
+					// Get real data
+					$data		 =  $ifd_entry -> UnderlyingValue ;
 
-					$strip_count		=  count ( $strip_offsets ) ;
-					$value			=  $tiff -> ToWord32 ( $post_offset ) ;
-
-					// Rebuild the new offset table
-					$strip_data		=  '' ;
-					$strip_data_offset	=  $post_offset + ( $strip_count * 4 ) ;
-					$new_offsets		=  array ( ) ; 
-
-					for  ( $i = 1 ; $i  <=  $strip_count ; $i ++ )
-					   {
-						$strip_data		.=  $tiff -> GetRawBytes ( $strip_offsets [$i], $strip_byte_counts [$i] ) ;
-						$new_offsets []		 =  $strip_data_offset ;
-						$strip_data_offset	+=  $strip_byte_counts [$i] ;
-					    }
-					
-					// Catenate the new offset table + strip contents to the data to be added after the IFD structure
-					$extra_data	 =  $tiff -> ToWord32 ( $new_offsets ) . $strip_data ;
-					$post_data	.=  $extra_data ;
-					$post_offset    +=  strlen ( $extra_data ) ;
+					$post_data	.=  $data ;
+					$post_offset	+=  strlen ( $data ) ;
 				    }
 			    }
-			// The 'offset' entry is false : the 'value' field is really a value, not an offset
+			// Special processing for StripOffsets
 			else
 			   {
-				$value	 =  $tiff -> ToWord32 ( $ifd_entry [ 'value' ] ) ;
+				// The original IFD value will be replaced with the current output offset
+				$value		 =  $post_offset ;
+
+				// Get real data
+				$data			=  $ifd_entry -> UnderlyingValue ;
+
+				// Get the StripByteCounts value
+				$byte_counts_entry	=  $this -> IFD -> GetTagById ( TiffImage::TAG_STRIP_BYTE_COUNTS ) ;
+
+				// When the Count field is > 1, the Value field is necessarily an offset
+				if  ( $byte_counts_entry -> IsOffset )
+				   {
+					// Get the StripByteCounts entries
+					$strip_byte_counts	=  $tiff -> Unpack32 ( $byte_counts_entry -> UnderlyingValue ) ;
+
+					// Then strip offset data
+					$strip_offsets		=  $tiff -> Unpack32 ( $data ) ;
+					$strip_count		=  count ( $strip_offsets ) ;
+				    }
+				// Otherwise, the Value field gives the strip byte counts
+				else
+				   {
+					$strip_byte_counts	=  array ( 1 => $byte_counts_entry -> Value ) ;
+					$strip_offsets		=  array ( 1 => $ifd_entry -> Value ) ;
+					$strip_count		=  1 ;
+				    }
+
+				// Rebuild the new offset table
+				$strip_data		=  '' ;
+				$strip_data_offset	=  $post_offset + ( $strip_count * 4 ) ;
+				$new_offsets		=  array ( ) ;
+
+				for  ( $i = 1 ; $i  <=  $strip_count ; $i ++ )
+				   {
+					$strip_data		.=  $tiff -> GetRawBytes ( $strip_offsets [$i], $strip_byte_counts [$i] ) ;
+					$new_offsets []		 =  $strip_data_offset ;
+					$strip_data_offset	+=  $strip_byte_counts [$i] ;
+				    }
+					
+				// Catenate the new offset table + strip contents to the data to be added after the IFD structure
+				$extra_data	 =  $tiff -> ToWord32 ( $new_offsets ) . $strip_data ;
+				$post_data	.=  $extra_data ;
+				$post_offset    +=  strlen ( $extra_data ) ;
 			    }
 
-			// Add the IFD entry to the current contents
-			$tiff_data	.=  $tag . $type . $count . $value ;
-			$ifd_index ++ ;
+			// Add this IFD entry tot he output data
+			$entry_value	 =  $tiff -> ToWord32 ( $value ) ;
+			$tiff_data	.=  $tag . $type . $count . $entry_value ;
 		    }
-
-		// dump ( $ifd ) ;
-
 		// Add the pointer to the next IFD, which is zero since there will be only one IFD here, then the data we extracted 
 		// in the above loop
 		$tiff_data	.=  "\x00\x00\x00\x00" . $post_data ;
