@@ -1117,7 +1117,7 @@ END;
 									// the most common ones
 									if  ( $current_parameter -> Numeric   && 
 										(
-											preg_match ( "/^[$escaped_switches] [a-zA-Z_] [a-zA-Z0-9__-]* \$/x", $argv [$j] )	||
+											preg_match ( "/^[$escaped_switches]? [a-z_]/ix", $argv [$j] )	||
 											preg_match ( '/\d [a-z_\-]/ix', $argv [$j] )
 										 ) )
 										break ;
