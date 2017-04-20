@@ -1,0 +1,638 @@
+<?php
+/**************************************************************************************************************
+
+    NAME
+        TiffMerger.phpclass
+
+    DESCRIPTION
+        A class for merging multiple TIFF files into one.
+
+    AUTHOR
+        Christian Vigh, 04/2017.
+
+    HISTORY
+    [Version : 1.0]	[Date : 2017-04-17]     [Author : CV]
+        Initial version.
+
+ **************************************************************************************************************/
+namespace 	Thrak\Graphics ;
+
+// Used namespaces and objects
+use		Thrak\System\Object ;
+use 		Thrak\Graphics\TiffImage ;
+use		Thrak\Graphics\TiffException ;
+use		Thrak\Graphics\TiffPage ;
+
+
+/*==============================================================================================================
+
+    class TiffMerger -
+        A class for joining together multiple tiff files.
+
+  ==============================================================================================================*/
+class	TiffMerger		extends Object 
+   {
+	public		$Files		=  array ( ) ;
+	
+	// Since we use the pack()/unpack() functions, we have to use the proper coding format for WORD16 and WORD32
+	// These formats are define the endianness of the output file only ; each input file can have its own endianness
+	protected	$PackFormat16,
+			$PackFormat32 ;
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    Constructor -
+		Creates a TiffMerger object, taking into account the specified endianness.
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  __construct ( $output_endianness  =  TiffImage::LITTLE_ENDIAN )
+	   {
+		parent::__construct ( ) ;
+
+		if  ( $output_endianness  ===  TiffImage::LITTLE_ENDIAN )
+		   {
+			$this -> PackFormat16	=  'v' ;
+			$this -> PackFormat32	=  'V' ;
+		    }
+		else
+		   {
+			$this -> PackFormat16	=  'n' ;
+			$this -> PackFormat32	=  'N' ;
+		    }
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        Add - Adds files to be merged.
+	
+	    PROTOTYPE
+	        $merger -> Add ( ... ) ;
+	
+	    DESCRIPTION
+	        Adds files to the list of files to be merged.
+	
+	    PARAMETERS
+	        $... (list of strings or arrays) -
+	                Names of the files to be added to the list of files to be merged. 
+			The argument list can contain any number of filenames or arrays containing filenames.
+		
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  Add ( )
+	   {
+		$argv	=  func_get_args ( ) ;
+
+		foreach  ( $argv  as  $arg )
+		   {
+			if  ( is_array ( $arg ) )
+			   {
+				foreach  ( $arg  as  $item )
+					$this -> Add ( $item ) ;
+			    }
+			else if  ( is_string ( $arg ) )
+			   {
+				if  ( ! file_exists ( $arg ) )
+					error ( new TiffException ( "File \"$arg\" does not exist." ) ) ;
+				else
+					$this -> Files []	=  $arg ;
+			    }
+		    }
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        AsString - Returns the merged contents as a string.
+	
+	    PROTOTYPE
+	        $data		=  $merger -> AsString ( $format = TiffImage::OUTPUT_FORMAT_TIFF ) ;
+	
+	    DESCRIPTION
+	        Merges all the specified input TIFF files and returns the result as a string.
+	
+	    PARAMETERS
+	        $format (integer) -
+	                Output data format. Currently, only the TIFF file format is supported.
+	
+	    RETURN VALUE
+	        Returns the data containing the merged TIFF files.
+	
+	    NOTES
+	        Use this function only if you are aware of the memory limitations of your system...
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  AsString ( $format = TiffImage::OUTPUT_FORMAT_TIFF ) 
+	   {
+		$this -> __check_files ( ) ;
+		$output		=  new  TiffStringOutput ( ) ;
+		$this -> __generate ( $output, $format ) ;
+		
+		return ( ( string ) $output ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        SaveTo - Saves merged input files to the specified output file.
+	
+	    PROTOTYPE
+	        $merger -> SaveTo ( $filename, $format = TiffImage::OUTPUT_FORMAT_TIFF ) ;
+	
+	    DESCRIPTION
+	        Saves the supplied input TIFF file as a single file.
+	
+	    PARAMETERS
+		$filename (string) -
+			Output filename that will contaon the merged TIFF files.
+
+	        $format (integer) -
+	                Output data format. Currently, only the TIFF file format is supported.
+		
+	 *-------------------------------------------------------------------------------------------------------------*/
+	public function  SaveTo ( $filename, $format = TiffImage::OUTPUT_FORMAT_TIFF ) 
+	   {
+		$this -> __check_files ( ) ;
+		$output		=  new  TiffFileOutput ( $filename, $format ) ;
+		$this -> __generate ( $output ) ;
+		$output -> Close ( ) ;
+	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+		Support functions
+
+	 *-------------------------------------------------------------------------------------------------------------*/
+
+	 // __check_files -
+	 //	Checks that input files have been supplied. Throws an exception otherwise.
+	private function  __check_files ( )
+	   {
+		if  ( ! count ( $this -> Files ) )
+			error ( new TiffException ( "No files to be merged have been specified." ) ) ;
+	    }
+
+
+	// __generate -
+	//	Generates an output file containing the merged input TIFFs, using the specified TiffOutput object.
+	//	The generation process is performed in 3 steps :
+	//	1) Build an IFD that contains all the IFDs present in the input files. The offsets present in the input IFDs
+	//	   are recomputed for the output file, to point to the correct data
+	//	2) Store every data AFTER the last IFD. A special case exists for the StripData entry, which requires to
+	//	   recompute every offset of the strip bands supplied in the input TIFFs (StripData contains the actual image data)
+	//	3) Store the strip data at the end of the file.
+	private function  __generate ( $output, $format = TiffImage::OUTPUT_FORMAT_TIFF )
+	   {
+		// Get a global header, containing the IFDs for 
+		$tiff_data		=  $this -> __build_global_ifd ( $tiff_images, $after_ifd_offset, $last_file_offset, $special_entries ) ;
+		$output -> Write ( $tiff_data ) ;
+		$current_offset		=  $after_ifd_offset ;
+
+		// Strip data (TAG_STRIP_OFFSETS) need a special processing, since it contains the offsets of the strip bands that constitute 
+		// the image. Each of these offsets needs to be recomputed when generating the output file.
+		$strip_data		=  array ( ) ;
+		$strip_data_offset	=  $last_file_offset ;
+
+		// Loop through supplied input TIFF files
+		for  ( $i = 0, $tiff_image_count = count ( $tiff_images ) ; $i  <  $tiff_image_count ; $i ++ )
+		   {
+			$tiff_image	=  $tiff_images [$i] ;
+
+			// Loop through every page of the current TIFF
+			for ( $j = 0, $tiff_page_count = count ( $tiff_image ) ; $j  <  $tiff_page_count ; $j ++ )
+			   {
+				$tiff_page	=  $tiff_image [$j] ;
+				$ifd		=  $tiff_page -> IFD ;
+
+				// Loop through every IFD entry of the current page
+				for  ( $k = 0, $page_ifd_count  =  count ( $ifd ) ; $k  <  $page_ifd_count ; $k ++ )
+				   {
+					$ifd_entry	=  $ifd [$k] ;
+
+					// Entries whose value are not an offset are ignored, along with the ones that are currently
+					// not supported by the TiffImage class
+					// Also take into account the special kludge for StripOffsets entries that have only one entry and,
+					// consequently, whose value is not a pointer to strip offsets, but to actual data
+					if  ( ! isset ( $special_entries [$i] [$j] [$k] )  &&  ( ! $ifd_entry -> IsOffset ||  ! $ifd_entry -> Supported ) )
+						continue ;
+
+					// Some entries may require adjustments, depending on their types
+					switch  ( $ifd_entry -> Type )
+					   {
+						// Byte-type entries may need, may need an extra padding byte, so that they align on a 16-bits boundary 
+						case	TiffImage::TYPE_ASCII :
+						case	TiffImage::TYPE_BYTE :
+						case	TiffImage::TYPE_SBYTE :
+						case	TiffImage::TYPE_UNDEFINED :
+							$data	=  $ifd_entry -> UnderlyingValue ;
+
+							if  ( $ifd_entry -> NeedsPadding )
+								$data	.=  "\x0" ;
+
+							break ;
+
+						// Short values are a piece of cake : simply copy them, taking into account the destination endianness
+						case	TiffImage::TYPE_SHORT :
+						case	TiffImage::TYPE_SSHORT :
+							$data	=  pack ( $this -> PackFormat16 . '*', $ifd_entry -> UnderlyingValue ) ;
+							break ;
+					
+						// Long values. In the case of the StripOffsets entry, each offset will have to be recomputed
+						case	TiffImage::TYPE_LONG :
+							// Strip offsets will be added at the very end of the output file.
+							// Meanwhile, we will store their input offsets in the $strip_data array
+							if  ( $ifd_entry -> Tag  ===  TiffImage::TAG_STRIP_OFFSETS )
+							   {
+								// Get the StripByteCounts entry
+								$byte_counts_entry	=  $tiff_page -> IFD -> GetTagById ( TiffImage::TAG_STRIP_BYTE_COUNTS ) ;
+
+								// There is more than one strip in the image, so we will have several offsets to recompute
+								if  ( $byte_counts_entry -> IsOffset )
+								   {
+									// Get the byte count for each strip
+									$strip_byte_counts	 =  $tiff_image -> TiffData -> Unpack32 ( $byte_counts_entry -> UnderlyingValue ) ;
+
+									// Get the input offsets
+									$strip_offsets		 =  $tiff_image -> TiffData -> Unpack32 ( $ifd_entry -> UnderlyingValue ) ;
+									$strip_count		 =  count ( $strip_offsets ) ;
+
+									// In the end, we will call the pack() function using call_user_func_array() with the 
+									// $new_offsets array. The first item of this array is the pack format ; subsequent items will
+									// be the new offsets
+									$new_offsets		 =  array ( $this -> PackFormat32 . '*' ) ;
+
+									for  ( $strip_index = 1 ; $strip_index  <=  $strip_count ; $strip_index ++ )
+									   {
+										$new_offsets []		=  $strip_data_offset ;
+
+										$strip_data []		=  array
+										   (
+											'object'	=>  $tiff_image,
+											'offset'	=>  $strip_offsets [ $strip_index ],
+											'size'		=>  $strip_byte_counts [ $strip_index ]
+										    ) ;
+
+										$strip_data_offset	+=  $strip_byte_counts [ $strip_index ] ;
+									    }
+
+									$data		 =  call_user_func_array ( 'pack', $new_offsets ) ;
+									$output -> Write ( $data ) ;
+								    }
+								// There is only one strip for this image : the IFD value fields don't point to a list of offsets,
+								// but rather to the actual data ; the StripByteCounts entry itself contains the actual size of the
+								// data
+								else
+								   {
+									$strip_offset_offset	 =  $special_entries [$i] [$j] [$k] ;
+									$value			 =  pack ( $this -> PackFormat32, $strip_data_offset ) ;
+
+									$output -> Overwrite ( $value, 4, $strip_offset_offset ) ;
+
+									$strip_data_offset	+=  $byte_counts_entry -> Value ;
+
+									$strip_data []		 =  array 
+									   (
+										'object'		=>  $tiff_image,
+										'offset'		=>  $ifd_entry -> Value,
+										'size'			=>  $byte_counts_entry -> Value
+									    ) ;
+								    }
+
+								continue 2 ;
+							    }
+							// else intentionnally fall through the case below
+
+						// Other types : simply convert them to the destination endianness
+						case	TiffImage::TYPE_SLONG :
+						case	TiffImage::TYPE_RATIONAL :
+						case	TiffImage::TYPE_SRATIONAL :
+						case	TiffImage::TYPE_FLOAT :
+							$data	=  pack ( $this -> PackFormat32 . '*', $ifd_entry -> UnderlyingValue ) ;
+							break ;
+
+						// Other cases (note that the type DOUBLE is not yet handled here)
+						default :
+							warning ( "Unimplemented type {$this -> Type}." ) ;
+					    }
+
+					$data		 =  $ifd_entry -> UnderlyingValue ;
+					$output -> Write ( $data ) ;
+					$current_offset	+=  strlen ( $data ) ;
+				    }
+			    } 
+		    }
+
+		// Put any strip data collected so far at the end of the file
+		foreach  ( $strip_data  as  $strip )
+		   {
+			$data		 =  $strip [ 'object' ] -> TiffData -> GetRawBytes ( $strip [ 'offset' ], $strip [ 'size' ] ) ;
+			$output -> Write ( $data ) ;
+		    }
+	    }
+
+
+	// __build_ifd -
+	//	Builds the output file IFD, by mergin the IFDs on the input files.
+	private function  __build_global_ifd ( &$tiff_images, &$after_ifd_offset,  &$last_offset, &$special_entries )
+	   {
+		// Build the output file header :
+		// - Endianness (0x4949 or 0x4D4D, WORD16)
+		// - Magic value (42, WORD16)
+		// - Pointer to the first IFD (WORD32). We put the lowest offset authorized for an IFD, 8 (ie,
+		//   immediatley after this pointer)
+		$tiff_data		=  pack ( $this -> PackFormat16, TiffImage::LITTLE_ENDIAN ) .
+					   pack ( $this -> PackFormat16, TiffImage::TIFF_IDENTIFIER ) .
+					   pack ( $this -> PackFormat32, 0x00000008 ) ;
+
+		// The current offset is used here only to compute the pointer to the next IFD, after the current one
+		// In the output file, all IFDs will be put one after the other
+		$current_offset		=  8 ;
+
+		// We will have first to compute the total number of IFD entries in all input files
+		$tiff_images		=  array ( ) ;		// TiffImage objects for each input file
+		$global_page_count	=  0 ;			// Total output page count
+		$global_ifd_entry_count	=  0 ;			// Total number of IFD entries
+		$special_entries	=  array ( ) ;		// Offset, in the output IFD, of special StripOffsets entries with only one byte count
+
+		foreach  ( $this -> Files  as  $filename )
+		   {
+			$tiff_image		 =  TiffImage::Load ( $filename ) ;
+
+			// We only count the IFD entries supported by the TiffImage class
+			foreach  ( $tiff_image  as  $tiff_page )
+			   {
+				// Add a PageNumber entry if necessary
+				if  ( $tiff_page -> PageNumber  ===  false )
+				   {
+					$tiff_page -> IFD []		=  new TiffIFDEntry ( $tiff_image, TiffImage::TAG_PAGE_NUMBER, TiffImage::TYPE_LONG, 1, $global_page_count ) ;
+					$tiff_page -> PageNumber	=  $global_page_count ;
+				    }
+							
+				$global_ifd_entry_count	+=  $tiff_page -> IFD -> GetRealCount ( ) ;
+				$global_page_count ++ ;
+			    }
+
+			$tiff_images []		 =  $tiff_image ;
+		    }
+
+		// Total size of the IFDs we have to generate. This includes the sum of :
+		// - The start offset (8)
+		// - The total number of IFDs found in all the images, multiplied by their size
+		// - Since an IFD is preceded by an entry count (WORD16) and followed by a pointer to the next IFD (WORD32),
+		//   we have to add (2 + 4) bytes per page
+		$after_ifd_offset		 =  
+		$post_offset			 =  $current_offset + ( $global_ifd_entry_count * TiffImage::IFD_ENTRY_SIZE ) +
+							( $global_page_count * 6 ) ;
+
+		// Loop through each image
+		$current_page			=  0 ;
+
+		for  ( $i = 0, $image_count = count ( $tiff_images ) ; $i  <  $image_count ; $i ++ )
+		   {
+			$tiff_image	=  $tiff_images [$i] ;
+
+			// Loop through  each page of the current image to build a new IFD
+			for  ( $j = 0, $page_count = count ( $tiff_image ) ; $j  <  $page_count ; $j ++ )
+			   {
+				$tiff_page		 =  $tiff_image [$j] ;
+				$ifd			 =  $tiff_page -> IFD ;
+				$ifd_count		 =  $ifd -> GetRealCount ( ) ;
+
+				// Number of entries for this IFD
+				$tiff_data		.=  pack ( $this -> PackFormat16, $ifd_count ) ;
+				$current_offset		+=  2 ;
+
+				// Loop through each IFD entry for the current page
+				for  ( $k = 0, $page_ifd_count = count ( $ifd ) ; $k  <  $page_ifd_count ; $k ++ )
+				   {
+					$ifd_entry	=  $ifd [$k] ;
+
+					// Skip unsupported entries
+					if  ( ! $ifd_entry -> Supported )
+						continue ;
+
+					// Get the Tag, Type and Count fields for this IFD entry, in native format
+					$tag	=  pack ( $this -> PackFormat16, $ifd_entry -> Tag ) ;
+					$type	=  pack ( $this -> PackFormat16, $ifd_entry -> Type ) ;
+					$count	=  pack ( $this -> PackFormat32, $ifd_entry -> Count ) ;
+
+					// IFD entry is not an offset to some data : simply reuse the original Value
+					if  ( ! $ifd_entry -> IsOffset )
+					   {
+						$value		=  $ifd_entry -> Value ;
+
+						// General case
+						if  ( $ifd_entry -> Tag  !==  TiffImage::TAG_PAGE_NUMBER  &&  $ifd_entry -> Tag  !==  TiffImage::TAG_STRIP_OFFSETS )
+							$value	=  $ifd_entry -> Value ;
+						// Special case for StripOffsets entries that have only one entry : we will have later
+						// to modify the offset which has been put in the output IFD
+						else if  ( $ifd_entry -> Tag  ===  TiffImage::TAG_STRIP_OFFSETS )
+							$special_entries [$i] [$j] [$k]		=  $current_offset + 8 ;
+						// Page number
+						else
+							$value	=  ( $global_page_count  <<  16 ) | $current_page ;
+					    }
+					// Otherwise, $post_offset will be the new value (offset) for this IFD entry
+					else
+					   {
+						$value		 =  $post_offset ;
+
+						// Certain entry types, such as binary or string, may have an odd number of bytes
+						// They have to be padded on a 16-bits boundary, so add an extra bbyte if necessary
+						$post_offset	+=  $ifd_entry -> ActualSize + ( $ifd_entry -> ActualSize % 2 ) ;
+					    }
+
+					// Convert the entry value into native format
+					$new_value		 =  pack ( $this -> PackFormat32, $value ) ;
+
+					// Add this new entry to the output data
+					$tiff_data		.=  $tag . $type . $count . $new_value ;
+					$current_offset		+=  TiffImage::IFD_ENTRY_SIZE ; 
+				    }
+
+				// Add the PageCount to the PageNumber entry
+				//$entry			 =  $tiff_page -> IFD -> GetTagById ( TiffImage::TAG_PAGE_NUMBER ) ;
+				//$entry -> Value		|=  ( $global_page_count << 16 ) ;
+
+				// Update current offset to point to the next IFD
+				$current_offset		+=  4 ;
+
+				// If we did not reach the last page of the last image, add the next IFD pointer to this IFD
+				if  ( $i + 1  !==  $image_count  ||  $j + 1  !==  $page_count )
+					$tiff_data	.=  pack ( $this -> PackFormat32, $current_offset ) ;
+				// Otherwise, the last pointer is always zero
+				else 
+					$tiff_data	.=  "\x0\x0\x0\x0" ;
+
+				// Update current page number
+				$current_page ++ ;
+			    }
+		    }
+
+		// All done, return
+		$last_offset		=  $post_offset ;
+
+		return ( $tiff_data ) ;
+	    }
+    }
+
+
+/*==============================================================================================================
+
+    class TiffOutputBase -
+        Base class for TIFF output.
+
+  ==============================================================================================================*/
+abstract class	TiffOutputBase		extends  Object
+   {
+	// Current buffer and buffer length
+	protected	$Buffer		=  '' ;
+	protected	$BufferLength	=  0 ;
+
+
+	public function  __construct ( )
+	   {
+	    }
+
+
+	abstract public function  Close		( ) ;
+	abstract public function  Flush		( ) ;
+	abstract public function  Overwrite	( $data, $data_length, $offset ) ;
+	abstract public function  Write		( $data, $data_length = false ) ;
+    }
+
+
+/*==============================================================================================================
+
+    class TiffStringOutput -
+        Generates TIFF data as a string.
+
+  ==============================================================================================================*/
+class  TiffStringOutput			extends  TiffOutputBase
+   {
+	public function  __construct ( )
+	   {
+		parent::__construct ( ) ;
+	    }
+
+
+	public function  Close ( )
+	   {
+		$this -> Buffer		=  '' ;
+		$this -> BufferLength	=  '' ;
+	    }
+
+
+	public function  Flush ( )
+	   {}
+
+
+	public function  Overwrite ( $data, $data_length, $offset )
+	   {
+		for  ( $i = 0 ; $i  <  $data_length ; $i ++ )
+			$this -> Buffer [ $offset + $i ]	=  $data [$i] ;
+	    }
+
+
+	public function  Write ( $data, $data_length = false )
+	   {
+		if  ( $data_length )
+			$this -> Buffer		.=  substr ( $data, $data_length ) ;
+		else
+			$this -> Buffer		.=  $data ;
+	    }
+
+
+	public function  __tostring ( )
+	   {
+		return ( $this -> Buffer ) ;
+	    }
+    }
+
+
+/*==============================================================================================================
+
+    class TiffFileOutput -
+        Generates TIFF data as a file. The output is buffered.
+
+  ==============================================================================================================*/
+class  TiffFileOutput			extends  TiffOutputBase
+   {
+	private 	$fp ;
+	private		$BufferSize ;
+	private		$BufferOffset		=  0 ;
+
+
+	public function  __construct ( $filename, $buffer_size = 65536 ) 
+	   {
+		if  ( ( $this -> fp = fopen ( $filename, "w" ) )  ===  false ) 
+			error ( new TiffException ( "Cannot open file \"$filename\"." ) ) ;
+
+		$this -> BufferSize	=  $buffer_size ;
+	    }
+
+
+	public function  __destruct ( )
+	   {
+		$this -> Close ( ) ;
+	    }
+
+
+	public function  Close ( )
+	   {
+		if  ( $this -> fp )
+		   {
+			$this -> Flush ( ) ;
+			fclose ( $this -> fp ) ;
+			$this -> fp	=  false ;
+		    }
+	    }
+
+
+	public function  Flush ( )
+	   {
+		fwrite ( $this -> fp, $this -> Buffer ) ;
+		$this -> Buffer			 =  '' ;
+		$this -> BufferOffset		+=  $this -> BufferLength ;
+		$this -> BufferLength		 =  0 ;
+	    }
+
+
+	public function  Overwrite ( $data, $data_length, $offset )
+	   {
+		// We have to think here that the data to overwrite may not have been yet written to disk and is still present in
+		// the buffer
+		if  ( $offset  >=  $this -> BufferOffset  &&  $offset + $data_length  <  $this -> BufferOffset + $this -> BufferLength )
+		   {
+			$start	=  $offset - $this -> BufferOffset ;
+
+			for  ( $i = 0 ; $i  <  $data_length ; $i ++ )
+				$this -> Buffer [ $start + $i ]		=  $data [$i] ;
+		    }
+		// Otherwise, directly modify data written to disk
+		else
+		   {
+			fseek  ( $this -> fp, $offset, SEEK_SET ) ;
+			fwrite ( $this -> fp, $data, $data_length ) ;
+			fseek  ( $this -> fp, 0, SEEK_END ) ;
+		    }
+	    }
+
+
+	public function  Write ( $data, $length = false )
+	   {
+		if  ( $length  ===  false )
+			$length		=  strlen ( $data ) ;
+
+		$this -> Buffer		.=  $data ;
+
+		if  ( $this -> BufferLength + $length  >  $this -> BufferSize )
+			$this -> Flush ( ) ;
+		else
+			$this -> BufferLength	+=  $length ;
+	    }
+    }
