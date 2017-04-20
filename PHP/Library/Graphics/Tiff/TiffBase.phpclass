@@ -140,6 +140,7 @@ class  TiffImage	extends  Object
 	const		TAG_INK_NAMES				=  0x014D ;	// (ASCII) List of null-separated ink names
 	const		TAG_INK_SET				=  0x014C ;	// (SHORT) The set of inks used in a separated (PhotometricInterpretation=5) image
 	const		TAG_INTEROPERABILITY_IFD		=  0xA005 ;	// (LONG) A pointer to the Exif-related Interoperability IFD
+	const		TAG_IPTC_METADATA			=  0x83BB ;	// (UNDEFINED or BYTE) IPTC (International Press Telecommunications Council) metadata
 	const		TAG_JPEG_INTERCHANGE_FORMAT		=  0x0201 ;	// (LONG) Indicates whether a JPEG interchange format bitstream is present in the TIFF file.
 	const		TAG_JPEG_INTERCHANGE_FORMAT_LENGTH	=  0x0202 ;	// (LONG) Length in bytes of the JPEG interchange format bitstream.
 	const		TAG_JPEG_LOSSLESS_PREDICTORS		=  0x0205 ;	// (SHORT) Points to a list of lossless predictor-selection values, one per component.
@@ -185,6 +186,7 @@ class  TiffImage	extends  Object
 	const		TAG_TRANSFER_RANGE			=  0x0156 ;	// (SHORT) Expands the range of the transfer function.
 	const		TAG_WHITE_POINT				=  0x013E ;	// (RATIONAL) Chromaticity of the white point of an image
 	const		TAG_X_POSITION				=  0x011E ;	// (RATIONAL) X position of the image
+	const		TAG_XML_METADATA			=  0x02BC ;	// (BYTE) XML packet containing XMP metadata, such as description, title, etc.
 	const		TAG_X_RESOLUTION			=  0x011A ;	// (RATIONAL) Number of pixels per resolution unit in the image width
 	const		TAG_Y_POSITION				=  0x011F ;	// (RATIONAL) Y position of the image
 	const		TAG_Y_RESOLUTION			=  0x011B ;	// (RATIONAL) Number of pixels per resolution unit in the image length
@@ -326,6 +328,7 @@ class  TiffImage	extends  Object
 			self::TAG_INK_NAMES				=>  array ( 'type' => self::TYPE_ASCII		),
 			self::TAG_INK_SET				=>  array ( 'type' => self::TYPE_SHORT		),
 			self::TAG_INTEROPERABILITY_IFD			=>  array ( 'type' => self::TYPE_IGNORED	),
+			self::TAG_IPTC_METADATA				=>  array ( 'type' => self::TYPE_IGNORED	),
 			self::TAG_JPEG_INTERCHANGE_FORMAT		=>  array ( 'type' => self::TYPE_LONG		),
 			self::TAG_JPEG_INTERCHANGE_FORMAT_LENGTH	=>  array ( 'type' => self::TYPE_LONG		),
 			self::TAG_JPEG_LOSSLESS_PREDICTORS		=>  array ( 'type' => self::TYPE_SHORT		),
@@ -372,6 +375,7 @@ class  TiffImage	extends  Object
 			self::TAG_WHITE_POINT				=>  array ( 'type' => self::TYPE_RATIONAL	),
 			self::TAG_X_POSITION				=>  array ( 'type' => self::TYPE_RATIONAL	),
 			self::TAG_X_RESOLUTION				=>  array ( 'type' => self::TYPE_RATIONAL	),
+			self::TAG_XML_METADATA				=>  array ( 'type' => self::TYPE_BYTE		),
 			self::TAG_Y_POSITION				=>  array ( 'type' => self::TYPE_RATIONAL	),
 			self::TAG_Y_RESOLUTION				=>  array ( 'type' => self::TYPE_RATIONAL	),
 			self::TAG_YCC_COEFFICIENTS			=>  array ( 'type' => self::TYPE_RATIONAL	),
@@ -586,16 +590,18 @@ class  TiffImage	extends  Object
 
 			if  ( self::$DEBUG )
 			   {
-				echo ( "IFD #$current_ifd at offset 0x" . sprintf ( "0x%08X", $ifd_offset - 2 ) . ", entry count : " . count ( $ifd_data ) . "\n" ) ;
+				echo ( "IFD #$current_ifd at offset 0x" . sprintf ( "%08X", $ifd_offset ) . ", entry count : " . count ( $ifd_data ) . "\n" ) ;
 				$current_entry	=  0 ;
 
 				foreach  ( $ifd_data  as  $ifd_entry )
 				   {
 					echo ( "\tEntry #" . ( $current_entry ) . " :\n" ) ;
-					echo ( "\t\tTag   : " . sprintf ( "0x%04X", $ifd_entry -> Tag ) . " ({$ifd_entry -> Tagname})\n" ) ;
-					echo ( "\t\tType  : {$ifd_entry -> Type}\n" ) ;
-					echo ( "\t\tCount : {$ifd_entry -> Count}\n" ) ;
-					echo ( "\t\tValue : " . sprintf ( "0x%08X", $ifd_entry -> Value ) . "\n" ) ;
+					echo ( "\t\tTag         : " . sprintf ( "0x%04X", $ifd_entry -> Tag ) . " ({$ifd_entry -> Tagname})\n" ) ;
+					echo ( "\t\tType        : {$ifd_entry -> Type}\n" ) ;
+					echo ( "\t\tCount       : {$ifd_entry -> Count}\n" ) ;
+					echo ( "\t\tValue       : " . sprintf ( "0x%08X", $ifd_entry -> Value ) . "\n" ) ;
+					echo ( "\t\tActual size : " . sprintf ( "0x%08X", $ifd_entry -> ActualSize ) . "\n" ) ;
+					echo ( "\t\tSupported   : " . ( ( $ifd_entry -> Supported ) ? "yes" : "no" ) . "\n" ) ;
 
 					$current_entry ++ ;
 				    }
@@ -667,7 +673,7 @@ class  TiffImage	extends  Object
 class  TiffPage			extends  Object
    {
 	// Page number 
-	public		$PageNumber	=  0 ;
+	public		$PageNumber	=  false ;
 	// Page dimensions
 	public		$PageWidth	=  0,
 			$PageHeight	=  0 ;
@@ -695,7 +701,7 @@ class  TiffPage			extends  Object
 		$this -> IFD		=  $ifd_data ;
 
 		if  ( ( $entry = $ifd_data -> GetTagById ( TiffImage::TAG_PAGE_NUMBER ) )  !==  false )
-			$this -> PageNumber	=  $entry -> Value ;
+			$this -> PageNumber	=  $entry -> Value & 0xFFFF ;
 
 		if  ( ( $entry = $ifd_data -> GetTagById ( TiffImage::TAG_IMAGE_WIDTH ) )  !==  false )
 			$this -> PageWidth	=  $entry -> Value ;
@@ -869,8 +875,8 @@ class	TiffIFDEntry		extends  Object
 		$this -> ParentImage	=  $parent_image ;
 
 		// Get the display name of the tag (for debugging purposes)
-		if  ( isset ( TiffImage::$TagTypes [ TiffImage::IFD_STANDARD ] [ $tag ] ) )
-			$tagname	=  TiffImage::$TagTypes [ TiffImage::IFD_STANDARD ] [ $tag ] [ 'name' ] ;
+		if  ( isset ( TiffImage::$TagTypes [ $ifd_type ] [ $tag ] ) )
+			$tagname	=  TiffImage::$TagTypes [ $ifd_type ] [ $tag ] [ 'name' ] ;
 		else
 			$tagname	=  "*** UNDEFINED ***" ;
 
@@ -891,7 +897,6 @@ class	TiffIFDEntry		extends  Object
 
 		if  ( isset ( TiffImage::$TagTypes [ $ifd_type ] [ $tag ] )  &&  TiffImage::$TagTypes [ $ifd_type ] [ $tag ] [ 'type' ]  ===  TiffImage::TYPE_IGNORED )
 			$this -> Supported	=  false ;
-
 
 		// Determine if the IDF entry value is a value or an offset
 		switch ( $this -> Type )
