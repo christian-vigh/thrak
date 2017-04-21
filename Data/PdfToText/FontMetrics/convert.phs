@@ -1,0 +1,34 @@
+<?php
+	if  ( count ( $argv )  !=  3 )
+	   {
+		echo ( "Usage : convert tcpdffile .fm_file\n" ) ;
+		exit ;
+	    }
+
+	$input		=  $argv [1] ;
+	$output		=  $argv [2] ;
+
+	include ( $input ) ;
+	
+	$result		=  "<?php\n// Adobe standard 14 fonts : Metrics for name\n\$charwidths	=  array\n   (\n" ;
+
+	$line_items	=  0 ;
+
+	foreach  ( $cw  as  $char => $width )
+	   {
+		if  ( ! $line_items )
+			$result		.=  "\t" ;
+
+		$result		.=  sprintf ( "%3d", $char ) . ' => ' . sprintf ( "%4d", $width ) . ', ' ;
+
+		$line_items ++ ;
+
+		if  ( $line_items  ==  8 )
+		   {
+			$result		.=  "\n" ;
+			$line_items	 =  0 ;
+		    }
+	    }
+
+	$result		.= "    ) ;\n" ;
+	file_put_contents ( $output, $result ) ;
