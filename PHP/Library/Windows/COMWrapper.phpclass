@@ -73,6 +73,7 @@ class  COMWrapper       extends Object
 	public static function  Create ( $module, $desired_class = null, $helper = null )
 	   {
 		// Instanciate the COM object
+		com_load_typelib ( $module ) ;
 	        $com_object     =  new \COM ( $module ) ;
 	               
 	        if  ( ! $com_object )
@@ -276,7 +277,6 @@ class  COMWrapper       extends Object
 	        @com_print_typeinfo ( $object, $interface ) ;
 	        $result =  ob_get_clean ( ) ;
 
-output ( $result ) ;
 		return ( $result ) ;
 	    }
 	      
@@ -624,34 +624,19 @@ END;
 	                                               
 	                        foreach  ( $member -> Parameters  as  $parameter_name => $parameter )
 	                           {
+					$parameter_declaration		=  $parameter -> Name ;
+
+				  
 					if  ( $parameter -> IsReference ( ) )
 						$parameter_name		=  substr ( $parameter -> Name, 1 ) ;
 					else
 						$parameter_name		=  $parameter -> Name ;
 
-					$internal_parameter_name	=  '$__' . substr ( $parameter_name, 1 ) ;
-
 					// Pad names for alignment
-					$iname				=  str_pad  ( $internal_parameter_name, $maxlength + 3 ) ;
-	                                $name				=  str_pad ( $parameter_name, $maxlength ) ;
-
-					// Add the parameter initializations ; null means an empty variant
-					if  ( $parameter -> OutType  &&  $parameter -> OutType -> ConstantValue )
-					   {
-						$type				=  $parameter -> OutType -> ConstantValue ;
-						$empty				=  'VT_NULL' ;
-					    }
-					else
-					   {
-						$type				=  $parameter -> InType -> ConstantValue ;
-						$empty				=  'VT_EMPTY' ;
-					    }
-
-					//$inits []			=  "\t\t$iname	=  ( $name  ===  null ) ? new \\VARIANT ( 0, VT_EMPTY ) :  new \\VARIANT ( $name, $type ) ;" ;
-					$inits []			=  "\t\t$iname	=  $name ;" ;
+	                                $name				=  str_pad ( $parameter_declaration, $maxlength ) ;
 
 					// Add the parameter name, for real COM function call
-					$names []			=  $internal_parameter_name ;
+					$names []			=  $parameter_name ;
 	                                                                              
 	                                // Don't forget the comma between two parameters
 	                                $comma                 =  ( $index + 1  ==  count ( $member -> Parameters ) ) ?  " " : "," ;

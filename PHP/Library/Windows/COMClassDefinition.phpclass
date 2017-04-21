@@ -96,19 +96,19 @@ class  COMClassValueTypeDefinition     extends  COMClassDefinitionBase
 //            Holds a method parameter definition.   
 class  COMClassMethodParameterDefinition  extends COMClassDefinitionBase
    {
-	public    $Name ;
-	public  $InOut ;
-	public    $InType ;
-	public  $OutType ;
+	public		$Name ;
+	public		$InOut ;
+	public		$InType ;
+	public		$OutType ;
 	
 	
 	public function  __construct ( $name, $inout, $intype, $outtype =  false ) 
 	   {
 	               parent::__construct ( ) ;
-	               $this -> Name                   =  $name ;
+	               $this -> Name			=  $name ;
 	               $this -> InOut                   =  $inout ;
-	               $this -> InType                 =  $intype ;
-	               $this -> OutType             =  $outtype ;
+	               $this -> InType			=  $intype ;
+	               $this -> OutType			=  $outtype ;
 	    }
 	  
 	public function  IsReference ( )
@@ -129,7 +129,7 @@ class  COMClassMethodDefinition          extends  COMClassElementDefinitionBase
 	
 	public function  AddParameter ( $parameter ) 
 	   {
-	               $name                                                 =  preg_replace ( '/[$&]/', '', $parameter -> Name ) ;
+	               $name                           =  preg_replace ( '/[$&]/', '', $parameter -> Name ) ;
 	               $this -> Parameters [ $name ]   =  $parameter ;
 	    }
 	
@@ -176,7 +176,7 @@ class  COMClassDefinition           extends COMClassDefinitionBase
 	    
 	public function  Add ( $method_or_property ) 
 	   {
-	               $name                                                 =  preg_replace ( '/[$&]/', '', $method_or_property -> Name ) ;
+	               $name                           =  preg_replace ( '/[$&]/', '', $method_or_property -> Name ) ;
 	               $this -> Members [ $name ]      =  $method_or_property ;
 	    }
     }
