@@ -268,9 +268,11 @@ class  	DateTime	extends  Object
 		GetWeekRangeAsString and GetMonthRangeAsString both return a date range as a string.
 	
 	    PARAMETERS
-	        $current_time (integer) -
+	        $current_time (integer or string) -
 	                Represents the reference time used to determine a week/month range that contains the supplied
 			date. Defaults to the current date/time.
+			If the parameter is specified as a string, then the strtotime() function will be used to
+			convert it as a Unix timestamp.
 
 		$date_format (string) -
 			Form of the date string to be returned.
@@ -286,6 +288,8 @@ class  	DateTime	extends  Object
 	   {
 		if  ( $current_time  ===  false )
 			$current_time	=  time ( ) ;
+		else if  ( is_string ( $current_time ) )
+			$current_time	=  strtotime ( $current_time ) ;
 
 		$week_day	=  date ( 'w', $current_time ) ;
 
@@ -314,6 +318,8 @@ class  	DateTime	extends  Object
 	   {
 		if  ( $current_time  ===  false )
 			$current_time	=  time ( ) ;
+		else if  ( is_string ( $current_time ) )
+			$current_time	=  strtotime ( $current_time ) ;
 
 		$days_in_month		=  date ( 't', $current_time ) ;
 		$current_day		=  date ( 'j', $current_time ) ;
