@@ -22,6 +22,10 @@
 	. Added the DateEx() method and dateex() function.
 	. Changed the FirstTimeOfDay() and LastTimeOfDay methods to accept both a timestamp and
 	  a date string.
+
+    [Version : 1.0.3]		[Date : 2017/04/29]		[Author : CV]
+	. Added the GetWeekRange(), GetMonthRange(), GetWeekRangeAsString() and 
+	  GetMonthRangeAsString() methods.
  
  ***************************************************************************************************/
 namespace 	Thrak\Types ;
@@ -239,6 +243,105 @@ class  	DateTime	extends  Object
 
 		return ( $result ) ;
   	    }
+
+
+	/*--------------------------------------------------------------------------------------------------------------
+	
+	    NAME
+	        GetWeekRange, GetWeekRangeAsString,
+		GetMontRange, GetMonthRangeAsString - Returns a week/mont interval.
+	
+	    PROTOTYPE
+	        list ( $start, $end )	=  DateTime::GetWeekRange          ( $current_time = false ) ;
+	        list ( $start, $end )	=  DateTime::GetMonthRange         ( $current_time = false ) ;
+	        list ( $start, $end )	=  DateTime::GetWeekRangeAsString  ( $current_time = false, 
+									     $date_format = 'Y-m-d H:i:s' ) ;
+	        list ( $start, $end )	=  DateTime::GetMonthRangeAsString ( $current_time = false,
+									     $date_format = 'Y-m-d H:i:s' ) ;
+	
+	    DESCRIPTION
+	        GetWeekRange returns a set of two time values. The first time value represents the first day of the
+		week, at 00:00:00, the last time value representing the last day of the week at 23:59:59.
+		GetMonthRange also returns a range of time values, from the first to the last day of the month.
+		The reference time used to determine the week/month range is given by the $current_time parameter.
+
+		GetWeekRangeAsString and GetMonthRangeAsString both return a date range as a string.
+	
+	    PARAMETERS
+	        $current_time (integer) -
+	                Represents the reference time used to determine a week/month range that contains the supplied
+			date. Defaults to the current date/time.
+
+		$date_format (string) -
+			Form of the date string to be returned.
+	
+	    RETURN VALUE
+	        Returns an array of two values representing the desired range.
+	
+	    NOTES
+	        The first day of a week is considered to be monday.
+	
+	 *-------------------------------------------------------------------------------------------------------------*/
+	static public function  GetWeekRange ( $current_time = false )
+	   {
+		if  ( $current_time  ===  false )
+			$current_time	=  time ( ) ;
+
+		$week_day	=  date ( 'w', $current_time ) ;
+
+		if  ( $week_day  ===  0 )
+		   {
+			$first_day_offset	=  -6 ;
+			$last_day_offset	=  0 ;
+		    }
+		else
+		   {
+			$first_day_offset	=  - $week_day + 1 ;
+			$last_day_offset	=  7 - $week_day ;
+		    }
+
+		if  ( $last_day_offset  >=  0 )
+			$last_day_offset	=  "+$last_day_offset" ;
+
+		$start_time	=  strtotime ( date ( 'Y-m-d 00:00:00', $current_time ) . ' ' . $first_day_offset . ' days' ) ;
+		$end_time	=  strtotime ( date ( 'Y-m-d 23:59:59', $current_time ) . ' ' . $last_day_offset  . ' days' ) ;
+
+		return ( array ( $start_time, $end_time ) ) ;
+	    }
+
+
+	static public function  GetMonthRange ( $current_time = false )
+	   {
+		if  ( $current_time  ===  false )
+			$current_time	=  time ( ) ;
+
+		$days_in_month		=  date ( 't', $current_time ) ;
+		$current_day		=  date ( 'j', $current_time ) ;
+
+		$first_day_offset	=  - $current_day + 1 ;
+		$last_day_offset	=  "+" . ( $days_in_month - $current_day ) ;
+
+		$start_time	=  strtotime ( date ( 'Y-m-d 00:00:00', $current_time ) . ' ' . $first_day_offset . ' days' ) ;
+		$end_time	=  strtotime ( date ( 'Y-m-d 23:59:59', $current_time ) . ' ' . $last_day_offset  . ' days' ) ;
+
+		return ( array ( $start_time, $end_time ) ) ;
+	    }
+
+
+	static public function  GetWeekRangeAsString  ( $current_time = false, $date_format = 'Y-m-d H:i:s' )
+	   {
+		list ( $start, $end )		=  self::GetWeekRange ( $current_time ) ;
+
+		return ( array ( date ( $date_format, $start ), date ( $date_format, $end ) ) ) ;
+	    }
+
+
+	static public function  GetMonthRangeAsString  ( $current_time = false, $date_format = 'Y-m-d H:i:s' )
+	   {
+		list ( $start, $end )		=  self::GeMonthRange ( $current_time ) ;
+
+		return ( array ( date ( $date_format, $start ), date ( $date_format, $end ) ) ) ;
+	    }
    }
 
 
