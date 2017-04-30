@@ -291,7 +291,7 @@ class  	DateTime	extends  Object
 		else if  ( is_string ( $current_time ) )
 			$current_time	=  strtotime ( $current_time ) ;
 
-		$week_day	=  date ( 'w', $current_time ) ;
+		$week_day	=  ( integer ) date ( 'w', $current_time ) ;
 
 		if  ( $week_day  ===  0 )
 		   {
@@ -321,8 +321,8 @@ class  	DateTime	extends  Object
 		else if  ( is_string ( $current_time ) )
 			$current_time	=  strtotime ( $current_time ) ;
 
-		$days_in_month		=  date ( 't', $current_time ) ;
-		$current_day		=  date ( 'j', $current_time ) ;
+		$days_in_month		=  ( integer ) date ( 't', $current_time ) ;
+		$current_day		=  ( integer ) date ( 'j', $current_time ) ;
 
 		$first_day_offset	=  - $current_day + 1 ;
 		$last_day_offset	=  "+" . ( $days_in_month - $current_day ) ;
