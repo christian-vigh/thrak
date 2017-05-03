@@ -32,6 +32,12 @@
 	. Set TiffPage::PageNumber to a sequential index when no PAGE_NUMBER entry is specified in a TIFF page.
 	. Added the TAG_CLEAN_FAX_DATA tag.
 
+    [Version : 1.0.4]	[Date : 2017-05-03]     [Author : CV]
+	. Changed the meaning of the TiffPage::PageNumber property : sometimes an IFD does not contain a
+	  PAGE_NUMBER entry, sometimes all the PAGE_NUMBER entries can be zero. The PageNumber property
+	  now reflects the sequential page number, from 0 to page count - 1.
+	. Added the ActualPageNumber property, which reflects the page number as mentioned in the IFD.
+
  **************************************************************************************************************/
 namespace 	Thrak\Graphics ;
 
@@ -589,7 +595,6 @@ class  TiffImage	extends  Object
 
 		// Loop through all the IFDs defined in this file
 		$current_ifd	=  0 ;
-		$page_index	=  0 ;
 
 		do
 		   {
@@ -618,23 +623,16 @@ class  TiffImage	extends  Object
 			// Create a new Page object corresponding to the IFD data found
 			$page			=  new TiffSplitterPage ( $this, $ifd_data ) ;
 
-			if  ( $page -> PageNumber  ===  false )
-				$page -> PageNumber	=  $page_index ++ ;
-
 			$this -> Pages []	=  $page ;
 
 			$ifd_offset		=  $new_ifd_offset ;
 
 		    }  while  ( $ifd_offset ) ;
 
-		usort ( $this -> Pages, array ( $this, '__sort_by_page_number' ) ) ;
+		// Assign a sequential page number to each page
+		for  ( $page_index = 0, $page_count = count ( $this -> Pages ) ; $page_index  <  $page_count ; $page_index ++ )
+			$this -> Pages [ $page_index ]	-> PageNumber	=  $page_index ;
 	    }
-
-
-	// __sort_by_page_number -
-	//	Sorts the pages by their number
-	public function  __sort_by_page_number ( $a, $b )
-	   { return ( $a -> PageNumber - $b -> PageNumber ) ; }
 
 
 	// GetIFD -
@@ -686,10 +684,11 @@ class  TiffImage	extends  Object
 class  TiffPage			extends  Object
    {
 	// Page number 
-	public		$PageNumber	=  false ;
+	public		$PageNumber		=  false ;		// Sequential page number assigned by the TiffImage class
+	public		$ActualPageNumber	=  false ;		// Actual page number, as mentioned in the IFD (if any)
 	// Page dimensions
-	public		$PageWidth	=  0,
-			$PageHeight	=  0 ;
+	public		$PageWidth		=  0,
+			$PageHeight		=  0 ;
 	// Parent TiffSplitter object
 	public		$Parent ;
 	// Image file directory for this page
@@ -714,13 +713,13 @@ class  TiffPage			extends  Object
 		$this -> IFD		=  $ifd_data ;
 
 		if  ( ( $entry = $ifd_data -> GetTagById ( TiffImage::TAG_PAGE_NUMBER ) )  !==  false )
-			$this -> PageNumber	=  $entry -> Value & 0xFFFF ;
+			$this -> ActualPageNumber	=  $entry -> Value & 0xFFFF ;
 
 		if  ( ( $entry = $ifd_data -> GetTagById ( TiffImage::TAG_IMAGE_WIDTH ) )  !==  false )
-			$this -> PageWidth	=  $entry -> Value ;
+			$this -> PageWidth		=  $entry -> Value ;
 
 		if  ( ( $entry = $ifd_data -> GetTagById ( TiffImage::TAG_IMAGE_LENGTH ) )  !==  false )
-			$this -> PageHeight	=  $entry -> Value ;
+			$this -> PageHeight		=  $entry -> Value ;
 	    }
     }
 
