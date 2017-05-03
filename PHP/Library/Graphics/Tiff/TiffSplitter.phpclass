@@ -26,6 +26,10 @@
     [Version : 1.0.2]	[Date : 2017-04-16]     [Author : CV]
 	. Completely rewrote the AsString() method to use the new TiffIFD and TiffIFDEntry classes.
 
+    [Version : 1.0.3]	[Date : 2017-05-03]     [Author : CV]
+	. Corrected an offset inconsistency in the output when the STRIP_BYTE_OFFSETS (and therefore the 
+	  STRIP_BYTE_COUNT) tag contains only one entry, directly contained in the IFD entry.
+
  **************************************************************************************************************/
 namespace 	Thrak\Graphics ;
 
@@ -216,7 +220,12 @@ class  TiffSplitterPage			extends  TiffPage
 				    }
 					
 				// Catenate the new offset table + strip contents to the data to be added after the IFD structure
-				$extra_data	 =  $tiff -> ToWord32 ( $new_offsets ) . $strip_data ;
+				// but take into account the fact that there is only one byte count and strip data
+				if  ( $byte_counts_entry -> IsOffset )
+					$extra_data	 =  $tiff -> ToWord32 ( $new_offsets ) . $strip_data ;
+				else
+					$extra_data	 =  $strip_data ;
+
 				$post_data	.=  $extra_data ;
 				$post_offset    +=  strlen ( $extra_data ) ;
 			    }
