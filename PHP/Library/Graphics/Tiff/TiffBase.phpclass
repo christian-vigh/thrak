@@ -28,6 +28,10 @@
     [Version : 1.0.2]	[Date : 2017-04-16]     [Author : CV]
 	. Added the TiffIFD and TiffIfdEntry classes.
 
+    [Version : 1.0.3]	[Date : 2017-05-03]     [Author : CV]
+	. Set TiffPage::PageNumber to a sequential index when no PAGE_NUMBER entry is specified in a TIFF page.
+	. Added the TAG_CLEAN_FAX_DATA tag.
+
  **************************************************************************************************************/
 namespace 	Thrak\Graphics ;
 
@@ -116,6 +120,8 @@ class  TiffImage	extends  Object
 	const		TAG_CELL_LENGTH				=  0x0109 ;	// (SHORT) Length of the dithering or halftoning matrix used to create a dithered or halftoned bilevel file.
 	const		TAG_CELL_WIDTH				=  0x0108 ;	// (SHORT) Width of the dithering or halftoning matrix used to create a dithered or halftoned bilevel file
 	const		TAG_COLOR_MAP				=  0x0140 ;	// (SHORT) RGB color map (short???)
+	const		TAG_CLEAN_FAX_DATA			=  0x0147 ;	// (SHORT) Used in the TIFF-F standard, indicates if 'bad' lines encountered during reception are stored in 
+										// the data, or if 'bad' lines have been replaced by the receiver.
 	const		TAG_COMPRESSION				=  0x0103 ;	// (SHORT) Type of compression used (1 = use as few bits as possible, 2 = CCITT FAX compression)
 	const		TAG_COPYRIGHT				=  0x8298 ;	// (ASCII) Copyright information
 	const		TAG_DATETIME				=  0x0132 ;	// (ASCII) Date/time of image creation
@@ -303,6 +309,7 @@ class  TiffImage	extends  Object
 			self::TAG_BITS_PER_SAMPLE			=>  array ( 'type' => self::TYPE_SHORT		),
 			self::TAG_CELL_LENGTH				=>  array ( 'type' => self::TYPE_SHORT		),
 			self::TAG_CELL_WIDTH				=>  array ( 'type' => self::TYPE_SHORT		),
+			self::TAG_CLEAN_FAX_DATA			=>  array ( 'type' => self::TYPE_SHORT		),
 			self::TAG_COLOR_MAP				=>  array ( 'type' => self::TYPE_SHORT		),
 			self::TAG_COMPRESSION				=>  array ( 'type' => self::TYPE_SHORT		),
 			self::TAG_COPYRIGHT				=>  array ( 'type' => self::TYPE_ASCII		),
@@ -582,6 +589,7 @@ class  TiffImage	extends  Object
 
 		// Loop through all the IFDs defined in this file
 		$current_ifd	=  0 ;
+		$page_index	=  0 ;
 
 		do
 		   {
@@ -608,7 +616,12 @@ class  TiffImage	extends  Object
 			    }
 
 			// Create a new Page object corresponding to the IFD data found
-			$this -> Pages []	=  new TiffSplitterPage ( $this, $ifd_data ) ;
+			$page			=  new TiffSplitterPage ( $this, $ifd_data ) ;
+
+			if  ( $page -> PageNumber  ===  false )
+				$page -> PageNumber	=  $page_index ++ ;
+
+			$this -> Pages []	=  $page ;
 
 			$ifd_offset		=  $new_ifd_offset ;
 
