@@ -15,6 +15,8 @@
 		Specifications of the TIFF file format version 6.
 	- http://www.awaresystems.be/imaging/tiff.html :
 		Where to get a list of available TIFF IFD tags.
+	- http://www.daveperrett.com/articles/2012/07/28/exif-orientation-handling-is-a-ghetto/ :
+		Graphically explains the 8 values for the Orientation EXIF tag.
 
     HISTORY
     [Version : 1.0]	[Date : 2017-04-08]     [Author : CV]
