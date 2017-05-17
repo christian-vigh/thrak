@@ -273,7 +273,7 @@
 		// Get labels from the current locale (if any)
 		var	labels		=  default_labels ;
 
-		if  ( $. locale )
+		if  ( $. locale  &&  $. locale ( ) )
 			labels		=  $. extend ( labels, $. locale ( ). options. msgbox ) ;
 
 		// Dialog options
