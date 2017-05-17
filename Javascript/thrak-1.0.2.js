@@ -64,6 +64,7 @@
 		var	context		=  undefined ;
 		var	language	=  document. documentElement. lang ;
 
+
 		// Arguments can be :
 		// - None
 		// - A string, specifying the language
@@ -107,6 +108,7 @@
 			$. locale ( language ) ;
 
 		// Make all buttons cancel the default button action
+		/*
 		$('input[type="button"], button, .button:not(a)', context). button ( ). click
 		   (
 			function  ( e )
@@ -115,6 +117,7 @@
 				e  &&  e. stopPropagation &&  e. stopPropagation ( ) ;
 			    }
 		    ) ;
+		*/
 
 		// Button styling
 		$('a.button', context). button ( ) ;
@@ -164,7 +167,9 @@
 			showWeek	:  true
 		     } ;
 
-		datepicker_options	=  $. extend ( {}, datepicker_options, $. locale ( ). options. datepicker ) ;
+		var	extra_datepicker_options	=   ( $. locale  &&  $. locale ( ) ) ?  $. locale ( ). options. datepicker : {} ;
+
+		datepicker_options	=  $. extend ( {}, datepicker_options, extra_datepicker_options ) ;
 		$(document). datepicker  &&  $('.date', context). datepicker ( datepicker_options ) ;
 		
 		// Datetimepicker options
@@ -177,8 +182,9 @@
 			firstDay	:  1,
 			showWeek	:  true
 		     } ;
+		var	extra_datetimepicker_options	=   ( $. locale  &&  $. locale ( ) ) ?  $. locale ( ). options. datetimepicker : {} ;
 		     
-		datetimepicker_options	=  $. extend ( {}, datetimepicker_options, $. locale ( ). options. datetimepicker ) ;
+		datetimepicker_options	=  $. extend ( {}, datetimepicker_options, extra_datetimepicker_options ) ;
 		$(document). datetimepicker  &&  $('.datetime', context). datetimepicker ( datetimepicker_options ) ;
 
 		// Timepicker options
@@ -191,8 +197,9 @@
 			firstDay	:  1,
 			showWeek	:  true
 		     } ;
+		var	extra_timepicker_options	=   ( $. locale  &&  $. locale ( ) ) ?  $. locale ( ). options. timepicker : {} ;
 
-		timepicker_options	=  $. extend ( {}, timepicker_options, $. locale ( ). options. timepicker ) ;
+		timepicker_options	=  $. extend ( {}, timepicker_options, extra_timepicker_options ) ;
 		$(document). timepicker  &&  $('.time', context). timepicker ( timepicker_options ) ;
 
 		// Tristate buttons
